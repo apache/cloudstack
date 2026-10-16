@@ -126,6 +126,7 @@ import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitie
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.RequestExecutionContext;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
@@ -306,6 +307,9 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     public String _attachIsoDeviceNum = "3";
 
     protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
+
+    // per resource, so two hosts cannot collide on a request sequence
+    private final XenServerTaskRegistry taskRegistry = new XenServerTaskRegistry();
 
     protected int _wait;
     // Hypervisor specific params with generic value, may need to be overridden
@@ -1775,6 +1779,31 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     @Override
     public Answer executeRequest(final Command cmd) {
+        final Long requestSequence = RequestExecutionContext.getRequestSequence();
+        taskRegistry.beginRequest(requestSequence);
+        try {
+            final Answer answer = executeRequestInternal(cmd);
+            // a cancelled XenAPI task surfaces as an ordinary failure; flag it as cancelled
+            if (answer != null && !answer.getResult() && taskRegistry.wasCancelRequested(requestSequence)) {
+                answer.setCancelled(true);
+            }
+            return answer;
+        } finally {
+            taskRegistry.endRequest(requestSequence);
+        }
+    }
+
+    @Override
+    public boolean isRequestSequenceCancellable(final long sequence) {
+        return taskRegistry.isCancellable(sequence);
+    }
+
+    @Override
+    public boolean cancelRequestSequence(final long sequence) {
+        return taskRegistry.cancel(sequence);
+    }
+
+    private Answer executeRequestInternal(final Command cmd) {
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         try {
             return wrapper.execute(cmd, this);
@@ -5283,21 +5312,33 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         if (logger.isTraceEnabled()) {
             logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout + "ms timeout");
         }
-        while (task.getStatus(c) == Types.TaskStatusType.PENDING) {
-            try {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") is pending, sleeping for " + pollInterval + "ms");
+        // register with the executing request; a request already cancelled cancels the new task at once
+        if (XenServerTaskRegistry.taskStarted(task, c)) {
+            logger.info("Request executing on this thread was already cancelled, cancelling newly created task " + task);
+            XenServerTaskRegistry.cancelTask(task, c);
+        }
+        try {
+            // wait through CANCELLING too: callers read the final status right after this returns
+            Types.TaskStatusType status = task.getStatus(c);
+            while (status == Types.TaskStatusType.PENDING || status == Types.TaskStatusType.CANCELLING) {
+                try {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") is " + status + ", sleeping for " + pollInterval + "ms");
+                    }
+                    Thread.sleep(pollInterval);
+                } catch (final InterruptedException ignored) {
                 }
-                Thread.sleep(pollInterval);
-            } catch (final InterruptedException ignored) {
+                if (System.currentTimeMillis() - beginTime > timeout) {
+                    final String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task;
+                    logger.warn(msg);
+                    task.cancel(c);
+                    task.destroy(c);
+                    throw new TimeoutException(msg);
+                }
+                status = task.getStatus(c);
             }
-            if (System.currentTimeMillis() - beginTime > timeout) {
-                final String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task;
-                logger.warn(msg);
-                task.cancel(c);
-                task.destroy(c);
-                throw new TimeoutException(msg);
-            }
+        } finally {
+            XenServerTaskRegistry.taskFinished(task);
         }
     }
 

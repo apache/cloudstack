@@ -92,4 +92,14 @@ public interface ServerResource extends Manager {
     }
 
     default void processPingAnswer(PingAnswer answer) {};
+
+    /** Defaults to false: a resource that has not implemented cancellation must not claim it. */
+    default boolean isRequestSequenceCancellable(long sequence) {
+        return false;
+    }
+
+    /** Returns true only when the backend operation was actually stopped. */
+    default boolean cancelRequestSequence(long sequence) {
+        return false;
+    }
 }

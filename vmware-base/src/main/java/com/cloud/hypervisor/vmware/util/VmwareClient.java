@@ -40,6 +40,7 @@ import javax.xml.ws.handler.PortInfo;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 
 import org.w3c.dom.Element;
@@ -148,6 +149,8 @@ public class VmwareClient {
     private String serviceCookie;
     private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
+    private static final long CANCEL_TASK_WAIT_MS = 30000;
+    private static final long CANCEL_TASK_POLL_MS = 500;
 
     private boolean isConnected = false;
 
@@ -415,6 +418,12 @@ public class VmwareClient {
 
         boolean retVal = false;
 
+        // register with the executing request; a request already cancelled cancels the new task at once
+        if (VmwareTaskRegistry.taskStarted(task, this)) {
+            LOGGER.info("Request executing on this thread was already cancelled, cancelling newly created task {}", task.getValue());
+            cancelTask(task);
+        }
+
         try {
             // info has a property - state for state of the task
             Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
@@ -460,6 +469,8 @@ public class VmwareClient {
                     throw new RuntimeException(((LocalizedMethodFault)result[1]).getLocalizedMessage());
                 }
             }
+        } finally {
+            VmwareTaskRegistry.taskFinished(task);
         }
         return retVal;
     }
@@ -780,11 +791,23 @@ public class VmwareClient {
         return vCenterSessionTimeout;
     }
 
-    public void cancelTask(ManagedObjectReference task) throws Exception {
-        TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
+    public boolean isTaskCancellable(ManagedObjectReference task) throws Exception {
+        TaskInfo info = getDynamicProperty(task, "info");
+        if (info == null || info.getState() == null) {
+            return false;
+        }
+        if (info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR)) {
+            return false;
+        }
+        return info.isCancelable();
+    }
+
+    /** Asks vCenter to cancel and waits, bounded, for a terminal state. */
+    public Pair<Boolean, String> cancelTask(ManagedObjectReference task) throws Exception {
+        TaskInfo info = getDynamicProperty(task, "info");
         if (info == null) {
             LOGGER.warn("Unable to get the task info, so couldn't cancel the task");
-            return;
+            return new Pair<>(false, "unable to get the task info");
         }
 
         String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
@@ -794,40 +817,45 @@ public class VmwareClient {
 
         if (info.getState().equals(TaskInfoState.SUCCESS)) {
             LOGGER.debug(taskName + " task successfully completed for the entity " + entityName + ", can't cancel it");
-            return;
+            return new Pair<>(false, "task " + taskName + " already completed");
         }
 
         if (info.getState().equals(TaskInfoState.ERROR)) {
             LOGGER.debug(taskName + " task execution failed for the entity " + entityName + ", can't cancel it");
-            return;
+            return new Pair<>(false, "task " + taskName + " already failed");
         }
 
         LOGGER.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
         if (!info.isCancelable()) {
             LOGGER.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
-            return;
+            return new Pair<>(false, "task " + taskName + " is not cancelable on vCenter");
         }
 
         LOGGER.debug("Cancelling task " + taskName + " of the entity " + entityName);
         getService().cancelTask(task);
 
-        // Since task cancellation is asynchronous, wait for the task to be cancelled
-        Object[] result = waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"},
-                new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}});
-
-        if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
-            if (result[0].equals(TaskInfoState.SUCCESS)) {
-                LOGGER.warn("Failed to cancel" + taskName + " task of the entity " + entityName + ", the task successfully completed");
+        // poll rather than waitForValues: it is synchronized and the thread waiting on this task holds its monitor
+        final long deadline = System.currentTimeMillis() + CANCEL_TASK_WAIT_MS;
+        while (System.currentTimeMillis() < deadline) {
+            info = getDynamicProperty(task, "info");
+            TaskInfoState state = info != null ? info.getState() : null;
+            if (TaskInfoState.SUCCESS.equals(state)) {
+                LOGGER.warn("Failed to cancel " + taskName + " task of the entity " + entityName + ", the task successfully completed");
+                return new Pair<>(false, "task " + taskName + " completed before it could be cancelled");
             }
-
-            if (result[1] instanceof LocalizedMethodFault) {
-                MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
-                if (fault instanceof RequestCanceled) {
+            if (TaskInfoState.ERROR.equals(state)) {
+                LocalizedMethodFault error = info.getError();
+                if (error != null && error.getFault() instanceof RequestCanceled) {
                     LOGGER.debug(taskName + " task of the entity " + entityName + " was successfully cancelled");
+                    return new Pair<>(true, "task " + taskName + " cancelled");
                 }
-            } else {
-                LOGGER.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
+                String reason = error != null ? error.getLocalizedMessage() : "unknown error";
+                LOGGER.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + reason);
+                return new Pair<>(false, "task " + taskName + " failed: " + reason);
             }
+            Thread.sleep(CANCEL_TASK_POLL_MS);
         }
+        LOGGER.warn(taskName + " task of the entity " + entityName + " is still running after the cancel request");
+        return new Pair<>(false, "task " + taskName + " did not stop within " + CANCEL_TASK_WAIT_MS / 1000 + " seconds of the cancel request");
     }
 }

@@ -226,6 +226,9 @@ export default {
       return (text.length <= length) ? text : (text.substring(0, length - 3) + '...')
     },
     retrieveFieldLabel (fieldName) {
+      if (fieldName === 'duration' && this.apiName.includes('listAsyncJobs')) {
+        fieldName = 'period'
+      }
       if (fieldName === 'groupid') {
         fieldName = 'group'
       }
@@ -253,6 +256,9 @@ export default {
       }
     },
     getStaticFieldValue (key, value) {
+      if (key === 'duration' && this.apiName.includes('listAsyncJobs')) {
+        return this.$t({ 1: 'label.last.hour', 24: 'label.last.24.hours', 168: 'label.last.7.days' }[value] || 'label.period')
+      }
       let formattedValue = ''
       if (key.includes('type')) {
         if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {

@@ -874,4 +874,10 @@ public class VmwareResourceTest {
         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
+
+    @Test
+    public void testUnknownRequestSequenceIsNotCancellable() {
+        assertFalse(vmwareResource.isRequestSequenceCancellable(4242L));
+        assertFalse(vmwareResource.cancelRequestSequence(4242L));
+    }
 }

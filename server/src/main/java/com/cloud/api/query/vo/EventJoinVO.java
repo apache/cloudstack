@@ -69,6 +69,12 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "start_uuid")
     private String startUuid;
 
+    @Column(name = "async_job_id")
+    private Long asyncJobId;
+
+    @Column(name = "async_job_uuid")
+    private String asyncJobUuid;
+
     @Column(name = "parameters", length = 1024)
     private String parameters;
 
@@ -227,6 +233,14 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getStartUuid() {
         return startUuid;
+    }
+
+    public Long getAsyncJobId() {
+        return asyncJobId;
+    }
+
+    public String getAsyncJobUuid() {
+        return asyncJobUuid;
     }
 
     public String getParameters() {

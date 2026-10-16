@@ -31,13 +31,18 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class AgentManagerImplTest {
@@ -171,5 +176,104 @@ public class AgentManagerImplTest {
         Mockito.when(host.getDetail(Host.HOST_SSH_PORT)).thenReturn(String.valueOf(3922));
         int hostSshPort = mgr.getHostSshPort(host);
         Assert.assertEquals(3922, hostSshPort);
+    }
+
+    private AsyncJobManager cancelledJobOnThisServer(final long jobId) {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        final AsyncJobVO job = new AsyncJobVO();
+        job.setId(jobId);
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.singletonList(job));
+        return asyncJobManager;
+    }
+
+    @Test
+    public void testCancelledJobWithoutInFlightCommandsIsFinalisedAtOnce() {
+        final AsyncJobManager asyncJobManager = cancelledJobOnThisServer(42L);
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+    }
+
+    @Test
+    public void testCancelledJobStaysAssignedUntilItsCommandCanBeStopped() throws Exception {
+        final AsyncJobManager asyncJobManager = cancelledJobOnThisServer(42L);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(false);
+        mgr.new CancelledJobsCheckTask().runInContext();
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
+
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr.new CancelledJobsCheckTask().runInContext();
+        Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
+    }
+
+    @Test
+    public void testCommandsInFlightHereForAJobCancelledElsewhereAreStopped() throws Exception {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.emptyList());
+        final AsyncJobVO cancelled = new AsyncJobVO();
+        cancelled.setId(42L);
+        cancelled.setStatus(JobInfo.Status.IN_PROGRESS);
+        cancelled.setCancelRequested(true);
+        Mockito.when(asyncJobManager.getAsyncJob(42L)).thenReturn(cancelled);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCancelWithNothingInFlightRefusesTheNextCommandOnly() {
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        // the worker is now unwinding: its rollback commands go through
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(7L));
+        Assert.assertFalse(mgr.refusesCommandsOf(null));
+    }
+
+    @Test
+    public void testStoppedCommandHandsTheCancelToTheWorkerSoItsRollbackPasses() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+    }
+
+    @Test
+    public void testCommandThatCannotBeStoppedLeavesTheRefusalForTheNextOne() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(false);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertFalse(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
+        Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
     }
 }

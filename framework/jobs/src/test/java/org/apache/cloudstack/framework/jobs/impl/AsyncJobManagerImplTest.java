@@ -27,10 +27,18 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.junit.Assert;
 import org.junit.Test;
+import java.util.Arrays;
+import java.util.Collections;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -55,6 +63,18 @@ public class AsyncJobManagerImplTest {
     NetworkDao networkDao;
     @Mock
     NetworkOrchestrationService networkOrchestrationService;
+
+    @Mock
+    AsyncJobDao jobDao;
+
+    @Mock
+    SyncQueueItemDao queueItemDao;
+
+    @Mock
+    SyncQueueManager queueMgr;
+
+    @Mock
+    AsyncJobMonitor jobMonitor;
 
     @Test
     public void testCleanupVolumeResource() {
@@ -92,5 +112,86 @@ public class AsyncJobManagerImplTest {
         asyncJobManager.cleanupResources(job);
         Mockito.verify(networkOrchestrationService, Mockito.times(1)).stateTransitTo(networkVO,
                 Network.Event.OperationFailed);
+    }
+
+    private AsyncJobVO childJob(long id, JobInfo.Status status) {
+        AsyncJobVO child = new AsyncJobVO();
+        child.setId(id);
+        child.setStatus(status);
+        child.setRelated("10");
+        return child;
+    }
+
+    private SyncQueueItemVO queueItem(long id, Long lastProcessMsid) {
+        SyncQueueItemVO item = new SyncQueueItemVO();
+        item.setId(id);
+        item.setLastProcessMsid(lastProcessMsid);
+        return item;
+    }
+
+    @Test
+    public void testCancelQueuedChildJobsCompletesAndPurgesWaitingChild() {
+        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+        when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
+        when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
+        Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.anyString());
+
+        asyncJobManager.cancelQueuedChildJobs(10L, "user request");
+
+        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.contains("user request"));
+        Mockito.verify(jobMonitor).unregisterByJobId(11L);
+        Mockito.verify(queueMgr).purgeItem(5L);
+    }
+
+    @Test
+    public void testCancelQueuedChildJobsLeavesDequeuedChildToTheInFlightPath() {
+        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+        when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
+        when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, 1L));
+
+        asyncJobManager.cancelQueuedChildJobs(10L, "user request");
+
+        Mockito.verify(asyncJobManager, Mockito.never()).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+        Mockito.verify(jobMonitor, Mockito.never()).unregisterByJobId(Mockito.anyLong());
+        Mockito.verify(queueMgr, Mockito.never()).purgeItem(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCancelQueuedChildJobsSkipsFinishedAndUnqueuedChildren() {
+        when(jobDao.listChildJobs(10L)).thenReturn(Arrays.asList(childJob(11L, JobInfo.Status.SUCCEEDED), childJob(12L, JobInfo.Status.IN_PROGRESS)));
+        when(queueItemDao.getQueueItemIdByContentIdAndType(12L, SyncQueueItem.AsyncJobContentType)).thenReturn(null);
+
+        asyncJobManager.cancelQueuedChildJobs(10L, "user request");
+
+        Mockito.verify(queueItemDao, Mockito.never()).getQueueItemIdByContentIdAndType(Mockito.eq(11L), Mockito.anyString());
+        Mockito.verify(asyncJobManager, Mockito.never()).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+        Mockito.verify(queueMgr, Mockito.never()).purgeItem(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCancellationReasonComesFromTheStoredRequest() {
+        AsyncJobVO parent = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        parent.setCancelRequested(true);
+        parent.setRelated(null);
+        parent.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
+        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
+        when(jobDao.findByIdIncludingRemoved(11L)).thenReturn(childJob(11L, JobInfo.Status.IN_PROGRESS));
+        AsyncJobVO other = childJob(12L, JobInfo.Status.IN_PROGRESS);
+        other.setRelated("");
+        when(jobDao.findByIdIncludingRemoved(12L)).thenReturn(other);
+
+        Assert.assertEquals("Cancelled by admin via mgmt2", asyncJobManager.getCancellationReason(10L));
+        Assert.assertEquals("Cancelled by admin via mgmt2", asyncJobManager.getCancellationReason(11L));
+        Assert.assertNull(asyncJobManager.getCancellationReason(12L));
+    }
+
+    @Test
+    public void testCancelledResultReadsLikeAFailure() {
+        String serialized = AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2");
+
+        Assert.assertTrue(serialized.startsWith(ExceptionResponse.class.getName() + "/"));
+        ExceptionResponse response = (ExceptionResponse) JobSerializerHelper.fromSerializedString(serialized);
+        Assert.assertEquals("Cancelled by admin via mgmt2", response.getErrorText());
+        Assert.assertEquals(Integer.valueOf(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), response.getErrorCode());
     }
 }

@@ -93,50 +93,6 @@ export default {
       docHelp: 'adminguide/management.html#metrics',
       permission: ['listDbMetrics', 'listUsageServerMetrics'],
       component: () => import('@/views/infra/Metrics.vue')
-    },
-    {
-      name: 'alert',
-      title: 'label.alerts',
-      icon: 'FlagOutlined',
-      docHelp: 'adminguide/management.html#administrator-alerts',
-      permission: ['listAlerts'],
-      columns: ['name', 'description', 'type', 'sent'],
-      details: ['name', 'id', 'type', 'sent', 'description'],
-      searchFilters: ['name', 'type'],
-      actions: [
-        {
-          api: 'archiveAlerts',
-          icon: 'book-outlined',
-          label: 'label.archive.alerts',
-          message: 'message.confirm.archive.selected.alerts',
-          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
-          dataView: true,
-          groupAction: true,
-          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
-          args: ['ids'],
-          mapping: {
-            ids: {
-              value: (record) => { return record.id }
-            }
-          }
-        },
-        {
-          api: 'deleteAlerts',
-          icon: 'delete-outlined',
-          label: 'label.delete.alerts',
-          message: 'message.confirm.remove.selected.alerts',
-          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
-          dataView: true,
-          groupAction: true,
-          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
-          args: ['ids'],
-          mapping: {
-            ids: {
-              value: (record) => { return record.id }
-            }
-          }
-        }
-      ]
     }
   ]
 }

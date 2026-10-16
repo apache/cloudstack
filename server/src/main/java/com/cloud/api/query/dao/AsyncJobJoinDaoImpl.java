@@ -24,6 +24,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -55,33 +57,52 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         _count = "select count(distinct id) from async_job_view WHERE ";
     }
 
+    private String managementServerName(final Long msid) {
+        if (msid == null) {
+            return null;
+        }
+        final ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(msid);
+        return managementServer != null ? managementServer.getName() : null;
+    }
+
     @Override
     public AsyncJobResponse newAsyncJobResponse(final AsyncJobJoinVO job) {
         final AsyncJobResponse jobResponse = new AsyncJobResponse();
         jobResponse.setAccountId(job.getAccountUuid());
         jobResponse.setAccount(job.getAccountName());
         jobResponse.setDomainId(job.getDomainUuid());
+        jobResponse.setDomain(job.getDomainName());
         jobResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(job.getDomainPath()));
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
         jobResponse.setRemoved(job.getRemoved());
+        jobResponse.setId(job.getUuid());
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
+        // while the cancellation is carried out the job's result holds the request; it is reported as the reason, not as a result
+        final boolean cancelling = job.isCancelRequested() && job.getStatus() == JobInfo.Status.IN_PROGRESS.value();
+        if (job.isCancelRequested()) {
+            jobResponse.setCancelRequested(true);
+        }
         jobResponse.setJobProcStatus(job.getProcessStatus());
-        if (job.getExecutingMsid() != null) {
-            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(job.getExecutingMsid());
+        // a finished job no longer has an executing server; the one that completed it is the answer then
+        final Long msid = job.getExecutingMsid() != null ? job.getExecutingMsid() : job.getCompleteMsid();
+        if (msid != null) {
+            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(msid);
             if (managementServer != null) {
                 jobResponse.setManagementServerId(managementServer.getUuid());
                 jobResponse.setManagementServerName(managementServer.getName());
             }
         }
 
+        jobResponse.setInitManagementServerName(managementServerName(job.getInitMsid()));
+        jobResponse.setExecutingManagementServerName(managementServerName(job.getExecutingMsid()));
+        jobResponse.setCompleteManagementServerName(managementServerName(job.getCompleteMsid()));
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
-
             jobResponse.setJobInstanceId(job.getInstanceUuid());
-
+            jobResponse.setJobInstanceName(job.getInstanceName());
         }
         jobResponse.setJobResultCode(job.getResultCode());
 
@@ -89,10 +110,16 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         SerializationContext.current().setUuidTranslation(false);
 
         final Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
-        jobResponse.setJobResult((ResponseObject)resultObject);
+        if (cancelling) {
+            if (resultObject instanceof ExceptionResponse) {
+                jobResponse.setCancelReason(((ExceptionResponse)resultObject).getErrorText());
+            }
+        } else {
+            jobResponse.setJobResult((ResponseObject)resultObject);
+        }
         SerializationContext.current().setUuidTranslation(savedValue);
 
-        if (resultObject != null) {
+        if (resultObject != null && !cancelling) {
             final Class<?> clz = resultObject.getClass();
             if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
                 jobResponse.setJobResultType("text");

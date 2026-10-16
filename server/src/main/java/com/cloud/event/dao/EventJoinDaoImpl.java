@@ -106,6 +106,7 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setId(event.getUuid());
         responseEvent.setLevel(event.getLevel());
         responseEvent.setParentId(event.getStartUuid());
+        responseEvent.setJobId(event.getAsyncJobUuid());
         responseEvent.setState(event.getState());
         responseEvent.setUsername(event.getUserName());
         if (event.getArchived()) {

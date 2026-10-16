@@ -94,7 +94,8 @@ public enum ApiCommandResourceType {
     KmsKey(org.apache.cloudstack.kms.KMSKey.class),
     HsmProfile(org.apache.cloudstack.kms.HSMProfile.class),
     InstanceBootGroup(org.apache.cloudstack.vm.bootgroup.InstanceBootGroup.class),
-    InstanceBootGroupReadinessRule(InstanceBootGroupReadinessRule.class);
+    InstanceBootGroupReadinessRule(InstanceBootGroupReadinessRule.class),
+    Job(org.apache.cloudstack.jobs.JobInfo.class);
 
     private final Class<?> clazz;
 
