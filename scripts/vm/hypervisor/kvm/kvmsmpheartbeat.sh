@@ -80,50 +80,43 @@ if [ ! -d "$MountPoint" ]; then
   exit 1
 fi
 
-# If the 'mountpoint' utility is available, ensure this is an actual mount
-if command -v mountpoint >/dev/null 2>&1; then
-  if ! mountpoint -q "$MountPoint"; then
-    echo "Mount point is not a mounted filesystem: $MountPoint" >&2
-    exit 1
+# Returns 0 if the given path is usable for the heartbeat:
+# - the path is a mount point itself (same behaviour as before), or
+# - the path is a subdirectory of a mounted (e.g. clustered) filesystem that
+#   is neither the root filesystem nor a local disk filesystem.
+# The second rule keeps a lost exact mount from passing: its empty directory
+# then belongs to the parent filesystem (e.g. a local /var), which is refused.
+is_on_mounted_fs() {
+  local target fstype
+  if command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$1"; then
+    return 0
   fi
+  if command -v findmnt >/dev/null 2>&1; then
+    target=$(findmnt -n -o TARGET -T "$1" 2>/dev/null)
+    fstype=$(findmnt -n -o FSTYPE -T "$1" 2>/dev/null)
+  else
+    target=$(df -P "$1" 2>/dev/null | awk 'NR==2 {print $6}')
+    fstype=$(df -PT "$1" 2>/dev/null | awk 'NR==2 {print $2}')
+  fi
+  [ -n "$target" ] && [ "$target" != "/" ] || return 1
+  case "$fstype" in
+    ext2|ext3|ext4|xfs|btrfs|zfs|f2fs|vfat|exfat|ntfs|ntfs3|tmpfs|ramfs|overlay|squashfs)
+      return 1
+      ;;
+  esac
+  return 0
+}
+
+# Ensure the path is on a mounted filesystem (not the local root filesystem)
+if ! is_on_mounted_fs "$MountPoint"; then
+  echo "Mount point is not on a mounted filesystem: $MountPoint" >&2
+  exit 1
 fi
 
 # Ensure the mount point is writable
 if [ ! -w "$MountPoint" ]; then
   echo "Mount point is not writable: $MountPoint" >&2
   exit 1
-fi
-#delete VMs on this mountpoint (best-effort)
-deleteVMs() {
-  local mountPoint=$1
-  # ensure it ends with a single trailing slash
-  mountPoint="${mountPoint%/}/"
-
-  vmPids=$(ps aux | grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
-
-  if [ -z "$vmPids" ]
-  then
-     return
-  fi
-
-  for pid in $vmPids
-  do
-     kill -9 $pid &> /dev/null
-  done
-}
-
-#checking is there the mount point present under $MountPoint?
-if grep -q "^[^ ]\+ $MountPoint " /proc/mounts
-then
-   # mount exists; nothing to do here; keep for compatibility with original flow
-   :
-else
-   # mount point not present
-   # if not in read-check mode, consider deleting VMs similar to original behavior
-   if [ "$rflag" == "0" ]
-   then
-     deleteVMs $MountPoint
-   fi
 fi
 
 hbFolder="$MountPoint/KVMHA"
@@ -143,9 +136,16 @@ write_hbLog() {
      fi
   fi
 
+  # A run killed on timeout (SIGKILL) cannot run its trap; remove its
+  # leftover temporary file on the next run.
+  find "$hbFolder" -maxdepth 1 -name "hb-$HostIP.*" -mmin +1 -delete 2>/dev/null
+
   timestamp=$(date +%s)
   # Write atomically to avoid partial writes (write to tmp then mv)
   tmpfile="${hbFile}.$$"
+  # remove the temporary file if the script is interrupted (e.g. on timeout)
+  trap 'rm -f "$tmpfile"' EXIT
+  trap 'exit 1' INT TERM
   printf "%s\n" "$timestamp" > "$tmpfile" 2>/dev/null
   if [ $? -ne 0 ]; then
     printf "Failed to write heartbeat to $tmpfile" >&2
@@ -168,12 +168,20 @@ check_hbLog() {
     hb_diff=999998
     return 1
   fi
-  diff=`expr $now - $hb 2>/dev/null`
-  if [ $? -ne 0 ]
-  then
+  # note: 'expr' exits with 1 when the result is 0, so use shell arithmetic
+  # only accept a plain decimal timestamp of sane length
+  case "$hb" in
+    ''|*[!0-9]*)
+      hb_diff=999997
+      return 1
+      ;;
+  esac
+  if [ ${#hb} -gt 12 ]; then
     hb_diff=999997
     return 1
   fi
+  # base 10, otherwise a leading 0 (e.g. "08") is parsed as octal
+  diff=$((now - 10#$hb))
   if [ -z "$interval" ]; then
     # if no interval provided, consider 0 as success
     if [ $diff -gt 0 ]; then
