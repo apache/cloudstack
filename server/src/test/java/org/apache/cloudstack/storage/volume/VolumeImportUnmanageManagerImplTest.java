@@ -62,6 +62,9 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -134,6 +137,8 @@ public class VolumeImportUnmanageManagerImplTest {
     private VolumeApiService volumeApiService;
     @Mock
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Mock
+    private DataStoreManager dataStoreMgr;
 
     @Mock
     StoragePoolVO storagePoolVO;
@@ -291,6 +296,57 @@ public class VolumeImportUnmanageManagerImplTest {
     }
 
     @Test
+    public void testImportVolumeNotifiesStorageDriverOfImport() throws ResourceAllocationException {
+        ImportVolumeCmd cmd = mock(ImportVolumeCmd.class);
+        when(cmd.getPath()).thenReturn(path);
+        when(cmd.getStorageId()).thenReturn(poolId);
+        when(cmd.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(volumeDao.findByPoolIdAndPath(poolId, path)).thenReturn(null);
+        when(templatePoolDao.findByPoolPath(poolId, path)).thenReturn(null);
+
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                format, size, virtualSize);
+        volumeOnStorageTO.setQemuEncryptFormat(encryptFormat);
+        List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
+        volumesOnStorageTO.add(volumeOnStorageTO);
+
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeHasBackingFile(volumeOnStorageTO);
+
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(diskOffering.isCustomized()).thenReturn(true);
+        doReturn(diskOffering).when(volumeImportUnmanageManager).getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+        doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
+        doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
+        doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
+                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull(), eq(Storage.ImageFormat.QCOW2));
+        when(diskProfile.getVolumeId()).thenReturn(volumeId);
+        when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
+        String volumeUuid = UUID.randomUUID().toString();
+        when(volumeVO.getUuid()).thenReturn(volumeUuid);
+
+        doNothing().when(resourceLimitService).incrementResourceCount(accountId, Resource.ResourceType.volume);
+        doNothing().when(resourceLimitService).incrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
+
+        DataStore dataStore = mock(DataStore.class);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        when(dataStore.getDriver()).thenReturn(driver);
+        when(dataStoreMgr.getPrimaryDataStore(poolId)).thenReturn(dataStore);
+
+        VolumeResponse response = mock(VolumeResponse.class);
+        doReturn(response).when(responseGenerator).createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignoredtoo = Mockito.mockStatic(ActionEventUtils.class)) {
+            volumeImportUnmanageManager.importVolume(cmd);
+        }
+
+        verify(driver).volumeManagementChanged(storagePoolVO, volumeVO, true);
+    }
+
+    @Test
     public void testGetImageFormat() {
         Assert.assertNull(volumeImportUnmanageManager.getImageFormat(null));
         Assert.assertNull(volumeImportUnmanageManager.getImageFormat(""));
@@ -301,6 +357,9 @@ public class VolumeImportUnmanageManagerImplTest {
 
     @Test
     public void testListVolumesForImportInternal() {
+        // no primary storage driver available for this pool -> fall back to the host command path
+        when(dataStoreMgr.getPrimaryDataStore(poolId)).thenReturn(null);
+
         Pair<HostVO, String> hostAndLocalPath = mock(Pair.class);
         doReturn(hostAndLocalPath).when(volumeImportUnmanageManager).findHostAndLocalPathForVolumeImport(storagePoolVO);
         when(hostAndLocalPath.first()).thenReturn(hostVO);
@@ -370,7 +429,7 @@ public class VolumeImportUnmanageManagerImplTest {
         when(volumeVO.getPath()).thenReturn(path);
         VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
                 format, size, virtualSize);
-        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path);
+        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path, true);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
 
@@ -382,6 +441,31 @@ public class VolumeImportUnmanageManagerImplTest {
         verify(resourceLimitService).decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.volume);
         verify(resourceLimitService).decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, virtualSize);
         verify(volumeDao).update(eq(volumeId), any());
+    }
+
+    @Test
+    public void testUnmanageVolumeNotifiesStorageDriverOfUnmanage() {
+        when(volumeVO.getState()).thenReturn(Volume.State.Ready);
+        when(volumeVO.getPoolId()).thenReturn(poolId);
+        when(volumeVO.getInstanceId()).thenReturn(null);
+        when(volumeVO.getPath()).thenReturn(path);
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                format, size, virtualSize);
+        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path, true);
+        doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
+        doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
+
+        DataStore dataStore = mock(DataStore.class);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        when(dataStore.getDriver()).thenReturn(driver);
+        when(dataStoreMgr.getPrimaryDataStore(poolId)).thenReturn(dataStore);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignoredtoo = Mockito.mockStatic(ActionEventUtils.class)) {
+            volumeImportUnmanageManager.unmanageVolume(volumeId);
+        }
+
+        verify(driver).volumeManagementChanged(storagePoolVO, volumeVO, false);
     }
 
     @Test
