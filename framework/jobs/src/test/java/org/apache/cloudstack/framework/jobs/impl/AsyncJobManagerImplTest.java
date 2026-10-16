@@ -314,21 +314,20 @@ public class AsyncJobManagerImplTest {
     }
 
     @Test
-    public void testCancelReasonCoversTheJobAndItsVmWorkChild() {
-        asyncJobManager.markCancelRequested(10L, "user request");
-
-        Assert.assertEquals("user request", asyncJobManager.cancelReasonFor(childJob(10L, JobInfo.Status.IN_PROGRESS)));
-        Assert.assertEquals("user request", asyncJobManager.cancelReasonFor(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+    public void testCancellationReasonComesFromTheStoredRequest() {
+        AsyncJobVO parent = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        parent.setCancelRequested(true);
+        parent.setRelated(null);
+        parent.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
+        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
+        when(jobDao.findByIdIncludingRemoved(11L)).thenReturn(childJob(11L, JobInfo.Status.IN_PROGRESS));
         AsyncJobVO other = childJob(12L, JobInfo.Status.IN_PROGRESS);
-        other.setRelated("99");
-        Assert.assertNull(asyncJobManager.cancelReasonFor(other));
-    }
+        other.setRelated("");
+        when(jobDao.findByIdIncludingRemoved(12L)).thenReturn(other);
 
-    @Test
-    public void testNoCancelReasonWithoutARequest() {
-        AsyncJobVO job = childJob(12L, JobInfo.Status.IN_PROGRESS);
-        job.setRelated("");
-        Assert.assertNull(asyncJobManager.cancelReasonFor(job));
+        Assert.assertEquals("Cancelled by admin via mgmt2", asyncJobManager.getCancellationReason(10L));
+        Assert.assertEquals("Cancelled by admin via mgmt2", asyncJobManager.getCancellationReason(11L));
+        Assert.assertNull(asyncJobManager.getCancellationReason(12L));
     }
 
     @Test

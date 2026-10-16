@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -166,8 +165,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private AsyncJobMonitor _jobMonitor;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
-
-    private final Map<Long, String> cancelRequestedJobs = new ConcurrentHashMap<>();
     @Inject
     private VMInstanceDao _vmInstanceDao;
     @Inject
@@ -357,13 +354,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     @DB
-    public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject) {
-        completeAsyncJob(jobId, jobStatus, resultCode, resultObject, true);
-    }
-
-    @Override
-    @DB
-    public void completeAsyncJob(final long jobId, final Status requestedStatus, final int requestedResultCode, final String requestedResult, final boolean remove) {
+    public void completeAsyncJob(final long jobId, final Status requestedStatus, final int requestedResultCode, final String requestedResult) {
         String resultObj = null;
         if (logger.isDebugEnabled()) {
             resultObj = convertHumanReadableJson(obfuscatePassword(requestedResult, HidePassword.value()));
@@ -382,7 +373,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
-        if (job.getStatus() != JobInfo.Status.IN_PROGRESS) {
+        if (job.getStatus().done()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("job-" + jobId + " is already completed.");
             }
@@ -391,9 +382,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
-        final String cancelReason = requestedStatus == JobInfo.Status.FAILED ? cancelReasonIncludingParent(job) : null;
+        // a job that fails after its cancellation was requested, or whose API job was cancelled, ended because of the cancellation
+        final String cancelReason = requestedStatus == JobInfo.Status.FAILED ? getCancellationReasonForJob(job) : null;
         if (cancelReason != null) {
-            logger.info("job-{} failed while its cancellation was being carried out; recording it as cancelled", jobId);
+            logger.info("job-{} failed while being cancelled; recording it as cancelled", jobId);
         }
         final Status jobStatus = cancelReason != null ? JobInfo.Status.CANCELLED : requestedStatus;
         final int resultCode = cancelReason != null ? ApiErrorCode.INTERNAL_ERROR.getHttpCode() : requestedResultCode;
@@ -427,11 +419,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
                 job.setLastUpdated(currentGMTTime);
-                if (remove) {
-                    job.setCompleteMsid(getMsid());
-                    job.setRemoved(currentGMTTime);
-                    job.setExecutingMsid(null);
-                }
+                job.setCompleteMsid(getMsid());
+                job.setRemoved(currentGMTTime);
+                job.setExecutingMsid(null);
                 _jobDao.update(jobId, job);
 
                 if (logger.isDebugEnabled()) {
@@ -955,7 +945,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         // TODO, we assume that all jobs in this category is API job only
                         AsyncJobVO job = _jobDao.findById(jobId);
                         if (job != null && (job.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0) {
-                            if (job.getStatus() == Status.CANCELLED) {
+                            if (job.isCancelRequested() || job.getStatus() == Status.CANCELLED) {
                                 finalizeCancelledJob(job.getId());
                             } else {
                                 scheduleExecution(job, false);
@@ -1502,18 +1492,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return true;
     }
 
-    /** The reason a cancel is in flight for this job, or for the API job a VM work job runs on behalf of; null otherwise. */
-    String cancelReasonFor(final AsyncJobVO job) {
-        String reason = cancelRequestedJobs.get(job.getId());
-        if (reason == null && job.getRelated() != null && !job.getRelated().isEmpty()) {
-            try {
-                reason = cancelRequestedJobs.get(Long.parseLong(job.getRelated()));
-            } catch (final NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return reason;
-    }
 
     private String managementServerName(final long msid) {
         final ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(msid);
@@ -1530,39 +1508,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public String getCancellationReason(final long jobId) {
         final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
-        if (job == null) {
-            return null;
-        }
-        final String reason = cancelReasonFor(job);
-        if (reason != null) {
-            return reason;
-        }
-        if (job.getStatus() == JobInfo.Status.CANCELLED) {
-            return "job was cancelled";
-        }
-        if (job.getRelated() != null && !job.getRelated().isEmpty()) {
-            try {
-                final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
-                if (parent != null && parent.getStatus() == JobInfo.Status.CANCELLED) {
-                    return "job-" + parent.getId() + " was cancelled";
-                }
-            } catch (final NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return null;
+        return job != null ? getCancellationReasonForJob(job) : null;
     }
 
-    /** The in-flight reason, else the fact that the API job this VM work job runs for was already cancelled (possibly on another server). */
-    private String cancelReasonIncludingParent(final AsyncJobVO job) {
-        final String reason = cancelReasonFor(job);
-        if (reason != null || job.getRelated() == null || job.getRelated().isEmpty()) {
-            return reason;
+    private String getCancellationReasonForJob(final AsyncJobVO job) {
+        if (isJobCancelling(job)) {
+            final String reason = getJobCancelReasonFromResult(job);
+            return reason != null ? reason : "job-" + job.getId() + " was cancelled";
+        }
+        if (job.getRelated() == null || job.getRelated().isEmpty()) {
+            return null;
         }
         try {
             final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
-            if (parent != null && parent.getStatus() == JobInfo.Status.CANCELLED) {
-                return "job-" + parent.getId() + " was cancelled";
+            if (parent != null && isJobCancelling(parent)) {
+                final String reason = getJobCancelReasonFromResult(parent);
+                return reason != null ? reason : "job-" + parent.getId() + " was cancelled";
             }
         } catch (final NumberFormatException ignored) {
             return null;
@@ -1570,8 +1531,37 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return null;
     }
 
-    void markCancelRequested(final long jobId, final String reason) {
-        cancelRequestedJobs.put(jobId, reason);
+    private static boolean isJobCancelling(final AsyncJobVO job) {
+        return job.getStatus() == JobInfo.Status.CANCELLED || (job.isCancelRequested() && job.getStatus() == JobInfo.Status.IN_PROGRESS);
+    }
+
+    static String getJobCancelReasonFromResult(final AsyncJobVO job) {
+        try {
+            final Object result = JobSerializerHelper.fromSerializedString(job.getResult());
+            return result instanceof ExceptionResponse ? ((ExceptionResponse)result).getErrorText() : null;
+        } catch (final RuntimeException e) {
+            return null;
+        }
+    }
+
+    private void requestJobCancel(final AsyncJobVO job, final String cancelledBy) {
+        job.setCancelRequested(true);
+        job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
+        job.updateResultWithEncryptionIfNeeded(cancelledResult(cancelledBy));
+        job.setLastUpdated(DateUtil.currentGMTTime());
+        _jobDao.update(job.getId(), job);
+    }
+
+    private void withdrawJobCancel(final long jobId) {
+        final AsyncJobVO job = _jobDao.findById(jobId);
+        if (job == null || !job.isCancelRequested() || job.getStatus() != JobInfo.Status.IN_PROGRESS) {
+            return;
+        }
+        job.setCancelRequested(false);
+        job.setResultCode(0);
+        job.updateResultWithEncryptionIfNeeded(null);
+        job.setLastUpdated(DateUtil.currentGMTTime());
+        _jobDao.update(jobId, job);
     }
 
     void cancelQueuedChildJobs(final long parentJobId, final String reason) {
@@ -1605,16 +1595,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return false;
         }
         final AsyncJobVO parentJob = _jobDao.findById(Long.parseLong(job.getRelated()));
-        if (parentJob == null || !parentJob.getStatus().done() || isPseudoJob(parentJob)) {
+        if (parentJob == null || isPseudoJob(parentJob) || !(parentJob.getStatus().done() || parentJob.isCancelRequested())) {
             return false;
         }
 
         logger.debug("Not executing sync-queue item {}: parent job-{} is already {}", item, parentJob.getId(), parentJob.getStatus());
-        completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0,
-                "Job is not scheduled for execution as the parent job is done. Parent job state: " + parentJob.getStatus());
+        if (isJobCancelling(parentJob)) {
+            final String reason = getJobCancelReasonFromResult(parentJob);
+            completeAsyncJob(item.getContentId(), Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(),
+                    cancelledResult((reason != null ? reason : "job-" + parentJob.getId() + " was cancelled") + " (parent job cancelled before this job was scheduled)"));
+        } else {
+            completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0,
+                    "Job is not scheduled for execution as the parent job is done. Parent job state: " + parentJob.getStatus());
+        }
         _jobMonitor.unregisterByJobId(item.getContentId());
         _queueMgr.purgeItem(item.getId());
-        if (parentJob.getStatus() == Status.CANCELLED) {
+        if (parentJob.isCancelRequested() && parentJob.getStatus() == Status.IN_PROGRESS) {
             finalizeCancelledJob(parentJob.getId());
         }
         return true;
@@ -1672,49 +1668,46 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (CallContext.current() != null) {
             CallContext.current().setEventDetails("Job id: " + job.getUuid() + ". " + cancelledBy);
         }
-        logger.debug("Cancelling job-{} which is in progress.", jobId);
-        markCancelRequested(jobId, cancelledBy);
+        logger.info("Cancellation of job-{} requested: {}", jobId, cancelledBy);
+        requestJobCancel(job, cancelledBy);
         try {
             for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
                 if (!handler.cancelJobExecution(jobId, reason)) {
+                    withdrawJobCancel(jobId);
                     errMessage = "Cannot cancel job-" + jobId + ", the operation it is running could not be stopped.";
                     logger.info(errMessage);
                     throw new CloudRuntimeException(errMessage);
                 }
             }
-
-            // finalise here unless another management server is executing the job; its poller acknowledges
-            final Long executingMsid = job.getExecutingMsid();
-            final boolean finalizeNow = executingMsid == null || executingMsid == getMsid();
-            completeAsyncJob(jobId, JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResult(cancelledBy), finalizeNow);
-            cancelQueuedChildJobs(jobId, cancelledBy);
-            return;
+        } catch (final CloudRuntimeException e) {
+            throw e;
         } catch (final Throwable t) {
+            withdrawJobCancel(jobId);
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
             logger.error(errMessage, t);
-        } finally {
-            cancelRequestedJobs.remove(jobId);
+            throw new CloudRuntimeException(errMessage, t);
         }
-        throw new CloudRuntimeException(errMessage);
+
+        final Long executingMsid = job.getExecutingMsid();
+        if (executingMsid == null || executingMsid.equals(getMsid())) {
+            finalizeCancelledJob(jobId);
+        }
+        cancelQueuedChildJobs(jobId, cancelledBy);
     }
 
     @Override
-    public List<AsyncJobVO> listCancelledJobsExecutingOn(final long msid) {
-        return _jobDao.getCancelledJobs(msid);
+    public List<AsyncJobVO> listCancelRequestedJobsExecutingOn(final long msid) {
+        return _jobDao.getCancelRequestedJobs(msid);
     }
 
     @Override
     public void finalizeCancelledJob(final long jobId) {
         final AsyncJobVO job = _jobDao.findById(jobId);
-        if (job == null || job.getStatus() != JobInfo.Status.CANCELLED) {
+        if (job == null || !job.isCancelRequested() || job.getStatus() != JobInfo.Status.IN_PROGRESS) {
             return;
         }
-        final Date now = DateUtil.currentGMTTime();
-        job.setCompleteMsid(getMsid());
-        job.setLastUpdated(now);
-        job.setRemoved(now);
-        job.setExecutingMsid(null);
-        _jobDao.update(jobId, job);
+        final String reason = getJobCancelReasonFromResult(job);
+        completeAsyncJob(jobId, JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResult(reason != null ? reason : "job-" + jobId + " was cancelled"));
     }
 
     private List<JobCancellationHandler> getJobCancellationHandlers() {
