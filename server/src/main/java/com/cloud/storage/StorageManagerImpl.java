@@ -3873,6 +3873,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 logger.debug(String.format("Pool [%s] with type [%s] does not match volume [%s] pool type [%s].", pool, pool.getPoolType(), volume, volumePool.getPoolType()));
                 return false;
             }
+        } else if (volume.getState() == Volume.State.Allocated) {
+            // For volumes in Allocated state that have a poolId (e.g., from a failed attach/create attempt),
+            // allow pool allocation. The volume hasn't been physically created yet, so it can be allocated to any compatible pool.
+            // This enables retry scenarios where encryption or other operations failed during the first attach attempt.
+            return true;
         } else {
             logger.debug(String.format("Cannot check compatibility of pool [%s] because volume [%s] is not in [%s] state.", pool, volume, Volume.State.Ready));
             return false;
