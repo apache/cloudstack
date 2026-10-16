@@ -46,6 +46,9 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
     @Column(name = "parent_id")
     private Long parentId;
 
+    @Column(name = "data_center_id")
+    private Long dataCenterId;
+
     @Column(name = "subnet")
     private String subnet;
 
@@ -72,8 +75,9 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
         uuid = UUID.randomUUID().toString();
     }
 
-    protected Ipv4GuestSubnetNetworkMapVO(Long parentId, String subnet, Long networkId, Ipv4GuestSubnetNetworkMap.State state) {
+    protected Ipv4GuestSubnetNetworkMapVO(Long parentId, Long dataCenterId, String subnet, Long networkId, Ipv4GuestSubnetNetworkMap.State state) {
         this.parentId = parentId;
+        this.dataCenterId = dataCenterId;
         this.subnet = subnet;
         this.networkId = networkId;
         this.state = state;
@@ -93,6 +97,14 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
     @Override
     public Long getParentId() {
         return parentId;
+    }
+
+    public Long getDataCenterId() {
+        return dataCenterId;
+    }
+
+    public void setDataCenterId(Long dataCenterId) {
+        this.dataCenterId = dataCenterId;
     }
 
     @Override
