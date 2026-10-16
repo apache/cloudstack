@@ -65,6 +65,9 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
             "Accepts names (IN_PROGRESS, SUCCEEDED, FAILED, CANCELLED) or ordinals (0, 1, 2, 3). Only pending jobs are listed by default.", since = "24.0")
     private List<String> jobStatuses;
 
+    @Parameter(name = "cancelrequested", type = CommandType.BOOLEAN, description = "True to list only jobs whose cancellation has been requested, and False to list jobs whose cancellation has not been requested", since = "24.0")
+    private Boolean cancelRequested;
+
     @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration in hours to list the async jobs started or completed within that period up to now.", since = "24.0")
     private Integer duration;
 
@@ -86,6 +89,10 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getCancelRequested() {
+        return cancelRequested;
     }
 
     public String getResourceId() {

@@ -722,7 +722,7 @@
         />
       </template>
       <template v-if="column.key === 'jobstatus'">
-        <a-tag :color="jobStatusColor(text)">{{ $t(jobStatusLabel(text)) }}</a-tag>
+        <a-tag :color="jobStatusColor(jobDisplayStatus(record))">{{ $t(jobStatusLabel(jobDisplayStatus(record))) }}</a-tag>
       </template>
       <template v-if="column.key === 'jobinstancename'">
         <resource-label
@@ -1113,7 +1113,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
 import CopyLabel from '@/components/widgets/CopyLabel'
-import { jobStatusLabel, jobStatusColor, jobResultText, jobResultPretty } from '@/utils/asyncjob'
+import { jobStatusLabel, jobStatusColor, jobDisplayStatus, jobResultText, jobResultPretty } from '@/utils/asyncjob'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
@@ -1248,6 +1248,7 @@ export default {
   methods: {
     jobStatusLabel,
     jobStatusColor,
+    jobDisplayStatus,
     jobResultText,
     jobResultPretty,
     isTungstenPath () {

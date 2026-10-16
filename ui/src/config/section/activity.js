@@ -42,7 +42,7 @@ export default {
         'jobresult'
       ],
       filters: () => {
-        return ['pending', 'succeeded', 'failed', 'cancelled', 'all']
+        return ['pending', 'cancelling', 'succeeded', 'failed', 'cancelled', 'all']
       },
       searchFilters: ['domainid', 'account', 'resourcetype', 'duration'],
       related: [{

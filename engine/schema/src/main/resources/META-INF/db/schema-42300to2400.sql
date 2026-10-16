@@ -243,3 +243,5 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
 -- Link every action event to the API job that raised it, so a job can be traced to its events
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event', 'async_job_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT ''The async job that raised this event'' ');
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_event__async_job_id', 'cloud.event', '(`async_job_id`)');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.async_job', 'cancel_requested', 'TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Cancel requested flag'' ');

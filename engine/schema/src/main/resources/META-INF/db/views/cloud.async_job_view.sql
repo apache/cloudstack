@@ -46,6 +46,7 @@ select
     async_job.job_init_msid,
     async_job.job_executing_msid,
     async_job.job_complete_msid,
+    async_job.cancel_requested,
     COALESCE(
         volumes.uuid,
         vm_template.uuid,

@@ -2189,10 +2189,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 final long now = System.currentTimeMillis();
                 _cancelledJobs.values().removeIf(firstSeen -> now - firstSeen > CANCELLED_JOB_MEMORY_MS);
 
-                for (final AsyncJobVO job : asyncJobManager.listCancelledJobsExecutingOn(_nodeId)) {
+                for (final AsyncJobVO job : asyncJobManager.listCancelRequestedJobsExecutingOn(_nodeId)) {
                     _cancelledJobs.putIfAbsent(job.getId(), now);
                     if (_jobToHostIdAndReqSequenceMap.containsKey(job.getId())) {
-                        logger.info("Job-{} on {} {} was cancelled, stopping its in-flight commands",
+                        logger.info("Cancellation of job-{} on {} {} was requested, stopping its in-flight commands",
                                 job.getId(), job.getInstanceType(), job.getInstanceId());
                         if (!cancelJobExecution(job.getId(), "Job was cancelled")) {
                             logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", job.getId());
@@ -2208,8 +2208,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         continue;
                     }
                     final AsyncJobVO job = asyncJobManager.getAsyncJob(jobId);
-                    if (job != null && job.getStatus() == JobInfo.Status.CANCELLED) {
-                        logger.info("Job-{} was cancelled elsewhere; stopping the commands in flight for it on this server", jobId);
+                    if (job != null && (job.isCancelRequested() || job.getStatus() == JobInfo.Status.CANCELLED)) {
+                        logger.info("Job-{} is being cancelled elsewhere; stopping the commands in flight for it on this server", jobId);
                         if (!cancelJobExecution(jobId, "Job was cancelled")) {
                             logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", jobId);
                         }

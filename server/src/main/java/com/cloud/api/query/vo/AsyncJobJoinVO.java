@@ -91,6 +91,9 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "job_process_status")
     private int processStatus;
 
+    @Column(name = "cancel_requested")
+    private boolean cancelRequested;
+
     @Column(name = "job_result_code")
     private int resultCode;
 
@@ -182,6 +185,10 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getCmd() {
         return cmd;
+    }
+
+    public boolean isCancelRequested() {
+        return cancelRequested;
     }
 
     public int getStatus() {
