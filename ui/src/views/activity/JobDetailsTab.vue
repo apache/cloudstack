@@ -23,7 +23,7 @@
           <strong>{{ $t(item.label) }}</strong>
           <br/>
           <copy-label v-if="item.key === 'id'" :label="resource.id" />
-          <a-tag v-else-if="item.key === 'jobstatus'" :color="jobStatusColor(resource.jobstatus)">{{ $t(jobStatusLabel(resource.jobstatus)) }}</a-tag>
+          <a-tag v-else-if="item.key === 'jobstatus'" :color="jobStatusColor(jobDisplayStatus(resource))">{{ $t(jobStatusLabel(jobDisplayStatus(resource))) }}</a-tag>
           <resource-label
             v-else-if="item.key === 'resource'"
             :resourceType="resource.jobinstancetype"
@@ -47,7 +47,7 @@
 <script>
 import CopyLabel from '@/components/widgets/CopyLabel'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
-import { jobStatusLabel, jobStatusColor, jobResultPretty } from '@/utils/asyncjob'
+import { jobStatusLabel, jobStatusColor, jobDisplayStatus, jobResultPretty } from '@/utils/asyncjob'
 
 export default {
   name: 'JobDetailsTab',
@@ -73,6 +73,9 @@ export default {
         { key: 'cmd', label: 'label.command', value: job.cmd },
         { key: 'jobstatus', label: 'label.status' }
       ]
+      if (job.cancelrequested) {
+        rows.push({ key: 'cancelreason', label: 'label.cancelreason', value: job.cancelreason || '-' })
+      }
       if (job.jobinstanceid) {
         rows.push({ key: 'resourcetype', label: 'label.resourcetype', value: job.jobinstancetype })
         rows.push({ key: 'resource', label: 'label.resource' })
@@ -92,6 +95,7 @@ export default {
   methods: {
     jobStatusLabel,
     jobStatusColor,
+    jobDisplayStatus,
     jobResultPretty
   }
 }

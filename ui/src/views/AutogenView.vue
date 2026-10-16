@@ -1001,11 +1001,15 @@ export default {
       delete params.filter
       delete params.irefresh
       if (this.$route.name === 'jobs') {
-        const jobStatus = { succeeded: '1', failed: '2', cancelled: '3', all: '0,1,2,3' }[this.$route.query.filter]
+        const filter = this.$route.query.filter
+        const jobStatus = { succeeded: '1', failed: '2', cancelled: '3', all: '0,1,2,3' }[filter]
         if (jobStatus) {
           params.jobstatus = jobStatus
         } else {
           delete params.duration
+          if (filter === 'cancelling') {
+            params.cancelrequested = true
+          }
         }
       }
 

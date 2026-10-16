@@ -4489,6 +4489,8 @@
 "label.pending": "Pending",
 "label.period": "Period",
 "label.cancelled": "Cancelled",
+"label.cancelling": "Cancelling",
+"label.cancelreason": "Cancel reason",
 "label.last.hour": "Last hour",
 "label.last.24.hours": "Last 24 hours",
 "label.last.7.days": "Last 7 days",

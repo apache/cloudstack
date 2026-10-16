@@ -3236,6 +3236,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("statuses", sb.entity().getStatus(), SearchCriteria.Op.IN);
         }
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("cancelRequested", sb.entity().isCancelRequested(), SearchCriteria.Op.EQ);
         sb.and("instanceTypeNEQ", sb.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         boolean accountJoinIsDone = false;
@@ -3272,6 +3273,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
         if (filterByStatus) {
             sc.setParameters("statuses", cmd.getJobStatuses().toArray());
+        }
+        if (cmd.getCancelRequested() != null) {
+            sc.setParameters("cancelRequested", cmd.getCancelRequested());
         }
         if (cmd.getId() != null) {
             sc.setParameters("id", cmd.getId());
