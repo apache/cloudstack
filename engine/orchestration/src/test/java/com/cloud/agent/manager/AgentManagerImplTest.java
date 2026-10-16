@@ -18,11 +18,13 @@ package com.cloud.agent.manager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -235,6 +237,23 @@ public class AgentManagerImplTest {
 
         Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
         Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+    }
+
+    @Test
+    public void testEasySendHandsTheCancellationToTheCallerInsteadOfANullAnswer() throws Exception {
+        final HostVO up = Mockito.mock(HostVO.class);
+        Mockito.when(up.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(1L)).thenReturn(up);
+        final Command cmd = new ReadyCommand();
+        final OperationCancelledException cancelled = new OperationCancelledException(new Command[] {cmd}, 1L, 11L, 5L, true, "Cancelled by admin via mgmt1");
+        Mockito.doThrow(cancelled).when(mgr).send(1L, cmd);
+
+        try {
+            mgr.easySend(1L, cmd);
+            Assert.fail("The cancellation was swallowed");
+        } catch (final OperationCancelledException e) {
+            Assert.assertSame(cancelled, e);
+        }
     }
 
     @Test
