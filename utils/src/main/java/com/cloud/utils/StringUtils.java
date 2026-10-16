@@ -146,7 +146,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     // removes a password/accesskey/ property from a response json object
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(([pP])assword|privatekey|accesskey|secretkey)\":\\s?\".*?\",?");
 
-    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)(([pP])assword|accesskey|secretkey)(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)(([pP])assword|accesskey|secretkey)(?=(%26|[&'\"]|$))");
 
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
 

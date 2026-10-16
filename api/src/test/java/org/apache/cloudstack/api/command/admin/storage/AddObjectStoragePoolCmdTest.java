@@ -109,4 +109,30 @@ public class AddObjectStoragePoolCmdTest {
         assertNotNull(apiCommand);
         assertTrue(apiCommand.requestHasSensitiveInfo());
     }
+
+    @Test
+    public void testCredentialsAndProviderOptionsReachDiscoveryUnchanged() throws DiscoveryException {
+        Map<String, String> expected = new HashMap<>();
+        expected.put("accesskey", "ACCESS_SENTINEL");
+        expected.put("secretkey", "SECRET+key&with=symbols");
+        expected.put("validateSSL", "true");
+        expected.put("s3Url", "https://s3.example.test");
+        expected.put("iamUrl", "https://iam.example.test");
+        Map<Integer, Map<String, String>> indexedDetails = new HashMap<>();
+        int index = 0;
+        for (Map.Entry<String, String> entry : expected.entrySet()) {
+            Map<String, String> detail = new HashMap<>();
+            detail.put("key", entry.getKey());
+            detail.put("value", entry.getValue());
+            indexedDetails.put(index++, detail);
+        }
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "details", indexedDetails);
+        Mockito.doReturn(objectStore).when(storageService).discoverObjectStore(Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), any());
+        Mockito.doReturn(new ObjectStoreResponse()).when(responseGenerator).createObjectStoreResponse(any());
+
+        addObjectStoragePoolCmdSpy.execute();
+
+        Mockito.verify(storageService).discoverObjectStore(name, url, size, provider, expected);
+    }
 }
