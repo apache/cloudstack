@@ -236,4 +236,44 @@ public class AgentManagerImplTest {
         Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
         Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
     }
+
+    @Test
+    public void testCancelWithNothingInFlightRefusesTheNextCommandOnly() {
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        // the worker is now unwinding: its rollback commands go through
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(7L));
+        Assert.assertFalse(mgr.refusesCommandsOf(null));
+    }
+
+    @Test
+    public void testStoppedCommandHandsTheCancelToTheWorkerSoItsRollbackPasses() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+    }
+
+    @Test
+    public void testCommandThatCannotBeStoppedLeavesTheRefusalForTheNextOne() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(false);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertFalse(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
+        Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+    }
 }
