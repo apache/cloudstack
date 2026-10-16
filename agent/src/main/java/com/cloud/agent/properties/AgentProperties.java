@@ -914,6 +914,33 @@ public class AgentProperties{
      * */
     public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
 
+    /**
+     * Time, in seconds, that a single Ceph OSD operation may block before it fails.<br>
+     * This bounds each operation, not a whole request, so a long running copy or flatten is made up of
+     * many operations that are each well inside the limit.<br>
+     * The default of <code>0</code> leaves the option unset, which keeps the librados behaviour of waiting
+     * forever. A stuck operation then blocks the agent thread that issued it, and with it every storage
+     * command queued behind it for that host, so setting a limit is recommended.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>0</code>
+     */
+    public static final Property<Integer> RADOS_OSD_OP_TIMEOUT = new Property<>("rados.osd.op.timeout", 0);
+
+    /**
+     * Time, in seconds, that a single Ceph monitor operation may block before it fails.<br>
+     * The default of <code>0</code> leaves the option unset, which keeps the librados behaviour of waiting
+     * forever.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>0</code>
+     */
+    public static final Property<Integer> RADOS_MON_OP_TIMEOUT = new Property<>("rados.mon.op.timeout", 0);
+
+    /**
+     * Time, in seconds, that the Ceph client may spend connecting to the monitors.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>30</code>
+     */
+    public static final Property<Integer> RADOS_CLIENT_MOUNT_TIMEOUT = new Property<>("rados.client.mount.timeout", 30);
 
     public static class Property <T>{
         private String name;
