@@ -46,25 +46,29 @@ public class VmwareTaskRegistryTest {
 
     @Test
     public void unknownSequenceIsNeitherCancellableNorCancelled() {
-        Assert.assertFalse(registry.isCancellable(999L));
+        Assert.assertNotNull(registry.checkTaskNotCancellable(999L));
         Assert.assertFalse(registry.cancel(999L));
         Assert.assertFalse(registry.wasCancelRequested(999L));
     }
 
     @Test
-    public void requestWithNoTaskInFlightIsCancellableByInterruptAlone() throws Exception {
-        registry.beginRequest(SEQ);
+    public void requestWithNoTaskInFlightIsRefused() throws Exception {
+        registry.beginRequest(SEQ, "StopCommand");
 
-        Assert.assertTrue(registry.isCancellable(SEQ));
-        Assert.assertTrue(registry.cancel(SEQ));
-        Assert.assertTrue(registry.wasCancelRequested(SEQ));
+        final String reason = registry.checkTaskNotCancellable(SEQ);
+        Assert.assertTrue(reason, reason.contains("no vCenter task is running for StopCommand"));
+        Assert.assertFalse(registry.cancel(SEQ));
+        Assert.assertFalse(registry.wasCancelRequested(SEQ));
         Mockito.verify(client, Mockito.never()).cancelTask(Mockito.any());
     }
 
     @Test
-    public void taskCreatedAfterCancelIsReportedSoTheClientCancelsItImmediately() {
-        registry.beginRequest(SEQ);
-        registry.cancel(SEQ);
+    public void taskCreatedAfterCancelIsReportedSoTheClientCancelsItImmediately() throws Exception {
+        final ManagedObjectReference first = mor("task-first");
+        Mockito.when(client.cancelTask(first)).thenReturn(new Pair<>(true, "cancelled"));
+        registry.beginRequest(SEQ, "MigrateCommand");
+        VmwareTaskRegistry.taskStarted(first, client);
+        Assert.assertTrue(registry.cancel(SEQ));
 
         Assert.assertTrue(VmwareTaskRegistry.taskStarted(mor("task-late"), client));
     }
@@ -72,13 +76,12 @@ public class VmwareTaskRegistryTest {
     @Test
     public void cancellableTaskIsCancelledThroughItsClient() throws Exception {
         final ManagedObjectReference mor = mor("task-1");
-        Mockito.when(client.isTaskCancellable(mor)).thenReturn(true);
         Mockito.when(client.cancelTask(mor)).thenReturn(new Pair<>(true, "cancelled"));
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         Assert.assertFalse(VmwareTaskRegistry.taskStarted(mor, client));
 
-        Assert.assertTrue(registry.isCancellable(SEQ));
+        Assert.assertNull(registry.checkTaskNotCancellable(SEQ));
         Assert.assertTrue(registry.cancel(SEQ));
         Mockito.verify(client).cancelTask(mor);
     }
@@ -86,12 +89,12 @@ public class VmwareTaskRegistryTest {
     @Test
     public void nonCancellableTaskRefusesAndIsLeftAlone() throws Exception {
         final ManagedObjectReference mor = mor("task-2");
-        Mockito.when(client.isTaskCancellable(mor)).thenReturn(false);
+        Mockito.when(client.checkTaskIsNotCancellable(mor)).thenReturn("vCenter reports task PowerOffVM_Task(task-2) of i-2-5-VM as not cancelable");
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         VmwareTaskRegistry.taskStarted(mor, client);
 
-        Assert.assertFalse(registry.isCancellable(SEQ));
+        Assert.assertEquals("vCenter reports task PowerOffVM_Task(task-2) of i-2-5-VM as not cancelable", registry.checkTaskNotCancellable(SEQ));
         Mockito.verify(client, Mockito.never()).cancelTask(Mockito.any());
     }
 
@@ -100,7 +103,7 @@ public class VmwareTaskRegistryTest {
         final ManagedObjectReference mor = mor("task-3");
         Mockito.when(client.cancelTask(mor)).thenReturn(new Pair<>(false, "completed first"));
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         VmwareTaskRegistry.taskStarted(mor, client);
 
         Assert.assertFalse(registry.cancel(SEQ));
@@ -109,30 +112,30 @@ public class VmwareTaskRegistryTest {
     @Test
     public void finishedTaskIsNoLongerTracked() throws Exception {
         final ManagedObjectReference mor = mor("task-4");
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         VmwareTaskRegistry.taskStarted(mor, client);
         Assert.assertEquals(1, registry.activeTaskCount(SEQ));
 
         VmwareTaskRegistry.taskFinished(mor);
 
         Assert.assertEquals(0, registry.activeTaskCount(SEQ));
-        Assert.assertTrue(registry.cancel(SEQ));
+        Assert.assertFalse(registry.cancel(SEQ));
         Mockito.verify(client, Mockito.never()).cancelTask(Mockito.any());
     }
 
     @Test
     public void endRequestForgetsTheSequence() {
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         registry.endRequest(SEQ);
 
-        Assert.assertFalse(registry.isCancellable(SEQ));
+        Assert.assertNotNull(registry.checkTaskNotCancellable(SEQ));
         Assert.assertFalse(VmwareTaskRegistry.taskStarted(mor("task-5"), client));
         Assert.assertEquals(0, registry.activeTaskCount(SEQ));
     }
 
     @Test
     public void unscopedThreadRegistersNothing() throws Exception {
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         final AtomicBoolean registered = new AtomicBoolean(true);
 
         // scope is per thread
@@ -146,7 +149,7 @@ public class VmwareTaskRegistryTest {
 
     @Test
     public void nullSequenceLeavesTheThreadUnscoped() {
-        registry.beginRequest(null);
+        registry.beginRequest(null, "MigrateCommand");
 
         Assert.assertFalse(VmwareTaskRegistry.taskStarted(mor("task-7"), client));
         registry.endRequest(null);

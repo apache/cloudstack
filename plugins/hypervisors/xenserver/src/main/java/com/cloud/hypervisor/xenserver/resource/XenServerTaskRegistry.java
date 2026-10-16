@@ -49,8 +49,13 @@ public class XenServerTaskRegistry {
     }
 
     private static final class RequestState {
+        final String command;
         final Map<String, ActiveTask> tasks = new ConcurrentHashMap<>();
         volatile boolean cancelRequested;
+
+        RequestState(final String command) {
+            this.command = command;
+        }
     }
 
     private static final class RequestScope {
@@ -64,11 +69,11 @@ public class XenServerTaskRegistry {
     }
 
     /** A null sequence (not from the agent layer) leaves the thread unscoped. */
-    public void beginRequest(final Long sequence) {
+    public void beginRequest(final Long sequence, final String command) {
         if (sequence == null) {
             return;
         }
-        requests.putIfAbsent(sequence, new RequestState());
+        requests.putIfAbsent(sequence, new RequestState(command));
         CURRENT.set(new RequestScope(this, sequence));
     }
 
@@ -112,30 +117,38 @@ public class XenServerTaskRegistry {
         }
     }
 
-    /** Unknown sequences are not cancellable; XenAPI has no cancelable flag, so tasks must still be pending. */
-    public boolean isCancellable(final long sequence) {
+    /** Null when every XenAPI task in flight is still pending (XenAPI has no cancelable flag). A request with none in flight is refused: a synchronous call already made cannot be undone by interrupting the thread. */
+    public String checkTaskNotCancellable(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
-            return false;
+            return "request sequence " + sequence + " is not running on this host";
+        }
+        if (state.tasks.isEmpty()) {
+            return "no XenAPI task is running for " + state.command;
         }
         for (final ActiveTask active : state.tasks.values()) {
             try {
-                if (active.task.getStatus(active.connection) != Types.TaskStatusType.PENDING) {
-                    LOGGER.debug("XenAPI task {} of request sequence {} is no longer pending, not cancellable", refOf(active.task), sequence);
-                    return false;
+                final Types.TaskStatusType status = active.task.getStatus(active.connection);
+                if (status != Types.TaskStatusType.PENDING) {
+                    LOGGER.debug("XenAPI task {} of request sequence {} is already {}, not cancellable", refOf(active.task), sequence, status);
+                    return "XenAPI task " + refOf(active.task) + " is already " + status;
                 }
             } catch (final Exception e) {
                 LOGGER.warn("Unable to check the status of XenAPI task {} of request sequence {}", refOf(active.task), sequence, e);
-                return false;
+                return "unable to check XenAPI task " + refOf(active.task) + ": " + e.getMessage();
             }
         }
-        return true;
+        return null;
     }
 
     /** Cancels the in-flight tasks and marks the request so later tasks are cancelled on arrival. */
     public boolean cancel(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
+            return false;
+        }
+        if (state.tasks.isEmpty()) {
+            LOGGER.debug("Request sequence {} ({}) has no XenAPI task to cancel", sequence, state.command);
             return false;
         }
         state.cancelRequested = true;

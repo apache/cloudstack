@@ -113,18 +113,21 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     @Override
-    protected boolean isExecutionCancellable(final long seq) {
+    protected String checkExecutionIsNotCancellable(final long seq) {
         if (isQueued(seq)) {
-            return true;
+            return null;
         }
 
         if (!_taskFutures.containsKey(seq)) {
-            return false;
+            return "request sequence " + seq + " is no longer running on this host";
         }
 
         final ServerResource resource = _resource;
+        if (resource == null) {
+            return "the host is not connected";
+        }
         // not under the attache lock: this call goes out to the hypervisor
-        return resource != null && resource.isRequestSequenceCancellable(seq);
+        return resource.checkRequestSequenceIsNotCancellable(seq);
     }
 
     @Override
@@ -140,8 +143,9 @@ public class DirectAgentAttache extends AgentAttache {
         }
 
         final ServerResource resource = _resource;
-        if (resource == null || !resource.isRequestSequenceCancellable(seq)) {
-            logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Cancellation requested but the command is not cancellable, letting it run to completion.");
+        final String reason = resource == null ? "the host is not connected" : resource.checkRequestSequenceIsNotCancellable(seq);
+        if (reason != null) {
+            logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Cancellation requested but the command is left to run to completion: " + reason);
             return false;
         }
 
@@ -434,8 +438,7 @@ public class DirectAgentAttache extends AgentAttache {
                             }
 
                             // cancelled mid-request: do not start the remaining commands
-                            if ((Thread.currentThread().isInterrupted() || _req.isCancelled())
-                                    && resource.isRequestSequenceCancellable(seq)) {
+                            if (Thread.currentThread().isInterrupted() || _req.isCancelled()) {
                                 answers.add(answer);
                                 for (int j = i + 1; j < cmds.length; j++) {
                                     answers.add(Answer.createCancelledAnswer(cmds[j], "Command cancelled"));

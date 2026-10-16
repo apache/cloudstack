@@ -30,10 +30,8 @@ public final class LibvirtCancelCommandWrapper extends CommandWrapper<CancelComm
     public Answer execute(final CancelCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final long sequence = command.getSequence();
         if (command.isCheckOnly()) {
-            final boolean cancellable = libvirtComputingResource.isRequestSequenceCancellable(sequence);
-            return new Answer(command, cancellable, cancellable
-                    ? "request sequence " + sequence + " can be cancelled"
-                    : "request sequence " + sequence + " has no work that can be stopped on this host");
+            final String reason = libvirtComputingResource.checkRequestSequenceIsNotCancellable(sequence);
+            return new Answer(command, reason == null, reason == null ? "request sequence " + sequence + " can be cancelled" : reason);
         }
 
         final boolean cancelled = libvirtComputingResource.cancelRequestSequence(sequence);

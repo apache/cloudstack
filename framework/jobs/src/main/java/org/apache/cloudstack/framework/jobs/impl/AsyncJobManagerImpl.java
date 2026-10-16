@@ -1657,8 +1657,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
         // ask before changing state: a job whose work cannot be stopped is refused, not recorded as cancelled
         for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
-            if (!handler.isJobExecutionCancellable(jobId)) {
-                errMessage = "Cannot cancel job-" + jobId + ", the operation it is running cannot be stopped at this point.";
+            final String refusal = handler.checkJobCannotBeCancelled(jobId);
+            if (refusal != null) {
+                errMessage = "Cannot cancel job-" + jobId + ", its work cannot be stopped at this point: " + refusal;
                 logger.info(errMessage);
                 throw new CloudRuntimeException(errMessage);
             }

@@ -791,15 +791,27 @@ public class VmwareClient {
         return vCenterSessionTimeout;
     }
 
-    public boolean isTaskCancellable(ManagedObjectReference task) throws Exception {
+    /** Null when vCenter reports the task as still running and cancelable; otherwise what it reports. */
+    public String checkTaskIsNotCancellable(ManagedObjectReference task) throws Exception {
         TaskInfo info = getDynamicProperty(task, "info");
         if (info == null || info.getState() == null) {
-            return false;
+            return "vCenter has no information on task " + task.getValue();
         }
-        if (info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR)) {
-            return false;
+        String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
+        taskName += "(" + info.getKey() + ")";
+        if (StringUtils.isNotBlank(info.getEntityName())) {
+            taskName += " of " + info.getEntityName();
         }
-        return info.isCancelable();
+        if (info.getState().equals(TaskInfoState.SUCCESS)) {
+            return "vCenter task " + taskName + " has already completed";
+        }
+        if (info.getState().equals(TaskInfoState.ERROR)) {
+            return "vCenter task " + taskName + " has already failed";
+        }
+        if (!info.isCancelable()) {
+            return "vCenter reports task " + taskName + " as not cancelable";
+        }
+        return null;
     }
 
     /** Asks vCenter to cancel and waits, bounded, for a terminal state. */

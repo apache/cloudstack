@@ -48,24 +48,27 @@ public class XenServerTaskRegistryTest {
 
     @Test
     public void unknownSequenceIsNeitherCancellableNorCancelled() {
-        Assert.assertFalse(registry.isCancellable(999L));
+        Assert.assertNotNull(registry.checkTaskNotCancellable(999L));
         Assert.assertFalse(registry.cancel(999L));
         Assert.assertFalse(registry.wasCancelRequested(999L));
     }
 
     @Test
-    public void requestWithNoTaskInFlightIsCancellableByInterruptAlone() {
-        registry.beginRequest(SEQ);
+    public void requestWithNoTaskInFlightIsRefused() {
+        registry.beginRequest(SEQ, "StopCommand");
 
-        Assert.assertTrue(registry.isCancellable(SEQ));
-        Assert.assertTrue(registry.cancel(SEQ));
-        Assert.assertTrue(registry.wasCancelRequested(SEQ));
+        final String reason = registry.checkTaskNotCancellable(SEQ);
+        Assert.assertTrue(reason, reason.contains("no XenAPI task is running for StopCommand"));
+        Assert.assertFalse(registry.cancel(SEQ));
+        Assert.assertFalse(registry.wasCancelRequested(SEQ));
     }
 
     @Test
     public void taskCreatedAfterCancelIsReportedSoTheResourceCancelsItImmediately() throws Exception {
-        registry.beginRequest(SEQ);
-        registry.cancel(SEQ);
+        final Task first = task("OpaqueRef:first", Types.TaskStatusType.PENDING, Types.TaskStatusType.CANCELLED);
+        registry.beginRequest(SEQ, "MigrateCommand");
+        XenServerTaskRegistry.taskStarted(first, connection);
+        Assert.assertTrue(registry.cancel(SEQ));
 
         Assert.assertTrue(XenServerTaskRegistry.taskStarted(task("OpaqueRef:late", Types.TaskStatusType.PENDING), connection));
     }
@@ -75,10 +78,10 @@ public class XenServerTaskRegistryTest {
         final Task task = task("OpaqueRef:1", Types.TaskStatusType.PENDING, Types.TaskStatusType.PENDING,
                 Types.TaskStatusType.CANCELLING, Types.TaskStatusType.CANCELLED);
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         Assert.assertFalse(XenServerTaskRegistry.taskStarted(task, connection));
 
-        Assert.assertTrue(registry.isCancellable(SEQ));
+        Assert.assertNull(registry.checkTaskNotCancellable(SEQ));
         Assert.assertTrue(registry.cancel(SEQ));
         Mockito.verify(task).cancelAsync(connection);
         Mockito.verify(task, Mockito.never()).cancel(Mockito.any());
@@ -88,10 +91,11 @@ public class XenServerTaskRegistryTest {
     public void taskNoLongerPendingRefusesAndIsLeftAlone() throws Exception {
         final Task task = task("OpaqueRef:2", Types.TaskStatusType.SUCCESS);
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         XenServerTaskRegistry.taskStarted(task, connection);
 
-        Assert.assertFalse(registry.isCancellable(SEQ));
+        final String reason = registry.checkTaskNotCancellable(SEQ);
+        Assert.assertTrue(reason, reason.toLowerCase().contains("opaqueref:2 is already success"));
         Assert.assertFalse(registry.cancel(SEQ));
         Mockito.verify(task, Mockito.never()).cancelAsync(Mockito.any());
     }
@@ -100,7 +104,7 @@ public class XenServerTaskRegistryTest {
     public void cancelReportsFailureWhenTheTaskCompletesFirst() throws Exception {
         final Task task = task("OpaqueRef:3", Types.TaskStatusType.PENDING, Types.TaskStatusType.PENDING, Types.TaskStatusType.SUCCESS);
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         XenServerTaskRegistry.taskStarted(task, connection);
 
         Assert.assertFalse(registry.cancel(SEQ));
@@ -120,30 +124,30 @@ public class XenServerTaskRegistryTest {
     @Test
     public void finishedTaskIsNoLongerTracked() throws Exception {
         final Task task = task("OpaqueRef:5", Types.TaskStatusType.PENDING);
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         XenServerTaskRegistry.taskStarted(task, connection);
         Assert.assertEquals(1, registry.activeTaskCount(SEQ));
 
         XenServerTaskRegistry.taskFinished(task);
 
         Assert.assertEquals(0, registry.activeTaskCount(SEQ));
-        Assert.assertTrue(registry.cancel(SEQ));
+        Assert.assertFalse(registry.cancel(SEQ));
         Mockito.verify(task, Mockito.never()).cancelAsync(Mockito.any());
     }
 
     @Test
     public void endRequestForgetsTheSequence() throws Exception {
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         registry.endRequest(SEQ);
 
-        Assert.assertFalse(registry.isCancellable(SEQ));
+        Assert.assertNotNull(registry.checkTaskNotCancellable(SEQ));
         Assert.assertFalse(XenServerTaskRegistry.taskStarted(task("OpaqueRef:6", Types.TaskStatusType.PENDING), connection));
         Assert.assertEquals(0, registry.activeTaskCount(SEQ));
     }
 
     @Test
     public void unscopedThreadRegistersNothing() throws Exception {
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         final Task task = task("OpaqueRef:7", Types.TaskStatusType.PENDING);
         final AtomicBoolean registered = new AtomicBoolean(true);
 
@@ -161,11 +165,11 @@ public class XenServerTaskRegistryTest {
         final Task task = Mockito.mock(Task.class);
         Mockito.when(task.getStatus(connection)).thenReturn(Types.TaskStatusType.PENDING);
 
-        registry.beginRequest(SEQ);
+        registry.beginRequest(SEQ, "MigrateCommand");
         XenServerTaskRegistry.taskStarted(task, connection);
 
         Assert.assertEquals(1, registry.activeTaskCount(SEQ));
-        Assert.assertTrue(registry.isCancellable(SEQ));
+        Assert.assertNull(registry.checkTaskNotCancellable(SEQ));
     }
 
     private Task task(final String ref, final Types.TaskStatusType first, final Types.TaskStatusType... rest) throws Exception {

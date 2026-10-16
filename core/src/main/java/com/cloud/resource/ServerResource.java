@@ -93,9 +93,9 @@ public interface ServerResource extends Manager {
 
     default void processPingAnswer(PingAnswer answer) {};
 
-    /** Defaults to false: a resource that has not implemented cancellation must not claim it. */
-    default boolean isRequestSequenceCancellable(long sequence) {
-        return false;
+    /** Null when the request's work can be stopped, otherwise what the hypervisor reports. Defaults to a refusal: a resource that has not implemented cancellation must not claim it. */
+    default String checkRequestSequenceIsNotCancellable(long sequence) {
+        return "this host does not support cancelling a running command";
     }
 
     /** Returns true only when the backend operation was actually stopped. */
