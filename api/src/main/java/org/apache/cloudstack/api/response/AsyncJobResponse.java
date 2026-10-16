@@ -87,6 +87,14 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "The unique ID of the Instance/entity object related to the job")
     private String jobInstanceId;
 
+    @SerializedName("cancelrequested")
+    @Param(description = "True once the job's cancellation has been requested", since = "24.0")
+    private Boolean cancelRequested;
+
+    @SerializedName("cancelreason")
+    @Param(description = "Who requested the job cancellation and through which management server", since = "24.0")
+    private String cancelReason;
+
     @SerializedName("jobinstancename")
     @Param(description = "The name of the Instance/entity object related to the job", since = "24.0")
     private String jobInstanceName;
@@ -185,6 +193,14 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setCompleteManagementServerName(String completeManagementServerName) {
         this.completeManagementServerName = completeManagementServerName;
+    }
+
+    public void setCancelRequested(Boolean cancelRequested) {
+        this.cancelRequested = cancelRequested;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
     }
 
     public void setJobInstanceName(String jobInstanceName) {

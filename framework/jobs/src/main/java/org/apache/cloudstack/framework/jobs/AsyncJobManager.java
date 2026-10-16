@@ -40,11 +40,10 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
-    /** With remove=false the row keeps executing_msid until the executing server has stopped the job's work and called finalizeCancelledJob. */
-    void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result, boolean remove);
+    /** In-progress jobs with a cancel requested that this server executes, whose in-flight work it has to stop. */
+    List<AsyncJobVO> listCancelRequestedJobsExecutingOn(long msid);
 
-    List<AsyncJobVO> listCancelledJobsExecutingOn(long msid);
-
+    /** Completes a job whose cancellation was requested as CANCELLED once nothing of it is running any more. */
     void finalizeCancelledJob(long jobId);
 
     /** Why the job, or the API job a VM work job runs for, is being or has been cancelled; null when it is not. */

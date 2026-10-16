@@ -37,7 +37,7 @@
             </a-select-option>
           </a-select>
         </a-tooltip>
-        <a-tooltip v-if="statusFilter !== 'pending'" placement="right">
+        <a-tooltip v-if="!['pending', 'cancelling'].includes(statusFilter)" placement="right">
           <template #title>{{ $t('label.period') }}</template>
           <a-select
             v-model:value="durationHours"
@@ -87,8 +87,8 @@
           :enabled="true"
           @exec-action="(action) => execAction(action, record)" />
       </template>
-      <template #jobstatus="{ text }">
-        <a-tag :color="jobStatusColor(text)">{{ $t(jobStatusLabel(text)) }}</a-tag>
+      <template #jobstatus="{ record }">
+        <a-tag :color="jobStatusColor(jobDisplayStatus(record))">{{ $t(jobStatusLabel(jobDisplayStatus(record))) }}</a-tag>
       </template>
       <template #jobinstance="{ record }">
         <router-link v-if="jobResourcePath(record.jobinstancetype, record.jobinstanceid)" :to="{ path: jobResourcePath(record.jobinstancetype, record.jobinstanceid) }">
@@ -160,7 +160,7 @@ import SearchView from '@/components/view/SearchView'
 import QuickView from '@/components/view/QuickView'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { genericCompare } from '@/utils/sort.js'
-import { JOB_STATUS, jobStatusLabel, jobStatusColor, jobResultText, jobResultPretty, jobResourcePath, cancelJobAction } from '@/utils/asyncjob'
+import { JOB_STATUS, jobStatusLabel, jobStatusColor, jobDisplayStatus, jobResultText, jobResultPretty, jobResourcePath, cancelJobAction } from '@/utils/asyncjob'
 
 export default {
   name: 'AsyncJobsTab',
@@ -199,6 +199,7 @@ export default {
       jobActions: [cancelJobAction],
       statusOptions: [
         { value: 'pending', label: this.$t('label.pending') },
+        { value: JOB_STATUS.CANCELLING, label: this.$t('label.cancelling') },
         { value: String(JOB_STATUS.SUCCEEDED), label: this.$t('label.success') },
         { value: String(JOB_STATUS.FAILED), label: this.$t('label.failed') },
         { value: String(JOB_STATUS.CANCELLED), label: this.$t('label.cancelled') },
@@ -272,6 +273,7 @@ export default {
   methods: {
     jobStatusLabel,
     jobStatusColor,
+    jobDisplayStatus,
     jobResultText,
     jobResultPretty,
     jobResourcePath,
@@ -295,10 +297,12 @@ export default {
       // pending is the API default; a period only makes sense once completed jobs are included
       if (this.statusFilter === 'all') {
         params.jobstatus = [JOB_STATUS.IN_PROGRESS, JOB_STATUS.SUCCEEDED, JOB_STATUS.FAILED, JOB_STATUS.CANCELLED].join(',')
+      } else if (this.statusFilter === JOB_STATUS.CANCELLING) {
+        params.cancelrequested = true
       } else if (this.statusFilter !== 'pending') {
         params.jobstatus = this.statusFilter
       }
-      if (this.statusFilter !== 'pending' && this.durationHours > 0) {
+      if (!['pending', JOB_STATUS.CANCELLING].includes(this.statusFilter) && this.durationHours > 0) {
         params.duration = this.durationHours
       }
       if (!this.resourceType) {
