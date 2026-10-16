@@ -3278,14 +3278,46 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds) {
         List<Long> hostIds = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
-        if (hostIds.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(hostIds)) {
+            Collections.shuffle(hostIds);
+
+            for (Long hostId : hostIds) {
+                Host host = _hostDao.findById(hostId);
+                if (canHostAccessStoragePools(host, poolIds)) {
+                    return host;
+                }
+            }
+        }
+
+        return findUpAndEnabledHostAbleToPrepareAccessToStoragePools(poolIds);
+    }
+
+    protected Host findUpAndEnabledHostAbleToPrepareAccessToStoragePools(List<Long> poolIds) {
+        if (CollectionUtils.isEmpty(poolIds)) {
             return null;
         }
-        Collections.shuffle(hostIds);
 
-        for (Long hostId : hostIds) {
-            Host host = _hostDao.findById(hostId);
-            if (canHostAccessStoragePools(host, poolIds)) {
+        Long zoneId = null;
+        for (Long poolId : poolIds) {
+            StoragePoolVO pool = _storagePoolDao.findById(poolId);
+            if (pool == null) {
+                return null;
+            }
+            if (zoneId == null) {
+                zoneId = pool.getDataCenterId();
+            } else if (!zoneId.equals(pool.getDataCenterId())) {
+                return null;
+            }
+        }
+
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, zoneId);
+        if (CollectionUtils.isEmpty(hosts)) {
+            return null;
+        }
+
+        Collections.shuffle(hosts);
+        for (HostVO host : hosts) {
+            if (canHostAccessOrPrepareStoragePools(host, poolIds)) {
                 return host;
             }
         }
@@ -3301,6 +3333,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         for (Long poolId : poolIds) {
             StoragePool pool = _storagePoolDao.findById(poolId);
             if (!canHostAccessStoragePool(host, pool)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean canHostAccessOrPrepareStoragePools(Host host, List<Long> poolIds) {
+        if (CollectionUtils.isEmpty(poolIds)) {
+            return false;
+        }
+
+        for (Long poolId : poolIds) {
+            StoragePool pool = _storagePoolDao.findById(poolId);
+            if (!canHostAccessOrPrepareStoragePool(host, pool)) {
                 return false;
             }
         }
@@ -3339,6 +3386,30 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
         return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canHostPrepareStoragePoolAccess(host, pool);
+    }
+
+    @Override
+    public boolean canHostAccessOrPrepareStoragePool(Host host, StoragePool pool) {
+        if (host == null || pool == null) {
+            return false;
+        }
+
+        if (!checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool)) {
+            logger.debug("Storage pool {} and host {} do not have matching storage access groups", pool, host);
+            return false;
+        }
+
+        if (_storagePoolHostDao.findByPoolHost(pool.getId(), host.getId()) != null && canHostAccessStoragePool(host, pool)) {
+            return true;
+        }
+
+        if (canHostPrepareStoragePoolAccess(host, pool)) {
+            logger.debug("Host {} can prepare access to pool {}", host, pool);
+            return true;
+        }
+
+        logger.debug("Host {} cannot access, nor prepare access to pool {}", host, pool);
+        return false;
     }
 
     @Override
