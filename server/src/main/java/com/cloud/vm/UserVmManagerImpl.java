@@ -1446,6 +1446,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
+            updateNicNetworkRates(vmId);
+
             // Increment or decrement CPU and Memory count accordingly.
             if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                 _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(owner.getAccountId(), vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
@@ -1456,6 +1458,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         } finally {
             ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    protected void updateNicNetworkRates(long vmId) {
+        for (NicVO nic : _nicDao.listByVmId(vmId)) {
+            Integer networkRate = _networkModel.getNetworkRate(nic.getNetworkId(), vmId);
+            if (!Objects.equals(networkRate, nic.getNetworkRate())) {
+                nic.setNetworkRate(networkRate);
+                _nicDao.update(nic.getId(), nic);
+            }
         }
     }
 

@@ -94,6 +94,9 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "conserve_mode")
     private boolean conserveMode;
 
+    @Column(name = "public_nw_rate")
+    private Integer publicNetworkRate;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -253,5 +256,14 @@ public class VpcOfferingVO implements VpcOffering {
 
     public void setConserveMode(boolean conserveMode) {
         this.conserveMode = conserveMode;
+    }
+
+    @Override
+    public Integer getPublicNetworkRate() {
+        return publicNetworkRate;
+    }
+
+    public void setPublicNetworkRate(Integer publicNetworkRate) {
+        this.publicNetworkRate = publicNetworkRate;
     }
 }

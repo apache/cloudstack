@@ -28,7 +28,9 @@ import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.junit.After;
 import org.junit.Assert;
@@ -37,6 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -54,6 +57,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 
@@ -95,6 +99,9 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
 
     @Mock
     ExtensionHelper extensionHelper;
+
+    @Mock
+    NicExtraDhcpOptionDao nicExtraDhcpOptionDao;
 
     private UserVmJoinVO userVm = new UserVmJoinVO();
     private UserVmResponse userVmResponse = new UserVmResponse();
@@ -211,5 +218,59 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         Mockito.when(hostDetailsDao.findDetail(7L, com.cloud.host.Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
         // Configured cap defaults to 1 (no cluster override mocked); host advertises 2; clamps to 1.
         Assert.assertEquals(1, _userVmJoinDaoImpl.effectiveCdromMaxCount(userVm));
+    }
+
+    private UserVmJoinVO userVmWithNic(Integer nicNetworkRate) {
+        UserVmJoinVO uvo = Mockito.mock(UserVmJoinVO.class);
+        Mockito.when(uvo.getId()).thenReturn(vmId);
+        Mockito.when(uvo.getNicId()).thenReturn(5L);
+        Mockito.when(uvo.getNicNetworkRate()).thenReturn(nicNetworkRate);
+        return uvo;
+    }
+
+    private NicResponse onlyNicOf(UserVmResponse response) {
+        Assert.assertEquals(1, response.getNics().size());
+        return response.getNics().iterator().next();
+    }
+
+    private NicResponse setUserVmResponseNic(Integer nicNetworkRate) {
+        CallContext callContext = Mockito.mock(CallContext.class);
+        Mockito.when(callContext.getCallingAccount()).thenReturn(caller);
+        try (MockedStatic<CallContext> callContextStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextStatic.when(CallContext::current).thenReturn(callContext);
+            UserVmResponse response = _userVmJoinDaoImpl.setUserVmResponse(ResponseObject.ResponseView.Full, new UserVmResponse(), userVmWithNic(nicNetworkRate));
+            return onlyNicOf(response);
+        }
+    }
+
+    @Test
+    public void testSetUserVmResponseReportsNicNetworkRate() {
+        Assert.assertEquals(Integer.valueOf(150), setUserVmResponseNic(150).getNetworkRate());
+    }
+
+    @Test
+    public void testSetUserVmResponseReportsMissingZeroAndNegativeNicRateAsUnlimited() {
+        Assert.assertEquals(Integer.valueOf(-1), setUserVmResponseNic(null).getNetworkRate());
+        Assert.assertEquals(Integer.valueOf(-1), setUserVmResponseNic(0).getNetworkRate());
+        Assert.assertEquals(Integer.valueOf(-1), setUserVmResponseNic(-1).getNetworkRate());
+    }
+
+    private NicResponse newUserVmResponseNic(Integer nicNetworkRate) {
+        prepareNewUserVmResponseForVnfAppliance();
+        Mockito.when(userVmMock.getNicId()).thenReturn(5L);
+        Mockito.when(userVmMock.getNicNetworkRate()).thenReturn(nicNetworkRate);
+        UserVmResponse response = _userVmJoinDaoImpl.newUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVmMock,
+                EnumSet.of(ApiConstants.VMDetails.all), null, null, caller);
+        return onlyNicOf(response);
+    }
+
+    @Test
+    public void testNewUserVmResponseReportsNicNetworkRate() {
+        Assert.assertEquals(Integer.valueOf(150), newUserVmResponseNic(150).getNetworkRate());
+    }
+
+    @Test
+    public void testNewUserVmResponseReportsMissingNicRateAsUnlimited() {
+        Assert.assertEquals(Integer.valueOf(-1), newUserVmResponseNic(null).getNetworkRate());
     }
 }

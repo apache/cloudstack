@@ -115,6 +115,9 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "conserve_mode")
     private boolean conserveMode;
 
+    @Column(name = "public_nw_rate")
+    private Integer publicNetworkRate;
+
     public VpcOfferingJoinVO() {
     }
 
@@ -184,6 +187,11 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public boolean isConserveMode() {
         return conserveMode;
+    }
+
+    @Override
+    public Integer getPublicNetworkRate() {
+        return publicNetworkRate;
     }
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {

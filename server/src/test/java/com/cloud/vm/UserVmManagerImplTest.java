@@ -4801,4 +4801,20 @@ public class UserVmManagerImplTest {
         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
     }
+
+    @Test
+    public void updateNicNetworkRatesTestUpdatesOnlyChangedRates() {
+        NicVO changed = new NicVO("guru", 1L, 10L, VirtualMachine.Type.User);
+        changed.setNetworkRate(200);
+        NicVO same = new NicVO("guru", 1L, 11L, VirtualMachine.Type.User);
+        same.setNetworkRate(500);
+        Mockito.when(nicDao.listByVmId(1L)).thenReturn(List.of(changed, same));
+        Mockito.when(networkModel.getNetworkRate(10L, 1L)).thenReturn(500);
+        Mockito.when(networkModel.getNetworkRate(11L, 1L)).thenReturn(500);
+
+        userVmManagerImpl.updateNicNetworkRates(1L);
+
+        Assert.assertEquals(Integer.valueOf(500), changed.getNetworkRate());
+        Mockito.verify(nicDao, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any(NicVO.class));
+    }
 }
