@@ -1319,6 +1319,58 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    static String maskRbdKey(String message) {
+        return message == null ? null : message.replaceAll("key=[^:\\s]*", "key=******");
+    }
+
+    private Rados connectToCeph(KVMStoragePool pool) throws RadosException {
+        Rados r = new Rados(pool.getAuthUserName());
+        r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+        r.confSet("key", pool.getAuthSecret());
+        r.confSet("client_mount_timeout", "30");
+        r.connect();
+        return r;
+    }
+
+    private boolean rbdImageExists(KVMStoragePool pool, String imageName) throws RadosException, RbdException {
+        Rados r = connectToCeph(pool);
+        try {
+            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+            try {
+                return Arrays.asList(new Rbd(io).list()).contains(imageName);
+            } finally {
+                r.ioCtxDestroy(io);
+            }
+        } finally {
+            r.shutDown();
+        }
+    }
+
+    /**
+     * Removes an RBD image left behind by a failed copy, so that it does not make every later copy fail with "File exists"
+     */
+    private void removeRbdImageQuietly(KVMStoragePool pool, String imageName) {
+        try {
+            Rados r = connectToCeph(pool);
+            try {
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                try {
+                    Rbd rbd = new Rbd(io);
+                    if (Arrays.asList(rbd.list()).contains(imageName)) {
+                        rbd.remove(imageName);
+                        logger.info("Removed the incomplete RBD image {}/{} left by the failed copy", pool.getSourceDir(), imageName);
+                    }
+                } finally {
+                    r.ioCtxDestroy(io);
+                }
+            } finally {
+                r.shutDown();
+            }
+        } catch (RadosException | RbdException e) {
+            logger.warn("Failed to remove the incomplete RBD image {}/{} left by the failed copy, remove it manually: {}", pool.getSourceDir(), imageName, e.getMessage());
+        }
+    }
+
     /**
      * This function copies a physical disk from Secondary Storage to Primary Storage
      * or from Primary to Primary Storage
@@ -1730,11 +1782,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
              * To do so it's mandatory that librbd on the system is at least 0.67.7 (Ceph Dumpling)
              */
             logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
+            String rbdDestPath = destPool.getSourceDir() + "/" + name;
+            // Only an image created by this copy may be removed again when the copy fails
+            boolean destCreatedByCopy = false;
             try {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
-                String rbdDestPath = destPool.getSourceDir() + "/" + name;
                 String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(destPool, rbdDestPath);
                 destFile = new QemuImgFile(rbdDestFile, destFormat);
+
+                if (rbdImageExists(destPool, name)) {
+                    // qemu-img can't convert into an existing image, and it can't be told if it is complete, so don't touch it
+                    logger.error("RBD image {} already exists, it will not be overwritten by the copy of {}", rbdDestPath, srcFile.getFileName());
+                    return null;
+                }
+                destCreatedByCopy = true;
 
                 logger.debug("Starting copy from source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
                 qemu.convert(srcFile, destFile);
@@ -1761,15 +1822,23 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 r.ioCtxDestroy(io);
             } catch (QemuImgException | LibvirtException e) {
                 String srcFilename = srcFile != null ? srcFile.getFileName() : null;
-                String destFilename = destFile != null ? destFile.getFileName() : null;
-                logger.error(String.format("Failed to convert from %s to %s the error was: %s", srcFilename, destFilename, e.getMessage()));
+                logger.error("Failed to convert from {} to RBD image {} the error was: {}", srcFilename, rbdDestPath, maskRbdKey(e.getMessage()));
                 newDisk = null;
+                if (destCreatedByCopy) {
+                    removeRbdImageQuietly(destPool, name);
+                }
             } catch (RadosException e) {
                 logger.error("A Ceph RADOS operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage());
                 newDisk = null;
+                if (destCreatedByCopy) {
+                    removeRbdImageQuietly(destPool, name);
+                }
             } catch (RbdException e) {
                 logger.error("A Ceph RBD operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage());
                 newDisk = null;
+                if (destCreatedByCopy) {
+                    removeRbdImageQuietly(destPool, name);
+                }
             }
         } else {
             /**
