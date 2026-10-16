@@ -24,6 +24,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -78,6 +80,11 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setId(job.getUuid());
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
+        // while the cancellation is carried out the job's result holds the request; it is reported as the reason, not as a result
+        final boolean cancelling = job.isCancelRequested() && job.getStatus() == JobInfo.Status.IN_PROGRESS.value();
+        if (job.isCancelRequested()) {
+            jobResponse.setCancelRequested(true);
+        }
         jobResponse.setJobProcStatus(job.getProcessStatus());
         // a finished job no longer has an executing server; the one that completed it is the answer then
         final Long msid = job.getExecutingMsid() != null ? job.getExecutingMsid() : job.getCompleteMsid();
@@ -103,10 +110,16 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         SerializationContext.current().setUuidTranslation(false);
 
         final Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
-        jobResponse.setJobResult((ResponseObject)resultObject);
+        if (cancelling) {
+            if (resultObject instanceof ExceptionResponse) {
+                jobResponse.setCancelReason(((ExceptionResponse)resultObject).getErrorText());
+            }
+        } else {
+            jobResponse.setJobResult((ResponseObject)resultObject);
+        }
         SerializationContext.current().setUuidTranslation(savedValue);
 
-        if (resultObject != null) {
+        if (resultObject != null && !cancelling) {
             final Class<?> clz = resultObject.getClass();
             if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
                 jobResponse.setJobResultType("text");

@@ -91,6 +91,9 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     @Column(name = "job_process_status")
     private int processStatus;
 
+    @Column(name = "cancel_requested")
+    private boolean cancelRequested;
+
     @Column(name = "job_result_code")
     private int resultCode;
 
@@ -248,6 +251,14 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     @Override
     public Status getStatus() {
         return status;
+    }
+
+    public boolean isCancelRequested() {
+        return cancelRequested;
+    }
+
+    public void setCancelRequested(boolean cancelRequested) {
+        this.cancelRequested = cancelRequested;
     }
 
     public void setStatus(Status status) {

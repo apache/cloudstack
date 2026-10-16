@@ -183,7 +183,7 @@ public class AgentManagerImplTest {
         mgr.asyncJobManager = asyncJobManager;
         final AsyncJobVO job = new AsyncJobVO();
         job.setId(jobId);
-        Mockito.when(asyncJobManager.listCancelledJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.singletonList(job));
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.singletonList(job));
         return asyncJobManager;
     }
 
@@ -219,10 +219,11 @@ public class AgentManagerImplTest {
     public void testCommandsInFlightHereForAJobCancelledElsewhereAreStopped() throws Exception {
         final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
         mgr.asyncJobManager = asyncJobManager;
-        Mockito.when(asyncJobManager.listCancelledJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.emptyList());
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.emptyList());
         final AsyncJobVO cancelled = new AsyncJobVO();
         cancelled.setId(42L);
-        cancelled.setStatus(JobInfo.Status.CANCELLED);
+        cancelled.setStatus(JobInfo.Status.IN_PROGRESS);
+        cancelled.setCancelRequested(true);
         Mockito.when(asyncJobManager.getAsyncJob(42L)).thenReturn(cancelled);
         final AgentAttache attache = Mockito.mock(AgentAttache.class);
         Mockito.doReturn(attache).when(mgr).getAttache(1L);

@@ -20,7 +20,9 @@ export const JOB_STATUS = {
   IN_PROGRESS: 0,
   SUCCEEDED: 1,
   FAILED: 2,
-  CANCELLED: 3
+  CANCELLED: 3,
+  // display only: an in-progress job whose cancellation was requested (API: jobstatus 0 + cancelrequested)
+  CANCELLING: 'cancelling'
 }
 
 export function jobStatusLabel (status) {
@@ -29,6 +31,7 @@ export function jobStatusLabel (status) {
     case JOB_STATUS.SUCCEEDED: return 'label.success'
     case JOB_STATUS.FAILED: return 'label.failed'
     case JOB_STATUS.CANCELLED: return 'label.cancelled'
+    case JOB_STATUS.CANCELLING: return 'label.cancelling'
     default: return String(status)
   }
 }
@@ -39,8 +42,17 @@ export function jobStatusColor (status) {
     case JOB_STATUS.SUCCEEDED: return 'green'
     case JOB_STATUS.FAILED: return 'red'
     case JOB_STATUS.CANCELLED: return 'orange'
+    case JOB_STATUS.CANCELLING: return 'gold'
     default: return 'default'
   }
+}
+
+// A job stays in progress while its cancellation runs and carries a flag; the UI shows that as its own state.
+export function jobDisplayStatus (job) {
+  if (job && job.cancelrequested && job.jobstatus === JOB_STATUS.IN_PROGRESS) {
+    return JOB_STATUS.CANCELLING
+  }
+  return job ? job.jobstatus : undefined
 }
 
 export function jobResultText (result) {
@@ -95,6 +107,6 @@ export const cancelJobAction = {
     return ['Admin'].includes(store.userInfo.roletype)
   },
   disabled: (record) => {
-    return record.jobstatus !== JOB_STATUS.IN_PROGRESS
+    return record.jobstatus !== JOB_STATUS.IN_PROGRESS || record.cancelrequested === true
   }
 }
