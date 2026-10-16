@@ -206,8 +206,12 @@
           <template #label>
             <tooltip-label :title="$t('label.publicnetworkrate')" :tooltip="apiParams.publicnetworkrate.description"/>
           </template>
-          <a-input
+          <a-input-number
+            style="width: 100%"
             v-model:value="form.publicnetworkrate"
+            :min="-1"
+            :max="2147483647"
+            :precision="0"
             :placeholder="apiParams.publicnetworkrate.description"/>
         </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
@@ -374,7 +378,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        publicnetworkrate: [{ type: 'number', validator: this.validateNetworkRate }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
           type: 'array',
@@ -767,12 +770,6 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
-    },
-    async validateNetworkRate (rule, value) {
-      if (value && (isNaN(value) || value < -1)) {
-        return Promise.reject(this.$t('message.error.number'))
-      }
-      return Promise.resolve()
     }
   }
 }
