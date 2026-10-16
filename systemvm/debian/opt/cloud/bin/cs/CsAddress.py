@@ -23,11 +23,28 @@ import time
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsApp import CsApache, CsDnsmasq, CsPasswdSvc
+from .CsGuestNetwork import CsGuestNetwork
 from .CsRoute import CsRoute
 from .CsRule import CsRule
 from .CsStaticRoutes import CsStaticRoutes
 
 VRRP_TYPES = ['guest']
+
+
+def _guest_needs_vrrp(device, config):
+    """
+    A guest interface only needs to be managed by keepalived (i.e. have the
+    network gateway floated onto it as a VRRP virtual address) when the
+    CloudStack virtual router is actually the gateway for that network.
+    When an external provider (e.g. Netris) owns the gateway/source NAT for
+    the tier, the router must not also claim the gateway IP.
+    If no guestnetwork data is found for the device, default to the
+    historical behaviour (needs vrrp) to avoid regressing existing setups.
+    """
+    gn = CsGuestNetwork(device, config)
+    if gn.is_guestnetwork():
+        return gn.is_vr_guest_gateway()
+    return True
 
 class CsAddress(CsDataBag):
 
@@ -99,7 +116,7 @@ class CsAddress(CsDataBag):
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in o and o['nw_type'] in VRRP_TYPES:
-            return True
+            return _guest_needs_vrrp(o.get('device'), self.config)
         return False
 
     def get_control_if(self):
@@ -148,6 +165,14 @@ class CsInterface:
 
     def get_ip(self):
         return self.get_attr("public_ip")
+
+    def get_passwd_server_ips(self):
+        if CsGuestNetwork(self.get_device(), self.config).router_owns_gateway():
+            return [self.get_gateway(), self.get_ip()]
+        return [self.get_ip()]
+
+    def get_passwd_server_address(self):
+        return ",".join(self.get_passwd_server_ips())
 
     def get_ip6(self):
         if not self.config.is_vpc():
@@ -229,7 +254,7 @@ class CsInterface:
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
-            return True
+            return _guest_needs_vrrp(self.get_device(), self.config)
         return False
 
     def is_control(self):
@@ -875,9 +900,9 @@ class CsIP:
                         CsPasswdSvc(self.address['public_ip']).stop()
                 elif cmdline.is_primary():
                     if method == "add":
-                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
+                        CsPasswdSvc(CsInterface(self.address, self.config).get_passwd_server_address()).start()
                     elif method == "delete":
-                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
+                        CsPasswdSvc(CsInterface(self.address, self.config).get_passwd_server_address()).stop()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routed():
             if self.address["source_nat"]:
@@ -909,7 +934,7 @@ class CsIP:
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
-            return True
+            return _guest_needs_vrrp(self.dev, self.config)
         return False
 
     def is_public(self):

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
@@ -44,6 +45,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -51,6 +53,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 
 import javax.inject.Inject;
 import java.util.Objects;
@@ -75,10 +78,12 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
     @Override
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
                              PhysicalNetwork physicalNetwork) {
+        NetworkOffering.NetworkMode networkMode = NetrisResourceObjectUtils.getNetworkMode(offering.getNetworkMode());
         return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
-                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode())
+                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)
                 || (networkOfferingServiceMapDao.isProviderForNetworkOffering(
-                offering.getId(), Network.Provider.Netris) && NetworkOffering.NetworkMode.NATTED.equals(offering.getNetworkMode())));
+                offering.getId(), Network.Provider.Netris) && NetworkOffering.NetworkMode.NATTED.equals(networkMode))
+                || (Network.GuestType.L2.equals(offering.getGuestType())));
     }
 
     @Override
@@ -174,8 +179,10 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
                 vpcName = vpc.getName();
             }
         }
+        NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(network.getNetworkOfferingId());
+        boolean isL2 = networkOfferingVO != null && Network.GuestType.L2.equals(networkOfferingVO.getGuestType());
         return netrisService.updateVnetResource(network.getDataCenterId(), network.getAccountId(), network.getDomainId(),
-                vpcName, vpcId, network.getName(), network.getId(), prevNetworkName);
+                vpcName, vpcId, network.getName(), network.getId(), prevNetworkName, isL2);
     }
 
     @Override
@@ -201,7 +208,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         if (network.getName() != null) {
             implemented.setName(network.getName());
         }
-        allocateVnet(network, implemented, network.getDataCenterId(), network.getPhysicalNetworkId(), network.getReservationId());
+
+        allocateVnet(network, implemented, network.getDataCenterId(), network.getPhysicalNetworkId(), context != null ? context.getReservationId() : null);
         return implemented;
     }
 
@@ -210,12 +218,13 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
             throws InsufficientVirtualNetworkCapacityException {
         String vnet = null;
         Long networkId = implemented.getId() > 0 ? implemented.getId() : network.getId();
+        long accountId = implemented.getAccountId() > 0 ? implemented.getAccountId() : network.getAccountId();
         if (network.getBroadcastUri() == null) {
             NetworkDetailVO netrisVnetDetail = networkDetailsDao.findDetail(networkId, ApiConstants.NETRIS_VXLAN_ID);
             if (nonNull(netrisVnetDetail)) {
                 vnet = netrisVnetDetail.getValue();
             } else {
-                vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
+                vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, accountId, reservationId, UseSystemGuestVlans.valueIn(accountId));
                 if (vnet == null) {
                     throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
                             dcId);
@@ -223,7 +232,7 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
                 networkDetailsDao.addDetail(networkId, ApiConstants.NETRIS_VXLAN_ID, vnet, true);
             }
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Netris.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
                     "Assigned Zone vNet: " + vnet + " Network Id: " + networkId, networkId, ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -264,8 +273,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         }
 
         NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(network.getNetworkOfferingId());
-
-        if (isNull(network.getVpcId()) && networkOfferingVO.getNetworkMode().equals(NetworkOffering.NetworkMode.NATTED)) {
+        NetworkOffering.NetworkMode networkMode = NetrisResourceObjectUtils.getNetworkMode(networkOfferingVO.getNetworkMode());
+        if (isNull(network.getVpcId()) && NetworkOffering.NetworkMode.NATTED.equals(networkMode)) {
             // Netris Natted mode
             long domainId = domain.getId();
             long accountId = account.getId();
@@ -299,6 +308,80 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         // Do nothing
     }
 
+    private void releaseAllocatedVnet(Network network) {
+        String vxlanId = null;
+        if (Objects.nonNull(network.getBroadcastUri())) {
+            vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
+        } else {
+            NetworkDetailVO vxlanDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETRIS_VXLAN_ID);
+            if (Objects.nonNull(vxlanDetail)) {
+                vxlanId = vxlanDetail.getValue();
+            }
+        }
+
+        if (Objects.isNull(vxlanId)) {
+            logger.debug("No VXLAN allocated for Netris network {}, nothing to release", network.getId());
+            return;
+        }
+
+        logger.debug("Releasing VXLAN {} for Netris network {}", vxlanId, network.getId());
+        _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
+                network.getAccountId(), network.getReservationId());
+        // Attempt to clean up with null reservation ID
+        _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
+                network.getAccountId(), null);
+        if (network.getAccountId() != 0) {
+            _dcDao.releaseVnet(vxlanId, network.getDataCenterId(), network.getPhysicalNetworkId(),
+                    0L, null);
+        }
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
+                EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_RELEASE,
+                "Released Zone vNet: " + vxlanId + " for Network: " + network.getId(),
+                network.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
+
+        NetworkDetailVO vxlanDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETRIS_VXLAN_ID);
+        if (Objects.nonNull(vxlanDetail)) {
+            networkDetailsDao.removeDetail(network.getId(), ApiConstants.NETRIS_VXLAN_ID);
+        }
+    }
+
+    @Override
+    public boolean trash(Network network, NetworkOffering offering) {
+        if (Network.GuestType.L2.equals(offering.getGuestType())) {
+            NetworkVO networkVO = _networkDao.findById(network.getId());
+            if (networkVO == null) {
+                logger.warn("Could not find network {} to trash, skipping Netris L2 cleanup", network.getId());
+                return super.trash(network, offering);
+            }
+
+            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+            if (Objects.isNull(zone)) {
+                logger.error("Cannot find zone with ID {} while trashing L2 Netris network {}", network.getDataCenterId(), network.getId());
+                return false;
+            }
+
+            Account account = accountDao.findById(network.getAccountId());
+            if (Objects.isNull(account)) {
+                logger.error("Cannot find account with ID {} while trashing L2 Netris network {}", network.getAccountId(), network.getId());
+                return false;
+            }
+
+            DomainVO domain = domainDao.findById(account.getDomainId());
+            if (Objects.isNull(domain)) {
+                logger.error("Cannot find domain with ID {} while trashing L2 Netris network {}", account.getDomainId(), network.getId());
+                return false;
+            }
+
+            logger.debug("Trashing L2 Netris network {}, deleting Netris vNet resource", network.getId());
+            netrisService.deleteVnetResource(zone.getId(), account.getId(), domain.getId(),
+                    null, null, networkVO.getName(), network.getId(), network.getCidr(), true);
+        }
+
+        releaseAllocatedVnet(network);
+
+        return super.trash(network, offering);
+    }
+
     public void createNetrisVnet(NetworkVO networkVO, DataCenter zone) {
         Account account = accountDao.findById(networkVO.getAccountId());
         if (isNull(account)) {
@@ -312,33 +395,38 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         }
         String vpcName = null;
         Long vpcId = null;
-        Boolean globalRouting = null;
+        boolean isL2 = false;
         long networkOfferingId = networkVO.getNetworkOfferingId();
+
         NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
-        if (NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode())) {
-            globalRouting = true;
+        NetUtils.InternetProtocol internetProtocol = networkOfferingDao.getNetworkOfferingInternetProtocol(networkOfferingVO.getId());
+        NetworkOffering.NetworkMode networkMode = networkOfferingVO.getNetworkMode();
+        if (Network.GuestType.L2.equals(networkOfferingVO.getGuestType())) {
+            isL2 = true;
         }
-        if (nonNull(networkVO.getVpcId())) {
-            VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
-            if (isNull(vpc)) {
-                throw new CloudRuntimeException(String.format("Failed to find VPC network with id: %s", networkVO.getVpcId()));
-            }
-            vpcName = vpc.getName();
-            vpcId = vpc.getId();
-        } else {
-            logger.debug(String.format("Creating IPAM Allocation before creating IPAM Subnet", networkVO.getName()));
-            boolean isSourceNatSupported = !NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode()) &&
-                    networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
-            boolean result = netrisService.createVpcResource(zone.getId(), networkVO.getAccountId(), networkVO.getDomainId(),
-                    networkVO.getId(), networkVO.getName(), isSourceNatSupported, networkVO.getCidr(), false);
-            if (!result) {
-                String msg = String.format("Error creating Netris VPC for the network: %s", networkVO.getName());
-                logger.error(msg);
-                throw new CloudRuntimeException(msg);
+        if (!isL2) {
+            if (nonNull(networkVO.getVpcId())) {
+                VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
+                if (isNull(vpc)) {
+                    throw new CloudRuntimeException(String.format("Failed to find VPC network with id: %s", networkVO.getVpcId()));
+                }
+                vpcName = vpc.getName();
+                vpcId = vpc.getId();
+            } else {
+                logger.debug(String.format("Creating IPAM Allocation before creating IPAM Subnet", networkVO.getName()));
+                boolean isSourceNatSupported = !NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode()) &&
+                        networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
+                boolean result = netrisService.createVpcResource(zone.getId(), networkVO.getAccountId(), networkVO.getDomainId(),
+                        networkVO.getId(), networkVO.getName(), isSourceNatSupported, networkVO.getCidr(), false);
+                if (!result) {
+                    String msg = String.format("Error creating Netris VPC for the network: %s", networkVO.getName());
+                    logger.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
             }
         }
         boolean result = netrisService.createVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId,
-                networkVO.getName(), networkVO.getId(), networkVO.getCidr(), globalRouting);
+                networkVO.getName(), networkVO.getId(), networkVO.getCidr(), networkMode, internetProtocol, isL2);
         if (!result) {
             throw new CloudRuntimeException("Failed to create Netris vNet resource for network: " + networkVO.getName());
         }

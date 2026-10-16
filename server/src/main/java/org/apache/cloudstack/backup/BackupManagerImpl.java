@@ -826,20 +826,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     true, 0);
 
             Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM());
-            if (!result.first()) {
-                throw new CloudRuntimeException("Failed to create VM backup");
-            }
             Backup backup = result.second();
             if (backup != null) {
-                BackupVO vmBackup = backupDao.findById(result.second().getId());
-                vmBackup.setBackupScheduleId(backupScheduleId);
-                if (cmd.getName() != null) {
-                    vmBackup.setName(cmd.getName());
-                }
-                vmBackup.setDescription(cmd.getDescription());
-                backupDao.update(vmBackup.getId(), vmBackup);
+                updateBackupFromCmd(backup.getId(), cmd, backupScheduleId);
+                // A failed backup returned here is kept in Error state and still holds space on
+                // the repository. The account's backup resource count recalculation includes such
+                // rows and deleting one decrements it, so add it to that count here as well.
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage,
+                        backup.getSize() != null ? backup.getSize() : 0L);
+            }
+            if (!result.first()) {
+                throw new CloudRuntimeException("Failed to create VM backup");
             }
         } catch (ResourceAllocationException e) {
             if (isScheduledBackup && (Resource.ResourceType.backup.equals(e.getResourceType()) ||
@@ -848,6 +846,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
             throw e;
         }
+    }
+
+    private void updateBackupFromCmd(long backupId, CreateBackupCmd cmd, Long backupScheduleId) {
+        BackupVO vmBackup = backupDao.findById(backupId);
+        vmBackup.setBackupScheduleId(backupScheduleId);
+        if (cmd.getName() != null) {
+            vmBackup.setName(cmd.getName());
+        }
+        vmBackup.setDescription(cmd.getDescription());
+        backupDao.update(vmBackup.getId(), vmBackup);
     }
 
     /**
