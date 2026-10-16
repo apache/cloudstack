@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.22.0
+CLOUDSTACK_RELEASE=24.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 12 \n \l
+ (___(_)   Debian GNU/Linux 13 \n \l
 
 EOF
 }
@@ -142,8 +142,12 @@ datasource:
 EOF
 
   touch /etc/cloud/cloud-init.disabled
-  systemctl stop cloud-init
-  systemctl disable cloud-init
+  # cloud-init.service was split into several units in newer cloud-init versions
+  for svc in cloud-init cloud-init-local cloud-init-main cloud-init-network cloud-config cloud-final; do
+    if systemctl cat ${svc}.service > /dev/null 2>&1; then
+      systemctl disable ${svc}.service
+    fi
+  done
 
   configure_apache2
   configure_strongswan

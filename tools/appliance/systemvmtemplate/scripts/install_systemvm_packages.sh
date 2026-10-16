@@ -66,7 +66,7 @@ function install_packages() {
     xenstore-utils libxenstore4 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
-    openjdk-17-jre-headless \
+    openjdk-21-jre-headless \
     ipcalc ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
@@ -77,7 +77,7 @@ function install_packages() {
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons cloud-guest-utils \
-    conntrack apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common
+    conntrack apt-transport-https ca-certificates curl gnupg  gnupg-agent
 
   apt-get install -y python3-json-pointer python3-jsonschema cloud-init
 
@@ -91,17 +91,14 @@ function install_packages() {
   fi
 
   # Install docker and containerd for CKS
-  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-  apt-key fingerprint 0EBFCD88
-  if [ "${arch}" == "arm64" ]; then
-    add-apt-repository "deb [arch=arm64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-  elif [ "${arch}" == "amd64" ]; then
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-  elif [ "${arch}" == "s390x" ]; then
-    add-apt-repository "deb [arch=s390x] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-  else
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  local docker_arch="${arch}"
+  if [[ "${arch}" != "arm64" && "${arch}" != "amd64" && "${arch}" != "s390x" ]]; then
+    docker_arch="amd64"
   fi
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
+  echo "deb [arch=${docker_arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" > /etc/apt/sources.list.d/docker.list
   apt-get update
   ${apt_get} install containerd.io
 
