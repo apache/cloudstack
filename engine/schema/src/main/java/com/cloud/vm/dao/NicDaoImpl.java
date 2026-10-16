@@ -47,7 +47,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private GenericSearchBuilder<NicVO, String> IpSearch;
     private SearchBuilder<NicVO> NonReleasedSearch;
     private GenericSearchBuilder<NicVO, Integer> deviceIdSearch;
-    private GenericSearchBuilder<NicVO, Integer> CountByForNonStoppedVms;
+    GenericSearchBuilder<NicVO, Integer> CountByForNonStoppedVms;
     private SearchBuilder<NicVO> PeerRouterSearch;
 
     @Inject
@@ -394,7 +394,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         SearchCriteria<Integer> sc = CountByForNonStoppedVms.create();
         sc.setParameters("networkId", networkId);
         sc.setParameters("vmTypeNEQ", VirtualMachine.Type.User);
-        sc.setJoinParameters("vm", "state", new Object[] {VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating});
+        sc.setJoinParameters("vm", "state", new Object[] {VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating});
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
     }

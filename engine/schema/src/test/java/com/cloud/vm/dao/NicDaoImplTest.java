@@ -17,20 +17,24 @@
 package com.cloud.vm.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NicDaoImplTest {
@@ -65,5 +69,23 @@ public class NicDaoImplTest {
         Mockito.verify(nicDaoImplSpy, Mockito.times(1)).searchIncludingRemoved(
                 Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
                 Mockito.eq(false));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCountNicsForNonStoppedRunningVrsIncludesRunningState() {
+        GenericSearchBuilder<NicVO, Integer> sb = Mockito.mock(GenericSearchBuilder.class);
+        SearchCriteria<Integer> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        nicDaoImplSpy.CountByForNonStoppedVms = sb;
+        Mockito.doReturn(List.of(0)).when(nicDaoImplSpy).customSearch(Mockito.eq(sc), Mockito.eq(null));
+
+        nicDaoImplSpy.countNicsForNonStoppedRunningVrs(5L);
+
+        ArgumentCaptor<Object[]> statesCaptor = ArgumentCaptor.forClass(Object[].class);
+        Mockito.verify(sc).setJoinParameters(Mockito.eq("vm"), Mockito.eq("state"), statesCaptor.capture());
+        Assert.assertTrue("A running VR's nic must still count towards the non-stopped-VR check, "
+                        + "otherwise NetworkGarbageCollector will tear down a network with a live router",
+                Arrays.asList(statesCaptor.getValue()).contains(VirtualMachine.State.Running));
     }
 }
