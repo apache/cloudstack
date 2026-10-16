@@ -132,6 +132,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                                             String backupPath, List<String> backupFiles, String mountDirectory, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
+            // The management server sends the instance's volumes in the order of the backed up volumes,
+            // each one being the volume that backup has to be written into (it matches them by uuid, see
+            // NASBackupProvider#getVolumesToRestoreInto), so they are paired by position here.
             for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
                 PrimaryDataStoreTO restoreVolumePool = restoreVolumePools.get(idx);
                 String restoreVolumePath = restoreVolumePaths.get(idx);

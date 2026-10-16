@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -583,6 +584,64 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(result instanceof BackupAnswer);
                 BackupAnswer backupAnswer = (BackupAnswer) result;
                 Assert.assertTrue(backupAnswer.getResult());
+            }
+        }
+    }
+
+    /**
+     * The management server sends the volumes to restore into in the order of the backed up volumes (it
+     * matches them by uuid). Their paths do not have to contain the backed up uuid: a volume migrated to
+     * another pool, or created from a snapshot, has a path that differs from its uuid. Each backup file
+     * has to be written into the volume at the same position.
+     */
+    @Test
+    public void testRestoreOfExistingVmWritesEachBackupIntoTheVolumeAtTheSamePosition() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO pool = Mockito.mock(PrimaryDataStoreTO.class);
+        lenient().when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(pool, pool, pool));
+        // data-vol-a was migrated, so its path is a different name than its uuid
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList(
+                "/var/lib/libvirt/images/root-vol",
+                "/var/lib/libvirt/images/migrated-path-of-a",
+                "/var/lib/libvirt/images/data-vol-b"
+        ));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("root-vol", "data-vol-a", "data-vol-b"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("root-vol", "data-vol-a", "data-vol-b"));
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
+                        .thenAnswer(invocation -> {
+                            String command = invocation.getArgument(0);
+                            // No backing chain, so the restore takes the rsync path this test asserts on.
+                            return command.contains("backing-filename") ? 1 : 0;
+                        });
+                filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/root.root-vol.qcow2", "/var/lib/libvirt/images/root-vol"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/migrated-path-of-a"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-b"})));
             }
         }
     }
