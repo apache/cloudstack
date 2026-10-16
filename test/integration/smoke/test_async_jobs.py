@@ -25,6 +25,7 @@ from marvin.cloudstackAPI import (cancelAsyncJob,
                                   listUsageJobs,
                                   migrateVirtualMachine,
                                   migrateVirtualMachineWithVolume,
+                                  migrateVolume,
                                   queryAsyncJobResult,
                                   stopVirtualMachine)
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -329,8 +330,49 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             if VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0].state != VirtualMachine.RUNNING:
                 self.virtual_machine.start(self.apiclient)
 
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_11_cancelled_offline_volume_migration_keeps_the_volume(self):
+        """Cancelling an offline volume migration leaves the volume Ready on its source pool, or the cancel is refused"""
+        if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
+            self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
+
+        root_volume = [v for v in Volume.list(self.apiclient, virtualmachineid=self.virtual_machine.id, listall=True) if v.type == "ROOT"][0]
+        self.virtual_machine.stop(self.apiclient)
+        try:
+            target_pools = StoragePool.listForMigration(self.apiclient, id=root_volume.id) or []
+            if not target_pools:
+                self.skipTest("Need a second primary storage pool to migrate to")
+
+            cmd = migrateVolume.migrateVolumeCmd()
+            cmd.volumeid = root_volume.id
+            cmd.storageid = target_pools[0].id
+            cmd.isAsync = "false"
+            jobid = self.apiclient.migrateVolume(cmd, method="GET").jobid
+
+            time.sleep(5)
+            cancelled = True
+            try:
+                self.cancel_job(jobid)
+            except Exception as e:
+                self.debug("Cancel of volume migration job %s refused: %s" % (jobid, e))
+                cancelled = False
+
+            job = self.wait_for_job(jobid)
+            if cancelled:
+                self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
+            else:
+                self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+            self.assertNotIn("NullPointerException", str(job.jobresult), "The cancel surfaced as a server error")
+
+            volume = Volume.list(self.apiclient, id=root_volume.id)[0]
+            self.assertEqual(volume.state, "Ready", "Volume left in state %s after the migration job ended" % volume.state)
+            if cancelled:
+                self.assertEqual(volume.storageid, root_volume.storageid, "Cancelled migration moved the volume")
+        finally:
+            self.virtual_machine.start(self.apiclient)
+
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_11_list_usage_jobs(self):
+    def test_12_list_usage_jobs(self):
         """Usage server jobs list without error, and filter by usage server"""
         cmd = listUsageJobs.listUsageJobsCmd()
         cmd.duration = 24
