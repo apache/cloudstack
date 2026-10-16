@@ -175,6 +175,64 @@ public class NASBackupProviderTest {
     }
 
     @Test
+    public void testSyncBackupStorageStatsSendsTrimmedMountOptions() throws AgentUnavailableException, OperationTimedoutException {
+        BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "vers=4.1 ", 1024L, null);
+
+        HostVO host = mock(HostVO.class);
+        Mockito.when(resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(host);
+        Mockito.when(backupRepositoryDao.listByZoneAndProvider(1L, "nas")).thenReturn(Collections.singletonList(backupRepository));
+        ArgumentCaptor<GetBackupStorageStatsCommand> commandCaptor = ArgumentCaptor.forClass(GetBackupStorageStatsCommand.class);
+        BackupStorageStatsAnswer answer = new BackupStorageStatsAnswer(new GetBackupStorageStatsCommand("nfs", "address", null), true, null);
+        Mockito.when(agentManager.send(anyLong(), commandCaptor.capture())).thenReturn(answer);
+
+        nasBackupProvider.syncBackupStorageStats(1L);
+
+        Assert.assertEquals("vers=4.1", commandCaptor.getValue().getMountOptions());
+    }
+
+    private String getMountOptions(String mountOptions) {
+        return NASBackupProvider.getMountOptions(new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", mountOptions, 1024L, null));
+    }
+
+    @Test
+    public void testGetMountOptionsTrimsTrailingWhitespace() {
+        Assert.assertEquals("vers=4.1", getMountOptions("vers=4.1 "));
+    }
+
+    @Test
+    public void testGetMountOptionsTrimsWhitespaceAroundEveryOption() {
+        Assert.assertEquals("vers=4.1,soft", getMountOptions(" vers=4.1 , soft "));
+    }
+
+    @Test
+    public void testGetMountOptionsDropsOptionsThatAreOnlyWhitespace() {
+        Assert.assertEquals("vers=4.1,soft", getMountOptions("vers=4.1, ,soft, "));
+    }
+
+    @Test
+    public void testGetMountOptionsKeepsDoubleCommaInsideAValue() {
+        // cifs reads a double comma as a comma inside the value, here the password "pa,ss"
+        Assert.assertEquals("username=user,password=pa,,ss,vers=3.0", getMountOptions("username=user,password=pa,,ss,vers=3.0 "));
+    }
+
+    @Test
+    public void testGetMountOptionsDoesNotStripWhitespaceInsideAnOption() {
+        Assert.assertEquals("username=some user", getMountOptions("username=some user"));
+    }
+
+    @Test
+    public void testGetMountOptionsReturnsEmptyWhenOnlyWhitespace() {
+        Assert.assertEquals("", getMountOptions("   "));
+    }
+
+    @Test
+    public void testGetMountOptionsKeepsNull() {
+        Assert.assertNull(getMountOptions(null));
+    }
+
+    @Test
     public void testListBackupOfferings() {
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
                 "nfs", "address", "sync", 1024L, null);
