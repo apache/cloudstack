@@ -192,6 +192,12 @@ public interface VolumeApiService {
      */
     Set<Long> getReservedDeviceIds(VirtualMachine vm);
 
+    /**
+     * Same as {@link #getReservedDeviceIds(VirtualMachine)}, with the specified usage of config drive instead of the one
+     * of the Instance. It is useful when the networks of the Instance are not known yet, e.g. when importing it.
+     */
+    Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed);
+
     boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
 
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
