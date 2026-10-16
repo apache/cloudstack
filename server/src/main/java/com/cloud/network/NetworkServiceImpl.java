@@ -5861,10 +5861,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (broadcastUriString != null) {
             URI uri = BroadcastDomainType.fromString(broadcastUriString);
             uriString = uri.toString();
-            BroadcastDomainType tiep = BroadcastDomainType.getSchemeValue(uri);
-            // numeric vlan or vlan URI are ok for now
-            // TODO make a test for any supported scheme
-            if (!(tiep == BroadcastDomainType.Vlan || tiep == BroadcastDomainType.Lswitch)) {
+            BroadcastDomainType type = BroadcastDomainType.getSchemeValue(uri);
+            if (type != BroadcastDomainType.Vlan && type != BroadcastDomainType.Vxlan && type != BroadcastDomainType.Lswitch) {
                 throw new InvalidParameterValueException("unsupported type of broadcastUri specified: " + broadcastUriString);
             }
         } else if (associatedNetworkId != null) {
