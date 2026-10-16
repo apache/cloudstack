@@ -118,9 +118,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     while (connectionAlive) {
                         logger.trace("Connection with client [{}] [IP: {}] is alive.", clientId, clientSourceIp);
                         if (client.isVncOverWebSocketConnection()) {
-                            if (client.isVncOverWebSocketConnectionOpen()) {
-                                updateFrontEndActivityTime();
-                            }
                             connectionAlive = session.isOpen();
                             sleepTime = 1;
                         } else if (client.isVncOverNioSocket()) {
