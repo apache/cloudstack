@@ -1640,8 +1640,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
+        // For project owned templates/isos, the project admins are treated as owners
+        boolean isOwner = caller.getId() == ownerId;
+        if (!isOwner && !isAdmin && owner.getType() == Account.Type.PROJECT) {
+            isOwner = _projectMgr.canModifyProjectAccount(caller, ownerId);
+        }
+
         //Only admin or owner of the template should be able to change its permissions
-        if (caller.getId() != ownerId && !isAdmin) {
+        if (!isOwner && !isAdmin) {
             throw new InvalidParameterValueException("Unable to grant permission to Account " + caller.getAccountName() + " as it is neither admin nor owner or the Template");
         }
 
@@ -1657,7 +1663,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isExtractable != null) {
             // Only Root admins and owners are allowed to change it for templates
-            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin) {
+            if (!template.getFormat().equals(ImageFormat.ISO) && !isOwner && !isAdmin) {
                 throw new InvalidParameterValueException("Only ROOT admins and Template owners are allowed to modify isExtractable attribute.");
             } else {
                 // For Isos normal user can change it, as their are no derivatives.
