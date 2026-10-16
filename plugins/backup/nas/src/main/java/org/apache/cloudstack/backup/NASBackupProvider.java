@@ -60,6 +60,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -69,6 +70,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,6 +129,61 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
 
+    static final ConfigKey<Boolean> NASInfraBackupEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.infra.backup.enabled",
+            "false",
+            "Enable automated infrastructure backup to NAS storage. When enabled, the management " +
+            "server will perform a daily backup of CloudStack configuration files and SSL " +
+            "certificates to the configured NAS location. The CloudStack database is NOT included " +
+            "by default — for production deployments, manage database backups externally (e.g. via " +
+            "a cron job running mysqldump). To opt in to bundling the database with this backup " +
+            "(useful only for small / edge / single-MS deployments without separate ops tooling), " +
+            "also set nas.infra.backup.include.database=true.",
+            true,
+            ConfigKey.Scope.Global,
+            BackupFrameworkEnabled.key());
+
+    static final ConfigKey<Boolean> NASInfraBackupIncludeDatabase = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.infra.backup.include.database",
+            "false",
+            "Include the CloudStack database in the daily infrastructure backup. Defaults to false " +
+            "because production deployments typically manage DB backups via external tooling (e.g. " +
+            "cron + mysqldump, replication, dedicated backup appliance) and are better served " +
+            "doing so. Only set true when you want one-knob disaster recovery for a small/edge " +
+            "deployment and the same NAS that already holds your VM backups is an acceptable " +
+            "target. Has no effect unless nas.infra.backup.enabled is also true.",
+            true,
+            ConfigKey.Scope.Global,
+            BackupFrameworkEnabled.key());
+
+    static final ConfigKey<String> NASInfraBackupLocation = new ConfigKey<>("Advanced", String.class,
+            "nas.infra.backup.location",
+            "",
+            "NAS mount path where infrastructure backups are stored (e.g. /mnt/nas-backup). " +
+            "Backups will be written to {location}/infra-backup/{management-server-host}/{timestamp}/. " +
+            "The path must be writable by the user the management server runs as (normally 'cloud'), " +
+            "e.g. chown cloud:cloud on the mounted path; a root-owned mount makes every run fail.",
+            true,
+            ConfigKey.Scope.Global,
+            BackupFrameworkEnabled.key());
+
+    static final ConfigKey<Integer> NASInfraBackupRetention = new ConfigKey<>("Advanced", Integer.class,
+            "nas.infra.backup.retention",
+            "7",
+            "Number of infrastructure backup sets to retain. Older backups are automatically removed.",
+            true,
+            ConfigKey.Scope.Global,
+            BackupFrameworkEnabled.key());
+
+    static final ConfigKey<Boolean> NASInfraBackupUsageDb = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.infra.backup.include.usage.db",
+            "true",
+            "Also include the cloud_usage database when the CloudStack database is being backed " +
+            "up. Has no effect unless nas.infra.backup.include.database is also true.",
+            true,
+            ConfigKey.Scope.Global,
+            BackupFrameworkEnabled.key());
+
     @Inject
     private BackupDao backupDao;
 
@@ -183,6 +240,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private AlertManager alertManager;
+
+    @Inject
+    private BackgroundPollManager backgroundPollManager;
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        backgroundPollManager.submitTask(new InfrastructureBackupTask());
+        return true;
+    }
 
     private Long getClusterIdFromRootVolume(VirtualMachine vm) {
         VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
@@ -1283,7 +1350,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 NASBackupRestoreMountTimeout,
                 NASBackupFullEvery,
                 NASBackupIncrementalEnabled,
-                NASBackupQuiesceAgentTimeout
+                NASBackupQuiesceAgentTimeout,
+                NASInfraBackupEnabled,
+                NASInfraBackupIncludeDatabase,
+                NASInfraBackupLocation,
+                NASInfraBackupRetention,
+                NASInfraBackupUsageDb
         };
     }
 
