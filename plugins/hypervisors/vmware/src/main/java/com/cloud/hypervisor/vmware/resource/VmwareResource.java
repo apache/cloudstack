@@ -473,7 +473,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     @Override
     public Answer executeRequest(Command cmd) {
         final Long requestSequence = RequestExecutionContext.getRequestSequence();
-        taskRegistry.beginRequest(requestSequence);
+        taskRegistry.beginRequest(requestSequence, cmd.getClass().getSimpleName());
         try {
             Answer answer = executeRequestInternal(cmd);
             // a cancelled vCenter task surfaces as an ordinary failure; flag it as cancelled
@@ -487,8 +487,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     @Override
-    public boolean isRequestSequenceCancellable(long sequence) {
-        return taskRegistry.isCancellable(sequence);
+    public String checkRequestSequenceIsNotCancellable(long sequence) {
+        return taskRegistry.checkTaskNotCancellable(sequence);
     }
 
     @Override

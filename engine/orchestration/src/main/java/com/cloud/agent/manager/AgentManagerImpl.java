@@ -2242,10 +2242,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public boolean isJobExecutionCancellable(final long jobId) {
+    public String checkJobCannotBeCancelled(final long jobId) {
         final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
         if (CollectionUtils.isEmpty(inFlight)) {
-            return true;
+            return null;
         }
 
         for (final Pair<Long, Long> request : inFlight) {
@@ -2253,15 +2253,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (attache == null) {
                 logger.debug("Agent {} for job-{} is no longer attached, treating sequence {} as not cancellable",
                         request.first(), jobId, request.second());
-                return false;
+                return "host " + request.first() + " running its command is no longer connected";
             }
-            if (!attache.isExecutionCancellable(request.second())) {
-                logger.info("Job-{} cannot be cancelled: sequence {} on host {} is not cancellable",
-                        jobId, request.second(), request.first());
-                return false;
+            final String reason = attache.checkExecutionIsNotCancellable(request.second());
+            if (reason != null) {
+                logger.info("Job-{} cannot be cancelled, sequence {} on host {}: {}", jobId, request.second(), attache.getName(), reason);
+                return reason + " (host " + attache.getName() + ")";
             }
         }
-        return true;
+        return null;
     }
 
     @Override
@@ -2282,9 +2282,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 allCancelled = false;
                 continue;
             }
-            if (!attache.isExecutionCancellable(request.second())) {
-                logger.info("Not cancelling sequence {} on host {} for job-{}: it is not cancellable, letting it run to completion",
-                        request.second(), request.first(), jobId);
+            final String refusal = attache.checkExecutionIsNotCancellable(request.second());
+            if (refusal != null) {
+                logger.info("Not cancelling sequence {} on host {} for job-{}, letting it run to completion: {}",
+                        request.second(), request.first(), jobId, refusal);
                 allCancelled = false;
                 continue;
             }

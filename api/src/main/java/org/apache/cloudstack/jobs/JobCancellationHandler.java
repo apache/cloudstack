@@ -19,8 +19,8 @@ package org.apache.cloudstack.jobs;
 /** Lets the job layer ask whoever runs a job's backend work whether it can be stopped, and stop it. An interface, not AgentManager: the job framework is built first. */
 public interface JobCancellationHandler {
 
-    /** Asked before the job is marked cancelled; a job whose work cannot be stopped is refused, not recorded as cancelled. */
-    boolean isJobExecutionCancellable(long jobId);
+    /** Asked before the job is marked cancelled: null when its work can be stopped, otherwise why not. Such a job is refused, not recorded as cancelled. */
+    String checkJobCannotBeCancelled(long jobId);
 
     /** Returns true only if everything in flight was actually stopped. */
     boolean cancelJobExecution(long jobId, String reason);

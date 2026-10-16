@@ -235,9 +235,9 @@ public abstract class AgentAttache {
         }
     }
 
-    /** Default false: an attache that cannot ask its resource must not claim it. */
-    protected boolean isExecutionCancellable(final long seq) {
-        return false;
+    /** Null when the request's work can be stopped, otherwise why not. Defaults to a refusal: an attache that cannot ask its resource must not claim it. */
+    protected String checkExecutionIsNotCancellable(final long seq) {
+        return "this host does not support cancelling a running command";
     }
 
     /** Returns true only when the resource's work was stopped (or nothing was left to stop). */
@@ -258,8 +258,9 @@ public abstract class AgentAttache {
             }
         }
         try {
-            if (!isExecutionCancellable(seq)) {
-                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Timed out; its hypervisor work cannot be stopped and is left to complete");
+            final String reason = checkExecutionIsNotCancellable(seq);
+            if (reason != null) {
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Timed out; its hypervisor work is left to complete: " + reason);
                 return false;
             }
             final boolean stopped = cancelRunning(seq);

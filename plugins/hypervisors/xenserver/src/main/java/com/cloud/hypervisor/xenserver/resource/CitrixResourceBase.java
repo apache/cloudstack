@@ -1780,7 +1780,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     @Override
     public Answer executeRequest(final Command cmd) {
         final Long requestSequence = RequestExecutionContext.getRequestSequence();
-        taskRegistry.beginRequest(requestSequence);
+        taskRegistry.beginRequest(requestSequence, cmd.getClass().getSimpleName());
         try {
             final Answer answer = executeRequestInternal(cmd);
             // a cancelled XenAPI task surfaces as an ordinary failure; flag it as cancelled
@@ -1794,8 +1794,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     }
 
     @Override
-    public boolean isRequestSequenceCancellable(final long sequence) {
-        return taskRegistry.isCancellable(sequence);
+    public String checkRequestSequenceIsNotCancellable(final long sequence) {
+        return taskRegistry.checkTaskNotCancellable(sequence);
     }
 
     @Override

@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -97,7 +100,7 @@ public class ConnectedAgentAttacheTest {
         ConnectedAgentAttache attache = new ConnectedAgentAttache(agentMgr, 5L, "uuid", "host", Hypervisor.HypervisorType.KVM, mock(Link.class), false);
         when(agentMgr.send(Mockito.eq(5L), Mockito.any(Command.class))).thenReturn(new Answer(null, true, "can"));
 
-        assertTrue(attache.isExecutionCancellable(77L));
+        assertNull(attache.checkExecutionIsNotCancellable(77L));
 
         ArgumentCaptor<Command> sent = ArgumentCaptor.forClass(Command.class);
         verify(agentMgr).send(Mockito.eq(5L), sent.capture());
@@ -126,7 +129,7 @@ public class ConnectedAgentAttacheTest {
         ConnectedAgentAttache attache = new ConnectedAgentAttache(agentMgr, 5L, "uuid", "host", Hypervisor.HypervisorType.KVM, mock(Link.class), false);
         when(agentMgr.send(Mockito.eq(5L), Mockito.any(Command.class))).thenReturn(new UnsupportedAnswer(null, "unsupported"));
 
-        assertFalse(attache.isExecutionCancellable(77L));
+        assertNotNull(attache.checkExecutionIsNotCancellable(77L));
         assertFalse(attache.cancelRunning(77L));
     }
 
@@ -136,14 +139,23 @@ public class ConnectedAgentAttacheTest {
         ConnectedAgentAttache attache = new ConnectedAgentAttache(agentMgr, 5L, "uuid", "host", Hypervisor.HypervisorType.KVM, mock(Link.class), false);
         when(agentMgr.send(Mockito.eq(5L), Mockito.any(Command.class))).thenThrow(new AgentUnavailableException(5L));
 
-        assertFalse(attache.isExecutionCancellable(77L));
+        assertNotNull(attache.checkExecutionIsNotCancellable(77L));
+    }
+
+    @Test
+    public void theAgentsRefusalIsTheReason() throws Exception {
+        AgentManagerImpl agentMgr = mock(AgentManagerImpl.class);
+        ConnectedAgentAttache attache = new ConnectedAgentAttache(agentMgr, 5L, "uuid", "host", Hypervisor.HypervisorType.KVM, mock(Link.class), false);
+        when(agentMgr.send(Mockito.eq(5L), Mockito.any(Command.class))).thenReturn(new Answer(null, false, "StopCommand has nothing that can be stopped on this host"));
+
+        assertEquals("StopCommand has nothing that can be stopped on this host", attache.checkExecutionIsNotCancellable(77L));
     }
 
     @Test
     public void withoutAnAgentManagerNothingIsAsked() {
         ConnectedAgentAttache attache = new ConnectedAgentAttache(null, 5L, "uuid", "host", Hypervisor.HypervisorType.KVM, mock(Link.class), false);
 
-        assertFalse(attache.isExecutionCancellable(77L));
+        assertNotNull(attache.checkExecutionIsNotCancellable(77L));
         assertFalse(attache.cancelRunning(77L));
     }
 }
