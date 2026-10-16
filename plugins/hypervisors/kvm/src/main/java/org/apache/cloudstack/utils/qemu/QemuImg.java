@@ -122,8 +122,8 @@ public class QemuImg {
 
     /**
      * Create a QemuImg object that supports skipping target zeroes
-     * We detect this support via qemu-img help since support can
-     * be backported rather than found in a specific version.
+     * We detect this support via qemu-img convert --help since support
+     * can be backported rather than found in a specific version.
      *
      * @param timeout script timeout, default 0
      * @param skipZeroIfSupported Don't write zeroes to target device during convert, if supported by qemu-img
@@ -132,7 +132,7 @@ public class QemuImg {
     public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
             final Script s = new Script(_qemuImgPath, timeout);
-            s.add("--help");
+            s.add("convert", "--help");
 
             final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
             final String result = s.execute(parser);
@@ -911,6 +911,16 @@ public class QemuImg {
     }
 
     public boolean supportsImageFormat(QemuImg.PhysicalDiskFormat format) {
+        // qemu-img create -f $format -o help
+        // - prints supported format options with rc=0 on known format, and
+        // - error message with rc=1 on unsupported format
+        final Script createProbe = new Script(_qemuImgPath, timeout);
+        createProbe.add("create", "-f", format.toString(), "-o", "help");
+        String createProbeResult = createProbe.execute(new OutputInterpreter.AllLinesParser());
+        if (createProbeResult == null) {
+            return true;
+        }
+
         final Script s = new Script(_qemuImgPath, timeout);
         s.add("--help");
 
