@@ -30,7 +30,11 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -113,6 +117,9 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
@@ -150,9 +157,16 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import junit.framework.TestCase;
 
@@ -229,6 +243,15 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     private UserDataVO userDataMock;
+
+    @Mock
+    private NicDao nicDaoMock;
+
+    @Mock
+    private NetworkModel networkModelMock;
+
+    @Mock
+    private VMInstanceDetailsDao vmInstanceDetailsDaoMock;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -812,6 +835,75 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
+    }
+
+    private Set<Long> ids(Long... deviceIds) {
+        return new HashSet<>(Arrays.asList(deviceIds));
+    }
+
+    private UserVmVO mockUserVm() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.lenient().when(vm.getId()).thenReturn(1L);
+        Mockito.lenient().when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        return vm;
+    }
+
+    private void mockVmNetworkProvidesConfigDrive(UserVmVO vm, boolean providesConfigDrive) {
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getNetworkId()).thenReturn(100L);
+        Mockito.when(nicDaoMock.listByVmId(vm.getId())).thenReturn(Collections.singletonList(nic));
+        Mockito.lenient().when(networkModelMock.isProviderSupportServiceInNetwork(Mockito.eq(100L), Mockito.any(Service.class), Mockito.eq(Provider.ConfigDrive))).thenReturn(providesConfigDrive);
+    }
+
+    @Test
+    public void getCdromDeviceIdsReturnsOnlyThePrimaryCdromForSystemVms() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm));
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm, true));
+    }
+
+    @Test
+    public void isConfigDriveUsedReturnsTrueWhenNetworkProvidesConfigDriveBeforeFirstStart() {
+        UserVmVO vm = mockUserVm();
+        mockVmNetworkProvidesConfigDrive(vm, true);
+
+        Assert.assertTrue(templateManager.isConfigDriveUsed(vm));
+    }
+
+    @Test
+    public void isConfigDriveUsedReturnsTrueWhenConfigDriveLocationDetailExists() {
+        UserVmVO vm = mockUserVm();
+        Mockito.when(vmInstanceDetailsDaoMock.findDetail(1L, VmDetailConstants.CONFIG_DRIVE_LOCATION)).thenReturn(Mockito.mock(VMInstanceDetailVO.class));
+
+        Assert.assertTrue(templateManager.isConfigDriveUsed(vm));
+    }
+
+    @Test
+    public void isConfigDriveUsedReturnsFalseWhenNoNetworkProvidesConfigDrive() {
+        UserVmVO vm = mockUserVm();
+        mockVmNetworkProvidesConfigDrive(vm, false);
+
+        Assert.assertFalse(templateManager.isConfigDriveUsed(vm));
+    }
+
+    @Test
+    public void getCdromDeviceIdsReturnsOnlyThePrimaryCdromWhenVmDoesNotUseConfigDrive() {
+        UserVmVO vm = mockUserVm();
+        mockVmNetworkProvidesConfigDrive(vm, false);
+
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm));
+    }
+
+    @Test
+    public void getCdromDeviceIdsAddsTheCdromOfConfigDrive() {
+        UserVmVO vm = mockUserVm();
+        mockVmNetworkProvidesConfigDrive(vm, true);
+
+        Assert.assertEquals(ids(3L, 4L), templateManager.getCdromDeviceIds(vm));
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm, false));
+        Assert.assertEquals(ids(3L, 4L), templateManager.getCdromDeviceIds(vm, true));
     }
 
     @Configuration

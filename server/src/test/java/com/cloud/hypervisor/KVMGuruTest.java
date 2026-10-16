@@ -19,7 +19,10 @@ package com.cloud.hypervisor;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -40,6 +43,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -48,6 +52,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
@@ -92,6 +97,9 @@ public class KVMGuruTest {
 
     @Mock
     DpdkHelper dpdkHelperMock;
+
+    @Mock
+    HypervisorCapabilitiesDao hypervisorCapabilitiesDaoMock;
 
     @Mock
     GuestOSVO guestOsVoMock;
@@ -505,5 +513,43 @@ public class KVMGuruTest {
         Long clusterId = guru.findClusterOfVm(vm);
 
         Assert.assertNull(clusterId);
+    }
+
+    private List<VolumeVO> mockVolumesWithDeviceIds(long... deviceIds) {
+        List<VolumeVO> volumes = new java.util.ArrayList<>();
+        for (long deviceId : deviceIds) {
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            Mockito.when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+        return volumes;
+    }
+
+    @Test
+    public void getNextAvailableDeviceIdSkipsReservedDeviceIds() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(4L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L)), volumes));
+        Assert.assertEquals(Long.valueOf(5L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L)), volumes));
+        Assert.assertEquals(Long.valueOf(6L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumes));
+    }
+
+    @Test
+    public void getNextAvailableDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        Set<Long> reserved = new HashSet<>(Arrays.asList(3L, 4L));
+        // root + 5 data volumes (1, 2, 5, 6, 7): the 6th data volume is still allowed, and gets device id 8
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L, 5L, 6L, 7L);
+
+        Assert.assertEquals(Long.valueOf(8L), guru.getNextAvailableDeviceId(reserved, volumes));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getNextAvailableDeviceIdThrowsExceptionWhenAllDeviceIdsAreUsed() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L, 5L, 6L, 7L, 8L);
+
+        guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L)), volumes);
     }
 }
