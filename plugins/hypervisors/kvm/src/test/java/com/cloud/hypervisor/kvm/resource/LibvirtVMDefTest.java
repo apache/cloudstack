@@ -214,6 +214,37 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testCpuModeDefIgnoresInvalidModelName() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem</model></cpu><devices><disk type='file'/></devices><cpu><model>x");
+
+        assertEquals("<cpu></cpu>", cpuModeDef.toString());
+        assertTrue(LibvirtVMDef.CpuModeDef.isValidModelName("EPYC-Rome-v2"));
+        assertTrue(LibvirtVMDef.CpuModeDef.isValidModelName("x86-64-v2"));
+        assertTrue(LibvirtVMDef.CpuModeDef.isValidModelName("Skylake-Client-noTSX-IBRS"));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName(""));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName("-Nehalem"));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName("Nehalem Broadwell"));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName("Nehalem<"));
+    }
+
+    @Test
+    public void testVideoDefOnlyEmitsKnownModels() {
+        assertEquals(LibvirtVMDef.VideoDef.VideoModel.VIRTIO, LibvirtVMDef.VideoDef.VideoModel.fromString("VirtIO"));
+        assertEquals(LibvirtVMDef.VideoDef.VideoModel.QXL, LibvirtVMDef.VideoDef.VideoModel.fromString(" qxl "));
+        assertNull(LibvirtVMDef.VideoDef.VideoModel.fromString(null));
+        assertNull(LibvirtVMDef.VideoDef.VideoModel.fromString(""));
+        assertNull(LibvirtVMDef.VideoDef.VideoModel.fromString("virtio'/></video><disk type='file'/><video><model type='virtio"));
+
+        assertEquals("", new LibvirtVMDef.VideoDef(null, 65536).toString());
+        assertEquals("<video>\n<model type='virtio' vram='65536'/>\n</video>\n",
+                new LibvirtVMDef.VideoDef(LibvirtVMDef.VideoDef.VideoModel.VIRTIO, 65536).toString());
+        assertEquals("<video>\n<model type='vga'/>\n</video>\n",
+                new LibvirtVMDef.VideoDef(LibvirtVMDef.VideoDef.VideoModel.VGA, 0).toString());
+    }
+
+    @Test
     public void testCpuModeDefCpuFeatures() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");

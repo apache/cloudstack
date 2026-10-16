@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
@@ -1994,12 +1995,22 @@ public class LibvirtVMDef {
     }
 
     public static class CpuModeDef {
+        /**
+         * CPU model names as QEMU and libvirt define them, such as Nehalem, EPYC-Rome-v2 or x86-64-v2.
+         * The model reaches the domain XML from a VM detail, so anything else is rejected.
+         */
+        private static final Pattern CPU_MODEL_NAME = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._+-]*$");
+
         private String _mode;
         private String _model;
         private List<String> _features;
         private int _coresPerSocket = -1;
         private int _threadsPerCore = -1;
         private int _sockets = -1;
+
+        public static boolean isValidModelName(String model) {
+            return model != null && CPU_MODEL_NAME.matcher(model).matches();
+        }
 
         public void setMode(String mode) {
             _mode = mode;
@@ -2011,7 +2022,14 @@ public class LibvirtVMDef {
             }
         }
 
+        /**
+         * Sets the CPU model for the custom mode. A name that is not a plain QEMU model name is ignored.
+         */
         public void setModel(String model) {
+            if (model != null && !isValidModelName(model)) {
+                LOGGER.warn("Ignoring CPU model '{}' because it is not a valid model name", model);
+                return;
+            }
             _model = model;
         }
 
@@ -2090,18 +2108,57 @@ public class LibvirtVMDef {
     }
 
     public static class VideoDef {
-        private String _videoModel;
+        /**
+         * Video model types accepted by libvirt. The model name reaches the domain XML
+         * from a VM detail, so only values from this list are ever emitted.
+         */
+        public enum VideoModel {
+            VGA("vga"), CIRRUS("cirrus"), VMVGA("vmvga"), XEN("xen"), VBOX("vbox"), QXL("qxl"), VIRTIO("virtio"), GOP("gop"), BOCHS("bochs"), RAMFB("ramfb"), NONE("none");
+
+            private final String model;
+
+            VideoModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+
+            /**
+             * Returns the matching model, ignoring case, or null when the value is blank or unknown.
+             */
+            public static VideoModel fromString(String model) {
+                if (StringUtils.isBlank(model)) {
+                    return null;
+                }
+                String trimmed = model.trim();
+                for (VideoModel videoModel : values()) {
+                    if (videoModel.model.equalsIgnoreCase(trimmed)) {
+                        return videoModel;
+                    }
+                }
+                return null;
+            }
+        }
+
+        private VideoModel _videoModel;
         private int _videoRam;
 
-        public VideoDef(String videoModel, int videoRam) {
+        public VideoDef(VideoModel videoModel, int videoRam) {
             _videoModel = videoModel;
             _videoRam = videoRam;
+        }
+
+        public VideoModel getVideoModel() {
+            return _videoModel;
         }
 
         @Override
         public String toString() {
             StringBuilder videoBuilder = new StringBuilder();
-            if (_videoModel != null && !_videoModel.isEmpty()){
+            if (_videoModel != null) {
                 videoBuilder.append("<video>\n");
                 if (_videoRam != 0) {
                     videoBuilder.append("<model type='" + _videoModel + "' vram='" + _videoRam + "'/>\n");
