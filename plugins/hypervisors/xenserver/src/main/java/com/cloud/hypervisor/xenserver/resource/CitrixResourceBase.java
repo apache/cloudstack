@@ -3673,6 +3673,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     logger.warn("Unable to clean up VBD due to ", e);
                 }
             }
+            removeSR(conn, getISOSRbyVmName(conn, vmName, false));
+            removeSR(conn, getISOSRbyVmName(conn, vmName, true));
             for (final VIF vif : vmr.VIFs) {
                 try {
                     vif.unplug(conn);
