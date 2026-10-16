@@ -37,6 +37,7 @@ import org.reflections.Reflections;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
@@ -445,7 +446,7 @@ public class KVMStoragePoolManager {
 
     public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type)) {
             _haMonitor.removeStoragePool(uuid);
         }
         boolean deleteStatus = adaptor.deleteStoragePool(uuid);;
@@ -457,7 +458,7 @@ public class KVMStoragePoolManager {
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type)) {
             _haMonitor.removeStoragePool(uuid);
         }
         boolean deleteStatus = adaptor.deleteStoragePool(uuid, details);
