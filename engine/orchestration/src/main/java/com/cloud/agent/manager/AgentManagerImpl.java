@@ -523,6 +523,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 try {
                     final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
+                } catch (final OperationCancelledException e) {
+                    throw e;
                 } catch (final Exception e) {
                     String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
                             host, e.getLocalizedMessage());
@@ -1412,6 +1414,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         } catch (final OperationTimedoutException e) {
             logger.warn("Operation timed out: {}", e.getMessage());
             return null;
+        } catch (final OperationCancelledException e) {
+            logger.info(e.getMessage());
+            throw e;
         } catch (final Exception e) {
             logger.warn("Exception while sending", e);
             return null;

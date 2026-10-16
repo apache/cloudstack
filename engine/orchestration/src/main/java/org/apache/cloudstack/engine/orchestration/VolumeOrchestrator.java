@@ -1645,7 +1645,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 String volToString = getReflectOnlySelectedFields(vol.getVolume());
 
                 String msg = String.format("Volume [%s] migration failed due to [%s].", volToString, result.getResult());
-                logger.error(msg);
+                if (currentJobCancellationReason() != null) {
+                    logger.info("Volume [{}] migration was cancelled: {}", volToString, result.getResult());
+                } else {
+                    logger.error(msg);
+                }
 
                 if (result.getResult() != null && result.getResult().contains("[UNSUPPORTED]")) {
                     throw new CloudRuntimeException(msg);
