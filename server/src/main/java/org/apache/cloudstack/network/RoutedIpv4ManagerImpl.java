@@ -893,7 +893,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 supportedProtocols = caps.get(Network.Capability.SupportedProtocols).toLowerCase();
             }
 
-            if (!supportedProtocols.contains(protocol.toLowerCase())) {
+            if (!NetUtils.isProtocolInList(supportedProtocols, protocol)) {
                 throw new InvalidParameterValueException(String.format("Protocol %s is not supported in zone", protocol));
             } else if (!supportedTrafficTypes.contains(trafficType.toString().toLowerCase())) {
                 throw new InvalidParameterValueException("Traffic Type " + trafficType + " is currently supported by Firewall in network " + networkId);

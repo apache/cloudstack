@@ -619,7 +619,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
             }
         } else {
-            if (!supportedProtocolsForAclRules.contains(protocol.toLowerCase())) {
+            // one of the names, not just part of the string: "cp" or "dp,ic" must not pass
+            if (!NetUtils.isProtocolInList(supportedProtocolsForAclRules, protocol)) {
                 throw new InvalidParameterValueException(String.format("Invalid protocol [%s]. Expected one of: [%s]", protocol, supportedProtocolsForAclRules));
             }
         }
