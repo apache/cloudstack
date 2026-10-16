@@ -717,7 +717,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected void createVpcTierAclRules(Network network) throws ManagementServerException {
-        if (network.getNetworkACLId() == NetworkACL.DEFAULT_ALLOW) {
+        if (Objects.equals(network.getNetworkACLId(), NetworkACL.DEFAULT_ALLOW)) {
             return;
         }
         // ACL rule for API access for control node VMs
@@ -746,7 +746,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected void removeVpcTierAclRules(Network network) throws ManagementServerException {
-        if (network.getNetworkACLId() == NetworkACL.DEFAULT_ALLOW) {
+        Long networkAclId = network.getNetworkACLId();
+        if (networkAclId == null || Objects.equals(networkAclId, NetworkACL.DEFAULT_ALLOW)) {
             return;
         }
         // ACL rule for API access for control node VMs
