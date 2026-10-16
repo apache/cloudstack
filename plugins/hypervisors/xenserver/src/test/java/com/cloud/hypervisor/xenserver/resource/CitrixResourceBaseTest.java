@@ -62,7 +62,9 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Host.Record;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VM;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -615,5 +617,29 @@ public class CitrixResourceBaseTest {
         Assert.assertFalse(listAnswer.getIsDirs().get(0));
         Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
+    }
+
+    @Test
+    public void handleVmStartFailureRemovesIsoSRsOfTheVm() throws Exception {
+        String vmName = "i-2-24-VM";
+        VM vmMock = Mockito.mock(VM.class);
+        VM.Record vmRecord = new VM.Record();
+        vmRecord.powerState = VmPowerState.HALTED;
+        vmRecord.VIFs = new HashSet<>();
+        vmRecord.VBDs = new HashSet<>();
+        Mockito.when(vmMock.getRecord(connectionMock)).thenReturn(vmRecord);
+        Mockito.when(vmMock.getPowerState(connectionMock)).thenReturn(VmPowerState.HALTED);
+        Mockito.doNothing().when(citrixResourceBase).destroyVm(vmMock, connectionMock, true);
+
+        SR isoSrMock = Mockito.mock(SR.class);
+        SR configDriveSrMock = Mockito.mock(SR.class);
+        Mockito.doReturn(isoSrMock).when(citrixResourceBase).getISOSRbyVmName(connectionMock, vmName, false);
+        Mockito.doReturn(configDriveSrMock).when(citrixResourceBase).getISOSRbyVmName(connectionMock, vmName, true);
+        Mockito.doNothing().when(citrixResourceBase).removeSR(Mockito.eq(connectionMock), Mockito.any(SR.class));
+
+        citrixResourceBase.handleVmStartFailure(connectionMock, vmName, vmMock, "", new Exception());
+
+        Mockito.verify(citrixResourceBase).removeSR(connectionMock, isoSrMock);
+        Mockito.verify(citrixResourceBase).removeSR(connectionMock, configDriveSrMock);
     }
 }
