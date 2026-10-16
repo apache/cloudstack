@@ -113,8 +113,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private String executePoolHeartBeatCommand(String uuid, HAStoragePool primaryStoragePool, String result) {
         for (int attempt = 1; attempt <= _heartBeatUpdateMaxTries; attempt++) {
-            String hostId = StoragePoolType.RBD.equals(primaryStoragePool.getPool().getType()) ? hostGuid : hostPrivateIp;
-            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostId, true);
+            String heartBeatHostId = StoragePoolType.RBD.equals(primaryStoragePool.getPool().getType()) ? hostGuid : hostPrivateIp;
+            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, heartBeatHostId, true);
             if (result == null) {
                 break;
             }

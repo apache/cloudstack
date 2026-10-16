@@ -452,12 +452,12 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return null;
     }
 
-    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostId, boolean hostValidation) {
+    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String heartBeatHostId, boolean hostValidation) {
         Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
         addPoolConnectionArgs(cmd, primaryStoragePool);
 
         if (hostValidation) {
-            cmd.add("-h", hostId);
+            cmd.add("-h", heartBeatHostId);
         } else {
             cmd.add("-c");
         }
@@ -491,33 +491,33 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
-        String hostId = getHeartBeatHostId(host);
+        String heartBeatHostId = getHeartBeatHostId(host);
         Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);
         addPoolConnectionArgs(cmd, pool);
-        cmd.add("-h", hostId);
+        cmd.add("-h", heartBeatHostId);
         cmd.add("-r");
         cmd.add("-t", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         String result = cmd.execute(parser, getHeartBeatScriptEnvironment());
         String parsedLine = parser.getLine();
 
-        logger.debug("Checking heart beat for host {} with KVMHAChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", hostId, cmd.toString(), result, parsedLine, pool.getPoolIp());
+        logger.debug("Checking heart beat for host {} with KVMHAChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", heartBeatHostId, cmd.toString(), result, parsedLine, pool.getPoolIp());
 
         if (result == null && parsedLine.contains("DEAD")) {
-            logger.warn("Checking heart beat for host {} with KVMHAChecker command [{}] returned [{}]. The host is considered dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", hostId, cmd.toString(), parsedLine);
+            logger.warn("Checking heart beat for host {} with KVMHAChecker command [{}] returned [{}]. The host is considered dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", heartBeatHostId, cmd.toString(), parsedLine);
             return false;
         } else {
-            logger.debug("Checking heart beat for host {} with KVMHAChecker command [{}] succeeded.", hostId, cmd.toString());
+            logger.debug("Checking heart beat for host {} with KVMHAChecker command [{}] succeeded.", heartBeatHostId, cmd.toString());
             return true;
         }
     }
 
     @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
-        String hostId = getHeartBeatHostId(host);
+        String heartBeatHostId = getHeartBeatHostId(host);
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
         addPoolConnectionArgs(cmd, pool);
-        cmd.add("-h", hostId);
+        cmd.add("-h", heartBeatHostId);
         File volumeListFile = addVolumeListArgs(cmd, volumeUUIDListString);
         cmd.add("-t", String.valueOf(System.currentTimeMillis() / 1000));
         cmd.add("-d", String.valueOf(duration));
@@ -533,13 +533,13 @@ public class LibvirtStoragePool implements KVMStoragePool {
         }
         String parsedLine = parser.getLine();
 
-        logger.debug("Checking VM activity for host {} with KVMHAVMActivityChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", hostId, cmd.toString(), result, parsedLine, pool.getPoolIp());
+        logger.debug("Checking VM activity for host {} with KVMHAVMActivityChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", heartBeatHostId, cmd.toString(), result, parsedLine, pool.getPoolIp());
 
         if (result == null && parsedLine.contains("DEAD")) {
-            logger.warn("Checking VM activity for host {} with KVMHAVMActivityChecker command [{}] returned [{}]. The host is considered dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", hostId, cmd.toString(), parsedLine);
+            logger.warn("Checking VM activity for host {} with KVMHAVMActivityChecker command [{}] returned [{}]. The host is considered dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", heartBeatHostId, cmd.toString(), parsedLine);
             return false;
         } else {
-            logger.debug("Checking VM activity for host {} with KVMHAVMActivityChecker command [{}] succeeded.", hostId, cmd.toString());
+            logger.debug("Checking VM activity for host {} with KVMHAVMActivityChecker command [{}] succeeded.", heartBeatHostId, cmd.toString());
             return true;
         }
     }
