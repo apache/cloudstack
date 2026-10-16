@@ -25,6 +25,8 @@ import org.junit.runner.RunWith;
 import org.libvirt.StoragePool;
 import org.mockito.Mockito;
 
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -281,5 +283,42 @@ public class LibvirtStoragePoolTest extends TestCase {
             }
         }
         file.delete();
+    }
+
+    private HostTO getHost(String ip, String guid) {
+        HostTO host = Mockito.mock(HostTO.class);
+        NetworkTO privateNetwork = new NetworkTO();
+        privateNetwork.setIp(ip);
+        Mockito.when(host.getGuid()).thenReturn(guid);
+        Mockito.when(host.getPrivateNetwork()).thenReturn(privateNetwork);
+        return host;
+    }
+
+    private LibvirtStoragePool getPool(StoragePoolType type) {
+        return new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", type,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+    }
+
+    @Test
+    public void testHeartBeatHostIdOfRbdIsTheGuid() {
+        HostTO host = getHost("10.0.0.5", "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource");
+        assertEquals("5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource", getPool(StoragePoolType.RBD).getHeartBeatHostId(host));
+    }
+
+    @Test
+    public void testHeartBeatHostIdOfOtherPoolsIsTheIp() {
+        HostTO host = getHost("10.0.0.5", "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource");
+        assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId(host));
+        assertEquals("10.0.0.5", getPool(StoragePoolType.SharedMountPoint).getHeartBeatHostId(host));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testHeartBeatHostIdOfRbdWithoutGuid() {
+        getPool(StoragePoolType.RBD).getHeartBeatHostId(getHost("10.0.0.5", " "));
+    }
+
+    @Test
+    public void testHeartBeatHostIdOfOtherPoolsDoesNotNeedAGuid() {
+        assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId(getHost("10.0.0.5", null)));
     }
 }

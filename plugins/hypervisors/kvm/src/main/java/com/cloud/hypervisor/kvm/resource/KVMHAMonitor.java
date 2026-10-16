@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
@@ -39,9 +40,15 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
 
     private final String hostPrivateIp;
+    private final String hostGuid;
 
-    public KVMHAMonitor(String host) {
+    /**
+     * @param host     the private IP address of the host, which names its heartbeat on NFS and SharedMountPoint pools
+     * @param hostGuid the GUID of the host as the management server knows it, which names its heartbeat on RBD pools
+     */
+    public KVMHAMonitor(String host, String hostGuid) {
         hostPrivateIp = host;
+        this.hostGuid = hostGuid;
         rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
     }
 
@@ -106,7 +113,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private String executePoolHeartBeatCommand(String uuid, HAStoragePool primaryStoragePool, String result) {
         for (int attempt = 1; attempt <= _heartBeatUpdateMaxTries; attempt++) {
-            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
+            String hostId = StoragePoolType.RBD.equals(primaryStoragePool.getPool().getType()) ? hostGuid : hostPrivateIp;
+            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostId, true);
             if (result == null) {
                 break;
             }

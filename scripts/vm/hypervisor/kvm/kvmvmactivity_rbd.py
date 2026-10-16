@@ -82,7 +82,7 @@ def main():
     key = os.environ.pop(KEY_ENV, "")
     if not args.mon_hosts or not args.pool or not args.suspect_time:
         sys.exit(2)
-    # the host IP names the heartbeat and activity objects
+    # the host (its GUID) names the heartbeat and activity objects
     if not args.host:
         sys.exit(2)
     if args.user and not key:

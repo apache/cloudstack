@@ -59,7 +59,7 @@ def main():
     key = os.environ.pop(KEY_ENV, "")
     if not args.mon_hosts or not args.pool:
         sys.exit(1)
-    # the host IP names the heartbeat object, so it is required except for the self-fencing (-c)
+    # the host (its GUID) names the heartbeat object, so it is required except for the self-fencing (-c)
     if not args.cleanup and not args.host:
         sys.exit(1)
     if args.user and not key:
