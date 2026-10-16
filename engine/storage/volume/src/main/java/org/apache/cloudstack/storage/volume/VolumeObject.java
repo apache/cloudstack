@@ -948,6 +948,11 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public boolean isEncrypted() {
+        return volumeVO.isEncrypted();
+    }
+
+    @Override
     public boolean isDeleteProtection() {
         return volumeVO.isDeleteProtection();
     }
