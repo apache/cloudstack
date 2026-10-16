@@ -182,6 +182,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for SSH access can't be removed", null);
         }
+        removeEtcdFirewallRules(publicIp);
         try {
             removePortForwardingRules(publicIp, network, owner, removedVmIds);
         } catch (ResourceUnavailableException e) {
