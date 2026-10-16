@@ -620,7 +620,7 @@ public class CitrixResourceBaseTest {
 
     @Test
     public void testUnknownRequestSequenceIsNotCancellable() {
-        assertFalse(citrixResourceBase.isRequestSequenceCancellable(4242L));
+        Assert.assertNotNull(citrixResourceBase.checkRequestSequenceIsNotCancellable(4242L));
         assertFalse(citrixResourceBase.cancelRequestSequence(4242L));
     }
 }

@@ -25,7 +25,8 @@ from marvin.cloudstackAPI import (cancelAsyncJob,
                                   listUsageJobs,
                                   migrateVirtualMachine,
                                   migrateVirtualMachineWithVolume,
-                                  queryAsyncJobResult)
+                                  queryAsyncJobResult,
+                                  stopVirtualMachine)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.codes import (JOB_CANCELLED,
                           JOB_FAILED,
@@ -308,7 +309,28 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             self.assertEqual(roots[0].storageid, root_volume.storageid, "Cancelled migration moved the root volume")
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_10_list_usage_jobs(self):
+    def test_10_cancel_of_power_operation_is_refused(self):
+        """A stop has no hypervisor task that can be stopped: its cancel is refused and the instance ends Stopped"""
+        cmd = stopVirtualMachine.stopVirtualMachineCmd()
+        cmd.id = self.virtual_machine.id
+        cmd.isAsync = "false"
+        jobid = self.apiclient.stopVirtualMachine(cmd, method="GET").jobid
+
+        try:
+            with self.assertRaises(Exception) as refused:
+                self.cancel_job(jobid)
+            self.debug("Cancel of stop job %s refused: %s" % (jobid, refused.exception))
+
+            job = self.wait_for_job(jobid)
+            self.assertEqual(job.jobstatus, JOB_SUCCEEDED, "Stop did not complete after its cancel was refused")
+            response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
+            self.assertEqual(response[0], PASS, response[1])
+        finally:
+            if VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0].state != VirtualMachine.RUNNING:
+                self.virtual_machine.start(self.apiclient)
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_11_list_usage_jobs(self):
         """Usage server jobs list without error, and filter by usage server"""
         cmd = listUsageJobs.listUsageJobsCmd()
         cmd.duration = 24

@@ -877,7 +877,7 @@ public class VmwareResourceTest {
 
     @Test
     public void testUnknownRequestSequenceIsNotCancellable() {
-        assertFalse(vmwareResource.isRequestSequenceCancellable(4242L));
+        assertNotNull(vmwareResource.checkRequestSequenceIsNotCancellable(4242L));
         assertFalse(vmwareResource.cancelRequestSequence(4242L));
     }
 }

@@ -93,10 +93,16 @@ public class KvmCancellableRequests {
         }
     }
 
-    /** A request can be stopped only while it has a hook that knows how to stop it. */
-    public boolean isCancellable(final long sequence) {
+    /** Null while the request has a hook that knows how to stop it. */
+    public String checkRequestNotCancellable(final long sequence) {
         final RequestState state = requests.get(sequence);
-        return state != null && !state.hooks.isEmpty();
+        if (state == null) {
+            return "request sequence " + sequence + " is not running on this host";
+        }
+        if (state.hooks.isEmpty()) {
+            return describe(state.command) + " has nothing that can be stopped on this host";
+        }
+        return null;
     }
 
     /** Runs each hook once, bounded by its timeout; a Thread cannot be started twice, so ran hooks are handed back for removal from the disconnect list. */

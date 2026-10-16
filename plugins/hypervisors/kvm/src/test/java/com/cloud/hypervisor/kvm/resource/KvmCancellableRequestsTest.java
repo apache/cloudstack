@@ -54,7 +54,7 @@ public class KvmCancellableRequestsTest {
 
     @Test
     public void unknownSequenceIsNeitherCancellableNorCancelled() {
-        Assert.assertFalse(requests.isCancellable(999L));
+        Assert.assertNotNull(requests.checkRequestNotCancellable(999L));
         Assert.assertFalse(requests.cancel(999L, dropped::add));
         Assert.assertFalse(requests.wasCancelRequested(999L));
     }
@@ -63,7 +63,8 @@ public class KvmCancellableRequestsTest {
     public void requestWithoutAHookHasNothingToStop() {
         requests.begin(SEQ, new CheckHealthCommand());
 
-        Assert.assertFalse(requests.isCancellable(SEQ));
+        final String reason = requests.checkRequestNotCancellable(SEQ);
+        Assert.assertTrue(reason, reason.contains("CheckHealthCommand has nothing that can be stopped"));
         Assert.assertFalse(requests.cancel(SEQ, dropped::add));
         Assert.assertTrue(requests.wasCancelRequested(SEQ));
     }
@@ -74,7 +75,7 @@ public class KvmCancellableRequestsTest {
         requests.begin(SEQ, new CheckHealthCommand());
         requests.attach(hook);
 
-        Assert.assertTrue(requests.isCancellable(SEQ));
+        Assert.assertNull(requests.checkRequestNotCancellable(SEQ));
         Assert.assertTrue(requests.cancel(SEQ, dropped::add));
         Assert.assertEquals(1, hook.runs.get());
         Assert.assertEquals(1, dropped.size());
@@ -92,7 +93,7 @@ public class KvmCancellableRequestsTest {
         requests.detach(hook);
 
         Assert.assertEquals(0, requests.hookCount(SEQ));
-        Assert.assertFalse(requests.isCancellable(SEQ));
+        Assert.assertNotNull(requests.checkRequestNotCancellable(SEQ));
         Assert.assertEquals(0, hook.runs.get());
     }
 
@@ -113,7 +114,7 @@ public class KvmCancellableRequestsTest {
         requests.begin(0L, new CheckHealthCommand());
         requests.attach(new CountingHook());
 
-        Assert.assertFalse(requests.isCancellable(0L));
+        Assert.assertNotNull(requests.checkRequestNotCancellable(0L));
         requests.end(0L);
     }
 
@@ -123,7 +124,7 @@ public class KvmCancellableRequestsTest {
         requests.attach(new CountingHook());
         requests.end(SEQ);
 
-        Assert.assertFalse(requests.isCancellable(SEQ));
+        Assert.assertNotNull(requests.checkRequestNotCancellable(SEQ));
         Assert.assertEquals(0, requests.hookCount(SEQ));
     }
 }

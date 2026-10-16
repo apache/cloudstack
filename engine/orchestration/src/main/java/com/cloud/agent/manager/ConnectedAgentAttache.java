@@ -58,18 +58,24 @@ public class ConnectedAgentAttache extends AgentAttache {
 
     /** Only the agent knows whether its backend work can be stopped; an agent that does not understand the question answers unsupported. */
     @Override
-    protected boolean isExecutionCancellable(final long seq) {
-        return askAgentToCancel(seq, true);
+    protected String checkExecutionIsNotCancellable(final long seq) {
+        final Answer answer = requestAgentToCancel(seq, true);
+        if (answer == null) {
+            return "the agent on this host does not support cancelling a running command";
+        }
+        return answer.getResult() ? null : answer.getDetails();
     }
 
     @Override
     protected boolean cancelRunning(final long seq) {
-        return askAgentToCancel(seq, false);
+        final Answer answer = requestAgentToCancel(seq, false);
+        return answer != null && answer.getResult();
     }
 
-    private boolean askAgentToCancel(final long seq, final boolean checkOnly) {
+    /** The agent's answer; null when it does not understand the question. */
+    private Answer requestAgentToCancel(final long seq, final boolean checkOnly) {
         if (_agentMgr == null) {
-            return false;
+            return null;
         }
         final CancelCommand cmd = new CancelCommand(seq, "Job cancelled", checkOnly);
         cmd.setWait(CANCEL_COMMAND_WAIT_SECONDS);
@@ -77,15 +83,15 @@ public class ConnectedAgentAttache extends AgentAttache {
             final Answer answer = _agentMgr.send(_id, cmd);
             if (answer == null || answer instanceof UnsupportedAnswer) {
                 logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Agent does not support cancellation, treating as not cancellable");
-                return false;
+                return null;
             }
             if (!answer.getResult()) {
                 logger.debug(LOG_SEQ_FORMATTED_STRING, seq, (checkOnly ? "Not cancellable: " : "Not cancelled: ") + answer.getDetails());
             }
-            return answer.getResult();
+            return answer;
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
-            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Unable to ask the agent about cancellation: " + e.getMessage());
-            return false;
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Unable to request the agent about cancellation: " + e.getMessage());
+            return new Answer(cmd, false, "unable to request the agent on this host: " + e.getMessage());
         }
     }
 
