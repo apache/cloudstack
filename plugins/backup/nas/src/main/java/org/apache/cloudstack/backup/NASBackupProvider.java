@@ -224,11 +224,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     /**
      * Returned by {@link #decideChain(VirtualMachine)} to describe the next backup's place in
-     * the chain: full vs incremental, the bitmap name to create, and (for incrementals) the
-     * parent bitmap and parent file path.
+     * the chain: full vs incremental, how it is taken, the bitmap name to create, and (for
+     * incrementals) the parent bitmap and parent file path.
      */
     static final class ChainDecision {
         final String mode;            // "full" or "incremental"
+        final String method;          // NASBackupChainKeys.METHOD_QCOW2 or METHOD_CONTENT
         final String bitmapNew;
         final String bitmapParent;    // null for full
         // Per-volume parent backup file paths, one per current VM volume in deviceId order.
@@ -237,15 +238,26 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final List<String> parentPaths;
         final String chainId;         // chain identifier this backup belongs to
         final int chainPosition;      // 0 for full, N for the Nth incremental in the chain
+        // Content-based chains have no bitmap to look the parent up by, so the parent backup's
+        // uuid is resolved when the decision is made. null for bitmap-based decisions.
+        final String parentBackupUuid;
 
         private ChainDecision(String mode, String bitmapNew, String bitmapParent, List<String> parentPaths,
                               String chainId, int chainPosition) {
+            this(mode, NASBackupChainKeys.METHOD_QCOW2, bitmapNew, bitmapParent, parentPaths, chainId,
+                    chainPosition, null);
+        }
+
+        private ChainDecision(String mode, String method, String bitmapNew, String bitmapParent,
+                              List<String> parentPaths, String chainId, int chainPosition, String parentBackupUuid) {
             this.mode = mode;
+            this.method = method;
             this.bitmapNew = bitmapNew;
             this.bitmapParent = bitmapParent;
             this.parentPaths = parentPaths;
             this.chainId = chainId;
             this.chainPosition = chainPosition;
+            this.parentBackupUuid = parentBackupUuid;
         }
 
         static ChainDecision fullStart(String bitmapName) {
@@ -268,8 +280,28 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     parentPaths, chainId, chainPosition);
         }
 
+        /**
+         * Full backup on the content-based (pull mode) path: no bitmap, no checkpoint, but it
+         * does anchor a chain so later content-incrementals can hang off it.
+         */
+        static ChainDecision contentFull() {
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, NASBackupChainKeys.METHOD_CONTENT, null, null,
+                    null, UUID.randomUUID().toString(), 0, null);
+        }
+
+        static ChainDecision contentIncremental(List<String> parentPaths, String chainId,
+                                                int chainPosition, String parentBackupUuid) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, NASBackupChainKeys.METHOD_CONTENT, null,
+                    null, parentPaths, chainId, chainPosition, parentBackupUuid);
+        }
+
         boolean isIncremental() {
             return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
+        }
+
+        /** True for the pull-mode content-diff path (no dirty bitmaps involved). */
+        boolean isContentBased() {
+            return NASBackupChainKeys.METHOD_CONTENT.equals(method);
         }
 
         boolean isLegacyFull() {
@@ -293,15 +325,24 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // Master switch — when the operator disables incrementals at the zone level the backup
         // behaves exactly like the pre-incremental full-only path: no bitmap is generated and no
         // chain/checkpoint metadata is created, sent to the agent, or persisted (legacy-full).
+        // This holds for every storage, so enabling incrementals is also the opt-in to the
+        // content-based path below and its host-local scratch space.
         Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
         if (incrementalEnabled == null || !incrementalEnabled) {
             return ChainDecision.legacyFull();
         }
 
+        // Raw block-device storage (LINSTOR/DRBD) cannot carry QEMU persistent dirty bitmaps, so
+        // libvirt checkpoints — and with them the push-mode incremental path — are unavailable.
+        // Those VMs take the content-based pull-mode path instead.
+        if (allVolumesOnContentDiffCapableStorage(vm)) {
+            return decideContentChain(vm);
+        }
+
         // Incremental backups rely on QEMU dirty bitmaps / libvirt checkpoints, which only exist
-        // on file-based qcow2 storage. Storage such as Ceph-RBD and Linstor cannot carry per-disk
-        // checkpoints, so a VM with any volume on such a pool must stay on the full-only (legacy)
-        // path — otherwise an incremental attempt would fail or regress those storages.
+        // on file-based qcow2 storage. Storage such as Ceph-RBD cannot carry per-disk checkpoints
+        // and has no content-diff path either, so such a VM stays on the full-only (legacy) path —
+        // otherwise an incremental attempt would fail or regress those storages.
         if (!allVolumesOnCheckpointCapableStorage(vm)) {
             return ChainDecision.legacyFull();
         }
@@ -363,6 +404,74 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
         return ChainDecision.incremental(newBitmap, activeCheckpoint, parentPaths,
                 parentChainId, parentChainPosition + 1);
+    }
+
+    /**
+     * Chain decision for content-based (pull mode) storage such as LINSTOR/DRBD.
+     *
+     * <p>Unlike the bitmap path there is no host-side state to anchor on. The delta is derived by
+     * comparing the disk's point-in-time NBD export against the parent backup, so the chain cannot
+     * be invalidated by a VM restart, live migration or restore — the comparison is stateless. The
+     * parent is therefore simply the most recent BackedUp backup of the same chain, and the agent
+     * independently verifies the parent files still exist on the NAS, degrading to a full if they
+     * do not (INCREMENTAL_FALLBACK).</p>
+     */
+    protected ChainDecision decideContentChain(VirtualMachine vm) {
+        // Stopped VMs are backed up straight from the disk with qemu-img convert; that path has no
+        // point-in-time export to diff against a parent, so it is always a full.
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+            return ChainDecision.contentFull();
+        }
+
+        Integer fullEvery = NASBackupFullEvery.valueIn(vm.getDataCenterId());
+        if (fullEvery == null || fullEvery <= 1) {
+            return ChainDecision.contentFull();
+        }
+
+        Backup parent = findLatestBackedUpBackup(vm.getId());
+        if (parent == null) {
+            return ChainDecision.contentFull();
+        }
+
+        String parentChainId = readDetail(parent, NASBackupChainKeys.CHAIN_ID);
+        int parentChainPosition = chainPosition(parent);
+        if (parentChainId == null || parentChainPosition == Integer.MAX_VALUE) {
+            return ChainDecision.contentFull();
+        }
+
+        // Force a fresh full when the chain has reached the configured length.
+        if (parentChainPosition + 1 >= fullEvery) {
+            return ChainDecision.contentFull();
+        }
+
+        List<String> parentPaths = composeParentBackupPaths(parent, vm.getId());
+        if (parentPaths == null) {
+            LOG.debug("VM {} parent backup {} volume layout no longer matches current VM — forcing full",
+                    vm.getInstanceName(), parent.getUuid());
+            return ChainDecision.contentFull();
+        }
+        return ChainDecision.contentIncremental(parentPaths, parentChainId, parentChainPosition + 1,
+                parent.getUuid());
+    }
+
+    /**
+     * True when EVERY volume of the VM sits on storage whose backups must be derived by content
+     * comparison instead of dirty bitmaps — currently LINSTOR, whose volumes are raw DRBD block
+     * devices and so cannot persist a bitmap (persistence is a qcow2-only feature). A VM with a
+     * mix of such volumes and others is not eligible, since one backup run uses a single mode.
+     */
+    protected boolean allVolumesOnContentDiffCapableStorage(VirtualMachine vm) {
+        List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
+        if (CollectionUtils.isEmpty(volumes)) {
+            return false;
+        }
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (pool == null || !Storage.StoragePoolType.Linstor.equals(pool.getPoolType())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -502,7 +611,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // source of truth. Not duplicated into backup_details.
         if (decision.isIncremental()) {
             // Resolve the parent backup's UUID so restore can walk the chain by id, not by path.
-            String parentUuid = lookupParentBackupUuid(backup.getVmId(), decision.bitmapParent);
+            // Content-based decisions carry the parent uuid directly (no bitmap to look it up by).
+            String parentUuid = decision.parentBackupUuid != null
+                    ? decision.parentBackupUuid
+                    : lookupParentBackupUuid(backup.getVmId(), decision.bitmapParent);
             if (parentUuid != null) {
                 backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.PARENT_BACKUP_ID, parentUuid, true));
             }
@@ -593,6 +705,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setQuiesce(quiesceVM);
         command.setQuiesceTimeout(NASBackupQuiesceAgentTimeout.valueIn(vm.getDataCenterId()));
         command.setMode(decision.mode);
+        command.setMethod(decision.method);
         command.setBitmapNew(decision.bitmapNew);
         command.setBitmapParent(decision.bitmapParent);
         command.setParentPaths(decision.parentPaths);
@@ -628,7 +741,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             // backup as a full and start a new chain.
             ChainDecision effective = decision;
             if (answer.getIncrementalFallback()) {
-                effective = ChainDecision.fullStart(decision.bitmapNew);
+                effective = decision.isContentBased()
+                        ? ChainDecision.contentFull()
+                        : ChainDecision.fullStart(decision.bitmapNew);
                 backupVO.setType("FULL");
             }
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
@@ -642,11 +757,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     // created — the only valid parent for the next incremental (see decideChain).
                     // If the agent reports no bitmap (bitmapCreated=null), clear any stale detail
                     // so the next backup starts a fresh full.
-                    String confirmedBitmap = answer.getBitmapCreated();
-                    if (confirmedBitmap != null) {
-                        upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
-                    } else {
-                        clearVmActiveCheckpoint(vm.getId());
+                    // The content-based path creates no bitmaps, so there is no active
+                    // checkpoint to track — its chain is anchored purely on backup history.
+                    if (!decision.isContentBased()) {
+                        String confirmedBitmap = answer.getBitmapCreated();
+                        if (confirmedBitmap != null) {
+                            upsertVmActiveCheckpoint(vm.getId(), confirmedBitmap);
+                        } else {
+                            clearVmActiveCheckpoint(vm.getId());
+                        }
                     }
                 }
                 return new Pair<>(true, backupVO);

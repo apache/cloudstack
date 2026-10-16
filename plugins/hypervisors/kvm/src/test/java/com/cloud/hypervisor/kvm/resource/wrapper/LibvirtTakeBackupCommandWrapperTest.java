@@ -18,7 +18,9 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -98,5 +100,89 @@ public class LibvirtTakeBackupCommandWrapperTest {
         command.setQuiesceTimeout(0);
 
         Assert.assertFalse(runAndCaptureArgv().contains("--quiesce-timeout"));
+    }
+
+    private void runFailing(Pair<Integer, String> result, boolean expectJobAbort) {
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong())).thenReturn(result);
+            scriptMock.when(() -> Script.getExecutableAbsolutePath("virsh")).thenReturn("/usr/bin/virsh");
+
+            BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+            Assert.assertFalse(answer.getResult());
+
+            if (expectJobAbort) {
+                scriptMock.verify(() -> Script.executeCommandForExitValue("/usr/bin/virsh", "-c", "qemu:///system",
+                        "domjobabort", "i-2-3-VM"));
+            } else {
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyString(), anyString(), anyString(),
+                        anyString(), anyString()), never());
+            }
+        }
+    }
+
+    @Test
+    public void executeAbortsPullBackupJobOnTimeout() {
+        command.setMode("full");
+        command.setMethod("content");
+
+        runFailing(new Pair<>(-1, Script.ERR_TIMEOUT), true);
+    }
+
+    @Test
+    public void executeLeavesPullBackupJobToScriptOnFailure() {
+        command.setMode("full");
+        command.setMethod("content");
+
+        runFailing(new Pair<>(1, "qemu-img convert failed"), false);
+    }
+
+    @Test
+    public void executeDoesNotAbortPushBackupJobOnTimeout() {
+        command.setMode("legacy-full");
+
+        runFailing(new Pair<>(-1, Script.ERR_TIMEOUT), false);
+    }
+
+    @Test
+    public void executePassesContentMethodToScript() {
+        command.setMode("incremental");
+        command.setMethod("content");
+        command.setParentPaths(Arrays.asList("i-2-3-VM/2026.10.03.00.00.00/root.vol-1.qcow2"));
+
+        List<String> argv = runAndCaptureArgv();
+
+        Assert.assertEquals("incremental", argv.get(argv.indexOf("-M") + 1));
+        Assert.assertEquals("content", argv.get(argv.indexOf("--method") + 1));
+        Assert.assertFalse(argv.contains("--bitmap-new"));
+        // Pull mode needs scratch space, by default for a quarter of the disk size.
+        Assert.assertEquals("25", argv.get(argv.indexOf("--scratch-min-free-percent") + 1));
+    }
+
+    @Test
+    public void executeOmitsScratchSpaceCheckForPushMode() {
+        command.setMode("legacy-full");
+
+        Assert.assertFalse(runAndCaptureArgv().contains("--scratch-min-free-percent"));
+    }
+
+    @Test
+    public void executeRejectsContentIncrementalWithoutParentPaths() {
+        command.setMode("incremental");
+        command.setMethod("content");
+
+        BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertEquals("content incremental mode requires parentPaths", answer.getDetails());
+    }
+
+    @Test
+    public void executeRejectsLegacyFullWithContentMethod() {
+        command.setMode("legacy-full");
+        command.setMethod("content");
+
+        BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
     }
 }

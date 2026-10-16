@@ -20,6 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -52,6 +54,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // Incremental feature disabled: plain full backup with no QEMU bitmap/checkpoint and no
     // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
     private static final String MODE_LEGACY_FULL = "legacy-full";
+
+    // Backup methods, orthogonal to the mode. qcow2 is the push-mode path with QEMU dirty bitmaps,
+    // also assumed when the management server sends none. content is libvirt pull mode, used for
+    // raw block-device storage such as LINSTOR/DRBD which cannot carry persistent dirty bitmaps:
+    // it needs no bitmap names, an incremental only its per-disk parent paths.
+    private static final String METHOD_QCOW2 = "qcow2";
+    private static final String METHOD_CONTENT = "content";
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -93,6 +102,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
+            if (Script.ERR_TIMEOUT.equals(result.second()) && METHOD_CONTENT.equals(command.getMethod())) {
+                abortPullBackupJob(vmName);
+            }
             BackupAnswer answer = new BackupAnswer(command, false, StringUtils.trimToEmpty(result.second()));
             if (EXIT_CLEANUP_FAILED.equals(result.first())) {
                 logger.debug("Backup cleanup failed");
@@ -116,6 +128,21 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         answer.setBitmapCreated(command.getBitmapNew());
         answer.setIncrementalFallback(incrementalFallback);
         return answer;
+    }
+
+    /**
+     * A pull-mode backup job never ends on its own: nasbackup.sh ends it once the data is read,
+     * and its EXIT trap does so on failure. A timed-out script is killed with SIGKILL, which
+     * no trap can catch, so end the job here. Otherwise it keeps the NBD server and the growing
+     * fleecing images alive and blocks every later backup or migration of the VM.
+     */
+    private void abortPullBackupJob(String vmName) {
+        logger.warn("Backup of VM {} timed out, aborting its pull-mode backup job", vmName);
+        int exitValue = Script.executeCommandForExitValue(Script.getExecutableAbsolutePath("virsh"),
+                "-c", "qemu:///system", "domjobabort", vmName);
+        if (exitValue != 0) {
+            logger.warn("Failed to abort the backup job of VM {} (exit code {})", vmName, exitValue);
+        }
     }
 
     /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */
@@ -164,6 +191,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("-M");
             argv.add(mode);
         }
+        if (StringUtils.isNotBlank(command.getMethod())) {
+            argv.add("--method");
+            argv.add(command.getMethod());
+        }
         if (StringUtils.isNotBlank(bitmapNew)) {
             argv.add("--bitmap-new");
             argv.add(bitmapNew);
@@ -175,6 +206,20 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         if (CollectionUtils.isNotEmpty(parentPaths)) {
             argv.add("--parent-paths");
             argv.add(String.join(",", parentPaths));
+        }
+        // Host-local scratch dir for the pull-mode NBD socket and fleecing images. Sent for every
+        // mode: harmless for the push-mode paths, which ignore it.
+        String scratchDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NAS_BACKUP_PULL_SCRATCH_DIR);
+        if (StringUtils.isNotBlank(scratchDir)) {
+            argv.add("-S");
+            argv.add(scratchDir);
+        }
+        if (METHOD_CONTENT.equals(command.getMethod())) {
+            Integer minFreePercent = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NAS_BACKUP_PULL_SCRATCH_MIN_FREE_PERCENT);
+            if (minFreePercent != null) {
+                argv.add("--scratch-min-free-percent");
+                argv.add(String.valueOf(Math.max(0, minFreePercent)));
+            }
         }
 
         List<String[]> commands = new ArrayList<>();
@@ -188,6 +233,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     private String validateBackupArgs(TakeBackupCommand command) {
         String mode = command.getMode();
+        String method = StringUtils.defaultIfBlank(command.getMethod(), METHOD_QCOW2);
+        if (METHOD_CONTENT.equals(method)) {
+            return validateContentBackupArgs(command);
+        }
+        if (!METHOD_QCOW2.equals(method)) {
+            return "Unknown backup method: " + method;
+        }
         if (StringUtils.isBlank(mode)) {
             return null; // legacy full-only, no extra args expected
         }
@@ -213,6 +265,21 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return null; // feature-off full backup, no bitmap or chain args expected
         }
         return "Unknown backup mode: " + mode;
+    }
+
+    private String validateContentBackupArgs(TakeBackupCommand command) {
+        String mode = command.getMode();
+        if (MODE_FULL.equals(mode)) {
+            return null; // pull-mode full — no bitmap, no parent
+        }
+        if (MODE_INCREMENTAL.equals(mode)) {
+            // No bitmap is involved: the delta comes from comparing the disk against the parent.
+            if (CollectionUtils.isEmpty(command.getParentPaths())) {
+                return "content incremental mode requires parentPaths";
+            }
+            return null;
+        }
+        return "Unsupported mode for the content backup method: " + mode;
     }
 
     /**
