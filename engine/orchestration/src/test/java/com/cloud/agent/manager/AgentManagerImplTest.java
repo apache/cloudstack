@@ -204,12 +204,12 @@ public class AgentManagerImplTest {
         Mockito.doReturn(attache).when(mgr).getAttache(1L);
         mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
 
-        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(false);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable");
         mgr.new CancelledJobsCheckTask().runInContext();
         Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
         Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
 
-        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
         Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
         mgr.new CancelledJobsCheckTask().runInContext();
         Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
@@ -227,7 +227,7 @@ public class AgentManagerImplTest {
         Mockito.when(asyncJobManager.getAsyncJob(42L)).thenReturn(cancelled);
         final AgentAttache attache = Mockito.mock(AgentAttache.class);
         Mockito.doReturn(attache).when(mgr).getAttache(1L);
-        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
         Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
         mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
 
@@ -235,6 +235,18 @@ public class AgentManagerImplTest {
 
         Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
         Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+    }
+
+    @Test
+    public void testRefusalCarriesWhatTheHypervisorReportedAndTheHost() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.getName()).thenReturn("esxi-1");
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("no vCenter task is running for StopCommand");
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertEquals("no vCenter task is running for StopCommand (host esxi-1)", mgr.checkJobCannotBeCancelled(42L));
+        Assert.assertNull(mgr.checkJobCannotBeCancelled(7L));
     }
 
     @Test
@@ -253,7 +265,7 @@ public class AgentManagerImplTest {
     public void testStoppedCommandHandsTheCancelToTheWorkerSoItsRollbackPasses() throws Exception {
         final AgentAttache attache = Mockito.mock(AgentAttache.class);
         Mockito.doReturn(attache).when(mgr).getAttache(1L);
-        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
         Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
         mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
 
@@ -267,7 +279,7 @@ public class AgentManagerImplTest {
     public void testCommandThatCannotBeStoppedLeavesTheRefusalForTheNextOne() throws Exception {
         final AgentAttache attache = Mockito.mock(AgentAttache.class);
         Mockito.doReturn(attache).when(mgr).getAttache(1L);
-        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(false);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable");
         mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
 
         Assert.assertFalse(mgr.cancelJobExecution(42L, "Job was cancelled"));

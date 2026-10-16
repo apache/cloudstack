@@ -76,7 +76,7 @@ public class DirectAgentAttacheTest {
 
         directAgentAttache.send(request, null);
         Assert.assertEquals(1, directAgentAttache.tasks.size());
-        Assert.assertTrue(directAgentAttache.isExecutionCancellable(202L));
+        Assert.assertNull(directAgentAttache.checkExecutionIsNotCancellable(202L));
 
         directAgentAttache.cancelExecution(202L);
 
@@ -89,10 +89,10 @@ public class DirectAgentAttacheTest {
     public void testCancelRunningTaskStopsTheResourceThenTheThread() throws Exception {
         final Request request = submitRunning(101L);
         directAgentAttache.registerListener(101L, waiter());
-        Mockito.doReturn(true).when(_resource).isRequestSequenceCancellable(101L);
+        Mockito.doReturn(null).when(_resource).checkRequestSequenceIsNotCancellable(101L);
         Mockito.doReturn(true).when(_resource).cancelRequestSequence(101L);
 
-        Assert.assertTrue(directAgentAttache.isExecutionCancellable(101L));
+        Assert.assertNull(directAgentAttache.checkExecutionIsNotCancellable(101L));
         Assert.assertTrue(directAgentAttache.cancelExecution(101L));
 
         Mockito.verify(_resource).cancelRequestSequence(101L);
@@ -105,9 +105,9 @@ public class DirectAgentAttacheTest {
     public void testCancelLeavesNonCancellableRunningTaskAlone() throws Exception {
         final Request request = submitRunning(303L);
         directAgentAttache.registerListener(303L, waiter());
-        Mockito.doReturn(false).when(_resource).isRequestSequenceCancellable(303L);
+        Mockito.doReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable").when(_resource).checkRequestSequenceIsNotCancellable(303L);
 
-        Assert.assertFalse(directAgentAttache.isExecutionCancellable(303L));
+        Assert.assertNotNull(directAgentAttache.checkExecutionIsNotCancellable(303L));
         Assert.assertFalse(directAgentAttache.cancelExecution(303L));
 
         Mockito.verify(_resource, Mockito.never()).cancelRequestSequence(Mockito.anyLong());
@@ -118,13 +118,13 @@ public class DirectAgentAttacheTest {
 
     @Test
     public void testUnknownSequenceIsNotClaimedCancellable() {
-        Assert.assertFalse(directAgentAttache.isExecutionCancellable(999L));
+        Assert.assertNotNull(directAgentAttache.checkExecutionIsNotCancellable(999L));
     }
 
     @Test
     public void testTimeoutStopsCancellableHypervisorWork() throws Exception {
         final Request request = submitRunning(404L);
-        Mockito.doReturn(true).when(_resource).isRequestSequenceCancellable(404L);
+        Mockito.doReturn(null).when(_resource).checkRequestSequenceIsNotCancellable(404L);
         Mockito.doReturn(true).when(_resource).cancelRequestSequence(404L);
 
         Assert.assertTrue(directAgentAttache.cancelRunningOnTimeout(404L, request));
@@ -136,7 +136,7 @@ public class DirectAgentAttacheTest {
     @Test
     public void testTimeoutLeavesNonCancellableHypervisorWorkAlone() throws Exception {
         final Request request = submitRunning(505L);
-        Mockito.doReturn(false).when(_resource).isRequestSequenceCancellable(505L);
+        Mockito.doReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable").when(_resource).checkRequestSequenceIsNotCancellable(505L);
 
         Assert.assertFalse(directAgentAttache.cancelRunningOnTimeout(505L, request));
 
@@ -151,7 +151,7 @@ public class DirectAgentAttacheTest {
 
         Assert.assertFalse(directAgentAttache.cancelRunningOnTimeout(606L, request));
 
-        Mockito.verify(_resource, Mockito.never()).isRequestSequenceCancellable(Mockito.anyLong());
+        Mockito.verify(_resource, Mockito.never()).checkRequestSequenceIsNotCancellable(Mockito.anyLong());
     }
 
     private Request newRequest(final long seq) {

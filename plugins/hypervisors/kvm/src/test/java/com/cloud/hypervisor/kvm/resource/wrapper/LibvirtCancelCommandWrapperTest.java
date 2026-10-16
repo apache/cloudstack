@@ -37,7 +37,7 @@ public class LibvirtCancelCommandWrapperTest {
 
     @Test
     public void checkOnlyAsksWithoutCancelling() {
-        Mockito.when(resource.isRequestSequenceCancellable(7L)).thenReturn(true);
+        Mockito.when(resource.checkRequestSequenceIsNotCancellable(7L)).thenReturn(null);
 
         final Answer answer = wrapper.execute(new CancelCommand(7L, "probe", true), resource);
 
@@ -47,12 +47,12 @@ public class LibvirtCancelCommandWrapperTest {
 
     @Test
     public void checkOnlyReportsNothingToStop() {
-        Mockito.when(resource.isRequestSequenceCancellable(7L)).thenReturn(false);
+        Mockito.when(resource.checkRequestSequenceIsNotCancellable(7L)).thenReturn("StopCommand has nothing that can be stopped on this host");
 
         final Answer answer = wrapper.execute(new CancelCommand(7L, "probe", true), resource);
 
         Assert.assertFalse(answer.getResult());
-        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("no work that can be stopped"));
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("nothing that can be stopped"));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class LibvirtCancelCommandWrapperTest {
 
         Assert.assertTrue(answer.getResult());
         Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("job cancelled"));
-        Mockito.verify(resource, Mockito.never()).isRequestSequenceCancellable(Mockito.anyLong());
+        Mockito.verify(resource, Mockito.never()).checkRequestSequenceIsNotCancellable(Mockito.anyLong());
     }
 
     @Test

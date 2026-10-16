@@ -44,8 +44,13 @@ public class VmwareTaskRegistry {
     }
 
     private static final class RequestState {
+        final String command;
         final Map<String, ActiveTask> tasks = new ConcurrentHashMap<>();
         volatile boolean cancelRequested;
+
+        RequestState(final String command) {
+            this.command = command;
+        }
     }
 
     private static final class RequestScope {
@@ -59,11 +64,11 @@ public class VmwareTaskRegistry {
     }
 
     /** A null sequence (not from the agent layer) leaves the thread unscoped. */
-    public void beginRequest(final Long sequence) {
+    public void beginRequest(final Long sequence, final String command) {
         if (sequence == null) {
             return;
         }
-        requests.putIfAbsent(sequence, new RequestState());
+        requests.putIfAbsent(sequence, new RequestState(command));
         CURRENT.set(new RequestScope(this, sequence));
     }
 
@@ -107,30 +112,38 @@ public class VmwareTaskRegistry {
         }
     }
 
-    /** Unknown sequences are not cancellable; with tasks in flight, every one must be cancelable on vCenter. */
-    public boolean isCancellable(final long sequence) {
+    /** Null when every vCenter task in flight is cancelable. A request with none in flight is refused: what vCenter was already asked to do (a guest shutdown, say) cannot be undone by interrupting the thread. */
+    public String checkTaskNotCancellable(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
-            return false;
+            return "request sequence " + sequence + " is not running on this host";
+        }
+        if (state.tasks.isEmpty()) {
+            return "no vCenter task is running for " + state.command;
         }
         for (final ActiveTask task : state.tasks.values()) {
             try {
-                if (!task.client.isTaskCancellable(task.mor)) {
-                    LOGGER.debug("vCenter task {} of request sequence {} is not cancellable", task.mor.getValue(), sequence);
-                    return false;
+                final String reason = task.client.checkTaskIsNotCancellable(task.mor);
+                if (reason != null) {
+                    LOGGER.debug("Request sequence {} ({}) is not cancellable: {}", sequence, state.command, reason);
+                    return reason;
                 }
             } catch (final Exception e) {
                 LOGGER.warn("Unable to check whether vCenter task {} of request sequence {} is cancellable", task.mor.getValue(), sequence, e);
-                return false;
+                return "unable to check vCenter task " + task.mor.getValue() + ": " + e.getMessage();
             }
         }
-        return true;
+        return null;
     }
 
     /** Cancels the in-flight tasks and marks the request so later tasks are cancelled on arrival. */
     public boolean cancel(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
+            return false;
+        }
+        if (state.tasks.isEmpty()) {
+            LOGGER.debug("Request sequence {} ({}) has no vCenter task to cancel", sequence, state.command);
             return false;
         }
         state.cancelRequested = true;
