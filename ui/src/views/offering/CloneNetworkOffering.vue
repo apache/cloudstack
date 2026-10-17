@@ -1409,41 +1409,12 @@ export default {
 
         params.traffictype = this.resource.traffictype || 'GUEST'
 
-        let detailsIndex = 0
-        if (values.promiscuousmode && values.promiscuousmode !== '') {
-          params['details[' + detailsIndex + '].key'] = 'promiscuousmode'
-          params['details[' + detailsIndex + '].value'] = values.promiscuousmode
-          detailsIndex++
-        }
-        if (values.macaddresschanges && values.macaddresschanges !== '') {
-          params['details[' + detailsIndex + '].key'] = 'macaddresschanges'
-          params['details[' + detailsIndex + '].value'] = values.macaddresschanges
-          detailsIndex++
-        }
-        if (values.forgedtransmits && values.forgedtransmits !== '') {
-          params['details[' + detailsIndex + '].key'] = 'forgedtransmits'
-          params['details[' + detailsIndex + '].value'] = values.forgedtransmits
-          detailsIndex++
-        }
-        if (values.maclearning && values.maclearning !== '') {
-          params['details[' + detailsIndex + '].key'] = 'maclearning'
-          params['details[' + detailsIndex + '].value'] = values.maclearning
-          detailsIndex++
-        }
-        if (values.nsxipdiscoveryprofileid) {
-          params['details[' + detailsIndex + '].key'] = 'nsxipdiscoveryprofileid'
-          params['details[' + detailsIndex + '].value'] = values.nsxipdiscoveryprofileid
-          detailsIndex++
-        }
-        if (values.nsxmacdiscoveryprofileid) {
-          params['details[' + detailsIndex + '].key'] = 'nsxmacdiscoveryprofileid'
-          params['details[' + detailsIndex + '].value'] = values.nsxmacdiscoveryprofileid
-          detailsIndex++
-        }
-        if (values.nsxsegmentsecurityprofileid) {
-          params['details[' + detailsIndex + '].key'] = 'nsxsegmentsecurityprofileid'
-          params['details[' + detailsIndex + '].value'] = values.nsxsegmentsecurityprofileid
-          detailsIndex++
+        const detailsKeys = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning',
+          'nsxipdiscoveryprofileid', 'nsxmacdiscoveryprofileid', 'nsxsegmentsecurityprofileid']
+        for (const key of detailsKeys) {
+          if (values[key]) {
+            params['details[0].' + key] = values[key]
+          }
         }
 
         this.loading = true
