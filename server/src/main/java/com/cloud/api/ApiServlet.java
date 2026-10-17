@@ -78,7 +78,7 @@ public class ApiServlet extends HttpServlet {
     protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
-    private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
 
     @Inject
     ApiServerService apiServer;
@@ -161,7 +161,7 @@ public class ApiServlet extends HttpServlet {
         params.forEach((k, v) -> {
             if (v.length > 1) {
                 String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
-                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
+                    "It is advised to pass only a single parameter", k, StringUtils.formatValuesForLog(k, v));
                 LOGGER.warn(message);
             }
         });
