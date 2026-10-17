@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -33,6 +35,16 @@ public interface VmwareManager {
 
     public static final ConfigKey<Long> s_vmwareNicHotplugWaitTimeout = new ConfigKey<Long>("Advanced", Long.class, "vmware.nic.hotplug.wait.timeout", "15000",
             "Wait timeout (milli seconds) for hot plugged NIC of VM to be detected by guest OS.", false, ConfigKey.Scope.Global);
+
+    ConfigKey<Long> VmwareNsxDvPortGroupWaitTimeout = new ValidatedConfigKey<>("Advanced", Long.class,
+            "vmware.nsx.dvportgroup.wait.timeout", "60000",
+            "Maximum polling time (milliseconds) per network preparation for an NSX-backed distributed virtual port group to appear in vCenter. "
+                    + "Set to 0 for a single lookup. Must not be negative. Capped by the VMware operation timeout; vCenter API request timeouts are separate.",
+            true, ConfigKey.Scope.Global, null, timeout -> {
+                if (timeout == null || timeout < 0) {
+                    throw new InvalidParameterValueException("vmware.nsx.dvportgroup.wait.timeout must be a non-negative number of milliseconds");
+                }
+            });
 
     public static final ConfigKey<Long> templateCleanupInterval = new ConfigKey<Long>("Advanced", Long.class, "vmware.full.clone.template.cleanup.period", "0",
             "period (in minutes) between the start of template cleanup jobs for VMWare full cloned Templates.", false, ConfigKey.Scope.Global);
