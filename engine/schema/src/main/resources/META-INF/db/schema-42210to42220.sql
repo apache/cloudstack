@@ -31,3 +31,23 @@ UPDATE op_dc_vnet_alloc a
         a.reservation_id = NULL,
         a.taken = NULL
 WHERE n.removed IS NOT NULL;
+
+-- Scope routed network/VPC subnets to a zone, so that the same CIDR can be used in more than one zone. See #14419.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ip4_guest_subnet_network_map', 'data_center_id', 'bigint unsigned DEFAULT NULL COMMENT "zone it belongs to"');
+
+UPDATE `cloud`.`ip4_guest_subnet_network_map` m
+    JOIN `cloud`.`dc_ip4_guest_subnets` p ON p.id = m.parent_id
+    SET m.data_center_id = p.data_center_id
+WHERE m.data_center_id IS NULL;
+
+UPDATE `cloud`.`ip4_guest_subnet_network_map` m
+    JOIN `cloud`.`vpc` v ON v.id = m.vpc_id
+    SET m.data_center_id = v.zone_id
+WHERE m.data_center_id IS NULL;
+
+UPDATE `cloud`.`ip4_guest_subnet_network_map` m
+    JOIN `cloud`.`networks` n ON n.id = m.network_id
+    SET m.data_center_id = n.data_center_id
+WHERE m.data_center_id IS NULL;
+
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.ip4_guest_subnet_network_map', 'fk_ip4_guest_subnet_network_map__data_center_id', '(`data_center_id`)', '`data_center`(`id`)');
