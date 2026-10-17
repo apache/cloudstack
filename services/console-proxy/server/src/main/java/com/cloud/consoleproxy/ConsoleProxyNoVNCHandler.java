@@ -17,6 +17,8 @@
 package com.cloud.consoleproxy;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -34,6 +36,7 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketFrame;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.eclipse.jetty.websocket.api.extensions.Frame;
+import org.eclipse.jetty.websocket.api.extensions.Frame.Type;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
@@ -41,6 +44,8 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     private static final Logger logger = LogManager.getLogger(ConsoleProxyNoVNCHandler.class);
+
+    private static final String ACTIVITY_SIGNAL = "CLOUDSTACK_ACTIVITY";
 
     private ConsoleProxyNoVncClient viewer = null;
 
@@ -192,8 +197,27 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             logger.debug("Ignoring WebSocket frame because viewer is not initialized yet.");
             return;
         }
-        logger.trace("Sending client [ID: {}] frame of {} bytes.", viewer.getClientId(), f.getPayloadLength());
-        viewer.updateFrontEndActivityTime();
+
+        if (f.getType() == Type.TEXT) {
+            ByteBuffer payload = f.getPayload().slice();
+            byte[] data = new byte[payload.remaining()];
+            payload.get(data);
+
+            String message = new String(data, StandardCharsets.UTF_8);
+            if (ACTIVITY_SIGNAL.equals(message)) {
+                viewer.updateFrontEndActivityTime();
+            } else {
+                logger.debug("Ignoring unexpected text WebSocket frame.");
+            }
+            return;
+        }
+
+        if (f.getType() != Type.BINARY) {
+            return;
+        }
+
+        logger.trace("Sending client [ID: {}] frame of {} bytes.",
+                viewer.getClientId(), f.getPayloadLength());
         viewer.sendClientFrame(f);
     }
 
