@@ -32,7 +32,7 @@ public class ValidatedConfigKey<T> extends ConfigKey<T> {
 
     public void validateValue(String value) {
         if (validator != null) {
-            validator.accept((T) value);
+            validator.accept(valueOf(value));
         }
     }
 }
