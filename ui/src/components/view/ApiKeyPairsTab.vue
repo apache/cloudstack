@@ -287,33 +287,16 @@ export default {
       this.fetchLoading = true
       try {
         await Promise.all(keypairs.map(async keypair => {
-          try {
-            const jobId = await this.deleteKeyPair({
-              keypairid: keypair.id
-            })
-            await this.$pollJob({
-              jobId,
-              action: {
-                isFetchData: false
-              },
-              successMethod: () => {
-                eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'success' })
-              },
-              catchMethod: () => {
-                eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'failed' })
-              }
-            })
-          } catch (e) {
+          await postAPI('deleteUserKeys', { keypairid: keypair.id }).then(response => {
+            eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'success' })
+          }).catch(error => {
             eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: keypair.id, state: 'failed' })
-          }
+            this.$notifyError(error)
+          })
         }))
       } finally {
         this.fetchLoading = false
       }
-    },
-    async deleteKeyPair (args) {
-      const response = await postAPI('deleteUserKeys', args)
-      return response.deleteuserkeysresponse.jobid
     },
     bulkActionConfirmation () {
       this.showConfirmationAction = true

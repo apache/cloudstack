@@ -436,7 +436,7 @@ public class NetworkOfferingVO implements NetworkOffering {
             true,
             Availability.Optional,
             null,
-            Network.GuestType.Isolated,
+            guestType,
             true,
             false,
             false,

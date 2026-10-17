@@ -20,4 +20,4 @@
 set -e
 
 python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+python3 -m pip install --upgrade /usr/share/cloudstack-marvin/[Mm]arvin-*.tar.gz

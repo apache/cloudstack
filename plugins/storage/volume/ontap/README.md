@@ -36,15 +36,15 @@ The NetApp ONTAP Storage Plugin provides integration between Apache CloudStack a
 
 ### Component Structure
 
-| Package | Description                                           |
-|---------|-------------------------------------------------------|
-| `driver` | Primary datastore driver implementation               |
+| Package | Description |
+| --- | --- |
+| `driver` | Primary datastore driver implementation |
 | `feign` | REST API clients and data models for ONTAP operations |
-| `lifecycle` | Storage pool lifecycle management                     |
-| `listener` | Host connection event handlers                        |
-| `provider` | Main provider and strategy factory                    |
-| `service` | ONTAP Storage strategy implementations (NAS/SAN)      |
-| `utils` | Constants and helper utilities                        |
+| `lifecycle` | Storage pool lifecycle management |
+| `listener` | Host connection event handlers |
+| `provider` | Main provider and strategy factory |
+| `service` | ONTAP Storage strategy implementations (NAS/SAN) |
+| `utils` | Constants and helper utilities |
 
 ## Requirements
 
@@ -74,7 +74,7 @@ ONTAP requires a minimum volume size of **1.56 GB** (1,677,721,600 bytes). The p
 When creating an ONTAP primary storage pool, provide the following details in the URL field (semicolon-separated key=value pairs):
 
 | Parameter | Required | Description |
-|-----------|----------|-------------|
+| --- | --- | --- |
 | `username` | Yes | ONTAP cluster admin username |
 | `password` | Yes | ONTAP cluster admin password |
 | `svmName` | Yes | Storage Virtual Machine name |
@@ -90,7 +90,7 @@ username=admin;password=secretpass;svmName=svm1;protocol=ISCSI;managementLIF=192
 ## Port Configuration
 
 | Protocol | Default Port |
-|----------|--------------|
+| --- | --- |
 | NFS | 2049 |
 | iSCSI | 3260 |
 | ONTAP Management API | 443 (HTTPS) |

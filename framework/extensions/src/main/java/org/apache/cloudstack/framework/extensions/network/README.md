@@ -256,7 +256,7 @@ For all standard network / VPC commands, CloudStack now executes the script as:
 ```
 
 | Field | Value |
-|---|---|
+| --- | --- |
 | `physical-network-extension-details` | Physical-network extension metadata registered on the physical network, enriched with `physicalnetworkname`. |
 | `network-extension-details` | Additional network or VPC details stored in CloudStack and forwarded as a JSON object. |
 | `payload` | Command-specific JSON object for the command being executed. |
@@ -277,7 +277,7 @@ The following names appear repeatedly inside the nested `payload` object.
 ### Network-level fields (added by `addNetworkToPayload`)
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | CloudStack numeric network ID. |
 | `vlan` | Guest VLAN tag (for example `100`). Extracted from the broadcast URI. May be empty for flat networks. |
 | `zone_id` | CloudStack zone ID. |
@@ -292,7 +292,7 @@ The following names appear repeatedly inside the nested `payload` object.
 ### NIC-level fields (added by `addNicToPayload`)
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `nic_id` | CloudStack numeric NIC ID. |
 | `nic_uuid` | NIC UUID — matches `external_ids:iface-id` written by the KVM agent for OVN port binding. |
 | `mac` | VM NIC MAC address. |
@@ -308,7 +308,7 @@ The following names appear repeatedly inside the nested `payload` object.
 ### Public-IP fields (added by `addPublicIpToPayload`)
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `public_ip` | A public IP address. |
 | `public_vlan` | VLAN tag of the public IP segment. |
 | `public_gateway` | Gateway of the public IP segment. |
@@ -319,7 +319,7 @@ The following names appear repeatedly inside the nested `payload` object.
 ### DNS / extension-IP fields
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `extension_ip` | The IP the extension device uses on the guest side. Equals the gateway when SourceNat/Gateway is provided; otherwise it is a dedicated IP from the guest subnet. |
 | `dns` | Comma-separated DNS server list. |
 | `domain` | Network domain suffix. |
@@ -357,7 +357,7 @@ passed back to later `ensure-network-device` calls as `payload.current_details`.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. Omitted for VPC-level calls. |
 | `vlan` | Guest VLAN. Present only for network-level calls. |
 | `zone_id` | CloudStack zone ID. |
@@ -389,7 +389,7 @@ configure the gateway.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `gateway` | Guest network gateway. |
@@ -411,7 +411,7 @@ URI — without them the KVM agent (`OvsVifDriver`) will not set
 `external_ids:iface-id` on the OVS tap port and OVN port-binding will fail:
 
 | Output key | Required value | Description |
-|---|---|---|
+| --- | --- | --- |
 | `network.broadcast_domain_type` | `"Lswitch"` (OVN) or appropriate type | Sets `BroadcastDomainType` on the network record. |
 | `network.broadcast_uri` | e.g. `"ovn://cs-net-<networkId>"` | Sets the broadcast URI used by the hypervisor agent. |
 
@@ -440,7 +440,7 @@ return.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `vpc_id` | Present for VPC tier networks. |
@@ -471,7 +471,7 @@ can set up the VPC-level SNAT rule at this stage.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `vpc_id` | VPC ID. |
 | `vpc_cidr` | VPC supernet CIDR. |
 | `public_ip` | Source-NAT IP, when already allocated. |
@@ -492,7 +492,7 @@ The `extension.details` blob is removed from CloudStack after a successful retur
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `vpc_id` | VPC ID. |
 
 ---
@@ -507,7 +507,7 @@ The `extension.details` blob is removed from CloudStack after a successful retur
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `vpc_id` | VPC ID. |
 | `vpc_cidr` | VPC supernet CIDR. |
 | `public_ip` | New source-NAT IP. |
@@ -531,7 +531,7 @@ network (source NAT, static NAT, PF, LB allocation).
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN. |
 | `public_ip` | The public IP being assigned or released. |
@@ -556,7 +556,7 @@ and a VM private IP.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `public_ip` | Public IP. |
@@ -578,7 +578,7 @@ and a VM private IP.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `public_ip` | Public IP. |
@@ -606,7 +606,7 @@ rules for the network, so a full rebuild is always safe.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `gateway` | Guest network gateway. |
@@ -645,7 +645,7 @@ rules for the network, so a full rebuild is always safe.
 ```
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `default_egress_allow` | `true` = permissive egress by default (explicit rules are deny rules); `false` = restrictive (explicit rules are allow rules). |
 | `cidr` | Guest network CIDR. |
 | `rules[].type` | `"ingress"` or `"egress"`. |
@@ -670,7 +670,7 @@ Rules are applied in ascending `number` order.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `gateway` | Guest network gateway. |
@@ -702,7 +702,7 @@ Rules are applied in ascending `number` order.
 ```
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `number` | Rule priority (lower number = higher priority). |
 | `action` | `"allow"` or `"deny"`. |
 | `trafficType` | `"ingress"` or `"egress"`. |
@@ -730,7 +730,7 @@ those belonging to DHCP/DNS-enabled offerings.
 **`prepare-nic` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `mac` | VM NIC MAC address. |
@@ -749,7 +749,7 @@ those belonging to DHCP/DNS-enabled offerings.
 **`release-nic` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `mac` | VM NIC MAC address. |
@@ -779,7 +779,7 @@ network whose DHCP service is provided by this extension.
 **`add-dhcp-entry` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `mac` | VM NIC MAC address, for example `02:00:00:00:00:01`. |
 | `ip` | VM assigned IP. |
@@ -796,7 +796,7 @@ network whose DHCP service is provided by this extension.
 **`remove-dhcp-entry` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `mac` | VM NIC MAC address. |
 | `ip` | VM assigned IP. |
@@ -816,7 +816,7 @@ without tying it to a specific VM.
 **`config-dhcp-subnet` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `gateway` | Guest network gateway. |
 | `cidr` | Guest network CIDR. |
@@ -830,7 +830,7 @@ without tying it to a specific VM.
 **`remove-dhcp-subnet` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `extension_ip` | Extension IP. |
 | `vpc_id` | Present for VPC tier networks. |
@@ -845,7 +845,7 @@ without tying it to a specific VM.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `nic_id` | CloudStack NIC ID. |
 | `options` | Compact JSON string such as `{"15":"example.com","119":"search.example.com"}`. |
@@ -862,7 +862,7 @@ provided by this extension.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `hostname` | VM hostname. |
@@ -879,7 +879,7 @@ provided by this extension.
 **`config-dns-subnet` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `gateway` | Guest network gateway. |
 | `cidr` | Guest network CIDR. |
@@ -893,7 +893,7 @@ provided by this extension.
 **`remove-dns-subnet` payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `extension_ip` | Extension IP. |
 | `vpc_id` | Present for VPC tier networks. |
@@ -911,7 +911,7 @@ meta-data/*, password) for the VM so the metadata HTTP server can serve it.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC on this network. |
@@ -947,7 +947,7 @@ Your metadata HTTP server should serve each entry at:
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC. |
@@ -966,7 +966,7 @@ Your metadata HTTP server should serve each entry at:
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC. |
@@ -985,7 +985,7 @@ Your metadata HTTP server should serve each entry at:
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC. |
@@ -1006,7 +1006,7 @@ which host they run on (cloud-init `availability-zone` / host detection).
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `ip` | VM IP. |
 | `gateway` | Gateway of the VM NIC. |
@@ -1029,7 +1029,7 @@ virtual server → backend pool mappings.
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `vlan` | Guest VLAN tag. |
 | `lb_rules` | JSON array of LB rules shown below. |
@@ -1057,7 +1057,7 @@ virtual server → backend pool mappings.
 ```
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `revoke` | `true` → delete this rule; `false` → create/update. |
 | `backends[].revoked` | `true` → this backend has been removed from the rule. |
 | `algorithm` | `roundrobin`, `leastconn`, or `source`. |
@@ -1077,7 +1077,7 @@ calls).
 **Payload fields (`payload` object):**
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `network_id` | Network ID. |
 | `gateway` | Guest network gateway. |
 | `cidr` | Guest network CIDR. |
@@ -1133,7 +1133,7 @@ including `physical-network-extension-details` and `network-extension-details`.
 **Top-level payload keys (network-level):**
 
 | Key | Description |
-|---|---|
+| --- | --- |
 | `network_id` | The CloudStack network ID. |
 | `vpc_id` | Present when the network belongs to a VPC. |
 | `action` | The action name passed by the operator. |
@@ -1144,7 +1144,7 @@ including `physical-network-extension-details` and `network-extension-details`.
 **Top-level payload keys (VPC-level):**
 
 | Key | Description |
-|---|---|
+| --- | --- |
 | `vpc_id` | The CloudStack VPC ID. |
 | `action` | The action name passed by the operator. |
 | `action-params` | JSON object with arbitrary key/value parameters. |
@@ -1160,7 +1160,7 @@ Hook scripts should parse the payload file directly.
 ## Service-to-Command Mapping
 
 | CloudStack Network Service | Commands triggered |
-|---|---|
+| --- | --- |
 | **SourceNat / Gateway** | `assign-ip`, `release-ip` |
 | **StaticNat** | `add-static-nat`, `delete-static-nat` |
 | **PortForwarding** | `add-port-forward`, `delete-port-forward` |
@@ -1300,7 +1300,7 @@ included in every command payload.
 ## Exit Codes
 
 | Exit code | Meaning |
-|---|---|
+| --- | --- |
 | `0` | Success. |
 | Any non-zero | Failure. CloudStack logs the exit code and script output, and treats the operation as failed. |
 
@@ -1308,7 +1308,7 @@ For SSH-proxy scripts you may use sub-codes for diagnostics (they are logged
 but not interpreted differently by CloudStack):
 
 | Suggested code | Suggested meaning |
-|---|---|
+| --- | --- |
 | `1` | Usage / configuration error. |
 | `2` | SSH connection / authentication failure. |
 | `3` | Remote script returned non-zero. |

@@ -1716,4 +1716,15 @@ public class StorageManagerImplTest {
 
         storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
     }
+
+    @Test
+    public void checkUsagedSpaceReturnsFalseForZeroCapacityPool() {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        Mockito.when(pool.isManaged()).thenReturn(false);
+        Mockito.when(pool.getCapacityBytes()).thenReturn(0L);
+
+        Boolean result = ReflectionTestUtils.invokeMethod(storageManagerImpl, "checkUsagedSpace", pool);
+
+        Assert.assertFalse(result);
+    }
 }

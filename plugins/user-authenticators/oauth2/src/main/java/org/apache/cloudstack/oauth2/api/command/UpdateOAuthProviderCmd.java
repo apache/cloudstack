@@ -61,10 +61,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider")
     private String redirectUri;
 
-    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL pre-registered in the specific OAuth provider")
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL pre-registered in the specific OAuth provider", since = "4.23.0")
     private String authorizeUrl;
 
-    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL pre-registered in the specific OAuth provider")
+    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL pre-registered in the specific OAuth provider", since = "4.23.0")
     private String tokenUrl;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
