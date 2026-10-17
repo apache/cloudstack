@@ -37,9 +37,11 @@ public interface Site2SiteVpnServiceProvider extends Adapter {
      * Permanently removes a provider-side connection.  This is distinct from stop: providers
      * may disable a tunnel while retaining its profiles for an immediate reconnect, but deletion
      * must remove all objects owned by the CloudStack connection.
+     * The default preserves legacy behavior for pending connections, which have not reached the
+     * virtual router. Providers that may own resources in that state must override this method.
      */
     default boolean deleteSite2SiteVpn(Site2SiteVpnConnection conn) throws ResourceUnavailableException {
-        return stopSite2SiteVpn(conn);
+        return conn.getState() == Site2SiteVpnConnection.State.Pending || stopSite2SiteVpn(conn);
     }
 
     /**

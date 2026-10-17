@@ -65,6 +65,15 @@ export function removeLoadingAnimate (id = '', timeout = 1500) {
   }, timeout)
 }
 
+export function escapeHtml (value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 export function sanitizeReverse (value) {
   return value
     .replace(/&amp;/g, '&')
@@ -145,4 +154,13 @@ export function isValidIPv4Cidr (rule, value) {
     }
     resolve()
   })
+}
+
+// Adds the projectid of a project-scoped resource to the given API params, so
+// that listing calls are correctly scoped to the resource's project.
+export function addProjectFilter (params, resource) {
+  if (resource?.projectid) {
+    params.projectid = resource.projectid
+  }
+  return params
 }

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -112,7 +113,7 @@ public class MoveUserCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws ResourceAllocationException {
         Preconditions.checkNotNull(getId(),"I have to have an user to move!");
         Preconditions.checkState(ObjectUtils.anyNotNull(getAccountId(),getAccountName()),"provide either an account name or an account id!");
 

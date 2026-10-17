@@ -185,4 +185,6 @@ public interface AccountService {
     String getAccessingApiKey(BaseCmd cmd);
 
     List<RolePermissionEntity> getAllKeypairPermissions(String apiKey);
+
+    List<? extends ApiKeyPairPermission> getAllExplicitKeyPairPermissions(Long keyPairId);
 }

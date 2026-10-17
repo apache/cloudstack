@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 
 public interface ProjectService {
     /**
@@ -102,4 +103,5 @@ public interface ProjectService {
 
     boolean addUserToProject(Long projectId, String username, String email, Long projectRoleId, Role projectRole) throws ResourceAllocationException;
 
+    void moveProjectAssociationsToUser(User oldUser, User newUser) throws ResourceAllocationException;
 }

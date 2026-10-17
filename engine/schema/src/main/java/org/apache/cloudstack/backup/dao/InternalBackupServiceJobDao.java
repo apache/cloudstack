@@ -32,7 +32,7 @@ public interface InternalBackupServiceJobDao extends GenericDao<InternalBackupSe
 
     List<InternalBackupServiceJobVO> listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(Object[] hostIds, Date date, InternalBackupServiceJobType... jobTypes);
 
-    Pair<List<InternalBackupServiceJobVO>, Integer> searchAndCountForListApi(Long id, Long backupId, Long hostId, Long zoneId, InternalBackupServiceJobType type, boolean executing,
+    Pair<List<InternalBackupServiceJobVO>, Integer> searchAndCountForListApi(Long id, Long backupId, Long hostId, Long zoneId, String type, boolean executing,
             boolean scheduled, Long startIndex, Long pageSize);
 
     void update(InternalBackupServiceJobVO job);

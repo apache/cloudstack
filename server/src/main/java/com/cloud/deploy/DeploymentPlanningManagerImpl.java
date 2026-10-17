@@ -20,6 +20,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -111,6 +112,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -428,7 +430,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         long hostId = dest.getHost().getId();
                         avoids.addHost(dest.getHost().getId());
 
-                        if (volumesRequireEncryption && !Boolean.parseBoolean(_hostDetailsDao.findDetail(hostId, Host.HOST_VOLUME_ENCRYPTION).getValue())) {
+                        if (volumesRequireEncryption && !hostMeetsVolumeEncryptionRequirements(hostId, _volsDao.findByInstance(vm.getId()), null)) {
                             logger.warn("VM's volumes require encryption support, and the planner-provided host {} can't handle it", dest.getHost());
                             continue;
                         } else {
@@ -599,8 +601,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
-            logger.warn("The last host of this VM {} does not support volume encryption, which is required by this VM.", host);
+        if (volumesRequireEncryption && !hostMeetsVolumeEncryptionRequirements(host.getId(), _volsDao.findByInstance(vm.getId()), null)) {
+            logger.warn("The last host of this VM {} does not support the volume encryption required by this VM.", host);
             return false;
         }
         return true;
@@ -687,6 +689,51 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
         return false;
+    }
+
+    private boolean hostHasEncryptionDetail(long hostId, String detailName) {
+        DetailVO detail = _hostDetailsDao.findDetail(hostId, detailName);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
+    }
+
+    /**
+     * Checks that the host advertises the encryption mechanism each encrypted volume needs:
+     * {@link Host#HOST_RBD_VOLUME_ENCRYPTION} (librbd) for volumes on RBD pools,
+     * {@link Host#HOST_VOLUME_ENCRYPTION} (qemu-native LUKS) for volumes on any other pool type.
+     * The pool of a volume is taken from {@code proposedPools} when present (pools being allocated
+     * along with the host), falling back to the volume's persisted pool. For an encrypted volume
+     * with no pool yet (initial deployment without a proposed pool), either mechanism is accepted;
+     * the storage pool allocator selects a pool the host can serve.
+     */
+    protected boolean hostMeetsVolumeEncryptionRequirements(long hostId, Collection<? extends Volume> volumes, Map<Volume, StoragePool> proposedPools) {
+        for (Volume volume : volumes) {
+            if (volume.getPassphraseId() == null && volume.getKmsKeyId() == null) {
+                continue;
+            }
+            Storage.StoragePoolType poolType = null;
+            StoragePool proposedPool = proposedPools != null ? proposedPools.get(volume) : null;
+            if (proposedPool != null) {
+                poolType = proposedPool.getPoolType();
+            } else if (volume.getPoolId() != null) {
+                StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+                poolType = pool != null ? pool.getPoolType() : null;
+            }
+            boolean hostMeets;
+            if (poolType == Storage.StoragePoolType.RBD) {
+                hostMeets = hostHasEncryptionDetail(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION);
+            } else if (poolType != null) {
+                hostMeets = hostHasEncryptionDetail(hostId, Host.HOST_VOLUME_ENCRYPTION);
+            } else {
+                hostMeets = hostHasEncryptionDetail(hostId, Host.HOST_VOLUME_ENCRYPTION)
+                        || hostHasEncryptionDetail(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION);
+            }
+            if (!hostMeets) {
+                logger.debug("Host [{}] does not support the encryption mechanism required by volume [{}] (pool type [{}])",
+                        hostId, volume, poolType);
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isDeployAsIs(VirtualMachine vm) {
@@ -1648,11 +1695,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             }
 
-            HostVO potentialHostVO = _hostDao.findById(potentialHost.getId());
-            _hostDao.loadDetails(potentialHostVO);
-
-            boolean hostHasEncryption = Boolean.parseBoolean(potentialHostVO.getDetail(Host.HOST_VOLUME_ENCRYPTION));
-            boolean hostMeetsEncryptionRequirements = !anyVolumeRequiresEncryption(new ArrayList<>(volumesOrderBySizeDesc)) || hostHasEncryption;
+            boolean hostMeetsEncryptionRequirements = hostMeetsVolumeEncryptionRequirements(potentialHost.getId(), volumesOrderBySizeDesc, storage);
             boolean hostFitsPlannerUsage = checkIfHostFitsPlannerUsage(potentialHost, resourceUsageRequired);
 
             if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && hostMeetsEncryptionRequirements && hostFitsPlannerUsage) {

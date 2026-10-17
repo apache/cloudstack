@@ -999,8 +999,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("Site to site VPN connection with specified id is currently Pending, unable to Disconnect!");
         }
 
-        conn.setState(State.Disconnected);
-        _vpnConnectionDao.persist(conn);
+        // Preserve Pending for provider deletion so the legacy default can skip backend teardown.
+        if (conn.getState() != State.Pending) {
+            conn.setState(State.Disconnected);
+            _vpnConnectionDao.persist(conn);
+        }
 
         Site2SiteVpnGateway vpnGateway = getVpnGatewayForConnection(conn);
         try {
