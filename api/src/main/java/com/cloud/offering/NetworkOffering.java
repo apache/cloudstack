@@ -40,7 +40,22 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
+        InternalLbProvider,
+        PublicLbProvider,
+        servicepackageuuid,
+        servicepackagedescription,
+        PromiscuousMode,
+        MacAddressChanges,
+        ForgedTransmits,
+        MacLearning,
+        NsxIpDiscoveryProfileId,
+        NsxMacDiscoveryProfileId,
+        NsxSegmentSecurityProfileId,
+        RelatedNetworkOffering,
+        domainid,
+        zoneid,
+        pvlanType,
+        internetProtocol
     }
 
     public enum NetworkMode {

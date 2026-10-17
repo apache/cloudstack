@@ -4194,6 +4194,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
         NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
 
+        if (!haveMatchingNsxSegmentProfiles(oldNetworkOfferingId, newNetworkOfferingId)) {
+            logger.debug("Network offerings {} and {} have different NSX segment profile bindings, can't upgrade",
+                    oldNetworkOffering, newNetworkOffering);
+            return false;
+        }
+
         // security group service should be the same
         if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.SecurityGroup) != areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.SecurityGroup)) {
             logger.debug("Offerings {} and {} have different securityGroupProperty, can't upgrade", newNetworkOffering, oldNetworkOffering);
@@ -4228,6 +4234,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         return canMoveToPhysicalNetwork(network, oldNetworkOfferingId, newNetworkOfferingId);
+    }
+
+    protected boolean haveMatchingNsxSegmentProfiles(long oldNetworkOfferingId, long newNetworkOfferingId) {
+        Map<NetworkOffering.Detail, String> oldDetails = _networkModel.getNtwkOffDetails(oldNetworkOfferingId);
+        Map<NetworkOffering.Detail, String> newDetails = _networkModel.getNtwkOffDetails(newNetworkOfferingId);
+        for (NetworkOffering.Detail detail : List.of(NetworkOffering.Detail.NsxIpDiscoveryProfileId,
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, NetworkOffering.Detail.NsxSegmentSecurityProfileId)) {
+            String oldProfileId = oldDetails == null ? null : oldDetails.get(detail);
+            String newProfileId = newDetails == null ? null : newDetails.get(detail);
+            if (!Objects.equals(oldProfileId, newProfileId)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

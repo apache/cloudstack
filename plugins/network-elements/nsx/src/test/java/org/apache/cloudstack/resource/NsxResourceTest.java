@@ -60,6 +60,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -182,6 +183,24 @@ public class NsxResourceTest {
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCreateNsxSegmentPassesProfileIdsToApiClient() {
+        List<TransportZone> transportZoneList = List.of(new TransportZone.Builder().setDisplayName(transportZone).build());
+        CreateNsxSegmentCommand command = new CreateNsxSegmentCommand(domainId, accountId, zoneId,
+                2L, "VPC01", 3L, "Web", "10.10.10.1", "10.10.10.0/24",
+                "ip-profile", "mac-profile", "security-profile");
+        when(nsxApi.getDefaultSiteId()).thenReturn("site1");
+        when(nsxApi.getDefaultEnforcementPointPath("site1")).thenReturn("enforcementPointPath");
+        when(nsxApi.getTransportZones()).thenReturn(transportZoneListResult);
+        when(transportZoneListResult.getResults()).thenReturn(transportZoneList);
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertTrue(answer.getResult());
+        verify(nsxApi).createSegment(anyString(), anyString(), anyString(), eq("enforcementPointPath"),
+                eq(transportZoneList), eq("ip-profile"), eq("mac-profile"), eq("security-profile"));
     }
 
     @Test

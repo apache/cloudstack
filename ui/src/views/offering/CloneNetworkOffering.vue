@@ -150,6 +150,38 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12" v-if="form.provider === 'NSX'">
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxipdiscoveryprofileid" ref="nsxipdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.ip.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.ip.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxipdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxmacdiscoveryprofileid" ref="nsxmacdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.mac.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.mac.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxmacdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxsegmentsecurityprofileid" ref="nsxsegmentsecurityprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.segment.security.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.segment.security.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxsegmentsecurityprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated' && form.provider">
           <template #label>
             <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
@@ -732,7 +764,10 @@ export default {
         netscalerservicepackages: null,
         netscalerservicepackagesdescription: '',
         nsxsupportlb: true,
-        nsxsupportsinternallb: false
+        nsxsupportsinternallb: false,
+        nsxipdiscoveryprofileid: '',
+        nsxmacdiscoveryprofileid: '',
+        nsxsegmentsecurityprofileid: ''
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -943,6 +978,9 @@ export default {
         if (r.details.macaddresschanges) this.form.macaddresschanges = r.details.macaddresschanges
         if (r.details.forgedtransmits) this.form.forgedtransmits = r.details.forgedtransmits
         if (r.details.maclearning) this.form.maclearning = r.details.maclearning
+        if (r.details.NsxIpDiscoveryProfileId) this.form.nsxipdiscoveryprofileid = r.details.NsxIpDiscoveryProfileId
+        if (r.details.NsxMacDiscoveryProfileId) this.form.nsxmacdiscoveryprofileid = r.details.NsxMacDiscoveryProfileId
+        if (r.details.NsxSegmentSecurityProfileId) this.form.nsxsegmentsecurityprofileid = r.details.NsxSegmentSecurityProfileId
       }
 
       this.forVpc = r.forvpc || false
@@ -1371,26 +1409,12 @@ export default {
 
         params.traffictype = this.resource.traffictype || 'GUEST'
 
-        let detailsIndex = 0
-        if (values.promiscuousmode && values.promiscuousmode !== '') {
-          params['details[' + detailsIndex + '].key'] = 'promiscuousmode'
-          params['details[' + detailsIndex + '].value'] = values.promiscuousmode
-          detailsIndex++
-        }
-        if (values.macaddresschanges && values.macaddresschanges !== '') {
-          params['details[' + detailsIndex + '].key'] = 'macaddresschanges'
-          params['details[' + detailsIndex + '].value'] = values.macaddresschanges
-          detailsIndex++
-        }
-        if (values.forgedtransmits && values.forgedtransmits !== '') {
-          params['details[' + detailsIndex + '].key'] = 'forgedtransmits'
-          params['details[' + detailsIndex + '].value'] = values.forgedtransmits
-          detailsIndex++
-        }
-        if (values.maclearning && values.maclearning !== '') {
-          params['details[' + detailsIndex + '].key'] = 'maclearning'
-          params['details[' + detailsIndex + '].value'] = values.maclearning
-          detailsIndex++
+        const detailsKeys = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning',
+          'nsxipdiscoveryprofileid', 'nsxmacdiscoveryprofileid', 'nsxsegmentsecurityprofileid']
+        for (const key of detailsKeys) {
+          if (values[key]) {
+            params['details[0].' + key] = values[key]
+          }
         }
 
         this.loading = true
