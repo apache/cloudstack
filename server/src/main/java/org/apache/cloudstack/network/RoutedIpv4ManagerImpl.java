@@ -109,7 +109,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements RoutedIpv4Manager {
@@ -519,12 +518,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
         if (zoneId != null) {
-            List<DataCenterIpv4GuestSubnetVO> subnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId);
-            if (CollectionUtils.isEmpty(subnets)) {
-                return new ArrayList<>();
-            }
-            List<Long> parentIds = subnets.stream().map(DataCenterIpv4GuestSubnetVO::getId).collect(Collectors.toList());
-            sc.addAnd("parentId", SearchCriteria.Op.IN, parentIds.toArray());
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
         if (parentId != null) {
             sc.addAnd("parentId", SearchCriteria.Op.EQ, parentId);
@@ -554,7 +548,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         response.setState(subnet.getState().name());
         response.setId(subnet.getUuid());
         response.setAllocatedTime(subnet.getAllocated());
-        Long zoneId = null;
+        Long zoneId = subnet.getDataCenterId();
         if (subnet.getNetworkId() != null) {
             Network network = ApiDBUtils.findNetworkById(subnet.getNetworkId());
             response.setNetworkId(network.getUuid());

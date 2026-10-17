@@ -99,6 +99,7 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
         return parentId;
     }
 
+    @Override
     public Long getDataCenterId() {
         return dataCenterId;
     }

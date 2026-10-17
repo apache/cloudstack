@@ -52,6 +52,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -60,6 +61,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForZoneCm
 import org.apache.cloudstack.api.command.admin.network.DedicateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForZoneCmd;
+import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
@@ -495,6 +497,43 @@ public class RoutedIpv4ManagerImplTest {
         Assert.assertEquals(zoneUuid, response.getZoneId());
         Assert.assertEquals(zoneName, response.getZoneName());
         Assert.assertEquals("ipv4subnetforguestnetwork", response.getObjectName());
+    }
+
+    @Test
+    public void testCreateIpv4SubnetForGuestNetworkResponseWithoutParentOrOwner() {
+        when(ipv4GuestSubnetNetworkMap.getSubnet()).thenReturn(subnet);
+        when(ipv4GuestSubnetNetworkMap.getState()).thenReturn(ipv4GuestSubnetNetworkMapState);
+        when(ipv4GuestSubnetNetworkMap.getDataCenterId()).thenReturn(zoneId);
+        when(ipv4GuestSubnetNetworkMap.getNetworkId()).thenReturn(null);
+        when(ipv4GuestSubnetNetworkMap.getVpcId()).thenReturn(null);
+        when(ipv4GuestSubnetNetworkMap.getParentId()).thenReturn(null);
+        apiDBUtilsMocked.when(() -> ApiDBUtils.findZoneById(zoneId)).thenReturn(zone);
+        when(zone.getName()).thenReturn(zoneName);
+        when(zone.getUuid()).thenReturn(zoneUuid);
+
+        Ipv4SubnetForGuestNetworkResponse response = routedIpv4Manager.createIpv4SubnetForGuestNetworkResponse(ipv4GuestSubnetNetworkMap);
+
+        // the subnet has no parent, network or VPC, so the zone can only come from the subnet itself
+        Assert.assertEquals(zoneUuid, response.getZoneId());
+        Assert.assertEquals(zoneName, response.getZoneName());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testListIpv4GuestSubnetsForGuestNetworkByZone() {
+        ListIpv4SubnetsForGuestNetworkCmd cmd = Mockito.mock(ListIpv4SubnetsForGuestNetworkCmd.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = Mockito.mock(SearchCriteria.class);
+        when(ipv4GuestSubnetNetworkMapDao.createSearchCriteria()).thenReturn(sc);
+        when(ipv4GuestSubnetNetworkMapDao.search(sc, null)).thenReturn(Arrays.asList(ipv4GuestSubnetNetworkMap));
+
+        List<Ipv4GuestSubnetNetworkMap> result = routedIpv4Manager.listIpv4GuestSubnetsForGuestNetwork(cmd);
+
+        Assert.assertEquals(1, result.size());
+        verify(sc).addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        // the zone is taken from the subnet itself, not resolved through the zone's parent subnets,
+        // so subnets created without a zone subnet are no longer missing from the result
+        verify(dataCenterIpv4GuestSubnetDao, Mockito.never()).listByDataCenterId(Mockito.anyLong());
     }
 
     @Test
