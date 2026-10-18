@@ -31,3 +31,5 @@ UPDATE op_dc_vnet_alloc a
         a.reservation_id = NULL,
         a.taken = NULL
 WHERE n.removed IS NOT NULL;
+
+ALTER TABLE `cloud`.`async_job` ADD COLUMN context TEXT;

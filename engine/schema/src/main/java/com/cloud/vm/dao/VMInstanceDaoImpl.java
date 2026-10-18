@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1335,5 +1336,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
         Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
         return listBy(sc, filter);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.and("id", sb.entity().getId(), Op.IN);
+        sb.done();
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("id", ids.toArray());
+        return listBy(sc);
     }
 }

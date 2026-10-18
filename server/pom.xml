@@ -200,10 +200,12 @@
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <version>${cs.opentelemetry-instrumentation.version}</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
+            <version>${cs.opentelemetry.version}</version>
         </dependency>
     </dependencies>
     <build>

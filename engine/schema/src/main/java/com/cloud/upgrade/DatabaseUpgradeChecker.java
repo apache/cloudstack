@@ -33,6 +33,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.upgrade.dao.Upgrade42210to42220;
 import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -94,7 +95,6 @@ import com.cloud.upgrade.dao.Upgrade42030to42040;
 import com.cloud.upgrade.dao.Upgrade42040to42100;
 import com.cloud.upgrade.dao.Upgrade42100to42200;
 import com.cloud.upgrade.dao.Upgrade42200to42210;
-import com.cloud.upgrade.dao.Upgrade42210to42220;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;

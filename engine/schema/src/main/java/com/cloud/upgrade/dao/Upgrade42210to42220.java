@@ -19,6 +19,7 @@ package com.cloud.upgrade.dao;
 import java.sql.Connection;
 
 public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgrade {
+
     @Override
     public String[] getUpgradableVersionRange() {
         return new String[] {"4.22.1.0", "4.22.2.0"};

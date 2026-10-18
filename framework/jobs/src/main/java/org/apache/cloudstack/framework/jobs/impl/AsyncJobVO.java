@@ -129,6 +129,9 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "context", length = 65535)
+    private String contextJson;
+
     @Transient
     private SyncQueueItem syncSource = null;
 
@@ -382,6 +385,15 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     public void setRemoved(final Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public String getContextJson() {
+        return contextJson;
+    }
+
+    public void setContextJson(String contextJson) {
+        this.contextJson = contextJson;
     }
 
     @Override

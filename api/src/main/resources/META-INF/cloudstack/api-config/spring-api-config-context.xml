@@ -28,5 +28,6 @@
                       >
 
     <bean id="apiServiceConfiguration" class="org.apache.cloudstack.config.ApiServiceConfiguration" />
+    <bean id="apiTraceFilter" class="org.apache.cloudstack.api.filter.ApiTraceFilter"/>
 
 </beans>

@@ -750,6 +750,10 @@
                             <name>log4j2.configurationFile</name>
                             <value>log4j-cloud.xml</value>
                         </systemProperty>
+                        <systemProperty>
+                            <name>log4j2.isThreadContextMapInheritable</name>
+                            <value>true</value>
+                        </systemProperty>
                     </systemProperties>
                 </configuration>
             </plugin>
