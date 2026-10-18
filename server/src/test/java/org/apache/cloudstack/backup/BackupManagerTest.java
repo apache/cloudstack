@@ -733,6 +733,61 @@ public class BackupManagerTest {
         }
     }
 
+    @Test
+    public void createBackupTestFailedScheduledBackupKeepsSchedule() throws ResourceAllocationException {
+        Long vmId = 1L;
+        Long zoneId = 2L;
+        Long scheduleId = 3L;
+        Long backupOfferingId = 4L;
+        Long accountId = 5L;
+        Long backupId = 6L;
+        long domainId = 101L;
+
+        when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+
+        overrideBackupFrameworkConfigValue();
+        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(backupOfferingVOMock);
+        when(backupOfferingVOMock.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(backupOfferingVOMock.getProvider()).thenReturn("testbackupprovider");
+
+        Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
+
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+        when(accountVOMock.getDomainId()).thenReturn(domainId);
+
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of());
+
+        BackupProvider backupProvider = mock(BackupProvider.class);
+        Backup backup = mock(Backup.class);
+        when(backup.getId()).thenReturn(backupId);
+        when(backupProvider.getName()).thenReturn("testbackupprovider");
+        when(backupProvider.takeBackup(vmInstanceVOMock, null)).thenReturn(new Pair<>(false, backup));
+        Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
+        backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
+        ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
+
+        BackupVO backupVO = mock(BackupVO.class);
+        when(backupVO.getId()).thenReturn(backupId);
+        when(backupDao.findById(backupId)).thenReturn(backupVO);
+
+        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getQuiesceVM()).thenReturn(null);
+
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            Assert.assertThrows(CloudRuntimeException.class, () -> backupManager.createBackup(cmd, asyncJobVOMock));
+
+            Mockito.verify(backupVO, times(1)).setBackupScheduleId(scheduleId);
+            Mockito.verify(backupDao, times(1)).update(backupId, backupVO);
+            Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
+            Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, 0L);
+            Mockito.verify(backupManager, Mockito.never()).deleteOldestBackupFromScheduleIfRequired(vmId, scheduleId);
+        }
+    }
+
     @Test(expected = ResourceAllocationException.class)
     public void createBackupTestResourceLimitReached() throws ResourceAllocationException {
         Long vmId = 1L;
