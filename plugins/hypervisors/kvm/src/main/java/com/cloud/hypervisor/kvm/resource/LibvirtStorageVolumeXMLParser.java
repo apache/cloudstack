@@ -48,7 +48,7 @@ public class LibvirtStorageVolumeXMLParser {
 
             String VolName = getTagValue("name", rootElement);
             Element target = (Element)rootElement.getElementsByTagName("target").item(0);
-            String format = getAttrValue("format", "type", target);
+            String format = getAttrValue("type", "format", target);
             Long capacity = Long.parseLong(getTagValue("capacity", rootElement));
             return new LibvirtStorageVolumeDef(VolName, capacity, LibvirtStorageVolumeDef.VolumeFormat.getFormat(format), null, null);
         } catch (ParserConfigurationException e) {

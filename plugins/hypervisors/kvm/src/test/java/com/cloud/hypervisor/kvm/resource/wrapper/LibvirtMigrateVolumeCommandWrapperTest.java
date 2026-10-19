@@ -605,22 +605,8 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
     }
 
     @Test
-    public void testMigrateRBDVolumeIsSuccessfulWhenTheDestinationPoolCanNotBeRefreshed() throws Exception {
-        KVMStoragePool[] pools = prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.RBD, Storage.StoragePoolType.NetworkFilesystem, null);
-        Mockito.doThrow(new CloudRuntimeException("failed to refresh the pool")).when(pools[1]).refresh();
-
-        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);
-
-        Assert.assertTrue(answer.getResult());
-        Assert.assertEquals("dest-volume", answer.getVolumePath());
-        // the source volume is not the one the Instance uses any more, so it is removed as for any migration
-        Mockito.verify(pools[0]).deletePhysicalDisk(Mockito.eq("src-volume"), Mockito.any());
-    }
-
-    @Test
     public void testMigrateRBDVolumeKeepsTheDestinationOfAnEncryptedVolumeWhichIsPivoted() throws Exception {
         KVMStoragePool[] pools = prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.RBD, Storage.StoragePoolType.NetworkFilesystem, new byte[] {1, 2, 3});
-        Mockito.doThrow(new CloudRuntimeException("failed to refresh the pool")).when(pools[1]).refresh();
         Mockito.doThrow(new CloudRuntimeException("failed to remove volume")).when(pools[0]).deletePhysicalDisk(Mockito.any(), Mockito.any());
 
         MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);

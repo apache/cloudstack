@@ -504,17 +504,6 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 answer = new MigrateVolumeAnswer(command, true, null, destVolumeObjectTO.getPath());
                 try {
                     libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
-
-                    // Libvirt only detects the volume's real format (e.g. qcow2) if the destination pool
-                    // already knew about it as such. Since the block copy wrote the file directly (not
-                    // through libvirt's own volume-creation calls), any pool other than RBD needs an
-                    // explicit refresh here; otherwise libvirt keeps whatever it inferred when the disk
-                    // was first attached to this domain (or falls back to a filename-suffix guess), which
-                    // for a volume carried over from RBD would wrongly be treated as a raw block device the
-                    // next time the Instance is (re)started.
-                    if (!Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())) {
-                        pool.refresh();
-                    }
                 } catch (Exception e) {
                     logger.warn(String.format("Failed to finish the migration of the volume %s to the pool %s after the block copy was pivoted: %s",
                             destVolumeObjectTO.getPath(), destPool.getUuid(), e.getMessage()), e);
