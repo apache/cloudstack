@@ -159,7 +159,7 @@ public class BackupManagerResponsesTest {
     public void createBackupResponseTestBasicResponse() {
         BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
-        assertBasicBackupResponseFields(response);
+        assertFullBackupResponseFields(response);
         Assert.assertNull(response.getBackupPaths());
     }
 
@@ -172,7 +172,7 @@ public class BackupManagerResponsesTest {
 
         BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
-        assertBasicBackupResponseFields(response);
+        assertFullBackupResponseFields(response);
         Assert.assertFalse(response.getBackupPaths().isEmpty());
         Assert.assertTrue(response.getBackupPaths().containsKey(backupJoin.getVolumeUuid()));
         Assert.assertEquals(backupJoin.getImageStorePath(), response.getBackupPaths().get(backupJoin.getVolumeUuid()).getBackupPath());
@@ -189,7 +189,7 @@ public class BackupManagerResponsesTest {
 
         BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
-        assertBasicBackupResponseFields(response);
+        assertFullBackupResponseFields(response);
         Assert.assertFalse(response.getBackupPaths().isEmpty());
         Assert.assertEquals(joinsAmount, response.getBackupPaths().size());
 
@@ -206,18 +206,23 @@ public class BackupManagerResponsesTest {
 
         BackupResponse response = backupManager.createBackupResponse(backup, true, false);
 
-        assertBasicBackupResponseFields(response);
+        assertFullBackupResponseFields(response);
         Assert.assertNull(response.getBackupPaths());
     }
 
     @Test
     public void createBackupResponseTestKBOSSResponseNullOffering() {
-        ReflectionTestUtils.setField(backupOffering, "provider", null);
+        Mockito.when(backupOfferingDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(null);
 
-        BackupResponse response = backupManager.createBackupResponse(backup, true, false);
+        BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
         assertBasicBackupResponseFields(response);
         Assert.assertNull(response.getBackupPaths());
+    }
+
+    private void assertFullBackupResponseFields(BackupResponse response) {
+        assertBasicBackupResponseFields(response);
+        assertBackupResponseOfferingFields(response);
     }
 
     private void assertBasicBackupResponseFields(BackupResponse response) {
@@ -229,13 +234,16 @@ public class BackupManagerResponsesTest {
         Assert.assertEquals("test-domain", response.getDomain());
         Assert.assertEquals("zone-uuid", response.getZoneId());
         Assert.assertEquals("test-zone", response.getZone());
-        Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
-        Assert.assertEquals("test-offering", response.getBackupOffering());
         Assert.assertEquals("MANUAL", response.getIntervalType());
         Assert.assertEquals("{serviceofferingid=service-offering-uuid1, isiso=false, hypervisor=Simulator, " +
                 "nics=[{\"networkid\":\"network-uuid1\",\"networkname\":\"network1\"}], serviceofferingname=service-offering1, " +
                 "templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
         Assert.assertEquals(true, response.getVmOfferingRemoved());
+    }
+
+    private void assertBackupResponseOfferingFields(BackupResponse response) {
+        Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
+        Assert.assertEquals("test-offering", response.getBackupOffering());
     }
 
     private List<InternalBackupJoinVO> getListOfBackupJoins(int listSize) {
