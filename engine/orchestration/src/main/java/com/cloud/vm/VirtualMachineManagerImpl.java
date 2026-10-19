@@ -3793,7 +3793,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     AttachOrDettachConfigDriveCommand dettachCommand = new AttachOrDettachConfigDriveCommand(vm.getInstanceName(), vmData, VmConfigDriveLabel.value(), false);
                     try {
                         _agentMgr.send(srcHost.getId(), dettachCommand);
-                        logger.debug("Deleted config drive ISO for VM {} in host {}.", vm.getInstanceName(), srcHost);
+                        logger.debug("Deleted config drive ISO for VM {} in host {}.", vm.getInstanceName(), srcHost.getId());
                     } catch (OperationTimedoutException e) {
                         logger.error("Timeout occurred while executing command AttachOrDettachConfigDrive for VM {} on source host {}", vm.getInstanceName(), srcHost.getId(), e);
                     }

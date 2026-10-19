@@ -340,7 +340,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
         } catch (final LibvirtException e) {
-            logMigrationFailure(vmName, command.getDestinationIp(), e);
+            logMigrationFailure(vmName, destinationUri, e);
             result = e.getMessage();
             if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
                 logger.debug("Migration failed as connection to destination [{}] was refused. Please check Libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
@@ -354,7 +354,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             | SAXException
             | TransformerException
             | URISyntaxException e) {
-            logMigrationFailure(vmName, command.getDestinationIp(), e);
+            logMigrationFailure(vmName, destinationUri, e);
             if (result == null) {
                 result = "Exception during migrate: " + e.getMessage();
             }
@@ -413,8 +413,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return new MigrateAnswer(command, result == null, result, null);
     }
 
-    private void logMigrationFailure(String vmName, String destinationIp, Exception exception) {
-        logger.error("Could not migrate domain [{}] to host [{}].", vmName, destinationIp, exception);
+    private void logMigrationFailure(String vmName, String destinationUri, Exception exception) {
+        logger.error("Could not migrate domain [{}] to host [{}].", vmName, destinationUri, exception);
     }
 
     private DomainState getDestDomainState(Domain destDomain, String vmName) {
