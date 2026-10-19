@@ -40,6 +40,12 @@ example.ver.1 > example.ver.2:
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
 
+4.22.1.0 > 4.22.2.0:
+  * Management servers now save their ID locally and reuse it after restarts,
+    preventing network interface reordering from changing the ID. Keep the ID
+    file when upgrading or restoring a server. See INSTALL.md for the file
+    location and JVM options to override the ID or its storage location.
+
 4.22.0.0 > 4.22.0.1:
   * Disk-only instance snapshots for KVM UEFI VMs now include a sidecar copy of
     the active NVRAM state so revert operations restore both disk and firmware
