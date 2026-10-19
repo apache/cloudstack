@@ -89,23 +89,13 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         MigrateVolumeAnswer answer;
         if (Objects.equals(Storage.StoragePoolType.PowerFlex, srcPrimaryDataStore.getPoolType())) {
             answer = migratePowerFlexVolume(command, libvirtComputingResource);
-        } else if (Objects.equals(Storage.StoragePoolType.RBD, srcPrimaryDataStore.getPoolType())
-                || Objects.equals(Storage.StoragePoolType.RBD, destPrimaryDataStore.getPoolType())
-                || (isFileBasedPool(srcPrimaryDataStore) && isFileBasedPool(destPrimaryDataStore))) {
-            // RBD, NFS, SharedMountPoint and local volumes are live migrated in place with a libvirt block copy, as both pools are
-            // reachable from the host the Instance is running on (the command is sent to that host).
+        } else if (Storage.isCopiedInPlaceOnKvm(srcPrimaryDataStore.getPoolType(), destPrimaryDataStore.getPoolType())) {
             answer = migrateRBDVolume(command, libvirtComputingResource);
         } else {
             answer = migrateRegularVolume(command, libvirtComputingResource);
         }
 
         return answer;
-    }
-
-    private static boolean isFileBasedPool(PrimaryDataStoreTO dataStore) {
-        return Objects.equals(Storage.StoragePoolType.NetworkFilesystem, dataStore.getPoolType())
-                || Objects.equals(Storage.StoragePoolType.SharedMountPoint, dataStore.getPoolType())
-                || Objects.equals(Storage.StoragePoolType.Filesystem, dataStore.getPoolType());
     }
 
     protected MigrateVolumeAnswer migratePowerFlexVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {

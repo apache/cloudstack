@@ -2901,40 +2901,6 @@ public class VolumeApiServiceImplTest {
         }
     }
 
-    private static final List<Storage.StoragePoolType> FILE_BASED = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.Filesystem);
-
-    @Test
-    public void isVolumeMigrationBetweenRbdAndFileBasedBetweenRbdAndFileBasedPools() {
-        Assert.assertTrue(VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(Storage.StoragePoolType.RBD, Storage.StoragePoolType.RBD));
-        for (Storage.StoragePoolType fileBased : FILE_BASED) {
-            Assert.assertTrue("RBD -> " + fileBased, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(Storage.StoragePoolType.RBD, fileBased));
-            Assert.assertTrue(fileBased + " -> RBD", VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(fileBased, Storage.StoragePoolType.RBD));
-        }
-    }
-
-    @Test
-    public void isVolumeMigrationBetweenRbdAndFileBasedBetweenFileBasedPools() {
-        for (Storage.StoragePoolType src : FILE_BASED) {
-            for (Storage.StoragePoolType dest : FILE_BASED) {
-                Assert.assertTrue(src + " -> " + dest, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(src, dest));
-            }
-        }
-    }
-
-    @Test
-    public void isVolumeMigrationBetweenRbdAndFileBasedNotWithOtherPoolTypes() {
-        List<Storage.StoragePoolType> supported = new ArrayList<>(FILE_BASED);
-        supported.add(Storage.StoragePoolType.RBD);
-        for (Storage.StoragePoolType other : Arrays.asList(Storage.StoragePoolType.StorPool, Storage.StoragePoolType.PowerFlex,
-                Storage.StoragePoolType.Iscsi, Storage.StoragePoolType.CLVM, Storage.StoragePoolType.Linstor)) {
-            Assert.assertFalse(other + " -> " + other, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(other, other));
-            for (Storage.StoragePoolType type : supported) {
-                Assert.assertFalse(type + " -> " + other, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(type, other));
-                Assert.assertFalse(other + " -> " + type, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(other, type));
-            }
-        }
-    }
-
     private StoragePoolVO poolOfType(long id, Storage.StoragePoolType type) {
         StoragePoolVO pool = mock(StoragePoolVO.class);
         lenient().when(pool.getId()).thenReturn(id);

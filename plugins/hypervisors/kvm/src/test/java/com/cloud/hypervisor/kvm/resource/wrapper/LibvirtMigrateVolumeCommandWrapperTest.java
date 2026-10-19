@@ -253,13 +253,13 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
 
         PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
         Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
-        Mockito.doReturn(Storage.StoragePoolType.Iscsi).when(srcPrimaryDataStore).getPoolType();
+        Mockito.doReturn(Storage.StoragePoolType.Filesystem).when(srcPrimaryDataStore).getPoolType();
 
         VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
         Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
         PrimaryDataStoreTO destPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
         Mockito.doReturn(destPrimaryDataStore).when(destVolumeObjectTO).getDataStore();
-        Mockito.doReturn(Storage.StoragePoolType.Iscsi).when(destPrimaryDataStore).getPoolType();
+        Mockito.doReturn(Storage.StoragePoolType.Filesystem).when(destPrimaryDataStore).getPoolType();
 
         MigrateVolumeAnswer powerFlexAnswer = Mockito.mock(MigrateVolumeAnswer.class);
         MigrateVolumeAnswer regularVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
@@ -296,28 +296,21 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
     }
 
     @Test
-    public void testBlockCopyMigrateVolumeMethodBetweenRbdAndFileBasedPools() {
-        for (Storage.StoragePoolType fileBased : new Storage.StoragePoolType[] {Storage.StoragePoolType.NetworkFilesystem,
-                Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.Filesystem}) {
+    public void testBlockCopyMigrateVolumeMethodBetweenRbdPoolsAndWithFileBasedPools() {
+        Assert.assertTrue("RBD -> RBD", executeMigrationBetween(Storage.StoragePoolType.RBD, Storage.StoragePoolType.RBD, true).getResult());
+        for (Storage.StoragePoolType fileBased : Storage.KVM_FILE_BASED_POOL_TYPES) {
             Assert.assertTrue("RBD -> " + fileBased, executeMigrationBetween(Storage.StoragePoolType.RBD, fileBased, true).getResult());
             Assert.assertTrue(fileBased + " -> RBD", executeMigrationBetween(fileBased, Storage.StoragePoolType.RBD, true).getResult());
         }
     }
 
     @Test
-    public void testBlockCopyMigrateVolumeMethodBetweenFileBasedPools() {
-        Storage.StoragePoolType[] fileBasedTypes = {Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint,
-                Storage.StoragePoolType.Filesystem};
-        for (Storage.StoragePoolType src : fileBasedTypes) {
-            for (Storage.StoragePoolType dest : fileBasedTypes) {
-                Assert.assertTrue(src + " -> " + dest, executeMigrationBetween(src, dest, true).getResult());
+    public void testRegularMigrateVolumeMethodBetweenFileBasedPools() {
+        for (Storage.StoragePoolType src : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            for (Storage.StoragePoolType dest : Storage.KVM_FILE_BASED_POOL_TYPES) {
+                Assert.assertTrue(src + " -> " + dest, executeMigrationBetween(src, dest, false).getResult());
             }
         }
-    }
-
-    @Test
-    public void testRegularMigrateVolumeMethodFromFileBasedPoolToOtherPool() {
-        Assert.assertTrue(executeMigrationBetween(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Iscsi, false).getResult());
     }
 
     @Test

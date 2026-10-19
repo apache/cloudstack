@@ -74,6 +74,13 @@ from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = False
 
+# KVM copies a volume in place only between two RBD pools, or between an RBD pool and a file based
+# one (Storage.isMigrationBetweenRbdOrRbdAndFileBased). A migration between two file based pools is
+# refused, with this message for a live one and the next for an encrypted volume, so the tests which
+# ask for one assert the refusal instead of the move.
+LIVE_MIGRATION_REFUSED = "KVM does not support volume live migration"
+ENCRYPTED_MIGRATION_REFUSED = "Migration of encrypted volumes is unsupported"
+
 # Runs on the host of an Instance to access one of its disks as the Instance sees it, i.e. decrypted:
 #   disk-io.sh <domain> <disk alias> write|read "<qemu-io command>"
 # A write goes through the HMP qemu-io command of the disk device. A read goes through a read-only NBD
@@ -329,6 +336,22 @@ class VolumeMigrationRbdNfsBase(cloudstackTestCase):
             Volume.migrate(self.apiclient, volumeid=volume.id, storageid=pool.id, livemigrate=True)
         self.assert_instance_state(instance, 'Running')
 
+    def hop_between_file_based_pools(self, source_pool, destination_pool):
+        """Whether a hop cannot be made in place: a volume is only copied between two RBD pools, or
+        between an RBD pool and a file based one, so two file based pools are the case to avoid."""
+        return source_pool.type != 'RBD' and destination_pool.type != 'RBD'
+
+    def assert_migration_refused(self, volume, pool, expected, livemigrate):
+        """Assert that migrating volume to pool is refused, and refused for the expected reason."""
+        try:
+            Volume.migrate(self.apiclient, volumeid=volume.id, storageid=pool.id, livemigrate=livemigrate)
+        except Exception as error:
+            self.assertIn(expected, str(error),
+                          "Expected the migration to %s to be refused as unsupported, but it failed with: %s"
+                          % (pool.name, error))
+        else:
+            self.fail("Migration of volume %s to %s should have been refused" % (volume.id, pool.name))
+
     def migrate_offline(self, instance, volumes, pool):
         instance.stop(self.apiclient)
         for volume in volumes:
@@ -350,11 +373,28 @@ class VolumeMigrationRbdNfsBase(cloudstackTestCase):
         disks = InstanceDisks(self, instance, root_volume, data_volume)
         disks.mark()
 
+        current_pool = source_pool
         for pool in destination_pools:
+            if self.hop_between_file_based_pools(current_pool, pool):
+                if online:
+                    # the volume is attached to a running Instance, so the live migration check
+                    # answers the migration
+                    self.assert_migration_refused(root_volume, pool, LIVE_MIGRATION_REFUSED, True)
+                    continue
+                if self.encrypted:
+                    # stop the Instance, as migrate_offline does, so that the encrypted volume
+                    # check answers the migration rather than the live migration one
+                    instance.stop(self.apiclient)
+                    self.assert_migration_refused(root_volume, pool, ENCRYPTED_MIGRATION_REFUSED, False)
+                    instance.start(self.apiclient)
+                    continue
+                # an offline hop of a plain volume between two file based pools is allowed,
+                # and is made below
             if online:
                 self.migrate_online(instance, (root_volume, data_volume), pool)
             else:
                 self.migrate_offline(instance, (root_volume, data_volume), pool)
+            current_pool = pool
             self.verify_volumes(instance, disks, (root_volume, data_volume), pool)
             # the volumes also have to be usable when the Instance is started again
             instance.stop(self.apiclient)
@@ -414,8 +454,19 @@ class VolumeMigrationRbdNfsBase(cloudstackTestCase):
         instance, root_volume, data_volume = self.deploy_instance(self.rbd_pool)
         disks = InstanceDisks(self, instance, root_volume, data_volume)
         disks.mark()
+        current_pool = self.rbd_pool
         for pool in [pool for pool in (self.nfs_pool, self.nfs_pool2, self.rbd_pool2, self.rbd_pool) if pool is not None]:
+            if self.encrypted and self.hop_between_file_based_pools(current_pool, pool):
+                # detach the volume first, as migrate_detached does, so that the encrypted volume
+                # check answers the migration rather than the live migration one
+                instance.stop(self.apiclient)
+                instance.detach_volume(self.apiclient, data_volume)
+                self.assert_migration_refused(data_volume, pool, ENCRYPTED_MIGRATION_REFUSED, False)
+                instance.attach_volume(self.apiclient, data_volume)
+                instance.start(self.apiclient)
+                continue
             self.migrate_detached(instance, data_volume, pool)
+            current_pool = pool
             self.verify_volumes(instance, disks, (data_volume,), pool)
 
 
@@ -529,7 +580,7 @@ class TestVolumeMigrationRbdNfs(VolumeMigrationRbdNfsBase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_03_online_migration_from_nfs_to_nfs(self):
-        """Online migration: NFS (ROOT with chain) -> NFS"""
+        """Online migration: NFS (ROOT with chain) -> NFS is refused, as both pools are file based"""
         self.require_pools(self.nfs_pool2)
         self.online_migration_from_nfs(self.nfs_pool2)
 
@@ -572,7 +623,7 @@ class TestEncryptedVolumeMigrationRbdNfs(VolumeMigrationRbdNfsBase):
 
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
     def test_03_encrypted_online_migration_from_nfs_to_nfs(self):
-        """Online migration of encrypted volumes: NFS (ROOT with chain) -> NFS"""
+        """Online migration of encrypted volumes: NFS -> NFS is refused, as both pools are file based"""
         self.require_pools(self.nfs_pool2)
         self.online_migration_from_nfs(self.nfs_pool2)
 

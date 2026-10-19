@@ -83,4 +83,82 @@ public class StorageTest {
         Assert.assertTrue(t1.equals(StoragePoolType.NetworkFilesystem));
         Assert.assertFalse(t1.equals(StoragePoolType.EXT));
     }
+
+    @Test
+    public void arePoolsSameTypeForTwoPoolsOfThatType() {
+        for (StoragePoolType poolType : StoragePoolType.values()) {
+            Assert.assertTrue(poolType + " -> " + poolType, Storage.arePoolsSameType(poolType, poolType));
+            for (StoragePoolType other : StoragePoolType.values()) {
+                if (other.equals(poolType)) {
+                    continue;
+                }
+                Assert.assertFalse(poolType + " -> " + other, Storage.arePoolsSameType(poolType, other));
+            }
+        }
+    }
+
+    @Test
+    public void isAnyPoolFileBasedForOneFileBasedPool() {
+        for (StoragePoolType fileBased : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            Assert.assertTrue("RBD -> " + fileBased, Storage.isAnyPoolFileBased(StoragePoolType.RBD, fileBased));
+            Assert.assertTrue(fileBased + " -> RBD", Storage.isAnyPoolFileBased(fileBased, StoragePoolType.RBD));
+            for (StoragePoolType otherFileBased : Storage.KVM_FILE_BASED_POOL_TYPES) {
+                Assert.assertTrue(fileBased + " -> " + otherFileBased, Storage.isAnyPoolFileBased(fileBased, otherFileBased));
+            }
+        }
+        Assert.assertFalse("RBD -> RBD", Storage.isAnyPoolFileBased(StoragePoolType.RBD, StoragePoolType.RBD));
+    }
+
+    @Test
+    public void isCopiedInPlaceOnKvmForRbdAndForRbdAndFileBasedPools() {
+        Assert.assertTrue("RBD -> RBD", Storage.isCopiedInPlaceOnKvm(StoragePoolType.RBD, StoragePoolType.RBD));
+        for (StoragePoolType fileBased : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            Assert.assertTrue("RBD -> " + fileBased, Storage.isCopiedInPlaceOnKvm(StoragePoolType.RBD, fileBased));
+            Assert.assertTrue(fileBased + " -> RBD", Storage.isCopiedInPlaceOnKvm(fileBased, StoragePoolType.RBD));
+        }
+    }
+
+    @Test
+    public void isCopiedInPlaceOnKvmNotBetweenTwoFileBasedPools() {
+        for (StoragePoolType srcType : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            for (StoragePoolType destType : Storage.KVM_FILE_BASED_POOL_TYPES) {
+                Assert.assertFalse(srcType + " -> " + destType, Storage.isCopiedInPlaceOnKvm(srcType, destType));
+            }
+        }
+    }
+
+    @Test
+    public void isCopiedInPlaceOnKvmNotWithOtherPoolTypes() {
+        for (StoragePoolType other : StoragePoolType.values()) {
+            if (StoragePoolType.RBD.equals(other) || Storage.KVM_FILE_BASED_POOL_TYPES.contains(other)) {
+                continue;
+            }
+            Assert.assertFalse(other + " -> " + other, Storage.isCopiedInPlaceOnKvm(other, other));
+            Assert.assertFalse("RBD -> " + other, Storage.isCopiedInPlaceOnKvm(StoragePoolType.RBD, other));
+            Assert.assertFalse(other + " -> RBD", Storage.isCopiedInPlaceOnKvm(other, StoragePoolType.RBD));
+        }
+    }
+
+    @Test
+    public void areBothPoolsFileBasedBetweenTwoFileBasedPools() {
+        for (StoragePoolType srcType : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            for (StoragePoolType destType : Storage.KVM_FILE_BASED_POOL_TYPES) {
+                Assert.assertTrue(srcType + " -> " + destType, Storage.areBothPoolsFileBased(srcType, destType));
+            }
+        }
+    }
+
+    @Test
+    public void areBothPoolsFileBasedNotWithOtherPoolTypes() {
+        for (StoragePoolType other : StoragePoolType.values()) {
+            if (Storage.KVM_FILE_BASED_POOL_TYPES.contains(other)) {
+                continue;
+            }
+            Assert.assertFalse(other + " -> " + other, Storage.areBothPoolsFileBased(other, other));
+            for (StoragePoolType fileBased : Storage.KVM_FILE_BASED_POOL_TYPES) {
+                Assert.assertFalse(fileBased + " -> " + other, Storage.areBothPoolsFileBased(fileBased, other));
+                Assert.assertFalse(other + " -> " + fileBased, Storage.areBothPoolsFileBased(other, fileBased));
+            }
+        }
+    }
 }

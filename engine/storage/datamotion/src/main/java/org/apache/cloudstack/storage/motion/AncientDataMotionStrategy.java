@@ -683,9 +683,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 // regardless of what format it had on the source pool (e.g. QCOW2 on NFS).
                 volumeVo.setFormat(ImageFormat.RAW);
             } else if (srcPool.getPoolType() == StoragePoolType.RBD && volumeVo.getFormat() == ImageFormat.RAW
-                    && (destPool.getPoolType() == StoragePoolType.NetworkFilesystem
-                    || destPool.getPoolType() == StoragePoolType.SharedMountPoint
-                    || destPool.getPoolType() == StoragePoolType.Filesystem)) {
+                    && Storage.KVM_FILE_BASED_POOL_TYPES.contains(destPool.getPoolType())) {
                 // The KVM agent (LibvirtMigrateVolumeCommandWrapper) writes a real QCOW2 file when the
                 // destination is file-based; without updating this, the volume keeps looking RAW to
                 // LibvirtComputingResource, which then (mis)treats a plain qcow2 file on NFS as a raw
