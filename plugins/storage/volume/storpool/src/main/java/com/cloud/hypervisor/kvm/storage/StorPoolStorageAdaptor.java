@@ -328,6 +328,26 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public boolean cleanupCreatedPhysicalDisk(String volumePath, KVMStoragePool pool) {
+        SP_LOG("StorPoolStorageAdaptor.cleanupCreatedPhysicalDisk: path=%s, pool=%s", volumePath, pool);
+        final String name = getVolumeNameFromPath(volumePath, true);
+        if (name == null) {
+            LOGGER.warn(String.format("Unable to clean up created disk '%s': not a StorPool volume path", volumePath));
+            return false;
+        }
+
+        try {
+            disconnectPhysicalDisk(volumePath, pool);
+            volumeDelete(name);
+        } catch (CloudRuntimeException e) {
+            SP_LOG("Failed to delete created StorPool volume %s: %s", name, e.getMessage());
+            LOGGER.warn(String.format("Failed to delete created StorPool volume %s, it must be deleted manually: %s", name, e.getMessage()));
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool) {
         SP_LOG("StorPoolStorageAdaptor.listPhysicalDisks: uuid=%s, pool=%s", storagePoolUuid, pool);
         throw new UnsupportedOperationException("Listing disks is not supported for this configuration.");
@@ -488,7 +508,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         try {
             attachOrDetachVolume("attach", "volume", volumePath);
         } catch (CloudRuntimeException e) {
-            volumeDelete(globalId);
+            volumeDelete("~" + globalId);
             throw e;
         }
 
