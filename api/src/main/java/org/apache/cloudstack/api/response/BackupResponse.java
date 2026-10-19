@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.response;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.response.helper.BackupVolumeNameAndPath;
 import org.apache.cloudstack.backup.Backup;
 
 import com.cloud.serializer.Param;
@@ -101,7 +102,7 @@ public class BackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.BACKUP_PATHS)
     @Param(description = "The backups paths in the secondary storage")
-    private Map<String, String> backupPaths;
+    private Map<String, BackupVolumeNameAndPath> backupPaths;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "Account id")
@@ -391,12 +392,11 @@ public class BackupResponse extends BaseResponse {
         return this.hostId;
     }
 
-    public Map<String, String> getBackupPaths() {
+    public Map<String, BackupVolumeNameAndPath> getBackupPaths() {
         return backupPaths;
     }
 
-    public void setBackupPaths(Map<String, String> backupPaths) {
+    public void setBackupPaths(Map<String, BackupVolumeNameAndPath> backupPaths) {
         this.backupPaths = backupPaths;
     }
-
 }

@@ -38,6 +38,7 @@ SELECT  b.id,
         COALESCE(MAX(CASE WHEN bd.name = 'isolated' THEN bd.value END), 'false') isolated,
         nbpr.volume_id,
         v.name as volume_name,
+        v.uuid as volume_uuid,
         nbsr.path image_store_path
 FROM    backups b
 LEFT    JOIN backup_details bd ON b.id = bd.backup_id

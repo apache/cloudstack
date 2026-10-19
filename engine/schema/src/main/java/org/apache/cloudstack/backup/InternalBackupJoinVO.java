@@ -98,6 +98,9 @@ public class InternalBackupJoinVO {
     @Column(name = "volume_id")
     private long volumeId;
 
+    @Column(name = "volume_uuid")
+    private String volumeUuid;
+
     @Column(name = "volume_name")
     private String volumeName;
 
@@ -188,6 +191,11 @@ public class InternalBackupJoinVO {
 
     public Backup.CompressionStatus getCompressionStatus() {
         return compressionStatus;
+    }
+
+
+    public String getVolumeUuid() {
+        return volumeUuid;
     }
 
     @Override
