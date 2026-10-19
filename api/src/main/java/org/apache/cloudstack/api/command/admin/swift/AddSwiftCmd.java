@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 
-import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
@@ -83,25 +82,20 @@ public class AddSwiftCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Map<String, String> dm = new HashMap<String, String>();
+        Map<String, String> dm = new HashMap<>();
         dm.put(ApiConstants.ACCOUNT, getAccount());
         dm.put(ApiConstants.USERNAME, getUsername());
         dm.put(ApiConstants.KEY, getKey());
 
-        try{
-            ImageStore result = _storageService.discoverImageStore(null, getUrl(), "Swift", null, dm);
-            ImageStoreResponse storeResponse = null;
-            if (result != null) {
-                storeResponse = _responseGenerator.createImageStoreResponse(result);
-                storeResponse.setResponseName(getCommandName());
-                storeResponse.setObjectName("secondarystorage");
-                setResponseObject(storeResponse);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift secondary storage");
-            }
-        } catch (DiscoveryException ex) {
-            logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        ImageStore result = _storageService.discoverImageStore(null, getUrl(), "Swift", null, dm);
+        ImageStoreResponse storeResponse;
+        if (result != null) {
+            storeResponse = _responseGenerator.createImageStoreResponse(result);
+            storeResponse.setResponseName(getCommandName());
+            storeResponse.setObjectName("secondarystorage");
+            setResponseObject(storeResponse);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift secondary storage");
         }
     }
 }
