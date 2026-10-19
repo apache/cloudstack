@@ -3445,7 +3445,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
                 destFormat = getFormat(destPoolDefaultFormat);
                 final String volumeName = UUID.randomUUID().toString();
-                destVolumeName = volumeName + "." + destFormat.getFileExtension();
+                // The name of an RBD image survives an online migration to a file based pool, where the block copy
+                // writes a qcow2 file, so a ".raw" extension would outlive the format it names.
+                destVolumeName = StoragePoolType.RBD.equals(destPrimaryStore.getPoolType()) ? volumeName : volumeName + "." + destFormat.getFileExtension();
 
                 // Update path in the command for reconciliation
                 if (StringUtils.isBlank(destVolumePath)) {
