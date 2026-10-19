@@ -219,8 +219,14 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                     if (blockJobInfo.end > 0) {
                         logger.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
                         dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
+                        // the Instance uses the destination volume from here on, so what is left to do must not fail the migration
                         if (StringUtils.isNotEmpty(srcSecretUUID)) {
-                            libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                            try {
+                                libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                            } catch (Exception e) {
+                                logger.warn(String.format("Failed to remove the libvirt secret %s of the source volume %s after the block copy completed: %s",
+                                        srcSecretUUID, srcPath, e.getMessage()), e);
+                            }
                         }
                         break;
                     } else {
@@ -415,6 +421,9 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         Domain dm = null;
         MigrateVolumeAnswer answer = null;
         boolean destVolumeCreated = false;
+        // whether the block copy has been pivoted: the Instance then uses the destination volume, so nothing
+        // that follows may turn the migration into a failure
+        boolean pivoted = false;
         KVMStoragePool destKvmPool = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -489,29 +498,37 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             logger.info(String.format("Block copy has started for the volume %s : %s to %s", destDiskLabel, sourceFilePath, destFilePath));
 
             answer = checkBlockJobStatus(command, dm, destDiskLabel, sourceFilePath, destFilePath, libvirtComputingResource, conn, srcSecretUUID);
-            if (answer != null) {
-                if (answer.getResult()) {
-                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
-                } else {
-                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
-                }
-            }
             if (answer != null && answer.getResult()) {
+                // the block copy was pivoted: from here on the migration is done, and what follows only logs a failure
+                pivoted = true;
                 answer = new MigrateVolumeAnswer(command, true, null, destVolumeObjectTO.getPath());
+                try {
+                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
 
-                // Libvirt only detects the volume's real format (e.g. qcow2) if the destination pool
-                // already knew about it as such. Since the block copy wrote the file directly (not
-                // through libvirt's own volume-creation calls), any pool other than RBD needs an
-                // explicit refresh here; otherwise libvirt keeps whatever it inferred when the disk
-                // was first attached to this domain (or falls back to a filename-suffix guess), which
-                // for a volume carried over from RBD would wrongly be treated as a raw block device the
-                // next time the Instance is (re)started.
-                if (!Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())) {
-                    pool.refresh();
+                    // Libvirt only detects the volume's real format (e.g. qcow2) if the destination pool
+                    // already knew about it as such. Since the block copy wrote the file directly (not
+                    // through libvirt's own volume-creation calls), any pool other than RBD needs an
+                    // explicit refresh here; otherwise libvirt keeps whatever it inferred when the disk
+                    // was first attached to this domain (or falls back to a filename-suffix guess), which
+                    // for a volume carried over from RBD would wrongly be treated as a raw block device the
+                    // next time the Instance is (re)started.
+                    if (!Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())) {
+                        pool.refresh();
+                    }
+                } catch (Exception e) {
+                    logger.warn(String.format("Failed to finish the migration of the volume %s to the pool %s after the block copy was pivoted: %s",
+                            destVolumeObjectTO.getPath(), destPool.getUuid(), e.getMessage()), e);
                 }
+            } else if (answer != null) {
+                libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
             }
             return answer;
         } catch (Exception e) {
+            if (pivoted) {
+                // the Instance already uses the destination volume: report the migration as done, as it is
+                logger.warn(String.format("Ignoring %s after the block copy of the volume %s was pivoted", e.toString(), destVolumeObjectTO.getPath()), e);
+                return answer;
+            }
             String msg = "Migrate volume failed due to " + e.toString();
             logger.warn(msg, e);
             if (destDiskLabel != null) {
@@ -531,12 +548,18 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             if (destVolumeCreated && (answer == null || !answer.getResult())) {
                 deleteDestinationVolume(destKvmPool, destPool, destVolumeObjectTO.getPath());
             }
-            if (answer != null && answer.getResult()) {
-                // Remove old volume after successful migration
-                KVMStoragePool libvirtSourcePool = storagePoolMgr.getStoragePool(sourcePool.getPoolType(), sourcePool.getUuid());
-                Storage.ImageFormat srcFormat = Objects.equals(Storage.StoragePoolType.RBD, sourcePool.getPoolType())
-                        ? Storage.ImageFormat.RAW : Storage.ImageFormat.QCOW2;
-                libvirtSourcePool.deletePhysicalDisk(srcVolumeObjectTO.getPath(), srcFormat);
+            if (pivoted) {
+                // Remove old volume after successful migration. The Instance uses the destination volume already, so a
+                // failure to remove the source one is only logged: it must not turn the migration into a failure.
+                try {
+                    KVMStoragePool libvirtSourcePool = storagePoolMgr.getStoragePool(sourcePool.getPoolType(), sourcePool.getUuid());
+                    Storage.ImageFormat srcFormat = Objects.equals(Storage.StoragePoolType.RBD, sourcePool.getPoolType())
+                            ? Storage.ImageFormat.RAW : Storage.ImageFormat.QCOW2;
+                    libvirtSourcePool.deletePhysicalDisk(srcVolumeObjectTO.getPath(), srcFormat);
+                } catch (Exception e) {
+                    logger.warn(String.format("Failed to remove the source volume %s from the pool %s after it was migrated: %s. It has to be removed manually",
+                            srcVolumeObjectTO.getPath(), sourcePool.getUuid(), e.getMessage()), e);
+                }
             }
             if (dm != null) {
                 try {
