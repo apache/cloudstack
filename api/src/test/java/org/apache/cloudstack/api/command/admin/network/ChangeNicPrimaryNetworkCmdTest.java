@@ -103,6 +103,7 @@ public class ChangeNicPrimaryNetworkCmdTest {
 
         assertEquals(response, cmd.getResponseObject());
         assertEquals("changenicprimarynetworkresponse", response.getResponseName());
+        assertEquals("nic", response.getObjectName());
     }
 
     @Test

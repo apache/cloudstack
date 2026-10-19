@@ -156,6 +156,7 @@ public class AssociateNetworkToNicCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to associate network to NIC. Refer to server logs for details.");
         }
         NicResponse response = _responseGenerator.createNicResponse(result);
+        response.setObjectName("nic");
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

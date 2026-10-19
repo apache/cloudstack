@@ -119,6 +119,7 @@ public class DisassociateNetworkFromNicCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disassociate network from NIC. Refer to server logs for details.");
         }
         NicResponse response = _responseGenerator.createNicResponse(result);
+        response.setObjectName("nic");
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

@@ -103,6 +103,7 @@ public class DisassociateNetworkFromNicCmdTest {
 
         assertEquals(response, cmd.getResponseObject());
         assertEquals("disassociatenetworkfromnicresponse", response.getResponseName());
+        assertEquals("nic", response.getObjectName());
     }
 
     @Test

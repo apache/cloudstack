@@ -163,6 +163,7 @@ public class AssociateNetworkToNicCmdTest {
 
         assertEquals(response, cmd.getResponseObject());
         assertEquals("associatenetworktonicresponse", response.getResponseName());
+        assertEquals("nic", response.getObjectName());
     }
 
     @Test

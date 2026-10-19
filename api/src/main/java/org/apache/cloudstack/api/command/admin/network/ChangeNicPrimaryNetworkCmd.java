@@ -120,6 +120,7 @@ public class ChangeNicPrimaryNetworkCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to change nic's primary network. Refer to server logs for details.");
         }
         NicResponse response = _responseGenerator.createNicResponse(result);
+        response.setObjectName("nic");
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
