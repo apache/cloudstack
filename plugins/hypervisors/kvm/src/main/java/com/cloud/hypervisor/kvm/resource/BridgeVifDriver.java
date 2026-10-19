@@ -307,9 +307,7 @@ public class BridgeVifDriver extends VifDriverBase {
             throw new InternalErrorException("Cannot apply manual VLAN trunk membership: tap device name unknown for nic " + nic.getMac());
         }
         Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
-        for (Integer vlanTag : collectTrunkVlanTags(nic)) {
-            runBridgeVlanCommand("add", tapName, String.valueOf(vlanTag), vlanTag.equals(primaryVlanTag));
-        }
+        applyVlanTrunkMembershipDiff(tapName, collectTrunkVlanTags(nic), primaryVlanTag);
     }
 
     protected void runBridgeVlanCommand(String operation, String dev, String vid, boolean pvidUntagged) throws InternalErrorException {
