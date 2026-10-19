@@ -1154,7 +1154,7 @@ public class QemuImg {
     }
 
     public Integer validateAndGetRateLimit(Integer rateLimit) throws QemuImgException {
-        if (rateLimit < 1) {
+        if (rateLimit == null || rateLimit < 1) {
             return null;
         }
 
