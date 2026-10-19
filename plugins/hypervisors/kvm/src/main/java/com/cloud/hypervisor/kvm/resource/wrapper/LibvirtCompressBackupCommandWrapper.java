@@ -24,7 +24,6 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.CompressBackupCommand;
 import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
@@ -54,7 +53,7 @@ public class LibvirtCompressBackupCommandWrapper extends CommandWrapper<Compress
         logger.info("Starting compression for backup deltas [{}].", deltas);
         try {
             QemuImg qemuImg = new QemuImg(command.getWait() * 1000);
-            Integer rateLimit = validateAndGetRateLimit(command, qemuImg);
+            Integer rateLimit = qemuImg.validateAndGetRateLimit(command.getRateLimit());
 
             KVMStoragePool mainSecStorage = storagePoolManager.getStoragePoolByURI(deltas.stream().findFirst().orElseThrow().getChild().getDataStore().getUrl());
             secondaryStorages.add(mainSecStorage);
@@ -97,18 +96,6 @@ public class LibvirtCompressBackupCommandWrapper extends CommandWrapper<Compress
         }
 
         return new Answer(command);
-    }
-
-    private Integer validateAndGetRateLimit(CompressBackupCommand command, QemuImg qemuImg) {
-        if (command.getRateLimit() < 1) {
-            return null;
-        }
-
-        if (qemuImg.getVersion() < QemuImg.QEMU_5_2) {
-            throw new CloudRuntimeException("Qemu version is lower than 5.2.0, unable to set the rate limit.");
-        }
-
-        return command.getRateLimit();
     }
 
     private Backup.CompressionLibrary getCompressionLibrary(CompressBackupCommand command, String fullDeltaPath) {

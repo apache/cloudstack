@@ -302,8 +302,9 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
         if (command.isCompress()) {
             qemuImg.setCompressionTypeOptionIfAvailable(options, command.getCompressionLib());
         }
+        Integer rateLimit = qemuImg.validateAndGetRateLimit(command.getRateLimit());
         qemuImg.convert(backupOrigin, backupDestination, parentBackup, options, null,  new QemuImageOptions(backupOrigin.getFormat(), backupOrigin.getFileName(), null), null,
-                true, false, false, command.isCompress(), command.getCoroutines(), command.getRateLimit());
+                true, false, false, command.isCompress(), command.getCoroutines(), rateLimit);
 
     }
 
