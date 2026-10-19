@@ -1262,7 +1262,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, caller account [%s] is not ROOT Admin.", caller.getUuid()));
         }
         if (clusterId == null) {
-            throw new InvalidParameterValueException("Cluster ID cannot be null.");
+            throw new InvalidParameterValueException(String.format("Cluster ID cannot be null, please specify the [%s] parameter.", ApiConstants.CLUSTER_ID));
         }
         final Cluster cluster = clusterDao.findById(clusterId);
         if (cluster == null) {
