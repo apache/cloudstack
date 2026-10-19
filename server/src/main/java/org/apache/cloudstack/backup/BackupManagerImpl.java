@@ -1068,9 +1068,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                      Resource.ResourceType.backup_storage, backupSize, reservationDao, resourceLimitMgr)) {
 
             Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated());
-            if (!result.first()) {
-                throw new CloudRuntimeException("Failed to create Instance Backup");
-            }
             Backup backup = result.second();
             if (backup != null) {
                 updateBackupFromCmd(backup.getId(), cmd, backupScheduleId);

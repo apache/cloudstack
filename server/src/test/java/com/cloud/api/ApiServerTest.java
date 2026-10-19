@@ -29,6 +29,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
@@ -302,7 +303,7 @@ public class ApiServerTest {
         overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "false");
         User user = Mockito.mock(User.class);
 
-        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"));
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
 
         Mockito.verify(accountManager, Mockito.never()).getAccount(Mockito.anyLong());
     }
@@ -317,7 +318,7 @@ public class ApiServerTest {
         Mockito.when(account.getId()).thenReturn(1L);
         Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
 
-        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"));
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
 
         Mockito.verify(accountManager).getAccount(1L);
     }
@@ -332,11 +333,11 @@ public class ApiServerTest {
         Mockito.when(account.getId()).thenReturn(1L);
         Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
 
-        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"));
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
     }
 
     @Test(expected = PermissionDeniedException.class)
     public void testCheckCommandAvailableThrowsWhenUserNull() throws Exception {
-        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", null, "listVirtualMachines", InetAddress.getByName("127.0.0.1"));
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", null, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
     }
 }

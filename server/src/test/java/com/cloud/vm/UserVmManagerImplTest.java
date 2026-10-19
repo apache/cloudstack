@@ -503,9 +503,6 @@ public class UserVmManagerImplTest {
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
-    @Mock
-    InstanceGroupVMMapDao instanceGroupVMMapDao;
-
     private static final long vmId = 1L;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
@@ -694,9 +691,9 @@ public class UserVmManagerImplTest {
         Mockito.when(userVmVoMock.getId()).thenReturn(vmId);
         InstanceGroupVMMapVO mapVO = Mockito.mock(InstanceGroupVMMapVO.class);
         Mockito.when(mapVO.getInstanceId()).thenReturn(vmId);
-        Mockito.when(instanceGroupVMMapDao.listByInstanceId(vmId)).thenReturn(Collections.singletonList(mapVO));
+        Mockito.when(_groupVMMapDao.listByInstanceId(vmId)).thenReturn(Collections.singletonList(mapVO));
         SearchCriteria<InstanceGroupVMMapVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(instanceGroupVMMapDao.createSearchCriteria()).thenReturn(searchCriteria);
+        Mockito.when(_groupVMMapDao.createSearchCriteria()).thenReturn(searchCriteria);
 
         // Set group = "" to reset/restore the instance group for a VM
         Mockito.when(updateVmCommand.getGroup()).thenReturn("");
@@ -705,7 +702,7 @@ public class UserVmManagerImplTest {
 
         verifyMethodsThatAreAlwaysExecuted();
         Mockito.verify(userVmManagerImpl).removeInstanceFromInstanceGroup(vmId);
-        Mockito.verify(instanceGroupVMMapDao).expunge(searchCriteria);
+        Mockito.verify(_groupVMMapDao).expunge(searchCriteria);
     }
 
     @Test

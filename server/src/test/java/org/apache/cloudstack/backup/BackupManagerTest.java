@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -795,7 +794,7 @@ public class BackupManagerTest {
         Backup backup = mock(Backup.class);
         when(backup.getId()).thenReturn(backupId);
         when(backupProvider.getName()).thenReturn("testbackupprovider");
-        when(backupProvider.takeBackup(vmInstanceVOMock, null, anyBoolean())).thenReturn(new Pair<>(false, backup));
+        when(backupProvider.takeBackup(vmInstanceVOMock, null, false)).thenReturn(new Pair<>(false, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
         ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
