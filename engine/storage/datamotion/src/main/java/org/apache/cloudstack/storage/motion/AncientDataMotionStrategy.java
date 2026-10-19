@@ -95,6 +95,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private static final List<StoragePoolType> SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE = Arrays.asList(
             StoragePoolType.NetworkFilesystem,
             StoragePoolType.Filesystem,
+            StoragePoolType.SharedMountPoint,
             StoragePoolType.RBD
     );
 
