@@ -29,6 +29,7 @@ import net.sf.ehcache.CacheManager;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.springframework.stereotype.Component;
@@ -164,17 +165,17 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     }
 
     @Override
-    public boolean checkAccess(User user, String apiCommandName, ApiKeyPairPermission ... apiKeyPairPermissions) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String apiCommandName, ApiKeyPair keyPair, ApiKeyPairPermission ... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
 
         Account account = _accountService.getAccount(user.getAccountId());
-        return checkAccess(account, apiCommandName, apiKeyPairPermissions);
+        return checkAccess(account, apiCommandName, keyPair, apiKeyPairPermissions);
     }
 
     @Override
-    public boolean checkAccess(Account account, String commandName, ApiKeyPairPermission ... apiKeyPairPermissions) {
+    public boolean checkAccess(Account account, String commandName, ApiKeyPair keyPair, ApiKeyPairPermission ... apiKeyPairPermissions) {
         Long accountId = account.getAccountId();
         if (_accountService.isRootAdmin(accountId)) {
             logger.info(String.format("Account [%s] is Root Admin, in this case, API limit does not apply.",

@@ -69,6 +69,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -126,6 +127,12 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final String cmdType = cmd.getType().getValue();
         final String ipAddress = cmd.getAddress();
         final String optionalArguments = cmd.getOptionalArguments();
+
+        if (StringUtils.isBlank(ipAddress) || !isValidIpOrHostname(ipAddress)) {
+            throw new InvalidParameterValueException("Invalid ipaddress value: " + ipAddress +
+                    ". It must be a valid IPv4/IPv6 address or hostname.");
+        }
+
         final VMInstanceVO vmInstance = instanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.DomainRouter, VirtualMachine.Type.SecondaryStorageVm);
 
         if (vmInstance == null) {
@@ -140,7 +147,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final String shellCmd = prepareShellCmd(cmdType, ipAddress, optionalArguments);
 
         if (StringUtils.isEmpty(shellCmd)) {
-            throw new IllegalArgumentException("Optional parameters contain unwanted characters: " + optionalArguments);
+            throw new InvalidParameterValueException("Diagnostics command contains invalid characters in ipaddress or optional parameters");
         }
 
         final Hypervisor.HypervisorType hypervisorType = vmInstance.getHypervisorType();
@@ -176,7 +183,20 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         }
     }
 
+    protected boolean isValidIpOrHostname(String address) {
+        if (StringUtils.isBlank(address)) {
+            return false;
+        }
+        if (NetUtils.isValidIp4(address) || NetUtils.isValidIp6(address)) {
+            return true;
+        }
+        return NetUtils.verifyDomainName(address);
+    }
+
     protected String prepareShellCmd(String cmdType, String ipAddress, String optionalParams) {
+        if (!isValidIpOrHostname(ipAddress)) {
+            return null;
+        }
         final String CMD_TEMPLATE = String.format("%s %s", cmdType, ipAddress);
         if (StringUtils.isEmpty(optionalParams)) {
             return CMD_TEMPLATE;
@@ -209,11 +229,26 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         return zipFilesAnswer.getDetails().replace("\n", "");
     }
 
+    private static final Pattern VALID_DIAG_FILE_PATTERN = Pattern.compile("^[\\w\\-./]+$");
+
+    protected void validateDiagnosticsFilesList(List<String> filesList) {
+        if (CollectionUtils.isEmpty(filesList)) {
+            return;
+        }
+        for (String file : filesList) {
+            if (StringUtils.isBlank(file) || !VALID_DIAG_FILE_PATTERN.matcher(file).matches() || file.contains("..")) {
+                throw new InvalidParameterValueException("Invalid diagnostics file entry: " + file +
+                        ". File paths must contain only alphanumeric characters, hyphens, underscores, dots, and forward slashes.");
+            }
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "getting diagnostics files on system vm", async = true)
     public String getDiagnosticsDataCommand(GetDiagnosticsDataCmd cmd) {
         final Long vmId = cmd.getId();
         final List<String> optionalFilesList = cmd.getFilesList();
+        validateDiagnosticsFilesList(optionalFilesList);
         final VMInstanceVO vmInstance = getSystemVMInstance(vmId);
         final DataStore store = getImageStore(vmInstance.getDataCenterId());
 

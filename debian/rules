@@ -177,7 +177,7 @@ override_dh_auto_install:
 
 	# cloudstack-marvin
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin
-	cp tools/marvin/dist/Marvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
+	cp tools/marvin/dist/[Mm]arvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
 
 	# cloudstack-integration-tests
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests

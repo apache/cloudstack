@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import com.linbit.linstor.api.ApiException;
+import org.apache.cloudstack.storage.datastore.util.LinstorImportHelper;
 import com.linbit.linstor.api.CloneWaiter;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
@@ -221,6 +222,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return LinstorUtil.getLinstorAPI(pool.getHostAddress(),
                 LinstorConfigurationManager.ApiToken.valueIn(pool.getId()),
                 Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(pool.getId())));
+    }
+
+    @Override
+    public void validateVolumeForImport(StoragePool pool, String path) {
+        LinstorImportHelper.validateResourceGroup(
+                getLinstorAPI(pool), pool.getPath(), path);
     }
 
     private void deleteResourceDefinition(StoragePoolVO storagePoolVO, String rscDefName)

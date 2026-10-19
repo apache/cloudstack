@@ -51,7 +51,9 @@ const err = (error) => {
       })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
+      const requestCommand = (response.config && response.config.params && response.config.params.command) ||
+        (response.config && typeof response.config.data === 'string' && new URLSearchParams(response.config.data).get('command'))
+      if (['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(requestCommand)) {
         return
       }
       const originalPath = router.currentRoute.value.path
@@ -75,9 +77,9 @@ const err = (error) => {
           }
         }
       }
-      countNotify++
-      store.commit('SET_COUNT_NOTIFY', countNotify)
       if (originalPath === '/verify2FA' || originalPath === '/setup2FA') {
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
           top: '65px',
           message: i18n.global.t('label.2FA'),
@@ -90,7 +92,9 @@ const err = (error) => {
             store.commit('SET_COUNT_NOTIFY', countNotify)
           }
         })
-      } else {
+      } else if (originalPath !== '/user/login') {
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
           top: '65px',
           message: i18n.global.t('label.unauthorized'),

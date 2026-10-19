@@ -31,7 +31,9 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
+import org.apache.cloudstack.storage.datastore.util.LinstorImportHelper;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
@@ -168,6 +170,12 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
+    }
+
+    public List<VolumeOnStorageTO> getVolumesForImport(
+            LinstorStoragePool pool, String path) {
+        return LinstorImportHelper.getVolumesForImport(
+                getLinstorAPI(pool), pool.getResourceGroup(), path);
     }
 
     @Override
@@ -593,7 +601,30 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool)
     {
-        throw new UnsupportedOperationException("Listing disks is not supported for this configuration.");
+        logger.debug("Linstor: listPhysicalDisks for pool {}", storagePoolUuid);
+        final DevelopersApi api = getLinstorAPI(pool);
+        final LinstorStoragePool linstorPool = (LinstorStoragePool) pool;
+        final String rscGroup = linstorPool.getResourceGroup();
+        List<KVMPhysicalDisk> disks = new ArrayList<>();
+        try {
+            List<ResourceDefinition> rscDfns = LinstorUtil.getRDListStartingWith(api, LinstorUtil.RSC_PREFIX);
+            for (ResourceDefinition rscDfn : rscDfns) {
+                if (rscGroup != null && !rscGroup.equalsIgnoreCase(rscDfn.getResourceGroupName())) {
+                    continue;
+                }
+                String name = rscDfn.getName().substring(LinstorUtil.RSC_PREFIX.length());
+                try {
+                    disks.add(getPhysicalDisk(name, pool));
+                } catch (Exception e) {
+                    logger.warn("Linstor: skipping resource {} while listing pool {}: {}",
+                            rscDfn.getName(), storagePoolUuid, e.getMessage());
+                }
+            }
+        } catch (ApiException apiEx) {
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+        return disks;
     }
 
     @Override

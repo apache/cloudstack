@@ -96,6 +96,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
@@ -107,9 +108,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -125,10 +124,6 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     NetworkDao networkDao;
     @Inject
     DnsZoneNetworkMapDao dnsZoneNetworkMapDao;
-    @Inject
-    UserVmDao userVmDao;
-    @Inject
-    NicDao nicDao;
     @Inject
     DomainDao domainDao;
     @Inject
@@ -162,14 +157,36 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         throw new CloudRuntimeException("No plugin found for DNS provider type: " + type);
     }
 
+    /**
+     * Rejects a DNS provider URL that resolves to an illegal address before any provider client
+     * is given the chance to connect to it. See {@link UriUtils#validateUrl(String)} for the exact rules
+     * enforced (including the requirement that the URL declares an {@code http}/{@code https} scheme).
+     *
+     * @throws InvalidParameterValueException if the URL is blank, fails validation
+     */
+    private void validateDnsServerUrl(String trimmedUrl) {
+        if (StringUtils.isBlank(trimmedUrl)) {
+            throw new InvalidParameterValueException("URL cannot be blank.");
+        }
+        try {
+            UriUtils.validateUrl(trimmedUrl);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException(e.getMessage());
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        DnsServer existing = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), caller.getId());
+        enforceRootAdminOnly(caller.getId());
+
+        String dnsUrl = StringUtils.trim(cmd.getUrl());
+        validateDnsServerUrl(dnsUrl);
+        DnsServer existing = dnsServerDao.findByUrlAndAccount(dnsUrl, caller.getId());
         if (existing != null) {
             throw new InvalidParameterValueException(
-                    "This Account already has a DNS server integration for URL: " + cmd.getUrl());
+                    "This Account already has a DNS server integration for URL: " + dnsUrl);
         }
 
         boolean isDnsPublic = cmd.isPublic();
@@ -184,8 +201,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(publicDomainSuffix);
         }
 
+        if (isDnsPublic && StringUtils.isBlank(publicDomainSuffix)) {
+            throw new InvalidParameterValueException("A public DNS server requires a public domain suffix so that " +
+                    "DNS zones created by other accounts are contained under it.");
+        }
+
         DnsProviderType type = cmd.getProvider();
-        DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), type,
+        DnsServerVO server = new DnsServerVO(cmd.getName(), dnsUrl, cmd.getPort(), type,
                 cmd.getDnsUserName(), cmd.getDnsApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
                 caller.getAccountId(), caller.getDomainId());
 
@@ -240,6 +262,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         Account caller = CallContext.current().getCallingAccount();
+        enforceRootAdminOnly(caller.getId());
+
         accountMgr.checkAccess(caller, null, true, dnsServer);
 
         boolean validationRequired = false;
@@ -250,13 +274,15 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             dnsServer.setName(cmd.getName());
         }
 
-        if (cmd.getUrl() != null) {
-            if (!cmd.getUrl().equals(originalUrl)) {
-                DnsServer duplicate = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), dnsServer.getAccountId());
+        if (StringUtils.isNotBlank(cmd.getUrl())) {
+            String dnsUrl = StringUtils.trim(cmd.getUrl());
+            if (!dnsUrl.equals(originalUrl)) {
+                validateDnsServerUrl(dnsUrl);
+                DnsServer duplicate = dnsServerDao.findByUrlAndAccount(dnsUrl, dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");
                 }
-                dnsServer.setUrl(cmd.getUrl());
+                dnsServer.setUrl(dnsUrl);
                 validationRequired = true;
             }
         }
@@ -273,12 +299,20 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (accountMgr.isRootAdmin(caller.getId()) || accountMgr.isDomainAdmin(caller.getId())) {
             if (cmd.isPublic() != null) {
                 boolean isPublic = BooleanUtils.isTrue(cmd.isPublic());
-                dnsServer.setPublicServer(isPublic);
 
                 String publicDomainSuffix = null;
-                if (isPublic && StringUtils.isNotBlank(cmd.getPublicDomainSuffix())) {
-                    publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix());
+                if (isPublic) {
+                    if (StringUtils.isNotBlank(cmd.getPublicDomainSuffix())) {
+                        publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix());
+                    } else {
+                        publicDomainSuffix = dnsServer.getPublicDomainSuffix();
+                    }
+                    if (StringUtils.isBlank(publicDomainSuffix)) {
+                        throw new InvalidParameterValueException("A public DNS server requires a public domain " +
+                                "suffix so that DNS zones created by other accounts are contained under it.");
+                    }
                 }
+                dnsServer.setPublicServer(isPublic);
                 dnsServer.setPublicDomainSuffix(publicDomainSuffix);
             }
         }
@@ -317,6 +351,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException(String.format("DNS server with ID: %s not found.", dnsServerId));
         }
         Account caller = CallContext.current().getCallingAccount();
+        enforceRootAdminOnly(caller.getId());
         accountMgr.checkAccess(caller, null, true, dnsServer);
         return Transaction.execute((TransactionCallback<Boolean>) status -> {
             if (cmd.getCleanup()) {
@@ -590,6 +625,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 throw new PermissionDeniedException("You do not have permission to use this DNS server.");
             }
             dnsZoneName = DnsProviderUtil.appendPublicSuffixToZone(dnsZoneName, server.getPublicDomainSuffix());
+            checkDnsZoneNameConflictsAcrossAccounts(dnsZoneName, server.getId(), caller.getId());
         }
         DnsZone.ZoneType type = cmd.getType();
         DnsZoneVO existing = dnsZoneDao.findByNameServerAndType(dnsZoneName, server.getId(), type);
@@ -598,6 +634,28 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
         DnsZoneVO dnsZoneVO = new DnsZoneVO(dnsZoneName, type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
         return dnsZoneDao.persist(dnsZoneVO);
+    }
+
+    /**
+     * Rejects a DNS zone name that is equal to, a DNS child of, or a DNS parent of an existing zone owned by a
+     * different account on the same DNS server. Without this, a co-tenant could register e.g.
+     * {@code www.victimzone.<suffix>} on a shared public server and shadow the victim's records in the
+     * authoritative name server, since the more specific zone wins resolution.
+     */
+    private void checkDnsZoneNameConflictsAcrossAccounts(String dnsZoneName, long dnsServerId, long callerAccountId) {
+        String requestedName = dnsZoneName.toLowerCase();
+        List<DnsZoneVO> existingZones = dnsZoneDao.listByDnsServerId(dnsServerId);
+        for (DnsZoneVO zone : existingZones) {
+            if (zone.getAccountId() == callerAccountId) {
+                continue;
+            }
+            String existingName = zone.getName().toLowerCase();
+            if (requestedName.equals(existingName) || requestedName.endsWith("." + existingName)
+                    || existingName.endsWith("." + requestedName)) {
+                throw new PermissionDeniedException(String.format("DNS zone name %s conflicts with an existing DNS " +
+                        "zone owned by another account on this DNS server.", dnsZoneName));
+            }
+        }
     }
 
     @Override
@@ -1225,6 +1283,12 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         } else {
             recordIpv6.setContents(ipv6s);
             provider.addRecord(dnsServer, dnsZone, recordIpv6);
+        }
+    }
+
+    void enforceRootAdminOnly(Long callerId) {
+        if (!accountMgr.isRootAdmin(callerId)) {
+            throw new PermissionDeniedException("This API can only be called by root admin");
         }
     }
 }

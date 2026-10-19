@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -361,7 +362,8 @@ public abstract class AgentAttache {
             return false;
         }
         AgentAttache that = (AgentAttache)obj;
-        return _id == that._id;
+        return Objects.equals(_uuid, that._uuid) &&
+               Objects.equals(_name, that._name);
     }
 
     public void send(final Request req, final Listener listener) throws AgentUnavailableException {
@@ -530,11 +532,12 @@ public abstract class AgentAttache {
         logger.debug(LOG_SEQ_FORMATTED_STRING, req.getSequence(), "Sending now.  is current sequence.");
         try {
             send(req);
+            _currentSequence = req.getSequence();
         } catch (AgentUnavailableException e) {
             logger.debug(LOG_SEQ_FORMATTED_STRING, req.getSequence(), "Unable to send the next sequence");
             cancel(req.getSequence());
+            sendNext(req.getSequence());
         }
-        _currentSequence = req.getSequence();
     }
 
     public void process(final Answer[] answers) {
@@ -560,6 +563,11 @@ public abstract class AgentAttache {
      * @return true if unable to reach agent or false if reachable.
      */
     protected abstract boolean isClosed();
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_uuid, _name);
+    }
 
     protected class Alarm extends ManagedContextRunnable {
         long _seq;
