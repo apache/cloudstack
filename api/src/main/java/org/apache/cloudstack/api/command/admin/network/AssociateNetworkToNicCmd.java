@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -118,7 +119,12 @@ public class AssociateNetworkToNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Associating networks " + StringUtils.join(getNetworkIds(), ",") + " with nic " + getResourceUuid(ApiConstants.NIC_ID);
+        List<String> networkUuids = new ArrayList<>();
+        for (Long networkId : getNetworkIds()) {
+            Network network = _entityMgr.findById(Network.class, networkId);
+            networkUuids.add(network != null ? network.getUuid() : String.valueOf(networkId));
+        }
+        return "Associating networks " + StringUtils.join(networkUuids, ",") + " with nic " + getResourceUuid(ApiConstants.NIC_ID);
     }
 
     private Nic getNic() {

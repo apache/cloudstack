@@ -921,9 +921,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException {
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
-        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
-            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
-        }
+        checkMultiNetworkNicEnabled(vm);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -978,9 +976,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException {
         NicVO nicVO = getTrunkEligibleNic(nic.getId());
         VirtualMachine vm = getOwningVm(nicVO);
-        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
-            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
-        }
+        checkMultiNetworkNicEnabled(vm);
         if (vm.getState() != VirtualMachine.State.Stopped) {
             throw new CloudRuntimeException(String.format(
                     "Nic %s's additional networks can only be associated while Instance %s is stopped or being created, not while %s",
@@ -1028,9 +1024,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     public Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) throws ResourceUnavailableException {
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
-        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
-            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
-        }
+        checkMultiNetworkNicEnabled(vm);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -1038,12 +1032,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (targetNetworkId == nic.getNetworkId()) {
             throw new InvalidParameterValueException(String.format(
                     "Network %s is nic %s's primary network and cannot be disassociated; add a new nic with the desired primary network instead",
-                    targetNetworkId, nic.getUuid()));
+                    cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
         }
 
         NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), targetNetworkId);
         if (association == null) {
-            throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), targetNetworkId));
+            throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
         }
         checkNoActiveRulesOnAssociation(vm.getId(), targetNetworkId, association.getIp4Address());
 
@@ -1080,9 +1074,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     public Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd) {
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
-        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
-            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
-        }
+        checkMultiNetworkNicEnabled(vm);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -1094,19 +1086,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         long newPrimaryNetworkId = cmd.getNetworkId();
         if (newPrimaryNetworkId == nic.getNetworkId()) {
-            throw new InvalidParameterValueException(String.format("Network %s is already nic %s's primary network", newPrimaryNetworkId, nic.getUuid()));
+            throw new InvalidParameterValueException(String.format("Network %s is already nic %s's primary network", cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
         }
 
         NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), newPrimaryNetworkId);
         if (association == null) {
             throw new InvalidParameterValueException(String.format(
                     "Network %s must already be associated with nic %s before it can become the primary; associate it first",
-                    newPrimaryNetworkId, nic.getUuid()));
+                    cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
         }
 
         NetworkVO newPrimaryNetwork = _networksDao.findById(newPrimaryNetworkId);
         if (newPrimaryNetwork == null) {
-            throw new CloudRuntimeException(String.format("Unable to find network %s", newPrimaryNetworkId));
+            throw new CloudRuntimeException(String.format("Unable to find network %s", cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
         }
 
         long oldPrimaryNetworkId = nic.getNetworkId();
@@ -1250,6 +1242,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException(String.format("Unable to find the Instance owning nic %s", nic.getUuid()));
         }
         return vm;
+    }
+
+    private void checkMultiNetworkNicEnabled(VirtualMachine vm) {
+        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
+            DataCenter zone = _dcDao.findById(vm.getDataCenterId());
+            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s",
+                    zone != null ? zone.getUuid() : vm.getDataCenterId()));
+        }
     }
 
     private Pair<List<NetworkVO>, List<NetworkVO>> buildResultingNetworkSet(VirtualMachine vm, NicVO nic, NetworkVO primaryNetwork, List<Long> requestedNetworkIds, Account caller) {
