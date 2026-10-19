@@ -68,8 +68,25 @@ key is defined by appending `.admin`, used automatically when the caller is a ro
 the base key falling back for everyone else.
 
 Before adding a new key, check whether an existing one already says the same thing; reuse
-before adding. `scripts/util/error_messages_tool.py` checks the file for structural errors,
-duplicate keys, and keys with no code references (`unused` command).
+before adding. `scripts/util/error_messages_tool.py` checks the file for structural errors
+(`errors`), duplicate keys (`duplicates`), and can fix/sort it (`fix`/`sort`) against any JSON
+file, deployed or not. Three of its commands additionally cross-reference against Java source, so
+they need a `--source` pointing at a checkout of matching CloudStack source; the JSON file
+(`--file`) itself can still be anywhere, including a live/deployed `error-messages.json` (an
+operator auditing a deployed file just needs to check out the matching release tag separately to
+point `--source` at):
+- `unused`: keys in the JSON file with no code reference (dead entries).
+- `missing-keys`: keys referenced via `Exceptions.*(...)` that don't exist in the JSON file at
+  all (typos, or a key that was never added). These resolve to the raw key string at runtime
+  instead of a message.
+- `placeholder-gaps`: call sites whose metadata doesn't cover all of the key's `{{placeholder}}`
+  tokens (including its `.admin` variant, checked against the same metadata), so the raw
+  `{{placeholder}}` is left in the rendered message. Best-effort: metadata supplied indirectly via
+  `CallContext.putErrorContextParameter(s)` elsewhere in the method can't be traced statically and
+  is reported separately as unresolved rather than as a confirmed gap.
+
+These three take `-s/--source` (a directory or a single file) to scope the scan instead of
+walking the whole tree, e.g. `error_messages_tool.py missing-keys -f client/conf/messages/error-messages.json.in -s server/src/main/java/com/cloud/vm/UserVmManagerImpl.java`.
 
 ### Plugin/operator override files
 

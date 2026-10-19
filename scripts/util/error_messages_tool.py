@@ -27,29 +27,50 @@ error keys (e.g. "vm.deploy.snapshot.not.found") to human-readable message templ
 that may contain {{placeholder}} variables.  These keys are referenced as string
 literals in Java source code via Exceptions.* helpers and ResponseMessageResolver.
 
-This tool helps maintain that file by detecting problems and applying safe fixes.
+The code-aware commands (unused, missing-keys, placeholder-gaps) need a Java
+source tree to cross-reference against. The JSON file given via --file can be
+anywhere, including a live/deployed error-messages.json; what matters is that
+--source points at a checkout of matching CloudStack source (e.g. an operator
+auditing a deployed file can check out the matching release tag separately
+and point --source at it).
 
 COMMANDS
 --------
-  errors      Report structural problems: missing/trailing commas, unexpected
-              lines, missing opening/closing braces.
+  errors            Report structural problems: missing/trailing commas,
+                    unexpected lines, missing opening/closing braces.
 
-  duplicates  List every key that appears more than once, together with the line
-              numbers of all occurrences.
+  duplicates        List every key that appears more than once, together with
+                    the line numbers of all occurrences.
 
-  unused      Walk a source tree and report keys that are never referenced as a
-              string literal in any .java, .groovy, .kt, .xml, or .py file.
-              Requires --root to point at the repository root (defaults to the
-              current working directory).
+  unused            Walk a source tree (or scan a single file) and report keys
+                    that are never referenced as a string literal in any
+                    .java, .groovy, .kt, .xml, or .py file.
 
-  fix         Produce a syntactically correct file by:
-                - removing duplicate keys (the last occurrence is kept)
-                - adding missing commas between entries
-                - removing trailing commas from the last entry
-              Overwrites the input file unless --output is given.
-              Use --dry-run to preview changes without writing.
+  missing-keys      The inverse of 'unused': scan Exceptions.*(...) call sites
+                    under --source and report keys referenced in code that
+                    have no entry in the JSON file at all (typo'd or never
+                    added). These resolve to the raw key at runtime instead of
+                    a message.
 
-  sort        Like fix, but also sorts all keys alphabetically.
+  placeholder-gaps  Cross-reference each key's {{placeholder}} tokens against
+                    the metadata keys supplied at its Exceptions.*(...) call
+                    site(s) under --source, and report placeholders with no
+                    matching metadata (these are left in the rendered message
+                    verbatim, e.g. "... is already the default for the
+                    {{instance}}."). Best-effort: metadata built indirectly
+                    (e.g. via CallContext.putErrorContextParameters elsewhere
+                    in the code) can't be traced statically and is reported
+                    separately as "could not be resolved" rather than as a
+                    confirmed gap; check those by hand.
+
+  fix               Produce a syntactically correct file by:
+                        - removing duplicate keys (the last occurrence is kept)
+                        - adding missing commas between entries
+                        - removing trailing commas from the last entry
+                    Overwrites the input file unless --output is given.
+                    Use --dry-run to preview changes without writing.
+
+  sort              Like fix, but also sorts all keys alphabetically.
 
 USAGE
 -----
@@ -58,8 +79,11 @@ USAGE
 OPTIONS
 -------
   -f, --file PATH    Path to the error messages JSON file (required).
-  -r, --root PATH    Repository root used by the 'unused' command to locate
-                     source files.  Default: current working directory.
+  -s, --source PATH  File or directory to scan for 'unused', 'missing-keys',
+                     and 'placeholder-gaps'. A directory is walked recursively;
+                     a single file (e.g. one Java class) is scanned on its own
+                     so you don't have to scan the whole tree.
+                     Default: current working directory.
   -o, --output PATH  Destination file for 'fix' and 'sort'.
                      Default: overwrites the input file in-place.
   -v, --verbose      'unused': also print the files that reference each used key.
@@ -74,6 +98,14 @@ EXAMPLES
   # Find keys with no code references (run from the repository root)
   error_messages_tool.py unused -f client/conf/messages/error-messages.json.in
 
+  # Find keys referenced in one class that don't exist in the JSON file
+  error_messages_tool.py missing-keys -f client/conf/messages/error-messages.json.in \\
+      -s server/src/main/java/com/cloud/vm/UserVmManagerImpl.java
+
+  # Find call sites whose metadata doesn't cover all of the key's placeholders
+  error_messages_tool.py placeholder-gaps -f client/conf/messages/error-messages.json.in \\
+      -s server/src/main/java/com/cloud/vm/
+
   # Preview what 'fix' would produce without writing
   error_messages_tool.py fix -f client/conf/messages/error-messages.json.in --dry-run
 
@@ -86,7 +118,8 @@ EXAMPLES
 EXIT STATUS
 -----------
   0  No issues found / fix written successfully.
-  1  Issues found (errors, duplicates, unused keys) or fix was a no-op.
+  1  Issues found (errors, duplicates, unused/missing keys, placeholder gaps)
+     or fix was a no-op.
 """
 
 import os
@@ -99,7 +132,8 @@ from pathlib import Path
 # Constants
 # ---------------------------------------------------------------------------
 
-# File extensions searched by the 'unused' command.
+# File extensions searched by the 'unused', 'missing-keys', and
+# 'placeholder-gaps' commands.
 SOURCE_EXTENSIONS = {".java", ".groovy", ".kt", ".xml", ".py"}
 
 # Directories skipped during source-file discovery to avoid scanning build
@@ -116,7 +150,7 @@ class Args:
     def __init__(self, argv):
         self.command  = None
         self.file     = None
-        self.root     = Path.cwd()
+        self.source   = Path.cwd()
         self.output   = None   # resolved to self.file after parsing if unset
         self.verbose  = False
         self.dry_run  = False
@@ -134,8 +168,8 @@ class Args:
                 self.dry_run = True
             elif arg in ("-f", "--file"):
                 self.file = Path(next(it))
-            elif arg in ("-r", "--root"):
-                self.root = Path(next(it))
+            elif arg in ("-s", "--source"):
+                self.source = Path(next(it))
             elif arg in ("-o", "--output"):
                 self.output = Path(next(it))
             elif arg.startswith("-"):
@@ -148,7 +182,7 @@ class Args:
             sys.exit(0)
 
         self.command = positionals[0]
-        valid = ("unused", "duplicates", "errors", "fix", "sort")
+        valid = ("unused", "missing-keys", "placeholder-gaps", "duplicates", "errors", "fix", "sort")
         if self.command not in valid:
             _die(f"Unknown command: {self.command!r}. Expected one of: {', '.join(valid)}")
 
@@ -176,6 +210,27 @@ def _load_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _collect_source_files(source: Path) -> list:
+    """Return the files to scan for *source*.
+
+    If *source* is a single file, it is scanned on its own regardless of
+    extension. If it's a directory, it's walked recursively and filtered to
+    SOURCE_EXTENSIONS, skipping EXCLUDE_DIRS.
+    """
+    if source.is_file():
+        return [source]
+    if not source.is_dir():
+        _die(f"Source path not found: {source}. Use -s/--source to point at a directory or file.")
+
+    files = []
+    for dirpath, dirnames, filenames in os.walk(source):
+        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
+        for name in filenames:
+            if Path(name).suffix in SOURCE_EXTENSIONS:
+                files.append(Path(dirpath) / name)
+    return files
+
+
 # ---------------------------------------------------------------------------
 # Core data structures
 # ---------------------------------------------------------------------------
@@ -199,7 +254,7 @@ class Entry:
 
 
 # ---------------------------------------------------------------------------
-# Parsing
+# JSON parsing
 # ---------------------------------------------------------------------------
 
 # Matches a single JSON entry line of the form:
@@ -216,7 +271,7 @@ _CLOSE_BRACE_RE = re.compile(r'^\s*\}\s*$')
 
 
 def _unescape_json_string(s: str) -> str:
-    """Strip surrounding double-quotes and decode JSON escape sequences."""
+    """Strip surrounding double-quotes and decode JSON/Java escape sequences."""
     inner = s[1:-1]  # remove leading/trailing quote
     return inner.encode("raw_unicode_escape").decode("unicode_escape")
 
@@ -295,6 +350,175 @@ def detect_errors(text: str) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Java call-site scanning (shared by unused / missing-keys / placeholder-gaps)
+# ---------------------------------------------------------------------------
+
+# A key, by convention, is lowercase dot-separated segments, e.g.
+# "vm.deploy.template.not.found". Used to pick the key literal out of a call's
+# argument list regardless of its position (serverApiException's overloads put
+# an ApiErrorCode and/or a free-text message before it).
+_KEY_SHAPE_RE = re.compile(r'^[a-z][a-z0-9]*(?:\.[a-z0-9]+)+$')
+
+_STRING_LITERAL_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
+_FULL_STRING_RE     = re.compile(r'^"(?:[^"\\]|\\.)*"$')
+_IDENTIFIER_RE      = re.compile(r'^[A-Za-z_]\w*$')
+_PLACEHOLDER_RE     = re.compile(r'\{\{(\w+)\}\}')
+
+_EXCEPTIONS_CALL_RE = re.compile(r'\bExceptions\.(\w+)\s*\(')
+
+# Inline metadata map constructors we know how to pull literal keys out of.
+_MAP_OF_PREFIXES = ("Map.of(", "ImmutableMap.of(", "Collections.singletonMap(")
+
+
+def split_top_level(s: str) -> list:
+    """Split *s* on commas that are not nested inside (), [], {}, or a string.
+
+    This is what lets us tell apart the top-level arguments of a call like
+    ``"key", Map.of("a", b, "c", d)`` (two arguments) from the inner
+    ``Map.of(...)`` arguments (four), without a real Java parser.
+    """
+    parts = []
+    depth = 0
+    in_string = False
+    escape = False
+    current = []
+    for ch in s:
+        if in_string:
+            current.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+            current.append(ch)
+        elif ch in "([{":
+            depth += 1
+            current.append(ch)
+        elif ch in ")]}":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+    tail = "".join(current).strip()
+    if tail:
+        parts.append(tail)
+    return parts
+
+
+def find_exceptions_calls(text: str) -> list:
+    """Return (method_name, args_text, line) for every Exceptions.<factory>(...) call in *text*.
+
+    The argument list is extracted by tracking paren depth from the opening
+    '(' (ignoring parens inside string literals), so multi-line calls and
+    nested calls like ``Map.of(...)`` are handled correctly.
+    """
+    calls = []
+    for m in _EXCEPTIONS_CALL_RE.finditer(text):
+        method = m.group(1)
+        start  = m.end()  # just after the opening '('
+        depth  = 1
+        i      = start
+        in_string = False
+        escape    = False
+        while i < len(text) and depth > 0:
+            ch = text[i]
+            if in_string:
+                if escape:
+                    escape = False
+                elif ch == "\\":
+                    escape = True
+                elif ch == '"':
+                    in_string = False
+            elif ch == '"':
+                in_string = True
+            elif ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            i += 1
+        args_text = text[start:i - 1]
+        line = text.count("\n", 0, m.start()) + 1
+        calls.append((method, args_text, line))
+    return calls
+
+
+def analyze_call(args_text: str):
+    """Split a call's argument list and locate its error-key literal.
+
+    Returns (key, metadata_arg) where key is the unescaped key string (or
+    None if no key-shaped literal is found among the top-level arguments),
+    and metadata_arg is the raw text of the argument immediately following
+    the key (or None if the key is the last argument): this is always where
+    metadata lives across every Exceptions.* factory signature.
+    """
+    top = split_top_level(args_text)
+    for idx, arg in enumerate(top):
+        if _FULL_STRING_RE.match(arg):
+            literal = _unescape_json_string(arg)
+            if _KEY_SHAPE_RE.match(literal):
+                metadata_arg = top[idx + 1] if idx + 1 < len(top) else None
+                return literal, metadata_arg
+    return None, None
+
+
+def resolve_metadata_keys(metadata_arg, file_text: str):
+    """Best-effort extraction of the metadata map's keys for one call site.
+
+    Returns (keys, status) where status is one of:
+      'empty'    no metadata argument (or an explicitly empty map) - keys={}
+      'inline'   an inline Map.of(...)/ImmutableMap.of(...)/
+                 Collections.singletonMap(...)/Map.ofEntries(...) literal -
+                 keys extracted with confidence
+      'variable' metadata is a bare identifier; keys come from a file-wide
+                 scan for '<var>.put("key", ...)', which can miss keys set
+                 via other means (chained builders, helper methods, etc.)
+      'unknown'  metadata is some other expression (a method call, ternary,
+                 etc.) that can't be statically resolved at all
+    """
+    if metadata_arg is None:
+        return set(), "empty"
+
+    arg = metadata_arg.strip()
+
+    if arg.startswith("Collections.emptyMap("):
+        return set(), "empty"
+
+    if arg.startswith(_MAP_OF_PREFIXES):
+        inner = arg[arg.index("(") + 1: arg.rindex(")")]
+        inner_parts = split_top_level(inner)
+        keys = set()
+        for i in range(0, len(inner_parts) - 1, 2):
+            if _FULL_STRING_RE.match(inner_parts[i]):
+                keys.add(_unescape_json_string(inner_parts[i]))
+        return keys, "inline"
+
+    if arg.startswith("Map.ofEntries("):
+        inner = arg[arg.index("(") + 1: arg.rindex(")")]
+        keys = set()
+        for part in split_top_level(inner):
+            part = part.strip()
+            if part.startswith("Map.entry("):
+                entry_inner = split_top_level(part[part.index("(") + 1: part.rindex(")")])
+                if entry_inner and _FULL_STRING_RE.match(entry_inner[0]):
+                    keys.add(_unescape_json_string(entry_inner[0]))
+        return keys, "inline"
+
+    if _IDENTIFIER_RE.match(arg):
+        put_re = re.compile(re.escape(arg) + r'\.put\(\s*("(?:[^"\\]|\\.)*")')
+        keys = {_unescape_json_string(m.group(1)) for m in put_re.finditer(file_text)}
+        return keys, ("variable" if keys else "unknown")
+
+    return set(), "unknown"
+
+
+# ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
 
@@ -337,10 +561,10 @@ def cmd_duplicates(args: Args) -> int:
 
 
 def cmd_unused(args: Args) -> int:
-    """Find keys that have no references in the source tree under --root.
+    """Find keys that have no references in the source under --source.
 
     Each key is searched as a plain substring across all files whose extension
-    is in SOURCE_EXTENSIONS.  A key is considered unused only if the literal
+    is in SOURCE_EXTENSIONS. A key is considered unused only if the literal
     string does not appear anywhere in those files.
 
     Returns the number of unused keys (0 = all keys referenced).
@@ -351,17 +575,8 @@ def cmd_unused(args: Args) -> int:
 
     print(f"Loaded {len(keys)} keys from {args.file}", flush=True)
 
-    if not args.root.is_dir():
-        _die(f"Source root not found: {args.root}. Use -r to specify the repository root.")
-
-    source_files = []
-    for dirpath, dirnames, filenames in os.walk(args.root):
-        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
-        for name in filenames:
-            if Path(name).suffix in SOURCE_EXTENSIONS:
-                source_files.append(Path(dirpath) / name)
-
-    print(f"Scanning {len(source_files)} source files under {args.root} ...", flush=True)
+    source_files = _collect_source_files(args.source)
+    print(f"Scanning {len(source_files)} source file(s) under {args.source} ...", flush=True)
 
     file_contents = {}
     for f in source_files:
@@ -391,10 +606,136 @@ def cmd_unused(args: Args) -> int:
     return len(unused)
 
 
+def cmd_missing_keys(args: Args) -> int:
+    """Find keys referenced via Exceptions.*(...) under --source that don't
+    exist in the JSON file.
+
+    These resolve to the raw key string at runtime (ResponseMessageResolver
+    falls back to the key itself when no template is found), so this catches
+    both typos (key doesn't match any real entry) and keys that were simply
+    never added.
+
+    Returns the number of distinct missing keys (0 = all referenced keys exist).
+    """
+    text        = _load_text(args.file)
+    entries     = parse_entries(text)
+    known_keys  = {e.key for e in entries}
+
+    print(f"Loaded {len(known_keys)} keys from {args.file}", flush=True)
+
+    source_files = _collect_source_files(args.source)
+    print(f"Scanning {len(source_files)} source file(s) under {args.source} ...", flush=True)
+
+    occurrences = {}
+    for f in source_files:
+        try:
+            file_text = f.read_text(errors="replace")
+        except OSError:
+            continue
+        for _method, call_args, line in find_exceptions_calls(file_text):
+            key, _metadata_arg = analyze_call(call_args)
+            if key is not None:
+                occurrences.setdefault(key, []).append((f, line))
+
+    missing = {k: v for k, v in occurrences.items() if k not in known_keys}
+
+    print()
+    if missing:
+        count = sum(len(v) for v in missing.values())
+        print(f"Keys referenced in code but missing from {args.file} "
+              f"({len(missing)} key(s), {count} call site(s)):")
+        for key in sorted(missing):
+            for f, line in missing[key]:
+                print(f"  {key}  ({f}:{line})")
+    else:
+        print("All referenced keys exist in the JSON file.")
+
+    return len(missing)
+
+
+def cmd_placeholder_gaps(args: Args) -> int:
+    """Find Exceptions.*(...) call sites whose metadata doesn't cover all of
+    the key's {{placeholder}} tokens.
+
+    Only call sites for keys that actually have placeholders are analyzed.
+    Call sites whose metadata argument can't be statically resolved (status
+    'unknown' from resolve_metadata_keys) are reported separately rather than
+    treated as confirmed gaps, since the metadata may be supplied indirectly
+    (e.g. CallContext.putErrorContextParameters elsewhere in the method).
+
+    A call site is also checked against its '.admin' variant, if one exists in
+    the JSON file, using the same metadata: '.admin'-suffixed keys are never
+    referenced directly in Java (ResponseMessageResolver selects them
+    automatically for a root admin caller), so without this a template that
+    only adds a placeholder in its '.admin' variant would never be checked.
+
+    Returns the number of call sites with a confirmed gap (0 = none found;
+    this does not count 'could not be resolved' call sites).
+    """
+    text    = _load_text(args.file)
+    entries = parse_entries(text)
+
+    templates = {}
+    for e in entries:
+        try:
+            value = _unescape_json_string(e.raw_value)
+        except Exception:
+            value = e.raw_value[1:-1]
+        placeholders = set(_PLACEHOLDER_RE.findall(value))
+        if placeholders:
+            templates[e.key] = placeholders
+
+    print(f"Loaded {len(templates)} key(s) with placeholders "
+          f"(out of {len(entries)} total) from {args.file}", flush=True)
+
+    source_files = _collect_source_files(args.source)
+    print(f"Scanning {len(source_files)} source file(s) under {args.source} ...", flush=True)
+
+    confirmed = []   # (key, file, line, missing_placeholders)
+    uncertain = []   # (key, file, line)
+
+    for f in source_files:
+        try:
+            file_text = f.read_text(errors="replace")
+        except OSError:
+            continue
+        for _method, call_args, line in find_exceptions_calls(file_text):
+            key, metadata_arg = analyze_call(call_args)
+            if key is None:
+                continue
+            variants = [v for v in (key, key + ".admin") if v in templates]
+            if not variants:
+                continue
+            meta_keys, status = resolve_metadata_keys(metadata_arg, file_text)
+            if status == "unknown":
+                uncertain.append((key, f, line))
+                continue
+            for variant in variants:
+                missing = templates[variant] - meta_keys
+                if missing:
+                    confirmed.append((variant, f, line, sorted(missing)))
+
+    print()
+    if confirmed:
+        print(f"Call sites with unresolved placeholders ({len(confirmed)}):")
+        for key, f, line, missing in confirmed:
+            print(f"  {f}:{line}  [{key}]  missing: {', '.join(missing)}")
+    else:
+        print("No call sites with statically-confirmed missing placeholders.")
+
+    if uncertain:
+        print(f"\nCall sites where metadata could not be statically resolved "
+              f"({len(uncertain)}), check these by hand:")
+        for key, f, line in uncertain:
+            print(f"  {f}:{line}  [{key}]")
+
+    return len(confirmed)
+
+
 def _build_fixed_text(entries: list) -> str:
     """Serialise *entries* as a properly formatted JSON object.
 
-    Produces exactly one entry per line with 4-space indentation.  All entries
+    Produces exactly one entry per line with 4-space indentation. All entries
     except the last have a trailing comma; the last entry does not.
     """
     lines = ["{"]
@@ -496,11 +837,13 @@ def cmd_sort(args: Args) -> int:
 # ---------------------------------------------------------------------------
 
 _COMMANDS = {
-    "errors":     cmd_errors,
-    "duplicates": cmd_duplicates,
-    "unused":     cmd_unused,
-    "fix":        cmd_fix,
-    "sort":       cmd_sort,
+    "errors":            cmd_errors,
+    "duplicates":        cmd_duplicates,
+    "unused":            cmd_unused,
+    "missing-keys":      cmd_missing_keys,
+    "placeholder-gaps":  cmd_placeholder_gaps,
+    "fix":               cmd_fix,
+    "sort":              cmd_sort,
 }
 
 

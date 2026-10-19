@@ -878,7 +878,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ));
         }
         if (!template.isEnablePassword()) {
-            throw Exceptions.invalidParameterValueException("vm.resetpassword.template.not.passwordenabled", Map.of(
+            throw Exceptions.invalidParameterValueException("vm.resetpassword.template.not.password.enabled", Map.of(
                     "instance", userVm,
                     "template", template
             ));
@@ -1013,7 +1013,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (userVm.getState() != State.Stopped) {
             logger.error("vm ({}) should be stopped to do UserData reset. current state: {}", userVm, userVm.getState());
-            throw Exceptions.invalidParameterValueException("vm.resetuserdata.vm.no.stopped", Map.of(
+            throw Exceptions.invalidParameterValueException("vm.resetuserdata.vm.not.stopped", Map.of(
                     "instance", userVm,
                     "instanceState", userVm.getState()
             ));
@@ -1106,7 +1106,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), names);
         if (pairs == null || pairs.size() != names.size()) {
-            throw Exceptions.invalidParameterValueException("vm.resetsshkey.key.not.all.found");
+            throw Exceptions.invalidParameterValueException("vm.resetsshkey.key.not.all.found", Map.of(
+                    "instance", userVm
+            ));
         }
         sshPublicKeys = pairs.stream().map(p -> p.getPublicKey()).collect(Collectors.joining("\n"));
         keypairnames = String.join(",", names);
@@ -1830,7 +1832,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         // if current default equals chosen new default, Throw an exception
         if (nic.isDefaultNic()) {
-            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.already.default");
+            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.already.default", Map.of(
+                    "nic", nic, "instance", vmInstance
+            ));
         }
 
         //make sure the VM is Running or Stopped
@@ -1849,7 +1853,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (existing == null) {
             logger.warn("Failed to update default NIC, no NIC profile found for existing default Network");
-            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.profile.not.found");
+            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.profile.not.found", Map.of(
+                    "nic", nic, "instance", vmInstance
+            ));
         }
 
         Network oldDefaultNetwork = null;
@@ -1882,7 +1888,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (newdefault.getId() == existingdefaultnet.getId()) {
                 throw Exceptions.cloudRuntimeException("vm.updatenic.default.update.failed", Collections.emptyMap());
             }
-            throw Exceptions.cloudRuntimeException("vm.updatenic.default.no.default", Map.of("nic", nic));
+            throw Exceptions.cloudRuntimeException("vm.updatenic.default.no.default", Map.of("nic", nic, "instance", vmInstance));
         } else if (newdefault.getId() == nic.getNetworkId()) {
             logger.debug("successfully set default network to " + network + " for " + vmInstance);
             String nicIdString = Long.toString(nic.getId());
@@ -2103,7 +2109,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             return vmInstance;
         } else {
-            throw Exceptions.cloudRuntimeException("vm.upgrade.failed");
+            throw Exceptions.cloudRuntimeException("vm.upgrade.failed", Map.of(
+                    "instance", vm
+            ));
         }
     }
 
@@ -2195,8 +2203,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Don't allow to scale when (Any of the new values less than current values) OR (All current and new values are same)
         if ((newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu) || (newSpeed == currentSpeed && newMemory == currentMemory && newCpu == currentCpu)) {
             throw Exceptions.invalidParameterValueException("vm.upgrade.vm.running.scale.down.unsupported", Map.of(
-                    "newMemory", newMemory, "newSpeed", newSpeed, "newCpu", newCpu,
-                    "currentMemory", currentMemory, "currentSpeed", currentSpeed, "currentCpu", currentCpu));
+                    "newMemory", newMemory, "newSpeed", newSpeed, "newCPU", newCpu,
+                    "currentMemory", currentMemory, "currentSpeed", currentSpeed, "currentCPU", currentCpu));
         }
 
         if (vmHypervisorType.equals(HypervisorType.KVM) && !currentServiceOffering.isDynamic()) {
@@ -6446,7 +6454,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!serviceOffering.isDynamic()) {
             for (String detail: cmd.getDetails().keySet()) {
                 if (detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
-                    throw Exceptions.invalidParameterValueException("vm.deploy.serviceoffering.fixed.parameters.not.allowed", Map.of("cpuNumberKey", VmDetailConstants.CPU_NUMBER, "cpuSpeedKey", VmDetailConstants.CPU_NUMBER, "memoryKey", VmDetailConstants.CPU_NUMBER));
+                    throw Exceptions.invalidParameterValueException("vm.deploy.serviceoffering.fixed.parameters.not.allowed", Map.of("cpuNumberKey", VmDetailConstants.CPU_NUMBER, "cpuSpeedKey", VmDetailConstants.CPU_SPEED, "memory", VmDetailConstants.MEMORY));
                 }
             }
         }
@@ -6688,7 +6696,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 logger.info("Adding extra configuration to user vm: {}", vm);
                 addExtraConfig(vm, extraConfig);
             } else {
-                throw Exceptions.invalidParameterValueException("vm.update.extraconfig.disabled");
+                throw Exceptions.invalidParameterValueException("vm.update.extraconfig.disabled", Map.of(
+                        "instance", vm, "extraConfigSetting", EnableAdditionalVmConfig.key()
+                ));
             }
         }
 
