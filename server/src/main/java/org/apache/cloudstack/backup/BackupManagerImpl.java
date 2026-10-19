@@ -2680,7 +2680,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             response.setToCheckpointId(backup.getToCheckpointId());
         }
 
-        if (KBOSS_BACKUP_PROVIDER.equals(offering.getProvider()) && isCallerRootAdmin) {
+        if (offering != null && KBOSS_BACKUP_PROVIDER.equals(offering.getProvider()) && isCallerRootAdmin) {
             List<InternalBackupJoinVO> backupJoins = internalBackupJoinDao.listById(backup.getId());
             Map<String, String> backupVolumePaths = new HashMap<>();
 
