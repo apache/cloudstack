@@ -25,11 +25,10 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.MacAddress;
 
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 
-    private static final long s_nodeId = MacAddress.getMacAddress().toLong();
+    private static final long s_nodeId = ManagementServerId.get();
 
     public ManagementServerNode() {
         setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
