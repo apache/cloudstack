@@ -455,21 +455,59 @@ sp_wait_for_device_symlink() {
   return 1
 }
 
-# detach is retried (a live volume's detach can transiently fail while still in use), attach is
-# not. A successful attach also waits for the device symlink.
-sp_attach_detach_volume() {
-  local cmd="$1" name="$2"
-  local tries=10 i
-  for ((i = 0; i < tries; i++)); do
-    if [[ "$cmd" == "attach" ]]; then
-      storpool -M -B attach volume "$name" here onRemoteAttached export >>"$logFile" 2>&1 && { sp_wait_for_device_symlink "$name"; return $?; }
-      break
-    else
-      storpool -M -B detach volume "$name" here >>"$logFile" 2>&1 && return 0
-      sleep 1
-    fi
-  done
+# A successful attach also waits for the device symlink.
+sp_attach_volume() {
+  local name="$1"
+  storpool -M -B attach volume "$name" here onRemoteAttached export >>"$logFile" 2>&1 && { sp_wait_for_device_symlink "$name"; return $?; }
   return 1
+}
+
+sp_api_post() {
+  local query="$1" json="$2"
+  local key value host="" port="81" token=""
+  while IFS='=' read -r key value; do
+    case "$key" in
+      SP_API_HTTP_HOST) host="$value" ;;
+      SP_API_HTTP_PORT) port="$value" ;;
+      SP_AUTH_TOKEN) token="$value" ;;
+    esac
+  done < <(storpool_confget 2>>"$logFile")
+  if [[ -z "$host" || -z "$token" ]]; then
+    log -ne "StorPool: SP_API_HTTP_HOST or SP_AUTH_TOKEN missing from storpool_confget, cannot call $query"
+    return 1
+  fi
+
+  local resp
+  if ! resp=$(curl -sS --connect-timeout 10 -X POST \
+      -H @<(printf 'Authorization: Storpool v1:%s\n' "$token") \
+      -H "Content-Type: application/json" -d "$json" \
+      "http://$host:$port/ctrl/1.0/$query" 2>>"$logFile"); then
+    log -ne "StorPool: API call $query failed, see above for curl output"
+    return 1
+  fi
+  python3 -c '
+import sys, json
+try:
+    resp = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+if "error" in resp or "data" not in resp:
+    sys.exit(1)
+print(json.dumps(resp["data"]))
+' <<< "$resp" || {
+    log -ne "StorPool: API call $query returned an error: $resp"
+    return 1
+  }
+}
+
+# Deletes $1, force-detaching it first wherever it is still attached (StorPool refuses to delete
+# an attached volume). Returns 1, after logging, if the delete failed.
+sp_delete_volume() {
+  local volume_name="$1"
+  if ! sp_api_post "MultiCluster/VolumeDelete/$volume_name" '{"onAttached":"detachForce"}' >/dev/null; then
+    log -ne "StorPool: failed to delete volume $volume_name, it must be deleted manually"
+    return 1
+  fi
 }
 
 # Clones $1 (a live StorPool volume path) into a new, point-in-time StorPool volume via the
@@ -487,8 +525,8 @@ sp_create_backup_source_disk() {
   log -ne "StorPool: creating backup source volume based on $base_on (from $volume_path)"
 
   local resp
-  if ! resp=$(storpool_req -P -M --json "{\"baseOn\":\"$base_on\",\"tags\":{\"cs\":\"backup\"}}" VolumeCreate 2>>"$logFile"); then
-    log -ne "StorPool: VolumeCreate baseOn=$base_on failed, see above for storpool_req output"
+  if ! resp=$(sp_api_post "MultiCluster/VolumeCreate" "{\"baseOn\":\"$base_on\",\"tags\":{\"cs\":\"backup\"}}"); then
+    log -ne "StorPool: VolumeCreate baseOn=$base_on failed, see above"
     echo "Could not create a backup source volume based on $base_on" >&2
     return 1
   fi
@@ -513,9 +551,9 @@ print(gid)
   local clone_path="/dev/storpool-byid/$global_id"
   local clone_name="~$global_id"
   log -ne "StorPool: created backup source volume $clone_name ($clone_path), attaching"
-  if ! sp_attach_detach_volume "attach" "$clone_name"; then
+  if ! sp_attach_volume "$clone_name"; then
     log -ne "StorPool: failed to attach backup source volume $clone_name, deleting it"
-    storpool_req -P -M VolumeDelete "$clone_name" >>"$logFile" 2>&1 || true
+    sp_delete_volume "$clone_name" || true
     echo "Could not attach backup source volume $clone_path cloned from $base_on" >&2
     return 1
   fi
@@ -528,16 +566,12 @@ print(gid)
   echo "$clone_path"
 }
 
-# Detach + delete a volume previously returned by sp_create_backup_source_disk. Best-effort:
+# Deletes a volume previously returned by sp_create_backup_source_disk. Best-effort:
 # logs on failure rather than aborting the backup, matching the wrapper's old cleanup semantics.
 sp_delete_backup_source_disk() {
   local clone_name="$1"
   log -ne "StorPool: releasing backup source volume $clone_name"
-  sp_attach_detach_volume "detach" "$clone_name" || log -ne "Failed to detach StorPool backup source volume $clone_name"
-  if ! storpool_req -P -M VolumeDelete "$clone_name" >>"$logFile" 2>&1; then
-    log -ne "Failed to delete StorPool backup source volume $clone_name"
-    return 1
-  fi
+  sp_delete_volume "$clone_name"
 }
 
 # Safety net for any clone not already released by its own per-disk cleanup (e.g. the script

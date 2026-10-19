@@ -152,4 +152,18 @@ public interface StorageAdaptor {
     default void createTemplate(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
         // no-op
     }
+
+    /**
+     * Releases a disk this host created via {@link #createPhysicalDisk} that could not be put into
+     * use (e.g. populating it from a backup failed), for storages where the management server
+     * can't clean it up because the storage assigned the disk's identity itself: disconnects it
+     * from this host and deletes it from the storage.
+     *
+     * @param volumePath the path of the disk, as returned in {@link KVMPhysicalDisk#getPath()}
+     * @param pool storage pool the disk is part of
+     * @return true if the disk was deleted; false if it wasn't or the adaptor doesn't support it
+     */
+    default boolean cleanupCreatedPhysicalDisk(String volumePath, KVMStoragePool pool) {
+        return false;
+    }
 }
