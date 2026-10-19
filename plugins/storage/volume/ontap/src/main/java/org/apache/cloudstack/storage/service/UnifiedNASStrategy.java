@@ -147,6 +147,9 @@ public class UnifiedNASStrategy extends NASStrategy {
         if (cloudstackVolume.getDatastoreId() == null) {
             throw new CloudRuntimeException("Failed to clone file, no datastore id in the request");
         }
+        if (cloudstackVolume.getVolumeInfo() == null) {
+            throw new CloudRuntimeException("Failed to clone file, volume info is missing from the request");
+        }
 
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(Long.parseLong(cloudstackVolume.getDatastoreId()));
         String flexVolUuid = details.get(OntapStorageConstants.VOLUME_UUID);
@@ -447,6 +450,9 @@ public class UnifiedNASStrategy extends NASStrategy {
 
     private String updateCloudStackVolumeMetadata(String dataStoreId, DataObject volumeInfo) {
         logger.info("updateCloudStackVolumeMetadata called with datastoreID: {} volumeInfo: {} ", dataStoreId, volumeInfo );
+        if (volumeInfo == null) {
+            throw new CloudRuntimeException("Failed to update volume metadata, volume info is missing");
+        }
         try {
             VolumeObject volumeObject = (VolumeObject) volumeInfo;
             long volumeId = volumeObject.getId();
@@ -525,6 +531,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     /**
      * Deletes a file from a FlexVolume, treating an already-absent file as success.
      */
+    @Override
     public void deleteFileByPath(String flexVolUuid, String filePath) {
         logger.info("deleteFileByPath: Deleting file [{}] from FlexVol [{}]", filePath, flexVolUuid);
         try {

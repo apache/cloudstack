@@ -69,7 +69,6 @@ import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.SANStrategy;
 import org.apache.cloudstack.storage.service.StorageStrategy;
-import org.apache.cloudstack.storage.service.UnifiedNASStrategy;
 import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -280,6 +279,13 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
         boolean iscsi = isIscsi(details);
 
+        long templateSize = templatePoolRef.getTemplateSize();
+        if (templateSize <= 0) {
+            throw new CloudRuntimeException("Template cache size is missing or invalid (" + templateSize
+                    + ") for template [" + templateId + "] on pool [" + storagePool.getId()
+                    + "]; cannot clone volume [" + volumeInfo.getId() + "]");
+        }
+
         CloudStackVolume request = iscsi
                 ? createCloneLunRequest(storagePool, details, volumeInfo, templatePoolRef, templateId)
                 : createCloneFileRequest(storagePool, volumeInfo, templatePoolRef, templateId);
@@ -295,9 +301,9 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 templateId, volumeInfo.getId(), storagePool.getId());
 
         long requestedSize = getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, storagePool);
-        if (requestedSize > templatePoolRef.getTemplateSize()) {
+        if (requestedSize > templateSize) {
             logger.info("cloneCloudStackVolumeFromTemplate: Growing clone of template [{}] from {} to {} bytes for volume [{}]",
-                    templateId, templatePoolRef.getTemplateSize(), requestedSize, volumeInfo.getId());
+                    templateId, templateSize, requestedSize, volumeInfo.getId());
             storageStrategy.resizeCloudStackVolume(cloned, requestedSize);
         }
 
@@ -426,7 +432,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     + "cannot delete NFS template cache file [" + filePath + "] for template ["
                     + templateInfo.getId() + "]");
         }
-        ((UnifiedNASStrategy) storageStrategy).deleteFileByPath(flexVolUuid, filePath);
+        storageStrategy.deleteFileByPath(flexVolUuid, filePath);
         logger.info("deleteNfsTemplateCache: Deleted template cache file [{}] for template [{}]",
                 filePath, templateInfo.getId());
     }

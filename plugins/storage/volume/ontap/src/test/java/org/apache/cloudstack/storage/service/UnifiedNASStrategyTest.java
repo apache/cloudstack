@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -697,6 +698,21 @@ public class UnifiedNASStrategyTest {
 
         assertThrows(CloudRuntimeException.class,
                 () -> strategy.deleteFileByPath("flexvol-uuid", "template-uuid"));
+    }
+
+    @Test
+    public void testCloneCloudStackVolume_MissingVolumeInfo_ThrowsBeforeClone() {
+        FileInfo source = new FileInfo();
+        source.setPath("template-uuid");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setDatastoreId("1");
+        request.setFile(source);
+        request.setDestinationPath("volume-uuid");
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> strategy.cloneCloudStackVolume(request));
+        assertTrue(ex.getMessage().contains("volume info is missing"));
+        verify(nasFeignClient, never()).cloneFile(anyString(), any(FileCloneRequest.class));
     }
 
     @Test

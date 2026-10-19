@@ -915,6 +915,24 @@ class OntapPrimaryDatastoreDriverTest {
         }
     }
 
+    @Test
+    void testCreateAsync_VolumeClonedFromTemplate_FailsWhenTemplateSizeIsInvalid() {
+        stubVolumeCloneFromTemplate(0L, 21474836480L);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+
+            driver.createAsync(dataStore, volumeInfo, createCallback);
+
+            ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+            verify(createCallback).complete(resultCaptor.capture());
+            assertFalse(resultCaptor.getValue().isSuccess());
+            assertTrue(resultCaptor.getValue().getResult().contains("Template cache size is missing or invalid"));
+            verify(sanStrategy, never()).cloneCloudStackVolume(any());
+            verify(sanStrategy, never()).resizeCloudStackVolume(any(), anyLong());
+        }
+    }
+
     /**
      * Sets up a volume create that the orchestrator has marked as a clone of a cached template.
      */

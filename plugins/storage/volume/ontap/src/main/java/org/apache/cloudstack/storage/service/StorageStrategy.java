@@ -567,6 +567,17 @@ public abstract class StorageStrategy {
     abstract public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes);
 
     /**
+     * Deletes a file from a FlexVolume by path.
+     *
+     * <p>NFS strategies override this. Other strategies fail with the strategy type in the error
+     * so callers can invoke it without casting to a concrete NAS implementation.</p>
+     */
+    public void deleteFileByPath(String flexVolUuid, String filePath) {
+        throw new CloudRuntimeException("Deleting a file by path is not supported by storage strategy "
+                + getClass().getSimpleName());
+    }
+
+    /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
      * it is going to mimic
      *     getLun       for iSCSI, FC protocols
@@ -748,6 +759,9 @@ public abstract class StorageStrategy {
                     operationName);
             return;
         }
-        jobPollForSuccess(response.getJob().getUuid(), 60, 2000);
+        String jobUuid = response.getJob().getUuid();
+        if (!Boolean.TRUE.equals(jobPollForSuccess(jobUuid, 60, 2000))) {
+            throw new CloudRuntimeException("ONTAP job [" + jobUuid + "] failed for operation [" + operationName + "]");
+        }
     }
 }
