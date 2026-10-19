@@ -57,6 +57,7 @@ import org.libvirt.StorageVol;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
+import com.ceph.rados.exceptions.ErrorCode;
 import com.ceph.rados.exceptions.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;

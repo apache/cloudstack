@@ -214,7 +214,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.dao.InstanceGroupDao;
-import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
