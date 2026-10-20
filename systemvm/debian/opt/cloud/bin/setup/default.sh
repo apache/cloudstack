@@ -23,7 +23,6 @@ setup_default() {
 auto lo
 iface lo inet loopback
 EOF
-  cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
 }
 
 setup_default
