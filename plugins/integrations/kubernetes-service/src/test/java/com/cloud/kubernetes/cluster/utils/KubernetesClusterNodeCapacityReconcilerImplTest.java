@@ -48,6 +48,8 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
         Assert.assertTrue(reconciler.requiresKubeletRefresh(oldOffering, cpuOffering, KubernetesClusterNodeType.WORKER, KubernetesCluster.State.Running));
         Assert.assertTrue(reconciler.requiresKubeletRefresh(oldOffering, ramOffering, KubernetesClusterNodeType.CONTROL, KubernetesCluster.State.Running));
         Assert.assertFalse(reconciler.requiresKubeletRefresh(oldOffering, capOnlyOffering, KubernetesClusterNodeType.WORKER, KubernetesCluster.State.Running));
+        Assert.assertFalse(reconciler.requiresKubeletRefresh(null, cpuOffering, KubernetesClusterNodeType.WORKER, KubernetesCluster.State.Running));
+        Assert.assertFalse(reconciler.requiresKubeletRefresh(oldOffering, null, KubernetesClusterNodeType.WORKER, KubernetesCluster.State.Running));
         Assert.assertFalse(reconciler.requiresKubeletRefresh(oldOffering, cpuOffering, KubernetesClusterNodeType.ETCD, KubernetesCluster.State.Running));
         Assert.assertFalse(reconciler.requiresKubeletRefresh(oldOffering, cpuOffering, KubernetesClusterNodeType.WORKER, KubernetesCluster.State.Stopped));
     }
@@ -118,6 +120,18 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
         Assert.assertEquals("sudo /opt/bin/kubectl cordon worker-1", fakeReconciler.controlCommands.get(1));
     }
 
+    @Test
+    public void testGuestVerificationAllowsObservedKvmHotplugOverhead() throws Exception {
+        FakeReconciler fakeReconciler = new FakeReconciler(nodeJson(false));
+        fakeReconciler.nodeResources = "4\n4568788\n";
+
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot before =
+                new KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot(false, false, 2, 2097152L, 2000L, 2L * 1024L * 1024L * 1024L,
+                        1900L, 1900L * 1024L * 1024L, true);
+
+        fakeReconciler.verifyGuestResources(vm("worker-1"), offering(4, 4608), before, access(), System.currentTimeMillis() + 1000L);
+    }
+
     private ServiceOffering offering(int cpu, int memory) {
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         Mockito.when(offering.getCpu()).thenReturn(cpu);
@@ -149,6 +163,7 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
     private static class FakeReconciler extends KubernetesClusterNodeCapacityReconcilerImpl {
         private final String nodeJson;
         private final List<String> controlCommands = new ArrayList<>();
+        private String nodeResources = "2\n2097152\n";
 
         FakeReconciler(String nodeJson) {
             this.nodeJson = nodeJson;
@@ -162,7 +177,7 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
 
         @Override
         protected String executeNode(KubernetesClusterNodeCapacityReconciler.NodeAccess access, String command) {
-            return "2\n2097152\n";
+            return nodeResources;
         }
     }
 }

@@ -21,6 +21,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeCapacityReconciler;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeCapacityReconcilerImpl;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -194,6 +195,11 @@ public class KubernetesClusterScaleWorkerTest {
     }
 
     @Test
+    public void testUsesLiveResizeReconcilerWithoutComponentContextRegistration() {
+        Assert.assertTrue(worker.kubernetesClusterNodeCapacityReconciler instanceof KubernetesClusterNodeCapacityReconcilerImpl);
+    }
+
+    @Test
     public void testShouldReconcileNodeCapacityOnlyForManagedKvmNodes() {
         KubernetesCluster runningManagedCluster = Mockito.mock(KubernetesCluster.class);
         Mockito.when(runningManagedCluster.getState()).thenReturn(KubernetesCluster.State.Running);
@@ -222,5 +228,25 @@ public class KubernetesClusterScaleWorkerTest {
 
         Mockito.when(runningManagedCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         Assert.assertFalse(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
+    }
+
+    @Test
+    public void testCksOwnedCordonCanRetryReconciliationAfterVmReachedTargetOffering() {
+        KubernetesCluster runningManagedCluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(runningManagedCluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(runningManagedCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.CloudManaged);
+        KubernetesClusterScaleWorker scaleWorker = new KubernetesClusterScaleWorker(runningManagedCluster,
+                new java.util.HashMap<>(), 1L, null, false, null, null, clusterManager);
+
+        KubernetesClusterVmMapVO managedNode = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(managedNode.isExternalNode()).thenReturn(false);
+        UserVmVO kvmNode = Mockito.mock(UserVmVO.class);
+        Mockito.when(kvmNode.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(kvmNode.getServiceOfferingId()).thenReturn(Long.parseLong("1024"));
+        ServiceOffering targetOffering = Mockito.mock(ServiceOffering.class);
+        Mockito.when(targetOffering.getId()).thenReturn(Long.parseLong("1024"));
+
+        Assert.assertTrue(scaleWorker.isReconciliationRetryCandidate(managedNode, kvmNode, targetOffering, WORKER));
+        Assert.assertFalse(scaleWorker.isReconciliationRetryCandidate(managedNode, kvmNode, targetOffering, DEFAULT));
     }
 }

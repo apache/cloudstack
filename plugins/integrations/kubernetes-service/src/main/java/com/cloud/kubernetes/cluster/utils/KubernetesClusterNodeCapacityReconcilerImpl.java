@@ -32,17 +32,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
-/**
- * SSH-backed implementation for a rolling CKS live-resize reconciliation.
- *
- * Component scanning makes this implementation available to the scale worker, which obtains it
- * through {@code ComponentContext}.
- */
-@Component
+/** SSH-backed implementation for a rolling CKS live-resize reconciliation. */
 public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesClusterNodeCapacityReconciler {
-    static final long MINIMUM_MEMORY_OVERHEAD_BYTES = 128L * 1024L * 1024L;
+    // KVM QA observes 4,568,788 KiB in a 4,608 MiB guest after memory hotplug
+    // (about 146 MiB below the offering), so keep a small margin above that
+    // platform overhead while still rejecting materially undersized guests.
+    static final long MINIMUM_MEMORY_OVERHEAD_BYTES = 160L * 1024L * 1024L;
     static final long KUBERNETES_MEMORY_REPORTING_TOLERANCE_BYTES = 16L * 1024L * 1024L;
     private static final int COMMAND_TIMEOUT_MS = 30000;
     private static final int POLL_INTERVAL_MS = 5000;

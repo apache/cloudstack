@@ -28,8 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -87,8 +85,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private Boolean isAutoscalingEnabled;
     private long scaleTimeoutTime;
 
-    @Inject
-    protected KubernetesClusterNodeCapacityReconciler kubernetesClusterNodeCapacityReconciler;
+    protected KubernetesClusterNodeCapacityReconciler kubernetesClusterNodeCapacityReconciler = new KubernetesClusterNodeCapacityReconcilerImpl();
 
     protected KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -401,26 +398,30 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                         kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             boolean reconcileKubernetes = shouldReconcileNodeCapacity(vmMapVO, userVM, oldOffering, serviceOffering, nodeType);
+            boolean reconciliationRetryCandidate = isReconciliationRetryCandidate(vmMapVO, userVM, serviceOffering, nodeType);
             NodeAccess nodeAccess = null;
             NodeCapacitySnapshot before = null;
             boolean result = false;
             boolean cksCordonCompleted = false;
-            boolean resizeSucceeded = serviceOffering.getId() == userVM.getServiceOfferingId();
+            boolean resizeSucceeded = Objects.equals(serviceOffering.getId(), userVM.getServiceOfferingId());
             try {
-                if (reconcileKubernetes) {
+                if (reconcileKubernetes || reconciliationRetryCandidate) {
                     nodeAccess = resolveNodeAccess(userVM);
                     before = kubernetesClusterNodeCapacityReconciler.captureBefore(kubernetesCluster, userVM, nodeAccess);
+                    reconcileKubernetes = reconcileKubernetes || before.isCloudStackResizeCordon();
+                }
+                if (reconcileKubernetes) {
                     kubernetesClusterNodeCapacityReconciler.cordonIfNeeded(kubernetesCluster, userVM, before, nodeAccess, scaleTimeoutTime);
                     cksCordonCompleted = !before.isUnschedulable() || before.isCloudStackResizeCordon();
                 }
-                if (serviceOffering.getId() != userVM.getServiceOfferingId()) {
+                if (!Objects.equals(serviceOffering.getId(), userVM.getServiceOfferingId())) {
                     result = userVmManager.upgradeVirtualMachine(userVM.getId(), serviceOffering.getId(), new HashMap<String, String>());
                     if (!result) {
                         logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, unable to scale cluster VM : %s", kubernetesCluster.getName(), userVM.getDisplayName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                     }
                     resizeSucceeded = true;
                     userVM = userVmDao.findById(userVM.getId());
-                    if (userVM == null || serviceOffering.getId() != userVM.getServiceOfferingId()) {
+                    if (userVM == null || !Objects.equals(serviceOffering.getId(), userVM.getServiceOfferingId())) {
                         logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, VM %s did not reach target offering", kubernetesCluster.getName(), vmMapVO.getVmId()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                     }
                 }
@@ -490,6 +491,16 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 && KubernetesCluster.ClusterType.CloudManaged == kubernetesCluster.getClusterType()
                 && Hypervisor.HypervisorType.KVM == userVM.getHypervisorType()
                 && kubernetesClusterNodeCapacityReconciler.requiresKubeletRefresh(oldOffering, targetOffering, nodeType, originalState);
+    }
+
+    protected boolean isReconciliationRetryCandidate(KubernetesClusterVmMapVO vmMapVO, UserVm userVM,
+                                                       ServiceOffering targetOffering, KubernetesClusterNodeType nodeType) {
+        return !vmMapVO.isExternalNode()
+                && KubernetesCluster.ClusterType.CloudManaged == kubernetesCluster.getClusterType()
+                && Hypervisor.HypervisorType.KVM == userVM.getHypervisorType()
+                && (WORKER == nodeType || CONTROL == nodeType)
+                && KubernetesCluster.State.Running == originalState
+                && Objects.equals(targetOffering.getId(), userVM.getServiceOfferingId());
     }
 
     private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
