@@ -132,6 +132,16 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
         fakeReconciler.verifyGuestResources(vm("worker-1"), offering(4, 4608), before, access(), System.currentTimeMillis() + 1000L);
     }
 
+    @Test
+    public void testOnlineGuestResourcesActivatesHotpluggedCpuAndMemory() throws Exception {
+        FakeReconciler fakeReconciler = new FakeReconciler(nodeJson(false));
+
+        fakeReconciler.onlineGuestResources(access());
+
+        Assert.assertEquals(KubernetesClusterNodeCapacityReconcilerImpl.ONLINE_HOTPLUGGED_RESOURCES,
+                fakeReconciler.nodeCommands.get(0));
+    }
+
     private ServiceOffering offering(int cpu, int memory) {
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         Mockito.when(offering.getCpu()).thenReturn(cpu);
@@ -163,6 +173,7 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
     private static class FakeReconciler extends KubernetesClusterNodeCapacityReconcilerImpl {
         private final String nodeJson;
         private final List<String> controlCommands = new ArrayList<>();
+        private final List<String> nodeCommands = new ArrayList<>();
         private String nodeResources = "2\n2097152\n";
 
         FakeReconciler(String nodeJson) {
@@ -177,6 +188,7 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
 
         @Override
         protected String executeNode(KubernetesClusterNodeCapacityReconciler.NodeAccess access, String command) {
+            nodeCommands.add(command);
             return nodeResources;
         }
     }

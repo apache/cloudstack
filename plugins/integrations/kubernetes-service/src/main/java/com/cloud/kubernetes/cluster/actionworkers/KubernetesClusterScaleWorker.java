@@ -426,6 +426,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                     }
                 }
                 if (reconcileKubernetes) {
+                    kubernetesClusterNodeCapacityReconciler.onlineGuestResources(nodeAccess);
                     kubernetesClusterNodeCapacityReconciler.verifyGuestResources(userVM, serviceOffering, before, nodeAccess, scaleTimeoutTime);
                     if (!kubernetesClusterNodeCapacityReconciler.isKubernetesResourcesCurrent(before, serviceOffering)) {
                         kubernetesClusterNodeCapacityReconciler.restartKubelet(userVM, nodeAccess, scaleTimeoutTime);

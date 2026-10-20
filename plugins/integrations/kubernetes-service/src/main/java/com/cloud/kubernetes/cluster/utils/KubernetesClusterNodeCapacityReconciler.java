@@ -29,6 +29,7 @@ public interface KubernetesClusterNodeCapacityReconciler {
     boolean requiresKubeletRefresh(ServiceOffering oldOffering, ServiceOffering newOffering,
             KubernetesClusterNodeType nodeType, KubernetesCluster.State originalState);
     void cordonIfNeeded(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception;
+    void onlineGuestResources(NodeAccess access) throws Exception;
     void verifyGuestResources(UserVm vm, ServiceOffering target, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception;
     boolean isKubernetesResourcesCurrent(NodeCapacitySnapshot snapshot, ServiceOffering target);
     void restartKubelet(UserVm vm, NodeAccess access, long deadline) throws Exception;

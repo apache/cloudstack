@@ -45,6 +45,10 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
     private static final Pattern NODE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9.-]{0,252}");
     private static final Pattern MEMORY_QUANTITY = Pattern.compile("([0-9]+)(Ki|Mi|Gi|Ti|K|M|G|T)?");
     private static final String RESIZE_ANNOTATION = "cloudstack.apache.org/cks-live-resize";
+    static final String ONLINE_HOTPLUGGED_RESOURCES = "sudo sh -c 'for cpu in /sys/devices/system/cpu/cpu[0-9]*; do "
+            + "[ -e \"$cpu/online\" ] || continue; echo 1 > \"$cpu/online\"; done; "
+            + "for memory in /sys/devices/system/memory/memory[0-9]*; do "
+            + "[ -e \"$memory/online\" ] || continue; echo online > \"$memory/online\"; done'";
 
     @Override
     public boolean requiresKubeletRefresh(ServiceOffering oldOffering, ServiceOffering newOffering,
@@ -70,6 +74,11 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
             sleep();
         }
         throw failure("CORDON", vm, "Kubernetes node did not become unschedulable");
+    }
+
+    @Override
+    public void onlineGuestResources(NodeAccess access) throws Exception {
+        executeNode(access, ONLINE_HOTPLUGGED_RESOURCES);
     }
 
     @Override
