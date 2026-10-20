@@ -43,6 +43,7 @@ import java.util.List;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -169,6 +170,70 @@ public class KubernetesClusterScaleWorkerTest {
         Mockito.when(offering.getCpu()).thenReturn(cpu);
         Mockito.when(offering.getRamSize()).thenReturn(memory);
         return offering;
+    }
+
+    @Test
+    public void testExistingOfferingUsesCommittedMetadataRatherThanPartiallyResizedFirstVm() {
+        Mockito.when(kubernetesCluster.getWorkerNodeServiceOfferingId()).thenReturn(17L);
+        Assert.assertEquals(Long.valueOf(17), worker.getExistingOfferingIdForNodeType(WORKER, kubernetesCluster));
+        Mockito.verifyNoInteractions(userVmDao, kubernetesClusterVmMapDao);
+    }
+
+    @Test
+    public void testWorkerPlanningUsesNodeOfferingWithoutLegacyGlobalOffering() {
+        Mockito.when(kubernetesCluster.getWorkerNodeServiceOfferingId()).thenReturn(17L);
+        ServiceOfferingVO workerOffering = offering(3, 3072);
+        Mockito.when(serviceOfferingDao.findById(17L)).thenReturn(workerOffering);
+        Assert.assertSame(workerOffering, worker.getServiceOfferingForNodeTypeOnCluster(WORKER, kubernetesCluster));
+    }
+
+    @Test
+    public void testGlobalOfferingChangeSkipsAbsentDedicatedEtcdNodes() {
+        Mockito.when(kubernetesCluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(kubernetesCluster.getServiceOfferingId()).thenReturn(null);
+        Mockito.when(kubernetesCluster.getControlNodeServiceOfferingId()).thenReturn(11L);
+        Mockito.when(kubernetesCluster.getWorkerNodeServiceOfferingId()).thenReturn(12L);
+        ServiceOfferingVO controlOffering = Mockito.mock(ServiceOfferingVO.class);
+        ServiceOfferingVO workerOffering = Mockito.mock(ServiceOfferingVO.class);
+        ServiceOfferingVO target = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(controlOffering.getId()).thenReturn(11L);
+        Mockito.when(workerOffering.getId()).thenReturn(12L);
+        Mockito.when(target.getId()).thenReturn(13L);
+        Mockito.when(serviceOfferingDao.findById(11L)).thenReturn(controlOffering);
+        Mockito.when(serviceOfferingDao.findById(12L)).thenReturn(workerOffering);
+        KubernetesClusterScaleWorker scaleWorker = Mockito.spy(new KubernetesClusterScaleWorker(kubernetesCluster,
+                java.util.Map.of(DEFAULT.name(), target), null, null, null, null, null, clusterManager));
+        scaleWorker.serviceOfferingDao = serviceOfferingDao;
+        Mockito.doNothing().when(scaleWorker).init();
+        Mockito.doNothing().when(scaleWorker).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+        Mockito.doReturn(true).when(scaleWorker).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        Assert.assertTrue(scaleWorker.scaleCluster());
+
+        Mockito.verify(scaleWorker).scaleKubernetesClusterOffering(CONTROL, target, true, false);
+        Mockito.verify(scaleWorker).scaleKubernetesClusterOffering(WORKER, target, true, true);
+        Mockito.verify(scaleWorker, Mockito.never()).scaleKubernetesClusterOffering(Mockito.eq(ETCD), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testRetryUsesUncommittedWorkerOfferingToEnterResizeLoop() {
+        Mockito.when(kubernetesCluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(kubernetesCluster.getWorkerNodeServiceOfferingId()).thenReturn(11L);
+        ServiceOfferingVO old = Mockito.mock(ServiceOfferingVO.class);
+        ServiceOfferingVO target = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(old.getId()).thenReturn(11L);
+        Mockito.when(target.getId()).thenReturn(12L);
+        Mockito.when(serviceOfferingDao.findById(11L)).thenReturn(old);
+        KubernetesClusterScaleWorker scaleWorker = Mockito.spy(new KubernetesClusterScaleWorker(kubernetesCluster,
+                java.util.Map.of(WORKER.name(), target), null, null, null, null, null, clusterManager));
+        scaleWorker.serviceOfferingDao = serviceOfferingDao;
+        Mockito.doNothing().when(scaleWorker).init();
+        Mockito.doNothing().when(scaleWorker).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+        Mockito.doReturn(true).when(scaleWorker).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        Assert.assertTrue(scaleWorker.scaleCluster());
+
+        Mockito.verify(scaleWorker).scaleKubernetesClusterOffering(WORKER, target, true, false);
     }
 
 

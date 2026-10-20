@@ -338,7 +338,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         // Check capacity and transition state
         final long newVmRequiredCount = clusterSize - originalClusterSize;
-        final ServiceOffering clusterServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        final ServiceOffering clusterServiceOffering = getServiceOfferingForNodeTypeOnCluster(nodeType, kubernetesCluster);
         if (clusterServiceOffering == null) {
             logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling failed for Kubernetes cluster : %s, cluster service offering not found", kubernetesCluster.getName()));
         }
@@ -361,7 +361,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private void scaleKubernetesClusterOffering(KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering,
+    protected void scaleKubernetesClusterOffering(KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering,
                                                 boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
         List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster);
@@ -708,6 +708,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         for (KubernetesClusterNodeType nodeType : Arrays.asList(CONTROL, ETCD, WORKER)) {
             boolean isWorkerNode = WORKER == nodeType;
             final long newVMRequired = (!isWorkerNode || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
+            if (nodeType == ETCD && kubernetesCluster.getEtcdNodeCount() == 0) {
+                continue;
+            }
             if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
                 continue;
             }
@@ -777,15 +780,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     protected Long getExistingOfferingIdForNodeType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
-        List<KubernetesClusterVmMapVO> clusterVms = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), nodeType);
-        if (CollectionUtils.isEmpty(clusterVms)) {
-            return kubernetesCluster.getServiceOfferingId();
-        }
-        KubernetesClusterVmMapVO clusterVm = clusterVms.get(0);
-        UserVmVO clusterUserVm = userVmDao.findById(clusterVm.getVmId());
-        if (clusterUserVm == null) {
-            return kubernetesCluster.getServiceOfferingId();
-        }
-        return clusterUserVm.getServiceOfferingId();
+        // Cluster metadata is committed only after every selected VM succeeds.
+        // A partially resized first VM must not make a retry skip the remaining nodes.
+        return getConfiguredOfferingIdForNodeType(nodeType);
     }
 }
