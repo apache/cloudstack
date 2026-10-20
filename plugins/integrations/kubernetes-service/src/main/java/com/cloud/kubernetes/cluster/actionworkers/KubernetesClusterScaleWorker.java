@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -219,7 +218,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                                                                         final ServiceOffering newServiceOffering,
                                                                         final boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         final ServiceOffering serviceOffering = newServiceOffering == null ?
-                serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
+                serviceOfferingDao.findById(getConfiguredOfferingIdForNodeType(nodeType)) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
 
         Pair<Long, Long> clusterCountAndCapacity = calculateNewClusterCountAndCapacity(newWorkerSize, nodeType, serviceOffering);
@@ -236,30 +235,34 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     protected Pair<Long, Long> calculateNewClusterCountAndCapacity(Long newWorkerSize, KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering) {
-        long cores;
-        long memory;
-        long totalClusterSize = newWorkerSize == null ? kubernetesCluster.getTotalNodeCount() : (newWorkerSize + kubernetesCluster.getControlNodeCount() + kubernetesCluster.getEtcdNodeCount());
-
-        if (nodeType == DEFAULT) {
-            cores = serviceOffering.getCpu() * totalClusterSize;
-            memory = serviceOffering.getRamSize() * totalClusterSize;
-        } else {
-            long nodeCount = getNodeCountForType(nodeType, kubernetesCluster);
-            Long existingOfferingId = getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
-            if (existingOfferingId == null) {
-                existingOfferingId = serviceOffering.getId();
+        long cores = 0;
+        long memory = 0;
+        // VM offerings have already changed here. Recompute the total from the
+        // configured node types instead of subtracting a supposedly old VM offering.
+        for (KubernetesClusterNodeType type : List.of(CONTROL, WORKER, ETCD)) {
+            long nodeCount = WORKER == type && newWorkerSize != null ? newWorkerSize : getNodeCountForType(type, kubernetesCluster);
+            if (nodeCount == 0) {
+                continue;
             }
-            ServiceOfferingVO previousOffering = serviceOfferingDao.findById(existingOfferingId);
-            Pair<Long, Long> previousNodesCapacity = calculateNodesCapacity(previousOffering, nodeCount);
-            if (WORKER == nodeType) {
-                nodeCount = newWorkerSize == null ? kubernetesCluster.getNodeCount() : newWorkerSize;
-            }
-            Pair<Long, Long> newNodesCapacity = calculateNodesCapacity(serviceOffering, nodeCount);
-            Pair<Long, Long> newClusterCapacity = calculateClusterNewCapacity(kubernetesCluster, previousNodesCapacity, newNodesCapacity);
-            cores = newClusterCapacity.first();
-            memory = newClusterCapacity.second();
+            ServiceOffering offering = nodeType == DEFAULT || nodeType == type ? serviceOffering :
+                    serviceOfferingDao.findByIdIncludingRemoved(getConfiguredOfferingIdForNodeType(type));
+            Pair<Long, Long> capacity = calculateNodesCapacity(offering, nodeCount);
+            cores += capacity.first();
+            memory += capacity.second();
         }
         return new Pair<>(cores, memory);
+    }
+
+    private Long getConfiguredOfferingIdForNodeType(KubernetesClusterNodeType nodeType) {
+        Long offeringId = null;
+        if (WORKER == nodeType) {
+            offeringId = kubernetesCluster.getWorkerNodeServiceOfferingId();
+        } else if (CONTROL == nodeType) {
+            offeringId = kubernetesCluster.getControlNodeServiceOfferingId();
+        } else if (ETCD == nodeType) {
+            offeringId = kubernetesCluster.getEtcdNodeServiceOfferingId();
+        }
+        return offeringId == null ? kubernetesCluster.getServiceOfferingId() : offeringId;
     }
 
     private long getNodeCountForType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
@@ -271,16 +274,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             return kubernetesCluster.getEtcdNodeCount();
         }
         return kubernetesCluster.getTotalNodeCount();
-    }
-
-    protected Pair<Long, Long> calculateClusterNewCapacity(KubernetesCluster kubernetesCluster,
-                                                           Pair<Long, Long> previousNodeTypeCapacity,
-                                                           Pair<Long, Long> newNodeTypeCapacity) {
-        long previousCores = kubernetesCluster.getCores();
-        long previousMemory = kubernetesCluster.getMemory();
-        long newCores = previousCores - previousNodeTypeCapacity.first() + newNodeTypeCapacity.first();
-        long newMemory = previousMemory - previousNodeTypeCapacity.second() + newNodeTypeCapacity.second();
-        return new Pair<>(newCores, newMemory);
     }
 
     protected Pair<Long, Long> calculateNodesCapacity(ServiceOffering offering, long nodeCount) {
