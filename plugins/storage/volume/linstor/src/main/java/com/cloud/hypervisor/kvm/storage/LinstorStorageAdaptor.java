@@ -69,9 +69,10 @@ import java.nio.file.Paths;
 public class LinstorStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
+    private static final long DEVICE_WAIT_MS = 10000;
     private final String localNodeName;
 
-    private DevelopersApi getLinstorAPI(KVMStoragePool pool) {
+    DevelopersApi getLinstorAPI(KVMStoragePool pool) {
         // Use a fresh client per pool so a self-signed/insecure pool can't weaken the TLS settings
         // of another pool sharing this agent.
         ApiClient client = new ApiClient();
@@ -208,6 +209,38 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
         handleLinstorApiAnswers(answers,
             String.format("Linstor: Unable to make resource %s available on node: %s", rscName, localNodeName));
+        waitForLocalDevice(api, rscName);
+    }
+
+    /**
+     * Waits until the device of resource {@code rscName} exists on this node. Making a resource available
+     * returns before udev has created its /dev/drbd/by-res link, so opening the device right away can fail
+     * with "No such file or directory".
+     */
+    private void waitForLocalDevice(DevelopersApi api, String rscName) throws ApiException {
+        List<ResourceWithVolumes> resources = api.viewResources(Collections.singletonList(localNodeName),
+                Collections.singletonList(rscName), Collections.emptyList(), null, null, null);
+        if (resources.isEmpty() || resources.get(0).getVolumes().isEmpty()) {
+            throw new CloudRuntimeException(String.format("Linstor: resource %s has no volumes on %s",
+                    rscName, localNodeName));
+        }
+        waitForDevice(LinstorUtil.getDevicePathFromResource(resources.get(0)));
+    }
+
+    void waitForDevice(String device) {
+        long deadline = System.currentTimeMillis() + DEVICE_WAIT_MS;
+        while (!Files.exists(Paths.get(device))) {
+            if (System.currentTimeMillis() > deadline) {
+                throw new CloudRuntimeException(String.format("Linstor: device %s did not appear within %d ms",
+                        device, DEVICE_WAIT_MS));
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CloudRuntimeException("Linstor: interrupted while waiting for device " + device, e);
+            }
+        }
     }
 
     /**
@@ -340,7 +373,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
-
+            waitForLocalDevice(api, rscName);
         } catch (ApiException apiEx) {
             logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
