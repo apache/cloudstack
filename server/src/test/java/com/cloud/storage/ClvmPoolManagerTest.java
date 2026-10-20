@@ -40,9 +40,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -921,6 +925,309 @@ public class ClvmPoolManagerTest {
 
         Assert.assertNull(result);
         verify(agentMgr, never()).send(anyLong(), any(ClvmLockTransferCommand.class));
+    }
+
+    /** DB host is Up but times out on the query: recovery activates on the other host. */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_SkipsUnreachableDbHost_ActivatesOnOtherHost()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = mockClusterPool();
+
+        VolumeDetailVO detail = new VolumeDetailVO();
+        detail.setValue(String.valueOf(HOST_ID_1));
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO host2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(host1);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(host1, host2));
+
+        when(agentMgr.send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenThrow(new OperationTimedoutException(null, HOST_ID_1, 0, 0, false));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, false, false, null));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, never()).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    /** No DB record, one Up host does not answer the fan-out: the fallback pick is the host that answered. */
+    @Test
+    public void testQueryCurrentLockHolder_InactiveEverywhere_FallbackSkipsHostThatDidNotAnswer()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = mockClusterPool();
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO host2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(host1, host2));
+
+        when(agentMgr.send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(null);
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, false, false, null));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, never()).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    /** Every Up host fails to answer: nothing is activated. */
+    @Test
+    public void testQueryCurrentLockHolder_AllHostsUnreachable_NoActivation()
+            throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = mockClusterPool();
+
+        VolumeDetailVO detail = new VolumeDetailVO();
+        detail.setValue(String.valueOf(HOST_ID_1));
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO host2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(host1);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(host1, host2));
+
+        when(agentMgr.send(anyLong(), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenThrow(new OperationTimedoutException(null, HOST_ID_1, 0, 0, false));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        verify(agentMgr, never()).send(anyLong(), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    /** Fake clock: sleep only advances it and records the interval. */
+    private static class RetryTestClvmPoolManager extends ClvmPoolManager {
+        private final AtomicLong clock = new AtomicLong();
+        private final List<Long> sleeps = new ArrayList<>();
+        private long timeoutMs = 180_000L;
+
+        @Override
+        protected long now() {
+            return clock.get();
+        }
+
+        @Override
+        protected boolean sleep(long millis) {
+            sleeps.add(millis);
+            clock.addAndGet(millis);
+            return true;
+        }
+
+        @Override
+        protected long getRetryTimeoutMillis() {
+            return timeoutMs;
+        }
+
+        @Override
+        protected long getRetryIntervalMillis() {
+            return 10_000L;
+        }
+    }
+
+    private RetryTestClvmPoolManager newRetryManager() {
+        RetryTestClvmPoolManager manager = new RetryTestClvmPoolManager();
+        ReflectionTestUtils.setField(manager, "_volsDetailsDao", volsDetailsDao);
+        ReflectionTestUtils.setField(manager, "_agentMgr", agentMgr);
+        ReflectionTestUtils.setField(manager, "_hostDao", hostDao);
+        return manager;
+    }
+
+    /** DB host is Down, HOST_ID_2 reports the volume inactive: recovery activates there. */
+    private StoragePoolVO prepareRecoveryOnHost2() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = mockClusterPool();
+
+        VolumeDetailVO detail = new VolumeDetailVO();
+        detail.setValue(String.valueOf(HOST_ID_1));
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+
+        HostVO downHost = createMockHost(HOST_ID_1, "host1", Status.Down, Hypervisor.HypervisorType.KVM);
+        HostVO upHost = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(downHost);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(downHost, upHost));
+
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, false, false, null));
+        return pool;
+    }
+
+    private static Answer lockedByOtherHost() {
+        return new Answer(null, false, "lvchange -aey /dev/acsvg/test-volume-path failed:   LV locked by other host: acsvg/test-volume-path");
+    }
+
+    private static Answer lockStartInProgress() {
+        return new Answer(null, false, "lvchange -aey /dev/acsvg/test-volume-path failed:   VG acsvg lock skipped: lock start in progress  Cannot access VG acsvg due to failed lock.");
+    }
+
+    @Test
+    public void testRecoveryActivation_LockStartInProgressThenGranted_RetriesOnSameHost() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockStartInProgress(), lockedByOtherHost(), new Answer(null, true, null));
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        Assert.assertEquals(Arrays.asList(10_000L, 10_000L), manager.sleeps);
+        verify(agentMgr, times(3)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_RefusedTwiceThenGranted_RetriesOnSameHost() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost(), lockedByOtherHost(), new Answer(null, true, null));
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        Assert.assertEquals(Arrays.asList(10_000L, 10_000L), manager.sleeps);
+        verify(agentMgr, times(3)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+        verify(agentMgr, never()).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
+    }
+
+    @Test
+    public void testRecoveryActivation_RefusedUntilDeadline_GivesUp() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost());
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        Assert.assertEquals(18, manager.sleeps.size());
+        Assert.assertEquals(180_000L, manager.clock.get());
+        verify(agentMgr, times(19)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_DeadlineIsCountedFromLookupStart() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = mockClusterPool();
+
+        VolumeDetailVO detail = new VolumeDetailVO();
+        detail.setValue(String.valueOf(HOST_ID_1));
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+
+        HostVO upHost1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO upHost2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(upHost1);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(upHost1, upHost2));
+
+        // The query to the DB host times out after 130 seconds
+        when(agentMgr.send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenAnswer(invocation -> {
+                    manager.clock.addAndGet(130_000L);
+                    throw new OperationTimedoutException(null, HOST_ID_1, 0, 0, false);
+                });
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, false, false, null));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost());
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        Assert.assertEquals(5, manager.sleeps.size());
+        Assert.assertEquals(180_000L, manager.clock.get());
+        verify(agentMgr, times(6)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_OtherFailure_NotRetried() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, false, "lvchange failed: Cannot access VG acsvg due to failed lock"));
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        Assert.assertTrue(manager.sleeps.isEmpty());
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_AgentException_NotRetried() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenThrow(new OperationTimedoutException(null, HOST_ID_2, 0, 0, false));
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        Assert.assertTrue(manager.sleeps.isEmpty());
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_RetryDisabledWithZeroTimeout() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        manager.timeoutMs = 0L;
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost());
+
+        Long result = manager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertNull(result);
+        Assert.assertTrue(manager.sleeps.isEmpty());
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_SharedDeadline_SecondVolumeNotRetriedOnceBudgetIsUsed() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost());
+        long deadlineMs = manager.newLockRecoveryDeadlineMs();
+
+        Assert.assertNull(manager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, deadlineMs));
+        Assert.assertNull(manager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, deadlineMs));
+
+        Assert.assertEquals(18, manager.sleeps.size());
+        Assert.assertEquals(180_000L, manager.clock.get());
+        verify(agentMgr, times(20)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testRecoveryActivation_SharedDeadline_SecondVolumeActivatedRightAfterTheFirst() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost(), lockedByOtherHost(), new Answer(null, true, null), new Answer(null, true, null));
+        long deadlineMs = manager.newLockRecoveryDeadlineMs();
+
+        Assert.assertEquals(HOST_ID_2, manager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, deadlineMs));
+        Assert.assertEquals(HOST_ID_2, manager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, deadlineMs));
+
+        Assert.assertEquals(Arrays.asList(10_000L, 10_000L), manager.sleeps);
+        verify(agentMgr, times(4)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    private StoragePoolVO mockClusterPool() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getClusterId()).thenReturn(10L);
+        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+        when(pool.getPath()).thenReturn(VG_NAME);
+        return pool;
+    }
+
+    private static Command operation(ClvmLockTransferCommand.Operation operation) {
+        return Mockito.<Command>argThat(cmd -> cmd instanceof ClvmLockTransferCommand
+                && ((ClvmLockTransferCommand) cmd).getOperation() == operation);
     }
 
     // Helper method to create mock hosts
