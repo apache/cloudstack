@@ -26,12 +26,15 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
+import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAML2AuthManagerImpl;
 import org.apache.cloudstack.saml.SAMLTokenDao;
 import org.apache.cloudstack.saml.SAMLTokenVO;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -94,6 +97,39 @@ public class SAML2AuthManagerImplTest extends TestCase {
         Mockito.doReturn(true).when(saml2AuthManager).isSAMLPluginEnabled();
     }
 
+    @After
+    public void tearDown() {
+        resetConfigKeyValue(SAML2AuthManager.EnableLoginAfterSAMLDisable);
+    }
+
+    private static <T> void setConfigKeyValue(ConfigKey<T> configKey, T value) {
+        try {
+            Field valueField = ConfigKey.class.getDeclaredField("_value");
+            valueField.setAccessible(true);
+            valueField.set(configKey, value);
+
+            Field dynamicField = ConfigKey.class.getDeclaredField("_isDynamic");
+            dynamicField.setAccessible(true);
+            dynamicField.setBoolean(configKey, false);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException("Failed to set ConfigKey value", e);
+        }
+    }
+
+    private static void resetConfigKeyValue(ConfigKey<?> configKey) {
+        try {
+            Field valueField = ConfigKey.class.getDeclaredField("_value");
+            valueField.setAccessible(true);
+            valueField.set(configKey, null);
+
+            Field dynamicField = ConfigKey.class.getDeclaredField("_isDynamic");
+            dynamicField.setAccessible(true);
+            dynamicField.setBoolean(configKey, true);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException("Failed to reset ConfigKey value", e);
+        }
+    }
+
     @Test
     public void testIsUserAuthorized() {
         final String entityID = "some IDP ID";
@@ -154,6 +190,91 @@ public class SAML2AuthManagerImplTest extends TestCase {
         saml2AuthManager.authorizeUser(200L, "someID", true);
 
         verify(userDetailsDao, never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testAuthorizeUserEnableWithNullSourceSkipsStore() {
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(null);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+
+        assertTrue(saml2AuthManager.authorizeUser(200L, "someID", true));
+
+        verify(userDetailsDao, never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        assertEquals(User.Source.SAML2, user.getSource());
+    }
+
+    @Test
+    public void testAuthorizeUserEnableSkipsStoreWhenAlreadyDisabled() {
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.SAML2DISABLED);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+
+        saml2AuthManager.authorizeUser(200L, "someID", true);
+
+        verify(userDetailsDao, never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        assertEquals(User.Source.SAML2, user.getSource());
+    }
+
+    @Test
+    public void testAuthorizeUserDisableReturnsFalseWhenUserNotCurrentlySaml() {
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.LDAP);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+
+        assertFalse(saml2AuthManager.authorizeUser(200L, "someID", false));
+
+        assertEquals(User.Source.LDAP, user.getSource());
+        Mockito.verify(userDao, never()).update(Mockito.anyLong(), Mockito.any(UserVO.class));
+    }
+
+    // With enable.login.with.disabled.saml left at its default (false), disabling SAML must still
+    // block login via SAML2DISABLED, regardless of any PreSamlSource recorded.
+    @Test
+    public void testAuthorizeUserDisableSetsSaml2DisabledWhenFlagOff() {
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.SAML2);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+
+        assertTrue(saml2AuthManager.authorizeUser(200L, "someID", false));
+
+        assertEquals(User.Source.SAML2DISABLED, user.getSource());
+        verify(userDetailsDao, never()).findDetail(Mockito.anyLong(), Mockito.anyString());
+    }
+
+    @Test
+    public void testAuthorizeUserDisableRestoresPreSamlSourceWhenFlagOn() {
+        setConfigKeyValue(SAML2AuthManager.EnableLoginAfterSAMLDisable, true);
+
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.SAML2);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "LDAP"));
+
+        assertTrue(saml2AuthManager.authorizeUser(200L, "someID", false));
+
+        assertEquals(User.Source.LDAP, user.getSource());
+        Mockito.verify(userDao, Mockito.atLeastOnce()).update(Mockito.anyLong(), Mockito.any(UserVO.class));
+    }
+
+    @Test
+    public void testAuthorizeUserDisableFallsBackToUnknownWhenFlagOnButNothingStored() {
+        setConfigKeyValue(SAML2AuthManager.EnableLoginAfterSAMLDisable, true);
+
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.SAML2);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(null);
+
+        assertTrue(saml2AuthManager.authorizeUser(200L, "someID", false));
+
+        assertEquals(User.Source.UNKNOWN, user.getSource());
     }
 
     @Test
