@@ -730,8 +730,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             _jobDao.update(job.getId(), job);
         } catch (Exception e) {
             logger.warn("Unexpected exception while dispatching job-" + item.getContentId(), e);
-            returnItemToQueue(item);
-            return;
+            if (returnItemToQueue(item)) {
+                return;
+            }
+            // requeue failed: fall through so the job still runs once rather than being stranded until cleanup
         }
 
         try {
@@ -743,11 +745,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
     }
 
-    private void returnItemToQueue(SyncQueueItemVO item) {
+    private boolean returnItemToQueue(SyncQueueItemVO item) {
         try {
             _queueMgr.returnItem(item.getId());
+            return true;
         } catch (Throwable thr) {
             logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", thr);
+            return false;
         }
     }
 

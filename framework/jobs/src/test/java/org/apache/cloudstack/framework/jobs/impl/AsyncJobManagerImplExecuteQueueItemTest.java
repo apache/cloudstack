@@ -98,4 +98,32 @@ public class AsyncJobManagerImplExecuteQueueItemTest {
         inOrder.verify(job).setExecutingMsid(null);
         inOrder.verify(_queueMgr).returnItem(itemId);
     }
+
+    @Test
+    public void executeQueueItemStillSchedulesWhenRequeueAlsoFailsSoJobIsNotStranded() {
+        long contentId = 10L;
+        long itemId = 20L;
+        long jobId = 1L;
+
+        SyncQueueItemVO item = Mockito.mock(SyncQueueItemVO.class);
+        Mockito.when(item.getContentId()).thenReturn(contentId);
+        Mockito.when(item.getId()).thenReturn(itemId);
+
+        AsyncJobVO job = Mockito.mock(AsyncJobVO.class);
+        Mockito.when(job.getId()).thenReturn(jobId);
+        Mockito.when(_jobDao.findById(contentId)).thenReturn(job);
+
+        // Stamping the executing msid fails (the DB deadlock path), and returning the item also fails.
+        Mockito.doThrow(new CloudRuntimeException("simulated DB deadlock"))
+                .when(_jobDao).update(Mockito.anyLong(), Mockito.any(AsyncJobVO.class));
+        Mockito.doThrow(new CloudRuntimeException("queue unavailable"))
+                .when(_queueMgr).returnItem(Mockito.anyLong());
+        Mockito.doNothing().when(asyncJobManager).scheduleExecution(Mockito.any(AsyncJobVO.class));
+
+        asyncJobManager.executeQueueItem(item, false);
+
+        // The requeue failed, so the job must still be scheduled once instead of sitting until cleanup.
+        Mockito.verify(_queueMgr).returnItem(itemId);
+        Mockito.verify(asyncJobManager).scheduleExecution(job);
+    }
 }
