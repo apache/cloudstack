@@ -154,7 +154,6 @@ public class ClusteredAgentManagerImplTest {
         verify(clusteredAgentManagerImpl).loadDirectlyConnectedHost(hostVO, false);
     }
 
-    // https://github.com/apache/cloudstack/issues/9640
     // Indirectly connected agents (KVM hosts, SSVM, CPVM) dial in to a management server rather than
     // being loaded directly by it, so they must be disconnected (and left to reconnect on their own)
     // instead of going through the direct-agent rebalance dance that expects a ClusteredDirectAgentAttache.
