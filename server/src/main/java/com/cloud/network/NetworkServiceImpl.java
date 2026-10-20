@@ -930,10 +930,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             checkHostReadyForVlanTrunk(vm);
         }
 
+        boolean nicWasAlreadyMultiNetwork = nic.getMultiNetwork();
         List<NetworkVO> newlyAssociatedNetworks = associateNetworksInternal(nic, vm, caller, cmd.getNetworkIds(), cmd.getIpAddressesMap());
 
         if (vmRunning) {
-            updateLiveVlanTrunkMembership(vm, nic);
+            try {
+                updateLiveVlanTrunkMembership(vm, nic);
+            } catch (ResourceUnavailableException | CloudRuntimeException ex) {
+                rollbackNetworkAssociations(nic, newlyAssociatedNetworks, nicWasAlreadyMultiNetwork);
+                throw ex;
+            }
             refreshNicVlanMappingMetadata(nic);
             for (NetworkVO network : newlyAssociatedNetworks) {
                 pushDhcpEntryForAssociation(vm, nic, network);
@@ -942,6 +948,37 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         return _nicDao.findById(nic.getId());
+    }
+
+    /**
+     * Undoes persistAssociations' db writes when the host rejects the live VLAN trunk update straight after -
+     * guest IPs for this feature are never tracked anywhere but nic_network_map itself, so removing these rows
+     * is itself the release, same as the normal disassociate path.
+     */
+    private void rollbackNetworkAssociations(NicVO nic, List<NetworkVO> networks, boolean nicWasAlreadyMultiNetwork) {
+        for (NetworkVO network : networks) {
+            NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), network.getId());
+            if (association != null) {
+                _nicNetworkMapDao.remove(association.getId());
+            }
+        }
+        if (!nicWasAlreadyMultiNetwork) {
+            nic.setMultiNetwork(false);
+            _nicDao.update(nic.getId(), nic);
+        }
+    }
+
+    /**
+     * Undoes the nic_network_map removal (and multiNetwork flag clear) when the host rejects the live VLAN
+     * trunk update straight after - restores the same ip4/ip6 the association held, which simply re-occupies
+     * that guest IP since availability is computed fresh from nic_network_map.
+     */
+    private void rollbackNetworkDisassociation(NicVO nic, NicNetworkMapVO association, boolean nicMultiNetworkCleared) {
+        _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), association.getNetworkId(), association.getIp4Address(), association.getIp6Address()));
+        if (nicMultiNetworkCleared) {
+            nic.setMultiNetwork(true);
+            _nicDao.update(nic.getId(), nic);
+        }
     }
 
     /**
@@ -1051,18 +1088,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // so removing this row is itself the release
         _nicNetworkMapDao.remove(association.getId());
 
-        if (nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty()) {
+        boolean nicMultiNetworkCleared = nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty();
+        if (nicMultiNetworkCleared) {
             nic.setMultiNetwork(false);
             _nicDao.update(nic.getId(), nic);
         }
 
         if (vmRunning) {
+            try {
+                updateLiveVlanTrunkMembership(vm, nic);
+            } catch (ResourceUnavailableException | CloudRuntimeException ex) {
+                rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared);
+                throw ex;
+            }
             cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
             NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
             if (targetNetwork != null) {
                 publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
             }
-            updateLiveVlanTrunkMembership(vm, nic);
             refreshNicVlanMappingMetadata(nic);
         }
 
