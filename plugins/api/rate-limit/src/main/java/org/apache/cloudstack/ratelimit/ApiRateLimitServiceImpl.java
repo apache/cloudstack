@@ -82,25 +82,12 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 
         if (_store == null) {
             // get global configured duration and max values
-            String isEnabled = _configDao.getValue(ManagementServer.ApiLimitEnabled.key());
-            if (isEnabled != null) {
-                enabled = Boolean.parseBoolean(isEnabled);
-            }
-            String duration = _configDao.getValue(ManagementServer.ApiLimitInterval.key());
-            if (duration != null) {
-                timeToLive = Integer.parseInt(duration);
-            }
-            String maxReqs = _configDao.getValue(ManagementServer.ApiLimitMax.key());
-            if (maxReqs != null) {
-                maxAllowed = Integer.parseInt(maxReqs);
-            }
+            enabled = ManagementServer.ApiLimitEnabled.value();
+            timeToLive = ManagementServer.ApiLimitInterval.value();
+            maxAllowed = ManagementServer.ApiLimitMax.value();
             // create limit store
             EhcacheLimitStore cacheStore = new EhcacheLimitStore();
-            int maxElements = 10000;
-            String cachesize = _configDao.getValue(ApiLimitCacheSize.key());
-            if (cachesize != null) {
-                maxElements = Integer.parseInt(cachesize);
-            }
+            int maxElements = ApiLimitCacheSize.value();
             CacheManager cm = CacheManager.create();
             Cache cache = new Cache("api-limit-cache", maxElements, false, false, timeToLive, timeToLive);
             cm.addCache(cache);

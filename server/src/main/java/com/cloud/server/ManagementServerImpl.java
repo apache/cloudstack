@@ -893,6 +893,18 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<Boolean> exposeCloudStackVersionInApiListCapabilities = new ConfigKey<>("Advanced", Boolean.class, "expose.cloudstack.version.api.list.capabilities", "true", "Indicates whether ACS version should show in the listCapabilities API.", true, ConfigKey.Scope.Global);
 
+    // Registered/owned by the kubernetes-service and sharedfs-storagevm plugins; declared here too so this module
+    // can read them without a reverse dependency on those plugin modules.
+    static final ConfigKey<Boolean> KubernetesServiceEnabled = new ConfigKey<>("Advanced", Boolean.class, "cloud.kubernetes.service.enabled", "true",
+            "Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change", false);
+    static final ConfigKey<Boolean> KubernetesClusterExperimentalFeaturesEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "cloud.kubernetes.cluster.experimental.features.enabled", "false",
+            "Indicates whether experimental feature for Kubernetes cluster such as Docker private registry are enabled or not", true);
+    static final ConfigKey<Integer> SharedFSVmMinCpuCount = new ConfigKey<>("Advanced", Integer.class, "sharedfsvm.min.cpu.count", "2",
+            "minimum cpu count allowed for the compute offering to be used to create the sharedfs vm.", true);
+    static final ConfigKey<Integer> SharedFSVmMinRamSize = new ConfigKey<>("Advanced", Integer.class, "sharedfsvm.min.ram.size", "1024",
+            "minimum ram size allowed for the compute offering to be used to create the sharedfs vm.", true);
+
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
     private static final List<HypervisorType> LIVE_MIGRATION_SUPPORTING_HYPERVISORS = List.of(HypervisorType.Hyperv, HypervisorType.KVM,
             HypervisorType.LXC, HypervisorType.Ovm, HypervisorType.Ovm3, HypervisorType.Simulator, HypervisorType.VMware, HypervisorType.XenServer);
@@ -4897,8 +4909,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(domainId));
 
-        final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
-        final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
+        final boolean kubernetesServiceEnabled = KubernetesServiceEnabled.value();
+        final boolean kubernetesClusterExperimentalFeaturesEnabled = KubernetesClusterExperimentalFeaturesEnabled.value();
 
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
@@ -4907,8 +4919,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             regionSecondaryEnabled = true;
         }
 
-        final Integer fsVmMinCpu = Integer.parseInt(_configDao.getValue("sharedfsvm.min.cpu.count"));
-        final Integer fsVmMinRam = Integer.parseInt(_configDao.getValue("sharedfsvm.min.ram.size"));
+        final Integer fsVmMinCpu = SharedFSVmMinCpuCount.value();
+        final Integer fsVmMinRam = SharedFSVmMinRamSize.value();
         if (exposeCloudStackVersionInApiListCapabilities.value()) {
             capabilities.put("cloudStackVersion", getVersion());
         }

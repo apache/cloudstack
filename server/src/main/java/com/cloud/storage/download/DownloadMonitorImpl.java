@@ -52,6 +52,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.TemplateConstants;
@@ -328,7 +329,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private Long getMaxTemplateSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
+            return SecondaryStorageVmManager.MaxTemplateAndIsoSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }

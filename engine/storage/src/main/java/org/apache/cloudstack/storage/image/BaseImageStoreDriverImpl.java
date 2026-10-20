@@ -40,7 +40,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -78,6 +77,7 @@ import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -104,8 +104,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
     EndPointSelector _epSelector;
-    @Inject
-    ConfigurationDao configDao;
     @Inject
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
@@ -161,7 +159,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     protected Long getMaxTemplateSizeInBytes() {
         try {
-            return Long.parseLong(configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
+            return SecondaryStorageVmManager.MaxTemplateAndIsoSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }

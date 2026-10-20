@@ -24,7 +24,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,19 +54,16 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected ServiceOfferingDao _offeringDao;
     @Inject protected UserVmDao _userVmDao;
     @Inject protected UserVmManager _userVmMgr;
-    @Inject protected ConfigurationDao _configDao;
     private EventDistributor eventDistributor;
     protected Logger logger = LogManager.getLogger(getClass());
 
-    public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr,
-            ConfigurationDao configDao) {
+    public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
         this._nicDao = nicDao;
         this._offeringDao = offeringDao;
         this._userVmDao = userVmDao;
         this._userVmMgr = userVmMgr;
-        this._configDao = configDao;
     }
 
     @Override
@@ -122,9 +118,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
 
     private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
 
-        String configKey = ManagementServer.PublishResourceStateEvent.key();
-        String value = _configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = ManagementServer.PublishResourceStateEvent.value();
         if(!configValue)
             return;
         try {

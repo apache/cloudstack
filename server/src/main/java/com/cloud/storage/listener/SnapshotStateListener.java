@@ -22,10 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,21 +41,11 @@ import com.cloud.utils.fsm.StateMachine2;
 @Component
 public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
-    protected static ConfigurationDao s_configDao;
-
-    @Inject
-    private ConfigurationDao configDao;
-
     private EventDistributor eventDistributor = null;
     protected Logger logger = LogManager.getLogger(getClass());
 
     public SnapshotStateListener() {
 
-    }
-
-    @PostConstruct
-    void init() {
-        s_configDao = configDao;
     }
 
     public void setEventDistributor(EventDistributor eventDistributor) {
@@ -80,9 +66,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
 
     private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
-        String configKey = ManagementServer.PublishResourceStateEvent.key();
-        String value = s_configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = ManagementServer.PublishResourceStateEvent.value();
         if(!configValue) {
             return;
         }

@@ -107,6 +107,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -1163,9 +1164,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, capacityScanInterval);
         resourceManager.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 
-        staticPublicIp = configurationDao.getValue("consoleproxy.static.publicIp");
+        staticPublicIp = ConsoleProxyStaticPublicIp.value();
         if (staticPublicIp != null) {
-            staticPort = NumbersUtil.parseInt(configurationDao.getValue("consoleproxy.static.port"), 8443);
+            Integer configuredStaticPort = ConsoleProxyStaticPort.value();
+            staticPort = configuredStaticPort != null ? configuredStaticPort : 8443;
         }
 
         if (logger.isInfoEnabled()) {
@@ -1210,17 +1212,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" session_reconnection_window=").append(sessionReconnectionWindow);
         }
 
-        String msPublicKey = configurationDao.getValue("ssh.publickey");
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
-        boolean externalDhcp = false;
-        String externalDhcpStr = configurationDao.getValue("direct.attach.network.externalIpAllocator.enabled");
-        if (externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
-            externalDhcp = true;
-        }
+        boolean externalDhcp = VirtualNetworkApplianceManager.DirectAttachNetworkEnabled.value();
 
-        if (Boolean.valueOf(configurationDao.getValue("system.vm.random.password"))) {
-            buf.append(" vmpassword=").append(configurationDao.getValue("system.vm.password"));
+        if (SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
+            buf.append(" vmpassword=").append(ManagementServer.SystemVMPassword.value());
         }
 
         if (StringUtils.isNotEmpty(NTPServerConfig.value())) {
@@ -1670,8 +1668,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     private void createServiceOfferingForConsoleProxy() throws ConfigurationException {
-        int ramSize = NumbersUtil.parseInt(configurationDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
-        int cpuFreq = NumbersUtil.parseInt(configurationDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
+        int ramSize = ConsoleProxyVmRamSize.value();
+        int cpuFreq = ConsoleProxyVmCpuMhz.value();
         List<ServiceOfferingVO> offerings = serviceOfferingDao.createSystemServiceOfferings("System Offering For Console Proxy",
                 ServiceOffering.consoleProxyDefaultOffUniqueName, 1, ramSize, cpuFreq, 0, 0, false, null,
                 Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ConsoleProxy, true);

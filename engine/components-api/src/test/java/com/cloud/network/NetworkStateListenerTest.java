@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,7 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class NetworkStateListenerTest {
     @InjectMocks
-    NetworkStateListener networkStateListener = new NetworkStateListener(Mockito.mock(ConfigurationDao.class));
+    NetworkStateListener networkStateListener = new NetworkStateListener();
 
     @Test
     public void testSetEventDistributor() {

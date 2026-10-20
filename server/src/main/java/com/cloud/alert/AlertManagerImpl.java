@@ -198,15 +198,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _vlanCapacityThreshold = VlanCapacityThreshold.value();
         _directNetworkPublicIpCapacityThreshold = DirectNetworkPublicIpCapacityThreshold.value();
         _localStorageCapacityThreshold = LocalStorageCapacityThreshold.value();
-        String backupStorageCapacityThreshold = _configDao.getValue(BackupManager.BackupStorageCapacityThreshold.key());
-        String objectStorageCapacityThreshold = _configDao.getValue(_storageMgr.ObjectStorageCapacityThreshold.key());
-
-        if (backupStorageCapacityThreshold != null) {
-            _backupStorageCapacityThreshold = Double.parseDouble(backupStorageCapacityThreshold);
-        }
-        if (objectStorageCapacityThreshold != null) {
-            _objectStorageCapacityThreshold = Double.parseDouble(objectStorageCapacityThreshold);
-        }
+        _backupStorageCapacityThreshold = BackupManager.BackupStorageCapacityThreshold.value();
+        _objectStorageCapacityThreshold = StorageManager.ObjectStorageCapacityThreshold.value();
 
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);

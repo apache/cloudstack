@@ -3980,7 +3980,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _hostDao.loadDetails(host);
         final String password = host.getDetail("password");
         final String username = host.getDetail("username");
-        final String privateKey = _configDao.getValue("ssh.privatekey");
+        final String privateKey = ManagementServer.SshPrivateKey.value();
         if ((password == null && privateKey == null) || username == null) {
             throw new CloudRuntimeException("SSH to agent is enabled, but username and password or private key are not found");
         }

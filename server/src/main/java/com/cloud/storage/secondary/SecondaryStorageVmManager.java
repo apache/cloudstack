@@ -74,6 +74,9 @@ public interface SecondaryStorageVmManager extends Manager {
     ConfigKey<String> SecStorageSecureCopyCert = new ConfigKey<>("Advanced", String.class, "secstorage.ssl.cert.domain", "",
             "SSL certificate used to encrypt copy traffic between zones", true);
 
+    ConfigKey<String> SecStorageCopyPassword = new ConfigKey<>("Hidden", String.class, "secstorage.copy.password", null,
+            "Password used to authenticate zone-to-zone template copy requests", true);
+
     ConfigKey<Integer> ExtractURLCleanUpInterval = new ConfigKey<>("Advanced", Integer.class, "extract.url.cleanup.interval", "7200",
             "The interval (in seconds) to wait before cleaning up the extract URL's ", true);
 
@@ -88,6 +91,12 @@ public interface SecondaryStorageVmManager extends Manager {
 
     public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz
+
+    ConfigKey<Integer> SecStorageVmRamSize = new ConfigKey<>("Advanced", Integer.class, "ssvm.ram.size", String.valueOf(DEFAULT_SS_VM_RAMSIZE),
+            "Secondary storage VM default RAM size (in MB)", true);
+
+    ConfigKey<Integer> SecStorageVmCpuMhz = new ConfigKey<>("Advanced", Integer.class, "ssvm.cpu.mhz", String.valueOf(DEFAULT_SS_VM_CPUMHZ),
+            "Secondary storage VM default CPU speed (in MHz)", true);
     public static final int DEFAULT_SS_VM_MTUSIZE = 1500;
     public static final int DEFAULT_SS_VM_CAPACITY = 50;            // max command execution session per SSVM
     public static final int DEFAULT_MIGRATE_SS_VM_CAPACITY = 2;     // number of concurrent migrate operations to happen per SSVM
