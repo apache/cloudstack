@@ -24,21 +24,27 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -118,6 +124,72 @@ public class LibvirtTakeBackupCommandWrapperTest {
                         anyString(), anyString()), never());
             }
         }
+    }
+
+    private static final String LINSTOR_DEVICE = "/dev/drbd/by-res/cs-vol-1/0";
+
+    /** A stopped VM with one volume on a LINSTOR pool; its device exists here as given. */
+    private KVMStoragePoolManager mockStoppedVmOnLinstor(boolean deviceExists) {
+        PrimaryDataStoreTO pool = Mockito.mock(PrimaryDataStoreTO.class);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.lenient().when(pool.getUuid()).thenReturn("pool-uuid");
+        command.setVolumePools(Collections.singletonList(pool));
+        command.setVolumePaths(Collections.singletonList(LINSTOR_DEVICE));
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        wrapper = Mockito.spy(wrapper);
+        Mockito.doReturn(deviceExists).when(wrapper).deviceExists(LINSTOR_DEVICE);
+        return storagePoolMgr;
+    }
+
+    @Test
+    public void executeConnectsLinstorVolumeMissingOnThisHost() {
+        KVMStoragePoolManager storagePoolMgr = mockStoppedVmOnLinstor(false);
+
+        List<String> argv = runAndCaptureArgv();
+
+        Assert.assertEquals(LINSTOR_DEVICE, argv.get(argv.indexOf("-d") + 1));
+        InOrder inOrder = Mockito.inOrder(storagePoolMgr);
+        inOrder.verify(storagePoolMgr).connectPhysicalDisk(Storage.StoragePoolType.Linstor, "pool-uuid", "vol-1", null);
+        inOrder.verify(storagePoolMgr).disconnectPhysicalDisk(Storage.StoragePoolType.Linstor, "pool-uuid", "vol-1");
+    }
+
+    @Test
+    public void executeLeavesLinstorVolumeWithDeviceOnThisHostAlone() {
+        KVMStoragePoolManager storagePoolMgr = mockStoppedVmOnLinstor(true);
+
+        runAndCaptureArgv();
+
+        Mockito.verify(storagePoolMgr, never()).connectPhysicalDisk(Mockito.any(Storage.StoragePoolType.class),
+                anyString(), anyString(), Mockito.any());
+        Mockito.verify(storagePoolMgr, never()).disconnectPhysicalDisk(Mockito.any(Storage.StoragePoolType.class),
+                anyString(), anyString());
+    }
+
+    @Test
+    public void executeDisconnectsConnectedVolumeWhenBackupFails() {
+        KVMStoragePoolManager storagePoolMgr = mockStoppedVmOnLinstor(false);
+
+        runFailing(new Pair<>(1, "qemu-img convert failed"), false);
+
+        Mockito.verify(storagePoolMgr).disconnectPhysicalDisk(Storage.StoragePoolType.Linstor, "pool-uuid", "vol-1");
+    }
+
+    @Test
+    public void executeFailsWhenLinstorVolumeCannotBeConnected() {
+        KVMStoragePoolManager storagePoolMgr = mockStoppedVmOnLinstor(false);
+        when(storagePoolMgr.connectPhysicalDisk(Storage.StoragePoolType.Linstor, "pool-uuid", "vol-1", null))
+                .thenThrow(new CloudRuntimeException("resource not found"));
+
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+            Assert.assertFalse(answer.getResult());
+            Assert.assertTrue(answer.getDetails().contains("resource not found"));
+            scriptMock.verify(() -> Script.executePipedCommands(anyList(), anyLong()), never());
+        }
+        Mockito.verify(storagePoolMgr, never()).disconnectPhysicalDisk(Mockito.any(Storage.StoragePoolType.class),
+                anyString(), anyString());
     }
 
     @Test

@@ -63,7 +63,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String QEMU_IMG_HAS_BACKING_COMMAND =
             "qemu-img info --output=json %s 2>/dev/null | grep -q '\"backing-filename\"'";
 
-    private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
+    static String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
             Path path = Paths.get(volumePath);
             String rscName = path.getParent().getFileName().toString();

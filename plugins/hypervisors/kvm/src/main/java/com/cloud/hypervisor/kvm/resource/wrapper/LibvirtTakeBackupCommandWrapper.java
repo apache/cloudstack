@@ -30,6 +30,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
@@ -37,6 +38,8 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -65,10 +68,6 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
-        final String backupPath = command.getBackupPath();
-        final String backupRepoType = command.getBackupRepoType();
-        final String backupRepoAddress = command.getBackupRepoAddress();
-        final String mountOptions = command.getMountOptions();
         List<PrimaryDataStoreTO> volumePools = command.getVolumePools();
         final List<String> volumePaths = command.getVolumePaths();
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -96,8 +95,29 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
 
-        Pair<Integer, String> result = runBackupScript(libvirtComputingResource, command, vmName, backupRepoType, backupRepoAddress,
-                mountOptions, backupPath, diskPaths, command.getMode(),
+        // A stopped VM is copied straight from its volumes, but a LINSTOR volume only has a device on
+        // the hosts that hold a resource of it, and once the VM is stopped its last host may hold none.
+        List<Pair<PrimaryDataStoreTO, String>> connectedVolumes;
+        try {
+            connectedVolumes = connectMissingLinstorVolumes(storagePoolMgr, volumePools, volumePaths);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Failed to make the volumes of VM {} available for its backup", vmName, e);
+            return new BackupAnswer(command, false,
+                    String.format("Failed to make the volumes of VM %s available: %s", vmName, e.getMessage()));
+        }
+
+        try {
+            return runBackup(libvirtComputingResource, command, diskPaths, timeout);
+        } finally {
+            disconnectVolumes(storagePoolMgr, connectedVolumes);
+        }
+    }
+
+    private Answer runBackup(LibvirtComputingResource libvirtComputingResource, TakeBackupCommand command,
+            List<String> diskPaths, int timeout) {
+        final String vmName = command.getVmName();
+        Pair<Integer, String> result = runBackupScript(libvirtComputingResource, command, vmName, command.getBackupRepoType(),
+                command.getBackupRepoAddress(), command.getMountOptions(), command.getBackupPath(), diskPaths, command.getMode(),
                 command.getBitmapNew(), command.getBitmapParent(), command.getParentPaths(), timeout);
 
         if (result.first() != 0) {
@@ -128,6 +148,51 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         answer.setBitmapCreated(command.getBitmapNew());
         answer.setIncrementalFallback(incrementalFallback);
         return answer;
+    }
+
+    /**
+     * Makes each LINSTOR volume whose device does not exist on this host available here; connecting
+     * returns once the device exists. A volume of a running VM, or one this host holds a replica of,
+     * already has its device and is left alone. Returns the pool and uuid of every volume it connected,
+     * for {@link #disconnectVolumes}.
+     */
+    private List<Pair<PrimaryDataStoreTO, String>> connectMissingLinstorVolumes(KVMStoragePoolManager storagePoolMgr,
+            List<PrimaryDataStoreTO> volumePools, List<String> volumePaths) {
+        List<Pair<PrimaryDataStoreTO, String>> connected = new ArrayList<>();
+        if (volumePaths == null) {
+            return connected;
+        }
+        try {
+            for (int idx = 0; idx < volumePaths.size(); idx++) {
+                PrimaryDataStoreTO volumePool = volumePools.get(idx);
+                String volumePath = volumePaths.get(idx);
+                if (volumePool.getPoolType() != Storage.StoragePoolType.Linstor || deviceExists(volumePath)) {
+                    continue;
+                }
+                String volumeUuid = LibvirtRestoreBackupCommandWrapper.getVolumeUuidFromPath(volumePath, volumePool);
+                logger.debug("Making LINSTOR volume {} available for the backup", volumeUuid);
+                storagePoolMgr.connectPhysicalDisk(volumePool.getPoolType(), volumePool.getUuid(), volumeUuid, null);
+                connected.add(new Pair<>(volumePool, volumeUuid));
+            }
+        } catch (CloudRuntimeException e) {
+            disconnectVolumes(storagePoolMgr, connected);
+            throw e;
+        }
+        return connected;
+    }
+
+    private void disconnectVolumes(KVMStoragePoolManager storagePoolMgr, List<Pair<PrimaryDataStoreTO, String>> volumes) {
+        for (Pair<PrimaryDataStoreTO, String> volume : volumes) {
+            try {
+                storagePoolMgr.disconnectPhysicalDisk(volume.first().getPoolType(), volume.first().getUuid(), volume.second());
+            } catch (CloudRuntimeException e) {
+                logger.warn("Failed to disconnect volume {} after the backup: {}", volume.second(), e.getMessage());
+            }
+        }
+    }
+
+    boolean deviceExists(String path) {
+        return Files.exists(Paths.get(path));
     }
 
     /**
