@@ -710,16 +710,20 @@ class StorPoolHelper():
 
     @classmethod
     def check_storpool_volume_iops(cls, spapi, volume,):
-        spvolume = cls.get_storpool_volume_by_path(spapi, volume.path)
-        logging.debug(spvolume.iops)
-        logging.debug(volume.maxiops)
-        if spvolume.iops != volume.maxiops:
-            raise Exception("Storpool volume size is not the same as CloudStack db size")
+        name = volume.path.split("/")[3]
+        try:
+            spvolume = spapi.volumeList(volumeName = "~" + name)
+            logging.debug(spvolume[0].iops)
+            logging.debug(volume.maxiops)
+            if spvolume[0].iops != volume.maxiops:
+                raise Exception("Storpool volume size is not the same as CloudStack db size")
+        except spapi.ApiError as err:
+           raise Exception(err)
 
     @classmethod
     def verify_storpool_volume(cls, spapi, volume, check_size=True):
         """Assert the CloudStack volume exists on StorPool; optionally compare size."""
-        if not volume.path or not volume.path.startswith("/dev/storpool"):
+        if not volume.path or not volume.path.startswith("/dev/storpool-byid/"):
             raise Exception("Volume %s does not have a StorPool device path: %s" %
                             (volume.id, volume.path))
         spvolume = cls.get_storpool_volume_by_path(spapi, volume.path)

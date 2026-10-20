@@ -480,6 +480,10 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Encrypted StorPool volumes are not supported");
         }
 
+        if (!PhysicalDiskFormat.RAW.equals(format)) {
+            throw new CloudRuntimeException(String.format("StorPool volumes can only be created as RAW, %s was requested", format));
+        }
+
         if (size <= 0) {
             throw new CloudRuntimeException("Size must be greater than 0 to create a StorPool volume");
         }
