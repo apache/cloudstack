@@ -53,6 +53,7 @@ import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoPlaceRequest;
 import com.linbit.linstor.api.model.DrbdResource;
 import com.linbit.linstor.api.model.LayerType;
+import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
 import com.linbit.linstor.api.model.ResourceLayer;
@@ -278,5 +279,66 @@ public class LinstorStorageAdaptorTest {
     @Test
     public void waitForDeviceReturnsForAnExistingDevice() {
         new LinstorStorageAdaptor().waitForDevice("/dev/null");
+    }
+
+    private static ResourceDefinition scratchRd(String name, String vmName) {
+        ResourceDefinition rd = new ResourceDefinition();
+        rd.setName(name);
+        Properties props = new Properties();
+        props.put(LinstorStorageAdaptor.BACKUP_SCRATCH_VM_PROP, vmName);
+        rd.setProps(props);
+        return rd;
+    }
+
+    private static ResourceWithVolumes resourceOf(String name) {
+        ResourceWithVolumes rsc = new ResourceWithVolumes();
+        rsc.setName(name);
+        return rsc;
+    }
+
+    // The controllers this agent has swept are remembered per process, so every test uses its own one.
+    private KVMStoragePool registerPool(String controller) {
+        return adaptor.createStoragePool("pool-" + controller, controller, 3370, "cloudstack", null,
+                Storage.StoragePoolType.Linstor, null, true);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void createStoragePoolDeletesLeftoverScratchOfThisNode() throws ApiException {
+        ResourceDefinition volume = new ResourceDefinition();
+        volume.setName("cs-vol-1");
+        when(api.resourceDefinitionList(null, false, null, null, null)).thenReturn(Arrays.asList(
+                scratchRd("cs-bkscratch-here", "i-2-3-VM"), scratchRd("cs-bkscratch-elsewhere", "i-2-4-VM"), volume));
+        ArgumentCaptor<List<String>> rscNames = ArgumentCaptor.forClass(List.class);
+        when(api.viewResources(eq(Collections.singletonList(localNode)), rscNames.capture(), any(), any(), any(), any()))
+                .thenReturn(Collections.singletonList(resourceOf("cs-bkscratch-here")));
+        when(api.resourceDefinitionDelete("cs-bkscratch-here")).thenReturn(success());
+
+        Assert.assertNotNull(registerPool("http://sweep-1:3370"));
+
+        Assert.assertEquals(2, rscNames.getValue().size());
+        Assert.assertFalse(rscNames.getValue().contains("cs-vol-1"));
+        verify(api).resourceDefinitionDelete("cs-bkscratch-here");
+        verify(api, never()).resourceDefinitionDelete("cs-bkscratch-elsewhere");
+    }
+
+    @Test
+    public void createStoragePoolSweepsEachControllerOnlyOnce() throws ApiException {
+        when(api.resourceDefinitionList(null, false, null, null, null)).thenReturn(Collections.emptyList());
+
+        registerPool("http://sweep-2:3370");
+        registerPool("http://sweep-2:3370");
+
+        verify(api, times(1)).resourceDefinitionList(null, false, null, null, null);
+    }
+
+    @Test
+    public void createStoragePoolRegistersPoolWhenControllerIsUnreachable() throws ApiException {
+        when(api.resourceDefinitionList(null, false, null, null, null)).thenThrow(new ApiException("connection refused"));
+
+        KVMStoragePool registered = registerPool("http://sweep-3:3370");
+
+        Assert.assertSame(registered, adaptor.getStoragePool("pool-http://sweep-3:3370"));
+        verify(api, never()).resourceDefinitionDelete(anyString());
     }
 }

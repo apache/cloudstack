@@ -24,7 +24,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -81,6 +83,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     static final String BACKUP_SCRATCH_PREFIX = "cs-bkscratch-";
     static final String BACKUP_SCRATCH_VM_PROP = "Aux/cs-backup-vm";
     private static final long DEVICE_WAIT_MS = 10000;
+    // Controllers this agent has already removed its leftover backup scratch from, see deleteLeftoverBackupScratch().
+    private static final Set<String> BackupScratchSweptControllers = ConcurrentHashMap.newKeySet();
     private final String localNodeName;
 
     DevelopersApi getLinstorAPI(KVMStoragePool pool) {
@@ -198,6 +202,11 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 : Boolean.parseBoolean(LinstorConfigurationManager.InsecureSsl.defaultValue());
         LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this, insecureSsl);
 
+        // Pools are registered again whenever the agent reconnects, but only the first registration of a
+        // controller precedes every backup that could be using its scratch space.
+        if (BackupScratchSweptControllers.add(host)) {
+            deleteLeftoverBackupScratch(storagePool);
+        }
         MapStorageUuidToStoragePool.put(name, storagePool);
 
         return storagePool;
@@ -265,8 +274,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
      * node attaches diskless.
      *
      * The agent deletes the scratch once the backup has ended. If it never gets there, e.g. because the agent
-     * crashed, the resource definition has to be deleted manually; its {@value #BACKUP_SCRATCH_VM_PROP}
-     * property names the VM.
+     * crashed or the host went down, it deletes the leftover the next time it starts, see
+     * {@link #deleteLeftoverBackupScratch(KVMStoragePool)}; the {@value #BACKUP_SCRATCH_VM_PROP} property
+     * names the VM.
      */
     public Pair<String, List<String>> createBackupScratch(KVMStoragePool pool, String vmName, List<Long> sizes) {
         final LinstorStoragePool lpool = (LinstorStoragePool) pool;
@@ -369,6 +379,47 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             waitForDevice(device);
         }
         return devices;
+    }
+
+    /**
+     * Deletes the backup scratch resources an earlier run of this agent left on this node, e.g. because it
+     * crashed or was restarted during a backup. Called when the first pool of a controller is registered,
+     * before any backup can use it, so none of them can belong to a running backup. A scratch always has a
+     * resource on the node whose agent created it, diskless if its data lives on another node. Failures are
+     * logged only: a leftover must not keep the pool from being registered.
+     */
+    void deleteLeftoverBackupScratch(KVMStoragePool pool) {
+        final DevelopersApi api = getLinstorAPI(pool);
+        try {
+            Map<String, ResourceDefinition> scratchRds = LinstorUtil.getRDListStartingWith(api, BACKUP_SCRATCH_PREFIX)
+                    .stream().collect(Collectors.toMap(ResourceDefinition::getName, rd -> rd));
+            if (scratchRds.isEmpty()) {
+                return;
+            }
+            List<String> leftovers = api.viewResources(Collections.singletonList(localNodeName),
+                    new ArrayList<>(scratchRds.keySet()), Collections.emptyList(), null, null, null)
+                    .stream().map(Resource::getName).distinct().collect(Collectors.toList());
+            for (String rscName : leftovers) {
+                Properties props = scratchRds.get(rscName).getProps();
+                String vmName = props != null ? props.get(BACKUP_SCRATCH_VM_PROP) : null;
+                logger.warn("Linstor: deleting backup scratch {} of VM {} left behind on {}", rscName, vmName,
+                        localNodeName);
+                try {
+                    deleteBackupScratch(pool, rscName);
+                } catch (CloudRuntimeException e) {
+                    // Typically after a crash during a backup: the VM's pull-mode backup job outlived the agent
+                    // and still holds the scratch devices.
+                    logger.warn("Linstor: unable to delete leftover backup scratch {}: {}. If VM {} still has a backup "
+                            + "job, end it with 'virsh domjobabort {}', then delete the resource definition manually.",
+                            rscName, e.getMessage(), vmName, vmName);
+                }
+            }
+        } catch (ApiException apiEx) {
+            logger.warn("Linstor: unable to look for leftover backup scratch on {}: {}", localNodeName,
+                    apiEx.getBestMessage());
+        } catch (CloudRuntimeException e) {
+            logger.warn("Linstor: unable to look for leftover backup scratch on {}: {}", localNodeName, e.getMessage());
+        }
     }
 
     public void deleteBackupScratch(KVMStoragePool pool, String rscName) {
