@@ -365,7 +365,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
 
-        _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(VmwareVcenterSessionTimeout.key()), 1200) * 1000;
+        _vCenterSessionTimeout = (int) (VmwareVcenterSessionTimeout.value() * 1000);
         logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
 
         _recycleHungWorker = String.valueOf(VmwareRecycleHungWorker.value());

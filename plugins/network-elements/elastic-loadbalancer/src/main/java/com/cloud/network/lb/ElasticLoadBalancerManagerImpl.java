@@ -485,7 +485,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (defaultDns2 != null) {
             buf.append(" dns2=").append(defaultDns2);
         }
-        String msPublicKey = _configDao.getValue("ssh.publickey");
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {

@@ -140,7 +140,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.user.Account;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -296,7 +295,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
             hostDetails.put("username", nccVO.getUsername());
             hostDetails.put("password", DBEncryptionUtil.decrypt(nccVO.getPassword()));
             hostDetails.put("deviceName", "netscaler control center");
-            hostDetails.put("cmdTimeOut", Long.toString(NumbersUtil.parseInt(_configDao.getValue(NCCCmdTimeOut.key()), 600000)));
+            hostDetails.put("cmdTimeOut", Long.toString(NCCCmdTimeOut.value()));
             ServerResource resource = new NetScalerControlCenterResource();
             resource.configure(hostName, hostDetails);
             final Host host = _resourceMgr.addHost(guestConfig.getDataCenterId(), resource, Host.Type.NetScalerControlCenter, hostDetails);

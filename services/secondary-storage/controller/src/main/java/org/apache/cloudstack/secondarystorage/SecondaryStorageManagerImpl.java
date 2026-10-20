@@ -114,6 +114,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -275,6 +276,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     static final ConfigKey<Integer> MaxNumberOfSsvmsForMigration = new ConfigKey<Integer>("Advanced", Integer.class, "max.ssvm.count", "5",
             "Number of additional SSVMs to handle migration of data objects concurrently", true, ConfigKey.Scope.Global);
 
+    // Registered/owned by AgentManager; declared here too so this module can read it without a reverse dependency on engine/orchestration.
+    static final ConfigKey<Integer> Workers = new ConfigKey<>("Advanced", Integer.class, "workers", "5",
+            "Number of worker threads handling remote agent connections.", false);
+
     public SecondaryStorageManagerImpl() {
     }
 
@@ -377,7 +382,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<String> allowedCidrs = getAllowedInternalSiteCidrs();
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }
-        String copyPasswd = _configDao.getValue("secstorage.copy.password");
+        String copyPasswd = SecondaryStorageVmManager.SecStorageCopyPassword.value();
         setupCmd.setCopyPassword(copyPasswd);
         setupCmd.setCopyUserName(TemplateConstants.DEFAULT_HTTP_AUTH_USER);
 
@@ -918,15 +923,15 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
         boolean _useServiceVM = UseSecondaryStorageVm.value();
-        _useSSlCopy = BooleanUtils.toBoolean(_configDao.getValue("secstorage.encrypt.copy"));
+        _useSSlCopy = SecondaryStorageVmManager.SecStorageEncryptCopy.value();
 
-        String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
+        String ssvmUrlDomain = SecondaryStorageVmManager.SecStorageSecureCopyCert.value();
         if(_useSSlCopy && StringUtils.isEmpty(ssvmUrlDomain)){
             logger.warn("Empty secondary storage url domain, explicitly disabling SSL");
             _useSSlCopy = false;
         }
 
-        _allowedInternalSites = _configDao.getValue("secstorage.allowed.internal.sites");
+        _allowedInternalSites = SecondaryStorageVmManager.SecStorageAllowedInternalDownloadSites.value();
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -961,8 +966,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         if (_serviceOffering == null || !_serviceOffering.isSystemUse()) {
-            int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
-            int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
+            int ramSize = SecStorageVmRamSize.value();
+            int cpuFreq = SecStorageVmCpuMhz.value();
             List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Secondary Storage VM",
                     ServiceOffering.ssvmDefaultOffUniqueName, 1, ramSize, cpuFreq, null, null, false, null,
                     Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
@@ -1154,8 +1159,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         buf.append(" guid=").append(vmName);
 
-        buf.append(" workers=").append(_configDao.getValue("workers"));
-        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" workers=").append(Workers.value());
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (_configDao.isPremium()) {
@@ -1169,14 +1174,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" role=").append(vm.getRole().toString());
         buf.append(" mtu=").append(_secStorageVmMtuSize);
 
-        boolean externalDhcp = false;
-        String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
-        if (externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
-            externalDhcp = true;
-        }
+        boolean externalDhcp = VirtualNetworkApplianceManager.DirectAttachNetworkEnabled.value();
 
-        if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
-            buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        if (SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
+            buf.append(" vmpassword=").append(ManagementServer.SystemVMPassword.value());
         }
 
         if (StringUtils.isNotEmpty(NTPServerConfig.value())) {

@@ -83,7 +83,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -325,8 +324,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private VMSnapshotDao _vmSnapshotDao;
     @Inject
-    private ConfigurationDao _configDao;
-    @Inject
     private DataStoreManager dataStoreMgr;
     @Inject
     private VolumeService volService;
@@ -403,6 +400,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
+
+    // Registered/owned by the VMware hypervisor plugin's VmwareManager; declared here too so this module can read it without a reverse dependency on that plugin.
+    static final ConfigKey<Integer> VmwareOVAPackageTimeout = new ConfigKey<>("Advanced", Integer.class, "vmware.package.ova.timeout", "3600",
+            "Vmware script timeout for ova packaging process", true);
 
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<>("Advanced", Boolean.class, "volume.url.check", "true",
             "Check the url for a volume before downloading it from the management server. Set to false when your management has no internet access.", true);
@@ -559,7 +560,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                             dataObject.getDataStore().getRole().toString(), zoneId);
                     command.setLocalPath(volumeStore.getLocalDownloadPath());
                     //using the existing max upload size configuration
-                    command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
+                    command.setProcessTimeout(VmwareOVAPackageTimeout.value());
                     command.setMaxUploadSize(String.valueOf(MaxUploadVolumeSize.value()));
 
                     long accountId = vol.getAccountId();

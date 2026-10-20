@@ -307,7 +307,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
@@ -515,7 +514,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     protected DataCenterLinkLocalIpAddressDao _linkLocalIpAllocDao;
 
-    private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
+    private long _defaultPageSize = Long.parseLong(ManagementServer.DefaultPageSize.defaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     private Set<String> configValuesForValidation = new HashSet<>();
     private Set<String> configKeysAllowedOnlyForDefaultAdmin = new HashSet<>();
@@ -588,8 +587,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        final String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
-        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, Long.parseLong(Config.DefaultPageSize.getDefaultValue()));
+        _defaultPageSize = ManagementServer.DefaultPageSize.value();
 
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
@@ -1019,7 +1017,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      */
     private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
         String hypervisorListConfigName = ManagementServer.HypervisorList.key();
-        String hypervisors = _configDao.getValue(hypervisorListConfigName);
+        String hypervisors = ManagementServer.HypervisorList.value();
         if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
             hypervisors = hypervisors.replace(previousValue, newValue);
             logger.info("Updating the hypervisor list configuration '{}' to match the new custom hypervisor display name",
@@ -1871,8 +1869,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        final String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
-        if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
+        if (ManagementServer.CheckPodCIDRs.value()) {
             checkPodCidrSubnets(zone.getId(), podId, cidr);
         }
     }
@@ -2704,7 +2701,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _zoneDao.addPrivateIpAddress(zone.getId(), pod.getId(), startIpFinal, endIpFinal, false, null);
             }
 
-            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(ManagementServer.ControlCidr.key()));
+            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(ManagementServer.ControlCidr.value());
             if (linkLocalIpRanges.length > 1) {
                 _zoneDao.addLinkLocalIpAddress(zone.getId(), pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }
@@ -7642,8 +7639,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
 
-        final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
-        final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
+        final int multicastRate = ManagementServer.MulticastThrottlingRate.value();
         tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
         // specifyIpRanges should always be true for Shared networks

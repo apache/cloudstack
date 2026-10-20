@@ -306,10 +306,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxProjectGpus.value());
             projectResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), DefaultMaxProjectPrimaryStorage.value());
             projectResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxProjectSecondaryStorage.value());
-            projectResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxProjectBackups.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxProjectBackupStorage.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxProjectBuckets.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxProjectObjectStorage.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.backup.name(), BackupManager.DefaultMaxProjectBackups.value());
+            projectResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), BackupManager.DefaultMaxProjectBackupStorage.value());
+            projectResourceLimitMap.put(Resource.ResourceType.bucket.name(), BucketApiService.DefaultMaxProjectBuckets.value());
+            projectResourceLimitMap.put(Resource.ResourceType.object_storage.name(), BucketApiService.DefaultMaxProjectObjectStorage.value());
 
             accountResourceLimitMap.put(Resource.ResourceType.public_ip.name(), DefaultMaxAccountPublicIPs.value());
             accountResourceLimitMap.put(Resource.ResourceType.snapshot.name(), DefaultMaxAccountSnapshots.value());
@@ -324,10 +324,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), DefaultMaxAccountPrimaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxAccountSecondaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxAccountProjects.value());
-            accountResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxAccountBackups.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxAccountBackupStorage.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxAccountBuckets.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxAccountObjectStorage.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.backup.name(), BackupManager.DefaultMaxAccountBackups.value());
+            accountResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), BackupManager.DefaultMaxAccountBackupStorage.value());
+            accountResourceLimitMap.put(Resource.ResourceType.bucket.name(), BucketApiService.DefaultMaxAccountBuckets.value());
+            accountResourceLimitMap.put(Resource.ResourceType.object_storage.name(), BucketApiService.DefaultMaxAccountObjectStorage.value());
 
             domainResourceLimitMap.put(Resource.ResourceType.public_ip.name(), DefaultMaxDomainPublicIPs.value());
             domainResourceLimitMap.put(Resource.ResourceType.snapshot.name(), DefaultMaxDomainSnapshots.value());
@@ -342,10 +342,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), DefaultMaxDomainSecondaryStorage.value());
             domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
             domainResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxDomainGpus.value());
-            domainResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxDomainBackups.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxDomainBackupStorage.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxDomainBuckets.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxDomainObjectStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.backup.name(), BackupManager.DefaultMaxDomainBackups.value());
+            domainResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), BackupManager.DefaultMaxDomainBackupStorage.value());
+            domainResourceLimitMap.put(Resource.ResourceType.bucket.name(), BucketApiService.DefaultMaxDomainBuckets.value());
+            domainResourceLimitMap.put(Resource.ResourceType.object_storage.name(), BucketApiService.DefaultMaxDomainObjectStorage.value());
         } catch (NumberFormatException e) {
             logger.error("NumberFormatException during configuration", e);
             throw new ConfigurationException("Configuration failed due to NumberFormatException, see log for the stacktrace");

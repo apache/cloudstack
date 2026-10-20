@@ -669,7 +669,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         allocationAlgorithm = VmAllocationAlgorithm.value();
         globalDeploymentPlanner = DeploymentPlanningManager.VmDeploymentPlanner.value();
         String configValue;
-        if ((configValue = configDao.getValue(ImplicitHostTags.key())) != null) {
+        if ((configValue = ImplicitHostTags.value()) != null) {
             implicitHostTags = configValue.trim().split("\\s*,\\s*");
         }
         return true;

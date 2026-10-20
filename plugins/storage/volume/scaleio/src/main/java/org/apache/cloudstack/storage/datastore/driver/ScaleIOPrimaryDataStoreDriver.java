@@ -103,7 +103,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -888,7 +887,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             grantAccess(destData, host, destData.getDataStore());
 
-            int waitInterval = NumbersUtil.parseInt(configDao.getValue(AgentManager.MigrateWait.key()), Integer.parseInt(AgentManager.MigrateWait.defaultValue()));
+            int waitInterval = AgentManager.MigrateWait.value();
             MigrateVolumeCommand migrateVolumeCommand = new MigrateVolumeCommand(srcData.getTO(), destVolTO,
                     srcDetails, destDetails, waitInterval);
             answer = ep.sendMessage(migrateVolumeCommand);

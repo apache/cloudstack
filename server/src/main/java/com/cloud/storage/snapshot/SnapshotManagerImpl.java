@@ -68,7 +68,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -96,6 +95,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -163,7 +163,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.Ternary;
@@ -231,8 +230,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     DomainManager _domainMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
-    @Inject
-    ConfigurationDao _configDao;
     @Inject
     VMSnapshotDao _vmSnapshotDao;
     @Inject
@@ -1891,7 +1888,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
         Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
         _totalRetries = TotalRetries.value();
-        _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
+        _pauseInterval = 2 * ManagementServiceConfiguration.PingInterval.value();
 
         snapshotBackupRetries = BackupRetryAttempts.value();
         snapshotBackupRetryInterval = BackupRetryInterval.value();

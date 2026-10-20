@@ -189,7 +189,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     private String generateCopyUrlBase(String hostname, String dir) {
         String scheme = "http";
         boolean _sslCopy = SecondaryStorageVmManager.SecStorageEncryptCopy.value();
-        String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
+        String _ssvmUrlDomain = SecondaryStorageVmManager.SecStorageSecureCopyCert.value();
         if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
             logger.warn("Empty secondary storage url domain, ignoring SSL");
             _sslCopy = false;

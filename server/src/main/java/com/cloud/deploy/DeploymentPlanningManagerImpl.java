@@ -1327,11 +1327,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         _vmCapacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
 
-        String hostReservationReleasePeriod = _configDao.getValue(HostReservationReleasePeriod.key());
-        if (hostReservationReleasePeriod != null) {
-            _hostReservationReleasePeriod = Long.parseLong(hostReservationReleasePeriod);
-            if (_hostReservationReleasePeriod <= 0)
-                _hostReservationReleasePeriod = Long.parseLong(HostReservationReleasePeriod.defaultValue());
+        _hostReservationReleasePeriod = HostReservationReleasePeriod.value();
+        if (_hostReservationReleasePeriod <= 0) {
+            _hostReservationReleasePeriod = Long.parseLong(HostReservationReleasePeriod.defaultValue());
         }
 
         _timer = new Timer("HostReservationReleaseChecker");

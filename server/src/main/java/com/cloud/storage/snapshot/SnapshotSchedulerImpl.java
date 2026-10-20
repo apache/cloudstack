@@ -30,7 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
@@ -58,7 +58,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
@@ -85,9 +84,23 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @Inject
     protected VolumeDao _volsDao;
     @Inject
-    protected ConfigurationDao _configDao;
-    @Inject
     protected ApiDispatcher _dispatcher;
+
+    // QA-only test hook: lets snapshots be scheduled on an accelerated, admin-configured clock instead of a real calendar.
+    private static final ConfigKey<Boolean> SnapshotRecurringTest = new ConfigKey<>("Advanced", Boolean.class, "snapshot.recurring.test", "false",
+            "Enable accelerated snapshot recurrence for testing purposes.", true);
+    private static final ConfigKey<Integer> SnapshotTestMinutesPerHour = new ConfigKey<>("Advanced", Integer.class, "snapshot.test.minutes.per.hour", "60",
+            "Minutes per simulated hour when snapshot.recurring.test is enabled.", true);
+    private static final ConfigKey<Integer> SnapshotTestHoursPerDay = new ConfigKey<>("Advanced", Integer.class, "snapshot.test.hours.per.day", "24",
+            "Hours per simulated day when snapshot.recurring.test is enabled.", true);
+    private static final ConfigKey<Integer> SnapshotTestDaysPerWeek = new ConfigKey<>("Advanced", Integer.class, "snapshot.test.days.per.week", "7",
+            "Days per simulated week when snapshot.recurring.test is enabled.", true);
+    private static final ConfigKey<Integer> SnapshotTestDaysPerMonth = new ConfigKey<>("Advanced", Integer.class, "snapshot.test.days.per.month", "30",
+            "Days per simulated month when snapshot.recurring.test is enabled.", true);
+    private static final ConfigKey<Integer> SnapshotTestWeeksPerMonth = new ConfigKey<>("Advanced", Integer.class, "snapshot.test.weeks.per.month", "4",
+            "Weeks per simulated month when snapshot.recurring.test is enabled.", true);
+    private static final ConfigKey<Integer> SnapshotTestMonthsPerYear = new ConfigKey<>("Advanced", Integer.class, "snapshot.test.months.per.year", "12",
+            "Months per simulated year when snapshot.recurring.test is enabled.", true);
     @Inject
     protected AccountDao _acctDao;
     @Inject
@@ -447,15 +460,15 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
         _snapshotPollInterval = SnapshotManager.SnapshotPollInterval.value();
-        final boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
+        final boolean snapshotsRecurringTest = SnapshotRecurringTest.value();
         if (snapshotsRecurringTest) {
             // look for some test values in the configuration table so that snapshots can be taken more frequently (QA test code)
-            final int minutesPerHour = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.minutes.per.hour"), 60);
-            final int hoursPerDay = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.hours.per.day"), 24);
-            final int daysPerWeek = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.week"), 7);
-            final int daysPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.month"), 30);
-            final int weeksPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.weeks.per.month"), 4);
-            final int monthsPerYear = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.months.per.year"), 12);
+            final int minutesPerHour = SnapshotTestMinutesPerHour.value();
+            final int hoursPerDay = SnapshotTestHoursPerDay.value();
+            final int daysPerWeek = SnapshotTestDaysPerWeek.value();
+            final int daysPerMonth = SnapshotTestDaysPerMonth.value();
+            final int weeksPerMonth = SnapshotTestWeeksPerMonth.value();
+            final int monthsPerYear = SnapshotTestMonthsPerYear.value();
 
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }

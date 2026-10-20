@@ -275,9 +275,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             String hostIpAdr = NetUtils.getDefaultHostIp();
             boolean needUpdateHostIp = true;
             if (hostIpAdr != null) {
-                Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+                Boolean devel = ManagementServer.DeveloperMode.value();
                 if (devel) {
-                    String value = _configDao.getValue(ApiServiceConfiguration.ManagementServerAddresses.key());
+                    String value = ApiServiceConfiguration.ManagementServerAddresses.value();
                     if (value != null && !value.equals("localhost")) {
                         needUpdateHostIp = false;
                     }
@@ -399,7 +399,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 ResultSet rs1 = null;
                 ResultSet rs2 = null;
                 try {
-                    String oldValue = _configDao.getValue(ManagementServer.XenServerPVdriverVersion.key());
+                    String oldValue = ManagementServer.XenServerPVdriverVersion.value();
                     if (oldValue == null) {
                         String sql = "select resource from host where hypervisor_type='XenServer' and removed is null and status not in ('Error', 'Removed') group by resource";
                         pstmt = txn.prepareAutoCloseStatement(sql);
@@ -578,11 +578,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             return;
         }
 
-        if (!Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
+        if (!SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
             return;
         }
 
-        String already = _configDao.getValue("system.vm.password");
+        String already = ManagementServer.SystemVMPassword.value();
         if (already == null) {
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
@@ -606,12 +606,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // Grab the SSH key pair and insert it into the database, if it is not present
 
         String username = System.getProperty("user.name");
-        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+        Boolean devel = ManagementServer.DeveloperMode.value();
         if (!username.equalsIgnoreCase("cloud") && !devel) {
             logger.warn("Systemvm keypairs could not be set. Management server should be run as cloud user, or in development mode.");
             return;
         }
-        String already = _configDao.getValue("ssh.privatekey");
+        String already = ManagementServer.SshPrivateKey.value();
         String homeDir = System.getProperty("user.home");
         if (homeDir == null) {
             throw new CloudRuntimeException("Cannot get home directory for account: " + username);
@@ -756,13 +756,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateKeyPairsOnDisk(String homeDir) {
         File keyDir = new File(homeDir + "/.ssh");
-        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+        Boolean devel = ManagementServer.DeveloperMode.value();
         if (!keyDir.isDirectory()) {
             logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
             keyDir.mkdirs();
         }
-        String pubKey = _configDao.getValue("ssh.publickey");
-        String prvKey = _configDao.getValue("ssh.privatekey");
+        String pubKey = ManagementServer.SshPublicKey.value();
+        String prvKey = ManagementServer.SshPrivateKey.value();
 
         // Using non-default file names (id_rsa.cloud and id_rsa.cloud.pub) in developer mode. This is to prevent SSH keys overwritten for user running management server
         if (devel) {
@@ -822,7 +822,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @DB
     protected void generateSecStorageVmCopyPassword() {
-        String already = _configDao.getValue("secstorage.copy.password");
+        String already = SecondaryStorageVmManager.SecStorageCopyPassword.value();
 
         if (already == null) {
 
@@ -935,8 +935,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                     }
 
-                    String ipNums = _configDao.getValue("linkLocalIp.nums");
-                    int nums = Integer.parseInt(ipNums);
+                    int nums = ManagementServer.LinkLocalIpNums.value();
                     if (nums > 16 || nums <= 0) {
                         throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
                     }

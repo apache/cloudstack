@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,14 +43,12 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
-    protected ConfigurationDao _configDao;
     protected VMInstanceDao _vmInstanceDao;
 
     private EventDistributor eventDistributor;
     protected Logger logger = LogManager.getLogger(getClass());
 
-    public VolumeStateListener(ConfigurationDao configDao, VMInstanceDao vmInstanceDao) {
-        this._configDao = configDao;
+    public VolumeStateListener(VMInstanceDao vmInstanceDao) {
         this._vmInstanceDao = vmInstanceDao;
     }
 
@@ -96,9 +93,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
     private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
-        String configKey = ManagementServer.PublishResourceStateEvent.key();
-        String value = _configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = ManagementServer.PublishResourceStateEvent.value();
         if(!configValue)
             return;
         if (eventDistributor == null) {

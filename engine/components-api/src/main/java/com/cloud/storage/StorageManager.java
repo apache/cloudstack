@@ -56,6 +56,9 @@ public interface StorageManager extends StorageService {
             false,
             ConfigKey.Scope.Global,
             null);
+
+    ConfigKey<Boolean> StoragePoolCleanupEnabled = new ConfigKey<>("Advanced", Boolean.class, "storage.pool.cleanup.enabled", "true",
+            "Enables/disables cleanup of the garbage-collecting storage pool allocator.", true);
     ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<>(Integer.class,
             "storage.cleanup.interval",
             "Advanced",

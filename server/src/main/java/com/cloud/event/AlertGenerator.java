@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,15 +45,12 @@ public class AlertGenerator {
     protected static Logger LOGGER = LogManager.getLogger(AlertGenerator.class);
     private static DataCenterDao s_dcDao;
     private static HostPodDao s_podDao;
-    protected static ConfigurationDao s_configDao;
     protected static EventDistributor eventDistributor;
 
     @Inject
     DataCenterDao dcDao;
     @Inject
     HostPodDao podDao;
-    @Inject
-    ConfigurationDao configDao;
 
     public AlertGenerator() {
     }
@@ -63,13 +59,10 @@ public class AlertGenerator {
     void init() {
         s_dcDao = dcDao;
         s_podDao = podDao;
-        s_configDao = configDao;
     }
 
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
-        String configKey = ManagementServer.PublishAlertEvent.key();
-        String value = s_configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = ManagementServer.PublishAlertEvent.value();
         if (!configValue) {
             return;
         }

@@ -112,6 +112,27 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<Integer> LinkLocalIpNums = new ConfigKey<>("Advanced", Integer.class, "linkLocalIp.nums", "10",
             "The number of link local ip that needed by domR(in power of 2)", true);
 
+    ConfigKey<Long> DefaultPageSize = new ConfigKey<>("Advanced", Long.class, "default.page.size", "500",
+            "Default page size for API list* commands", true);
+
+    ConfigKey<Boolean> CheckPodCIDRs = new ConfigKey<>("Advanced", Boolean.class, "check.pod.cidrs", "true",
+            "If true, different pods must belong to different CIDR subnets.", true);
+
+    ConfigKey<Integer> MulticastThrottlingRate = new ConfigKey<>("Advanced", Integer.class, "multicast.throttling.rate", "10",
+            "Default multicast rate in megabits per second allowed.", true);
+
+    ConfigKey<Boolean> DeveloperMode = new ConfigKey<>("Advanced", Boolean.class, "developer", "false",
+            "Whether the management server is running in developer mode.", false);
+
+    ConfigKey<String> SshPublicKey = new ConfigKey<>("Hidden", String.class, "ssh.publickey", null,
+            "Public key for the entire CloudStack, generated once and stored on first management server start.", false);
+
+    ConfigKey<String> SshPrivateKey = new ConfigKey<>("Hidden", String.class, "ssh.privatekey", null,
+            "Private key for the entire CloudStack, generated once and stored on first management server start.", false);
+
+    ConfigKey<String> SystemVMPassword = new ConfigKey<>("Secure", String.class, "system.vm.password", null,
+            "Randomly generated password for system vm, set once and stored on first management server start.", false);
+
     ConfigKey<String> HypervisorList = new ConfigKey<>("Advanced", String.class, "hypervisor.list",
             HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
                     HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,

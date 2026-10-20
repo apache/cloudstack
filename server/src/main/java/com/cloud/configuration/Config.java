@@ -64,7 +64,6 @@ public enum Config {
             "In second, timeout for CreatePrivateTemplateFromVolumeCommand",
             null),
     // Network
-    //MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
     DirectNetworkNoDefaultRoute(
             "Network",
             ManagementServer.class,
@@ -88,14 +87,6 @@ public enum Config {
     // Advanced
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
-    CheckPodCIDRs(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "check.pod.cidrs",
-            "true",
-            "If true, different pods must belong to different CIDR subnets.",
-            "true,false"),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -156,8 +147,6 @@ public enum Config {
             "Should we automatically add XenServers into pools that are inside a Pod",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-
-    DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
     IntervalToEchoBaremetalSecurityGroupAgent(
             "Advanced",

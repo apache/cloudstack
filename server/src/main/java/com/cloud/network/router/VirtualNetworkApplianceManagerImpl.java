@@ -221,6 +221,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
@@ -1916,10 +1917,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
 
-        if (Boolean.parseBoolean(_configDao.getValue("system.vm.random.password"))) {
-            buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        if (SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
+            buf.append(" vmpassword=").append(ManagementServer.SystemVMPassword.value());
         }
-        String msPublicKey = _configDao.getValue("ssh.publickey");
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         NicProfile controlNic = null;

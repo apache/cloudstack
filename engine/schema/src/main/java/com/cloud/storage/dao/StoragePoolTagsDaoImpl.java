@@ -20,10 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.api.response.StorageTagResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -36,13 +34,12 @@ import com.cloud.utils.db.TransactionStatus;
 
 public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Long> implements StoragePoolTagsDao {
 
-    @Inject
-    private ConfigurationDao _configDao;
+    // Registered/owned by ManagementServer; declared here too so this lower-layer module can read it without depending on the server module.
+    private static final ConfigKey<Integer> DetailBatchQuerySize = new ConfigKey<>("Advanced", Integer.class, "detail.batch.query.size", "2000",
+            "Default entity detail batch query size for listing", true);
 
     protected final SearchBuilder<StoragePoolTagVO> StoragePoolSearch;
     private final SearchBuilder<StoragePoolTagVO> StoragePoolIdsSearch;
-
-    private static final int DEFAULT_BATCH_QUERY_SIZE = 2000;
 
     public StoragePoolTagsDaoImpl() {
         StoragePoolSearch = createSearchBuilder();
@@ -151,12 +148,11 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
     }
 
     /**
-     * Retrieve {@code detail.batch.query.size} configuration value. If not available, return default value {@link StoragePoolTagsDaoImpl#DEFAULT_BATCH_QUERY_SIZE}
+     * Retrieve {@code detail.batch.query.size} configuration value.
      * @return detail.batch.query.size configuration value
      */
     protected int getDetailsBatchSize() {
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        return batchCfg != null ? Integer.parseInt(batchCfg) : DEFAULT_BATCH_QUERY_SIZE;
+        return DetailBatchQuerySize.value();
     }
 
     @Override

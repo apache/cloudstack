@@ -2629,7 +2629,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
 
-        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, serviceOfferingDao, _vmDao, this, _configDao));
+        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, serviceOfferingDao, _vmDao, this));
 
         _instanceNameFlag = SetVmInternalNameUsingDisplayName.value();
 
