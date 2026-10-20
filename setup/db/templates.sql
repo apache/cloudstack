@@ -43,7 +43,7 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
     VALUES (6, UUID(), 'centos64-x64', 'CentOS 6.4(64-bit) GUI (Hyperv)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/4.3/centos6_4_64bit.vhd.bz2', 'eef6b9940ea3ed01221d963d4a012d0a', 0, 'CentOS 6.4 (64-bit) GUI (Hyperv)', 'VHD', 182, 1, 1, 'Hyperv', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (7, UUID(), 'debian13-x64-vmware', 'Debian 13 (64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://10.0.34.8/templates/debian-13-genericcloud-amd64/debian-13-genericcloud-amd64-20261017-2634-acs.ova', '{SHA-512}a090fafc53cbcf375937a8328500689543d9716a527f8a6059daee49712c56cc0e1553f386af8df1a650fa92819b235f4066df1076f242bf9a9e225f18a10b2b', 0, 'Debian 13 (64-bit) no GUI (vSphere)', 'OVA', 184, 1, 1, 'VMware', 1);
+    VALUES (7, UUID(), 'debian13-x86_64-vmware', 'Debian 13 (64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://10.0.34.8/templates/debian-13-genericcloud-amd64/debian-13-genericcloud-amd64-20261017-2634-acs.ova', '{SHA-512}a090fafc53cbcf375937a8328500689543d9716a527f8a6059daee49712c56cc0e1553f386af8df1a650fa92819b235f4066df1076f242bf9a9e225f18a10b2b', 0, 'Debian 13 (64-bit) no GUI (vSphere)', 'OVA', 184, 1, 1, 'VMware', 1);
 
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (1, UUID(), 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (2, UUID(), 'Debian');
