@@ -25,6 +25,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -77,6 +78,9 @@ public class StorPoolPrimaryDataStoreDriverTest {
 
     @Mock
     private VMInstanceDao vmInstanceDao;
+
+    @Mock
+    private ResourceTagDao _resourceTagDao;
 
     @Mock
     private AsyncCompletionCallback<CopyCommandResult> callback;
@@ -540,7 +544,7 @@ public class StorPoolPrimaryDataStoreDriverTest {
         Assert.assertEquals("",updated.getTags().get("uuid"));
         Assert.assertEquals("",updated.getTags().get("qc"));
         Assert.assertEquals("",updated.getTags().get("cvm"));
-        Assert.assertEquals("",updated.getTags().get("vc_policy"));
+        Assert.assertEquals("",updated.getTags().get(StorPoolUtil.SP_VC_POLICY));
     }
 
     private static JsonObject volumeJsonObject(String name, Long size, Long spaceUsed) {
