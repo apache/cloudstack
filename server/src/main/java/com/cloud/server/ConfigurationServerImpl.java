@@ -1086,13 +1086,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             new NetworkOfferingServiceMapVO(defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service,
                                     defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
                     _ntwkOfferingServiceMapDao.persist(offService);
-                    logger.trace("Added service {} for the network offering: {}", offService, defaultIsolatedSourceNatEnabledNetworkOffering.getUniqueName());
+                    logger.trace("Added service {} for the network offering: {}", service, defaultIsolatedSourceNatEnabledNetworkOffering.getUniqueName());
 
                     offService =
                             new NetworkOfferingServiceMapVO(defaultIsolatedSourceNatEnabledNetworkOfferingWithDefaultEgressAllowed.getId(), service,
                                     defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
                     _ntwkOfferingServiceMapDao.persist(offService);
-                    logger.trace("Added service {} for the network offering: {}", offService, defaultIsolatedSourceNatEnabledNetworkOfferingWithDefaultEgressAllowed.getUniqueName());
+                    logger.trace("Added service {} for the network offering: {}", service, defaultIsolatedSourceNatEnabledNetworkOfferingWithDefaultEgressAllowed.getUniqueName());
                 }
 
                 // Offering #4

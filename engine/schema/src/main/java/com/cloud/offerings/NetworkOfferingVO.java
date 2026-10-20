@@ -384,7 +384,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb,
             boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent,
-            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressdefaultpolicy, boolean supportsStrechedL2, boolean supportsPublicAccess) {
+            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressDefaultPolicy, boolean supportsStrechedL2, boolean supportsPublicAccess) {
         this(name,
             displayText,
             trafficType,
@@ -408,7 +408,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticLb = elasticLb;
         this.inline = inline;
         this.eipAssociatePublicIp = associatePublicIP;
-        this.egressDefaultPolicy = egressdefaultpolicy;
+        this.egressDefaultPolicy = egressDefaultPolicy;
         this.supportsStrechedL2 = supportsStrechedL2;
         this.supportsPublicAccess = supportsPublicAccess;
     }
