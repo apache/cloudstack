@@ -243,9 +243,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
     protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath, boolean forUnmanage) {
         // send a command to hypervisor to check
-        List<VolumeOnStorageTO> volumes = forUnmanage
-                ? listVolumesForImportInternal(pool, volumePath, null, true)
-                : listVolumesForImportInternal(pool, volumePath, null);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null, forUnmanage);
         if (CollectionUtils.isEmpty(volumes)) {
             logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
         }

@@ -2998,50 +2998,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Volume volume = volumeDao.findById(diskProfile.getVolumeId());
             StoragePool storagePool = storage.get(volume);
 
-            Map<VolumeOnStorageTO.Detail, String> volumeDetails;
-            long volumeSize;
-            List<VolumeOnStorageTO> volumesFromDriver = listVolumesForImportFromDriver(storagePool, diskPath);
-            if (volumesFromDriver != null) {
-                // The storage driver can enumerate its own volumes (e.g. StorPool, via its
-                // management API), so there is no need to reach the host agent just to read size.
-                if (CollectionUtils.isEmpty(volumesFromDriver)) {
-                    cleanupFailedImportVM(userVm);
-                    throw new CloudRuntimeException("Disk not found or is invalid");
-                }
-                VolumeOnStorageTO volumeOnStorage = volumesFromDriver.get(0);
-                volumeDetails = volumeOnStorage.getDetails();
-                try {
-                    checkVolume(volumeDetails);
-                } catch (CloudRuntimeException e) {
-                    cleanupFailedImportVM(userVm);
-                    throw e;
-                }
-                volumeSize = volumeOnStorage.getVirtualSize();
-            } else {
-                CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
-                checkVolumeCommand.setSrcFile(diskPath);
-                StorageFilerTO storageTO = new StorageFilerTO(storagePool);
-                checkVolumeCommand.setStorageFilerTO(storageTO);
-                Answer answer = agentManager.easySend(dest.getHost().getId(), checkVolumeCommand);
-                if (!(answer instanceof CheckVolumeAnswer)) {
-                    cleanupFailedImportVM(userVm);
-                    throw new CloudRuntimeException("Disk not found or is invalid");
-                }
-                CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
-                volumeDetails = checkVolumeAnswer.getVolumeDetails();
-                try {
-                    checkVolume(volumeDetails);
-                } catch (CloudRuntimeException e) {
-                    cleanupFailedImportVM(userVm);
-                    throw e;
-                }
-                if (!checkVolumeAnswer.getResult()) {
-                    cleanupFailedImportVM(userVm);
-                    throw new CloudRuntimeException("Disk not found or is invalid");
-                }
-                volumeSize = checkVolumeAnswer.getSize();
+            Pair<Map<VolumeOnStorageTO.Detail, String>, Long> volumeDetailsAndSize;
+            try {
+                volumeDetailsAndSize = getVolumeDetailsAndSize(storagePool, diskPath, dest.getHost().getId());
+            } catch (CloudRuntimeException e) {
+                cleanupFailedImportVM(userVm);
+                throw e;
             }
-            diskProfile.setSize(volumeSize);
+            Map<VolumeOnStorageTO.Detail, String> volumeDetails = volumeDetailsAndSize.first();
+            diskProfile.setSize(volumeDetailsAndSize.second());
 
             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, Resource.ResourceType.primary_storage, resourceLimitStorageTags,
                     CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? diskProfile.getSize() : 0L, reservationDao, resourceLimitService);
@@ -3127,6 +3092,39 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return null;
         }
         return ((PrimaryDataStoreDriver) dataStore.getDriver()).listVolumesForImport(pool, volumePath, null, false);
+    }
+
+    /**
+     * Retrieves the details and the virtual size of the disk at diskPath, either from the pool's
+     * storage driver (if it can enumerate its own volumes) or from the host agent.
+     * @throws CloudRuntimeException if the disk is not found, is invalid or fails the volume checks
+     */
+    private Pair<Map<VolumeOnStorageTO.Detail, String>, Long> getVolumeDetailsAndSize(StoragePool storagePool, String diskPath, long hostId) {
+        List<VolumeOnStorageTO> volumesFromDriver = listVolumesForImportFromDriver(storagePool, diskPath);
+        if (volumesFromDriver != null) {
+            // The storage driver can enumerate its own volumes (e.g. StorPool, via its
+            // management API), so there is no need to reach the host agent just to read size.
+            if (CollectionUtils.isEmpty(volumesFromDriver)) {
+                throw new CloudRuntimeException("Disk not found or is invalid");
+            }
+            VolumeOnStorageTO volumeOnStorage = volumesFromDriver.get(0);
+            checkVolume(volumeOnStorage.getDetails());
+            return new Pair<>(volumeOnStorage.getDetails(), volumeOnStorage.getVirtualSize());
+        }
+
+        CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
+        checkVolumeCommand.setSrcFile(diskPath);
+        checkVolumeCommand.setStorageFilerTO(new StorageFilerTO(storagePool));
+        Answer answer = agentManager.easySend(hostId, checkVolumeCommand);
+        if (!(answer instanceof CheckVolumeAnswer)) {
+            throw new CloudRuntimeException("Disk not found or is invalid");
+        }
+        CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
+        checkVolume(checkVolumeAnswer.getVolumeDetails());
+        if (!checkVolumeAnswer.getResult()) {
+            throw new CloudRuntimeException("Disk not found or is invalid");
+        }
+        return new Pair<>(checkVolumeAnswer.getVolumeDetails(), checkVolumeAnswer.getSize());
     }
 
     private void checkVolume(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {

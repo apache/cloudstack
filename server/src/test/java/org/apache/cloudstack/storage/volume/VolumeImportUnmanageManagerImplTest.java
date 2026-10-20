@@ -234,7 +234,7 @@ public class VolumeImportUnmanageManagerImplTest {
         volumeOnStorageTO.setQemuEncryptFormat(encryptFormat);
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null, false);
 
         ListResponse<VolumeForImportResponse> listResponses = volumeImportUnmanageManager.listVolumesForImport(cmd);
         Assert.assertEquals(1, listResponses.getResponses().size());
@@ -267,7 +267,7 @@ public class VolumeImportUnmanageManagerImplTest {
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
 
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null, false);
 
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
@@ -310,7 +310,7 @@ public class VolumeImportUnmanageManagerImplTest {
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
 
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null, false);
 
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
