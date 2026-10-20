@@ -364,6 +364,14 @@ public class ResponseMessageResolverTest {
     }
 
     @Test
+    public void expand_shouldReplacePlaceholderContainingWhitespace() {
+        String template = "Hello, {{ name }}! Today is {{  day  }}.";
+        Map<String, String> metadata = Map.of("name", "Alice", "day", "Monday");
+        String result = ResponseMessageResolver.expand(template, metadata);
+        Assert.assertEquals("Hello, Alice! Today is Monday.", result);
+    }
+
+    @Test
     public void expand_shouldIgnorePlaceholdersWithoutMatchingMetadata() {
         String template = "Hello, {{name}}! Your age is {{age}}.";
         Map<String, String> metadata = Map.of("name", "Bob");

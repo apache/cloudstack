@@ -117,9 +117,12 @@ EXAMPLES
 
 EXIT STATUS
 -----------
-  0  No issues found / fix written successfully.
-  1  Issues found (errors, duplicates, unused/missing keys, placeholder gaps)
-     or fix was a no-op.
+  errors, duplicates, unused, missing-keys, placeholder-gaps:
+    0  No issues found.
+    1  Issues found.
+  fix, sort:
+    0  Always, on success, whether or not the file needed changes (not an
+       error state either way).
 """
 
 import os
@@ -314,15 +317,18 @@ def detect_errors(text: str) -> list:
     errors = []
     lines = text.splitlines()
 
-    content_lines = [l for l in lines if l.strip()]
-    if not content_lines:
+    content = [(i, l) for i, l in enumerate(lines) if l.strip()]
+    if not content:
         errors.append("File is empty.")
         return errors
 
-    if not _OPEN_BRACE_RE.match(content_lines[0]):
-        errors.append(f"Line 1: Expected opening '{{', got: {content_lines[0]!r}")
-    if not _CLOSE_BRACE_RE.match(content_lines[-1]):
-        errors.append(f"Line {len(lines)}: Expected closing '}}', got: {content_lines[-1]!r}")
+    first_idx, first_line = content[0]
+    last_idx, last_line = content[-1]
+
+    if not _OPEN_BRACE_RE.match(first_line):
+        errors.append(f"Line {first_idx + 1}: Expected opening '{{', got: {first_line!r}")
+    if not _CLOSE_BRACE_RE.match(last_line):
+        errors.append(f"Line {last_idx + 1}: Expected closing '}}', got: {last_line!r}")
 
     # Collect 0-based indices of lines that are valid entries.
     entry_indices = [i for i, l in enumerate(lines) if _ENTRY_RE.match(l)]
@@ -341,10 +347,12 @@ def detect_errors(text: str) -> list:
                 f"(next entry is on line {next_line})."
             )
 
-    # Flag lines inside the braces that are neither entries nor blank.
-    for i, line in enumerate(lines[1:-1], 2):  # lines[0] and lines[-1] are braces
+    # Flag lines between the opening and closing brace that are neither
+    # entries nor blank.
+    for i in range(first_idx + 1, last_idx):
+        line = lines[i]
         if line.strip() and not _ENTRY_RE.match(line):
-            errors.append(f"Line {i}: Unexpected content: {line!r}")
+            errors.append(f"Line {i + 1}: Unexpected content: {line!r}")
 
     return errors
 

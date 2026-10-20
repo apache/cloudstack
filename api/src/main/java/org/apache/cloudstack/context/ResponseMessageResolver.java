@@ -388,18 +388,18 @@ public class ResponseMessageResolver {
     }
 
     protected static String expand(String template, Map<String, String> metadata) {
-        if (MapUtils.isEmpty(metadata)) {
+        if (MapUtils.isEmpty(metadata) || template == null) {
             return template;
         }
-        String result = template;
-        for (Map.Entry<String, String> entry : metadata.entrySet()) {
-            String placeholder = "{{" + entry.getKey() + "}}";
-            Object value = entry.getValue();
-            if (value != null) {
-                result = result.replace(placeholder, value.toString());
-            }
+        Matcher matcher = VARIABLE_PATTERN.matcher(template);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String value = metadata.get(matcher.group(1));
+            String replacement = value != null ? value : matcher.group(0);
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
-        return result;
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     public static String getMessage(String errorKey, Map<String, Object> metadata) {
