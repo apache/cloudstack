@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -273,6 +274,37 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao).persist(Mockito.any(BackupVO.class));
         Mockito.verify(backupDao).update(Mockito.anyLong(), Mockito.any(BackupVO.class));
         Mockito.verify(agentManager).send(anyLong(), Mockito.any(TakeBackupCommand.class));
+    }
+
+    @Test
+    public void takeBackupSendsVolumePoolsForContentMethodOnRunningVm() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
+        Mockito.doReturn(NASBackupProvider.ChainDecision.contentFull()).when(nasBackupProvider).decideChain(vm);
+        VolumeVO volume = volumeDao.findByInstance(1L).get(0);
+        Mockito.when(volume.getPoolId()).thenReturn(11L);
+        Mockito.when(volume.getPath()).thenReturn("vol-uuid");
+        Mockito.when(volumeDao.findByInstance(1L)).thenReturn(new ArrayList<>(List.of(volume)));
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(11L);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(storagePoolDao.findById(11L)).thenReturn(pool);
+        DataStore dataStore = mock(DataStore.class);
+        PrimaryDataStoreTO dataStoreTO = mock(PrimaryDataStoreTO.class);
+        Mockito.when(dataStore.getTO()).thenReturn(dataStoreTO);
+        Mockito.when(dataStoreMgr.getDataStore(11L, DataStoreRole.Primary)).thenReturn(dataStore);
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        ArgumentCaptor<TakeBackupCommand> commandCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), commandCaptor.capture())).thenReturn(answer);
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        nasBackupProvider.takeBackup(vm, false);
+
+        TakeBackupCommand command = commandCaptor.getValue();
+        Assert.assertEquals("content", command.getMethod());
+        Assert.assertEquals(List.of(dataStoreTO), command.getVolumePools());
+        Assert.assertEquals(List.of("/dev/drbd/by-res/cs-vol-uuid/0"), command.getVolumePaths());
     }
 
     @Test

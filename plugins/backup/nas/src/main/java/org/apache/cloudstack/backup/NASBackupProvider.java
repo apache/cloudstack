@@ -326,7 +326,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // behaves exactly like the pre-incremental full-only path: no bitmap is generated and no
         // chain/checkpoint metadata is created, sent to the agent, or persisted (legacy-full).
         // This holds for every storage, so enabling incrementals is also the opt-in to the
-        // content-based path below and its host-local scratch space.
+        // content-based path below and the scratch space it takes from the primary storage.
         Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
         if (incrementalEnabled == null || !incrementalEnabled) {
             return ChainDecision.legacyFull();
@@ -710,7 +710,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBitmapParent(decision.bitmapParent);
         command.setParentPaths(decision.parentPaths);
 
-        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+        // A stopped VM is copied straight from its volumes. A running VM backed up with the content method
+        // takes the scratch space of its pull-mode backup from the volumes' primary storage.
+        if (VirtualMachine.State.Stopped.equals(vm.getState()) || decision.isContentBased()) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
             Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(vmVolumes);

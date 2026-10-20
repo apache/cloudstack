@@ -22,31 +22,45 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.AutoPlaceRequest;
 import com.linbit.linstor.api.model.DrbdResource;
+import com.linbit.linstor.api.model.LayerType;
+import com.linbit.linstor.api.model.ResourceDefinition;
+import com.linbit.linstor.api.model.ResourceDefinitionCreate;
 import com.linbit.linstor.api.model.ResourceLayer;
+import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
+import com.linbit.linstor.api.model.StorageResource;
 import com.linbit.linstor.api.model.Volume;
+import com.linbit.linstor.api.model.VolumeDefinitionCreate;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LinstorStorageAdaptorTest {
@@ -69,13 +83,26 @@ public class LinstorStorageAdaptorTest {
         localNode = LinstorStoragePool.getHostname();
     }
 
-    private static ApiCallRcList success() {
+    private static ApiCallRcList answers(long retCode, String message) {
         ApiCallRc rc = new ApiCallRc();
-        rc.setRetCode(ApiConsts.MASK_SUCCESS);
-        rc.setMessage("ok");
+        rc.setRetCode(retCode);
+        rc.setMessage(message);
         ApiCallRcList list = new ApiCallRcList();
         list.add(rc);
         return list;
+    }
+
+    private static ApiCallRcList success() {
+        return answers(ApiConsts.MASK_SUCCESS, "ok");
+    }
+
+    private static ApiCallRcList error(String message) {
+        return answers(ApiConsts.MASK_ERROR, message);
+    }
+
+    private void mockDefinitionsCreated() throws ApiException {
+        when(api.resourceDefinitionCreate(any())).thenReturn(success());
+        when(api.volumeDefinitionCreate(anyString(), any())).thenReturn(success());
     }
 
     private static ResourceWithVolumes drbdResource() {
@@ -90,6 +117,123 @@ public class LinstorStorageAdaptorTest {
         rsc.setLayerObject(layer);
         rsc.setVolumes(Collections.singletonList(vlm));
         return rsc;
+    }
+
+    /** How the controller reports a failed request: an HTTP error carrying the answers in its body. */
+    private static ApiException httpError(String message) {
+        return new ApiException(500, Collections.emptyMap(),
+                String.format("[{\"ret_code\": %d, \"message\": \"%s\"}]", ApiConsts.MASK_ERROR, message));
+    }
+
+    private static Volume volume(int number, String devicePath) {
+        Volume vlm = new Volume();
+        vlm.setVolumeNumber(number);
+        vlm.setDevicePath(devicePath);
+        return vlm;
+    }
+
+    private void mockLocalResource(boolean drbd, Volume... volumes) throws ApiException {
+        ResourceLayer layer = new ResourceLayer();
+        if (drbd) {
+            layer.setDrbd(new DrbdResource());
+        } else {
+            layer.setStorage(new StorageResource());
+        }
+        ResourceWithVolumes rsc = new ResourceWithVolumes();
+        rsc.setLayerObject(layer);
+        rsc.setVolumes(Arrays.asList(volumes));
+        when(api.viewResources(eq(Collections.singletonList(localNode)), any(), any(), any(), any(), any()))
+                .thenReturn(Collections.singletonList(rsc));
+    }
+
+    @Test
+    public void createBackupScratchPlacesStorageOnlyResourceLocally() throws ApiException {
+        mockDefinitionsCreated();
+        when(api.resourceAutoplace(anyString(), any())).thenReturn(success());
+        mockLocalResource(false, volume(1, "/dev/storage/scratch_00001"), volume(0, "/dev/storage/scratch_00000"));
+
+        Pair<String, List<String>> scratch = adaptor.createBackupScratch(pool, "i-2-3-VM", Arrays.asList(1025L, 4096L));
+
+        Assert.assertTrue(scratch.first().startsWith(LinstorStorageAdaptor.BACKUP_SCRATCH_PREFIX));
+        Assert.assertTrue(scratch.first().length() <= 48);
+        Assert.assertEquals(Arrays.asList("/dev/storage/scratch_00000", "/dev/storage/scratch_00001"), scratch.second());
+
+        ArgumentCaptor<ResourceDefinitionCreate> rdCreate = ArgumentCaptor.forClass(ResourceDefinitionCreate.class);
+        verify(api).resourceDefinitionCreate(rdCreate.capture());
+        ResourceDefinition rd = rdCreate.getValue().getResourceDefinition();
+        Assert.assertEquals(scratch.first(), rd.getName());
+        Assert.assertEquals("cloudstack", rd.getResourceGroupName());
+        Assert.assertEquals("i-2-3-VM", rd.getProps().get(LinstorStorageAdaptor.BACKUP_SCRATCH_VM_PROP));
+
+        // One volume per disk, sizes rounded up to KiB.
+        ArgumentCaptor<VolumeDefinitionCreate> vdCreate = ArgumentCaptor.forClass(VolumeDefinitionCreate.class);
+        verify(api, times(2)).volumeDefinitionCreate(eq(scratch.first()), vdCreate.capture());
+        Assert.assertEquals(Integer.valueOf(0), vdCreate.getAllValues().get(0).getVolumeDefinition().getVolumeNumber());
+        Assert.assertEquals(Long.valueOf(2L), vdCreate.getAllValues().get(0).getVolumeDefinition().getSizeKib());
+        Assert.assertEquals(Integer.valueOf(1), vdCreate.getAllValues().get(1).getVolumeDefinition().getVolumeNumber());
+        Assert.assertEquals(Long.valueOf(4L), vdCreate.getAllValues().get(1).getVolumeDefinition().getSizeKib());
+
+        ArgumentCaptor<AutoPlaceRequest> placement = ArgumentCaptor.forClass(AutoPlaceRequest.class);
+        verify(api).resourceAutoplace(eq(scratch.first()), placement.capture());
+        Assert.assertEquals(Collections.singletonList(localNode), placement.getValue().getSelectFilter().getNodeNameList());
+        Assert.assertEquals(Collections.singletonList(LayerType.STORAGE), placement.getValue().getLayerList());
+        Assert.assertEquals(Integer.valueOf(1), placement.getValue().getSelectFilter().getPlaceCount());
+        verify(api, never()).resourceMakeAvailableOnNode(anyString(), anyString(), any());
+    }
+
+    @Test
+    public void createBackupScratchAttachesRemoteReplicaDisklessWithoutLocalStoragePool() throws ApiException {
+        mockDefinitionsCreated();
+        when(api.resourceAutoplace(anyString(), any()))
+                .thenThrow(httpError("Not enough available nodes"))
+                .thenReturn(success());
+        when(api.resourceMakeAvailableOnNode(anyString(), eq(localNode), any())).thenReturn(success());
+        mockLocalResource(true, volume(0, "/dev/drbd1000"), volume(1, "/dev/drbd1001"));
+
+        Pair<String, List<String>> scratch = adaptor.createBackupScratch(pool, "i-2-3-VM", Arrays.asList(1024L, 1024L));
+
+        String rscName = scratch.first();
+        Assert.assertEquals(Arrays.asList("/dev/drbd/by-res/" + rscName + "/0", "/dev/drbd/by-res/" + rscName + "/1"),
+                scratch.second());
+
+        ArgumentCaptor<AutoPlaceRequest> placement = ArgumentCaptor.forClass(AutoPlaceRequest.class);
+        verify(api, times(2)).resourceAutoplace(eq(rscName), placement.capture());
+        AutoPlaceRequest remote = placement.getAllValues().get(1);
+        Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.STORAGE), remote.getLayerList());
+        Assert.assertTrue(remote.getSelectFilter().getNodeNameList().isEmpty());
+        Assert.assertEquals(Integer.valueOf(1), remote.getSelectFilter().getPlaceCount());
+
+        ArgumentCaptor<ResourceMakeAvailable> available = ArgumentCaptor.forClass(ResourceMakeAvailable.class);
+        verify(api).resourceMakeAvailableOnNode(eq(rscName), eq(localNode), available.capture());
+        Assert.assertFalse(available.getValue().isDiskful());
+        verify(api, never()).resourceDefinitionDelete(anyString());
+    }
+
+    @Test
+    public void createBackupScratchDeletesResourceDefinitionWhenItCannotBePlaced() throws ApiException {
+        mockDefinitionsCreated();
+        when(api.resourceAutoplace(anyString(), any()))
+                .thenReturn(error("Not enough available nodes"))
+                .thenThrow(httpError("No storage pool with enough space"));
+        when(api.resourceDefinitionDelete(anyString())).thenReturn(success());
+
+        try {
+            adaptor.createBackupScratch(pool, "i-2-3-VM", Collections.singletonList(1024L));
+            Assert.fail("expected CloudRuntimeException");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("No storage pool with enough space"));
+        }
+
+        ArgumentCaptor<ResourceDefinitionCreate> rdCreate = ArgumentCaptor.forClass(ResourceDefinitionCreate.class);
+        verify(api).resourceDefinitionCreate(rdCreate.capture());
+        verify(api).resourceDefinitionDelete(rdCreate.getValue().getResourceDefinition().getName());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void deleteBackupScratchFailsWhenStillInUse() throws ApiException {
+        when(api.resourceDefinitionDelete("cs-bkscratch-1")).thenReturn(error("Resource is still in use"));
+
+        adaptor.deleteBackupScratch(pool, "cs-bkscratch-1");
     }
 
     @Test

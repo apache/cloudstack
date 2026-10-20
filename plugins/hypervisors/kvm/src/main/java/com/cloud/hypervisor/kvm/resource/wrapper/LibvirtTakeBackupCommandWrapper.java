@@ -20,9 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -37,6 +36,10 @@ import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainInfo;
+import org.libvirt.LibvirtException;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
@@ -64,6 +68,8 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // it needs no bitmap names, an incremental only its per-disk parent paths.
     private static final String METHOD_QCOW2 = "qcow2";
     private static final String METHOD_CONTENT = "content";
+    // Fixed part of the qcow2 metadata on a scratch device, with room to spare.
+    private static final long SCRATCH_EXTRA_BYTES = 4L * 1024 * 1024;
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -106,19 +112,50 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                     String.format("Failed to make the volumes of VM %s available: %s", vmName, e.getMessage()));
         }
 
+        KVMStoragePool scratchPool = null;
+        Pair<String, List<String>> scratch = null;
         try {
-            return runBackup(libvirtComputingResource, command, diskPaths, timeout);
+            // A pull-mode backup of a running VM needs a copy-before-write scratch device per disk, provided by
+            // the VM's primary storage. A stopped VM is copied straight from its disks and needs none.
+            if (METHOD_CONTENT.equals(command.getMethod())) {
+                try {
+                    List<Long> diskSizes = getRunningVmDiskSizes(libvirtComputingResource, vmName);
+                    if (diskSizes != null) {
+                        if (CollectionUtils.isEmpty(volumePools)) {
+                            return new BackupAnswer(command, false, "No volumes to back up for VM " + vmName);
+                        }
+                        PrimaryDataStoreTO scratchPoolTO = volumePools.get(0);
+                        scratchPool = storagePoolMgr.getStoragePool(scratchPoolTO.getPoolType(), scratchPoolTO.getUuid());
+                        scratch = scratchPool.createBackupScratch(vmName,
+                                diskSizes.stream().map(LibvirtTakeBackupCommandWrapper::scratchSize).collect(Collectors.toList()));
+                    }
+                } catch (LibvirtException | CloudRuntimeException e) {
+                    logger.warn("Failed to create the backup scratch space for VM {}", vmName, e);
+                    return new BackupAnswer(command, false,
+                            String.format("Failed to create the backup scratch space for VM %s: %s", vmName, e.getMessage()));
+                }
+            }
+
+            return runBackup(libvirtComputingResource, command, diskPaths, scratch != null ? scratch.second() : null, timeout);
         } finally {
+            if (scratch != null) {
+                try {
+                    scratchPool.deleteBackupScratch(scratch.first());
+                } catch (CloudRuntimeException e) {
+                    logger.warn("Failed to delete the backup scratch space {} of VM {}, delete it manually: {}",
+                            scratch.first(), vmName, e.getMessage());
+                }
+            }
             disconnectVolumes(storagePoolMgr, connectedVolumes);
         }
     }
 
     private Answer runBackup(LibvirtComputingResource libvirtComputingResource, TakeBackupCommand command,
-            List<String> diskPaths, int timeout) {
+            List<String> diskPaths, List<String> scratchDevices, int timeout) {
         final String vmName = command.getVmName();
         Pair<Integer, String> result = runBackupScript(libvirtComputingResource, command, vmName, command.getBackupRepoType(),
                 command.getBackupRepoAddress(), command.getMountOptions(), command.getBackupPath(), diskPaths, command.getMode(),
-                command.getBitmapNew(), command.getBitmapParent(), command.getParentPaths(), timeout);
+                command.getBitmapNew(), command.getBitmapParent(), command.getParentPaths(), scratchDevices, timeout);
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
@@ -198,8 +235,8 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     /**
      * A pull-mode backup job never ends on its own: nasbackup.sh ends it once the data is read,
      * and its EXIT trap does so on failure. A timed-out script is killed with SIGKILL, which
-     * no trap can catch, so end the job here. Otherwise it keeps the NBD server and the growing
-     * fleecing images alive and blocks every later backup or migration of the VM.
+     * no trap can catch, so end the job here. Otherwise it keeps the NBD server and the scratch
+     * devices busy and blocks every later backup or migration of the VM.
      */
     private void abortPullBackupJob(String vmName) {
         logger.warn("Backup of VM {} timed out, aborting its pull-mode backup job", vmName);
@@ -208,6 +245,44 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         if (exitValue != 0) {
             logger.warn("Failed to abort the backup job of VM {} (exit code {})", vmName, exitValue);
         }
+    }
+
+    /**
+     * The capacity of each disk of the VM in domain order, which is the order nasbackup.sh lists them in, or
+     * {@code null} if the VM is not running here. nasbackup.sh takes a stopped VM's backup without pull mode.
+     */
+    private List<Long> getRunningVmDiskSizes(LibvirtComputingResource libvirtComputingResource, String vmName)
+            throws LibvirtException {
+        Connect conn = libvirtComputingResource.getLibvirtUtilitiesHelper().getConnectionByVmName(vmName);
+        Domain dm;
+        try {
+            dm = libvirtComputingResource.getDomain(conn, vmName);
+        } catch (LibvirtException e) {
+            logger.debug("VM {} is not defined on this host: {}", vmName, e.getMessage());
+            return null;
+        }
+        try {
+            if (dm.getInfo().state != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
+                return null;
+            }
+            List<Long> sizes = new ArrayList<>();
+            for (DiskDef disk : libvirtComputingResource.getDisks(conn, vmName)) {
+                if (disk.getDeviceType() == DiskDef.DeviceType.DISK) {
+                    sizes.add(dm.blockInfo(disk.getDiskLabel()).getCapacity());
+                }
+            }
+            return sizes;
+        } finally {
+            dm.free();
+        }
+    }
+
+    /**
+     * Size of a scratch device for a disk of {@code diskSize} bytes. libvirt formats it as a qcow2 that may
+     * end up holding every block of the disk, plus metadata: about 0.015% of the disk with 64 KiB clusters.
+     */
+    static long scratchSize(long diskSize) {
+        return diskSize + diskSize / 4096 + SCRATCH_EXTRA_BYTES;
     }
 
     /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */
@@ -234,7 +309,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     private Pair<Integer, String> runBackupScript(LibvirtComputingResource libvirtComputingResource,
             TakeBackupCommand command, String vmName, String backupRepoType, String backupRepoAddress,
             String mountOptions, String backupPath, List<String> diskPaths, String mode,
-            String bitmapNew, String bitmapParent, List<String> parentPaths, int timeout) {
+            String bitmapNew, String bitmapParent, List<String> parentPaths, List<String> scratchDevices, int timeout) {
         boolean quiesce = command.getQuiesce() != null && command.getQuiesce();
         List<String> argv = new ArrayList<>(Arrays.asList(
                 libvirtComputingResource.getNasBackupPath(),
@@ -272,19 +347,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("--parent-paths");
             argv.add(String.join(",", parentPaths));
         }
-        // Host-local scratch dir for the pull-mode NBD socket and fleecing images. Sent for every
-        // mode: harmless for the push-mode paths, which ignore it.
-        String scratchDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NAS_BACKUP_PULL_SCRATCH_DIR);
-        if (StringUtils.isNotBlank(scratchDir)) {
-            argv.add("-S");
-            argv.add(scratchDir);
-        }
-        if (METHOD_CONTENT.equals(command.getMethod())) {
-            Integer minFreePercent = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NAS_BACKUP_PULL_SCRATCH_MIN_FREE_PERCENT);
-            if (minFreePercent != null) {
-                argv.add("--scratch-min-free-percent");
-                argv.add(String.valueOf(Math.max(0, minFreePercent)));
-            }
+        if (CollectionUtils.isNotEmpty(scratchDevices)) {
+            argv.add("--scratch-devs");
+            argv.add(String.join(",", scratchDevices));
         }
 
         List<String[]> commands = new ArrayList<>();

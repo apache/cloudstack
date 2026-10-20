@@ -24,6 +24,7 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -382,6 +383,16 @@ public class LinstorStoragePool implements KVMStoragePool {
     @Override
     public boolean newVolumeReadsAsZero(String volumeUuid) {
         return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeUuid);
+    }
+
+    @Override
+    public Pair<String, List<String>> createBackupScratch(String vmName, List<Long> sizes) {
+        return ((LinstorStorageAdaptor) _storageAdaptor).createBackupScratch(this, vmName, sizes);
+    }
+
+    @Override
+    public void deleteBackupScratch(String name) {
+        ((LinstorStorageAdaptor) _storageAdaptor).deleteBackupScratch(this, name);
     }
 
     @Override

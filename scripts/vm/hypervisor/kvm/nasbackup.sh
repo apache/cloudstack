@@ -44,16 +44,15 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
                       # is rebased onto its corresponding parent file. Required because
                       # data-disk backup files don't share the root volume's UUID, so
                       # each disk must be rebased onto its own parent.
-SCRATCH_PARENT="/var/tmp"   # Parent dir for the pull-mode scratch area (NBD socket +
-                      # libvirt fleecing images). Host-local, never the NAS share.
-                      # Overridable with -S (agent.properties nas.backup.pull.scratch.dir).
-SCRATCH_MIN_FREE_PERCENT=25   # Free space the scratch area needs before a pull-mode backup starts,
-                      # as a percentage of the VM's total disk size; 0 disables the check.
+SCRATCH_DEVS=""       # Pull mode: comma-separated list of copy-before-write scratch block devices, one
+                      # per VM volume in the same order as DISK_PATHS, created by the agent on the
+                      # VM's primary storage and at least as large as the disk plus qcow2 metadata.
+PULL_WORK_PARENT="/var/tmp"   # Parent dir for the pull-mode work dir (NBD socket + backup XML)
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
 BACKUP_JOB_ACTIVE=0
-PULL_SCRATCH_DIR=""   # Scratch dir of a running pull-mode backup, removed by on_pull_backup_exit()
+PULL_WORK_DIR=""      # Work dir of a running pull-mode backup, removed by on_pull_backup_exit()
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -199,8 +198,9 @@ thaw_guest() {
 # checkpoints, and with them the push-mode incremental path, are unavailable.
 #
 # Instead libvirt is asked for a pull-mode backup: it starts an NBD server exposing a
-# point-in-time view of each disk, held consistent by copy-before-write into local
-# fleecing scratch images. The backup is then derived from that export:
+# point-in-time view of each disk, held consistent by copy-before-write into a scratch
+# block device per disk, which the agent creates on the VM's primary storage and libvirt
+# formats as qcow2. The backup is then derived from that export:
 #
 #   full         qemu-img convert -> sparse standalone qcow2. Zero detection happens
 #                while streaming, so the fully allocated push-mode output and its
@@ -217,20 +217,20 @@ thaw_guest() {
 # Assumes mount_operation() already ran, so $dest and $mount_point are set.
 # ---------------------------------------------------------------------------
 
-# EXIT trap of the pull-mode path, armed once the scratch dir exists and cleared once the
+# EXIT trap of the pull-mode path, armed once the work dir exists and cleared once the
 # backup is complete. Any exit in between -- an explicit failure, an unexpected error under
 # "set -e", or SIGINT/SIGTERM/SIGHUP -- has to end the pull job: unlike a push job it never
-# finishes on its own, so it would keep the NBD server and the growing fleecing images alive
-# and block every later backup or migration of the VM. cleanup() aborts the job (via
+# finishes on its own, so it would keep the NBD server and the scratch devices busy and
+# block every later backup or migration of the VM. cleanup() aborts the job (via
 # BACKUP_JOB_ACTIVE) before removing the partial backup. SIGKILL cannot be trapped, so the
 # agent wrapper aborts the job itself when the script times out.
 on_pull_backup_exit() {
   local rc=$?
   trap - EXIT INT TERM HUP
   [[ $rc -ne 0 ]] || rc=1
-  # The fleecing images belong to the job: only remove them once it is gone.
+  # The NBD socket belongs to the job: only remove it once the job is gone.
   if abort_backup_job; then
-    rm -rf "$PULL_SCRATCH_DIR"
+    rm -rf "$PULL_WORK_DIR"
   fi
   cleanup
   exit $rc
@@ -239,30 +239,20 @@ on_pull_backup_exit() {
 backup_running_vm_pull() {
   local effective_mode="$1"
 
-  # Scratch area for the NBD socket and libvirt's fleecing images. Never on the NAS:
-  # copy-before-write runs inline with guest writes, so it wants fast local storage with
-  # room for the write churn during the backup. 711 lets the qemu process traverse in to
-  # the files libvirt creates as root.
-  local scratch_dir
-  scratch_dir=$(mktemp -d "$SCRATCH_PARENT/csbackup-scratch.XXXXXX") || {
-    echo "Failed to create scratch directory under $SCRATCH_PARENT"; cleanup; exit 1;
+  # Work dir for the NBD socket and the backup XML. 711 lets the qemu process traverse in
+  # to the socket.
+  local work_dir
+  work_dir=$(mktemp -d "$PULL_WORK_PARENT/csbackup-pull.XXXXXX") || {
+    echo "Failed to create work directory under $PULL_WORK_PARENT"; cleanup; exit 1;
   }
-  chmod 711 "$scratch_dir"
-  PULL_SCRATCH_DIR="$scratch_dir"
+  chmod 711 "$work_dir"
+  PULL_WORK_DIR="$work_dir"
   trap on_pull_backup_exit EXIT
   trap 'exit 129' HUP
   trap 'exit 130' INT
   trap 'exit 143' TERM
-  local nbd_sock="$scratch_dir/nbd.sock"
-  local backupxml="$scratch_dir/backup.xml"
-
-  # The kernel caps UNIX socket paths at 108 bytes. A long scratch dir would otherwise
-  # fail deep inside qemu-img with an opaque error, so reject it up front.
-  if [[ ${#nbd_sock} -ge 108 ]]; then
-    echo "Pull-mode NBD socket path is too long (${#nbd_sock} bytes, limit 108): $nbd_sock"
-    echo "Set a shorter scratch dir via -S (agent.properties nas.backup.pull.scratch.dir)"
-    exit 1
-  fi
+  local nbd_sock="$work_dir/nbd.sock"
+  local backupxml="$work_dir/backup.xml"
 
   # Snapshot the disk list once so the backup XML and the read-back loop stay in sync.
   local -a disks
@@ -274,39 +264,23 @@ backup_running_vm_pull() {
     exit 1
   fi
 
-  # Copy-before-write saves each guest block overwritten during the backup into the scratch
-  # area, at most once per block. If the scratch area fills up, the guest's writes fail and
-  # QEMU pauses the VM, and nothing resumes it. Refuse to start unless the scratch area can
-  # take the configured share of the worst case, the VM's total disk size.
-  if [[ ! "$SCRATCH_MIN_FREE_PERCENT" =~ ^[0-9]+$ ]]; then
-    echo "Invalid scratch minimum free percentage: $SCRATCH_MIN_FREE_PERCENT"
+  # Copy-before-write saves each guest block overwritten during the backup into the disk's
+  # scratch device, at most once per block. The agent sizes each device for the whole disk,
+  # so it cannot fill up and pause the VM.
+  local -a scratch_devs=()
+  IFS=',' read -ra scratch_devs <<< "$SCRATCH_DEVS"
+  if [[ ${#scratch_devs[@]} -ne ${#disks[@]} ]]; then
+    echo "Pull-mode backup of vm $VM needs one scratch device per disk:" \
+      "got ${#scratch_devs[@]} for ${#disks[@]} disks"
     exit 1
   fi
-  if [[ $SCRATCH_MIN_FREE_PERCENT -gt 0 ]]; then
-    local entry disk_bytes total_bytes=0 required_bytes available_bytes
-    for entry in "${disks[@]}"; do
-      disk_bytes=$(virsh -c qemu:///system domblkinfo "$VM" "${entry%% *}" 2>/dev/null | awk '/^Capacity:/ {print $2}')
-      if [[ ! "$disk_bytes" =~ ^[0-9]+$ ]]; then
-        echo "Failed to determine the size of disk ${entry%% *} of vm $VM"
-        exit 1
-      fi
-      total_bytes=$((total_bytes + disk_bytes))
-    done
-    required_bytes=$(((total_bytes * SCRATCH_MIN_FREE_PERCENT + 99) / 100))
-    available_bytes=$(df --output=avail -B1 "$scratch_dir" 2>/dev/null | tail -n 1 | tr -d ' ')
-    if [[ ! "$available_bytes" =~ ^[0-9]+$ ]]; then
-      echo "Failed to determine the free space in $SCRATCH_PARENT"
+  local scratch_dev
+  for scratch_dev in "${scratch_devs[@]}"; do
+    if [[ ! -b "$scratch_dev" ]]; then
+      echo "Scratch device $scratch_dev for the backup of vm $VM is not a block device"
       exit 1
     fi
-    if [[ $available_bytes -lt $required_bytes ]]; then
-      echo "Not enough free space in $SCRATCH_PARENT for the pull-mode backup of vm $VM:" \
-        "$available_bytes bytes available, $required_bytes bytes required" \
-        "($SCRATCH_MIN_FREE_PERCENT% of the $total_bytes bytes of disk)."
-      echo "Free up or enlarge $SCRATCH_PARENT, set agent.properties nas.backup.pull.scratch.dir to a" \
-        "larger filesystem, or lower nas.backup.pull.scratch.min.free.percent."
-      exit 1
-    fi
-  fi
+  done
 
   # Resolve each disk's parent backup up front. PARENT_PATHS is comma separated, one entry
   # per volume in the same order as the disk list. Anything missing degrades this run to a
@@ -337,14 +311,15 @@ backup_running_vm_pull() {
     fi
   fi
 
-  # Pull-mode backup XML: one NBD export and one fleecing scratch image per disk.
+  # Pull-mode backup XML: one NBD export and one scratch device per disk.
   {
     echo "<domainbackup mode='pull'>"
     echo "<server transport='unix' socket='$nbd_sock'/>"
     echo "<disks>"
-    local entry
+    local entry idx=0
     for entry in "${disks[@]}"; do
-      echo "<disk name='${entry%% *}' backup='yes' type='file' backupmode='full'><scratch file='$scratch_dir/${entry%% *}.scratch'/></disk>"
+      echo "<disk name='${entry%% *}' backup='yes' type='block' backupmode='full'><scratch dev='${scratch_devs[$idx]}'/></disk>"
+      idx=$((idx + 1))
     done
     echo "</disks></domainbackup>"
   } > "$backupxml"
@@ -428,14 +403,14 @@ backup_running_vm_pull() {
   done
 
   # End the pull job. Aborting the active job is how a pull backup finishes (there is no
-  # backup-end command): libvirt tears down the NBD server and deletes the scratch files.
-  # The data already pulled is a complete backup, so from here on a failure must no longer
-  # discard it.
+  # backup-end command): libvirt tears down the NBD server and releases the scratch devices,
+  # which the agent then deletes. The data already pulled is a complete backup, so from here
+  # on a failure must no longer discard it.
   trap - EXIT INT TERM HUP
   if ! abort_backup_job; then
     log -e "warning: failed to end (domjobabort) backup job for $VM"
   fi
-  rm -rf "$scratch_dir"
+  rm -rf "$work_dir"
   sync
 
   # Statistics -- the size on the last stdout line is parsed by the Java wrapper.
@@ -917,11 +892,9 @@ function usage {
   echo "                                as a sparse qcow2; an incremental is a qcow2 overlay on the NBD export,"
   echo "                                safe-rebased onto the parent, keeping only the clusters that differ."
   echo "                                Takes no bitmap names; an incremental requires --parent-paths."
-  echo "  -S|--scratch-dir <dir>        Host-local parent dir for pull-mode scratch (NBD socket + fleecing images)."
-  echo "                                Defaults to /var/tmp. Must not be on the NAS share."
-  echo "  --scratch-min-free-percent <n>"
-  echo "                                Free space the scratch dir needs before a pull-mode backup starts, as a"
-  echo "                                percentage of the VM's total disk size. Defaults to 25; 0 disables the check."
+  echo "  --scratch-devs <d1,d2,...>    Copy-before-write scratch block devices for --method content on a running"
+  echo "                                VM, one per disk in the same order as -d|--disks, each large enough for"
+  echo "                                the whole disk plus qcow2 metadata. libvirt formats them."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1
@@ -999,13 +972,8 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    -S|--scratch-dir)
-      SCRATCH_PARENT="$2"
-      shift
-      shift
-      ;;
-    --scratch-min-free-percent)
-      SCRATCH_MIN_FREE_PERCENT="$2"
+    --scratch-devs)
+      SCRATCH_DEVS="$2"
       shift
       shift
       ;;
