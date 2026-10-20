@@ -566,8 +566,6 @@ print(gid)
   echo "$clone_path"
 }
 
-# Deletes a volume previously returned by sp_create_backup_source_disk. Best-effort:
-# logs on failure rather than aborting the backup, matching the wrapper's old cleanup semantics.
 sp_delete_backup_source_disk() {
   local clone_name="$1"
   log -ne "StorPool: releasing backup source volume $clone_name"
@@ -582,7 +580,7 @@ sp_cleanup_backup_source_disks() {
   for clone_name in "${SP_CLEANUP_VOLUMES[@]:-}"; do
     [[ -z "$clone_name" ]] && continue
     log -ne "StorPool: cleaning up backup source volume $clone_name left over on script exit"
-    sp_delete_backup_source_disk "$clone_name"
+    sp_delete_backup_source_disk "$clone_name" || true
   done
   SP_CLEANUP_VOLUMES=()
 }
@@ -926,6 +924,11 @@ backup_stopped_vm() {
 
   local -a disk_arr=()
   IFS=',' read -ra disk_arr <<< "$DISK_PATHS"
+  if [[ ${#disk_arr[@]} -eq 0 ]]; then
+    echo "No disk paths given for stopped VM $VM"
+    cleanup
+    exit 1
+  fi
 
   name="root"
   for disk in "${disk_arr[@]}"; do
@@ -951,7 +954,12 @@ backup_stopped_vm() {
         cleanup
         exit 1
       fi
-      sp_clone_name=$(sp_volume_name_from_path "$read_disk")
+      if ! sp_clone_name=$(sp_volume_name_from_path "$read_disk"); then
+        log -ne "Failed to resolve the StorPool volume name of backup source volume $read_disk, it must be deleted manually"
+        echo "Failed to resolve the StorPool volume name of backup source volume $read_disk"
+        cleanup
+        exit 1
+      fi
       # Register the clone here, in the parent shell, right after the command substitution
       # above returns — sp_create_backup_source_disk cannot do this itself (see its comment).
       SP_CLEANUP_VOLUMES+=("$sp_clone_name")

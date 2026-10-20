@@ -802,11 +802,11 @@ public class NASBackupProviderTest {
         Mockito.when(volumeDao.findByUuid(volUuid)).thenReturn(srcVolume);
     }
 
-    private void mockThinDiskOffering(Long diskOfferingId) {
+    private void mockThinDiskOffering(String diskOfferingUuid, Long diskOfferingId) {
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         Mockito.when(diskOffering.getId()).thenReturn(diskOfferingId);
         Mockito.when(diskOffering.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
-        Mockito.when(diskOfferingDao.findByUuid(Mockito.anyString())).thenReturn(diskOffering);
+        Mockito.when(diskOfferingDao.findByUuid(diskOfferingUuid)).thenReturn(diskOffering);
     }
 
     private void mockStorPoolPoolByUuid(String dsUuid, Long poolId) {
@@ -877,7 +877,7 @@ public class NASBackupProviderTest {
         String realStorPoolPath = "/dev/storpool-byid/t.t.t";
 
         mockSourceVolume(volUuid, "data-sp");
-        mockThinDiskOffering(6L);
+        mockThinDiskOffering("disk-offering-uuid", 6L);
         mockStorPoolPoolByUuid(dsUuid, poolId);
         mockHostByIp(hostIp, 8L);
         mockNasRepository(backupOfferingId);
