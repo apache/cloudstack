@@ -481,6 +481,10 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Encrypted StorPool volumes are not supported");
         }
 
+        if (!PhysicalDiskFormat.RAW.equals(format)) {
+            throw new CloudRuntimeException(String.format("StorPool volumes can only be created as RAW, %s was requested", format));
+        }
+
         if (size <= 0) {
             throw new CloudRuntimeException("Size must be greater than 0 to create a StorPool volume");
         }
@@ -507,7 +511,11 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         String volumePath = StorPoolUtil.devPath(globalId);
         try {
-            attachOrDetachVolume("attach", "volume", volumePath);
+            if (!attachOrDetachVolume("attach", "volume", volumePath)) {
+                // The attach succeeded but the device never showed up; StorPool refuses to delete an attached volume.
+                attachOrDetachVolume("detach", "volume", volumePath);
+                throw new CloudRuntimeException(String.format("StorPool volume %s for %s was attached but its device did not appear", volumePath, name));
+            }
         } catch (CloudRuntimeException e) {
             volumeDelete("~" + globalId);
             throw e;

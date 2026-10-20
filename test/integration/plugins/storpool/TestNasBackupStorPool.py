@@ -89,7 +89,8 @@ class TestNasBackupStorPool(cloudstackTestCase):
         StorPoolHelper.logger = cls
 
         zone_cfg = config.zones[0]
-        assert zone_cfg is not None
+        if zone_cfg is None:
+            raise Exception("No zone configured in the Marvin config")
         cls.zone_cfg = zone_cfg
 
         testClient = super(TestNasBackupStorPool, cls).getClsTestClient()
@@ -106,8 +107,10 @@ class TestNasBackupStorPool(cloudstackTestCase):
 
         cls.services = testClient.getParsedTestDataConfig()
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = list_zones(cls.apiclient, name=zone_cfg.name)[0]
-        assert cls.zone is not None
+        zones = list_zones(cls.apiclient, name=zone_cfg.name)
+        if not zones:
+            raise Exception("Zone %s not found" % zone_cfg.name)
+        cls.zone = zones[0]
         cls.services["mode"] = cls.zone.networktype
 
         cls.hypervisor = get_hypervisor_type(cls.apiclient)
@@ -127,7 +130,7 @@ class TestNasBackupStorPool(cloudstackTestCase):
 
         template = get_template(cls.apiclient, cls.zone.id, account="system")
         if template == FAILED:
-            assert False, "get_template() failed to return a system template"
+            raise Exception("get_template() failed to return a system template")
         cls.template = template
 
         offerings = BackupOffering.listByZone(cls.apiclient, cls.zone.id) or []
@@ -202,7 +205,7 @@ class TestNasBackupStorPool(cloudstackTestCase):
     @classmethod
     def _get_or_create_disk_offering(cls, tag, displaytext):
         disk_offerings = list_disk_offering(cls.apiclient, name=tag)
-        if disk_offerings is None:
+        if not disk_offerings:
             disk_offering = DiskOffering.create(
                 cls.apiclient,
                 {
@@ -237,7 +240,8 @@ class TestNasBackupStorPool(cloudstackTestCase):
     @classmethod
     def _verify_setup_volumes(cls, vm):
         volumes = Volume.list(cls.apiclient, virtualmachineid=vm.id, listall=True)
-        assert isinstance(volumes, list) and len(volumes) >= 1
+        if not isinstance(volumes, list) or not volumes:
+            raise Exception("No volumes found for VM %s" % vm.id)
         for vol in volumes:
             if cls.nfs_storage_pool and vol.storageid == cls.nfs_storage_pool.id:
                 continue
@@ -678,7 +682,7 @@ class TestNasBackupMixedStorage(TestNasBackupStorPool):
     @classmethod
     def _get_or_create_nfs_service_offering(cls):
         service_offerings = list_service_offering(cls.apiclient, name=cls.nfs_tag)
-        if service_offerings is None:
+        if not service_offerings:
             service_offering = ServiceOffering.create(
                 cls.apiclient,
                 {

@@ -951,7 +951,12 @@ backup_stopped_vm() {
         cleanup
         exit 1
       fi
-      sp_clone_name=$(sp_volume_name_from_path "$read_disk")
+      if ! sp_clone_name=$(sp_volume_name_from_path "$read_disk"); then
+        log -ne "Failed to resolve the StorPool volume name of backup source volume $read_disk, it must be deleted manually"
+        echo "Failed to resolve the StorPool volume name of backup source volume $read_disk"
+        cleanup
+        exit 1
+      fi
       # Register the clone here, in the parent shell, right after the command substitution
       # above returns — sp_create_backup_source_disk cannot do this itself (see its comment).
       SP_CLEANUP_VOLUMES+=("$sp_clone_name")
