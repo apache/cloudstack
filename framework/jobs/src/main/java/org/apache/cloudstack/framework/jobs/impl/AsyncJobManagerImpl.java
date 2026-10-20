@@ -738,8 +738,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             scheduleExecution(job);
         } catch (RejectedExecutionException e) {
             logger.warn("Execution for job-" + job.getId() + " is rejected, return it to the queue for next turn");
-            returnItemToQueue(item);
             clearExecutingMsid(job, item);
+            returnItemToQueue(item);
         }
     }
 

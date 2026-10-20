@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs.impl;
 
+import java.util.concurrent.RejectedExecutionException;
+
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -66,5 +69,33 @@ public class AsyncJobManagerImplExecuteQueueItemTest {
         // would run twice (once here and once when the heartbeat re-dequeues the returned item).
         Mockito.verify(_queueMgr).returnItem(itemId);
         Mockito.verify(asyncJobManager, Mockito.never()).scheduleExecution(Mockito.any(AsyncJobVO.class));
+    }
+
+    @Test
+    public void executeQueueItemClearsExecutingMsidBeforeReturningItemOnRejectedExecution() {
+        long contentId = 10L;
+        long itemId = 20L;
+        long jobId = 1L;
+
+        SyncQueueItemVO item = Mockito.mock(SyncQueueItemVO.class);
+        Mockito.when(item.getContentId()).thenReturn(contentId);
+        Mockito.when(item.getId()).thenReturn(itemId);
+
+        AsyncJobVO job = Mockito.mock(AsyncJobVO.class);
+        Mockito.when(job.getId()).thenReturn(jobId);
+        Mockito.when(_jobDao.findById(contentId)).thenReturn(job);
+
+        // Dispatch stamps the executing msid successfully, then the executor rejects the job.
+        Mockito.doThrow(new RejectedExecutionException("pool full"))
+                .when(asyncJobManager).scheduleExecution(Mockito.any(AsyncJobVO.class));
+
+        asyncJobManager.executeQueueItem(item, false);
+
+        // The executing msid must be cleared while we still hold the item, before it goes back on the
+        // queue. Otherwise another management server could dequeue the item and stamp its own msid in
+        // the gap, and the clearing update would wipe it.
+        InOrder inOrder = Mockito.inOrder(job, _queueMgr);
+        inOrder.verify(job).setExecutingMsid(null);
+        inOrder.verify(_queueMgr).returnItem(itemId);
     }
 }
