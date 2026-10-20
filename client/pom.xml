@@ -827,7 +827,19 @@
                                 <copy overwrite="true" todir="${basedir}/target/conf">
                                     <fileset dir="${basedir}/conf">
                                         <exclude name="*.in" />
+                                        <exclude name="messages/**" />
                                     </fileset>
+                                </copy>
+                                <copy overwrite="true" todir="${basedir}/target/conf/messages">
+                                    <fileset dir="${basedir}/conf/messages">
+                                        <include name="*.in" />
+                                    </fileset>
+                                    <globmapper from="*.in" to="*" />
+                                    <filterchain>
+                                        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                                            <param type="propertiesfile" value="${cs.replace.properties}" />
+                                        </filterreader>
+                                    </filterchain>
                                 </copy>
                             </target>
                         </configuration>
