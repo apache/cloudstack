@@ -307,6 +307,23 @@ public class BridgeVifDriverTest {
         Mockito.verify(vm, Mockito.never()).updateDeviceFlags(Mockito.anyString(), Mockito.anyInt());
     }
 
+    @Test
+    public void updateVlanTrunkMembershipChecksUplinkMembershipForTheResolvedPif() throws Exception {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(true);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        Mockito.doReturn(Collections.emptyMap()).when(driver).readCurrentVlanMembership(Mockito.anyString());
+        NicTO nic = buildTrunkNic(100, Collections.singletonList(200));
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.defBridgeNet(BRIDGE_NAME, null, nic.getMac(), LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        intf.setDevName("vnet5");
+        org.libvirt.Domain vm = Mockito.mock(org.libvirt.Domain.class);
+
+        driver.updateVlanTrunkMembership(vm, intf, nic);
+
+        // a live associateNetworkToNic/disassociateNetworkFromNic reaches the uplink the same way a plug does
+        Mockito.verify(driver).readCurrentVlanMembership("eth1");
+    }
+
     @Test(expected = InternalErrorException.class)
     public void updateVlanTrunkMembershipFailsForNonTrunkNic() throws Exception {
         NicTO nic = new NicTO();

@@ -338,6 +338,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
         Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
         List<Integer> vlanTags = collectTrunkVlanTags(nic);
+        warnIfUplinkMissingVlanMembership(iface.getBrName(), vlanTags);
 
         if (_libvirtComputingResource.hostSupportsVlanTrunkXml()) {
             iface.setTrunkVlanTags(vlanTags, primaryVlanTag);
