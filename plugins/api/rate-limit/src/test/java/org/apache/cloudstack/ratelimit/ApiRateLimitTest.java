@@ -35,7 +35,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 
 import com.cloud.exception.RequestLimitException;
 import com.cloud.server.ManagementServer;
@@ -261,14 +263,17 @@ public static void setUp() throws ConfigurationException {
     @Test
     public void configureAppliesPersistedGlobalSettings() throws Exception {
         ApiRateLimitServiceImpl service = new ApiRateLimitServiceImpl();
-        ConfigurationDao configDao = mock(ConfigurationDao.class);
-        when(configDao.getValue(ManagementServer.ApiLimitEnabled.key())).thenReturn("true");
-        when(configDao.getValue(ManagementServer.ApiLimitInterval.key())).thenReturn("5");
-        when(configDao.getValue(ManagementServer.ApiLimitMax.key())).thenReturn("100");
-        when(configDao.getValue(ApiRateLimitService.ApiLimitCacheSize.key())).thenReturn("20000");
-        service._configDao = configDao;
-
-        configureTolerantOfDuplicateCache(service, Collections.<String, Object> emptyMap());
+        ConfigDepotImpl configDepot = mock(ConfigDepotImpl.class);
+        when(configDepot.getConfigStringValue(ManagementServer.ApiLimitEnabled.key(), ConfigKey.Scope.Global, null)).thenReturn("true");
+        when(configDepot.getConfigStringValue(ManagementServer.ApiLimitInterval.key(), ConfigKey.Scope.Global, null)).thenReturn("5");
+        when(configDepot.getConfigStringValue(ManagementServer.ApiLimitMax.key(), ConfigKey.Scope.Global, null)).thenReturn("100");
+        when(configDepot.getConfigStringValue(ApiRateLimitService.ApiLimitCacheSize.key(), ConfigKey.Scope.Global, null)).thenReturn("20000");
+        ConfigKey.init(configDepot);
+        try {
+            configureTolerantOfDuplicateCache(service, Collections.<String, Object> emptyMap());
+        } finally {
+            ConfigKey.init(null);
+        }
 
         assertTrue(service.isEnabled());
         assertEquals(5, service.getTimeToLive());
@@ -276,24 +281,18 @@ public static void setUp() throws ConfigurationException {
     }
 
     @Test
-    public void configureFallsBackToHardcodedFieldDefaultsWhenNothingPersisted() throws Exception {
+    public void configureFallsBackToConfigKeyDefaultsWhenNothingPersisted() throws Exception {
         ApiRateLimitServiceImpl service = new ApiRateLimitServiceImpl();
-        ConfigurationDao configDao = mock(ConfigurationDao.class);
-        when(configDao.getValue(ManagementServer.ApiLimitEnabled.key())).thenReturn(null);
-        when(configDao.getValue(ManagementServer.ApiLimitInterval.key())).thenReturn(null);
-        when(configDao.getValue(ManagementServer.ApiLimitMax.key())).thenReturn(null);
-        when(configDao.getValue(ApiRateLimitService.ApiLimitCacheSize.key())).thenReturn(null);
-        service._configDao = configDao;
+        ConfigKey.init(mock(ConfigDepotImpl.class));
+        try {
+            configureTolerantOfDuplicateCache(service, Collections.<String, Object> emptyMap());
+        } finally {
+            ConfigKey.init(null);
+        }
 
-        configureTolerantOfDuplicateCache(service, Collections.<String, Object> emptyMap());
-
-        // configure() never consults the registered ConfigKey defaults when the
-        // config row is missing (raw getValue() returns null); it silently keeps
-        // its own hardcoded field defaults instead, which is why this is 30/false/1
-        // here rather than ManagementServer.ApiLimitMax's registered default of 25.
-        assertFalse(service.isEnabled());
-        assertEquals(1, service.getTimeToLive());
-        assertEquals(30, service.getMaxAllowed());
+        assertEquals(Boolean.parseBoolean(ManagementServer.ApiLimitEnabled.defaultValue()), service.isEnabled());
+        assertEquals(Integer.parseInt(ManagementServer.ApiLimitInterval.defaultValue()), service.getTimeToLive());
+        assertEquals(Integer.parseInt(ManagementServer.ApiLimitMax.defaultValue()), service.getMaxAllowed());
     }
 
     @Test

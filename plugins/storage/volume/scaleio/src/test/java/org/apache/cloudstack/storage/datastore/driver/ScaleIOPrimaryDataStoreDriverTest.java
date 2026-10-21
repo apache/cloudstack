@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.storage.datastore.driver;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVolumeStatAnswer;
 import com.cloud.agent.api.GetVolumeStatCommand;
@@ -216,8 +215,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
 
-        when(configDao.getValue(AgentManager.MigrateWait.key())).thenReturn("3600");
-
         GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
         when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
         when(getVolumeStatAnswer.getResult()).thenReturn(true);
@@ -265,8 +262,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Mockito.lenient().when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         Mockito.lenient().doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
-
-        Mockito.lenient().when(configDao.getValue(AgentManager.MigrateWait.key())).thenReturn("3600");
 
         GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
         Mockito.lenient().when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
