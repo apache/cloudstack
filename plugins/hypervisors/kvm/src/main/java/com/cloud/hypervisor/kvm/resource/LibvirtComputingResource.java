@@ -3250,6 +3250,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (isUefiEnabled && isSecureBoot) {
             features.addFeatures(SMM);
         }
+        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(VmDetailConstants.KVM_HINT_DEDICATED)) {
+            features.setKvmHintDedicated(Boolean.parseBoolean(customParams.get(VmDetailConstants.KVM_HINT_DEDICATED)));
+        }
         return features;
     }
 
