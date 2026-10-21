@@ -469,14 +469,14 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     private void enableSAMLForUser(UserVO user, String entityId) {
         if (user.getSource() != null && !User.Source.SAML2.equals(user.getSource()) && !User.Source.SAML2DISABLED.equals(user.getSource())) {
-            userDetailsDao.addDetail(user.getId(), PRE_SAML_SOURCE_DETAIL_KEY, user.getSource().toString(), false);
+            userDetailsDao.addDetail(user.getId(), PRE_SAML_SOURCE_DETAIL_KEY, user.getSource().name(), false);
         }
         user.setExternalEntity(entityId);
         user.setSource(User.Source.SAML2);
     }
 
     private boolean disableSAMLForUser(UserVO user) {
-        if (!user.getSource().equals(User.Source.SAML2)) {
+        if (!User.Source.SAML2.equals(user.getSource())) {
             return false;
         }
         if (SAML2AuthManager.EnableLoginAfterSAMLDisable.value()) {

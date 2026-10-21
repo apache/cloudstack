@@ -181,7 +181,7 @@ public class SAML2AuthManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testAuthorizeUserDoesNotRestorePreSamlSourceWhenAlreadyAuthorized() {
+    public void testAuthorizeUserDoesNotStorePreSamlSourceWhenAlreadySaml() {
         UserVO user = new UserVO(200L);
         user.setUsername("someuser");
         user.setSource(User.Source.SAML2);
