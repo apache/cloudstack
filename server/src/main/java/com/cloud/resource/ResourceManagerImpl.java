@@ -1723,6 +1723,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _haMgr.cancelScheduledMigrations(host);
         configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMaintain, _nodeId);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
+                EventVO.LEVEL_ERROR, EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR,
+                String.format("failed to put host %s into maintenance due to running VMs that could not be migrated or VMs in error state", host), host.getId(), null, 0);
         return false;
     }
 

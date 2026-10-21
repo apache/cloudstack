@@ -524,6 +524,7 @@ public class ResourceManagerImplTest {
     }
 
     private void verifyErrorInMaintenanceCalls() throws NoTransitionException {
+        when(host.getResourceState()).thenReturn(ResourceState.PrepareForMaintenance);
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
         verify(resourceManager).setHostIntoErrorInMaintenance(eq(host), any());
@@ -531,6 +532,9 @@ public class ResourceManagerImplTest {
         verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(any(), any());
         verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(any());
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMaintain), anyLong());
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onCompletedActionEvent(
+                anyLong(), anyLong(), eq(EventVO.LEVEL_ERROR), eq(EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR),
+                anyString(), eq(hostId), isNull(), eq(0L)));
         Assert.assertFalse(enterMaintenanceMode);
     }
 
