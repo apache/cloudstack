@@ -273,6 +273,7 @@ public class LinstorUtil {
         final String backingPool = sp.getProps().get("StorDriver/StorPoolName");
         final String path;
         switch (sp.getProviderKind()) {
+            case LVM:  // thick LVM snapshot LVs use the same naming scheme as thin
             case LVM_THIN:
                 // device-mapper doubles every dash in the VG and LV name, so the VG part needs escaping too
                 final String vgName = backingPool.split("/")[0];
