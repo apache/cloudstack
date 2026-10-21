@@ -66,7 +66,8 @@ public class KvmCancellableRequestsTest {
         final String reason = requests.checkRequestNotCancellable(SEQ);
         Assert.assertTrue(reason, reason.contains("CheckHealthCommand has nothing that can be stopped"));
         Assert.assertFalse(requests.cancel(SEQ, dropped::add));
-        Assert.assertTrue(requests.wasCancelRequested(SEQ));
+        // nothing was stopped, so a later failure of the request is not a cancellation
+        Assert.assertFalse(requests.wasCancelRequested(SEQ));
     }
 
     @Test
