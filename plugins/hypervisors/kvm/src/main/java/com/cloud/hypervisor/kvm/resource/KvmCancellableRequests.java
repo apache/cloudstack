@@ -111,11 +111,11 @@ public class KvmCancellableRequests {
         if (state == null) {
             return false;
         }
-        state.cancelRequested = true;
         if (state.hooks.isEmpty()) {
             LOGGER.debug("Request sequence {} ({}) has nothing that can be stopped", sequence, describe(state.command));
             return false;
         }
+        state.cancelRequested = true;
 
         boolean allRan = true;
         for (final DisconnectHook hook : state.hooks) {
