@@ -624,9 +624,24 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             return snapshot;
         } catch (Exception e) {
             String errMsg = String.format("Failed to create Instance Snapshot: [%s] due to: %s", vmSnapshot, e.getMessage());
-            logger.debug(errMsg, e);
+            if (isCurrentJobCancelled()) {
+                logger.info("Creation of Instance Snapshot {} was cancelled, removing it: {}", vmSnapshot, e.getMessage());
+                removeCancelledVMSnapshot(vmSnapshot);
+            } else {
+                logger.debug(errMsg, e);
+            }
             throw new CloudRuntimeException(errMsg, e);
         }
+    }
+
+    protected boolean isCurrentJobCancelled() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        return context != null && context.getJob() != null && _jobMgr.getCancellationReason(context.getJob().getId()) != null;
+    }
+
+    protected void removeCancelledVMSnapshot(VMSnapshotVO vmSnapshot) {
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VM_SNAPSHOT.name(), vmSnapshot.getUuid());
+        _vmSnapshotDao.remove(vmSnapshot.getId());
     }
 
     public VMSnapshotManagerImpl() {

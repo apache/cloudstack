@@ -3796,6 +3796,11 @@ public class VirtualMachineMO extends BaseMO {
         return null;
     }
 
+    public boolean isConsolidationNeeded() throws Exception {
+        final Boolean needed = _context.getVimClient().getDynamicProperty(_mor, "runtime.consolidationNeeded");
+        return Boolean.TRUE.equals(needed);
+    }
+
     public boolean consolidateVmDisks() throws Exception {
         ManagedObjectReference morTask = _context.getService().consolidateVMDisksTask(_mor);
         boolean result = _context.getVimClient().waitForTask(morTask);

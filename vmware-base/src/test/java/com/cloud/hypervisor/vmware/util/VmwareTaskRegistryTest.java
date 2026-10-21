@@ -64,14 +64,35 @@ public class VmwareTaskRegistryTest {
     }
 
     @Test
-    public void taskCreatedAfterCancelIsReportedSoTheClientCancelsItImmediately() throws Exception {
+    public void taskStartedWhileTheCancelRunsIsReportedButTheUndoAfterwardsIsNot() throws Exception {
         final ManagedObjectReference first = mor("task-first");
-        Mockito.when(client.cancelTask(first)).thenReturn(new Pair<>(true, "cancelled"));
-        registry.beginRequest(SEQ, "MigrateCommand");
+        final AtomicBoolean racing = new AtomicBoolean();
+        Mockito.when(client.cancelTask(first)).thenAnswer(invocation -> {
+            racing.set(VmwareTaskRegistry.taskStarted(mor("task-racing"), client));
+            return new Pair<>(true, "cancelled");
+        });
+        registry.beginRequest(SEQ, "CreateVMSnapshotCommand");
         VmwareTaskRegistry.taskStarted(first, client);
+
         Assert.assertTrue(registry.cancel(SEQ));
 
-        Assert.assertTrue(VmwareTaskRegistry.taskStarted(mor("task-late"), client));
+        Assert.assertTrue(racing.get());
+        // the consolidation after a cancelled snapshot must run
+        Assert.assertFalse(VmwareTaskRegistry.taskStarted(mor("task-undo"), client));
+        Assert.assertTrue(registry.wasCancelRequested(SEQ));
+    }
+
+    @Test
+    public void refusedCancelLeavesTheRequestUnmarked() throws Exception {
+        final ManagedObjectReference mor = mor("task-done");
+        Mockito.when(client.cancelTask(mor)).thenReturn(new Pair<>(false, "completed first"));
+        registry.beginRequest(SEQ, "MigrateCommand");
+        VmwareTaskRegistry.taskStarted(mor, client);
+
+        Assert.assertFalse(registry.cancel(SEQ));
+
+        Assert.assertFalse(registry.wasCancelRequested(SEQ));
+        Assert.assertFalse(VmwareTaskRegistry.taskStarted(mor("task-next"), client));
     }
 
     @Test
@@ -170,12 +191,20 @@ public class VmwareTaskRegistryTest {
     }
 
     @Test
-    public void leaseStartedAfterCancelIsReportedSoTheCallerAbortsItImmediately() throws Exception {
+    public void leaseStartedWhileTheCancelRunsIsReportedButNotAfterwards() throws Exception {
+        final HttpNfcLeaseMO lease = Mockito.mock(HttpNfcLeaseMO.class);
+        final AtomicBoolean racing = new AtomicBoolean();
+        Mockito.doAnswer(invocation -> {
+            racing.set(VmwareTaskRegistry.leaseStarted(Mockito.mock(HttpNfcLeaseMO.class)));
+            return null;
+        }).when(lease).abortLease();
         registry.beginRequest(SEQ, "CopyCommand");
-        VmwareTaskRegistry.leaseStarted(Mockito.mock(HttpNfcLeaseMO.class));
+        VmwareTaskRegistry.leaseStarted(lease);
+
         Assert.assertTrue(registry.cancel(SEQ));
 
-        Assert.assertTrue(VmwareTaskRegistry.leaseStarted(Mockito.mock(HttpNfcLeaseMO.class)));
+        Assert.assertTrue(racing.get());
+        Assert.assertFalse(VmwareTaskRegistry.leaseStarted(Mockito.mock(HttpNfcLeaseMO.class)));
     }
 
     @Test
