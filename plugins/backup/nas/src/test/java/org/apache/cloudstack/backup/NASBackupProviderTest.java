@@ -44,9 +44,11 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -125,6 +127,18 @@ public class NASBackupProviderTest {
                 return true;
             });
             Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
+            Mockito.when(backupDao.findById(Mockito.anyLong())).thenAnswer(inv -> {
+                final long id = inv.getArgument(0);
+                synchronized (rows) {
+                    return rows.stream().filter(b -> b.getId() == id && b.getRemoved() == null).findFirst().orElse(null);
+                }
+            });
+            Mockito.when(backupDao.listByVmId(Mockito.any(), Mockito.anyLong())).thenAnswer(inv -> {
+                final long vmId = inv.getArgument(1);
+                synchronized (rows) {
+                    return rows.stream().filter(b -> b.getRemoved() == null && b.getVmId() == vmId).collect(Collectors.toList());
+                }
+            });
             Mockito.when(vmInstanceDao.findByIdIncludingRemoved(Mockito.anyLong())).thenAnswer(inv -> vms.get((Long) inv.getArgument(0)));
         }
 
@@ -230,8 +244,8 @@ public class NASBackupProviderTest {
         final SharedDb db = new SharedDb();
         final NASBackupProvider provider = db.managementServer();
         final BackupVO stale = provider.reserveHostBackupSlot(db.vm(1L, 5L, 5L), 5L, "a", 1, 1);
-        stale.setDate(new Date(System.currentTimeMillis() - (provider.takeBackupCommandWaitSeconds() + 3600L) * 1000L));
-        Assert.assertEquals("a BackingUp row nobody waits for any more must not hold a slot", 0, provider.countInFlightBackups(5L, 1L));
+        stale.setDate(new Date(System.currentTimeMillis() - (NASBackupProvider.abandonedAfterSeconds(provider.takeBackupCommandWaitSeconds(1L)) + 60L) * 1000L));
+        Assert.assertEquals("an abandoned BackingUp row must not hold a slot", 0, provider.countInFlightBackups(5L, 1L));
 
         final BackupVO other = provider.reserveHostBackupSlot(db.vm(2L, 5L, 5L), 5L, "b", 1, 1);
         Mockito.when(db.backupOfferingDao.findByIdIncludingRemoved(Mockito.anyLong()))
@@ -310,9 +324,8 @@ public class NASBackupProviderTest {
         Assert.assertEquals(max, peak.get());
     }
 
-    @Test
-    public void failedBackupReleasesItsSlot() throws Exception {
-        final SharedDb db = new SharedDb();
+    /** A provider wired to one host (id 11) and an agent that answers every command with the given behaviour. */
+    private static NASBackupProvider wiredToHost(final SharedDb db, final Answer<Object> agentBehaviour) throws Exception {
         final NASBackupProvider provider = db.managementServer();
         final HostDao hostDao = Mockito.mock(HostDao.class);
         final HostVO host = Mockito.mock(HostVO.class);
@@ -323,25 +336,129 @@ public class NASBackupProviderTest {
         final BackupRepositoryDao repositoryDao = Mockito.mock(BackupRepositoryDao.class);
         Mockito.when(repositoryDao.findByBackupOfferingId(Mockito.anyLong())).thenReturn(Mockito.mock(BackupRepository.class));
         final AgentManager agentManager = Mockito.mock(AgentManager.class);
-        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
-                .thenThrow(new OperationTimedoutException(null, 11L, 1L, 1, false));
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class))).thenAnswer(agentBehaviour);
         setField(provider, "hostDao", hostDao);
         setField(provider, "backupRepositoryDao", repositoryDao);
         setField(provider, "agentManager", agentManager);
         overrideDefaultConfigValue(NASBackupProvider.NASBackupParallelExecution, "true");
+        return provider;
+    }
 
-        final VMInstanceVO vm = db.vm(1L, 11L, 11L);
+    private static VMInstanceVO runningVm(final SharedDb db, final long vmId) {
+        final VMInstanceVO vm = db.vm(vmId, 11L, 11L);
         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        return vm;
+    }
+
+    /**
+     * Damans227's case: the management server stops waiting while the host is still writing the backup. The row
+     * must stay BackingUp and keep its slot, on this and on every other management server.
+     */
+    @Test
+    public void timedOutBackupKeepsItsRowAndItsSlot() throws Exception {
+        final SharedDb db = new SharedDb();
+        final AtomicInteger sentWait = new AtomicInteger(-1);
+        final NASBackupProvider ms1 = wiredToHost(db, inv -> {
+            sentWait.set(((Command) inv.getArgument(1)).getWait());
+            throw new OperationTimedoutException(null, 11L, 1L, 1, false);
+        });
         try {
-            provider.takeBackup(vm);
-            Assert.fail("a timed out backup must fail");
+            ms1.takeBackup(runningVm(db, 1L));
+            Assert.fail("a backup that did not answer in time must not report success");
         } catch (CloudRuntimeException expected) {
-            Assert.assertTrue(expected.getMessage().contains("timed out"));
+            Assert.assertTrue(expected.getMessage().contains("may still be running"));
         }
+        Assert.assertEquals("the command must wait backup.nas.backup.timeout, not the global wait",
+                Integer.parseInt(NASBackupProvider.NASBackupTimeout.defaultValue()), sentWait.get());
+        Assert.assertEquals(1, db.rows.size());
+        final BackupVO row = db.rows.get(0);
+        Assert.assertEquals("the backup must stay visible while the host may still run it", Backup.Status.BackingUp, row.getStatus());
+        Assert.assertNull("the backup must not be removed", row.getRemoved());
+        Assert.assertEquals("the slot must stay held", 1, ms1.countInFlightBackups(11L, 1L));
+
+        final NASBackupProvider ms2 = db.managementServer();
+        try {
+            ms2.reserveHostBackupSlot(runningVm(db, 2L), 11L, "b", 1, 0);
+            Assert.fail("another management server must see the slot as taken");
+        } catch (CloudRuntimeException expected) {
+            Assert.assertTrue(expected.getMessage().contains("1 of 1 in flight"));
+        }
+        Assert.assertEquals("the sync task must leave a backup the host may still be running alone", 0, ms2.markAbandonedBackups(db.vms.get(1L)));
+        Assert.assertEquals(Backup.Status.BackingUp, row.getStatus());
+    }
+
+    @Test
+    public void backupTheHostReportsFailedReleasesItsSlot() throws Exception {
+        final SharedDb db = new SharedDb();
+        final NASBackupProvider provider = wiredToHost(db, inv -> new BackupAnswer(inv.getArgument(1), false, "disk full"));
+        Assert.assertFalse(provider.takeBackup(runningVm(db, 1L)));
         Assert.assertEquals(1, db.rows.size());
         Assert.assertEquals(Backup.Status.Failed, db.rows.get(0).getStatus());
         Assert.assertNotNull(db.rows.get(0).getRemoved());
-        Assert.assertEquals("the failed backup must not hold a slot", 0, provider.countInFlightBackups(11L, 1L));
+        Assert.assertEquals("a backup the host reported failed must not hold a slot", 0, provider.countInFlightBackups(11L, 1L));
+    }
+
+    @Test
+    public void backupThatNeverReachedTheHostReleasesItsSlot() throws Exception {
+        final SharedDb db = new SharedDb();
+        final NASBackupProvider provider = wiredToHost(db, inv -> {
+            throw new AgentUnavailableException(11L);
+        });
+        try {
+            provider.takeBackup(runningVm(db, 1L));
+            Assert.fail("an unreachable host must fail the backup");
+        } catch (CloudRuntimeException expected) {
+            Assert.assertTrue(expected.getMessage().contains("Unable to contact"));
+        }
+        Assert.assertNotNull(db.rows.get(0).getRemoved());
+        Assert.assertEquals(0, provider.countInFlightBackups(11L, 1L));
+    }
+
+    @Test
+    public void successfulBackupIsBackedUpAndReleasesItsSlot() throws Exception {
+        final SharedDb db = new SharedDb();
+        final NASBackupProvider provider = wiredToHost(db, inv -> {
+            final BackupAnswer answer = new BackupAnswer(inv.getArgument(1), true, "42");
+            answer.setSize(42L);
+            return answer;
+        });
+        Assert.assertTrue(provider.takeBackup(runningVm(db, 1L)));
+        Assert.assertEquals(Backup.Status.BackedUp, db.rows.get(0).getStatus());
+        Assert.assertNull(db.rows.get(0).getRemoved());
+        Assert.assertEquals(0, provider.countInFlightBackups(11L, 1L));
+    }
+
+    /**
+     * A BackingUp row twice the wait old has been given up by its management server (or that management server
+     * stopped) and the agent has stopped the script: it frees its slot and the sync task marks it Error, keeping it.
+     */
+    @Test
+    public void abandonedBackupIsMarkedErrorAndKept() throws Exception {
+        final SharedDb db = new SharedDb();
+        final NASBackupProvider provider = db.managementServer();
+        final VMInstanceVO vm = runningVm(db, 1L);
+        final long wait = provider.takeBackupCommandWaitSeconds(1L);
+        final BackupVO pastWait = provider.reserveHostBackupSlot(vm, 11L, "a", 5, 1);
+        pastWait.setDate(new Date(System.currentTimeMillis() - (wait + 60L) * 1000L));
+        final BackupVO abandoned = provider.reserveHostBackupSlot(vm, 11L, "b", 5, 1);
+        abandoned.setDate(new Date(System.currentTimeMillis() - (2 * wait + 60L) * 1000L));
+        final BackupVO done = provider.reserveHostBackupSlot(vm, 11L, "c", 5, 1);
+        done.setDate(new Date(System.currentTimeMillis() - (3 * wait) * 1000L));
+        done.setStatus(Backup.Status.BackedUp);
+
+        Assert.assertEquals("only the row past the wait but not abandoned holds a slot", 1, provider.countInFlightBackups(11L, 1L));
+        provider.syncBackups(vm, null);
+        Assert.assertEquals(Backup.Status.BackingUp, pastWait.getStatus());
+        Assert.assertEquals(Backup.Status.Error, abandoned.getStatus());
+        Assert.assertNull("an abandoned backup stays in the list so it can be seen and deleted", abandoned.getRemoved());
+        Assert.assertEquals(Backup.Status.BackedUp, done.getStatus());
+        Assert.assertEquals("marking is idempotent across management servers", 0, db.managementServer().markAbandonedBackups(vm));
+    }
+
+    @Test
+    public void abandonedWindowIsTwiceTheWaitAndAtLeastFiveMinutesMore() {
+        Assert.assertEquals(14400L, NASBackupProvider.abandonedAfterSeconds(7200));
+        Assert.assertEquals(360L, NASBackupProvider.abandonedAfterSeconds(60));
     }
 
     @Test
@@ -349,11 +466,17 @@ public class NASBackupProviderTest {
         final NASBackupProvider provider = new NASBackupProvider();
         overrideDefaultConfigValue(AgentManager.GranularWaitTimeForCommands, "CopyCommand=60, TakeBackupCommand=14400");
         try {
-            Assert.assertEquals(14400, provider.takeBackupCommandWaitSeconds());
+            Assert.assertEquals(14400, provider.takeBackupCommandWaitSeconds(1L));
         } finally {
             overrideDefaultConfigValue(AgentManager.GranularWaitTimeForCommands, "");
         }
-        Assert.assertEquals(Integer.parseInt(AgentManager.Wait.defaultValue()), provider.takeBackupCommandWaitSeconds());
+        Assert.assertEquals(Integer.parseInt(NASBackupProvider.NASBackupTimeout.defaultValue()), provider.takeBackupCommandWaitSeconds(1L));
+        overrideDefaultConfigValue(NASBackupProvider.NASBackupTimeout, "0");
+        try {
+            Assert.assertEquals(Integer.parseInt(AgentManager.Wait.defaultValue()), provider.takeBackupCommandWaitSeconds(1L));
+        } finally {
+            overrideDefaultConfigValue(NASBackupProvider.NASBackupTimeout, "7200");
+        }
     }
 
     @Test

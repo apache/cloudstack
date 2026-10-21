@@ -90,14 +90,24 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             "Seconds a NAS take-backup may wait for a free per-host slot before it fails.",
             true, ConfigKey.Scope.Zone);
 
+    public static final ConfigKey<Integer> NASBackupTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "backup.nas.backup.timeout",
+            "7200",
+            "Seconds the management server waits for a NAS take-backup to finish on the host (commands.timeout for "
+            + "TakeBackupCommand takes precedence when set). The default matches the KVM agent's cmds.timeout (7200), after "
+            + "which the agent stops the backup script; keep this at or above cmds.timeout. A backup that has not answered "
+            + "in time may still be running on the host, so it stays BackingUp and keeps its host slot until it is twice "
+            + "this old, when it is marked Error (it stays in the backup list and can be deleted).",
+            true, ConfigKey.Scope.Zone);
+
     /** Seconds to wait for a host's cluster-wide lock; it is only held for the count-and-reserve step. */
     private static final int HOST_SLOT_LOCK_WAIT_SECONDS = 30;
 
     /**
-     * A BackingUp row older than the take-backup command timeout plus this margin is no longer awaited by any
-     * management server (for example its management server stopped mid-backup), so it does not hold a slot.
+     * The least time a BackingUp row is held beyond the take-backup wait before it is treated as abandoned. The hold
+     * is the wait again (so twice the wait in all), but never less than this.
      */
-    private static final int STALE_RESERVATION_MARGIN_SECONDS = 300;
+    private static final int MIN_ABANDONED_MARGIN_SECONDS = 300;
 
     /** Bounds of the back-off between two attempts to reserve a slot on a full host. */
     protected long slotPollMinMillis = 1000L;
@@ -202,6 +212,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setMountOptions(backupRepository.getMountOptions());
         final long zoneId = vm.getDataCenterId();
         final boolean parallel = applyExecutionPolicy(command, zoneId);
+        final int waitSeconds = takeBackupCommandWaitSeconds(zoneId);
+        command.setWait(waitSeconds);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -217,6 +229,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 ? reserveHostBackupSlot(vm, host.getId(), backupPath, NASBackupParallelMaxPerHost.valueIn(zoneId), NASBackupParallelQueueTimeout.valueIn(zoneId))
                 : createBackupObject(vm, backupPath);
         boolean succeeded = false;
+        boolean outcomeUnknown = false;
         try {
             final BackupAnswer answer;
             try {
@@ -224,7 +237,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             } catch (AgentUnavailableException e) {
                 throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
             } catch (OperationTimedoutException e) {
-                throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+                // The host did not answer in time, but its backup may still be running and writing to the NAS.
+                // Keep the BackingUp row, and with it the host slot, so the backup stays visible and the host is
+                // not given another backup early. markAbandonedBackups turns it into Error once it is too old.
+                outcomeUnknown = true;
+                LOG.warn("NAS backup {} of VM {} did not answer within {} seconds; it may still be running on host {}. "
+                        + "It stays BackingUp and keeps its host slot until it is {} seconds old, then it is marked Error",
+                        backupVO.getUuid(), vm.getInstanceName(), waitSeconds, host.getId(), abandonedAfterSeconds(waitSeconds));
+                throw new CloudRuntimeException(String.format("Backup did not finish within %d seconds and may still be "
+                        + "running on the host; it stays in BackingUp state until the host is done or it is marked Error", waitSeconds));
             }
             if (answer == null || !answer.getResult()) {
                 return false;
@@ -236,8 +257,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             return backupDao.update(backupVO.getId(), backupVO);
         } finally {
-            if (!succeeded) {
-                // Releases the slot: a failed or interrupted backup must never stay BackingUp.
+            if (!succeeded && !outcomeUnknown) {
+                // Releases the slot: the host reported a failure or never got the command, so nothing is running.
                 backupVO.setStatus(Backup.Status.Failed);
                 backupDao.update(backupVO.getId(), backupVO);
                 backupDao.remove(backupVO.getId());
@@ -335,19 +356,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * Counts the NAS backups in flight on the host, from the database, so every management server sees the same
      * number. A backup belongs to the host its VM is on, or was last on when stopped, which is how
      * getVMHypervisorHost picks the host the command is sent to. A running VM cannot migrate while libvirt runs
-     * its backup job, so the attribution does not drift for running VMs. Rows older than the take-backup command
-     * timeout are left out: no management server is waiting for them any more.
+     * its backup job, so the attribution does not drift for running VMs. A row keeps its slot after the take-backup
+     * wait runs out, because the host may still be running it, and is only left out once it is twice the wait old
+     * (abandoned: for example its management server stopped mid-backup), so a slot can never leak forever.
      */
     protected int countInFlightBackups(final long hostId, final long zoneId) {
         final List<BackupVO> backingUp = backupDao.listByZoneAndStatus(zoneId, Backup.Status.BackingUp);
         if (CollectionUtils.isEmpty(backingUp)) {
             return 0;
         }
-        final long staleBefore = System.currentTimeMillis() - (takeBackupCommandWaitSeconds() + (long) STALE_RESERVATION_MARGIN_SECONDS) * 1000L;
+        final long abandonedBefore = abandonedBefore(zoneId);
         int inFlight = 0;
         for (final BackupVO backup : backingUp) {
-            if (backup.getDate() != null && backup.getDate().getTime() < staleBefore) {
-                LOG.debug("Not counting stale BackingUp backup {} (started {}) towards host {}", backup.getUuid(), backup.getDate(), hostId);
+            if (backup.getDate() != null && backup.getDate().getTime() < abandonedBefore) {
+                LOG.debug("Not counting abandoned BackingUp backup {} (started {}) towards host {}", backup.getUuid(), backup.getDate(), hostId);
                 continue;
             }
             final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
@@ -366,9 +388,56 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return inFlight;
     }
 
-    /** The longest a management server waits for a TakeBackupCommand answer: commands.timeout if set for it, else wait. */
-    protected int takeBackupCommandWaitSeconds() {
-        int wait = Math.max(0, Objects.requireNonNullElse(AgentManager.Wait.value(), 0));
+    /** Seconds after which a BackingUp row that has not answered is treated as abandoned: twice the wait, at least wait + 5 minutes. */
+    static long abandonedAfterSeconds(final int waitSeconds) {
+        return (long) waitSeconds + Math.max(waitSeconds, MIN_ABANDONED_MARGIN_SECONDS);
+    }
+
+    /** BackingUp rows of the zone that started before this time are abandoned. */
+    protected long abandonedBefore(final long zoneId) {
+        return System.currentTimeMillis() - abandonedAfterSeconds(takeBackupCommandWaitSeconds(zoneId)) * 1000L;
+    }
+
+    /**
+     * Marks the VM's abandoned NAS backups Error: rows still BackingUp twice the take-backup wait after they started.
+     * By then the agent has stopped the backup script (cmds.timeout) and no management server is waiting for an
+     * answer, but the outcome on the NAS is unknown, so the row is kept, visible and deletable, instead of removed.
+     * Runs from the periodic backup sync task on every management server; marking the same row twice is harmless.
+     */
+    protected int markAbandonedBackups(final VirtualMachine vm) {
+        final List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (CollectionUtils.isEmpty(backups)) {
+            return 0;
+        }
+        final long abandonedBefore = abandonedBefore(vm.getDataCenterId());
+        int marked = 0;
+        for (final Backup backup : backups) {
+            if (!Backup.Status.BackingUp.equals(backup.getStatus()) || backup.getDate() == null
+                    || backup.getDate().getTime() >= abandonedBefore) {
+                continue;
+            }
+            final BackupVO row = backupDao.findById(backup.getId());
+            if (row == null || !Backup.Status.BackingUp.equals(row.getStatus())) {
+                continue;
+            }
+            LOG.warn("NAS backup {} of VM {} started at {} and never reported back; marking it Error. Its files on the "
+                    + "backup repository may be incomplete, delete the backup to remove them", row.getUuid(), vm.getInstanceName(), row.getDate());
+            row.setStatus(Backup.Status.Error);
+            backupDao.update(row.getId(), row);
+            marked++;
+        }
+        return marked;
+    }
+
+    /**
+     * The longest a management server waits for a TakeBackupCommand answer: commands.timeout if set for it,
+     * else backup.nas.backup.timeout, else (when that is 0) the global wait. The provider sets it as the command's wait.
+     */
+    protected int takeBackupCommandWaitSeconds(final long zoneId) {
+        int wait = Math.max(0, Objects.requireNonNullElse(NASBackupTimeout.valueIn(zoneId), 0));
+        if (wait == 0) {
+            wait = Math.max(0, Objects.requireNonNullElse(AgentManager.Wait.value(), 0));
+        }
         final String granular = AgentManager.GranularWaitTimeForCommands.value();
         if (granular != null) {
             for (final String entry : granular.split(",")) {
@@ -635,6 +704,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         // TODO: check and sum/return backups metrics on per VM basis
+        markAbandonedBackups(vm);
     }
 
     @Override
@@ -657,7 +727,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return new ConfigKey[]{
                 NASBackupParallelExecution,
                 NASBackupParallelMaxPerHost,
-                NASBackupParallelQueueTimeout
+                NASBackupParallelQueueTimeout,
+                NASBackupTimeout
         };
     }
 
