@@ -23,6 +23,7 @@ import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -140,6 +141,175 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
 
         Assert.assertEquals(KubernetesClusterNodeCapacityReconcilerImpl.ONLINE_HOTPLUGGED_RESOURCES,
                 fakeReconciler.nodeCommands.get(0));
+    }
+
+    @Test
+    public void testParseMemoryDecimalBinaryAndUnitlessQuantities() {
+        Assert.assertEquals(123L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("123"));
+        Assert.assertEquals(2L * 1024L * 1024L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("2Mi"));
+        Assert.assertEquals(2L * 1024L * 1024L * 1024L * 1024L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("2Ti"));
+        Assert.assertEquals(2000L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("2K"));
+        Assert.assertEquals(2000000L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("2M"));
+        Assert.assertEquals(2000000000L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("2G"));
+        Assert.assertEquals(2000000000000L, KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("2T"));
+        Assert.assertThrows(IllegalArgumentException.class, () -> KubernetesClusterNodeCapacityReconcilerImpl.parseMemoryBytes("4Gi; reboot"));
+    }
+
+    @Test
+    public void testRestartKubeletWaitsForActiveService() throws Exception {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        fake.nodeResources = " active\n";
+
+        fake.restartKubelet(vm("worker-1"), access(), System.currentTimeMillis() + 1000L);
+
+        Assert.assertEquals(List.of("sudo systemctl restart kubelet", "sudo systemctl is-active kubelet"), fake.nodeCommands);
+    }
+
+    @Test
+    public void testExpiredDeadlinesReportTheFailedPhaseAndVm() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        KubernetesCluster cluster = cluster("cluster-uuid");
+        UserVm vm = vm("worker-1");
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot before = snapshot(2, 2048, true);
+        long expired = System.currentTimeMillis() - 1L;
+
+        assertPhaseFailure("CORDON", () -> fake.cordonIfNeeded(cluster, vm, before, access(), expired));
+        assertPhaseFailure("GUEST_VERIFY", () -> fake.verifyGuestResources(vm, offering(4, 4096), before, access(), expired));
+        assertPhaseFailure("KUBELET_RESTART", () -> fake.restartKubelet(vm, access(), expired));
+        assertPhaseFailure("CAPACITY_VERIFY", () -> fake.waitForKubernetesResources(cluster, vm, offering(4, 4096), before, access(), expired));
+        assertPhaseFailure("RESTORE_SCHEDULABILITY", () -> fake.restoreSchedulability(cluster, vm, before, access(), expired));
+    }
+
+    @Test
+    public void testWaitForKubernetesResourcesRequiresIncreasedAllocatableCpuAndMemory() throws Exception {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false).replace("3900m", "4"));
+        fake.nodeResources = "4\n4194304\n";
+
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot observed = fake.waitForKubernetesResources(
+                cluster("cluster-uuid"), vm("worker-1"), offering(4, 4096), snapshot(2, 2048, true),
+                access(), System.currentTimeMillis() + 1000L);
+
+        Assert.assertTrue(observed.isReady());
+        Assert.assertEquals(4000L, observed.getCapacityCpuMillis());
+        Assert.assertEquals(3700L, observed.getAllocatableCpuMillis());
+        Assert.assertEquals(3900L * 1024L * 1024L, observed.getAllocatableMemoryBytes());
+    }
+
+    @Test(timeout = 15000L)
+    public void testWaitRejectsUnchangedAllocatableCpuAfterCpuIncrease() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false).replace("3900m", "4").replace("3700m", "1900m"));
+        fake.nodeResources = "4\n4194304\n";
+
+        assertPhaseFailure("CAPACITY_VERIFY", () -> fake.waitForKubernetesResources(cluster("cluster-uuid"), vm("worker-1"),
+                offering(4, 4096), snapshot(2, 2048, true), access(), System.currentTimeMillis() + 1000L));
+
+        Assert.assertFalse(fake.controlCommands.isEmpty());
+        Assert.assertTrue(fake.controlCommands.stream().noneMatch(command -> command.contains("uncordon")));
+    }
+
+    @Test(timeout = 15000L)
+    public void testWaitRejectsStaleAllocatableMemoryAfterMemoryIncrease() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false).replace("3900m", "4").replace("3900Mi", "1900Mi"));
+        fake.nodeResources = "4\n4194304\n";
+
+        assertPhaseFailure("CAPACITY_VERIFY", () -> fake.waitForKubernetesResources(cluster("cluster-uuid"), vm("worker-1"),
+                offering(4, 4096), snapshot(2, 2048, true), access(), System.currentTimeMillis() + 1000L));
+
+        Assert.assertFalse(fake.controlCommands.isEmpty());
+    }
+
+    @Test(timeout = 15000L)
+    public void testRestartKubeletDoesNotTreatInactiveServiceAsSuccess() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        fake.nodeResources = "inactive\n";
+
+        assertPhaseFailure("KUBELET_RESTART", () -> fake.restartKubelet(vm("worker-1"), access(), System.currentTimeMillis() + 1000L));
+
+        Assert.assertEquals(List.of("sudo systemctl restart kubelet", "sudo systemctl is-active kubelet"), fake.nodeCommands);
+    }
+
+    @Test
+    public void testResourceVerificationRejectsStaleNotReadyOrOutOfToleranceNodes() {
+        ServiceOffering target = offering(4, 4096);
+        Assert.assertFalse(reconciler.isKubernetesResourcesCurrent(snapshot(4, 4096, false), target));
+        Assert.assertFalse(reconciler.isKubernetesResourcesCurrent(snapshot(2, 4096, true), target));
+        Assert.assertFalse(reconciler.isKubernetesResourcesCurrent(snapshot(4, 4097, true), target));
+        Assert.assertFalse(reconciler.isKubernetesResourcesCurrent(snapshot(4, 3800, true), target));
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot staleMemory =
+                new KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot(false, false, 4, 4194304L,
+                        4000L, 2L * 1024L * 1024L * 1024L, 3700L, 1900L * 1024L * 1024L, true);
+        Assert.assertFalse(reconciler.isKubernetesResourcesCurrent(staleMemory, target));
+    }
+
+    @Test
+    public void testCaptureRecognizesOnlyThisClustersCordonOwnership() throws Exception {
+        String owned = nodeJson(true).replace("\"annotations\":{}",
+                "\"annotations\":{\"cloudstack.apache.org/cks-live-resize\":\"cluster-uuid\"}");
+        FakeReconciler fake = new FakeReconciler(owned);
+        Assert.assertTrue(fake.captureBefore(cluster("cluster-uuid"), vm("worker-1"), access()).isCloudStackResizeCordon());
+        Assert.assertFalse(fake.captureBefore(cluster("another-cluster"), vm("worker-1"), access()).isCloudStackResizeCordon());
+    }
+
+    @Test
+    public void testCaptureHandlesMissingOptionalFieldsAndNotReadyNode() throws Exception {
+        String minimal = nodeJson(false).replace("\"annotations\":{}", "\"name\":\"worker-1\"")
+                .replace("\"spec\":{\"unschedulable\":false},", "")
+                .replace("\"status\":\"True\"", "\"status\":\"False\"");
+        FakeReconciler fake = new FakeReconciler(minimal);
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot observed =
+                fake.captureBefore(cluster("cluster-uuid"), vm("worker-1"), access());
+        Assert.assertFalse(observed.isReady());
+        Assert.assertFalse(observed.isUnschedulable());
+        Assert.assertFalse(observed.isCloudStackResizeCordon());
+    }
+
+    @Test
+    public void testInvalidNodeNameIsRejectedBeforeControlCommand() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> fake.captureBefore(cluster("cluster-uuid"), vm("worker; reboot"), access()));
+        Assert.assertTrue(fake.controlCommands.isEmpty());
+    }
+
+    @Test
+    public void testNodeNameIsLowercaseInKubectlCommand() throws Exception {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        fake.captureBefore(cluster("cluster-uuid"), vm("Worker-1"), access());
+        Assert.assertEquals("sudo /opt/bin/kubectl get node worker-1 -o json", fake.controlCommands.get(0));
+    }
+
+    @Test
+    public void testMalformedGuestResourceOutputStopsBeforeKubectl() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        fake.nodeResources = "4\n";
+        CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class,
+                () -> fake.captureBefore(cluster("cluster-uuid"), vm("worker-1"), access()));
+        Assert.assertEquals("Unable to read guest CPU and memory", error.getMessage());
+        Assert.assertTrue(fake.controlCommands.isEmpty());
+    }
+
+    @Test
+    public void testNodeAccessPreservesSeparateControlAndWorkerEndpoints() {
+        java.io.File key = new java.io.File("test-only-key");
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access =
+                new KubernetesClusterNodeCapacityReconciler.NodeAccess("control", 2222, "worker", 2223, "cloud", key);
+        Assert.assertEquals("control", access.getControlAddress());
+        Assert.assertEquals(2222, access.getControlPort());
+        Assert.assertEquals("worker", access.getNodeAddress());
+        Assert.assertEquals(2223, access.getNodePort());
+        Assert.assertEquals("cloud", access.getUser());
+        Assert.assertSame(key, access.getSshKeyFile());
+    }
+
+    private KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot snapshot(int cpu, int memoryMiB, boolean ready) {
+        long bytes = memoryMiB * 1024L * 1024L;
+        return new KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot(false, false, cpu, memoryMiB * 1024L,
+                cpu * 1000L, bytes, cpu * 1000L - 100L, bytes - 128L * 1024L * 1024L, ready);
+    }
+
+    private void assertPhaseFailure(String phase, org.junit.function.ThrowingRunnable action) {
+        CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, action);
+        Assert.assertTrue(error.getMessage(), error.getMessage().contains(phase + " failed for VM vm-uuid"));
     }
 
     private ServiceOffering offering(int cpu, int memory) {
