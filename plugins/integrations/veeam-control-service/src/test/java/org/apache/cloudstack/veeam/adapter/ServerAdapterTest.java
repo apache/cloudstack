@@ -25,6 +25,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
@@ -60,9 +61,11 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.Nic;
-import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
+import org.apache.cloudstack.veeam.api.dto.Host;
+import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
+import org.apache.cloudstack.veeam.api.dto.Statistic;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.logging.log4j.Logger;
@@ -95,6 +98,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.HostStats;
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -102,6 +107,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -140,6 +146,7 @@ public class ServerAdapterTest {
     @Mock StoragePoolJoinDao storagePoolJoinDao;
     @Mock ClusterDao clusterDao;
     @Mock HostJoinDao hostJoinDao;
+    @Mock StatsCollector statsCollector;
     @Mock NetworkDao networkDao;
     @Mock UserVmDao userVmDao;
     @Mock UserVmJoinDao userVmJoinDao;
@@ -1101,14 +1108,35 @@ public class ServerAdapterTest {
         HostJoinVO hostVO = mock(HostJoinVO.class);
         when(hostJoinDao.listAvailableRoutingByZonesAndHypervisor(anyList(), any(), any())).thenReturn(List.of(hostVO));
 
-        assertEquals(1, serverAdapter.listAllHosts(0L, 10L).size());
+        List<Host> hosts = serverAdapter.listAllHosts(false, 0L, 10L);
+
+        assertEquals(1, hosts.size());
+        assertNull(hosts.get(0).getStatistics());
+        verify(statsCollector, never()).getHostStats(anyLong());
+    }
+
+    @Test
+    public void testListAllHosts_WithStatistics_IncludesStatistics() {
+        HostJoinVO hostVO = mock(HostJoinVO.class);
+        when(hostVO.getId()).thenReturn(7L);
+        when(hostVO.getStatus()).thenReturn(Status.Up);
+        HostStats hostStats = mock(HostStats.class);
+        when(hostStats.getTotalMemoryKBs()).thenReturn(1024D);
+        when(statsCollector.getHostStats(7L)).thenReturn(hostStats);
+        when(hostJoinDao.listAvailableRoutingByZonesAndHypervisor(anyList(), any(), any())).thenReturn(List.of(hostVO));
+
+        List<Host> hosts = serverAdapter.listAllHosts(true, 0L, 10L);
+
+        assertEquals(1, hosts.size());
+        assertEquals(4, hosts.get(0).getStatistics().getItems().size());
+        verify(statsCollector).getHostStats(7L);
     }
 
 
     @Test(expected = InvalidParameterValueException.class)
     public void testGetHost_NotFound_Throws() {
         when(hostJoinDao.findByUuid("host-uuid")).thenReturn(null);
-        serverAdapter.getHost("host-uuid");
+        serverAdapter.getHost("host-uuid", false);
     }
 
     @Test
@@ -1116,7 +1144,30 @@ public class ServerAdapterTest {
         HostJoinVO vo = mock(HostJoinVO.class);
         when(hostJoinDao.findByUuid("host-uuid")).thenReturn(vo);
 
-        assertNotNull(serverAdapter.getHost("host-uuid"));
+        Host host = serverAdapter.getHost("host-uuid", false);
+
+        assertNotNull(host);
+        assertNull(host.getStatistics());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListHostStatistics_NotFound_Throws() {
+        when(hostJoinDao.findByUuid("host-uuid")).thenReturn(null);
+        serverAdapter.listHostStatistics("host-uuid");
+    }
+
+    @Test
+    public void testListHostStatistics_NoStats_ReturnsTotalMemoryOnly() {
+        HostJoinVO vo = mock(HostJoinVO.class);
+        when(vo.getId()).thenReturn(7L);
+        when(vo.getTotalMemory()).thenReturn(2048L);
+        when(hostJoinDao.findByUuid("host-uuid")).thenReturn(vo);
+        when(statsCollector.getHostStats(7L)).thenReturn(null);
+
+        List<Statistic> statistics = serverAdapter.listHostStatistics("host-uuid");
+
+        assertEquals(1, statistics.size());
+        assertEquals("memory.total", statistics.get(0).getName());
     }
 
 

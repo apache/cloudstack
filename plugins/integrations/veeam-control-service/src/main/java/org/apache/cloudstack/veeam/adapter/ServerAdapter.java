@@ -134,6 +134,7 @@ import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
+import org.apache.cloudstack.veeam.api.dto.Statistic;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -170,6 +171,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.HostStats;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -186,6 +188,7 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -265,6 +268,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     HostJoinDao hostJoinDao;
+
+    @Inject
+    StatsCollector statsCollector;
 
     @Inject
     NetworkDao networkDao;
@@ -1338,20 +1344,35 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = ListHostsCmd.class)
-    public List<Host> listAllHosts(Long offset, Long limit) {
+    public List<Host> listAllHosts(boolean includeStatistics, Long offset, Long limit) {
         Filter filter = new Filter(HostJoinVO.class, "id", true, offset, limit);
         final List<HostJoinVO> hosts = hostJoinDao.listAvailableRoutingByZonesAndHypervisor(
                 kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM, filter);
-        return HostJoinVOToHostConverter.toHostList(hosts);
+        return HostJoinVOToHostConverter.toHostList(hosts, includeStatistics ? this::getHostStats : null);
     }
 
     @ApiAccess(command = ListHostsCmd.class)
-    public Host getHost(String uuid) {
+    public Host getHost(String uuid, boolean includeStatistics) {
+        final HostJoinVO vo = getHostJoinVOByUuid(uuid);
+        return HostJoinVOToHostConverter.toHost(vo, includeStatistics ? this::getHostStats : null);
+    }
+
+    @ApiAccess(command = ListHostsCmd.class)
+    public List<Statistic> listHostStatistics(String uuid) {
+        final HostJoinVO vo = getHostJoinVOByUuid(uuid);
+        return HostJoinVOToHostConverter.toStatistics(vo, getHostStats(vo.getId()));
+    }
+
+    protected HostJoinVO getHostJoinVOByUuid(String uuid) {
         final HostJoinVO vo = hostJoinDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("Host with ID " + uuid + " not found");
         }
-        return HostJoinVOToHostConverter.toHost(vo);
+        return vo;
+    }
+
+    protected HostStats getHostStats(Long hostId) {
+        return statsCollector.getHostStats(hostId);
     }
 
     @ApiAccess(command = ListNetworksCmd.class)
