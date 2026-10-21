@@ -17,15 +17,17 @@
 package com.cloud.hypervisor.vmware.util;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.mo.HttpNfcLeaseMO;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.ManagedObjectReference;
 
-/** Per agent request sequence, the vCenter tasks a resource is waiting on; one instance per host. VmwareClient.waitForTask is the single registration point. */
+/** Per agent request sequence, the vCenter tasks and NFC leases (OVF import/export transfers) a resource is waiting on; one instance per host. VmwareClient.waitForTask and HttpNfcLeaseMO.waitState are the registration points. */
 public class VmwareTaskRegistry {
     private static final Logger LOGGER = LogManager.getLogger(VmwareTaskRegistry.class);
 
@@ -46,6 +48,7 @@ public class VmwareTaskRegistry {
     private static final class RequestState {
         final String command;
         final Map<String, ActiveTask> tasks = new ConcurrentHashMap<>();
+        final Set<HttpNfcLeaseMO> leases = ConcurrentHashMap.newKeySet();
         volatile boolean cancelRequested;
 
         RequestState(final String command) {
@@ -101,6 +104,31 @@ public class VmwareTaskRegistry {
         return state.cancelRequested;
     }
 
+    /** A transfer over a lease is stopped by aborting the lease. Returns true when the request was already cancelled, so the caller aborts the new lease at once. */
+    public static boolean leaseStarted(final HttpNfcLeaseMO lease) {
+        final RequestScope scope = CURRENT.get();
+        if (scope == null || lease == null) {
+            return false;
+        }
+        final RequestState state = scope.registry.requests.get(scope.sequence);
+        if (state == null) {
+            return false;
+        }
+        state.leases.add(lease);
+        return state.cancelRequested;
+    }
+
+    public static void leaseFinished(final HttpNfcLeaseMO lease) {
+        final RequestScope scope = CURRENT.get();
+        if (scope == null || lease == null) {
+            return;
+        }
+        final RequestState state = scope.registry.requests.get(scope.sequence);
+        if (state != null) {
+            state.leases.remove(lease);
+        }
+    }
+
     static void taskFinished(final ManagedObjectReference mor) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || mor == null) {
@@ -118,8 +146,8 @@ public class VmwareTaskRegistry {
         if (state == null) {
             return "request sequence " + sequence + " is not running on this host";
         }
-        if (state.tasks.isEmpty()) {
-            return "no vCenter task is running for " + state.command;
+        if (state.tasks.isEmpty() && state.leases.isEmpty()) {
+            return "no vCenter task or transfer is running for " + state.command;
         }
         for (final ActiveTask task : state.tasks.values()) {
             try {
@@ -142,8 +170,8 @@ public class VmwareTaskRegistry {
         if (state == null) {
             return false;
         }
-        if (state.tasks.isEmpty()) {
-            LOGGER.debug("Request sequence {} ({}) has no vCenter task to cancel", sequence, state.command);
+        if (state.tasks.isEmpty() && state.leases.isEmpty()) {
+            LOGGER.debug("Request sequence {} ({}) has no vCenter task or transfer to cancel", sequence, state.command);
             return false;
         }
         state.cancelRequested = true;
@@ -160,6 +188,15 @@ public class VmwareTaskRegistry {
                 }
             } catch (final Exception e) {
                 LOGGER.warn("Failed to cancel vCenter task {} of request sequence {}", task.mor.getValue(), sequence, e);
+                allCancelled = false;
+            }
+        }
+        for (final HttpNfcLeaseMO lease : state.leases) {
+            try {
+                lease.abortLease();
+                LOGGER.info("Aborted the transfer lease of request sequence {} ({})", sequence, state.command);
+            } catch (final Exception e) {
+                LOGGER.warn("Failed to abort the transfer lease of request sequence {} ({})", sequence, state.command, e);
                 allCancelled = false;
             }
         }

@@ -1179,6 +1179,43 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
+    public void createVolumeExpungesTheVolumeWhenItsJobWasCancelled() throws Exception {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
+        Mockito.doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeMockId);
+        Mockito.doThrow(new CloudRuntimeException("CopyCommand to host 3 not sent: job-7 was cancelled")).when(volumeApiServiceImpl).createVolumeFromSnapshot(volumeVoMock, 9L, null);
+        Mockito.doReturn(true).when(volumeApiServiceImpl).isCurrentJobCancelled();
+        Mockito.doNothing().when(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId);
+
+        try {
+            volumeApiServiceImpl.createVolume(volumeMockId, null, 9L, null, true);
+            Assert.fail("The failed creation was not reported");
+        } catch (CloudRuntimeException expected) {
+        }
+
+        Mockito.verify(volumeInfo).stateTransit(Volume.Event.DestroyRequested);
+        Mockito.verify(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId);
+    }
+
+    @Test
+    public void createVolumeLeavesAFailedVolumeToTheStorageCleanupWhenNotCancelled() throws Exception {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
+        Mockito.doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeMockId);
+        Mockito.doThrow(new CloudRuntimeException("no space")).when(volumeApiServiceImpl).createVolumeFromSnapshot(volumeVoMock, 9L, null);
+        Mockito.doReturn(false).when(volumeApiServiceImpl).isCurrentJobCancelled();
+
+        try {
+            volumeApiServiceImpl.createVolume(volumeMockId, null, 9L, null, true);
+            Assert.fail("The failed creation was not reported");
+        } catch (CloudRuntimeException expected) {
+        }
+
+        Mockito.verify(volumeInfo).stateTransit(Volume.Event.DestroyRequested);
+        Mockito.verify(volumeApiServiceImpl, Mockito.never()).expungeCancelledVolume(Mockito.anyLong());
+    }
+
+    @Test
     public void deleteVolumeTestVolumeStateAllocated() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Allocated).when(volumeVoMock).getState();
 

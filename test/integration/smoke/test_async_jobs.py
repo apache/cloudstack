@@ -20,6 +20,7 @@ import time
 import uuid
 
 from marvin.cloudstackAPI import (cancelAsyncJob,
+                                  createVolume,
                                   listAsyncJobs,
                                   listEvents,
                                   listUsageJobs,
@@ -372,7 +373,41 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             self.virtual_machine.start(self.apiclient)
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_12_list_usage_jobs(self):
+    def test_12_cancelled_volume_creation_leaves_no_volume(self):
+        """A cancelled createVolume leaves no volume behind; a refused cancel leaves a usable one"""
+        pools = [p for p in (StoragePool.list(self.apiclient, zoneid=self.zone.id) or []) if p.state == "Up"]
+        if not pools:
+            self.skipTest("No primary storage pool in zone %s" % self.zone.id)
+
+        cmd = createVolume.createVolumeCmd()
+        cmd.name = "cancelled-" + str(uuid.uuid4())[:8]
+        cmd.zoneid = self.zone.id
+        cmd.diskofferingid = self.disk_offering.id
+        cmd.storageid = pools[0].id
+        cmd.isAsync = "false"
+        response = self.apiclient.createVolume(cmd, method="GET")
+        jobid, volumeid = response.jobid, response.id
+
+        cancelled = True
+        try:
+            self.cancel_job(jobid)
+        except Exception as e:
+            self.debug("Cancel of create volume job %s refused: %s" % (jobid, e))
+            cancelled = False
+
+        job = self.wait_for_job(jobid)
+        volumes = Volume.list(self.apiclient, id=volumeid, listall=True) or []
+        if cancelled:
+            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
+            self.assertFalse(volumes, "Cancelled creation left volume %s in state %s" % (volumeid, volumes[0].state if volumes else None))
+        else:
+            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+            self.assertNotEqual([v.state for v in volumes], ["Destroy"], "Volume %s left in Destroy" % volumeid)
+            if volumes and volumes[0].state == "Ready":
+                Volume(volumes[0].__dict__).delete(self.apiclient)
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_13_list_usage_jobs(self):
         """Usage server jobs list without error, and filter by usage server"""
         cmd = listUsageJobs.listUsageJobsCmd()
         cmd.duration = 24
