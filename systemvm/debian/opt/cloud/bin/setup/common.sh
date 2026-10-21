@@ -700,6 +700,28 @@ setup_ntp() {
     fi
 }
 
+# cloud-init 25.1 and later (Debian 13) does not have cloud-init.service anymore: cloud-init-main is
+# a single process which runs all the stages, and the units of the stages hand over to it
+start_cloud_init() {
+  if systemctl cat cloud-init-main.service > /dev/null 2>&1; then
+    systemctl start --no-block cloud-init-main cloud-init-local cloud-init-network cloud-config cloud-final
+  else
+    systemctl start --no-block cloud-init
+    systemctl start --no-block cloud-config
+    systemctl start --no-block cloud-final
+  fi
+}
+
+stop_cloud_init() {
+  local svc
+  for svc in cloud-init cloud-init-main cloud-init-local cloud-init-network cloud-config cloud-final; do
+    if systemctl cat ${svc}.service > /dev/null 2>&1; then
+      systemctl stop ${svc}
+      systemctl disable ${svc}
+    fi
+  done
+}
+
 routing_svcs() {
    echo "haproxy apache2 frr" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
