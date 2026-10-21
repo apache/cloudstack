@@ -266,6 +266,12 @@ public interface NetworkOrchestrationService {
         ResourceUnavailableException;
 
     /**
+     * Re-reserves the Allocated nics of a VM that is Running, e.g. after its nics were released on a power report
+     * that was later reverted, and restores the active nics count of their networks.
+     */
+    void reconcileNicsForRunningVm(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context);
+
+    /**
      * Removes the provided nic from the given vm
      * @param vm
      * @param nic

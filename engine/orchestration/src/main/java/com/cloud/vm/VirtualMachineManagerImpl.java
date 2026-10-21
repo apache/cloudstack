@@ -5432,6 +5432,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, vm.getDomainId(),
                 EventTypes.EVENT_VM_START, "Out of band VM power on", vm.getId(), getApiCommandResourceTypeForVm(vm).toString());
             logger.info("VM {} is sync-ed to at Running state according to power-on report from hypervisor.", vm.getInstanceName());
+            reconcileNicsForRunningVm(vm);
             break;
 
         case Destroyed:
@@ -5454,6 +5455,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.info("Receive power on report when Instance is in error or unexpected state. Instance: {}, state: {}.", vm, vm.getState());
             break;
         }
+    }
+
+    private void reconcileNicsForRunningVm(final VMInstanceVO vm) {
+        final VMInstanceVO runningVm = _vmDao.findById(vm.getId());
+        if (runningVm == null || runningVm.getType() != VirtualMachine.Type.User || runningVm.getState() != State.Running || runningVm.getHostId() == null
+                || _nicsDao.listByVmId(runningVm.getId()).stream().noneMatch(nic -> nic.getState() == Nic.State.Allocated)) {
+            return;
+        }
+        final Host host = _hostDao.findById(runningVm.getHostId());
+        final DataCenter dc = _entityMgr.findById(DataCenter.class, runningVm.getDataCenterId());
+        final User user = _entityMgr.findById(User.class, User.UID_SYSTEM);
+        final Account account = _entityMgr.findById(Account.class, Account.ACCOUNT_ID_SYSTEM);
+        final ReservationContext context = new ReservationContextImpl(null, null, user, account);
+        _networkMgr.reconcileNicsForRunningVm(new VirtualMachineProfileImpl(runningVm), new DeployDestination(dc, null, null, host), context);
     }
 
     private void handlePowerOffReportWithNoPendingJobsOnVM(final VMInstanceVO vm) {
