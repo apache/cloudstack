@@ -19,9 +19,12 @@ package com.cloud.api.query.dao;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
@@ -65,6 +68,23 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         return managementServer != null ? managementServer.getName() : null;
     }
 
+    private static final Map<String, Boolean> cancellableCommands = new ConcurrentHashMap<>();
+
+    /** The same annotation cancelAsyncJob checks; a command class that cannot be loaded is reported as not cancellable. */
+    static boolean isCancellableCommand(final String cmd) {
+        if (cmd == null) {
+            return false;
+        }
+        return cancellableCommands.computeIfAbsent(cmd, name -> {
+            try {
+                final APICommand annotation = Class.forName(name).getAnnotation(APICommand.class);
+                return annotation != null && annotation.cancellable();
+            } catch (final ClassNotFoundException e) {
+                return false;
+            }
+        });
+    }
+
     @Override
     public AsyncJobResponse newAsyncJobResponse(final AsyncJobJoinVO job) {
         final AsyncJobResponse jobResponse = new AsyncJobResponse();
@@ -75,6 +95,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(job.getDomainPath()));
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
+        jobResponse.setCancellable(isCancellableCommand(job.getCmd()));
         jobResponse.setCreated(job.getCreated());
         jobResponse.setRemoved(job.getRemoved());
         jobResponse.setId(job.getUuid());
