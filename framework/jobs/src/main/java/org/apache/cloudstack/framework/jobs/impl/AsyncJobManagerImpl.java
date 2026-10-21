@@ -1707,6 +1707,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (job == null || !job.isCancelRequested() || job.getStatus() != JobInfo.Status.IN_PROGRESS) {
             return;
         }
+        for (final AsyncJobVO child : _jobDao.listChildJobs(jobId)) {
+            if (child.getStatus() == JobInfo.Status.IN_PROGRESS) {
+                logger.debug("Job-{} is cancelled but its child job-{} is still running, it ends when that does", jobId, child.getId());
+                return;
+            }
+        }
         final String reason = getJobCancelReasonFromResult(job);
         completeAsyncJob(jobId, JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResult(reason != null ? reason : "job-" + jobId + " was cancelled"));
     }

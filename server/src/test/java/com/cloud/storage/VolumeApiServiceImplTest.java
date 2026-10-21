@@ -1198,6 +1198,21 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
+    public void expungeCancelledVolumeClosesTheUsageRecordBeforeRemovingTheVolume() throws Exception {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        Mockito.doReturn(Volume.State.Destroy).when(volumeInfo).getState();
+        Mockito.doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeMockId);
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
+        future.complete(new VolumeApiResult(volumeInfo));
+        Mockito.doReturn(future).when(volumeServiceMock).expungeVolumeAsync(volumeInfo);
+
+        volumeApiServiceImpl.expungeCancelledVolume(volumeMockId);
+
+        Mockito.verify(volumeInfo).stateTransit(Volume.Event.OperationSucceeded);
+        Mockito.verify(volumeServiceMock).expungeVolumeAsync(volumeInfo);
+    }
+
+    @Test
     public void createVolumeLeavesAFailedVolumeToTheStorageCleanupWhenNotCancelled() throws Exception {
         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);

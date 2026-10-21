@@ -331,6 +331,25 @@ public class AsyncJobManagerImplTest {
     }
 
     @Test
+    public void testFinalisationWaitsForARunningChildAndThenCancelsTheParent() {
+        AsyncJobVO parent = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        parent.setCancelRequested(true);
+        parent.setRelated(null);
+        parent.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
+        when(jobDao.findById(10L)).thenReturn(parent);
+        AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
+        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+
+        asyncJobManager.finalizeCancelledJob(10L);
+        Mockito.verify(asyncJobManager, Mockito.never()).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+
+        child.setStatus(JobInfo.Status.CANCELLED);
+        asyncJobManager.finalizeCancelledJob(10L);
+        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(10L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.anyInt(), Mockito.contains("Cancelled by admin via mgmt2"));
+    }
+
+    @Test
     public void testCancelledResultReadsLikeAFailure() {
         String serialized = AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2");
 

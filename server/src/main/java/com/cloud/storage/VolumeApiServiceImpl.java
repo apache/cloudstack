@@ -1209,6 +1209,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return;
         }
         logger.info("Creation of volume {} was cancelled, expunging it", volume);
+        if (volume.getState() == Volume.State.Destroy) {
+            volume.stateTransit(Volume.Event.OperationSucceeded);
+        }
         try {
             final VolumeApiResult result = volService.expungeVolumeAsync(volume).get();
             if (result.isFailed()) {
