@@ -20,6 +20,7 @@ import time
 import uuid
 
 from marvin.cloudstackAPI import (cancelAsyncJob,
+                                  listApis,
                                   createSnapshot,
                                   createVolume,
                                   listAsyncJobs,
@@ -129,6 +130,19 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         cmd = cancelAsyncJob.cancelAsyncJobCmd()
         cmd.jobid = jobid
         return self.apiclient.cancelAsyncJob(cmd)
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_00_cancellable_is_published(self):
+        """listApis and listAsyncJobs say in advance whether a command can be cancelled"""
+        cmd = listApis.listApisCmd()
+        apis = {api.name: api for api in (self.apiclient.listApis(cmd) or [])}
+        self.assertTrue(apis["createVolume"].cancellable, "createVolume is not published as cancellable")
+        self.assertTrue(apis["migrateVirtualMachine"].cancellable, "migrateVirtualMachine is not published as cancellable")
+        self.assertFalse(apis["deployVirtualMachine"].cancellable, "deployVirtualMachine is published as cancellable")
+
+        deploy_job = self.find_job(self.list_jobs(jobstatus=ALL_STATUSES), self.deploy_job_id)
+        self.assertIsNotNone(deploy_job, "Deploy job %s not listed" % self.deploy_job_id)
+        self.assertFalse(deploy_job.cancellable, "The deploy job is published as cancellable")
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_01_default_listing_is_pending_only(self):

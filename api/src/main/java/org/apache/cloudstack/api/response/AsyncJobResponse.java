@@ -95,6 +95,10 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "Who requested the job cancellation and through which management server", since = "24.0")
     private String cancelReason;
 
+    @SerializedName("cancellable")
+    @Param(description = "True if the job can be cancelled with cancelAsyncJob; a cancel may still be refused while the running job cannot be cancelled", since = "24.0")
+    private Boolean cancellable;
+
     @SerializedName("jobinstancename")
     @Param(description = "The name of the Instance/entity object related to the job", since = "24.0")
     private String jobInstanceName;
@@ -201,6 +205,10 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setCancelReason(String cancelReason) {
         this.cancelReason = cancelReason;
+    }
+
+    public void setCancellable(Boolean cancellable) {
+        this.cancellable = cancellable;
     }
 
     public void setJobInstanceName(String jobInstanceName) {
