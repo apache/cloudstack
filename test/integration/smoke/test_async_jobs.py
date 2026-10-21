@@ -20,6 +20,7 @@ import time
 import uuid
 
 from marvin.cloudstackAPI import (cancelAsyncJob,
+                                  createSnapshot,
                                   createVolume,
                                   listAsyncJobs,
                                   listEvents,
@@ -39,6 +40,7 @@ from marvin.lib.base import (Account,
                              DiskOffering,
                              Host,
                              ServiceOffering,
+                             Snapshot,
                              StoragePool,
                              VirtualMachine,
                              Volume)
@@ -406,8 +408,41 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             if volumes and volumes[0].state == "Ready":
                 Volume(volumes[0].__dict__).delete(self.apiclient)
 
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_13_cancelled_volume_snapshot_leaves_nothing(self):
+        """Cancelling a volume snapshot during its backup leaves no snapshot behind; a refused cancel lets it complete"""
+        if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
+            self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
+
+        root_volume = [v for v in Volume.list(self.apiclient, virtualmachineid=self.virtual_machine.id, listall=True) if v.type == "ROOT"][0]
+        cmd = createSnapshot.createSnapshotCmd()
+        cmd.volumeid = root_volume.id
+        cmd.isAsync = "false"
+        response = self.apiclient.createSnapshot(cmd, method="GET")
+        jobid, snapshotid = response.jobid, response.id
+
+        # let the backup to secondary storage start before cancelling
+        time.sleep(5)
+        cancelled = True
+        try:
+            self.cancel_job(jobid)
+        except Exception as e:
+            self.debug("Cancel of snapshot job %s refused: %s" % (jobid, e))
+            cancelled = False
+
+        job = self.wait_for_job(jobid, timeout=1800)
+        snapshots = Snapshot.list(self.apiclient, id=snapshotid, listall=True) or []
+        if cancelled:
+            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
+            self.assertFalse(snapshots, "Cancelled snapshot %s left behind in state %s" % (snapshotid, snapshots[0].state if snapshots else None))
+        else:
+            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+            self.assertNotEqual([s.state for s in snapshots], ["BackingUp"], "Snapshot %s stuck in BackingUp" % snapshotid)
+            if snapshots and snapshots[0].state == "BackedUp":
+                Snapshot(snapshots[0].__dict__).delete(self.apiclient)
+
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_13_list_usage_jobs(self):
+    def test_14_list_usage_jobs(self):
         """Usage server jobs list without error, and filter by usage server"""
         cmd = listUsageJobs.listUsageJobsCmd()
         cmd.duration = 24
