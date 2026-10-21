@@ -149,6 +149,51 @@ public class KvmHaFenceScriptTest {
     }
 
     @Test
+    public void includeSystemVmsTrueStopsSystemVmsToo() throws Exception {
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=log-only\nkvm.heartbeat.fence.include.system.vms=true\n",
+                "i-2-10-VM", "r-4-VM", "s-1-VM", "v-2-VM", "b-5-VM"));
+        Assert.assertEquals("", read(running).trim());
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
+    public void includeSystemVmsFalseStopsOnlyUserVms() throws Exception {
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=restart-agent\nkvm.heartbeat.fence.include.system.vms=false\n",
+                "i-2-10-VM", "r-4-VM", "r-7-VM-1234", "s-1-VM", "v-2-VM", "b-5-VM"));
+        final String log = read(calls);
+        Assert.assertTrue(log.contains("destroy i-2-10-VM"));
+        for (final String systemVm : new String[] {"r-4-VM", "r-7-VM-1234", "s-1-VM", "v-2-VM", "b-5-VM"}) {
+            Assert.assertFalse(systemVm + " must keep running", log.contains("destroy " + systemVm));
+        }
+        Assert.assertEquals("r-4-VM\nr-7-VM-1234\ns-1-VM\nv-2-VM\nb-5-VM", read(running).trim());
+        Assert.assertTrue(log.contains("systemctl restart cloudstack-agent"));
+        Assert.assertTrue(read(syslog).contains("include.system.vms=false"));
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
+    public void includeSystemVmsFalseIgnoresAStuckSystemVmButNotAStuckUserVm() throws Exception {
+        Files.write(dir.resolve("stuck"), "r-4-VM\n".getBytes(StandardCharsets.UTF_8));
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=log-only\nkvm.heartbeat.fence.include.system.vms=false\n",
+                "i-2-10-VM", "r-4-VM"));
+        Assert.assertFalse("a running system VM must not force a reboot", rebooted());
+
+        Files.write(dir.resolve("stuck"), "i-2-11-VM\n".getBytes(StandardCharsets.UTF_8));
+        fence("kvm.heartbeat.fence.action=log-only\nkvm.heartbeat.fence.include.system.vms=false\n", "i-2-11-VM", "r-4-VM");
+        Assert.assertTrue("a user VM still running must still force a reboot", rebooted());
+    }
+
+    @Test
+    public void keepVmsRunningWinsOverIncludeSystemVms() throws Exception {
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=log-only\nkvm.heartbeat.fence.keep.vms.running=true\n"
+                + "kvm.heartbeat.fence.include.system.vms=false\n", "i-2-10-VM", "r-4-VM"));
+        Assert.assertFalse(read(calls).contains("destroy"));
+        Assert.assertEquals("i-2-10-VM\nr-4-VM", read(running).trim());
+        Assert.assertTrue(read(syslog).contains("overrides kvm.heartbeat.fence.include.system.vms"));
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
     public void hardRebootIsTheDefaultAndDoesNotTouchVmsFirst() throws Exception {
         fence("", "i-2-10-VM");
         Assert.assertTrue(rebooted());

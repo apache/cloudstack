@@ -26,8 +26,11 @@
 # restart-agent and log-only leave the host up. Once the heartbeat is stale the management
 # server may declare this host Down and HA may start its VMs on another host, so both
 # actions first stop every VM still running here; if any VM cannot be stopped the fence
-# falls back to hard-reboot. kvm.heartbeat.fence.keep.vms.running=true skips that step,
-# which is only safe when no VM on this host can be restarted elsewhere by HA.
+# falls back to hard-reboot. kvm.heartbeat.fence.include.system.vms=false limits that step
+# to user VMs: system VMs (virtual routers, console proxy, secondary storage and internal
+# LB VMs) are left running and do not count towards the fallback.
+# kvm.heartbeat.fence.keep.vms.running=true skips the step entirely and wins over
+# include.system.vms; it is only safe when no VM on this host can be restarted elsewhere.
 #
 # Usage from caller:
 #   source "$(dirname "$0")/kvmha-fence.sh"
@@ -42,17 +45,40 @@ read_agent_property() {
   grep "^$1=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]'
 }
 
-# Stops every active VM on this host. Fails if libvirt cannot be queried or any VM is still
-# active afterwards, so the caller never assumes the VMs are stopped when they are not.
-stop_all_vms() {
-  local source_script="$1"
+# True when the libvirt domain name is a CloudStack system VM, using the names the management
+# server gives them (com.cloud.vm.VirtualMachineName): r-<id>-<instance>[-<vnet>] for virtual
+# routers, and s-, v- and b-<id>-<instance> for secondary storage, console proxy and internal
+# LB VMs. User VMs are i-<account>-<id>-<instance> and never match.
+is_system_vm() {
+  [[ "$1" =~ ^r-[0-9]+-[^-]+(-[^-]+)?$ || "$1" =~ ^[svb]-[0-9]+-[^-]+$ ]]
+}
+
+# Prints the active VMs the fence has to stop: every VM, or only user VMs when
+# include_system_vms is not "true". Fails if libvirt cannot be queried.
+vms_to_stop() {
+  local include_system_vms="$1"
   local vms vm
   vms=$(virsh -c qemu:///system list --name 2>/dev/null) || return 1
+  for vm in $vms; do
+    if [ "$include_system_vms" = "true" ] || ! is_system_vm "$vm"; then
+      echo "$vm"
+    fi
+  done
+}
+
+# Stops the active VMs selected by vms_to_stop. Fails if libvirt cannot be queried or any of
+# them is still active afterwards, so the caller never assumes the VMs are stopped when they
+# are not. System VMs left running on purpose do not make it fail.
+stop_vms() {
+  local source_script="$1"
+  local include_system_vms="$2"
+  local vms vm
+  vms=$(vms_to_stop "$include_system_vms") || return 1
   for vm in $vms; do
     "$FENCE_LOGGER" -t heartbeat "${source_script}: stopping VM ${vm} so it cannot run here while HA starts it on another host."
     virsh -c qemu:///system destroy "$vm" > /dev/null 2>&1
   done
-  vms=$(virsh -c qemu:///system list --name 2>/dev/null) || return 1
+  vms=$(vms_to_stop "$include_system_vms") || return 1
   [ -z "$(echo "$vms" | tr -d '[:space:]')" ]
 }
 
@@ -65,11 +91,20 @@ fence_action() {
 
   case "$FENCE_ACTION" in
     log-only|restart-agent)
-      if [ "$(read_agent_property "kvm.heartbeat.fence.keep.vms.running")" = "true" ]; then
-        "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING fence action '${FENCE_ACTION}' with kvm.heartbeat.fence.keep.vms.running=true leaves the VMs on this host running. If the management server marks this host Down, HA may start the same VMs on another host and both copies would write to the same disks."
-      elif ! stop_all_vms "$source_script"; then
-        "$FENCE_LOGGER" -t heartbeat "${source_script}: could not stop every VM on this host for fence action '${FENCE_ACTION}'; falling back to hard-reboot so no VM keeps running while HA may start it elsewhere."
-        FENCE_ACTION="hard-reboot"
+      local keep_running include_system_vms="true"
+      keep_running=$(read_agent_property "kvm.heartbeat.fence.keep.vms.running")
+      [ "$(read_agent_property "kvm.heartbeat.fence.include.system.vms")" = "false" ] && include_system_vms="false"
+      if [ "$keep_running" = "true" ]; then
+        # keep.vms.running is the master opt-out and wins over include.system.vms.
+        "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING fence action '${FENCE_ACTION}' with kvm.heartbeat.fence.keep.vms.running=true leaves every VM on this host running, system VMs included (this overrides kvm.heartbeat.fence.include.system.vms). If the management server marks this host Down, HA may start the same VMs on another host and both copies would write to the same disks."
+      else
+        if [ "$include_system_vms" = "false" ]; then
+          "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING fence action '${FENCE_ACTION}' with kvm.heartbeat.fence.include.system.vms=false stops only user VMs and leaves system VMs running. If the management server marks this host Down it may start those system VMs on another host, and a virtual router could then run twice with the same IP and MAC addresses."
+        fi
+        if ! stop_vms "$source_script" "$include_system_vms"; then
+          "$FENCE_LOGGER" -t heartbeat "${source_script}: could not stop every VM on this host that the fence must stop for action '${FENCE_ACTION}'; falling back to hard-reboot so no VM keeps running while HA may start it elsewhere."
+          FENCE_ACTION="hard-reboot"
+        fi
       fi
       ;;
   esac

@@ -656,12 +656,29 @@ public class AgentProperties{
      * stopping them first. Only safe when no VM on the host can be started on another host by HA (VM HA off for all
      * of them and host HA not enabled); otherwise a host the management server declares Down can end up with the
      * same VM running twice, writing to the same disks. No effect on {@code hard-reboot} and {@code graceful-reboot}.
+     * This is the master opt-out: when true nothing is stopped and {@link #KVM_HEARTBEAT_FENCE_INCLUDE_SYSTEM_VMS}
+     * is ignored.<br>
      * Read by the heartbeat shell scripts directly from agent.properties.<br>
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
     public static final Property<Boolean> KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING
         = new Property<>("kvm.heartbeat.fence.keep.vms.running", false);
+
+    /**
+     * Whether the {@code restart-agent} and {@code log-only} fence actions also stop system VMs (virtual routers,
+     * console proxy, secondary storage and internal LB VMs, recognised by their {@code r-}, {@code v-}, {@code s-} and
+     * {@code b-} instance names). When true every VM on the host is stopped. When false only user VMs are stopped;
+     * system VMs keep running and do not trigger the {@code hard-reboot} fallback. Risk of false: if the management
+     * server declares the host Down it restarts the system VMs on another host, so a virtual router could run twice
+     * with the same IP and MAC addresses. Ignored when {@link #KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING} is true. No
+     * effect on {@code hard-reboot} and {@code graceful-reboot}.
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>true</code>
+     */
+    public static final Property<Boolean> KVM_HEARTBEAT_FENCE_INCLUDE_SYSTEM_VMS
+        = new Property<>("kvm.heartbeat.fence.include.system.vms", true);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
