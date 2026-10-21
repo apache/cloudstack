@@ -752,6 +752,25 @@ backup_stopped_vm() {
   find "$dest" -type f -exec stat -c '%s' {} +
 }
 
+# Remove every backup anchor (csbackup-*) from the RBD disks named by -d. The anchor of a chain is
+# only kept to export the next incremental from it, so once the chain is gone - its last backup was
+# deleted, or the Instance left its backup offering - the next backup is a full one and the anchor
+# only pins the space of the data it still references in the pool.
+remove_rbd_anchors() {
+  if [[ -z "$DISK_PATHS" ]]; then
+    echo "Removing the RBD anchors requires the volume paths (-d|--diskpaths)"
+    exit 1
+  fi
+  local -a disks=()
+  local d
+  IFS=',' read -ra disks <<< "$DISK_PATHS"
+  for d in "${disks[@]}"; do
+    # a volume of any other pool type carries no anchor, and is not an rbd image to ask about
+    [[ "$d" == rbd:* ]] || continue
+    rbd_sweep_stale_anchors "" "$d"
+  done
+}
+
 delete_backup() {
   mount_operation
 
@@ -817,6 +836,11 @@ function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
   echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
+  echo ""
+  echo "Operations: backup, delete, stats, removeanchors"
+  echo "  removeanchors           Remove every backup anchor (csbackup-*) from the RBD volumes given with -d|--disks."
+  echo "                          Used once a chain is gone, as the next backup is a full one and the anchor would"
+  echo "                          only keep the data it references allocated in the pool."
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
   echo "  -M|--mode full          Take a full backup AND create a checkpoint (--bitmap-new required) for future incrementals."
@@ -936,6 +960,8 @@ if [ "$OP" = "backup" ]; then
   fi
 elif [ "$OP" = "delete" ]; then
   delete_backup
+elif [ "$OP" = "removeanchors" ]; then
+  remove_rbd_anchors
 elif [ "$OP" = "stats" ]; then
   get_backup_stats
 fi

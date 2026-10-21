@@ -1164,4 +1164,104 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao, Mockito.never()).remove(51L);
         Mockito.verify(backupDao).remove(50L);
     }
+
+    // -- the backup anchors are removed once the chain is gone ---------------------------
+
+    // Defaults for an Instance with one RBD volume; lenient, as a test may override a stub or
+    // return before reaching it.
+    private VMInstanceVO vmWithRbdVolume(long vmId, long hostId, long poolId) {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.lenient().when(vm.getId()).thenReturn(vmId);
+        Mockito.lenient().when(vm.getLastHostId()).thenReturn(hostId);
+
+        HostVO host = mock(HostVO.class);
+        Mockito.lenient().when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.lenient().when(host.getId()).thenReturn(hostId);
+        Mockito.lenient().when(hostDao.findById(hostId)).thenReturn(host);
+
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.lenient().when(volume.getPoolId()).thenReturn(poolId);
+        Mockito.lenient().when(volume.getDeviceId()).thenReturn(0L);
+        Mockito.lenient().when(volume.getPath()).thenReturn("volume-path");
+        Mockito.lenient().when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
+
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.lenient().when(pool.getId()).thenReturn(poolId);
+        Mockito.lenient().when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.lenient().when(pool.getPath()).thenReturn("rbd-pool");
+        Mockito.lenient().when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        return vm;
+    }
+
+    /**
+     * Taking the Instance out of its backup offering ends the chain: the next backup, if the
+     * Instance is ever assigned an offering again, is a full one, so the anchor is not read
+     * again and is removed rather than left holding the data it references in the pool.
+     */
+    @Test
+    public void removingTheOfferingRemovesTheBackupAnchors() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = vmWithRbdVolume(21L, 22L, 23L);
+        Mockito.when(agentManager.send(anyLong(), Mockito.any(RemoveBackupAnchorsCommand.class)))
+                .thenReturn(new BackupAnswer(null, true, null));
+
+        Assert.assertTrue(nasBackupProvider.removeVMFromBackupOffering(vm));
+
+        Mockito.verify(vmInstanceDetailsDao).findDetail(21L, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        Mockito.verify(agentManager).send(Mockito.eq(22L), Mockito.any(RemoveBackupAnchorsCommand.class));
+    }
+
+    /**
+     * An Instance whose volumes are on no RBD pool carries no anchor, so no command is sent to
+     * its host at all.
+     */
+    @Test
+    public void removingTheOfferingSendsNoCommandWithoutAnRbdVolume() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = vmWithRbdVolume(31L, 32L, 33L);
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        Mockito.when(nfsPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePoolDao.findById(33L)).thenReturn(nfsPool);
+
+        Assert.assertTrue(nasBackupProvider.removeVMFromBackupOffering(vm));
+
+        Mockito.verify(agentManager, Mockito.never()).send(anyLong(), Mockito.any(RemoveBackupAnchorsCommand.class));
+    }
+
+    /**
+     * Deleting the backup the VM's active_checkpoint_id points to leaves no chain to export the
+     * next incremental from, so the anchor of that chain goes with it.
+     */
+    @Test
+    public void deletingTheBackupHoldingTheActiveAnchorRemovesIt() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = vmWithRbdVolume(41L, 42L, 43L);
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(41L)).thenReturn(vm);
+
+        BackupVO backup = new BackupVO();
+        backup.setVmId(41L);
+        backup.setBackupOfferingId(44L);
+        backup.setExternalId("i-2-41-VM/2026.10.21.10.00.00");
+        ReflectionTestUtils.setField(backup, "id", 45L);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(44L)).thenReturn(repo);
+        Mockito.when(backupDao.remove(45L)).thenReturn(true);
+
+        // The deleted backup owns the bitmap the VM is anchored on.
+        BackupDetailVO bitmapDetail = mock(BackupDetailVO.class);
+        Mockito.when(bitmapDetail.getValue()).thenReturn("csbackup-1791");
+        Mockito.when(backupDetailsDao.findDetail(45L, NASBackupChainKeys.BITMAP_NAME)).thenReturn(bitmapDetail);
+        VMInstanceDetailVO active = mock(VMInstanceDetailVO.class);
+        Mockito.when(active.getValue()).thenReturn("csbackup-1791");
+        Mockito.when(vmInstanceDetailsDao.findDetail(41L, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(active);
+
+        Mockito.when(agentManager.send(anyLong(), Mockito.any(DeleteBackupCommand.class)))
+                .thenReturn(new BackupAnswer(null, true, null));
+        Mockito.when(agentManager.send(anyLong(), Mockito.any(RemoveBackupAnchorsCommand.class)))
+                .thenReturn(new BackupAnswer(null, true, null));
+
+        Assert.assertTrue(nasBackupProvider.deleteBackup(backup, false));
+
+        Mockito.verify(vmInstanceDetailsDao).removeDetail(41L, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+        Mockito.verify(agentManager).send(Mockito.eq(42L), Mockito.any(RemoveBackupAnchorsCommand.class));
+    }
 }

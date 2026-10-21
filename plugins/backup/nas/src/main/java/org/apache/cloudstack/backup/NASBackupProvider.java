@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
@@ -641,6 +642,54 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
     }
 
+    /**
+     * Remove the backup anchors of {@code vmId}'s volumes on the host: the RBD snapshots the chain
+     * was exported from. Called wherever the chain itself is gone, so that the next backup is a full
+     * one and the anchor would only keep the data it references allocated in the pool. Best effort:
+     * the chain is already gone either way, so a host which cannot be reached is logged, not thrown.
+     */
+    protected void removeBackupAnchors(long vmId) {
+        VirtualMachine vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+        if (vm != null) {
+            removeBackupAnchors(vm);
+        }
+    }
+
+    protected void removeBackupAnchors(VirtualMachine vm) {
+        long vmId = vm.getId();
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+        if (CollectionUtils.isEmpty(volumes)) {
+            return;
+        }
+        // Only an RBD volume carries an anchor, so an Instance without one is left alone rather
+        // than sent a command that would find nothing to remove.
+        if (volumes.stream().noneMatch(this::isOnRbdPool)) {
+            return;
+        }
+        volumes.sort(Comparator.comparing(Volume::getDeviceId));
+        try {
+            Host host = getVMHypervisorHost(vm);
+            if (host == null) {
+                LOG.debug("No host to remove the backup anchors of VM id={} on", vmId);
+                return;
+            }
+            Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(volumes);
+            RemoveBackupAnchorsCommand command = new RemoveBackupAnchorsCommand(volumePoolsAndPaths.first(), volumePoolsAndPaths.second());
+            Answer answer = agentManager.send(host.getId(), command);
+            if (answer == null || !answer.getResult()) {
+                LOG.warn("Failed to remove the backup anchors of VM id={}: {}", vmId,
+                        answer != null ? answer.getDetails() : "no answer received");
+            }
+        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException e) {
+            LOG.warn("Unable to remove the backup anchors of VM id={}: {}", vmId, e.getMessage());
+        }
+    }
+
+    private boolean isOnRbdPool(VolumeVO volume) {
+        StoragePoolVO pool = volume.getPoolId() == null ? null : primaryDataStoreDao.findById(volume.getPoolId());
+        return pool != null && Storage.StoragePoolType.RBD.equals(pool.getPoolType());
+    }
+
     private String lookupParentBackupUuid(long vmId, String parentBitmap) {
         if (parentBitmap == null) {
             return null;
@@ -1172,6 +1221,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // full chain instead of anchoring an incremental on a deleted checkpoint (test: delete last backup).
         if (deletedBitmap != null && deletedBitmap.equals(readVmActiveCheckpoint(backup.getVmId()))) {
             clearVmActiveCheckpoint(backup.getVmId());
+            // The chain this backup anchored is gone with it, so drop the anchor itself: the next
+            // backup is a full one, and an anchor nothing reads from only keeps the data it
+            // references allocated in the pool.
+            removeBackupAnchors(backup.getVmId());
         }
         // Exactly-once resource accounting: decrement at the single point a backup row + file are
         // physically removed. This runs for the leaf and for every swept delete-pending ancestor,
@@ -1343,6 +1396,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // while the offering is unassigned would lead to the next backup trying to rebase
         // onto a stale parent (different volume identity, same VM id).
         clearVmActiveCheckpoint(vm.getId());
+        // The next backup of this Instance, if it is ever assigned an offering again, is a full one,
+        // so the anchor of the chain it leaves behind is not read again: remove it rather than keep
+        // the data it references allocated in the pool for as long as the volumes live.
+        removeBackupAnchors(vm);
         return true;
     }
 
