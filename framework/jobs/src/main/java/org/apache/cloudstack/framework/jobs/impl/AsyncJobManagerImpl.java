@@ -695,6 +695,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
                     ThreadContext.put("logcontextid", logContext);
 
+                    // cancelled between being queued and being picked up: nothing to run
+                    final AsyncJobVO current = _jobDao.findById(job.getId());
+                    if (current != null && current.getStatus().done()) {
+                        logger.info("job-{} was completed as {} before it started, not executing it", job.getId(), current.getStatus());
+                        return;
+                    }
+
                     // execute the job
                     if (logger.isDebugEnabled()) {
                         logger.debug("Executing " + StringUtils.cleanString(job.toString()));
@@ -1196,9 +1203,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             logger.debug("Cancel left-over job-" + job.getId());
                         }
                         cleanupResources(job);
-                        job.setStatus(JobInfo.Status.FAILED);
+                        // a job whose cancellation was requested ends cancelled, as it would have through completeAsyncJob
+                        final String cancelReason = job.isCancelRequested() ? getJobCancelReasonFromResult(job) : null;
+                        job.setStatus(cancelReason != null ? JobInfo.Status.CANCELLED : JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-                        job.updateResultWithEncryptionIfNeeded("job cancelled because of management server restart or shutdown");
+                        job.updateResultWithEncryptionIfNeeded(cancelReason != null ? cancelledResult(cancelReason + " (management server restart or shutdown)")
+                                : "job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
                         final Date currentGMTTime = DateUtil.currentGMTTime();
                         job.setLastUpdated(currentGMTTime);
