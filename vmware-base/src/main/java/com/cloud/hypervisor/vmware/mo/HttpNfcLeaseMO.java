@@ -33,6 +33,8 @@ import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareTaskRegistry;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HttpNfcLeaseMO extends BaseMO {
 
@@ -67,9 +69,15 @@ public class HttpNfcLeaseMO extends BaseMO {
         HttpNfcLeaseState state;
         while (true) {
             state = getState();
-            if (state == HttpNfcLeaseState.READY || state == HttpNfcLeaseState.ERROR)
-                return state;
+            if (state == HttpNfcLeaseState.READY || state == HttpNfcLeaseState.ERROR) {
+                break;
+            }
         }
+        if (state == HttpNfcLeaseState.READY && VmwareTaskRegistry.leaseStarted(this)) {
+            abortLease();
+            throw new CloudRuntimeException("the request was cancelled before its transfer started");
+        }
+        return state;
     }
 
     public HttpNfcLeaseInfo getLeaseInfo() throws Exception {
@@ -85,11 +93,19 @@ public class HttpNfcLeaseMO extends BaseMO {
     }
 
     public void completeLease() throws Exception {
-        _context.getService().httpNfcLeaseComplete(_mor);
+        try {
+            _context.getService().httpNfcLeaseComplete(_mor);
+        } finally {
+            VmwareTaskRegistry.leaseFinished(this);
+        }
     }
 
     public void abortLease() throws Exception {
-        _context.getService().httpNfcLeaseAbort(_mor, null);
+        try {
+            _context.getService().httpNfcLeaseAbort(_mor, null);
+        } finally {
+            VmwareTaskRegistry.leaseFinished(this);
+        }
     }
 
     public void updateLeaseProgress(int percent) throws Exception {

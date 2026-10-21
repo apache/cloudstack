@@ -23,4 +23,12 @@ public interface SecondaryStorageResourceHandler {
 
     Answer executeRequest(Command cmd);
 
+    /** Null when the request's work can be stopped, otherwise reason for why not. */
+    default String checkRequestSequenceIsNotCancellable(long sequence) {
+        return "this handler does not support cancelling a running command";
+    }
+
+    default boolean cancelRequestSequence(long sequence) {
+        return false;
+    }
 }

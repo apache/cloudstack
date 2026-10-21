@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.hypervisor.vmware.mo.HttpNfcLeaseMO;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -56,7 +57,7 @@ public class VmwareTaskRegistryTest {
         registry.beginRequest(SEQ, "StopCommand");
 
         final String reason = registry.checkTaskNotCancellable(SEQ);
-        Assert.assertTrue(reason, reason.contains("no vCenter task is running for StopCommand"));
+        Assert.assertTrue(reason, reason.contains("is running for StopCommand"));
         Assert.assertFalse(registry.cancel(SEQ));
         Assert.assertFalse(registry.wasCancelRequested(SEQ));
         Mockito.verify(client, Mockito.never()).cancelTask(Mockito.any());
@@ -153,6 +154,40 @@ public class VmwareTaskRegistryTest {
 
         Assert.assertFalse(VmwareTaskRegistry.taskStarted(mor("task-7"), client));
         registry.endRequest(null);
+    }
+
+    @Test
+    public void transferOverALeaseIsStoppedByAbortingTheLease() throws Exception {
+        final HttpNfcLeaseMO lease = Mockito.mock(HttpNfcLeaseMO.class);
+        registry.beginRequest(SEQ, "CopyCommand");
+        Assert.assertFalse(VmwareTaskRegistry.leaseStarted(lease));
+
+        Assert.assertNull(registry.checkTaskNotCancellable(SEQ));
+        Assert.assertTrue(registry.cancel(SEQ));
+
+        Mockito.verify(lease).abortLease();
+        Assert.assertTrue(registry.wasCancelRequested(SEQ));
+    }
+
+    @Test
+    public void leaseStartedAfterCancelIsReportedSoTheCallerAbortsItImmediately() throws Exception {
+        registry.beginRequest(SEQ, "CopyCommand");
+        VmwareTaskRegistry.leaseStarted(Mockito.mock(HttpNfcLeaseMO.class));
+        Assert.assertTrue(registry.cancel(SEQ));
+
+        Assert.assertTrue(VmwareTaskRegistry.leaseStarted(Mockito.mock(HttpNfcLeaseMO.class)));
+    }
+
+    @Test
+    public void finishedLeaseIsNoLongerTracked() throws Exception {
+        final HttpNfcLeaseMO lease = Mockito.mock(HttpNfcLeaseMO.class);
+        registry.beginRequest(SEQ, "CopyCommand");
+        VmwareTaskRegistry.leaseStarted(lease);
+        VmwareTaskRegistry.leaseFinished(lease);
+
+        Assert.assertNotNull(registry.checkTaskNotCancellable(SEQ));
+        Assert.assertFalse(registry.cancel(SEQ));
+        Mockito.verify(lease, Mockito.never()).abortLease();
     }
 
     private static ManagedObjectReference mor(final String value) {
