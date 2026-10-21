@@ -1526,17 +1526,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final String reason = getJobCancelReasonFromResult(job);
             return reason != null ? reason : "job-" + job.getId() + " was cancelled";
         }
-        if (job.getRelated() == null || job.getRelated().isEmpty()) {
-            return null;
-        }
-        try {
-            final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
-            if (parent != null && isJobCancelling(parent)) {
-                final String reason = getJobCancelReasonFromResult(parent);
-                return reason != null ? reason : "job-" + parent.getId() + " was cancelled";
+        if (job.getRelated() != null && !job.getRelated().isEmpty()) {
+            try {
+                final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
+                if (parent != null && isJobCancelling(parent)) {
+                    final String reason = getJobCancelReasonFromResult(parent);
+                    return reason != null ? reason : "job-" + parent.getId() + " was cancelled";
+                }
+            } catch (final NumberFormatException ignored) {
+                return null;
             }
-        } catch (final NumberFormatException ignored) {
-            return null;
+        }
+        for (final AsyncJobVO child : _jobDao.listChildJobs(job.getId())) {
+            if (isJobCancelling(child)) {
+                final String reason = getJobCancelReasonFromResult(child);
+                return reason != null ? reason : "job-" + child.getId() + " was cancelled";
+            }
         }
         return null;
     }
@@ -1572,6 +1577,29 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         job.updateResultWithEncryptionIfNeeded(null);
         job.setLastUpdated(DateUtil.currentGMTTime());
         _jobDao.update(jobId, job);
+    }
+
+    @Override
+    public boolean hasOnlyQueuedWork(final long jobId) {
+        final List<AsyncJobVO> children = _jobDao.listChildJobs(jobId);
+        if (children.isEmpty()) {
+            return false;
+        }
+        for (final AsyncJobVO child : children) {
+            if (child.getStatus() == JobInfo.Status.CANCELLED) {
+                // completed as cancelled at dequeue, after the request: it never ran
+                continue;
+            }
+            if (child.getStatus() != JobInfo.Status.IN_PROGRESS) {
+                return false;
+            }
+            final Long queueItemId = _queueItemDao.getQueueItemIdByContentIdAndType(child.getId(), SyncQueueItem.AsyncJobContentType);
+            final SyncQueueItemVO item = queueItemId != null ? _queueItemDao.findById(queueItemId) : null;
+            if (item == null || item.getLastProcessMsid() != null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void cancelQueuedChildJobs(final long parentJobId, final String reason) {
@@ -1642,14 +1670,26 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             throw new CloudRuntimeException(errMessage);
         }
 
+        boolean onlyQueuedWork = false;
         if (job.getExecutingMsid() != null || isActiveJob(jobId)) {
             try {
                 final Class<?> cmdClass = Class.forName(job.getCmd());
                 final APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
-                if (apiCommand == null || !apiCommand.cancellable()) {
-                    errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
+                if (apiCommand == null && job.getRelated() != null && !job.getRelated().isEmpty()) {
+                    final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
+                    errMessage = "Cannot cancel job-" + jobId + ", it runs on behalf of job " + (parent != null ? parent.getUuid() : job.getRelated()) + "; cancel that job instead.";
                     logger.debug(errMessage);
                     throw new CloudRuntimeException(errMessage);
+                }
+                if (apiCommand == null || !apiCommand.cancellable()) {
+                    // none of its work has started while its work jobs are all still queued; cancelling then only frees the queue
+                    if (!hasOnlyQueuedWork(jobId)) {
+                        errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
+                        logger.debug(errMessage);
+                        throw new CloudRuntimeException(errMessage);
+                    }
+                    logger.info("job-{} is not cancellable, but its work jobs are all still queued and nothing has started; cancelling it", jobId);
+                    onlyQueuedWork = true;
                 }
             } catch (final ClassNotFoundException e) {
                 errMessage = "Command " + job.getCmd() + " of jobid " + job.getUuid() + " not found.";
@@ -1681,6 +1721,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
         logger.info("Cancellation of job-{} requested: {}", jobId, cancelledBy);
         requestJobCancel(job, cancelledBy);
+        // the flag stops a queued work job from starting; one taken by a server before the flag is work under way that cannot be stopped
+        if (onlyQueuedWork && !hasOnlyQueuedWork(jobId)) {
+            withdrawJobCancel(jobId);
+            errMessage = "Cannot cancel job-" + jobId + ", its work started meanwhile and cannot be stopped.";
+            logger.info(errMessage);
+            throw new CloudRuntimeException(errMessage);
+        }
         try {
             for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
                 if (!handler.cancelJobExecution(jobId, reason)) {

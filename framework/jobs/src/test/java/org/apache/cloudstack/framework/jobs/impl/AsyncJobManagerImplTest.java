@@ -22,6 +22,8 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -91,6 +93,9 @@ public class AsyncJobManagerImplTest {
 
     @Mock
     AsyncJobMonitor jobMonitor;
+
+    @Mock
+    ManagementServerHostDao managementServerHostDao;
 
     @Before
     public void preloadDbProperties() throws Exception {
@@ -347,6 +352,75 @@ public class AsyncJobManagerImplTest {
         child.setStatus(JobInfo.Status.CANCELLED);
         asyncJobManager.finalizeCancelledJob(10L);
         Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(10L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.anyInt(), Mockito.contains("Cancelled by admin via mgmt2"));
+    }
+
+    @Test
+    public void testParentFailingAfterItsQueuedChildWasCancelledEndsForThatReason() {
+        AsyncJobVO parent = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        parent.setRelated(null);
+        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
+        AsyncJobVO child = childJob(11L, JobInfo.Status.CANCELLED);
+        child.setCancelRequested(true);
+        child.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt1"));
+        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+
+        Assert.assertEquals("Cancelled by admin via mgmt1", asyncJobManager.getCancellationReason(10L));
+    }
+
+    @Test
+    public void testNotCancellableJobIsRefusedUnlessAllItsWorkIsStillQueued() {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setUuid("job-uuid");
+        job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
+        job.setExecutingMsid(1L);
+        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
+
+        AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
+        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
+        // taken by a server: its work is under way
+        when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, 1L));
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+            Assert.fail("A deploy with work under way was cancelled");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("is not cancellable"));
+        }
+
+        // still waiting in the queue: nothing has started
+        when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
+        Mockito.lenient().when(jobDao.findById(10L)).thenReturn(job);
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+        } catch (CloudRuntimeException e) {
+            Assert.assertFalse("Refused although nothing had started: " + e.getMessage(), e.getMessage().contains("is not cancellable"));
+        }
+        Assert.assertTrue(job.isCancelRequested());
+    }
+
+    @Test
+    public void testWorkTakenBetweenTheCheckAndTheFlagWithdrawsTheCancel() {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setUuid("job-uuid");
+        job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
+        job.setExecutingMsid(1L);
+        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
+        when(jobDao.findById(10L)).thenReturn(job);
+        AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
+        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
+        // queued at the check, taken by a server by the time the flag is written
+        when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null), queueItem(5L, 1L));
+
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+            Assert.fail("A job whose work had started was cancelled");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("started meanwhile"));
+        }
+        Assert.assertFalse(job.isCancelRequested());
     }
 
     @Test
