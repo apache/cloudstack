@@ -632,11 +632,15 @@ public class AgentProperties{
      *       where a stale NFSv3 mount can prevent a graceful shutdown from completing.</li>
      *   <li>{@code graceful-reboot}: {@code systemctl reboot} instead of sysrq; allows VMs
      *       to stop cleanly. Use only if a stale storage mount cannot block shutdown.</li>
-     *   <li>{@code restart-agent}: restart cloudstack-agent only; running VMs preserved.</li>
-     *   <li>{@code log-only}: only write a message to the host's syslog and take no action (no reboot,
-     *       no agent restart, no management server alert); the operator must investigate.</li>
+     *   <li>{@code restart-agent}: stop every VM on the host, then restart cloudstack-agent; the host stays up.</li>
+     *   <li>{@code log-only}: stop every VM on the host, then only write a message to the host's syslog (no
+     *       reboot, no agent restart, no management server alert); the operator must investigate.</li>
      * </ul>
      * Any other value falls back to {@code hard-reboot}.<br>
+     * {@code restart-agent} and {@code log-only} stop the VMs because, once the heartbeat is stale, the management
+     * server may declare the host Down and HA may start the same VMs on another host, where both copies would write
+     * to the same disks. If any VM cannot be stopped the fence falls back to {@code hard-reboot}. See
+     * {@link #KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING}.<br>
      * The non-default values are recommended for setups using LINSTOR/DRBD or other replicated
      * local storage, where transient I/O contention can cause a heartbeat write to time out
      * without the host actually being unhealthy.<br>
@@ -646,6 +650,18 @@ public class AgentProperties{
      */
     public static final Property<String> KVM_HEARTBEAT_FENCE_ACTION
         = new Property<>("kvm.heartbeat.fence.action", "hard-reboot");
+
+    /**
+     * When true, the {@code restart-agent} and {@code log-only} fence actions leave the host's VMs running instead of
+     * stopping them first. Only safe when no VM on the host can be started on another host by HA (VM HA off for all
+     * of them and host HA not enabled); otherwise a host the management server declares Down can end up with the
+     * same VM running twice, writing to the same disks. No effect on {@code hard-reboot} and {@code graceful-reboot}.
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING
+        = new Property<>("kvm.heartbeat.fence.keep.vms.running", false);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
