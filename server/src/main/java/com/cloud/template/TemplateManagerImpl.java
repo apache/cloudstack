@@ -1627,6 +1627,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
         boolean isAdmin = _accountMgr.isAdmin(caller.getId());
+        boolean isProjectTemplateOwnerAdmin = owner.getType() == Account.Type.PROJECT && _projectMgr.canModifyProjectAccount(caller, ownerId);
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
@@ -1640,8 +1641,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        //Only admin or owner of the template should be able to change its permissions
-        if (caller.getId() != ownerId && !isAdmin) {
+        //Only admin, owner, or the project admin of a project-owned template should be able to change its permissions
+        if (caller.getId() != ownerId && !isAdmin && !isProjectTemplateOwnerAdmin) {
             throw new InvalidParameterValueException("Unable to grant permission to Account " + caller.getAccountName() + " as it is neither admin nor owner or the Template");
         }
 
@@ -1657,7 +1658,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isExtractable != null) {
             // Only Root admins and owners are allowed to change it for templates
-            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin) {
+            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin && !isProjectTemplateOwnerAdmin) {
                 throw new InvalidParameterValueException("Only ROOT admins and Template owners are allowed to modify isExtractable attribute.");
             } else {
                 // For Isos normal user can change it, as their are no derivatives.
