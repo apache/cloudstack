@@ -51,6 +51,7 @@ public class XenServerTaskRegistry {
     private static final class RequestState {
         final String command;
         final Map<String, ActiveTask> tasks = new ConcurrentHashMap<>();
+        volatile boolean cancelling;
         volatile boolean cancelRequested;
 
         RequestState(final String command) {
@@ -92,7 +93,7 @@ public class XenServerTaskRegistry {
         return state != null && state.cancelRequested;
     }
 
-    /** Returns true when the request was already cancelled, so the caller cancels the new task at once. */
+    /** Returns true when the request is being cancelled right now, so the caller cancels the new task at once; a task started after the cancel is the request's undo and runs. */
     static boolean taskStarted(final Task task, final Connection connection) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || task == null) {
@@ -102,8 +103,11 @@ public class XenServerTaskRegistry {
         if (state == null) {
             return false;
         }
+        if (state.cancelling) {
+            return true;
+        }
         state.tasks.put(refOf(task), new ActiveTask(task, connection));
-        return state.cancelRequested;
+        return false;
     }
 
     static void taskFinished(final Task task) {
@@ -141,7 +145,7 @@ public class XenServerTaskRegistry {
         return null;
     }
 
-    /** Cancels the in-flight tasks and marks the request so later tasks are cancelled on arrival. */
+    /** Cancels the tasks in flight. One that starts meanwhile is cancelled on arrival; what the request starts afterwards is its undo and runs. */
     public boolean cancel(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
@@ -151,17 +155,25 @@ public class XenServerTaskRegistry {
             LOGGER.debug("Request sequence {} ({}) has no XenAPI task to cancel", sequence, state.command);
             return false;
         }
-        state.cancelRequested = true;
-
+        state.cancelling = true;
         boolean allCancelled = true;
-        for (final ActiveTask active : state.tasks.values()) {
-            final Pair<Boolean, String> result = cancelTask(active.task, active.connection);
-            if (result.first()) {
-                LOGGER.info("Cancelled XenAPI task {} of request sequence {}", refOf(active.task), sequence);
-            } else {
-                LOGGER.info("Could not cancel XenAPI task {} of request sequence {}: {}", refOf(active.task), sequence, result.second());
-                allCancelled = false;
+        boolean anyCancelled = false;
+        try {
+            for (final ActiveTask active : state.tasks.values()) {
+                final Pair<Boolean, String> result = cancelTask(active.task, active.connection);
+                if (result.first()) {
+                    anyCancelled = true;
+                    LOGGER.info("Cancelled XenAPI task {} of request sequence {}", refOf(active.task), sequence);
+                } else {
+                    LOGGER.info("Could not cancel XenAPI task {} of request sequence {}: {}", refOf(active.task), sequence, result.second());
+                    allCancelled = false;
+                }
             }
+        } finally {
+            if (anyCancelled) {
+                state.cancelRequested = true;
+            }
+            state.cancelling = false;
         }
         return allCancelled;
     }

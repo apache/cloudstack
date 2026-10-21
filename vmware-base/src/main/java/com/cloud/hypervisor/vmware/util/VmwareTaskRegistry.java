@@ -49,6 +49,7 @@ public class VmwareTaskRegistry {
         final String command;
         final Map<String, ActiveTask> tasks = new ConcurrentHashMap<>();
         final Set<HttpNfcLeaseMO> leases = ConcurrentHashMap.newKeySet();
+        volatile boolean cancelling;
         volatile boolean cancelRequested;
 
         RequestState(final String command) {
@@ -90,7 +91,7 @@ public class VmwareTaskRegistry {
         return state != null && state.cancelRequested;
     }
 
-    /** Returns true when the request was already cancelled, so the caller cancels the new task at once. */
+    /** Returns true when the request is being cancelled right now, so the caller cancels the new task at once; a task started after the cancel is the request's undo and runs. */
     static boolean taskStarted(final ManagedObjectReference mor, final VmwareClient client) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || mor == null) {
@@ -100,11 +101,14 @@ public class VmwareTaskRegistry {
         if (state == null) {
             return false;
         }
+        if (state.cancelling) {
+            return true;
+        }
         state.tasks.put(mor.getValue(), new ActiveTask(mor, client));
-        return state.cancelRequested;
+        return false;
     }
 
-    /** A transfer over a lease is stopped by aborting the lease. Returns true when the request was already cancelled, so the caller aborts the new lease at once. */
+    /** A transfer over a lease is stopped by aborting the lease. Returns true when the request is being cancelled right now, so the caller aborts the new lease at once. */
     public static boolean leaseStarted(final HttpNfcLeaseMO lease) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || lease == null) {
@@ -114,8 +118,11 @@ public class VmwareTaskRegistry {
         if (state == null) {
             return false;
         }
+        if (state.cancelling) {
+            return true;
+        }
         state.leases.add(lease);
-        return state.cancelRequested;
+        return false;
     }
 
     public static void leaseFinished(final HttpNfcLeaseMO lease) {
@@ -164,7 +171,7 @@ public class VmwareTaskRegistry {
         return null;
     }
 
-    /** Cancels the in-flight tasks and marks the request so later tasks are cancelled on arrival. */
+    /** Cancels the tasks and transfers in flight. One that starts meanwhile is cancelled on arrival; what the request starts afterwards is its undo (removing a half-made snapshot, consolidating disks) and runs. */
     public boolean cancel(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
@@ -174,31 +181,40 @@ public class VmwareTaskRegistry {
             LOGGER.debug("Request sequence {} ({}) has no vCenter task or transfer to cancel", sequence, state.command);
             return false;
         }
-        state.cancelRequested = true;
-
+        state.cancelling = true;
         boolean allCancelled = true;
-        for (final ActiveTask task : state.tasks.values()) {
-            try {
-                final Pair<Boolean, String> result = task.client.cancelTask(task.mor);
-                if (result.first()) {
-                    LOGGER.info("Cancelled vCenter task {} of request sequence {}", task.mor.getValue(), sequence);
-                } else {
-                    LOGGER.info("Could not cancel vCenter task {} of request sequence {}: {}", task.mor.getValue(), sequence, result.second());
+        boolean anyCancelled = false;
+        try {
+            for (final ActiveTask task : state.tasks.values()) {
+                try {
+                    final Pair<Boolean, String> result = task.client.cancelTask(task.mor);
+                    if (result.first()) {
+                        anyCancelled = true;
+                        LOGGER.info("Cancelled vCenter task {} of request sequence {}", task.mor.getValue(), sequence);
+                    } else {
+                        LOGGER.info("Could not cancel vCenter task {} of request sequence {}: {}", task.mor.getValue(), sequence, result.second());
+                        allCancelled = false;
+                    }
+                } catch (final Exception e) {
+                    LOGGER.warn("Failed to cancel vCenter task {} of request sequence {}", task.mor.getValue(), sequence, e);
                     allCancelled = false;
                 }
-            } catch (final Exception e) {
-                LOGGER.warn("Failed to cancel vCenter task {} of request sequence {}", task.mor.getValue(), sequence, e);
-                allCancelled = false;
             }
-        }
-        for (final HttpNfcLeaseMO lease : state.leases) {
-            try {
-                lease.abortLease();
-                LOGGER.info("Aborted the transfer lease of request sequence {} ({})", sequence, state.command);
-            } catch (final Exception e) {
-                LOGGER.warn("Failed to abort the transfer lease of request sequence {} ({})", sequence, state.command, e);
-                allCancelled = false;
+            for (final HttpNfcLeaseMO lease : state.leases) {
+                try {
+                    lease.abortLease();
+                    anyCancelled = true;
+                    LOGGER.info("Aborted the transfer lease of request sequence {} ({})", sequence, state.command);
+                } catch (final Exception e) {
+                    LOGGER.warn("Failed to abort the transfer lease of request sequence {} ({})", sequence, state.command, e);
+                    allCancelled = false;
+                }
             }
+        } finally {
+            if (anyCancelled) {
+                state.cancelRequested = true;
+            }
+            state.cancelling = false;
         }
         return allCancelled;
     }
