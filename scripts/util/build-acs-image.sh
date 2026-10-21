@@ -333,7 +333,8 @@ detect_os() {
   local base_cleanup='journalctl --vacuum-time=1s; rm -rf /var/log/*; rm -f /root/.bash_history'
   case "$OS_FAMILY" in
     debian)
-      PACKAGES="qemu-guest-agent,open-vm-tools,xenstore-utils,libxenstore4"
+      # nfs-common is the NFS client, the cloud images do not have it and the tests mount NFS in the guest
+      PACKAGES="qemu-guest-agent,open-vm-tools,xenstore-utils,libxenstore4,nfs-common"
       CLEANUP="apt clean; apt autoclean; apt autoremove --purge -y; $base_cleanup" ;;
     rhel)
       # there is no xenstore package in the EL repositories
