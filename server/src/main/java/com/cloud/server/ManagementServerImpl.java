@@ -4463,7 +4463,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 ApiLimitEnabled, ApiLimitInterval, ApiLimitMax,
                 PublishActionEvent, PublishAlertEvent, PublishResourceStateEvent, PublishUsageEvent,
                 EventPurgeInterval, LinkLocalIpNums, HypervisorList, ManagementNetwork, EventPurgeDelay,
-                AlertPurgeInterval, AlertPurgeDelay, ControlCidr, ControlGateway, DetailBatchQuerySize,
+                AlertPurgeInterval, AlertPurgeDelay, ControlCidr, ControlGateway, DetailBatchQuerySize, DefaultPageSize, CheckPodCIDRs,
                 S3EnableRRS, S3MaxSingleUploadSize, CloudDnsName, InternalLbVmServiceOfferingId, RouterAggregationCommandEachTimeout,
                 VmwareRootDiskControllerType, VmwareSystemVmNicDeviceType, VmwareUseNexusVSwitch, VmwareUseDVSwitch,
                 XenServerSetupMultipath, XenServerHeartBeatTimeout, XenServerHeartBeatInterval, XenServerPVdriverVersion,

@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +49,7 @@ import junit.framework.TestCase;
 public class StoragePoolTagsDaoImplTest extends TestCase {
 
     @Mock
-    ConfigurationDao _configDao;
+    ConfigDepotImpl configDepot;
     @Mock
     SearchBuilder<StoragePoolTagVO> StoragePoolIdsSearch;
 
@@ -70,9 +72,15 @@ public class StoragePoolTagsDaoImplTest extends TestCase {
 
     @Before
     public void setup() {
-        when(_configDao.getValue(batchSizeConfigurationKey)).thenReturn(batchSizeValue);
+        ConfigKey.init(configDepot);
+        when(configDepot.getConfigStringValue(batchSizeConfigurationKey, ConfigKey.Scope.Global, null)).thenReturn(batchSizeValue);
         doReturn(storagePoolTagList).when(_storagePoolTagsDaoImpl).searchIncludingRemoved(
                 ArgumentMatchers.any(SearchCriteria.class), ArgumentMatchers.isNull(Filter.class), ArgumentMatchers.isNull(Boolean.class), ArgumentMatchers.eq(false));
+    }
+
+    @After
+    public void tearDown() {
+        ConfigKey.init(null);
     }
 
     @Test
@@ -82,7 +90,7 @@ public class StoragePoolTagsDaoImplTest extends TestCase {
 
     @Test
     public void testGetDetailsBatchSizeNull() {
-        when(_configDao.getValue(batchSizeConfigurationKey)).thenReturn(null);
+        when(configDepot.getConfigStringValue(batchSizeConfigurationKey, ConfigKey.Scope.Global, null)).thenReturn(null);
         assertEquals(Integer.parseInt(batchSizeDefaultValue), _storagePoolTagsDaoImpl.getDetailsBatchSize());
     }
 
@@ -108,7 +116,7 @@ public class StoragePoolTagsDaoImplTest extends TestCase {
 
     @Test
     public void testSearchByIdsStorageTagsIdsGreaterOrEqualThanBatchSize() {
-        when(_configDao.getValue(batchSizeConfigurationKey)).thenReturn(batchSizeLow);
+        when(configDepot.getConfigStringValue(batchSizeConfigurationKey, ConfigKey.Scope.Global, null)).thenReturn(batchSizeLow);
         doNothing().when(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(), ArgumentMatchers.any(Long[].class), ArgumentMatchers.anyList());
         _storagePoolTagsDaoImpl.searchByIds(storageTagsIds);
 
