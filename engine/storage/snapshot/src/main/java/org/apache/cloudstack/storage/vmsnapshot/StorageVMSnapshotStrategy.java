@@ -338,7 +338,9 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     @Override
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
-       if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
+       // A snapshot that failed before any disk snapshot was taken (e.g. freeze failed) is in Error state
+       // without STORAGE_SNAPSHOT details. Still handle it, as the default strategy needs a libvirt domain.
+       if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState()) && !VMSnapshot.State.Error.equals(vmSnapshot.getState())) {
            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), STORAGE_SNAPSHOT);
            if (CollectionUtils.isEmpty(vmSnapshotDetails)) {
                return StrategyPriority.CANT_HANDLE;
