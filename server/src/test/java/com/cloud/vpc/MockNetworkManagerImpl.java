@@ -759,6 +759,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void reconcileNicsForRunningVm(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context) {
+    }
+
+    @Override
     public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException {
