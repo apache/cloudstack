@@ -8380,6 +8380,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
         validateIfVmHasNoRules(vm, vmId);
+        validateIfVmHasNicAssociationsRequiringNicNetworksList(vm, cmd);
 
         final List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
         validateIfVolumesHaveNoSnapshots(volumes);
@@ -8475,6 +8476,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException(String.format("Snapshots exist for volume [%s]. Detach volume or remove snapshots for the volume before assigning VM to "
                         + "another user.", volume.getName()));
             }
+        }
+    }
+
+    /**
+     * A plain {@code networkids}/{@code iptonetworklist} move rebuilds every nic from scratch and has no way to
+     * express a trunk nic's associated networks, so {@link #cleanupOfOldOwnerNicsForNetwork} would otherwise drop
+     * them silently. Reject the move instead when the caller didn't pass {@code nicnetworkslist} to carry them.
+     */
+    protected void validateIfVmHasNicAssociationsRequiringNicNetworksList(UserVmVO vm, AssignVMCmd cmd) throws InvalidParameterValueException {
+        if (cmd.isSkipNetwork() || CollectionUtils.isNotEmpty(cmd.getNicNetworksList())) {
+            return;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (NicVO nic : nics) {
+            if (!nic.getMultiNetwork()) {
+                continue;
+            }
+            List<Long> associatedNetworkIds = _nicNetworkMapDao.listByNicId(nic.getId()).stream()
+                    .map(NicNetworkMapVO::getNetworkId)
+                    .collect(Collectors.toList());
+            throw new InvalidParameterValueException(String.format(
+                    "Nic [%s] of Instance [%s] is associated with network(s) %s. Assigning this Instance would drop "
+                            + "those associations; use %s to carry them to the new account instead of %s.",
+                    nic.getUuid(), vm.getUuid(), associatedNetworkIds, ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS));
         }
     }
 

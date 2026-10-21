@@ -997,6 +997,7 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmSupportsMigration(Mockito.any(), Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.nullable(Account.class), Mockito.nullable(Account.class), Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(Long.class));
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
+        Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNicAssociationsRequiringNicNetworksList(Mockito.any(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
 
@@ -2472,6 +2473,62 @@ public class UserVmManagerImplTest {
     }
 
     @Test
+    public void validateIfVmHasNicAssociationsRequiringNicNetworksListSkipsCheckWhenSkipNetworkIsSet() {
+        Mockito.doReturn(true).when(assignVmCmdMock).isSkipNetwork();
+
+        userVmManagerImpl.validateIfVmHasNicAssociationsRequiringNicNetworksList(userVmVoMock, assignVmCmdMock);
+
+        Mockito.verifyNoInteractions(nicDao);
+    }
+
+    @Test
+    public void validateIfVmHasNicAssociationsRequiringNicNetworksListSkipsCheckWhenNicNetworksListIsProvided() {
+        Mockito.doReturn(false).when(assignVmCmdMock).isSkipNetwork();
+        Mockito.doReturn(Collections.singletonList(Mockito.mock(BaseDeployVMCmd.NicNetworkGrouping.class))).when(assignVmCmdMock).getNicNetworksList();
+
+        userVmManagerImpl.validateIfVmHasNicAssociationsRequiringNicNetworksList(userVmVoMock, assignVmCmdMock);
+
+        Mockito.verifyNoInteractions(nicDao);
+    }
+
+    @Test
+    public void validateIfVmHasNicAssociationsRequiringNicNetworksListDoesNotThrowWhenNoNicHasAssociations() {
+        Mockito.doReturn(false).when(assignVmCmdMock).isSkipNetwork();
+        Mockito.doReturn(new ArrayList<>()).when(assignVmCmdMock).getNicNetworksList();
+        Mockito.doReturn(1L).when(userVmVoMock).getId();
+        NicVO ordinaryNic = mockNicWithMultiNetwork(false);
+        Mockito.doReturn(Collections.singletonList(ordinaryNic)).when(nicDao).listByVmId(1L);
+
+        userVmManagerImpl.validateIfVmHasNicAssociationsRequiringNicNetworksList(userVmVoMock, assignVmCmdMock);
+
+        Mockito.verifyNoInteractions(nicNetworkMapDao);
+    }
+
+    @Test
+    public void validateIfVmHasNicAssociationsRequiringNicNetworksListThrowsWhenATrunkNicExistsAndNicNetworksListIsMissing() {
+        Mockito.doReturn(false).when(assignVmCmdMock).isSkipNetwork();
+        Mockito.doReturn(new ArrayList<>()).when(assignVmCmdMock).getNicNetworksList();
+        Mockito.doReturn(1L).when(userVmVoMock).getId();
+        Mockito.doReturn("vm-uuid").when(userVmVoMock).getUuid();
+
+        NicVO trunkNic = mockNicWithMultiNetwork(true);
+        Mockito.doReturn(5L).when(trunkNic).getId();
+        Mockito.doReturn("nic-uuid").when(trunkNic).getUuid();
+        Mockito.doReturn(Collections.singletonList(trunkNic)).when(nicDao).listByVmId(1L);
+
+        NicNetworkMapVO associatedNetwork = Mockito.mock(NicNetworkMapVO.class);
+        Mockito.doReturn(42L).when(associatedNetwork).getNetworkId();
+        Mockito.doReturn(Collections.singletonList(associatedNetwork)).when(nicNetworkMapDao).listByNicId(5L);
+
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () ->
+                userVmManagerImpl.validateIfVmHasNicAssociationsRequiringNicNetworksList(userVmVoMock, assignVmCmdMock));
+
+        Assert.assertTrue(assertThrows.getMessage().contains("nic-uuid"));
+        Assert.assertTrue(assertThrows.getMessage().contains("vm-uuid"));
+        Assert.assertTrue(assertThrows.getMessage().contains("42"));
+    }
+
+    @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsTrueDoesNotCallVmResourceLimitCheck() throws ResourceAllocationException {
         List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<>();
@@ -3499,6 +3556,21 @@ public class UserVmManagerImplTest {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
         doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
+    }
+
+    @Test
+    public void moveVmToUserTestValidateIfVmHasNicAssociationsRequiringNicNetworksListThrowsInvalidParameterValueException() throws ResourceUnavailableException,
+            InsufficientCapacityException, ResourceAllocationException {
+
+        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
+
+        configureDoNothingForMethodsThatWeDoNotWantToTest();
+
+        doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateIfVmHasNicAssociationsRequiringNicNetworksList(Mockito.any(), Mockito.any());
 
         Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
     }
