@@ -434,9 +434,14 @@ class TestSnapshotStandaloneBackup(cloudstackTestCase):
                 UserName=cls.account.name,
                 DomainName=cls.account.domain
             )
-            cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
-            if cls.template == FAILED:
-                assert False, "get_test_template() failed to return template"
+            cls.template = Template.register(
+                cls.userapiclient,
+                cls.services["test_templates"][cls.hypervisor.lower()],
+                zoneid=cls.zone.id,
+                hypervisor=cls.hypervisor
+            )
+            cls._cleanup.append(cls.template)
+            cls.template.download(cls.apiclient)
             cls.ostypeid = cls.template.ostypeid
             cls.virtual_machine = VirtualMachine.create(
                 cls.userapiclient,
