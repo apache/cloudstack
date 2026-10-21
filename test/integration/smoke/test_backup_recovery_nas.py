@@ -21,7 +21,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account, Network, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
                              NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool)
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (get_domain, get_zone, get_suitable_test_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
 import time
@@ -39,9 +39,9 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
-        cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
+        cls.template = get_suitable_test_template(cls.api_client, cls.zone.id, cls.services["ostype"])
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
         cls._cleanup = []
@@ -245,7 +245,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             return
         self.destZone = zones[1]
 
-        template = get_template(self.api_client, self.destZone.id, self.services["ostype"])
+        template = get_suitable_test_template(self.api_client, self.destZone.id, self.services["ostype"])
 
         list_isolated_network_offerings_response = NetworkOffering.list(
             self.apiclient,

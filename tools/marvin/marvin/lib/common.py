@@ -74,7 +74,8 @@ from marvin.lib.utils import (validateList,
                               xsplit,
                               get_process_status,
                               random_gen,
-                              format_volume_to_ext3)
+                              format_volume_to_ext3,
+                              get_hypervisor_type)
 from marvin.lib.base import (PhysicalNetwork,
                              PublicIPAddress,
                              NetworkOffering,
@@ -516,19 +517,23 @@ def get_windows_template(
 
     return FAILED
 
-def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor, deploy_as_is=False):
+def get_suitable_test_template(apiclient, zoneid=None, ostypeid=None, hypervisor=None, deploy_as_is=False):
     '''
     @Name : get_suitable_test_template
     @Desc : Retrieves the test template information based upon inputs provided
-            For Xenserver, get_test_template is used for retrieving the template
-            while get_template is used for other hypervisors or when
-            get_test_template fails
+            For XenServer and KVM, get_test_template is used for retrieving the
+            shared public test template (tiny), which is registered by the
+            admin only when it is missing. get_template is used for other
+            hypervisors or when get_test_template fails
+            The hypervisor is detected from the hosts when it is not given
     @Input : returns a template"
     @Output : FAILED in case of any failure
               template Information matching the inputs
     '''
     template = FAILED
-    if hypervisor.lower() in ["xenserver"] or (hypervisor.lower() in ["vmware"] and deploy_as_is):
+    if hypervisor is None:
+        hypervisor = get_hypervisor_type(apiclient)
+    if hypervisor.lower() in ["xenserver", "kvm"] or (hypervisor.lower() in ["vmware"] and deploy_as_is):
         template = get_test_template(
             apiclient,
             zoneid,

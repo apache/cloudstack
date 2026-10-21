@@ -33,7 +33,7 @@ from marvin.lib.base import (Account,
                              Template)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                list_hosts,
                                list_volumes,
                                list_storage_pools)
@@ -60,11 +60,9 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         if cls.hypervisor.lower() != "kvm":
             raise unittest.SkipTest("Only KVM hypervisor is supported for deployment of a VM with volume/snapshot")
 
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.apiclient,
-            cls.zone.id,
-            account="system"
-        )
+            cls.zone.id)
         if cls.template == FAILED:
             assert False, "get_template failed to return template with description [system]"
 

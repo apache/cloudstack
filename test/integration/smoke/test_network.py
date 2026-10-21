@@ -45,7 +45,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_free_vlan,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                get_test_template,
                                list_hosts,
                                list_publicIP,
@@ -1925,8 +1925,8 @@ class TestSharedNetwork(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.template = get_template(cls.apiclient, cls.zone.id,
-                                    cls.services["ostype"])
+        cls.template = get_suitable_test_template(cls.apiclient, cls.zone.id,
+                                                  cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id

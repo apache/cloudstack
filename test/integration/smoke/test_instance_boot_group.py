@@ -26,7 +26,7 @@ from marvin.lib.base import (Account,
                              InstanceBootGroupReadinessRule)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_suitable_test_template)
 from marvin.lib.utils import (random_gen)
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import FAILED
@@ -51,13 +51,13 @@ class TestInstanceBootGroup(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.apiclient,
-            zone_id=cls.zone.id,
+            zoneid=cls.zone.id,
             hypervisor=cls.hypervisor
         )
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_suitable_test_template() failed to return template"
 
         cls._cleanup = []
         cls.account = Account.create(

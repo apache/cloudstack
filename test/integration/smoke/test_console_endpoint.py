@@ -21,7 +21,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_suitable_test_template)
 from nose.plugins.attrib import attr
 
 class TestConsoleEndpoint(cloudstackTestCase):
@@ -36,14 +36,14 @@ class TestConsoleEndpoint(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
 
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.hypervisor
+            hypervisor=cls.hypervisor
         )
 
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_suitable_test_template() failed to return template"
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 

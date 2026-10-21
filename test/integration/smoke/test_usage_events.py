@@ -24,7 +24,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_suitable_test_template)
 from marvin.codes import (PASS)
 
 class TestUsageEvents(cloudstackTestCase):
@@ -39,7 +39,7 @@ class TestUsageEvents(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
             cls.testdata["ostype"])

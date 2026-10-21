@@ -24,7 +24,7 @@ from marvin.lib.base import (Account,
                              Host, Pod, Cluster)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_suitable_test_template)
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
@@ -67,7 +67,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
 
     def deploy_vm(self, destination_id):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
-        template = get_template(
+        template = get_suitable_test_template(
             self.apiclient,
             self.zone.id
         )
@@ -112,7 +112,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         target_id = target_cluster.id
         cluster_hypervisor = target_cluster.hypervisortype
 
-        template = get_template(
+        template = get_suitable_test_template(
             self.apiclient,
             hypervisor=cluster_hypervisor
         )
@@ -153,7 +153,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.zoneid = target_pod.zoneid
         cmd.serviceofferingid = self.service_offering.id
 
-        template = get_template(
+        template = get_suitable_test_template(
             self.apiclient,
             hypervisor=host[0].hypervisortype
         )
@@ -193,7 +193,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         # Required parameters
         cmd.zoneid = self.zone.id
         cmd.serviceofferingid = self.service_offering.id
-        template = get_template(self.apiclient, zone_id=self.zone.id, hypervisor=host.hypervisor)
+        template = get_suitable_test_template(self.apiclient, zoneid=self.zone.id, hypervisor=host.hypervisor)
         cmd.templateid = template.id
 
         # Add optional deployment params
@@ -229,7 +229,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         # Required parameters
         cmd.zoneid = self.zone.id
         cmd.serviceofferingid = self.service_offering.id
-        template = get_template(self.apiclient, zone_id=self.zone.id, hypervisor=clusters[0].hypervisortype)
+        template = get_suitable_test_template(self.apiclient, zoneid=self.zone.id, hypervisor=clusters[0].hypervisortype)
         cmd.templateid = template.id
 
         # Add optional deployment params
