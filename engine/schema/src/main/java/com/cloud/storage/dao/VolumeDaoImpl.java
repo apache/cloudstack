@@ -23,13 +23,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.kms.KMSWrappedKeyVO;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
-import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +53,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -82,6 +86,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     private final SearchBuilder<VolumeVO> poolAndPathSearch;
     final GenericSearchBuilder<VolumeVO, Integer> CountByOfferingId;
     private final SearchBuilder<VolumeVO> kmsMigrationSearch;
+    private SearchBuilder<VolumeVO> removedWithPassphraseSearch;
+    private SearchBuilder<VolumeVO> removedWithLiveKmsWrappedKeySearch;
 
     @Inject
     ReservationDao reservationDao;
@@ -544,6 +550,32 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        boolean result = super.configure(name, params);
+
+        removedWithPassphraseSearch = createSearchBuilder();
+        removedWithPassphraseSearch.and("passphraseId", removedWithPassphraseSearch.entity().getPassphraseId(), Op.NNULL);
+        removedWithPassphraseSearch.and().op("removed", removedWithPassphraseSearch.entity().getRemoved(), Op.NNULL);
+        removedWithPassphraseSearch.or("state", removedWithPassphraseSearch.entity().getState(), Op.EQ);
+        removedWithPassphraseSearch.cp();
+        removedWithPassphraseSearch.done();
+
+        // Joins with the table of another DAO, so it is built here rather than in the constructor.
+        SearchBuilder<KMSWrappedKeyVO> liveWrappedKeySearch = kmsWrappedKeyDao.createSearchBuilder();
+        liveWrappedKeySearch.and("wrappedKeyRemoved", liveWrappedKeySearch.entity().getRemoved(), Op.NULL);
+
+        removedWithLiveKmsWrappedKeySearch = createSearchBuilder();
+        removedWithLiveKmsWrappedKeySearch.and().op("removed", removedWithLiveKmsWrappedKeySearch.entity().getRemoved(), Op.NNULL);
+        removedWithLiveKmsWrappedKeySearch.or("state", removedWithLiveKmsWrappedKeySearch.entity().getState(), Op.EQ);
+        removedWithLiveKmsWrappedKeySearch.cp();
+        removedWithLiveKmsWrappedKeySearch.join("wrappedKey", liveWrappedKeySearch, liveWrappedKeySearch.entity().getId(),
+                removedWithLiveKmsWrappedKeySearch.entity().getKmsWrappedKeyId(), JoinBuilder.JoinType.INNER);
+        removedWithLiveKmsWrappedKeySearch.done();
+
+        return result;
+    }
+
+    @Override
     @DB()
     public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
@@ -784,17 +816,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
-            // Clean up KMS wrapped key if volume was encrypted with KMS
-            if (entry.getKmsWrappedKeyId() != null) {
-                try {
-                    kmsWrappedKeyDao.remove(entry.getKmsWrappedKeyId());
-                    logger.debug("Removed KMS wrapped key [id={}] for volume [id={}, uuid={}]",
-                            entry.getKmsWrappedKeyId(), id, entry.getUuid());
-                } catch (Exception e) {
-                    logger.warn("Failed to remove KMS wrapped key [id={}] for volume [id={}, uuid={}]: {}",
-                            entry.getKmsWrappedKeyId(), id, entry.getUuid(), e.getMessage(), e);
-                }
-            }
             tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
@@ -1010,5 +1031,33 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("kmsWrappedKeyId", kmsWrappedKeyId);
         sc.setParameters("notDestroyed", Volume.State.Expunged);
         return listBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> listIncludingRemovedByKmsWrappedKeyId(long kmsWrappedKeyId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("kmsWrappedKeyId", kmsWrappedKeyId);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> listIncludingRemovedByPassphraseId(long passphraseId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("passphraseId", passphraseId);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> listRemovedOrExpungedWithKmsWrappedKey() {
+        SearchCriteria<VolumeVO> sc = removedWithLiveKmsWrappedKeySearch.create();
+        sc.setParameters("state", Volume.State.Expunged);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> listRemovedOrExpungedWithPassphrase() {
+        SearchCriteria<VolumeVO> sc = removedWithPassphraseSearch.create();
+        sc.setParameters("state", Volume.State.Expunged);
+        return listIncludingRemovedBy(sc);
     }
 }

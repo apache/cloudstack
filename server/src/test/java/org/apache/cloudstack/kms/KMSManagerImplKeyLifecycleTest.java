@@ -19,7 +19,13 @@ package org.apache.cloudstack.kms;
 
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
@@ -32,6 +38,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -44,8 +51,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -55,6 +64,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -82,6 +92,9 @@ public class KMSManagerImplKeyLifecycleTest {
 
     @Mock
     private VolumeDao volumeDao;
+
+    @Mock
+    private SnapshotDao snapshotDao;
 
     @Mock
     private KMSProvider kmsProvider;
@@ -126,61 +139,175 @@ public class KMSManagerImplKeyLifecycleTest {
 
     @Test
     public void testUnwrapKey_SucceedsWithHintVersion() {
-        Long wrappedKeyId = 1L;
-        Long kmsKeyId = 10L;
-        Long versionId = 5L;
+        mockWrappedKey(5L, "AES/CBC/PKCS5Padding");
+        mockDatabaseProfile();
+        KMSKekVersionVO version = mockVersion(5L, 1, KMSKekVersionVO.Status.Active);
+        when(kmsKekVersionDao.findById(5L)).thenReturn(version);
+        when(kmsProvider.unwrapKey(any(WrappedKey.class), anyLong())).thenReturn(new byte[32]);
 
-        KMSWrappedKeyVO wrappedVO = mock(KMSWrappedKeyVO.class);
-        when(wrappedVO.getKmsKeyId()).thenReturn(kmsKeyId);
-        when(wrappedVO.getKekVersionId()).thenReturn(versionId);
-        when(wrappedVO.getWrappedBlob()).thenReturn(new byte[]{0, 1});
-        when(kmsWrappedKeyDao.findById(wrappedKeyId)).thenReturn(wrappedVO);
-
-        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
-        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
-        when(kmsKey.getAlgorithm()).thenReturn("AES/GCM/NoPadding");
-        when(kmsKeyDao.findById(kmsKeyId)).thenReturn(kmsKey);
-
-        KMSKekVersionVO version = mock(KMSKekVersionVO.class);
-        when(version.getStatus()).thenReturn(KMSKekVersionVO.Status.Active);
-        when(version.getHsmProfileId()).thenReturn(20L);
-        when(version.getKekLabel()).thenReturn("kek-label");
-        when(kmsKekVersionDao.findById(versionId)).thenReturn(version);
-
-        HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.getProtocol()).thenReturn("database");
-        when(profile.isEnabled()).thenReturn(true);
-        when(hsmProfileDao.findById(20L)).thenReturn(profile);
-
-        when(kmsProvider.unwrapKey(any(WrappedKey.class), anyLong())).thenReturn(new byte[]{1, 2, 3});
-        doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
-
-        byte[] result = kmsManager.unwrapKey(wrappedKeyId);
+        byte[] result = kmsManager.unwrapKey(1L);
 
         assertNotNull(result);
-        verify(kmsKekVersionDao, never()).getVersionsForDecryption(kmsKeyId);
+        // The blob is unwrapped with the algorithm recorded with it
+        ArgumentCaptor<WrappedKey> wrappedKeyCaptor = ArgumentCaptor.forClass(WrappedKey.class);
+        verify(kmsProvider).unwrapKey(wrappedKeyCaptor.capture(), anyLong());
+        assertEquals("AES/CBC/PKCS5Padding", wrappedKeyCaptor.getValue().getAlgorithm());
+        verify(kmsKekVersionDao, never()).getVersionsForDecryption(10L);
     }
 
-    @Test(expected = KMSException.class)
-    public void testUnwrapKey_FallsBackToAllVersionsWhenNoHint() {
-        KMSWrappedKeyVO wrappedVO = mock(KMSWrappedKeyVO.class);
-        when(wrappedVO.getKmsKeyId()).thenReturn(10L);
-        when(wrappedVO.getKekVersionId()).thenReturn(null);
-        when(kmsWrappedKeyDao.findById(1L)).thenReturn(wrappedVO);
-        when(kmsKeyDao.findById(10L)).thenReturn(mock(KMSKeyVO.class));
+    @Test
+    public void testUnwrapKey_NoFallbackForCbcWhenRecordedVersionFails() {
+        mockWrappedKey(5L, "AES/CBC/PKCS5Padding");
+        mockDatabaseProfile();
+        KMSKekVersionVO version = mockVersion(5L, 1, KMSKekVersionVO.Status.Previous);
+        when(kmsKekVersionDao.findById(5L)).thenReturn(version);
+        when(kmsProvider.unwrapKey(any(WrappedKey.class), anyLong())).thenThrow(KMSException.wrapUnwrapFailed("Failed to unwrap key"));
 
-        kmsManager.unwrapKey(1L);
+        assertThrows(KMSException.class, () -> kmsManager.unwrapKey(1L));
+
+        // Another KEK could unwrap a CBC blob to a wrong key without an error
+        verify(kmsKekVersionDao, never()).getVersionsForDecryption(anyLong());
+        verify(kmsProvider).unwrapKey(any(WrappedKey.class), anyLong());
+    }
+
+    @Test
+    public void testUnwrapKey_FallsBackToOtherVersionsForAuthenticatedAlgorithm() {
+        mockWrappedKey(5L, "AES/GCM/NoPadding");
+        mockDatabaseProfile();
+        KMSKekVersionVO recordedVersion = mockVersion(5L, 1, KMSKekVersionVO.Status.Previous);
+        when(kmsKekVersionDao.findById(5L)).thenReturn(recordedVersion);
+        KMSKekVersionVO activeVersion = mockVersion(6L, 2, KMSKekVersionVO.Status.Active);
+        when(kmsKekVersionDao.getVersionsForDecryption(10L)).thenReturn(List.of(recordedVersion, activeVersion));
+        when(kmsProvider.unwrapKey(any(WrappedKey.class), anyLong()))
+                .thenThrow(KMSException.wrapUnwrapFailed("Failed to unwrap key"))
+                .thenReturn(new byte[32]);
+
+        byte[] result = kmsManager.unwrapKey(1L);
+
+        assertEquals(32, result.length);
+        // The recorded version and then the active one; the recorded version isn't tried twice
+        verify(kmsProvider, times(2)).unwrapKey(any(WrappedKey.class), anyLong());
+    }
+
+    @Test
+    public void testUnwrapKey_ThrowsForCbcWithoutRecordedVersion() {
+        mockWrappedKey(null, "AES/CBC/PKCS5Padding");
+
+        KMSException e = assertThrows(KMSException.class, () -> kmsManager.unwrapKey(1L));
+
+        // Nothing could be tried, so the key counts as gone
+        assertEquals(KMSException.ErrorType.KEK_NOT_FOUND, e.getErrorType());
+        verify(kmsKekVersionDao, never()).getVersionsForDecryption(anyLong());
+    }
+
+    @Test
+    public void testUnwrapKey_ThrowsKekNotFoundForArchivedVersion() {
+        mockWrappedKey(5L, "AES/GCM/NoPadding");
+        KMSKekVersionVO version = mockVersion(5L, 1, KMSKekVersionVO.Status.Archived);
+        when(kmsKekVersionDao.findById(5L)).thenReturn(version);
+
+        KMSException e = assertThrows(KMSException.class, () -> kmsManager.unwrapKey(1L));
+
+        // Its KEK was deleted, so no other version is tried either
+        assertEquals(KMSException.ErrorType.KEK_NOT_FOUND, e.getErrorType());
+        verify(kmsKekVersionDao, never()).getVersionsForDecryption(anyLong());
+        verify(kmsProvider, never()).unwrapKey(any(WrappedKey.class), anyLong());
     }
 
     @Test(expected = KMSException.class)
     public void testUnwrapKey_ThrowsWhenAllVersionsFail() {
-        KMSWrappedKeyVO wrappedVO = mock(KMSWrappedKeyVO.class);
-        when(wrappedVO.getKmsKeyId()).thenReturn(10L);
-        when(wrappedVO.getKekVersionId()).thenReturn(null);
-        when(kmsWrappedKeyDao.findById(1L)).thenReturn(wrappedVO);
-        when(kmsKeyDao.findById(10L)).thenReturn(mock(KMSKeyVO.class));
+        mockWrappedKey(null, "AES/GCM/NoPadding");
+        when(kmsKekVersionDao.getVersionsForDecryption(10L)).thenReturn(List.of());
 
         kmsManager.unwrapKey(1L);
+    }
+
+    @Test
+    public void testDeleteKMSWrappedKey_KeepsKeyNeededBySnapshot() {
+        Volume volume = mockVolumeWithWrappedKey();
+        SnapshotVO snapshot = mockSnapshot(Snapshot.State.BackedUp);
+        when(snapshotDao.searchByVolumes(List.of(1L))).thenReturn(List.of(snapshot));
+
+        assertFalse(kmsManager.deleteKMSWrappedKey(volume));
+
+        verify(kmsWrappedKeyDao, never()).remove(anyLong());
+    }
+
+    @Test
+    public void testDeleteKMSWrappedKey_RemovesKeyWhenOnlyDestroyedSnapshotsAreLeft() {
+        Volume volume = mockVolumeWithWrappedKey();
+        SnapshotVO snapshot = mockSnapshot(Snapshot.State.Destroyed);
+        when(snapshotDao.searchByVolumes(List.of(1L))).thenReturn(List.of(snapshot));
+        when(kmsWrappedKeyDao.remove(50L)).thenReturn(true);
+
+        assertTrue(kmsManager.deleteKMSWrappedKey(volume));
+
+        verify(kmsWrappedKeyDao).remove(50L);
+    }
+
+    /**
+     * Wrapped key 1 of KMS key 10 (volume encryption), recorded with the given KEK version and algorithm.
+     */
+    private KMSWrappedKeyVO mockWrappedKey(Long kekVersionId, String wrapAlgorithm) {
+        KMSWrappedKeyVO wrappedVO = mock(KMSWrappedKeyVO.class);
+        when(wrappedVO.getKmsKeyId()).thenReturn(10L);
+        when(wrappedVO.getKekVersionId()).thenReturn(kekVersionId);
+        Mockito.lenient().when(wrappedVO.getWrapAlgorithm()).thenReturn(wrapAlgorithm);
+        Mockito.lenient().when(wrappedVO.getWrappedBlob()).thenReturn(new byte[]{0, 1});
+        when(kmsWrappedKeyDao.findById(1L)).thenReturn(wrappedVO);
+
+        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
+        Mockito.lenient().when(kmsKey.getId()).thenReturn(10L);
+        Mockito.lenient().when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+        when(kmsKeyDao.findById(10L)).thenReturn(kmsKey);
+        return wrappedVO;
+    }
+
+    /**
+     * A KEK version of KMS key 10 in HSM profile 20 (see {@link #mockDatabaseProfile()}).
+     */
+    private KMSKekVersionVO mockVersion(Long id, int versionNumber, KMSKekVersionVO.Status status) {
+        KMSKekVersionVO version = mock(KMSKekVersionVO.class);
+        Mockito.lenient().when(version.getId()).thenReturn(id);
+        Mockito.lenient().when(version.getVersionNumber()).thenReturn(versionNumber);
+        Mockito.lenient().when(version.getStatus()).thenReturn(status);
+        Mockito.lenient().when(version.getHsmProfileId()).thenReturn(20L);
+        Mockito.lenient().when(version.getKekLabel()).thenReturn("kek-label-" + versionNumber);
+        return version;
+    }
+
+    /**
+     * HSM profile 20, an enabled profile of the "database" provider.
+     */
+    private void mockDatabaseProfile() {
+        HSMProfileVO profile = mock(HSMProfileVO.class);
+        when(profile.getProtocol()).thenReturn("database");
+        when(profile.isEnabled()).thenReturn(true);
+        when(hsmProfileDao.findById(20L)).thenReturn(profile);
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
+    }
+
+    /**
+     * Volume 1, the only volume using wrapped key 50.
+     */
+    private Volume mockVolumeWithWrappedKey() {
+        Volume volume = mock(Volume.class);
+        when(volume.getKmsWrappedKeyId()).thenReturn(50L);
+        KMSWrappedKeyVO wrappedKey = mock(KMSWrappedKeyVO.class);
+        when(wrappedKey.getId()).thenReturn(50L);
+        when(kmsWrappedKeyDao.findById(50L)).thenReturn(wrappedKey);
+        when(volumeDao.findByKmsWrappedKeyId(50L)).thenReturn(List.of());
+
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        when(volumeVO.getId()).thenReturn(1L);
+        when(volumeDao.listIncludingRemovedByKmsWrappedKeyId(50L)).thenReturn(List.of(volumeVO));
+        return volume;
+    }
+
+    private SnapshotVO mockSnapshot(Snapshot.State state) {
+        SnapshotVO snapshot = mock(SnapshotVO.class);
+        when(snapshot.getState()).thenReturn(state);
+        return snapshot;
     }
 
     @Test(expected = KMSException.class)
@@ -362,29 +489,49 @@ public class KMSManagerImplKeyLifecycleTest {
     }
 
     @Test
-    public void testDeleteUserKMSKey_ContinuesWhenKekDeletionFails() throws KMSException {
-        Long keyId = 1L;
+    public void testDeleteUserKMSKey_KeepsKeyWhenKekDeletionFails() throws KMSException {
+        KMSKeyVO key = mockDeletableKeyWithOneKekVersion();
+        doThrow(KMSException.kekOperationFailed("provider error")).when(kmsProvider).deleteKek(anyString());
+
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            assertThrows(CloudRuntimeException.class, () -> kmsManager.deleteUserKMSKey(key));
+
+            // The KEK is still in the HSM, so keep the key that refers to it
+            verify(kmsKeyDao, never()).remove(anyLong());
+        }
+    }
+
+    @Test
+    public void testDeleteUserKMSKey_ContinuesWhenKekIsAlreadyGone() throws KMSException {
+        KMSKeyVO key = mockDeletableKeyWithOneKekVersion();
+        doThrow(KMSException.kekNotFound("Key with label 'kek-label' not found in HSM")).when(kmsProvider).deleteKek(anyString());
+
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            kmsManager.deleteUserKMSKey(key);
+
+            verify(kmsKeyDao).remove(1L);
+        }
+    }
+
+    /**
+     * KMS key 1, not used by any wrapped key or volume, with one KEK version in a "database" HSM profile.
+     */
+    private KMSKeyVO mockDeletableKeyWithOneKekVersion() {
         KMSKeyVO key = mock(KMSKeyVO.class);
-        when(key.getId()).thenReturn(keyId);
-        when(kmsWrappedKeyDao.countByKmsKeyId(keyId)).thenReturn(0L);
-        when(volumeDao.existsWithKmsKey(keyId)).thenReturn(false);
+        when(key.getId()).thenReturn(1L);
+        when(kmsWrappedKeyDao.countByKmsKeyId(1L)).thenReturn(0L);
+        when(volumeDao.existsWithKmsKey(1L)).thenReturn(false);
 
         KMSKekVersionVO version = mock(KMSKekVersionVO.class);
         when(version.getHsmProfileId()).thenReturn(10L);
         when(version.getKekLabel()).thenReturn("kek-label");
-        when(kmsKekVersionDao.listByKmsKeyId(keyId)).thenReturn(List.of(version));
+        when(kmsKekVersionDao.listByKmsKeyId(1L)).thenReturn(List.of(version));
 
         HSMProfileVO profile = mock(HSMProfileVO.class);
         when(profile.getProtocol()).thenReturn("database");
         when(hsmProfileDao.findById(10L)).thenReturn(profile);
         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
-        doThrow(KMSException.kekOperationFailed("provider error")).when(kmsProvider).deleteKek(anyString());
-
-        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
-            kmsManager.deleteUserKMSKey(key);
-
-            verify(kmsKeyDao).remove(keyId);
-        }
+        return key;
     }
 
     @Test

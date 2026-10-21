@@ -32,12 +32,14 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -140,8 +142,10 @@ public class PKCS11HSMProviderTest {
 
         // Verify
         assertNotNull("Config should not be null", config);
-        assertEquals(3, config.size());
+        assertEquals(4, config.size());
         assertEquals("/path/to/lib.so", config.get("library"));
+        // Not configured, so the default
+        assertEquals(PKCS11HSMProvider.ALG_GCM, config.get(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL));
         // Note: In real code, DBEncryptionUtil.decrypt would be called
         // Here we just verify the structure is correct
         assertTrue("Config should contain pin", config.containsKey("pin"));
@@ -160,6 +164,91 @@ public class PKCS11HSMProviderTest {
 
         // Test
         Map<String, String> config = provider.loadProfileConfig(testProfileId);
+    }
+
+    @Test
+    public void testValidateProfileConfig_DefaultsWrapAlgorithmToGcm() {
+        Map<String, String> config = validConfig();
+
+        provider.validateProfileConfig(config);
+
+        assertEquals(PKCS11HSMProvider.ALG_GCM, config.get(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL));
+    }
+
+    @Test
+    public void testValidateProfileConfig_AcceptsLegacyCbc() {
+        Map<String, String> config = validConfig();
+        config.put(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL, PKCS11HSMProvider.ALG_CBC);
+
+        provider.validateProfileConfig(config);
+
+        assertEquals(PKCS11HSMProvider.ALG_CBC, config.get(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL));
+    }
+
+    @Test(expected = KMSException.class)
+    public void testValidateProfileConfig_RejectsUnknownWrapAlgorithm() {
+        Map<String, String> config = validConfig();
+        config.put(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL, "AES/ECB/PKCS5Padding");
+
+        provider.validateProfileConfig(config);
+    }
+
+    @Test
+    public void testValidateProfileConfig_KwpNeedsJava18() {
+        Map<String, String> config = validConfig();
+        config.put(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL, PKCS11HSMProvider.ALG_KWP);
+
+        if (Runtime.version().feature() >= 18) {
+            provider.validateProfileConfig(config);
+            assertEquals(PKCS11HSMProvider.ALG_KWP, config.get(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL));
+        } else {
+            assertThrows(KMSException.class, () -> provider.validateProfileConfig(config));
+        }
+    }
+
+    @Test(expected = KMSException.class)
+    public void testValidateProfileConfig_RequiresSlotSelection() {
+        Map<String, String> config = validConfig();
+        config.remove("slot");
+
+        provider.validateProfileConfig(config);
+    }
+
+    @Test
+    public void testValidateProfileConfig_AcceptsSlotListIndex() {
+        Map<String, String> config = validConfig();
+        config.remove("slot");
+        config.put("slot_list_index", "0");
+
+        provider.validateProfileConfig(config);
+    }
+
+    @Test(expected = KMSException.class)
+    public void testGetWrapAlgorithm_RequiresProfileId() {
+        provider.getWrapAlgorithm(null);
+    }
+
+    @Test
+    public void testGetWrapAlgorithm_UsesProfileDetail() {
+        HSMProfileDetailsVO library = mock(HSMProfileDetailsVO.class);
+        when(library.getName()).thenReturn("library");
+        when(library.getValue()).thenReturn("/path/to/lib.so");
+        HSMProfileDetailsVO slot = mock(HSMProfileDetailsVO.class);
+        when(slot.getName()).thenReturn("slot");
+        when(slot.getValue()).thenReturn("0");
+        HSMProfileDetailsVO wrapAlgorithm = mock(HSMProfileDetailsVO.class);
+        when(wrapAlgorithm.getName()).thenReturn(PKCS11HSMProvider.WRAP_ALGORITHM_DETAIL);
+        when(wrapAlgorithm.getValue()).thenReturn(PKCS11HSMProvider.ALG_CBC);
+        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(library, slot, wrapAlgorithm));
+
+        assertEquals(PKCS11HSMProvider.ALG_CBC, provider.getWrapAlgorithm(testProfileId));
+    }
+
+    private Map<String, String> validConfig() {
+        Map<String, String> config = new HashMap<>();
+        config.put("library", "/path/to/lib.so");
+        config.put("slot", "0");
+        return config;
     }
 
     /**
