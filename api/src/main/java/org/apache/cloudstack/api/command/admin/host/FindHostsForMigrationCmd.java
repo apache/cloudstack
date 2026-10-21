@@ -96,6 +96,7 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
             if (!suitableForMigration && vm != null) {
                 hostResponse.setUnsuitableReason(_mgr.getMultiNetworkNicUnsuitableReason(vm, host));
             }
+            hostResponse.setMigrationCaution(_mgr.getGuestBridgeStpMigrationCaution(host));
 
             hostResponse.setObjectName("host");
             hostResponses.add(hostResponse);

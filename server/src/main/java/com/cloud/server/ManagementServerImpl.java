@@ -1780,6 +1780,23 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return null;
     }
 
+    @Override
+    public String getGuestBridgeStpMigrationCaution(final Host host) {
+        // a legacy host's guest nics use per-VLAN dynamic bridges instead, so stp on the shared bridge is irrelevant there
+        final DetailVO vlanFilteringDetail = _detailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        final boolean vlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
+        if (!vlanFilteringEnabled) {
+            return null;
+        }
+        final DetailVO stpDetail = _detailsDao.findDetail(host.getId(), Host.HOST_GUEST_BRIDGE_STP_ENABLED);
+        final boolean stpEnabled = stpDetail != null && Boolean.parseBoolean(stpDetail.getValue());
+        if (!stpEnabled) {
+            return null;
+        }
+        return "This host's guest bridge has STP enabled; a new NIC here (from this migration, a nic plug, or a VM start) "
+                + "will be unreachable for about the bridge's forward delay x2 while STP's listening/learning states run";
+    }
+
     private void validateVgpuProfileForVmMigration(final VirtualMachineProfile vmProfile) {
         // Validate if the VM is using a vGPU profile that supports migration.
         ServiceOffering serviceOffering = vmProfile.getServiceOffering();

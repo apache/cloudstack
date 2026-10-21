@@ -480,6 +480,13 @@ public interface ManagementService {
     String getMultiNetworkNicUnsuitableReason(VirtualMachine vm, Host host);
 
     /**
+     * If host's guest bridge has STP enabled, returns a human-readable caution about the forward-delay outage
+     * every new port on it incurs (migration, nic plug, vm start); null otherwise. Applies to every VM, not
+     * just ones with a multi-VLAN trunk NIC - unlike getMultiNetworkNicUnsuitableReason, never excludes the host.
+     */
+    String getGuestBridgeStpMigrationCaution(Host host);
+
+    /**
      * Apply affinity group constraints and other exclusion rules for VM migration.
      * This is a helper method that can be used independently for per-iteration affinity checks in DRS.
      *

@@ -35,6 +35,7 @@ import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_SUPPORT;
+import static com.cloud.host.Host.HOST_GUEST_BRIDGE_STP_ENABLED;
 import static com.cloud.host.Host.HOST_VLAN_FILTERING_ENABLED;
 import static com.cloud.host.Host.HOST_VLAN_TRUNK_XML_SUPPORTED;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
@@ -4472,6 +4473,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
         cmd.getHostDetails().put(HOST_CDROM_MAX_COUNT, String.valueOf(LibvirtVMDef.MAX_CDROMS_PER_VM));
         cmd.getHostDetails().put(HOST_VLAN_FILTERING_ENABLED, String.valueOf(hostSupportsVlanFiltering()));
+        cmd.getHostDetails().put(HOST_GUEST_BRIDGE_STP_ENABLED, String.valueOf(isGuestBridgeStpEnabled()));
         cmd.getHostDetails().put(HOST_VLAN_TRUNK_XML_SUPPORTED, String.valueOf(hostSupportsVlanTrunkXml()));
         cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_SUPPORT, String.valueOf(hostSupportsVddkBlockCopy()));
         cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyInPlaceFinalization()));
@@ -6355,6 +6357,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return "1".equals(FileUtils.readFileToString(vlanFilteringFile).trim());
         } catch (IOException e) {
             LOGGER.warn("Failed to read vlan_filtering state for bridge " + bridgeName, e);
+            return false;
+        }
+    }
+
+    // whether STP is enabled on this host's guest bridge - delays new ports (vm start, nic plug, migration) ~2x the forward delay before they forward traffic
+    public boolean isGuestBridgeStpEnabled() {
+        return isBridgeStpEnabled(guestBridgeName);
+    }
+
+    protected boolean isBridgeStpEnabled(String bridgeName) {
+        if (StringUtils.isBlank(bridgeName)) {
+            return false;
+        }
+        File stpStateFile = new File("/sys/class/net/" + bridgeName + "/bridge/stp_state");
+        if (!stpStateFile.exists()) {
+            return false;
+        }
+        try {
+            return !"0".equals(FileUtils.readFileToString(stpStateFile).trim());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to read stp_state for bridge " + bridgeName, e);
             return false;
         }
     }
