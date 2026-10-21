@@ -64,6 +64,7 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.dbclient = cls.testClient.getDbConnection()
         cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         cls._cleanup = []
 
@@ -402,6 +403,11 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         if cancelled:
             self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
             self.assertFalse(volumes, "Cancelled creation left volume %s in state %s" % (volumeid, volumes[0].state if volumes else None))
+            # the usage record opened at allocation must be closed, or never opened
+            usage_events = [row[0] for row in (self.dbclient.execute(
+                "select type from cloud.usage_event where resource_name = '%s' order by id" % cmd.name) or [])]
+            self.assertIn(usage_events, [[], ["VOLUME.CREATE", "VOLUME.DELETE"]],
+                          "Cancelled creation left usage events %s for volume %s" % (usage_events, volumeid))
         else:
             self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
             self.assertNotEqual([v.state for v in volumes], ["Destroy"], "Volume %s left in Destroy" % volumeid)
