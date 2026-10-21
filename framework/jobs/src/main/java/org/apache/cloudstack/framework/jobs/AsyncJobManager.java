@@ -49,6 +49,9 @@ public interface AsyncJobManager extends Manager {
     /** Why the job, or the API job a VM work job runs for, is being or has been cancelled; null when it is not. */
     String getCancellationReason(long jobId);
 
+    /** True while the job's work jobs exist and all still wait in their sync queue, untaken by any server: nothing of its work has started. */
+    boolean hasOnlyQueuedWork(long jobId);
+
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
