@@ -64,13 +64,22 @@ public class XenServerTaskRegistryTest {
     }
 
     @Test
-    public void taskCreatedAfterCancelIsReportedSoTheResourceCancelsItImmediately() throws Exception {
+    public void taskStartedWhileTheCancelRunsIsReportedButTheUndoAfterwardsIsNot() throws Exception {
         final Task first = task("OpaqueRef:first", Types.TaskStatusType.PENDING, Types.TaskStatusType.CANCELLED);
+        final Task racingTask = task("OpaqueRef:racing", Types.TaskStatusType.PENDING);
+        final AtomicBoolean racing = new AtomicBoolean();
+        Mockito.doAnswer(invocation -> {
+            racing.set(XenServerTaskRegistry.taskStarted(racingTask, connection));
+            return null;
+        }).when(first).cancelAsync(connection);
         registry.beginRequest(SEQ, "MigrateCommand");
         XenServerTaskRegistry.taskStarted(first, connection);
+
         Assert.assertTrue(registry.cancel(SEQ));
 
-        Assert.assertTrue(XenServerTaskRegistry.taskStarted(task("OpaqueRef:late", Types.TaskStatusType.PENDING), connection));
+        Assert.assertTrue(racing.get());
+        Assert.assertFalse(XenServerTaskRegistry.taskStarted(task("OpaqueRef:undo", Types.TaskStatusType.PENDING), connection));
+        Assert.assertTrue(registry.wasCancelRequested(SEQ));
     }
 
     @Test

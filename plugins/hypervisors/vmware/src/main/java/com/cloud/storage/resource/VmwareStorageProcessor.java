@@ -1918,6 +1918,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
             } finally {
                 if (vmMo != null) {
                     ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
+                    if (snapshotMor == null && backupResult == null) {
+                        try {
+                            if (vmMo.isConsolidationNeeded()) {
+                                logger.info("Consolidating the disks of VM {} after its snapshot was not created", vmMo.getName());
+                                vmMo.consolidateVmDisks();
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Unable to consolidate the disks of VM {} after its snapshot was not created", vmMo.getName(), e);
+                        }
+                    }
                     if (snapshotMor != null) {
                         vmMo.removeSnapshot(snapshotUuid, false);
 
