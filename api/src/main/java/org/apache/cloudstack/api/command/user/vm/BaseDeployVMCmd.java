@@ -61,12 +61,14 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.NetworkService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
@@ -523,6 +525,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     public List<Long> getNetworkIds() {
+        rejectNicNetworksListForNonRootAdmin();
         if (MapUtils.isNotEmpty(nicNetworksList)) {
             if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null
                     || MapUtils.isNotEmpty(ipToNetworkList) || MapUtils.isNotEmpty(vAppNetworks)) {
@@ -552,6 +555,23 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
            }
        }
         return networkIds;
+    }
+
+    // nicnetworkslist is authorized={RoleType.Admin}; the framework drops it silently for other callers instead of rejecting it.
+    private void rejectNicNetworksListForNonRootAdmin() {
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            return;
+        }
+        Map<String, String> rawParams = getFullUrlParams();
+        boolean nicNetworksListWasSupplied = rawParams != null && rawParams.keySet().stream()
+                .anyMatch(key -> key.startsWith(ApiConstants.NIC_NETWORKS_LIST));
+        if (!nicNetworksListWasSupplied) {
+            return;
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        if (!Account.Type.ADMIN.equals(caller.getType())) {
+            throw new PermissionDeniedException(String.format("Only a root admin can use %s.", ApiConstants.NIC_NETWORKS_LIST));
+        }
     }
 
     public String getName() {

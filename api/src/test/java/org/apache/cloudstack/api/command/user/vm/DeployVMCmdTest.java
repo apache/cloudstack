@@ -34,16 +34,21 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.BootMode;
 import org.apache.cloudstack.api.ApiConstants.BootType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkService;
+import com.cloud.user.Account;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.network.Network;
@@ -356,6 +361,63 @@ public class DeployVMCmdTest {
             cmd.getNetworkIds();
         });
         assertTrue(thrownException.getMessage().contains("nicnetworkslist"));
+    }
+
+    @Test
+    public void testGetNetworkIdsRejectsNicNetworksListForNonAdminCaller() {
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", null);
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("nicnetworkslist[0].networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+
+        Account caller = mock(Account.class);
+        when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(caller);
+
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+
+            PermissionDeniedException thrown = assertThrows(PermissionDeniedException.class, cmd::getNetworkIds);
+            assertTrue(thrown.getMessage().contains(ApiConstants.NIC_NETWORKS_LIST));
+        }
+    }
+
+    @Test
+    public void testGetNetworkIdsAllowsNicNetworksListForRootAdminCaller() {
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", null);
+        ReflectionTestUtils.setField(cmd, "networkIds", null);
+        ReflectionTestUtils.setField(cmd, "vAppNetworks", null);
+        ReflectionTestUtils.setField(cmd, "ipToNetworkList", null);
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("nicnetworkslist[0].networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+
+        Account caller = mock(Account.class);
+        when(caller.getType()).thenReturn(Account.Type.ADMIN);
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(caller);
+
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+
+            assertNull(cmd.getNetworkIds());
+        }
+    }
+
+    @Test
+    public void testGetNetworkIdsDoesNotRejectWhenNicNetworksListKeyAbsentFromRawParams() {
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", null);
+        ReflectionTestUtils.setField(cmd, "networkIds", Arrays.asList(1L, 2L));
+        ReflectionTestUtils.setField(cmd, "vAppNetworks", null);
+        ReflectionTestUtils.setField(cmd, "ipToNetworkList", null);
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+
+        List<Long> result = cmd.getNetworkIds();
+
+        assertEquals(Arrays.asList(1L, 2L), result);
     }
 
     @Test
