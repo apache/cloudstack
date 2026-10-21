@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
@@ -1415,9 +1416,11 @@ public class CommandSetupHelper {
     }
 
     protected void addNicVlanMappingToVmData(VmDataCommand cmd, UserVm vm, NicVO nic) {
-        if (!nic.getMultiNetwork() || !VirtualMachineManager.AllowExposeNicVlanMapping.valueIn(vm.getAccountId())) {
-            return;
-        }
+        boolean exposeMapping = nic.getMultiNetwork() && VirtualMachineManager.AllowExposeNicVlanMapping.valueIn(vm.getAccountId());
+        setOrClearVmData(cmd, NetworkModel.METATDATA_DIR, NetworkModel.NIC_VLAN_MAPPING_FILE, exposeMapping, () -> buildNicVlanMappingJson(nic));
+    }
+
+    private String buildNicVlanMappingJson(NicVO nic) {
         List<NicNetworkMapVO> associations = _nicNetworkMapDao.listByNicId(nic.getId());
         List<NicVlanMappingEntry> mappings = new ArrayList<>();
         for (NicNetworkMapVO association : associations) {
@@ -1428,10 +1431,15 @@ public class CommandSetupHelper {
             String vlanTag = BroadcastDomainType.Vlan.getValueFrom(associatedNetwork.getBroadcastUri());
             mappings.add(new NicVlanMappingEntry(associatedNetwork.getUuid(), associatedNetwork.getName(), vlanTag));
         }
-        // empty-string data is vmdata.py's signal to delete a previously-written file: once a nic has been
-        // trunked, its last association being removed must actively clear any stale file left from before,
-        // not just skip writing - the guest must never see associations that no longer exist
-        cmd.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.NIC_VLAN_MAPPING_FILE, mappings.isEmpty() ? "" : new Gson().toJson(mappings));
+        return mappings.isEmpty() ? "" : new Gson().toJson(mappings);
+    }
+
+    /**
+     * Sends the current value when {@code shouldExist}, otherwise sends "" - vmdata.py's signal to delete a
+     * previously-written file - so a guest never keeps seeing stale metadata once the condition no longer holds.
+     */
+    private void setOrClearVmData(VmDataCommand cmd, String folder, String file, boolean shouldExist, Supplier<String> valueSupplier) {
+        cmd.addVmData(folder, file, shouldExist ? valueSupplier.get() : "");
     }
 
     private static final class NicVlanMappingEntry {

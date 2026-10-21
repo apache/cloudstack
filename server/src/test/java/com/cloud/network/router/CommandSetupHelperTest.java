@@ -151,7 +151,7 @@ public class CommandSetupHelperTest {
     }
 
     @Test
-    public void testAddNicVlanMappingToVmDataSkipsWhenNicNotTrunked() {
+    public void testAddNicVlanMappingToVmDataClearsFileWhenNicNotTrunked() {
         VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
         NicVO nic = Mockito.mock(NicVO.class);
         when(nic.getMultiNetwork()).thenReturn(false);
@@ -159,12 +159,15 @@ public class CommandSetupHelperTest {
 
         commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
 
-        Assert.assertTrue(vmDataCommand.getVmData().isEmpty());
+        List<String[]> metadata = vmDataCommand.getVmData();
+        Assert.assertEquals(1, metadata.size());
+        Assert.assertEquals(NetworkModel.NIC_VLAN_MAPPING_FILE, metadata.get(0)[1]);
+        Assert.assertEquals("", metadata.get(0)[2]);
         Mockito.verifyNoInteractions(nicNetworkMapDao);
     }
 
     @Test
-    public void testAddNicVlanMappingToVmDataSkipsWhenConfigDisabled() {
+    public void testAddNicVlanMappingToVmDataClearsFileWhenConfigDisabled() {
         VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
         NicVO nic = Mockito.mock(NicVO.class);
         when(nic.getMultiNetwork()).thenReturn(true);
@@ -173,7 +176,10 @@ public class CommandSetupHelperTest {
 
         commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
 
-        Assert.assertTrue(vmDataCommand.getVmData().isEmpty());
+        List<String[]> metadata = vmDataCommand.getVmData();
+        Assert.assertEquals(1, metadata.size());
+        Assert.assertEquals(NetworkModel.NIC_VLAN_MAPPING_FILE, metadata.get(0)[1]);
+        Assert.assertEquals("", metadata.get(0)[2]);
         Mockito.verifyNoInteractions(nicNetworkMapDao);
     }
 
