@@ -1454,6 +1454,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String requestedIp4 = requested != null ? requested.getIp4Address() : null;
         String requestedIp6 = requested != null ? requested.getIp6Address() : null;
         String ip4Address = _ipAddrMgr.allocateGuestIP(network, requestedIp4);
+        if (ip4Address == null) {
+            throw new InsufficientAddressCapacityException(
+                    String.format("Unable to allocate a guest IPv4 address in network [name=%s, id=%s, uuid=%s]", network.getName(), network.getId(), network.getUuid()),
+                    DataCenter.class, network.getDataCenterId());
+        }
         String ip6Address = StringUtils.isNotBlank(network.getIp6Cidr()) ? ipv6AddrMgr.allocateGuestIpv6(network, requestedIp6) : null;
         return new Pair<>(ip4Address, ip6Address);
     }
