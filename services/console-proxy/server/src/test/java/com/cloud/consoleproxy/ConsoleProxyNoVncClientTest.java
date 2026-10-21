@@ -29,4 +29,17 @@ public class ConsoleProxyNoVncClientTest {
         byte[] expectedBytes = new byte[]{4, 0, 3, 0, 32, 24, 0, 1, 0, -1, 0, -1, 0, -1, 16, 8, 0, 0, 0, 0, 0, 0, 0, 22, 115, 101, 114, 118, 101, 114, 49, 50, 51, 44, 32, 98, 97, 99, 107, 101, 110, 100, 58, 84, 76, 83};
         Assert.assertArrayEquals(newServerInit, expectedBytes);
     }
+
+    @Test
+    public void updateFrontEndActivityTimeUpdatesTimestamp() throws InterruptedException {
+        ConsoleProxyNoVncClient client = new ConsoleProxyNoVncClient(null);
+
+        long previousActivityTime = client.getClientLastFrontEndActivityTime();
+
+        Thread.sleep(10);
+        client.updateFrontEndActivityTime();
+
+        long updatedActivityTime = client.getClientLastFrontEndActivityTime();
+        Assert.assertTrue(updatedActivityTime > previousActivityTime);
+    }
 }
