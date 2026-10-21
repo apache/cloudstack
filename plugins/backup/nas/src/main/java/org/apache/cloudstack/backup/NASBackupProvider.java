@@ -93,6 +93,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * tell a backup anchor apart from a user snapshot on the same image.
      */
     private static final String RBD_SNAPSHOT_PREFIX = "csbackup-";
+    private static final String QCOW2_BITMAP_PREFIX = "backup-";
 
     ConfigKey<Integer> NASBackupRestoreMountTimeout = new ConfigKey<>("Advanced", Integer.class,
             "nas.backup.restore.mount.timeout",
@@ -351,15 +352,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (IncrementalFlavor.UNSUPPORTED.equals(flavor)) {
             return ChainDecision.legacyFull();
         }
-        final boolean rbd = IncrementalFlavor.RBD.equals(flavor);
-
-        final String newAnchor = (rbd ? RBD_SNAPSHOT_PREFIX : "backup-") + System.currentTimeMillis() / 1000L;
+        final String newAnchor = anchorPrefixOf(flavor) + System.currentTimeMillis() / 1000L;
 
         // A QEMU dirty bitmap needs a live QEMU process, so a stopped VM always takes a full.
         // RBD snapshots are taken inside Ceph and work exactly the same whether the VM runs or
         // not, so RBD chains keep their cadence across a stop/start.
-        if (!rbd && VirtualMachine.State.Stopped.equals(vm.getState())) {
-            return ChainDecision.fullStart(newAnchor);
+        if (!flavorSupportsIncrementalWhileStopped(flavor) && VirtualMachine.State.Stopped.equals(vm.getState())) {
+            return fullDecision(flavor, newAnchor);
         }
 
         // The VM's active_checkpoint_id records the anchor that currently exists on the storage:
@@ -370,12 +369,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         Integer fullEvery = NASBackupFullEvery.valueIn(vm.getDataCenterId());
         if (fullEvery == null || fullEvery <= 1) {
             // Disabled or every-backup-is-full mode.
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
 
         // 1. No anchor on the storage => nothing to take an incremental against.
         if (activeCheckpoint == null) {
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
 
         // 2. The most-recent BackedUp backup is the only safe parent — after restore the
@@ -386,29 +385,29 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (parent == null || !activeCheckpoint.equals(readDetail(parent, NASBackupChainKeys.BITMAP_NAME))) {
             LOG.debug("VM {} latest backup does not match active_checkpoint_id={} — forcing full",
                     vm.getInstanceName(), activeCheckpoint);
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
 
         // A chain cannot change storage flavour halfway through: the on-NAS files of a qcow2 chain
         // and of an RBD chain are not interchangeable. A volume migration between pool types
         // therefore starts a new chain in the new format.
         String parentFormat = chainFormatOf(parent);
-        String requiredFormat = rbd ? NASBackupChainKeys.FORMAT_RBD_DIFF : NASBackupChainKeys.FORMAT_QCOW2;
+        String requiredFormat = flavorToFormat(flavor);
         if (!requiredFormat.equals(parentFormat)) {
             LOG.debug("VM {} parent backup {} is a {} chain but the VM's storage now needs {} — forcing full",
                     vm.getInstanceName(), parent.getUuid(), parentFormat, requiredFormat);
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
 
         String parentChainId = readDetail(parent, NASBackupChainKeys.CHAIN_ID);
         int parentChainPosition = chainPosition(parent);
         if (parentChainId == null || parentChainPosition == Integer.MAX_VALUE) {
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
 
         // Force a fresh full when the chain has reached the configured length.
         if (parentChainPosition + 1 >= fullEvery) {
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
 
         // The script needs the parent backup's on-NAS file path PER VOLUME so it can rebase
@@ -421,16 +420,43 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (parentPaths == null) {
             LOG.debug("VM {} parent backup {} volume layout no longer matches current VM — forcing full",
                     vm.getInstanceName(), parent.getUuid());
-            return fullDecision(rbd, newAnchor);
+            return fullDecision(flavor, newAnchor);
         }
-        return rbd
-                ? ChainDecision.rbdIncremental(newAnchor, activeCheckpoint, parentChainId, parentChainPosition + 1)
-                : ChainDecision.incremental(newAnchor, activeCheckpoint, parentPaths, parentChainId, parentChainPosition + 1);
+        return incrementalDecision(flavor, newAnchor, activeCheckpoint, parentPaths, parentChainId, parentChainPosition + 1);
     }
 
     /** Start of a fresh chain in the format the VM's storage calls for. */
-    private ChainDecision fullDecision(boolean rbd, String newAnchor) {
-        return rbd ? ChainDecision.rbdFullStart(newAnchor) : ChainDecision.fullStart(newAnchor);
+    private ChainDecision fullDecision(IncrementalFlavor flavor, String newAnchor) {
+        return IncrementalFlavor.RBD.equals(flavor) ? ChainDecision.rbdFullStart(newAnchor) : ChainDecision.fullStart(newAnchor);
+    }
+
+    /** Next link of an existing chain, in the format the VM's storage calls for. */
+    private ChainDecision incrementalDecision(IncrementalFlavor flavor, String newAnchor, String parentAnchor,
+            List<String> parentPaths, String chainId, int chainPosition) {
+        // An RBD chain reads its delta from the parent snapshot inside Ceph, so it carries no
+        // parent paths to rebase onto.
+        return IncrementalFlavor.RBD.equals(flavor)
+                ? ChainDecision.rbdIncremental(newAnchor, parentAnchor, chainId, chainPosition)
+                : ChainDecision.incremental(newAnchor, parentAnchor, parentPaths, chainId, chainPosition);
+    }
+
+    /** The prefix every anchor of a chain of this flavour is named with. */
+    private String anchorPrefixOf(IncrementalFlavor flavor) {
+        return IncrementalFlavor.RBD.equals(flavor) ? RBD_SNAPSHOT_PREFIX : QCOW2_BITMAP_PREFIX;
+    }
+
+    /** The on-NAS chain format a chain of this flavour is written in. */
+    private String flavorToFormat(IncrementalFlavor flavor) {
+        return IncrementalFlavor.RBD.equals(flavor) ? NASBackupChainKeys.FORMAT_RBD_DIFF : NASBackupChainKeys.FORMAT_QCOW2;
+    }
+
+    /**
+     * Whether a chain of this flavour can be continued while the Instance is stopped. An RBD
+     * anchor is a snapshot inside Ceph, which is taken whether the Instance runs or not; a QCOW2
+     * anchor is a QEMU dirty bitmap, which needs the live QEMU process that holds it.
+     */
+    private boolean flavorSupportsIncrementalWhileStopped(IncrementalFlavor flavor) {
+        return IncrementalFlavor.RBD.equals(flavor);
     }
 
     /**
@@ -890,7 +916,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setRestoreVolumePools(volumePoolsAndPaths.first());
         restoreCommand.setRestoreVolumePaths(volumePoolsAndPaths.second());
         restoreCommand.setBackupFiles(getBackupFiles(backedVolumes));
-        applyBackupFormat(restoreCommand, backup);
+        applyBackupFormatToRestoreCommand(restoreCommand, backup);
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
@@ -921,7 +947,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * so the whole chain from the full anchor up to this backup travels with the command and the
      * agent replays it in order.
      */
-    private void applyBackupFormat(RestoreBackupCommand restoreCommand, Backup backup) {
+    private void applyBackupFormatToRestoreCommand(RestoreBackupCommand restoreCommand, Backup backup) {
         if (!NASBackupChainKeys.FORMAT_RBD_DIFF.equals(chainFormatOf(backup))) {
             return;
         }
@@ -1062,7 +1088,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
         restoreCommand.setBackupFiles(Collections.singletonList(matchingVolume.getPath()));
-        applyBackupFormat(restoreCommand, backup);
+        applyBackupFormatToRestoreCommand(restoreCommand, backup);
 
         BackupAnswer answer;
         try {
