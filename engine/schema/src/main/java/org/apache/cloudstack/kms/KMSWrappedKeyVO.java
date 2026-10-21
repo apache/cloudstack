@@ -61,6 +61,16 @@ public class KMSWrappedKeyVO {
     @Column(name = "wrapped_blob", nullable = false)
     private byte[] wrappedBlob;
 
+    @Column(name = "wrap_algorithm", nullable = false)
+    private String wrapAlgorithm;
+
+    /**
+     * Set on every row that existed when upgrading from 4.23. Such a blob may hold a volume key that was migrated
+     * from a legacy passphrase in the wrong format; it is checked once and the flag is cleared.
+     */
+    @Column(name = "format_check_pending", nullable = false)
+    private boolean formatCheckPending;
+
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
@@ -152,6 +162,22 @@ public class KMSWrappedKeyVO {
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
+    public String getWrapAlgorithm() {
+        return wrapAlgorithm;
+    }
+
+    public void setWrapAlgorithm(String wrapAlgorithm) {
+        this.wrapAlgorithm = wrapAlgorithm;
+    }
+
+    public boolean isFormatCheckPending() {
+        return formatCheckPending;
+    }
+
+    public void setFormatCheckPending(boolean formatCheckPending) {
+        this.formatCheckPending = formatCheckPending;
+    }
+
     public Date getCreated() {
         return created;
     }
@@ -171,6 +197,6 @@ public class KMSWrappedKeyVO {
     @Override
     public String toString() {
         return String.format("KMSWrappedKey %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "kmsKeyId", "kekVersionId", "zoneId", "created", "removed"));
+                this, "id", "uuid", "kmsKeyId", "kekVersionId", "zoneId", "wrapAlgorithm", "created", "removed"));
     }
 }

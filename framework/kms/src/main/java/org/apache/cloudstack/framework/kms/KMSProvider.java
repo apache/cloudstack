@@ -104,6 +104,19 @@ public interface KMSProvider extends Configurable, Adapter {
     void deleteKek(String kekId) throws KMSException;
 
     /**
+     * Delete a KEK from the secure backend using an explicit HSM profile. Use this when the KEK has no
+     * version record (yet), so the provider can't find its profile from the KEK identifier.
+     * WARNING: This will make all DEKs wrapped by this KEK unrecoverable.
+     *
+     * @param kekId        the KEK identifier to delete
+     * @param hsmProfileId HSM profile ID holding the KEK (null for auto-resolution/default)
+     * @throws KMSException if deletion fails or KEK not found
+     */
+    default void deleteKek(String kekId, Long hsmProfileId) throws KMSException {
+        deleteKek(kekId);
+    }
+
+    /**
      * Validates the configuration details for this provider before saving an HSM
      * profile.
      * Implementations should override this to perform provider-specific validation.
@@ -123,6 +136,17 @@ public interface KMSProvider extends Configurable, Adapter {
      * @throws KMSException if check fails
      */
     boolean isKekAvailable(String kekId) throws KMSException;
+
+    /**
+     * Returns the algorithm this provider uses to wrap new keys under the given HSM profile
+     * (e.g. {@code AES/GCM/NoPadding}). The algorithm is recorded with every wrapped key so it can
+     * still be unwrapped after the profile or the provider default changes.
+     *
+     * @param hsmProfileId optional HSM profile ID (null for auto-resolution/default)
+     * @return the wrap algorithm name
+     * @throws KMSException if the profile cannot be resolved or has no valid algorithm configured
+     */
+    String getWrapAlgorithm(Long hsmProfileId) throws KMSException;
 
     /**
      * Wrap (encrypt) a plaintext Data Encryption Key with a KEK.

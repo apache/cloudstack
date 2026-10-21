@@ -191,4 +191,27 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     VolumeVO findByExternalUuid(String externalUuid);
 
     List<VolumeVO> findByKmsWrappedKeyId(Long kmsWrappedKeyId);
+
+    /**
+     * All volumes that reference the given KMS wrapped key, including removed ones. Snapshots of a removed volume
+     * still need the key of that volume.
+     */
+    List<VolumeVO> listIncludingRemovedByKmsWrappedKeyId(long kmsWrappedKeyId);
+
+    /**
+     * All volumes that reference the given passphrase, including removed ones.
+     */
+    List<VolumeVO> listIncludingRemovedByPassphraseId(long passphraseId);
+
+    /**
+     * Removed or expunged volumes whose KMS wrapped key has not been removed yet. Their key may no longer be needed
+     * once their snapshots are gone; used by the storage garbage collector to release it.
+     */
+    List<VolumeVO> listRemovedOrExpungedWithKmsWrappedKey();
+
+    /**
+     * Removed or expunged volumes that still reference a passphrase. Used by the storage garbage collector to release
+     * the passphrase once it is no longer needed.
+     */
+    List<VolumeVO> listRemovedOrExpungedWithPassphrase();
 }
