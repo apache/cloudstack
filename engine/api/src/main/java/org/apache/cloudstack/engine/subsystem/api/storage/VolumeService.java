@@ -72,6 +72,12 @@ public interface VolumeService {
      */
     AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume);
 
+    /**
+     * Releases the encryption key (KMS wrapped key or legacy passphrase) of removed or expunged volumes once nothing
+     * needs it anymore, e.g. after the last snapshot of such a volume was deleted.
+     */
+    void releaseKeysOfRemovedVolumes();
+
     void ensureVolumeIsExpungeReady(long volumeId);
 
     boolean cloneVolume(long volumeId, long baseVolId);

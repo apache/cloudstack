@@ -32,4 +32,10 @@ public interface KMSWrappedKeyDao extends GenericDao<KMSWrappedKeyVO, Long> {
     List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId, int limit);
 
     long countByKekVersionId(Long kekVersionId);
+
+    /**
+     * Rows still flagged for the one-time format check after the upgrade from 4.23
+     * (see {@link KMSWrappedKeyVO#isFormatCheckPending()}), with an id greater than {@code afterId}, by id.
+     */
+    List<KMSWrappedKeyVO> listFormatCheckPending(long afterId, int limit);
 }

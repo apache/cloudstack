@@ -42,11 +42,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -137,6 +140,7 @@ public class KMSManagerImplKeyRotationTest {
         // Provider creates new KEK
         when(kmsProvider.createKek(any(KeyPurpose.class), eq(newKekLabel), anyInt(), eq(oldProfileId)))
                 .thenReturn("new-kek-id");
+        mockWrapRoundTrip(oldProfileId);
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
         when(newVersion.getVersionNumber()).thenReturn(2);
@@ -149,6 +153,8 @@ public class KMSManagerImplKeyRotationTest {
         // Verify new KEK was created in same HSM
         assertNotNull(result);
         verify(kmsProvider).createKek(any(KeyPurpose.class), eq(newKekLabel), eq(256), eq(oldProfileId));
+        // The key shows the algorithm of its new KEK version
+        verify(kmsKey).setAlgorithm("AES/GCM/NoPadding");
 
         // Verify old version marked as Previous
         verify(oldVersion).setStatus(KMSKekVersionVO.Status.Previous);
@@ -192,6 +198,7 @@ public class KMSManagerImplKeyRotationTest {
         // Provider creates new KEK in different HSM
         when(kmsProvider.createKek(any(KeyPurpose.class), eq(newKekLabel), anyInt(), eq(newProfileId)))
                 .thenReturn("new-kek-id");
+        mockWrapRoundTrip(newProfileId);
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
         when(newVersion.getVersionNumber()).thenReturn(2);
@@ -247,6 +254,7 @@ public class KMSManagerImplKeyRotationTest {
 
         WrappedKey newWrappedKey = mock(WrappedKey.class);
         when(newWrappedKey.getWrappedKeyMaterial()).thenReturn("new-wrapped-blob".getBytes());
+        when(newWrappedKey.getAlgorithm()).thenReturn("AES/GCM/NoPadding");
         when(kmsProvider.wrapKey(plainDek, KeyPurpose.VOLUME_ENCRYPTION, "new-kek-label", newProfileId))
                 .thenReturn(newWrappedKey);
 
@@ -262,6 +270,8 @@ public class KMSManagerImplKeyRotationTest {
             // Verify wrapped key was updated
             verify(wrappedKeyVO).setKekVersionId(newVersionId);
             verify(wrappedKeyVO).setWrappedBlob("new-wrapped-blob".getBytes());
+            // The algorithm of the new blob is recorded with it
+            verify(wrappedKeyVO).setWrapAlgorithm("AES/GCM/NoPadding");
             verify(kmsWrappedKeyDao).update(wrappedKeyId, wrappedKeyVO);
         }
     }
@@ -298,6 +308,7 @@ public class KMSManagerImplKeyRotationTest {
         // Provider creates new KEK - will accept any label
         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(oldProfileId)))
                 .thenReturn("new-kek-id");
+        mockWrapRoundTrip(oldProfileId);
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
         when(newVersion.getVersionNumber()).thenReturn(2);
@@ -368,6 +379,7 @@ public class KMSManagerImplKeyRotationTest {
 
         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(currentProfileId)))
                 .thenReturn("new-kek-id");
+        mockWrapRoundTrip(currentProfileId);
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
         when(newVersion.getVersionNumber()).thenReturn(2);
@@ -383,5 +395,49 @@ public class KMSManagerImplKeyRotationTest {
 
         // Verify KMS key was not updated (same profile)
         verify(kmsKey, never()).setHsmProfileId(currentProfileId);
+    }
+
+    /**
+     * Test: rotateKek deletes the new KEK and keeps the current version when the HSM can't wrap with it
+     */
+    @Test
+    public void testRotateKek_DeletesNewKekWhenWrapTestFails() {
+        Long profileId = 10L;
+
+        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
+        when(kmsKey.getHsmProfileId()).thenReturn(profileId);
+        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+
+        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+        when(hsmProfile.getId()).thenReturn(profileId);
+        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+        when(hsmProfileDao.findById(profileId)).thenReturn(hsmProfile);
+
+        when(kmsProvider.createKek(any(KeyPurpose.class), eq("new-label"), eq(256), eq(profileId)))
+                .thenReturn("new-kek-id");
+        when(kmsProvider.getWrapAlgorithm(profileId)).thenReturn("AES/GCM/NoPadding");
+        when(kmsProvider.wrapKey(any(byte[].class), any(KeyPurpose.class), eq("new-kek-id"), eq(profileId)))
+                .thenThrow(KMSException.kekOperationFailed("AES/GCM/NoPadding not supported by HSM"));
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
+
+        assertThrows(KMSException.class, () -> kmsManager.rotateKek(kmsKey, "old-label", "new-label", 256, null));
+
+        verify(kmsProvider).deleteKek("new-kek-id", profileId);
+        verify(kmsKekVersionDao, never()).persist(any(KMSKekVersionVO.class));
+        verify(kmsKeyDao, never()).update(anyLong(), any(KMSKeyVO.class));
+    }
+
+    /**
+     * Makes the provider hand back whatever was wrapped, for the wrap test done after a KEK is created.
+     */
+    private void mockWrapRoundTrip(Long hsmProfileId) {
+        when(kmsProvider.getWrapAlgorithm(hsmProfileId)).thenReturn("AES/GCM/NoPadding");
+        AtomicReference<byte[]> wrapped = new AtomicReference<>();
+        when(kmsProvider.wrapKey(any(byte[].class), any(KeyPurpose.class), anyString(), eq(hsmProfileId)))
+                .thenAnswer(invocation -> {
+                    wrapped.set(((byte[]) invocation.getArgument(0)).clone());
+                    return mock(WrappedKey.class);
+                });
+        when(kmsProvider.unwrapKey(any(WrappedKey.class), eq(hsmProfileId))).thenAnswer(invocation -> wrapped.get().clone());
     }
 }
