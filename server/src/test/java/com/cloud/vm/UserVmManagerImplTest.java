@@ -67,6 +67,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
@@ -149,6 +150,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -265,6 +267,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private NetworkDao _networkDao;
+
+    @Mock
+    private NetworkService networkService;
 
     @Mock
     private NetworkOrchestrationService _networkMgr;
@@ -713,6 +718,44 @@ public class UserVmManagerImplTest {
                 Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(206L), Mockito.eq(false), Mockito.eq(false), Mockito.any());
         Mockito.verify(commandSetupHelper).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.eq("10.1.1.40"),
                 Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(206L), Mockito.eq(false), Mockito.eq(true), Mockito.any());
+    }
+
+    @Test
+    public void persistAdditionalNicNetworkAssociationsOrExpungeExpungesTheInstanceWhenAssociationFails() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(99L);
+        BaseDeployVMCmd cmd = Mockito.mock(BaseDeployVMCmd.class);
+        BaseDeployVMCmd.NicNetworkGrouping grouping = new BaseDeployVMCmd.NicNetworkGrouping(
+                Arrays.asList(206L, 207L), null, null, null, Collections.emptyMap());
+        Mockito.when(cmd.getNicNetworksList()).thenReturn(Collections.singletonList(grouping));
+        NicVO nic = mockNicWithId(11L);
+        Mockito.when(nicDao.listByVmId(99L)).thenReturn(Collections.singletonList(nic));
+        Mockito.doThrow(new InvalidParameterValueException("overlapping subnets"))
+                .when(networkService).associateNetworksToNic(Mockito.eq(nic), Mockito.eq(Collections.singletonList(207L)), Mockito.any());
+        Mockito.when(userVmDao.findById(99L)).thenReturn(vm);
+        Mockito.doReturn(true).when(userVmManagerImpl).expunge(vm);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> userVmManagerImpl.persistAdditionalNicNetworkAssociationsOrExpunge(cmd, vm));
+
+        Mockito.verify(userVmManagerImpl).expunge(vm);
+    }
+
+    @Test
+    public void persistAdditionalNicNetworkAssociationsOrExpungeDoesNotExpungeOnSuccess() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(99L);
+        BaseDeployVMCmd cmd = Mockito.mock(BaseDeployVMCmd.class);
+        BaseDeployVMCmd.NicNetworkGrouping grouping = new BaseDeployVMCmd.NicNetworkGrouping(
+                Arrays.asList(206L, 207L), null, null, null, Collections.emptyMap());
+        Mockito.when(cmd.getNicNetworksList()).thenReturn(Collections.singletonList(grouping));
+        NicVO nic = mockNicWithId(11L);
+        Mockito.when(nicDao.listByVmId(99L)).thenReturn(Collections.singletonList(nic));
+
+        userVmManagerImpl.persistAdditionalNicNetworkAssociationsOrExpunge(cmd, vm);
+
+        Mockito.verify(networkService).associateNetworksToNic(Mockito.eq(nic), Mockito.eq(Collections.singletonList(207L)), Mockito.any());
+        Mockito.verify(userVmManagerImpl, Mockito.never()).expunge(Mockito.any());
     }
 
     private VMInstanceVO mockVmWithId(long id) {

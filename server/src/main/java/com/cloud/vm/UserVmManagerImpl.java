@@ -6910,7 +6910,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        persistAdditionalNicNetworkAssociations(cmd, vm);
+        persistAdditionalNicNetworkAssociationsOrExpunge(cmd, vm);
 
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(template.getId());
@@ -6983,6 +6983,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void persistAdditionalNicNetworkAssociations(BaseDeployVMCmd cmd, UserVm vm)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         persistAdditionalNicNetworkAssociations(cmd.getNicNetworksList(), vm);
+    }
+
+    /**
+     * nicnetworkslist validation runs after the Instance (and its root volume) are already persisted, so without
+     * this a rejected request (e.g. overlapping subnets) would otherwise leave an orphaned Instance behind.
+     */
+    protected void persistAdditionalNicNetworkAssociationsOrExpunge(BaseDeployVMCmd cmd, UserVm vm)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+        try {
+            persistAdditionalNicNetworkAssociations(cmd, vm);
+        } catch (InsufficientCapacityException | ResourceUnavailableException | RuntimeException e) {
+            UserVmVO vmVO = _vmDao.findById(vm.getId());
+            try {
+                expunge(vmVO);
+            } catch (Exception cleanupException) {
+                logger.debug("Failed to cleanup Instance {} after nicnetworkslist association failed", vm.getId(), cleanupException);
+            }
+            throw e;
+        }
     }
 
     /**
