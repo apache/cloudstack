@@ -950,15 +950,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return _nicDao.findById(nic.getId());
     }
 
-    /**
-     * Undoes persistAssociations' db writes when the host rejects the live VLAN trunk update straight after -
-     * guest IPs for this feature are never tracked anywhere but nic_network_map itself, so removing these rows
-     * is itself the release, same as the normal disassociate path.
-     */
+    // undoes a failed live associate: removes the new nic_network_map rows and releases their shared ips
     private void rollbackNetworkAssociations(NicVO nic, List<NetworkVO> networks, boolean nicWasAlreadyMultiNetwork) {
         for (NetworkVO network : networks) {
             NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), network.getId());
             if (association != null) {
+                releaseSharedAssociationIp(network, association.getIp4Address());
                 _nicNetworkMapDao.remove(association.getId());
             }
         }
@@ -968,12 +965,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    /**
-     * Undoes the nic_network_map removal (and multiNetwork flag clear) when the host rejects the live VLAN
-     * trunk update straight after - restores the same ip4/ip6 the association held, which simply re-occupies
-     * that guest IP since availability is computed fresh from nic_network_map.
-     */
-    private void rollbackNetworkDisassociation(NicVO nic, NicNetworkMapVO association, boolean nicMultiNetworkCleared) {
+    // undoes a failed live disassociate: restores the nic_network_map row and re-acquires the released shared ip
+    private void rollbackNetworkDisassociation(NicVO nic, NicNetworkMapVO association, boolean nicMultiNetworkCleared, NetworkVO network, VirtualMachine vm) {
+        if (network != null && network.getGuestType() == Network.GuestType.Shared && association.getIp4Address() != null) {
+            try {
+                allocateSharedIpForAssociation(network, vm, association.getIp4Address());
+            } catch (InsufficientAddressCapacityException e) {
+                logger.warn("Failed to re-acquire shared ip {} for network {} while rolling back a failed disassociation: {}",
+                        association.getIp4Address(), network.getUuid(), e.getMessage());
+            }
+        }
         _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), association.getNetworkId(), association.getIp4Address(), association.getIp6Address()));
         if (nicMultiNetworkCleared) {
             nic.setMultiNetwork(true);
@@ -1083,9 +1084,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             checkHostReadyForVlanTrunk(vm);
         }
 
-        // guest IPs allocated for an association are never persisted anywhere but nic_network_map itself
-        // (allocateGuestIP/allocateGuestIpv6 compute availability fresh from live DB state each time),
-        // so removing this row is itself the release
+        NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
+
+        // a Shared network's ip4 is also tracked in user_ip_address and must be released there too
+        releaseSharedAssociationIp(targetNetwork, association.getIp4Address());
         _nicNetworkMapDao.remove(association.getId());
 
         boolean nicMultiNetworkCleared = nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty();
@@ -1098,11 +1100,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             try {
                 updateLiveVlanTrunkMembership(vm, nic);
             } catch (ResourceUnavailableException | CloudRuntimeException ex) {
-                rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared);
+                rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
                 throw ex;
             }
             cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
-            NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
             if (targetNetwork != null) {
                 publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
             }
@@ -1428,7 +1429,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Map<Long, Network.IpAddresses> safeRequestedIps = requestedIps != null ? requestedIps : Collections.emptyMap();
         for (NetworkVO network : requestedNetworks) {
             NetworkVO refreshed = _networksDao.findById(network.getId());
-            Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()));
+            Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()), vm);
             _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), network.getId(), allocatedIps.first(), allocatedIps.second()));
         }
         if (!nic.getMultiNetwork()) {
@@ -1447,13 +1448,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private Pair<String, String> allocateIpsForAssociation(NetworkVO network, Network.IpAddresses requested) throws InsufficientAddressCapacityException {
+    private Pair<String, String> allocateIpsForAssociation(NetworkVO network, Network.IpAddresses requested, VirtualMachine vm) throws InsufficientAddressCapacityException {
         if (network.getGuestType() == Network.GuestType.L2) {
             return new Pair<>(null, null);
         }
         String requestedIp4 = requested != null ? requested.getIp4Address() : null;
         String requestedIp6 = requested != null ? requested.getIp6Address() : null;
-        String ip4Address = _ipAddrMgr.allocateGuestIP(network, requestedIp4);
+        String ip4Address = network.getGuestType() == Network.GuestType.Shared
+                ? allocateSharedIpForAssociation(network, vm, requestedIp4)
+                : _ipAddrMgr.allocateGuestIP(network, requestedIp4);
         if (ip4Address == null) {
             throw new InsufficientAddressCapacityException(
                     String.format("Unable to allocate a guest IPv4 address in network [name=%s, id=%s, uuid=%s]", network.getName(), network.getId(), network.getUuid()),
@@ -1461,6 +1464,34 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         String ip6Address = StringUtils.isNotBlank(network.getIp6Cidr()) ? ipv6AddrMgr.allocateGuestIpv6(network, requestedIp6) : null;
         return new Pair<>(ip4Address, ip6Address);
+    }
+
+    // mirrors the Isolated/Shared branch in allocateSecondaryGuestIP: Shared ips live in user_ip_address
+    private String allocateSharedIpForAssociation(NetworkVO network, VirtualMachine vm, String requestedIp4) throws InsufficientAddressCapacityException {
+        Long podId = null;
+        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        if (dc.getNetworkType() == NetworkType.Basic) {
+            podId = ((VMInstanceVO) vm).getPodIdToDeployIn();
+        }
+        Account owner = _accountMgr.getAccount(vm.getAccountId());
+        return _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, owner, requestedIp4);
+    }
+
+    // counterpart to allocateSharedIpForAssociation - mirrors the same Shared release in releaseSecondaryIpFromNic
+    private void releaseSharedAssociationIp(NetworkVO network, String ip4Address) {
+        if (network == null || network.getGuestType() != Network.GuestType.Shared || ip4Address == null) {
+            return;
+        }
+        final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), ip4Address);
+        if (ip != null) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                    _ipAddressDao.unassignIpAddress(ip.getId());
+                }
+            });
+        }
     }
 
     private void checkHostReadyForVlanTrunk(VirtualMachine vm) {
