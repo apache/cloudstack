@@ -38,15 +38,21 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
@@ -61,8 +67,12 @@ import java.util.zip.GZIPOutputStream;
  *
  * Database credentials come from the management server's db.properties (via {@link DbProperties},
  * which decrypts ENC(...) values when db.properties encryption is in use).
- * Backups are stored under {nasBackupPath}/infra-backup/{timestamp}/ with
- * automatic retention management.
+ * Backups are stored under {nasBackupPath}/infra-backup/{ms}/{timestamp}/ with
+ * automatic retention management. A backup set only counts once every requested component succeeded,
+ * which is recorded by a {@value #COMPLETION_MARKER} file; a failed run is removed and never triggers
+ * retention, so failures cannot push good backups out. Everything is created owner-only (directories
+ * 0700, files 0600) because the archives hold db.properties and the encryption key, and the NAS is
+ * usually mounted on the hosts as well.
  */
 public class InfrastructureBackupTask extends ManagedContextRunnable implements BackgroundPollTask {
 
@@ -71,6 +81,12 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
     private static final String MANAGEMENT_CONFIG_PATH = "/etc/cloudstack/management";
     private static final String AGENT_CONFIG_PATH = "/etc/cloudstack/agent";
     private static final String SSL_CERT_PATH = "/etc/cloudstack/management/cert";
+
+    /** Written last into a backup set, only when every requested component succeeded. */
+    protected static final String COMPLETION_MARKER = "BACKUP_COMPLETE";
+
+    private static final Set<PosixFilePermission> OWNER_ONLY_DIR = PosixFilePermissions.fromString("rwx------");
+    private static final Set<PosixFilePermission> OWNER_ONLY_FILE = PosixFilePermissions.fromString("rw-------");
 
     /** 24 hours in milliseconds */
     private static final long DAILY_INTERVAL_MS = 86400L * 1000L;
@@ -133,26 +149,115 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
             return;
         }
 
+        File dir = new File(backupDir);
+        boolean complete = false;
         try {
-            File dir = new File(backupDir);
-            if (!dir.exists() && !dir.mkdirs()) {
-                LOG.error(describeDirectoryCreationFailure(backupDir, nasBackupPath));
+            try {
+                createBackupDirectories(nasBackupPath, infraBackupRoot, backupDir);
+            } catch (IOException e) {
+                LOG.error("{} ({})", describeDirectoryCreationFailure(backupDir, nasBackupPath), e.toString());
                 return;
             }
 
-            backupDatabases(backupDir, timestamp, includeDatabase, includeUsageDb);
-            backupDirectory(MANAGEMENT_CONFIG_PATH, backupDir, "management-config");
-            backupDirectoryIfPresent(AGENT_CONFIG_PATH, backupDir, "agent-config");
-            backupDirectoryIfPresent(SSL_CERT_PATH, backupDir, "ssl-certs");
-            cleanupOldBackups(infraBackupRoot, retentionCount);
+            // Run every step even after a failure so one run reports all problems.
+            boolean ok = backupDatabases(backupDir, timestamp, includeDatabase, includeUsageDb);
+            ok &= backupDirectory(MANAGEMENT_CONFIG_PATH, backupDir, "management-config");
+            ok &= backupDirectoryIfPresent(AGENT_CONFIG_PATH, backupDir, "agent-config");
+            ok &= backupDirectoryIfPresent(SSL_CERT_PATH, backupDir, "ssl-certs");
+            complete = ok && writeCompletionMarker(backupDir, timestamp);
 
-            LOG.info("Infrastructure backup completed successfully: {}", backupDir);
-
+            if (complete) {
+                // Retention only after a complete set exists, and it only counts complete sets.
+                cleanupOldBackups(infraBackupRoot, retentionCount);
+                LOG.info("Infrastructure backup completed successfully: {}", backupDir);
+            }
         } catch (Exception e) {
             LOG.error("Infrastructure backup failed: {}", e.getMessage(), e);
         } finally {
+            if (!complete && dir.exists()) {
+                LOG.error("Infrastructure backup {} is incomplete; removing it and skipping retention so existing backups are kept", backupDir);
+                deleteDirectory(dir);
+            }
             releaseRunLock(lock);
         }
+    }
+
+    /**
+     * Creates {@code infra-backup/<ms>/<timestamp>} under the configured location, each level owner-only
+     * (0700). The permissions are applied at creation, so there is no moment where the directory is open
+     * to other users. Existing {@code infra-backup} and per-server directories, for example from an older
+     * version, are tightened to 0700 as well, which also closes access to backups written before.
+     */
+    protected void createBackupDirectories(String location, String infraBackupRoot, String backupDir) throws IOException {
+        Path locationPath = Paths.get(location);
+        if (!Files.isDirectory(locationPath)) {
+            Files.createDirectories(locationPath);
+        }
+        createOwnerOnlyDirectory(Paths.get(infraBackupRoot).getParent());
+        createOwnerOnlyDirectory(Paths.get(infraBackupRoot));
+        createOwnerOnlyDirectory(Paths.get(backupDir));
+    }
+
+    /** Creates {@code dir} with mode 0700, or restricts it to 0700 when it already exists. */
+    protected void createOwnerOnlyDirectory(Path dir) throws IOException {
+        if (Files.isDirectory(dir)) {
+            restrictToOwner(dir, OWNER_ONLY_DIR);
+            return;
+        }
+        try {
+            Files.createDirectory(dir, ownerOnly(OWNER_ONLY_DIR));
+        } catch (UnsupportedOperationException e) {
+            Files.createDirectory(dir);
+            warnNonPosix(dir);
+        }
+    }
+
+    /** Creates an empty file with mode 0600 (replacing any existing one), so later writes never widen access. */
+    protected Path createOwnerOnlyFile(Path file) throws IOException {
+        Files.deleteIfExists(file);
+        try {
+            return Files.createFile(file, ownerOnly(OWNER_ONLY_FILE));
+        } catch (UnsupportedOperationException e) {
+            Files.createFile(file);
+            warnNonPosix(file);
+            return file;
+        }
+    }
+
+    private static FileAttribute<Set<PosixFilePermission>> ownerOnly(Set<PosixFilePermission> perms) {
+        return PosixFilePermissions.asFileAttribute(perms);
+    }
+
+    private void restrictToOwner(Path path, Set<PosixFilePermission> perms) {
+        try {
+            Files.setPosixFilePermissions(path, perms);
+        } catch (UnsupportedOperationException e) {
+            warnNonPosix(path);
+        } catch (IOException e) {
+            LOG.warn("Could not restrict {} to its owner: {}. Check that only the management server user can read the infrastructure backups.",
+                    path, e.getMessage());
+        }
+    }
+
+    private void warnNonPosix(Path path) {
+        LOG.warn("The file system of {} does not support POSIX permissions, so the infrastructure backup cannot be made owner-only there. "
+                + "The backups include db.properties and the encryption key; restrict access to nas.infra.backup.location on the NAS itself.", path);
+    }
+
+    /** Marks {@code backupDir} as a complete set; only marked sets count towards retention. */
+    protected boolean writeCompletionMarker(String backupDir, String timestamp) {
+        try {
+            Path marker = createOwnerOnlyFile(Paths.get(backupDir, COMPLETION_MARKER));
+            Files.write(marker, (timestamp + "\n").getBytes(StandardCharsets.UTF_8));
+            return true;
+        } catch (IOException e) {
+            LOG.error("Failed to write the completion marker in {}: {}", backupDir, e.getMessage());
+            return false;
+        }
+    }
+
+    protected static boolean isCompleteBackup(File backup) {
+        return new File(backup, COMPLETION_MARKER).isFile();
     }
 
     /**
@@ -192,37 +297,41 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
      * The database component is opt-in ({@code nas.infra.backup.include.database}): production
      * deployments typically run their own mysqldump jobs and leave it off; it exists for small and
      * edge deployments that want unified disaster recovery on the same NAS as their VM backups.
+     *
+     * @return false when a requested dump could not be made
      */
-    protected void backupDatabases(String backupDir, String timestamp, boolean includeDatabase, boolean includeUsageDb) {
+    protected boolean backupDatabases(String backupDir, String timestamp, boolean includeDatabase, boolean includeUsageDb) {
         if (!includeDatabase) {
             LOG.debug("Database backup skipped (nas.infra.backup.include.database=false). " +
                     "Manage DB backups externally for production deployments.");
-            return;
+            return true;
         }
         Properties dbProps = loadDbProperties();
         if (dbProps == null) {
-            LOG.error("Database backup requested but the management server's db.properties could not be loaded, skipping DB component");
-            return;
+            LOG.error("Database backup requested but the management server's db.properties could not be loaded");
+            return false;
         }
         String dbHost = dbProps.getProperty("db.cloud.host", "localhost");
         String dbUser = dbProps.getProperty("db.cloud.username", "cloud");
         String dbPassword = dbProps.getProperty("db.cloud.password", "");
 
-        backupDatabase("cloud", backupDir, timestamp, dbHost, dbUser, dbPassword);
+        boolean ok = backupDatabase("cloud", backupDir, timestamp, dbHost, dbUser, dbPassword);
 
         if (includeUsageDb) {
             String usageHost = dbProps.getProperty("db.usage.host", dbHost);
             String usageUser = dbProps.getProperty("db.usage.username", dbUser);
             String usagePassword = dbProps.getProperty("db.usage.password", dbPassword);
-            backupDatabase("cloud_usage", backupDir, timestamp, usageHost, usageUser, usagePassword);
+            ok &= backupDatabase("cloud_usage", backupDir, timestamp, usageHost, usageUser, usagePassword);
         }
+        return ok;
     }
 
     /** Archives {@code sourcePath} like {@link #backupDirectory} but silently skips it when it does not exist on this server. */
-    protected void backupDirectoryIfPresent(String sourcePath, String backupDir, String archiveName) {
+    protected boolean backupDirectoryIfPresent(String sourcePath, String backupDir, String archiveName) {
         if (new File(sourcePath).exists()) {
-            backupDirectory(sourcePath, backupDir, archiveName);
+            return backupDirectory(sourcePath, backupDir, archiveName);
         }
+        return true;
     }
 
     /**
@@ -260,7 +369,8 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
-    protected void backupDatabase(String dbName, String backupDir, String timestamp,
+    /** Dumps {@code dbName} into an owner-only {@code .sql.gz}; returns false when the dump failed. */
+    protected boolean backupDatabase(String dbName, String backupDir, String timestamp,
                                  String dbHost, String dbUser, String dbPassword) {
         String dumpFile = backupDir + "/" + dbName + "-" + timestamp + ".sql.gz";
 
@@ -272,7 +382,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
             // values read from db.properties cannot be interpreted as shell metacharacters (no injection).
             defaultsFile = writeMysqlDefaultsFile(dbHost, dbUser, dbPassword);
 
-            rawDump = new File(backupDir, dbName + "-" + timestamp + ".sql");
+            rawDump = createOwnerOnlyFile(Paths.get(backupDir, dbName + "-" + timestamp + ".sql")).toFile();
             // --single-transaction = InnoDB hot backup (no table locks, consistent snapshot)
             ProcessBuilder pb = new ProcessBuilder(
                     "mysqldump",
@@ -287,15 +397,16 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
             if (!completed) {
                 process.destroyForcibly();
                 LOG.error("Database backup timed out for {}", dbName);
-                return;
+                return false;
             }
 
             if (process.exitValue() != 0) {
                 LOG.error("Database backup failed for {} with exit code {}", dbName, process.exitValue());
-                return;
+                return false;
             }
 
-            // Compress in-process (no shell pipeline) into the final .sql.gz.
+            // Compress in-process (no shell pipeline) into the final .sql.gz, created owner-only first.
+            createOwnerOnlyFile(Paths.get(dumpFile));
             try (InputStream in = new FileInputStream(rawDump);
                  OutputStream out = new GZIPOutputStream(new FileOutputStream(dumpFile))) {
                 in.transferTo(out);
@@ -303,12 +414,14 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
 
             File dump = new File(dumpFile);
             LOG.info("Database {} backed up: {} ({} bytes)", dbName, dumpFile, dump.length());
+            return true;
 
         } catch (IOException | InterruptedException e) {
             LOG.error("Failed to backup database {}: {}", dbName, e.getMessage());
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
+            return false;
         } finally {
             if (rawDump != null && rawDump.exists() && !rawDump.delete()) {
                 LOG.warn("Failed to delete temporary dump file: {}", rawDump.getAbsolutePath());
@@ -342,11 +455,15 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         return tmp.toFile();
     }
 
-    protected void backupDirectory(String sourcePath, String backupDir, String archiveName) {
+    /**
+     * Archives {@code sourcePath} into an owner-only {@code <archiveName>.tar.gz}. Returns false when tar
+     * failed; a missing source directory is skipped and is not a failure.
+     */
+    protected boolean backupDirectory(String sourcePath, String backupDir, String archiveName) {
         File source = new File(sourcePath);
         if (!source.exists() || !source.isDirectory()) {
             LOG.debug("Directory {} does not exist, skipping", sourcePath);
-            return;
+            return true;
         }
 
         String tarFile = backupDir + "/" + archiveName + ".tar.gz";
@@ -354,6 +471,8 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
             String.format("tar czf '%s' -C '%s' .", tarFile, sourcePath)};
 
         try {
+            // tar truncates the existing file and keeps its 0600 mode
+            createOwnerOnlyFile(Paths.get(tarFile));
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -361,22 +480,30 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
 
             if (completed && process.exitValue() == 0) {
                 LOG.info("Directory {} backed up to {}", sourcePath, tarFile);
-            } else {
-                if (!completed) {
-                    process.destroyForcibly();
-                }
-                LOG.warn("Directory backup failed for {} (exit code: {})",
-                    sourcePath, completed ? process.exitValue() : "timeout");
+                return true;
             }
+            if (!completed) {
+                process.destroyForcibly();
+            }
+            LOG.error("Directory backup failed for {} (exit code: {})",
+                sourcePath, completed ? process.exitValue() : "timeout");
+            return false;
         } catch (IOException | InterruptedException e) {
             LOG.error("Failed to backup directory {}: {}", sourcePath, e.getMessage());
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
+            return false;
         }
     }
 
-    /** Keeps the newest {@code retentionCount} backups under {@code infraBackupRoot} (this server's directory) and deletes the rest. */
+    /**
+     * Keeps the newest {@code retentionCount} complete backups under {@code infraBackupRoot} (this server's
+     * directory) and deletes older complete ones. Sets without the completion marker never count, so failed
+     * or partial runs cannot push good backups out. Unmarked sets (left by a crash, or written before the
+     * marker existed) are removed only once a full window of complete sets exists, and only when they are
+     * older than the oldest complete set that is kept.
+     */
     protected void cleanupOldBackups(String infraBackupRoot, int retentionCount) {
         // A negative retention (misconfiguration) would make toDelete exceed backups.length below and
         // throw ArrayIndexOutOfBoundsException; clamp it so we never compute a delete count > available.
@@ -389,17 +516,29 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
 
         File[] backups = infraDir.listFiles(File::isDirectory);
-        if (backups == null || backups.length <= retentionCount) {
+        if (backups == null) {
             return;
         }
 
         // Sort by name (timestamp-based), oldest first
         Arrays.sort(backups, Comparator.comparing(File::getName));
+        List<File> complete = Arrays.stream(backups).filter(InfrastructureBackupTask::isCompleteBackup).collect(Collectors.toList());
+        if (complete.isEmpty() || complete.size() < retentionCount) {
+            return;
+        }
 
-        int toDelete = backups.length - retentionCount;
+        int toDelete = complete.size() - retentionCount;
         for (int i = 0; i < toDelete; i++) {
-            LOG.info("Removing old infrastructure backup: {}", backups[i].getName());
-            deleteDirectory(backups[i]);
+            LOG.info("Removing old infrastructure backup: {}", complete.get(i).getName());
+            deleteDirectory(complete.get(i));
+        }
+
+        String oldestKept = complete.get(Math.min(toDelete, complete.size() - 1)).getName();
+        for (File backup : backups) {
+            if (!complete.contains(backup) && backup.getName().compareTo(oldestKept) < 0) {
+                LOG.info("Removing incomplete infrastructure backup: {}", backup.getName());
+                deleteDirectory(backup);
+            }
         }
     }
 

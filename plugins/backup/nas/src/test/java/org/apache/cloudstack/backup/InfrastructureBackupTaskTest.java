@@ -24,10 +24,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
@@ -69,6 +72,8 @@ public class InfrastructureBackupTaskTest {
         final AtomicInteger retentionCalls = new AtomicInteger(0);
 
         final List<String> directoryBackupDirs = new ArrayList<>();
+        final Set<String> failingDatabases = new HashSet<>();
+        final Set<String> failingArchives = new HashSet<>();
 
         @Override
         protected String getManagementServerLabel() { return "ms-a"; }
@@ -90,16 +95,18 @@ public class InfrastructureBackupTaskTest {
         }
 
         @Override
-        protected void backupDatabase(String dbName, String backupDir, String timestamp,
+        protected boolean backupDatabase(String dbName, String backupDir, String timestamp,
                                       String dbHost, String dbUser, String dbPassword) {
             databaseBackupNames.add(dbName);
             databaseBackupPasswords.add(dbPassword);
+            return !failingDatabases.contains(dbName);
         }
 
         @Override
-        protected void backupDirectory(String sourcePath, String backupDir, String archiveName) {
+        protected boolean backupDirectory(String sourcePath, String backupDir, String archiveName) {
             directoryBackupNames.add(archiveName);
             directoryBackupDirs.add(backupDir);
+            return !failingArchives.contains(archiveName);
         }
 
         @Override
@@ -216,7 +223,7 @@ public class InfrastructureBackupTaskTest {
     }
 
     @Test
-    public void skipsDbBackupWhenPropertiesUnreadable() {
+    public void unreadablePropertiesFailTheRunWhenDatabaseRequested() {
         RecordingTask task = new RecordingTask();
         task.enabled = true;
         task.location = tmpRoot.toString();
@@ -227,8 +234,9 @@ public class InfrastructureBackupTaskTest {
 
         Assert.assertTrue("no DB backups attempted when props can't be loaded",
                 task.databaseBackupNames.isEmpty());
-        Assert.assertEquals("retention still runs (configs+certs path unaffected)",
-                1, task.retentionCalls.get());
+        Assert.assertEquals("a run without the requested DB dump must not trigger retention",
+                0, task.retentionCalls.get());
+        Assert.assertEquals(0, backupSetsOf("ms-a").length);
     }
 
     @Test
@@ -260,9 +268,9 @@ public class InfrastructureBackupTaskTest {
         File msA = new File(infraBackupDir(), "ms-a");
         File msB = new File(infraBackupDir(), "ms-b");
         for (String name : new String[] {"20240101-000000", "20240102-000000", "20240103-000000"}) {
-            Assert.assertTrue(new File(msA, name).mkdirs());
+            markComplete(new File(msA, name));
         }
-        Assert.assertTrue(new File(msB, "20240101-000000").mkdirs());
+        markComplete(new File(msB, "20240101-000000"));
 
         realTask.cleanupOldBackups(msA.toString(), 2);
 
@@ -287,10 +295,204 @@ public class InfrastructureBackupTaskTest {
     }
 
     private File makeBackup(String name) throws IOException {
+        File dir = makeIncompleteBackup(name);
+        Assert.assertTrue(new File(dir, InfrastructureBackupTask.COMPLETION_MARKER).createNewFile());
+        return dir;
+    }
+
+    /** A set without the completion marker: a failed run left behind by a crash, or one written before the marker existed. */
+    private File makeIncompleteBackup(String name) throws IOException {
         File dir = new File(infraBackupDir(), name);
         Assert.assertTrue(dir.mkdirs());
         Assert.assertTrue(new File(dir, "dump.sql.gz").createNewFile());
         return dir;
+    }
+
+    private static void markComplete(File dir) throws IOException {
+        Assert.assertTrue(dir.mkdirs());
+        Assert.assertTrue(new File(dir, InfrastructureBackupTask.COMPLETION_MARKER).createNewFile());
+    }
+
+    private File[] backupSetsOf(String ms) {
+        File[] sets = new File(infraBackupDir(), ms).listFiles(File::isDirectory);
+        return sets == null ? new File[0] : sets;
+    }
+
+    private static String mode(File f) throws IOException {
+        return PosixFilePermissions.toString(Files.getPosixFilePermissions(f.toPath()));
+    }
+
+    private void assumePosix() {
+        Assume.assumeTrue("needs a POSIX file system",
+                tmpRoot.getFileSystem().supportedFileAttributeViews().contains("posix"));
+    }
+
+    // ---- review: a failed run must never count, and never trigger retention ----
+
+    @Test
+    public void successfulRunMarksTheSetComplete() {
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+
+        task.runInContext();
+
+        File[] sets = backupSetsOf("ms-a");
+        Assert.assertEquals(1, sets.length);
+        Assert.assertTrue(InfrastructureBackupTask.isCompleteBackup(sets[0]));
+        Assert.assertEquals(1, task.retentionCalls.get());
+    }
+
+    @Test
+    public void failedDatabaseDumpSkipsRetentionAndRemovesThePartialSet() {
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+        task.databaseIncluded = true;
+        task.dbProps = stubDbProps();
+        task.failingDatabases.add("cloud_usage");
+
+        task.runInContext();
+
+        Assert.assertEquals(0, task.retentionCalls.get());
+        Assert.assertEquals("the partial set is removed", 0, backupSetsOf("ms-a").length);
+    }
+
+    @Test
+    public void failedArchiveSkipsRetentionAndRemovesThePartialSet() {
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+        task.failingArchives.add("management-config");
+
+        task.runInContext();
+
+        Assert.assertEquals(0, task.retentionCalls.get());
+        Assert.assertEquals(0, backupSetsOf("ms-a").length);
+    }
+
+    @Test
+    public void aWeekOfFailedRunsKeepsEveryGoodBackup() throws IOException {
+        File msA = new File(infraBackupDir(), "ms-a");
+        for (String name : new String[] {"20240101-000000", "20240102-000000", "20240103-000000"}) {
+            markComplete(new File(msA, name));
+        }
+        // real retention this time, so the test sees what a failed run would delete
+        RecordingTask task = new RecordingTask() {
+            @Override
+            protected void cleanupOldBackups(String root, int retentionCount) {
+                retentionCalls.incrementAndGet();
+                realTask.cleanupOldBackups(root, retentionCount);
+            }
+        };
+        task.location = tmpRoot.toString();
+        task.retention = 3;
+        task.failingArchives.add("management-config");
+
+        for (int day = 0; day < 7; day++) {
+            task.runInContext();
+        }
+
+        Assert.assertEquals(0, task.retentionCalls.get());
+        Assert.assertEquals(3, backupSetsOf("ms-a").length);
+    }
+
+    @Test
+    public void cleanupCountsOnlyCompleteSets() throws IOException {
+        makeBackup("20240101-000000");
+        makeBackup("20240102-000000");
+        makeBackup("20240103-000000");
+        makeIncompleteBackup("20240104-000000");
+        makeIncompleteBackup("20240105-000000");
+        makeIncompleteBackup("20240106-000000");
+
+        realTask.cleanupOldBackups(infraBackupDir().toString(), 3);
+
+        Assert.assertEquals("incomplete sets do not push complete ones out", 6, remainingBackups().length);
+    }
+
+    @Test
+    public void cleanupRemovesIncompleteSetsOlderThanTheKeptWindow() throws IOException {
+        makeIncompleteBackup("20240101-000000");
+        makeBackup("20240102-000000");
+        makeIncompleteBackup("20240103-000000");
+        makeBackup("20240104-000000");
+        makeBackup("20240105-000000");
+        makeIncompleteBackup("20240106-000000");
+
+        realTask.cleanupOldBackups(infraBackupDir().toString(), 2);
+
+        Assert.assertArrayEquals(new String[] {"20240104-000000", "20240105-000000", "20240106-000000"}, remainingBackups());
+    }
+
+    @Test
+    public void unmarkedSetsFromBeforeTheUpgradeStayUntilAFullWindowIsComplete() throws IOException {
+        for (int day = 1; day <= 7; day++) {
+            makeIncompleteBackup("2024010" + day + "-000000");
+        }
+        makeBackup("20240108-000000");
+
+        realTask.cleanupOldBackups(infraBackupDir().toString(), 7);
+
+        Assert.assertEquals(8, remainingBackups().length);
+    }
+
+    // ---- review: backups hold db.properties and the key, so they are owner-only ----
+
+    @Test
+    public void backupDirectoriesAndMarkerAreOwnerOnly() throws IOException {
+        assumePosix();
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+
+        task.runInContext();
+
+        File set = backupSetsOf("ms-a")[0];
+        Assert.assertEquals("rwx------", mode(infraBackupDir()));
+        Assert.assertEquals("rwx------", mode(new File(infraBackupDir(), "ms-a")));
+        Assert.assertEquals("rwx------", mode(set));
+        Assert.assertEquals("rw-------", mode(new File(set, InfrastructureBackupTask.COMPLETION_MARKER)));
+    }
+
+    @Test
+    public void existingBackupDirectoriesAreTightened() throws IOException {
+        assumePosix();
+        File msA = new File(infraBackupDir(), "ms-a");
+        Assert.assertTrue(msA.mkdirs());
+        Files.setPosixFilePermissions(infraBackupDir().toPath(), PosixFilePermissions.fromString("rwxr-xr-x"));
+        Files.setPosixFilePermissions(msA.toPath(), PosixFilePermissions.fromString("rwxr-xr-x"));
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+
+        task.runInContext();
+
+        Assert.assertEquals("rwx------", mode(infraBackupDir()));
+        Assert.assertEquals("rwx------", mode(msA));
+    }
+
+    @Test
+    public void configArchiveIsOwnerOnly() throws IOException {
+        assumePosix();
+        File source = new File(tmpRoot.toFile(), "management");
+        Assert.assertTrue(source.mkdirs());
+        Files.write(new File(source, "db.properties").toPath(), "db.cloud.password=secret\n".getBytes());
+        File set = new File(tmpRoot.toFile(), "set");
+        Assert.assertTrue(set.mkdirs());
+
+        Assert.assertTrue(realTask.backupDirectory(source.getPath(), set.getPath(), "management-config"));
+
+        File archive = new File(set, "management-config.tar.gz");
+        Assert.assertTrue(archive.length() > 0);
+        Assert.assertEquals("rw-------", mode(archive));
+    }
+
+    @Test
+    public void ownerOnlyFileIsCreatedWithoutAWiderWindow() throws IOException {
+        assumePosix();
+        File file = new File(tmpRoot.toFile(), "cloud-20240101-000000.sql.gz");
+        Assert.assertTrue(file.createNewFile());
+        Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("rw-r--r--"));
+
+        realTask.createOwnerOnlyFile(file.toPath());
+
+        Assert.assertEquals("rw-------", mode(file));
     }
 
     private String[] remainingBackups() {
@@ -397,7 +599,8 @@ public class InfrastructureBackupTaskTest {
         }
 
         Assert.assertTrue(task.databaseBackupNames.isEmpty());
-        Assert.assertEquals("configs, certs and retention still run", 1, task.retentionCalls.get());
+        Assert.assertFalse("configs are still attempted so the log shows every problem", task.directoryBackupNames.isEmpty());
+        Assert.assertEquals("retention is skipped", 0, task.retentionCalls.get());
     }
 
     @Test
