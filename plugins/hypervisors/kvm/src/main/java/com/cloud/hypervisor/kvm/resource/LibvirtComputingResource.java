@@ -5041,8 +5041,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
                 }
 
-                // for example, path = /mnt/pool_uuid/disk_path/
-                return token[3];
+                // for example, path = /mnt/pool_uuid/disk_path/ or, for local storage, /var/lib/libvirt/images/disk_path
+                return token[token.length - 1];
             }
         }
         return null;
