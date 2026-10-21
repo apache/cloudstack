@@ -26,7 +26,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -94,6 +96,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
         updated.setName("vm-updated");
         when(handler.serverAdapter.updateInstance(eq("vm-1"), updateCaptor.capture())).thenReturn(updated);
 
+        when(handler.serverAdapter.instanceExists("vm-1")).thenReturn(true);
         final ResponseCapture put = newResponse();
         handler.handle(newRequest("PUT", Map.of(), "application/json", "{\"name\":\"vm-updated\"}"), put.response,
                 "/api/vms/vm-1", Negotiation.OutFormat.JSON, newServlet());
@@ -106,6 +109,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
     public void testHandleGetByIdDeleteAndPowerActions() throws Exception {
         final VmsRouteHandler handler = new VmsRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.instanceExists("vm-1")).thenReturn(true);
         when(handler.serverAdapter.getInstance("vm-1", true, true, true, true)).thenReturn(withId(new Vm(), "vm-1"));
 
         final VmAction deleteAction = new VmAction();
@@ -153,9 +157,70 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
     }
 
     @Test
+    public void testHandleVmRoutesReturnNotFoundForMissingVm() throws Exception {
+        final VmsRouteHandler handler = new VmsRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.instanceExists("vm-missing")).thenReturn(false);
+
+        final String[][] routes = {
+                {"GET", "/api/vms/vm-missing"},
+                {"PUT", "/api/vms/vm-missing"},
+                {"DELETE", "/api/vms/vm-missing"},
+                {"POST", "/api/vms/vm-missing/start"},
+                {"POST", "/api/vms/vm-missing/stop"},
+                {"POST", "/api/vms/vm-missing/shutdown"},
+                {"GET", "/api/vms/vm-missing/diskattachments"},
+                {"POST", "/api/vms/vm-missing/diskattachments"},
+                {"DELETE", "/api/vms/vm-missing/diskattachments/disk-1"},
+                {"GET", "/api/vms/vm-missing/nics"},
+                {"POST", "/api/vms/vm-missing/nics"},
+                {"GET", "/api/vms/vm-missing/snapshots"},
+                {"POST", "/api/vms/vm-missing/snapshots"},
+                {"GET", "/api/vms/vm-missing/snapshots/snap-1"},
+                {"DELETE", "/api/vms/vm-missing/snapshots/snap-1"},
+                {"POST", "/api/vms/vm-missing/snapshots/snap-1/restore"},
+                {"GET", "/api/vms/vm-missing/backups"},
+                {"POST", "/api/vms/vm-missing/backups"},
+                {"GET", "/api/vms/vm-missing/backups/backup-1"},
+                {"GET", "/api/vms/vm-missing/backups/backup-1/disks"},
+                {"POST", "/api/vms/vm-missing/backups/backup-1/finalize"},
+                {"GET", "/api/vms/vm-missing/checkpoints"},
+                {"DELETE", "/api/vms/vm-missing/checkpoints/chk-1"},
+                {"POST", "/api/vms/vm-missing/tags"}
+        };
+        for (String[] route : routes) {
+            final ResponseCapture response = newResponse();
+            handler.handle(newRequest(route[0], Map.of(), "application/json", "{}"), response.response, route[1],
+                    Negotiation.OutFormat.JSON, newServlet());
+            verify(response.response).setStatus(404);
+            assertContains(response.body(), "VM with ID vm-missing not found");
+        }
+
+        verify(handler.serverAdapter, times(routes.length)).instanceExists("vm-missing");
+        verifyNoMoreInteractions(handler.serverAdapter);
+    }
+
+    @Test
+    public void testHandleVmRouteWrongMethodSkipsExistenceCheck() throws Exception {
+        final VmsRouteHandler handler = new VmsRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+
+        final ResponseCapture response = newResponse();
+        handler.handle(newRequest("PATCH"), response.response, "/api/vms/vm-missing", Negotiation.OutFormat.JSON, newServlet());
+        verify(response.response).setStatus(405);
+
+        final ResponseCapture start = newResponse();
+        handler.handle(newRequest("GET"), start.response, "/api/vms/vm-missing/start", Negotiation.OutFormat.JSON, newServlet());
+        verify(start.response).setStatus(405);
+
+        verify(handler.serverAdapter, never()).instanceExists(anyString());
+    }
+
+    @Test
     public void testHandleDiskAttachmentAndNicRoutes() throws Exception {
         final VmsRouteHandler handler = new VmsRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.instanceExists("vm-1")).thenReturn(true);
         when(handler.serverAdapter.listDiskAttachmentsByInstanceUuid("vm-1"))
                 .thenReturn(List.of(withId(new DiskAttachment(), "attach-1")));
         when(handler.serverAdapter.listNicsByInstanceUuid("vm-1"))
@@ -200,6 +265,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
     public void testHandleSnapshotRoutes() throws Exception {
         final VmsRouteHandler handler = new VmsRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.instanceExists("vm-1")).thenReturn(true);
         when(handler.serverAdapter.listSnapshotsByInstanceUuid("vm-1")).thenReturn(List.of(withId(new Snapshot(), "snap-1")));
         when(handler.serverAdapter.getSnapshot("snap-1")).thenReturn(withId(new Snapshot(), "snap-1"));
 
@@ -248,6 +314,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
     public void testHandleBackupRoutes() throws Exception {
         final VmsRouteHandler handler = new VmsRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.instanceExists("vm-1")).thenReturn(true);
         when(handler.serverAdapter.listBackupsByInstanceUuid("vm-1")).thenReturn(List.of(withId(new Backup(), "backup-1")));
         when(handler.serverAdapter.getBackup("backup-1")).thenReturn(withId(new Backup(), "backup-1"));
         when(handler.serverAdapter.listDisksByBackupUuid("backup-1")).thenReturn(List.of(withId(new Disk(), "disk-1")));
@@ -293,6 +360,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
     public void testHandleCheckpointRoutes() throws Exception {
         final VmsRouteHandler handler = new VmsRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.instanceExists("vm-1")).thenReturn(true);
         when(handler.serverAdapter.listCheckpointsByInstanceUuid("vm-1")).thenReturn(List.of(withId(new Checkpoint(), "chk-1")));
 
         final ResponseCapture list = newResponse();

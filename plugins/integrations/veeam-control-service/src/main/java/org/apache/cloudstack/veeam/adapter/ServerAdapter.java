@@ -1412,6 +1412,10 @@ public class ServerAdapter extends ManagerBase {
                 allContent);
     }
 
+    public boolean instanceExists(String uuid) {
+        return userVmDao.findByUuid(uuid) != null;
+    }
+
     @ApiAccess(command = ListVMsCmd.class)
     public Vm getInstance(String uuid, boolean includeTags, boolean includeDisks, boolean includeNics,
               boolean allContent) {

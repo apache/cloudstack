@@ -197,14 +197,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                     if (!"GET".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
                         io.methodNotAllowed(resp, "GET, DELETE", outFormat);
                     } else if ("GET".equalsIgnoreCase(method)) {
-                        handleGetSnapshotById(subId, resp, outFormat, io);
+                        handleGetSnapshotById(id, subId, resp, outFormat, io);
                     } else if ("DELETE".equalsIgnoreCase(method)) {
-                        handleDeleteSnapshotById(subId, req, resp, outFormat, io);
+                        handleDeleteSnapshotById(id, subId, req, resp, outFormat, io);
                     }
                     return;
                 } else if ("backups".equals(subPath)) {
                     if ("GET".equalsIgnoreCase(method)) {
-                        handleGetBackupById(subId, resp, outFormat, io);
+                        handleGetBackupById(id, subId, resp, outFormat, io);
                     } else {
                         io.methodNotAllowed(resp, "GET", outFormat);
                     }
@@ -223,14 +223,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                 String action = idAndSubPath.get(3);
                 if ("snapshots".equals(subPath) && "restore".equals(action)) {
                     if ("POST".equalsIgnoreCase(method)) {
-                        handleRestoreSnapshotById(subId, req, resp, outFormat, io);
+                        handleRestoreSnapshotById(id, subId, req, resp, outFormat, io);
                     } else {
                         io.methodNotAllowed(resp, "POST", outFormat);
                     }
                     return;
                 } else if ("backups".equals(subPath) && "disks".equals(action)) {
                     if ("GET".equalsIgnoreCase(method)) {
-                        handleGetBackupDisksById(subId, req, resp, outFormat, io);
+                        handleGetBackupDisksById(id, subId, req, resp, outFormat, io);
                     } else {
                         io.methodNotAllowed(resp, "GET", outFormat);
                     }
@@ -278,8 +278,20 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
+    protected boolean checkInstanceExists(final String id, final HttpServletResponse resp,
+            final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (serverAdapter.instanceExists(id)) {
+            return true;
+        }
+        io.notFound(resp, "VM with ID " + id + " not found", outFormat);
+        return false;
+    }
+
     protected void handleGetById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         try {
             ListQuery query = ListQuery.fromRequest(req);
             Vm response = serverAdapter.getInstance(id,
@@ -297,6 +309,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleUpdateById(final String id, final HttpServletRequest req, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                                     final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         String data = RouteHandler.getRequestData(req, logger);
         try {
             Vm request = io.getMapper().jsonMapper().readValue(data, Vm.class);
@@ -309,6 +324,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleDeleteById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         boolean async = RouteHandler.isRequestAsync(req);
         boolean deleteVolumes = !isRequestDetachOnly(req, false);
         try {
@@ -321,6 +339,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleStartVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.startInstance(id, async);
@@ -332,6 +353,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleStopVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.stopInstance(id, async);
@@ -343,6 +367,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleShutdownVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.shutdownInstance(id, async);
@@ -354,6 +381,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGetDiskAttachmentsByVmId(final String id, final HttpServletResponse resp,
                   final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         try {
             List<DiskAttachment> disks = serverAdapter.listDiskAttachmentsByInstanceUuid(id);
             NamedList<DiskAttachment> response = NamedList.of("disk_attachment", disks);
@@ -368,6 +398,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePostDiskAttachmentForVmId(final String id, final HttpServletRequest req,
              final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         String data = RouteHandler.getRequestData(req, logger);
         try {
             DiskAttachment request = io.getMapper().jsonMapper().readValue(data, DiskAttachment.class);
@@ -380,6 +413,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGetNicsByVmId(final String id, final HttpServletResponse resp,
                    final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         try {
             List<Nic> nics = serverAdapter.listNicsByInstanceUuid(id);
             NamedList<Nic> response = NamedList.of("nic", nics);
@@ -394,6 +430,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePostNicForVmId(final String id, final HttpServletRequest req,
                final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         String data = RouteHandler.getRequestData(req, logger);
         try {
             Nic request = io.getMapper().jsonMapper().readValue(data, Nic.class);
@@ -432,6 +471,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGetSnapshotsByVmId(final String id, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         try {
             List<Snapshot> snapshots = serverAdapter.listSnapshotsByInstanceUuid(id);
             NamedList<Snapshot> response = NamedList.of("snapshot", snapshots);
@@ -446,6 +488,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePostSnapshotForVmId(final String id, final HttpServletRequest req,
                  final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         String data = RouteHandler.getRequestData(req, logger);
         try {
             Snapshot request = io.getMapper().jsonMapper().readValue(data, Snapshot.class);
@@ -461,6 +506,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         boolean async = RouteHandler.isRequestAsync(req);
         boolean delete = !isRequestDetachOnly(req, true);
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         try {
             serverAdapter.detachInstanceDisk(vmId, diskId);
             ResourceAction action = null;
@@ -475,10 +523,13 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleGetSnapshotById(final String id, final HttpServletResponse resp,
+    protected void handleGetSnapshotById(final String vmId, final String snapshotId, final HttpServletResponse resp,
                  final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         try {
-            Snapshot response = serverAdapter.getSnapshot(id);
+            Snapshot response = serverAdapter.getSnapshot(snapshotId);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
@@ -487,25 +538,31 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleDeleteSnapshotById(final String id, final HttpServletRequest req,
+    protected void handleDeleteSnapshotById(final String vmId, final String snapshotId, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         boolean async = RouteHandler.isRequestAsync(req);
         try {
-            ResourceAction action = serverAdapter.deleteSnapshot(id, async);
+            ResourceAction action = serverAdapter.deleteSnapshot(snapshotId, async);
             RouteHandler.writeDeleteResponse(resp, async, action, outFormat, io);
         } catch (CloudRuntimeException e) {
             handleDeleteError(resp, e, outFormat, io);
         }
     }
 
-    protected void handleRestoreSnapshotById(final String id, final HttpServletRequest req,
+    protected void handleRestoreSnapshotById(final String vmId, final String snapshotId, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         boolean async = RouteHandler.isRequestAsync(req);
         String data = RouteHandler.getRequestData(req, logger);
         try {
-            ResourceAction response = serverAdapter.revertInstanceToSnapshot(id, async);
+            ResourceAction response = serverAdapter.revertInstanceToSnapshot(snapshotId, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, response, outFormat);
         } catch (CloudRuntimeException e) {
             handleActionError(resp, e, outFormat, io);
@@ -514,6 +571,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGetBackupsByVmId(final String id, final HttpServletResponse resp,
               final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         try {
             List<Backup> backups = serverAdapter.listBackupsByInstanceUuid(id);
             NamedList<Backup> response = NamedList.of("backup", backups);
@@ -528,6 +588,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePostBackupForVmId(final String id, final HttpServletRequest req,
                final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         String data = RouteHandler.getRequestData(req, logger);
         try {
             Backup request = io.getMapper().jsonMapper().readValue(data, Backup.class);
@@ -538,10 +601,13 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleGetBackupById(final String id, final HttpServletResponse resp,
+    protected void handleGetBackupById(final String vmId, final String backupId, final HttpServletResponse resp,
               final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         try {
-            Backup response = serverAdapter.getBackup(id);
+            Backup response = serverAdapter.getBackup(backupId);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
@@ -550,11 +616,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleGetBackupDisksById(final String id, final HttpServletRequest req,
+    protected void handleGetBackupDisksById(final String vmId, final String backupId, final HttpServletRequest req,
             final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         try {
-            List<Disk> disks = serverAdapter.listDisksByBackupUuid(id);
+            List<Disk> disks = serverAdapter.listDisksByBackupUuid(backupId);
             NamedList<Disk> response = NamedList.of("disk", disks);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
@@ -567,6 +636,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleFinalizeBackupById(final String vmId, final String backupId, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         try {
             Backup backup = serverAdapter.finalizeBackup(vmId, backupId);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, backup, outFormat);
@@ -577,6 +649,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGetCheckpointsByVmId(final String id, final HttpServletResponse resp,
               final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         try {
             List<Checkpoint> checkpoints = serverAdapter.listCheckpointsByInstanceUuid(id);
             NamedList<Checkpoint> response = NamedList.of("checkpoints", checkpoints);
@@ -592,6 +667,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
         boolean async = RouteHandler.isRequestAsync(req);
+        if (!checkInstanceExists(vmId, resp, outFormat, io)) {
+            return;
+        }
         try {
             serverAdapter.deleteCheckpoint(vmId, checkpointId);
             RouteHandler.writeDeleteResponse(resp, async, null, outFormat, io);
@@ -603,6 +681,9 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePostTagForVmId(final String id, final HttpServletRequest req,
                final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        if (!checkInstanceExists(id, resp, outFormat, io)) {
+            return;
+        }
         String data = RouteHandler.getRequestData(req, logger);
         try {
             Tag request = io.getMapper().jsonMapper().readValue(data, Tag.class);

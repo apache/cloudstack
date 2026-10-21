@@ -1134,6 +1134,14 @@ public class ServerAdapterTest {
     }
 
 
+    @Test
+    public void testInstanceExists() {
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(mock(UserVmVO.class));
+        when(userVmDao.findByUuid("vm-missing")).thenReturn(null);
+        assertTrue(serverAdapter.instanceExists("vm-uuid"));
+        assertFalse(serverAdapter.instanceExists("vm-missing"));
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteInstance_VmNotFound_Throws() {
         when(userVmDao.findByUuid("vm-uuid")).thenReturn(null);
