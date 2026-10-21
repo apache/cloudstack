@@ -3497,10 +3497,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     // Converges a trunk nic's associated-network DHCP entries with its current nic_network_map rows on start;
     // no-op for a nic without associations.
     void syncNicNetworkAssociationDhcpEntries(UserVmVO vm, NicVO nic) {
-        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
+        List<NicNetworkMapVO> currentAssociations = _nicNetworkMapDao.listByNicId(nic.getId());
+        Set<Pair<Long, String>> networkIpsCurrentlyOnNic = currentAssociations.stream()
+                .map(a -> new Pair<>(a.getNetworkId(), a.getIp4Address())).collect(Collectors.toSet());
+        networkIpsCurrentlyOnNic.add(new Pair<>(nic.getNetworkId(), nic.getIPv4Address()));
+        for (NicNetworkMapVO association : currentAssociations) {
             sendAssociationDhcpEntry(vm, nic, association.getNetworkId(), association.getIp4Address(), association.getIp6Address(), false);
         }
         for (NicNetworkMapVO removedAssociation : _nicNetworkMapDao.listRemovedByNicId(nic.getId())) {
+            // skip a removal whose (network, ip) is still live on this nic - e.g. changeNicPrimaryNetwork
+            // removes the association row for the network being promoted to primary, same ip
+            if (networkIpsCurrentlyOnNic.contains(new Pair<>(removedAssociation.getNetworkId(), removedAssociation.getIp4Address()))) {
+                continue;
+            }
             sendAssociationDhcpEntry(vm, nic, removedAssociation.getNetworkId(), removedAssociation.getIp4Address(), removedAssociation.getIp6Address(), true);
         }
     }

@@ -653,6 +653,68 @@ public class UserVmManagerImplTest {
         Mockito.verify(nwHelper).sendCommandsToRouter(Mockito.eq(router), Mockito.any());
     }
 
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesSkipsARemovedAssociationForTheNicsCurrentPrimaryNetwork() throws Exception {
+        // changeNicPrimaryNetwork removes the association row for the network being promoted to primary;
+        // replaying that removal would delete the router's live primary entry for the same IP
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = mockNicWithId(11L);
+        Mockito.when(nic.getNetworkId()).thenReturn(207L);
+        Mockito.when(nic.getIPv4Address()).thenReturn("10.1.2.117");
+        NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 207L, "10.1.2.117", null);
+        Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verify(_networkDao, Mockito.never()).findById(207L);
+        Mockito.verifyNoInteractions(commandSetupHelper);
+    }
+
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesSkipsARemovedAssociationForAnotherCurrentAssociationWithTheSameIp() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = mockNicWithId(11L);
+        NicNetworkMapVO currentAssociation = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Collections.singletonList(currentAssociation));
+        NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
+        Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
+        NetworkVO associatedNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(_networkDao.findById(206L)).thenReturn(associatedNetwork);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(routerDao.findByNetwork(206L)).thenReturn(Collections.singletonList(router));
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verify(commandSetupHelper, Mockito.times(1)).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.anyString(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(206L), Mockito.eq(false), Mockito.eq(false), Mockito.any());
+    }
+
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesStillCleansUpAStaleIpForACurrentAssociationThatWasReassignedANewIp() throws Exception {
+        // network 206 was disassociated and re-associated with a different ip while the VM was stopped - the
+        // old ip's router entry is genuinely orphaned and must still be cleaned up, even though network 206
+        // is, again, currently associated with this nic
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = mockNicWithId(11L);
+        NicNetworkMapVO currentAssociation = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Collections.singletonList(currentAssociation));
+        NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 206L, "10.1.1.40", null);
+        Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
+        NetworkVO associatedNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(_networkDao.findById(206L)).thenReturn(associatedNetwork);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(routerDao.findByNetwork(206L)).thenReturn(Collections.singletonList(router));
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verify(commandSetupHelper).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.eq("10.1.1.50"),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(206L), Mockito.eq(false), Mockito.eq(false), Mockito.any());
+        Mockito.verify(commandSetupHelper).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.eq("10.1.1.40"),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(206L), Mockito.eq(false), Mockito.eq(true), Mockito.any());
+    }
+
     private VMInstanceVO mockVmWithId(long id) {
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm.getId()).thenReturn(id);
