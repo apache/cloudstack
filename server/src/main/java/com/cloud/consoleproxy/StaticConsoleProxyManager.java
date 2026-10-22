@@ -22,8 +22,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.host.Host.Type;
@@ -33,7 +31,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
@@ -43,8 +40,6 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     ConsoleProxyDao _proxyDao;
     @Inject
     ResourceManager _resourceMgr;
-    @Inject
-    ConfigurationDao _configDao;
     private String _ip = null;
 
     public StaticConsoleProxyManager() {
@@ -67,7 +62,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _ip = _configDao.getValue("consoleproxy.static.publicIp");
+        _ip = ConsoleProxyStaticPublicIp.value();
         if (_ip == null) {
             _ip = "127.0.0.1";
         }
@@ -79,7 +74,8 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
         int defaultPort = 8088;
         if (_sslEnabled)
             defaultPort = 8443;
-        _consoleProxyUrlPort = NumbersUtil.parseInt(_configDao.getValue("consoleproxy.static.port"), defaultPort);
+        Integer configuredPort = ConsoleProxyStaticPort.value();
+        _consoleProxyUrlPort = configuredPort != null ? configuredPort : defaultPort;
 
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 

@@ -50,12 +50,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-
 import org.mockito.MockedStatic;
 import org.mockito.MockedConstruction;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.host.HostVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.server.ManagementServer;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -272,7 +273,7 @@ public class CAManagerImplTest {
         Mockito.when(host.getDetail(ApiConstants.USERNAME)).thenReturn("root");
         Mockito.when(host.getDetail(ApiConstants.PASSWORD)).thenReturn("password");
 
-        Mockito.when(configDao.getValue("ssh.privatekey")).thenReturn("privatekey");
+        ReflectionTestUtils.setField(ManagementServer.SshPrivateKey, "_value", "privatekey");
 
         try (MockedConstruction<Connection> ignored = Mockito.mockConstruction(Connection.class,
                 (mock, context) -> {
@@ -292,6 +293,8 @@ public class CAManagerImplTest {
             Mockito.verify(caManager, Mockito.times(1)).provisionCertificateViaSsh(Mockito.any(Connection.class), Mockito.eq("192.168.1.1"), Mockito.eq("host1"), Mockito.eq("root"));
             sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.eq("systemctl restart libvirtd")), Mockito.times(1));
             sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.eq("systemctl restart cloudstack-agent")), Mockito.times(1));
+        } finally {
+            ReflectionTestUtils.setField(ManagementServer.SshPrivateKey, "_value", null);
         }
     }
 

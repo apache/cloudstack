@@ -209,7 +209,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
-        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
+        String pubKey = "- \"" + SshPublicKey.value() + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
@@ -341,7 +341,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final Long waitTime = KubernetesClusterService.KubernetesControlNodeInstallAttemptWait.value();
         final Long reattempts = KubernetesClusterService.KubernetesControlNodeInstallReattempts.value();
 
-        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
+        String pubKey = "- \"" + SshPublicKey.value() + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
@@ -412,7 +412,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
         final Long waitTime = KubernetesClusterService.KubernetesControlNodeInstallAttemptWait.value();
         final Long reattempts = KubernetesClusterService.KubernetesControlNodeInstallReattempts.value();
-        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
+        String pubKey = "- \"" + SshPublicKey.value() + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);

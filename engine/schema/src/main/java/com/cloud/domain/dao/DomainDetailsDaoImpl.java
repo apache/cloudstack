@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
@@ -40,8 +40,12 @@ public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO>
 
     @Inject
     protected DomainDao _domainDao;
-    @Inject
-    private ConfigurationDao _configDao;
+
+    // Registered/owned by com.cloud.configuration.ConfigurationManagerImpl#ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN;
+    // declared here too so this module can read it without a reverse dependency on the server module.
+    private static final ConfigKey<Boolean> EnableDomainSettingsForChildDomain = new ConfigKey<>("Advanced", Boolean.class, "enable.domain.settings.for.child.domain", "false",
+            "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
+            true);
 
     protected DomainDetailsDaoImpl() {
         domainSearch = createSearchBuilder();
@@ -113,8 +117,7 @@ public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO>
     @Override
     public String getConfigValue(long id, String key) {
         DomainDetailVO vo = null;
-        String enableDomainSettingsForChildDomain = _configDao.getValue("enable.domain.settings.for.child.domain");
-        if (!Boolean.parseBoolean(enableDomainSettingsForChildDomain)) {
+        if (!EnableDomainSettingsForChildDomain.value()) {
             vo = findDetail(id, key);
             return vo == null ? null : getActualValue(vo);
         }

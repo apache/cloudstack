@@ -36,6 +36,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
@@ -198,7 +199,7 @@ public class ResourceManagerImplTest {
         when(hostDao.findById(hostId)).thenReturn(host);
         when(host.getDetail("username")).thenReturn(hostUsername);
         when(host.getDetail("password")).thenReturn(hostPassword);
-        when(configurationDao.getValue("ssh.privatekey")).thenReturn(hostPrivateKey);
+        overrideDefaultConfigValue(ManagementServer.SshPrivateKey, "_value", hostPrivateKey);
         when(host.getStatus()).thenReturn(Status.Up);
         when(host.getPrivateIpAddress()).thenReturn(hostPrivateIp);
         when(vm1.getId()).thenReturn(vm1Id);
@@ -242,6 +243,7 @@ public class ResourceManagerImplTest {
 
     @After
     public void tearDown() throws Exception {
+        overrideDefaultConfigValue(ManagementServer.SshPrivateKey, "_value", null);
         sshHelperMocked.close();
         actionEventUtilsMocked.close();
         getVncPortCommandMockedConstruction.close();
@@ -380,9 +382,9 @@ public class ResourceManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testGetHostCredentialsMissingParameter() {
+    public void testGetHostCredentialsMissingParameter() throws Exception {
         when(host.getDetail("password")).thenReturn(null);
-        when(configurationDao.getValue("ssh.privatekey")).thenReturn(null);
+        overrideDefaultConfigValue(ManagementServer.SshPrivateKey, "_value", null);
         resourceManager.getHostCredentials(host);
     }
 
