@@ -45,7 +45,6 @@ public interface ExternalFirewallDeviceManager extends Manager {
      * @param username username
      * @param password password
      * @param deviceName device name
-     * @param server resource that will handle the commands specific to this device
      * @return Host object for the device added
      */
     public ExternalFirewallDeviceVO addExternalFirewall(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource);
@@ -68,7 +67,6 @@ public interface ExternalFirewallDeviceManager extends Manager {
     /**
      * finds a suitable firewall device which can be used by this network
      * @param network guest network
-     * @param dedicatedLb true if a dedicated load balancer is needed for this guest network
      * @return ExternalLoadBalancerDeviceVO corresponding to the suitable device
      * @throws InsufficientCapacityException
      */
