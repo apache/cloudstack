@@ -3390,14 +3390,28 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
                 logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
                         vm.getInstanceName(), dstHostUuid, details);
+                alertPostMigrationFailure(vm, dstHostUuid, details);
             } else {
                 logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostUuid);
             }
         } catch (Exception e) {
             logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
                     vm.getInstanceName(), dstHostUuid, e.getMessage(), e);
+            alertPostMigrationFailure(vm, dstHostUuid, e.getMessage());
         }
         updateClvmLockHostForVmVolumes(vm.getId(), dstHostId);
+    }
+
+    private void alertPostMigrationFailure(VMInstanceVO vm, String dstHostUuid, String details) {
+        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
+        if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
+            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+        } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+        }
+        _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                String.format("Post-migration tasks failed for VM %s on destination host %s.", vm.getInstanceName(), dstHostUuid),
+                String.format("Post-migration tasks failed: %s. VM network/storage configuration on the destination may be incomplete.", details));
     }
 
     /**
