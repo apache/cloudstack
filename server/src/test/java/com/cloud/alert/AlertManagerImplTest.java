@@ -17,10 +17,15 @@
 package com.cloud.alert;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.mail.MessagingException;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -32,7 +37,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -54,7 +58,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyShort;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AlertManagerImplTest {
@@ -107,15 +121,15 @@ public class AlertManagerImplTest {
 
     private void sendMessage() {
         try {
-            DataCenterVO zone = Mockito.mock(DataCenterVO.class);
-            Mockito.when(zone.getId()).thenReturn(0L);
-            Mockito.when(_dcDao.findById(0L)).thenReturn(zone);
-            HostPodVO pod = Mockito.mock(HostPodVO.class);
-            Mockito.when(pod.getId()).thenReturn(1L);
-            Mockito.when(_podDao.findById(1L)).thenReturn(pod);
-            ClusterVO cluster = Mockito.mock(ClusterVO.class);
-            Mockito.when(cluster.getId()).thenReturn(1L);
-            Mockito.when(_clusterDao.findById(1L)).thenReturn(cluster);
+            DataCenterVO zone = mock(DataCenterVO.class);
+            when(zone.getId()).thenReturn(0L);
+            when(_dcDao.findById(0L)).thenReturn(zone);
+            HostPodVO pod = mock(HostPodVO.class);
+            when(pod.getId()).thenReturn(1L);
+            when(_podDao.findById(1L)).thenReturn(pod);
+            ClusterVO cluster = mock(ClusterVO.class);
+            when(cluster.getId()).thenReturn(1L);
+            when(_clusterDao.findById(1L)).thenReturn(cluster);
 
             alertManagerImplMock.sendAlert(AlertManager.AlertType.ALERT_TYPE_CPU, 0, 1L, 1L, "", "");
         } catch (UnsupportedEncodingException | MessagingException e) {
@@ -125,39 +139,39 @@ public class AlertManagerImplTest {
 
     @Test
     public void sendAlertTestSendMail() {
-        Mockito.doReturn(null).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(null).when(_alertDao).persist(any());
+        doReturn(null).when(_alertDao).getLastAlert(anyShort(), anyLong(),
+                anyLong(), anyLong());
+        doReturn(null).when(_alertDao).persist(any());
         alertManagerImplMock.recipients = new String[]{""};
 
         sendMessage();
 
-        Mockito.verify(alertManagerImplMock).sendMessage(any());
+        verify(alertManagerImplMock).sendMessage(any());
     }
 
     @Test
     public void sendAlertTestDebugLogging() {
-        Mockito.doReturn(0).when(alertVOMock).getSentCount();
-        Mockito.doReturn(alertVOMock).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.anyLong());
+        doReturn(0).when(alertVOMock).getSentCount();
+        doReturn(alertVOMock).when(_alertDao).getLastAlert(anyShort(), anyLong(),
+                anyLong(), anyLong());
 
         sendMessage();
 
-        Mockito.verify(alertManagerImplMock.logger).debug(Mockito.anyString());
-        Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(any());
+        verify(alertManagerImplMock.logger).debug(anyString());
+        verify(alertManagerImplMock, never()).sendMessage(any());
     }
 
     @Test
     public void sendAlertTestWarnLogging() {
-        Mockito.doReturn(null).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(null).when(_alertDao).persist(Mockito.any());
+        doReturn(null).when(_alertDao).getLastAlert(anyShort(), anyLong(),
+                anyLong(), anyLong());
+        doReturn(null).when(_alertDao).persist(any());
         alertManagerImplMock.recipients = null;
 
         sendMessage();
 
-        Mockito.verify(alertManagerImplMock.logger, Mockito.times(2)).warn(Mockito.anyString());
-        Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(any());
+        verify(alertManagerImplMock.logger, times(2)).warn(anyString());
+        verify(alertManagerImplMock, never()).sendMessage(any());
     }
 
     @Test
@@ -193,30 +207,192 @@ public class AlertManagerImplTest {
     @Test
     public void testRecalculateHostCapacities() {
         List<Long> mockHostIds = List.of(1L, 2L, 3L);
-        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(mockHostIds);
-        HostVO host = Mockito.mock(HostVO.class);
-        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(host);
-        Mockito.doNothing().when(capacityManager).updateCapacityForHost(host);
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(mockHostIds);
+        HostVO host = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(host);
+        doNothing().when(capacityManager).updateCapacityForHost(host);
         alertManagerImplMock.recalculateHostCapacities();
-        Mockito.verify(hostDao, Mockito.times(3)).findById(Mockito.anyLong());
-        Mockito.verify(capacityManager, Mockito.times(3)).updateCapacityForHost(host);
+        verify(hostDao, times(3)).findById(anyLong());
+        verify(capacityManager, times(3)).updateCapacityForHost(host);
     }
 
     @Test
     public void testRecalculateStorageCapacities() {
         List<Long> mockPoolIds = List.of(101L, 102L, 103L);
-        Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(mockPoolIds);
-        StoragePoolVO sharedPool = Mockito.mock(StoragePoolVO.class);
-        Mockito.when(sharedPool.isShared()).thenReturn(true);
-        Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(0))).thenReturn(sharedPool);
-        Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(1))).thenReturn(sharedPool);
-        StoragePoolVO nonSharedPool = Mockito.mock(StoragePoolVO.class);
-        Mockito.when(nonSharedPool.isShared()).thenReturn(false);
-        Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(2))).thenReturn(nonSharedPool);
-        Mockito.when(capacityManager.getAllocatedPoolCapacity(sharedPool, null)).thenReturn(10L);
-        Mockito.when(capacityManager.getAllocatedPoolCapacity(nonSharedPool, null)).thenReturn(20L);
+        when(primaryDataStoreDao.listAllIds()).thenReturn(mockPoolIds);
+        StoragePoolVO sharedPool = mock(StoragePoolVO.class);
+        when(sharedPool.isShared()).thenReturn(true);
+        when(primaryDataStoreDao.findById(mockPoolIds.get(0))).thenReturn(sharedPool);
+        when(primaryDataStoreDao.findById(mockPoolIds.get(1))).thenReturn(sharedPool);
+        StoragePoolVO nonSharedPool = mock(StoragePoolVO.class);
+        when(nonSharedPool.isShared()).thenReturn(false);
+        when(primaryDataStoreDao.findById(mockPoolIds.get(2))).thenReturn(nonSharedPool);
+        when(capacityManager.getAllocatedPoolCapacity(sharedPool, null)).thenReturn(10L);
+        when(capacityManager.getAllocatedPoolCapacity(nonSharedPool, null)).thenReturn(20L);
         alertManagerImplMock.recalculateStorageCapacities();
-        Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
-        Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
+        verify(storageManager, times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
+        verify(storageManager, times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesWithEmptyHostList() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of());
+        alertManagerImplMock.recalculateHostCapacities();
+        verify(hostDao, never()).findById(anyLong());
+        verify(capacityManager, never()).updateCapacityForHost(any());
+        assertNull("executor should never be created when there is nothing to submit", getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateStorageCapacitiesWithEmptyPoolList() throws Exception {
+        when(primaryDataStoreDao.listAllIds()).thenReturn(List.of());
+        alertManagerImplMock.recalculateStorageCapacities();
+        verify(primaryDataStoreDao, never()).findById(anyLong());
+        verify(storageManager, never()).createCapacityEntry(any(), anyShort(), anyLong());
+        assertNull("executor should never be created when there is nothing to submit", getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesLogsAndContinuesOnTaskFailure() {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L, 2L, 3L));
+        HostVO host1 = mock(HostVO.class);
+        HostVO host2 = mock(HostVO.class);
+        HostVO host3 = mock(HostVO.class);
+        when(hostDao.findById(1L)).thenReturn(host1);
+        when(hostDao.findById(2L)).thenReturn(host2);
+        when(hostDao.findById(3L)).thenReturn(host3);
+        doThrow(new RuntimeException("boom")).when(capacityManager).updateCapacityForHost(host2);
+
+        alertManagerImplMock.recalculateHostCapacities();
+
+        verify(capacityManager).updateCapacityForHost(host1);
+        verify(capacityManager).updateCapacityForHost(host2);
+        verify(capacityManager).updateCapacityForHost(host3);
+        verify(alertManagerImplMock.logger).error(anyString(), any(Throwable.class));
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesReusesExecutorAcrossCalls() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService firstExecutor = getCapacityExecutorService();
+        assertNotNull(firstExecutor);
+
+        when(primaryDataStoreDao.listAllIds()).thenReturn(List.of(101L));
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(primaryDataStoreDao.findById(101L)).thenReturn(pool);
+        alertManagerImplMock.recalculateStorageCapacities();
+
+        assertEquals("host and storage recalculation should share the same long-lived pool",
+                firstExecutor, getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesRecreatesExecutorAfterShutdown() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService firstExecutor = getCapacityExecutorService();
+        firstExecutor.shutdown();
+
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService secondExecutor = getCapacityExecutorService();
+
+        Assert.assertNotEquals("a shut down executor should be replaced rather than reused", firstExecutor, secondExecutor);
+        Assert.assertFalse(secondExecutor.isShutdown());
+    }
+
+    @Test
+    public void testStopShutsDownCapacityExecutorServiceWhenPresent() throws Exception {
+        Timer timerMock = mock(Timer.class);
+        setTimer(timerMock);
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+        alertManagerImplMock.recalculateHostCapacities();
+
+        boolean result = alertManagerImplMock.stop();
+
+        Assert.assertTrue(result);
+        verify(timerMock).cancel();
+        Assert.assertTrue(getCapacityExecutorService().isShutdown());
+    }
+
+    @Test
+    public void testStopDoesNotThrowWhenCapacityExecutorServiceNeverCreated() throws Exception {
+        Timer timerMock = mock(Timer.class);
+        setTimer(timerMock);
+
+        boolean result = alertManagerImplMock.stop();
+
+        Assert.assertTrue(result);
+        verify(timerMock).cancel();
+        assertNull(getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesResizesExecutorWhenWorkerCountIncreases() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "1");
+        alertManagerImplMock.recalculateHostCapacities();
+        ThreadPoolExecutor firstExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+        assertEquals(1, firstExecutor.getCorePoolSize());
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "4");
+        alertManagerImplMock.recalculateHostCapacities();
+        ThreadPoolExecutor secondExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+
+        assertEquals("a dynamic worker count change should resize the existing pool rather than replace it",
+                firstExecutor, secondExecutor);
+        Assert.assertFalse("the pool should remain usable, not shut down, after a resize", secondExecutor.isShutdown());
+        assertEquals(4, secondExecutor.getCorePoolSize());
+        assertEquals(4, secondExecutor.getMaximumPoolSize());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesResizesExecutorWhenWorkerCountDecreases() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "4");
+        alertManagerImplMock.recalculateHostCapacities();
+        ThreadPoolExecutor firstExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+        assertEquals(4, firstExecutor.getCorePoolSize());
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "1");
+        alertManagerImplMock.recalculateHostCapacities();
+        ThreadPoolExecutor secondExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+
+        assertEquals("a dynamic worker count change should resize the existing pool rather than replace it",
+                firstExecutor, secondExecutor);
+        assertEquals(1, secondExecutor.getCorePoolSize());
+        assertEquals(1, secondExecutor.getMaximumPoolSize());
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws Exception {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
+    private ExecutorService getCapacityExecutorService() throws Exception {
+        Field field = AlertManagerImpl.class.getDeclaredField("capacityExecutorService");
+        field.setAccessible(true);
+        return (ExecutorService) field.get(alertManagerImplMock);
+    }
+
+    private void setTimer(Timer timer) throws Exception {
+        Field field = AlertManagerImpl.class.getDeclaredField("_timer");
+        field.setAccessible(true);
+        field.set(alertManagerImplMock, timer);
     }
 }
