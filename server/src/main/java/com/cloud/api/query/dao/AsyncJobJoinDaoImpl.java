@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -69,9 +68,6 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         return managementServer != null ? managementServer.getName() : null;
     }
 
-    @Inject
-    private AsyncJobManager asyncJobManager;
-
     private static final Map<String, Boolean> cancellableCommands = new ConcurrentHashMap<>();
 
     /** The same annotation cancelAsyncJob checks; a command class that cannot be loaded is reported as not cancellable. */
@@ -99,8 +95,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(job.getDomainPath()));
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
-        jobResponse.setCancellable(isCancellableCommand(job.getCmd())
-                || (job.getStatus() == JobInfo.Status.IN_PROGRESS.value() && asyncJobManager.hasOnlyQueuedWork(job.getId())));
+        jobResponse.setCancellable(isCancellableCommand(job.getCmd()));
         jobResponse.setCreated(job.getCreated());
         jobResponse.setRemoved(job.getRemoved());
         jobResponse.setId(job.getUuid());

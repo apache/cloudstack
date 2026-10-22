@@ -90,6 +90,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -2187,7 +2188,11 @@ public class ApiDBUtils {
     }
 
     public static AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO ve) {
-        return s_jobJoinDao.newAsyncJobResponse(ve);
+        final AsyncJobResponse response = s_jobJoinDao.newAsyncJobResponse(ve);
+        if (!response.getCancellable() && ve.getStatus() == JobInfo.Status.IN_PROGRESS.value() && s_asyncMgr.hasOnlyQueuedWork(ve.getId())) {
+            response.setCancellable(true);
+        }
+        return response;
     }
 
     public static AsyncJobJoinVO newAsyncJobView(AsyncJob e) {
