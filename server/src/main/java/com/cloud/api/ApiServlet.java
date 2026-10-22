@@ -422,7 +422,7 @@ public class ApiServlet extends HttpServlet {
     protected boolean skip2FAcheckForUser(HttpSession session) {
         boolean skip2FAcheck = false;
         Long userId = (Long) session.getAttribute("userid");
-        boolean is2FAverified = (boolean) session.getAttribute(ApiConstants.IS_2FA_VERIFIED);
+        boolean is2FAverified = Boolean.TRUE.equals(session.getAttribute(ApiConstants.IS_2FA_VERIFIED));
         if (is2FAverified) {
             LOGGER.debug(String.format("Two factor authentication is already verified for the user %d, so skipping", userId));
             skip2FAcheck = true;
