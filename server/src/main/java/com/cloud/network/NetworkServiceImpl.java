@@ -1031,30 +1031,40 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("networkids must not be empty");
         }
 
-        NetworkVO primaryNetwork = _networksDao.findById(nic.getNetworkId());
-        if (primaryNetwork == null) {
-            throw new CloudRuntimeException(String.format("Nic %s has no primary network", nic.getUuid()));
+        // serializes concurrent associate calls on the same nic: the "already associated" check in
+        // buildResultingNetworkSet() and the insert in persistAssociations() are otherwise a check-then-act
+        // race, since nic_network_map has no unique constraint on (nic_id, network_id)
+        if (_nicDao.acquireInLockTable(nic.getId()) == null) {
+            throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic %s", nic.getUuid()));
         }
+        try {
+            NetworkVO primaryNetwork = _networksDao.findById(nic.getNetworkId());
+            if (primaryNetwork == null) {
+                throw new CloudRuntimeException(String.format("Nic %s has no primary network", nic.getUuid()));
+            }
 
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        if (template != null) {
-            vnfTemplateManager.validateVnfApplianceTrunkNic(template, nic.getDeviceId());
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+            if (template != null) {
+                vnfTemplateManager.validateVnfApplianceTrunkNic(template, nic.getDeviceId());
+            }
+
+            Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds, caller);
+            List<NetworkVO> resultingSet = networkSets.first();
+            List<NetworkVO> requestedNetworks = networkSets.second();
+
+            validateTrunkSet(primaryNetwork, resultingSet);
+            validateNoOverlappingCidrs(resultingSet);
+            // defer implement to the Instance's next start when stopped, like its primary network; a running Instance needs it now
+            boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
+            if (vmRunning) {
+                implementRequestedNetworks(requestedNetworks, vm, caller);
+            }
+            validateNoDuplicateVlanAfterImplement(resultingSet, vmRunning ? requestedNetworks : Collections.emptyList());
+            persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
+            return requestedNetworks;
+        } finally {
+            _nicDao.releaseFromLockTable(nic.getId());
         }
-
-        Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds, caller);
-        List<NetworkVO> resultingSet = networkSets.first();
-        List<NetworkVO> requestedNetworks = networkSets.second();
-
-        validateTrunkSet(primaryNetwork, resultingSet);
-        validateNoOverlappingCidrs(resultingSet);
-        // defer implement to the Instance's next start when stopped, like its primary network; a running Instance needs it now
-        boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
-        if (vmRunning) {
-            implementRequestedNetworks(requestedNetworks, vm, caller);
-        }
-        validateNoDuplicateVlanAfterImplement(resultingSet, vmRunning ? requestedNetworks : Collections.emptyList());
-        persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
-        return requestedNetworks;
     }
 
     @Override

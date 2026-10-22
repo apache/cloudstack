@@ -373,6 +373,7 @@ public class NetworkServiceImplTest {
         service._vpcMgr = vpcMgr;
         service._networksDao = networkDao;
         service._nicDao = nicDao;
+        Mockito.when(nicDao.acquireInLockTable(Mockito.anyLong())).thenReturn(Mockito.mock(NicVO.class));
         service._ipAddressDao = ipAddressDao;
         service.routerDao = routerDao;
         service.commandSetupHelper = commandSetupHelper;
