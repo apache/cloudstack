@@ -923,7 +923,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Invalid Network id is given");
         }
 
-        int maxAllowedIpsPerNic = NumbersUtil.parseInt(_configDao.getValue(Config.MaxNumberOfSecondaryIPsPerNIC.key()), Integer.parseInt(Config.MaxNumberOfSecondaryIPsPerNIC.getDefaultValue()));
+        int maxAllowedIpsPerNic = MaxNumberOfSecondaryIPsPerNIC.value();
         Long nicWiseIpCount = _nicSecondaryIpDao.countByNicId(nicId);
         if (nicWiseIpCount.intValue() >= maxAllowedIpsPerNic) {
             logger.error("Maximum Number of IPs \"vm.network.nic.max.secondary.ipaddresses = \"{} per NIC has been crossed for the NIC {}.", maxAllowedIpsPerNic, nicVO);
@@ -1367,8 +1367,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 Integer highestVlanTag = vlanRange.second();
                 for (int vlan = lowestVlanTag; vlan <= highestVlanTag; ++vlan) {
                     int offset = vlan - lowestVlanTag;
-                    String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-                    int cidrSize = 8 + Integer.parseInt(globalVlanBits);
+                    int cidrSize = 8 + GuestVlanBits.value();
                     String guestNetworkCidr = zone.getGuestNetworkCidr();
                     String[] cidrTuple = guestNetworkCidr.split("\\/");
                     long newCidrAddress = (NetUtils.ip2Long(cidrTuple[0]) & 0xff000000) | (offset << (32 - cidrSize));
@@ -5505,16 +5504,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String xenLabel = null;
         switch (trafficType) {
         case Public:
-            xenLabel = _configDao.getValue(Config.XenServerPublicNetwork.key());
+            xenLabel = XenServerPublicNetwork.value();
             break;
         case Guest:
-            xenLabel = _configDao.getValue(Config.XenServerGuestNetwork.key());
+            xenLabel = XenServerGuestNetwork.value();
             break;
         case Storage:
-            xenLabel = _configDao.getValue(Config.XenServerStorageNetwork1.key());
+            xenLabel = XenServerStorageNetwork1.value();
             break;
         case Management:
-            xenLabel = _configDao.getValue(Config.XenServerPrivateNetwork.key());
+            xenLabel = XenServerPrivateNetwork.value();
             break;
         case Control:
             xenLabel = "cloud_link_local_network";

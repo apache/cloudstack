@@ -95,6 +95,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -836,8 +837,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     protected Answer copyOfflineVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO volume
         logger.debug("Initiating copy from PowerFlex template volume on host {}", destHost != null ? destHost : "<not specified>");
-        String value = configDao.getValue(Config.CopyVolumeWait.key());
-        int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+        int copyVolumeWait = VolumeApiService.CopyVolumeWait.value();
 
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), copyVolumeWait, VirtualMachineManager.ExecuteInSequence.value());
 

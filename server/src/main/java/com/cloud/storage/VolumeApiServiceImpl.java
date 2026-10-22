@@ -404,6 +404,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
 
+    // Registered/owned by the VMware hypervisor plugin's VmwareManager; declared here too so this module can read it without a reverse dependency on that plugin.
+    static final ConfigKey<Integer> VmwareOVAPackageTimeout = new ConfigKey<>("Advanced", Integer.class, "vmware.package.ova.timeout", "3600",
+            "Vmware script timeout for ova packaging process", true);
+
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<>("Advanced", Boolean.class, "volume.url.check", "true",
             "Check the url for a volume before downloading it from the management server. Set to false when your management has no internet access.", true);
 
@@ -549,7 +553,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     String expires = currentDateTime.plusMinutes(timeout).toString();
                     response.setTimeout(expires);
 
-                    String key = _configDao.getValue(Config.SSVMPSK.key());
+                    String key = TemplateManager.SSVMPSK.value();
                     /*
                      * encoded metadata using the post upload config key
                      */
@@ -559,8 +563,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                             dataObject.getDataStore().getRole().toString(), zoneId);
                     command.setLocalPath(volumeStore.getLocalDownloadPath());
                     //using the existing max upload size configuration
-                    command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
-                    command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
+                    command.setProcessTimeout(VmwareOVAPackageTimeout.value());
+                    command.setMaxUploadSize(String.valueOf(MaxUploadVolumeSize.value()));
 
                     long accountId = vol.getAccountId();
                     Account account = _accountDao.findById(accountId);
@@ -4874,9 +4878,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (secStore == null) {
             throw new InvalidParameterValueException(String.format("Secondary storage to satisfy storage needs cannot be found for zone: %d", zoneId));
         }
-        String value = _configDao.getValue(Config.CopyVolumeWait.toString());
-        NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volumeId);
         VolumeInfo destVol = volFactory.getVolume(volumeId, DataStoreRole.Image);
