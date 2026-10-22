@@ -427,7 +427,17 @@ export default {
       }
       return null
     },
+    isNetrisNetwork () {
+      if (!this.resource.service) {
+        return false
+      }
+      const networkAclService = this.resource.service.find(svc => svc.name === 'NetworkACL')
+      return networkAclService && networkAclService.provider && networkAclService.provider.some(p => p.name === 'Netris')
+    },
     ip4routes () {
+      if (this.isNetrisNetwork) {
+        return null
+      }
       if (this.resource.ip4routes && this.resource.ip4routes.length > 0) {
         var routes = []
         for (var route of this.resource.ip4routes) {
@@ -438,6 +448,9 @@ export default {
       return null
     },
     ip6routes () {
+      if (this.isNetrisNetwork) {
+        return null
+      }
       if (this.resource.ip6routes && this.resource.ip6routes.length > 0) {
         var routes = []
         for (var route of this.resource.ip6routes) {

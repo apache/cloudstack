@@ -581,19 +581,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
 
         final Map<Network.Service, Set<Network.Provider>> defaultVPCOffProviders = new HashMap<>();
-        defaultProviders.clear();
-        defaultProviders.add(Network.Provider.VPCVirtualRouter);
-        defaultVPCOffProviders.put(Service.Dhcp, defaultProviders);
-        defaultVPCOffProviders.put(Service.Dns, defaultProviders);
-        defaultVPCOffProviders.put(Service.UserData, defaultProviders);
-        defaultVPCOffProviders.put(Service.NetworkACL, defaultProviders);
-        defaultVPCOffProviders.put(Service.Gateway, defaultProviders);
-        defaultVPCOffProviders.put(Service.Lb, defaultProviders);
-        defaultVPCOffProviders.put(Service.SourceNat, defaultProviders);
-        defaultVPCOffProviders.put(Service.StaticNat, defaultProviders);
-        defaultVPCOffProviders.put(Service.PortForwarding, defaultProviders);
-        defaultVPCOffProviders.put(Service.Vpn, defaultProviders);
-        defaultVPCOffProviders.put(Service.Firewall, defaultProviders);
+        final Set<Network.Provider> defaultVpcProviders = new HashSet<>();
+        defaultVpcProviders.add(Network.Provider.VPCVirtualRouter);
+        defaultVPCOffProviders.put(Service.Dhcp, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Dns, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.UserData, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.NetworkACL, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Gateway, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Lb, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.SourceNat, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.StaticNat, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.PortForwarding, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Vpn, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Firewall, defaultVpcProviders);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -634,6 +634,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null,
                             true, false, false, false, false, null, null, null, true, null, null, false);
+                }
+
+                //#4-2 - default isolated offering with Source nat service and egress traffic allowed by default
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed,
+                            "Offering for Isolated networks with Source Nat service enabled and egress traffic allowed by default", TrafficType.Guest, null, false, Availability.Optional, null,
+                            defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, true, null,
+                            true, false, false, false, false, null, null, null, true, null, null, false);
+                    // keep consistent with the offering created on fresh installation (ConfigurationServerImpl)
+                    offering.setMulticastRateMbps(null);
+                    offering.setDedicatedLB(true);
+                    offering.setEipAssociatePublicIp(true);
+                    offering.setSupportsVmAutoScaling(true);
+                    offering.setEgressDefaultPolicy(true);
+                    offering.setKeepAliveEnabled(false);
+                    _networkOfferingDao.update(offering.getId(), offering);
                 }
 
                 //#5 - default vpc offering with LB service
@@ -2170,13 +2186,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private Map<Long, NetworkVO> batchLoadNetworksForNics(List<NicVO> nics) {
+        List<Long> networkIds = nics.stream().map(NicVO::getNetworkId).distinct().collect(Collectors.toList());
+        Map<Long, NetworkVO> result = new HashMap<>(networkIds.size());
+        for (NetworkVO network : _networksDao.listByIds(networkIds)) {
+            result.put(network.getId(), network);
+        }
+        return result;
+    }
+
     @Override
     public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException {
         String hypervisorHostName = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
         if (StringUtils.isNotEmpty(hypervisorHostName)) {
             final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+            final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
             for (final NicVO nic : nics) {
-                final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                final NetworkVO network = networksById.get(nic.getNetworkId());
+                if (network == null) {
+                    continue;
+                }
                 final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
                 final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                         _networkModel.getNetworkTag(vm.getHypervisorType(), network));
@@ -2353,8 +2382,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final NetworkVO network = networksById.get(nic.getNetworkId());
+            if (network == null) {
+                logger.warn("Network {} not found for nic {} during migration prep, skipping", nic.getNetworkId(), nic);
+                continue;
+            }
             final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
@@ -2389,6 +2423,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private boolean isReservedForExternalProvider(Long vlanId) {
+        VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlanId, ApiConstants.NETRIS_DETAIL_KEY);
+        return vlanDetail != null && BooleanUtils.toBoolean(vlanDetail.getValue());
+    }
+
     /*
     Prepare All Nics for migration including the nics dynamically created and not stored in DB
     This is a temporary workaround work KVM migration
@@ -2398,9 +2437,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void prepareAllNicsForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
         Long guestNetworkId = null;
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final NetworkVO network = networksById.get(nic.getNetworkId());
+            if (network == null) {
+                logger.warn("Network {} not found for nic {} during migration prep, skipping", nic.getNetworkId(), nic);
+                continue;
+            }
             if (network.getTrafficType().equals(TrafficType.Guest) && network.getGuestType().equals(GuestType.Isolated)) {
                 guestNetworkId = network.getId();
             }
@@ -2437,6 +2481,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(guestNetworkId, null);
             for (final IPAddressVO userIp : publicIps) {
                 final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                if (isReservedForExternalProvider(publicIp.getVlanId())) {
+                    logger.debug("Skipping public IP {} for migration NIC profile: managed by external network provider", publicIp.getAddress());
+                    continue;
+                }
                 final URI broadcastUri = BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag());
                 final long ntwkId = publicIp.getNetworkId();
                 final Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ntwkId, vm.getId(),
@@ -3279,7 +3327,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     /**
      * Checks for L2 network offering services. Only 2 cases allowed:
      * - No services
-     * - User Data service only, provided by ConfigDrive
+     * - UserData service only, provided by ConfigDrive
      *
      * @param ntwkOff network offering
      */

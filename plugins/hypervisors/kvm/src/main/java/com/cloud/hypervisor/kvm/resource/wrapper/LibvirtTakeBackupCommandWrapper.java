@@ -143,6 +143,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             TakeBackupCommand command, String vmName, String backupRepoType, String backupRepoAddress,
             String mountOptions, String backupPath, List<String> diskPaths, String mode,
             String bitmapNew, String bitmapParent, List<String> parentPaths, int timeout) {
+        boolean quiesce = command.getQuiesce() != null && command.getQuiesce();
         List<String> argv = new ArrayList<>(Arrays.asList(
                 libvirtComputingResource.getNasBackupPath(),
                 "-o", "backup",
@@ -151,9 +152,14 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-s", backupRepoAddress,
                 "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
-                "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
+                "-q", quiesce ? "true" : "false",
                 "-d", CollectionUtils.isEmpty(diskPaths) ? "" : String.join(",", diskPaths)
         ));
+        Integer quiesceTimeout = command.getQuiesceTimeout();
+        if (quiesce && quiesceTimeout != null && quiesceTimeout > 0) {
+            argv.add("--quiesce-timeout");
+            argv.add(String.valueOf(quiesceTimeout));
+        }
         if (StringUtils.isNotBlank(mode)) {
             argv.add("-M");
             argv.add(mode);

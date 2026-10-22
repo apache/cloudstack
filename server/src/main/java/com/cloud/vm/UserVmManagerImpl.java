@@ -3383,8 +3383,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             osTypeId = vm.getGuestOSId();
         }
 
-        if (group != null) {
+        if (StringUtils.isNotBlank(group)) {
             addInstanceToGroup(id, group);
+        } else if (group != null) {
+            // Allow removing an instance from its group when passing an empty group on update
+            removeInstanceFromInstanceGroup(vm.getId());
         }
 
         if (isDynamicallyScalable == null) {
@@ -3987,6 +3990,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public void removeInstanceFromInstanceGroup(long vmId) {
         try {
             List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(vmId);
+            if (CollectionUtils.isEmpty(groupVmMaps)) {
+                logger.debug("Vm id: {} does not belong to any group", vmId);
+                return;
+            }
             for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
                 SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao.createSearchCriteria();
                 sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
