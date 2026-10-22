@@ -1638,8 +1638,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
         StoragePoolType poolType = volume.getStoragePoolType();
+        boolean isClvmNgIncrementalCandidate = StoragePoolType.CLVM_NG == poolType && kvmIncrementalSnapshot.valueIn(clusterId);
 
-        if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
+        if ((isKvmAndFileBasedStorage || isClvmNgIncrementalCandidate) && backupSnapToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
             if (imageStore == null) {
                 throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
@@ -1663,7 +1664,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
 
             if (backupSnapToSecondary) {
-                if (!isKvmAndFileBasedStorage) {
+                if (!isKvmAndFileBasedStorage && !isClvmNgIncrementalCandidate) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
                     if (!payload.getAsyncBackup() && ClvmPoolManager.isClvmPoolType(storagePool.getPoolType())) {
                         _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
@@ -1877,7 +1878,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             payload.setLocationType(null);
         }
 
-        if (isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) {
+        if ((isKvmAndFileBasedStorage || StoragePoolType.CLVM_NG == poolType) && kvmIncrementalSnapshot.valueIn(clusterId)) {
             payload.setKvmIncrementalSnapshot(true);
         }
     }
