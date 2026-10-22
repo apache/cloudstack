@@ -7732,4 +7732,36 @@ public class LibvirtComputingResourceTest {
         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
         Assert.assertEquals(expectedResult, result);
     }
+
+    // getEffectiveGuestBridgeName() must mirror BridgeVifDriver#plugTrunkVlanNic's resolution
+
+    @Test
+    public void getEffectiveGuestBridgeNameFallsBackToGuestNetworkDeviceWhenNoLabelReported() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNamePrefersGuestTrafficLabelOverGuestNetworkDeviceWhenTheyDiffer() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameRevertsToGuestNetworkDeviceOnceLabelIsCleared() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+
+        libvirtComputingResourceSpy.setGuestTrafficLabel(null);
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameTreatsBlankLabelAsNoLabel() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("   ");
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
 }

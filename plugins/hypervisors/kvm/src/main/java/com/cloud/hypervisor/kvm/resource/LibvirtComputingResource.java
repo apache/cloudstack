@@ -529,6 +529,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String linkLocalBridgeName;
     protected String publicBridgeName;
     protected String guestBridgeName;
+    // Guest traffic label (BridgeVifDriver#plugTrunkVlanNic prefers it over guestBridgeName)
+    protected String guestTrafficLabel;
     protected String privateIp;
     protected String pool;
     protected String localGateway;
@@ -6342,7 +6344,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * so this must be true before any multi-VLAN trunk nic can be placed on this host.
      */
     public boolean hostSupportsVlanFiltering() {
-        return isBridgeVlanFilteringEnabled(guestBridgeName);
+        return isBridgeVlanFilteringEnabled(getEffectiveGuestBridgeName());
+    }
+
+    public void setGuestTrafficLabel(String guestTrafficLabel) {
+        this.guestTrafficLabel = guestTrafficLabel;
+    }
+
+    // Mirrors BridgeVifDriver#plugTrunkVlanNic's bridge resolution
+    protected String getEffectiveGuestBridgeName() {
+        return StringUtils.isNotBlank(guestTrafficLabel) ? guestTrafficLabel : guestBridgeName;
     }
 
     protected boolean isBridgeVlanFilteringEnabled(String bridgeName) {
@@ -6363,7 +6374,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     // whether STP is enabled on this host's guest bridge - delays new ports (vm start, nic plug, migration) ~2x the forward delay before they forward traffic
     public boolean isGuestBridgeStpEnabled() {
-        return isBridgeStpEnabled(guestBridgeName);
+        return isBridgeStpEnabled(getEffectiveGuestBridgeName());
     }
 
     protected boolean isBridgeStpEnabled(String bridgeName) {
