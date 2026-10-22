@@ -457,11 +457,12 @@ public class KVMStoragePoolManager {
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        // For NetworkFilesystem, libvirt will take care of unmounting the nfs mount. If nfs mount has been removed before libvirt's pool
-        // delete, libvirt will throw an error.
-        boolean deleteStatus = adaptor.deleteStoragePool(uuid, details);
+        boolean deleteStatus;
         if (type == StoragePoolType.NetworkFilesystem) {
-            _haMonitor.removeStoragePool(uuid);
+            _haMonitor.unregisterStoragePool(uuid);
+            deleteStatus = adaptor.deleteStoragePool(uuid);
+        } else {
+            deleteStatus = adaptor.deleteStoragePool(uuid, details);
         }
         synchronized (_storagePools) {
             _storagePools.remove(uuid);

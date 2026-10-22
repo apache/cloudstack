@@ -1276,7 +1276,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (capacityBytes != null) {
             if (capacityBytes != pool.getCapacityBytes()) {
                 updatedCapacityBytes = capacityBytes;
-                 details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(updatedCapacityBytes));
+                details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(updatedCapacityBytes));
                 changes = true;
             }
         }
@@ -1286,7 +1286,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (capacityIops != null) {
             if (!capacityIops.equals(pool.getCapacityIops())) {
                 updatedCapacityIops = capacityIops;
-                 details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, String.valueOf(updatedCapacityIops));
+                details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, String.valueOf(updatedCapacityIops));
                 changes = true;
             }
         }
