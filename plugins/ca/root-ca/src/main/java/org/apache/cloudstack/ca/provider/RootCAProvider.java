@@ -78,7 +78,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
 import com.cloud.certificate.dao.CrlDao;
-import com.cloud.configuration.Config;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -439,7 +439,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     protected void addConfiguredManagementIp(List<String> ipList) {
-        String msNetworkCidr = configDao.getValue(Config.ManagementNetwork.key());
+        String msNetworkCidr = ManagementServer.ManagementNetwork.value();
         try {
             logger.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();

@@ -82,7 +82,6 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
@@ -143,6 +142,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
@@ -168,6 +168,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.vmware.pbm.PbmProfile;
@@ -341,49 +342,35 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _fullCloneFlag = StorageManager.VmwareCreateCloneFull.value();
 
-        value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
-        if (value == null) {
-            _instanceNameFlag = false;
-        } else {
-            _instanceNameFlag = Boolean.parseBoolean(value);
-        }
+        _instanceNameFlag = UserVmManager.SetVmInternalNameUsingDisplayName.value();
 
-        _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
-        if (_serviceConsoleName == null) {
-            _serviceConsoleName = "Service Console";
-        }
+        _serviceConsoleName = VmwareServiceConsole.value();
 
-        _managementPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
-        if (_managementPortGroupName == null) {
-            _managementPortGroupName = "Management Network";
-        }
+        _managementPortGroupName = VmwareManagementPortGroup.value();
 
-        _defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
+        _defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.value();
         if (_defaultSystemVmNicAdapterType == null) {
             _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
         }
 
-        _additionalPortRangeStart = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
+        _additionalPortRangeStart = VmwareAdditionalVncPortRangeStart.value();
         if (_additionalPortRangeStart > 65535) {
             logger.warn("Invalid port range start port (" + _additionalPortRangeStart + ") for additional VNC port allocation, reset it to default start port 59000");
             _additionalPortRangeStart = 59000;
         }
 
-        _additionalPortRangeSize = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeSize.key()), 1000);
+        _additionalPortRangeSize = VmwareAdditionalVncPortRangeSize.value();
         if (_additionalPortRangeSize < 0 || _additionalPortRangeStart + _additionalPortRangeSize > 65535) {
             logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
 
-        _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
+        _vCenterSessionTimeout = (int) (VmwareVcenterSessionTimeout.value() * 1000);
         logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
 
-        _recycleHungWorker = _configDao.getValue(Config.VmwareRecycleHungWorker.key());
-        if (_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {
-            _recycleHungWorker = "false";
-        }
+        _recycleHungWorker = String.valueOf(VmwareRecycleHungWorker.value());
 
-        _rootDiskController = _configDao.getValue(Config.VmwareRootDiskControllerType.key());
+        _rootDiskController = ManagementServer.VmwareRootDiskControllerType.value();
         if (_rootDiskController == null || _rootDiskController.isEmpty()) {
             _rootDiskController = DiskControllerType.ide.toString();
         }
