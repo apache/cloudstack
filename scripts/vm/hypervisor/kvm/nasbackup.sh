@@ -45,6 +45,7 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
                       # each disk must be rebased onto its own parent.
 logFile="/var/log/cloudstack/agent/agent.log"
 UNMOUNT_TIMEOUT=60
+UNMOUNT_RETRY_DELAY=5
 EXIT_CLEANUP_FAILED=20
 BACKUP_JOB_ACTIVE=0
 
@@ -62,6 +63,11 @@ MIN_FREE_SPACE=${MIN_FREE_SPACE:-1073741824}
 # finishes: cleanup() can exit the script itself (EXIT_CLEANUP_FAILED), and that exit fires
 # the EXIT trap, which would call cleanup() a second time while the first is still running.
 CLEANUP_STARTED=0
+
+# Set to 1 by the backup functions once every backup file is on the share, just before the
+# final unmount. From then on cleanup() must never remove $dest: a failed or slow unmount
+# after that point is an operational warning, not a failed backup.
+BACKUP_COMPLETE=0
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -150,6 +156,41 @@ get_linstor_uuid_from_device() {
   # Without a by-res symlink we cannot derive the volume UUID. Falling back to the
   # raw device name would produce a backup that restore cannot find, so fail hard.
   return 1
+}
+
+# Runs a command under timeout(1) when it is available, otherwise runs it directly.
+run_with_timeout() {
+  local secs=$1
+  shift
+  if command -v timeout > /dev/null 2>&1; then
+    timeout "$secs" "$@"
+  else
+    "$@"
+  fi
+}
+
+# Unmounts the share after a completed backup. Tries a bounded umount twice, then a lazy
+# umount as a last resort. Always returns 0: the backup on the share is intact, so a mount
+# that lingers is logged as a warning and does not fail the backup.
+unmount_completed_backup() {
+  local attempt
+  for ((attempt = 1; attempt <= 2; attempt++)); do
+    if run_with_timeout "$UNMOUNT_TIMEOUT" umount "$mount_point" 2>>"$logFile"; then
+      rmdir "$mount_point" 2>>"$logFile" || log "WARNING: rmdir of $mount_point failed"
+      return 0
+    fi
+    log "WARNING: umount attempt $attempt of $mount_point failed or timed out"
+    if [[ $attempt -eq 1 ]]; then
+      sleep "$UNMOUNT_RETRY_DELAY"
+    fi
+  done
+  if run_with_timeout "$UNMOUNT_TIMEOUT" umount -l "$mount_point" 2>>"$logFile"; then
+    log "WARNING: lazily unmounted $mount_point after umount failures, the backup is intact"
+    rmdir "$mount_point" 2>>"$logFile" || log "WARNING: rmdir of $mount_point failed"
+  else
+    log "WARNING: $mount_point is still mounted after umount failures, the backup is intact"
+  fi
+  return 0
 }
 
 qemu_agent_command() {
@@ -511,8 +552,9 @@ for dev in data.get("return", []) or []:
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }
-  timeout "$UNMOUNT_TIMEOUT" umount "$mount_point" 2>>"$logFile" || { log "WARNING: umount of $mount_point failed or timed out"; true; }
-  rmdir "$mount_point" 2>>"$logFile" || { log "WARNING: rmdir of $mount_point failed"; true; }
+  # The backup is complete from here on: cleanup() must not delete it if the unmount fails.
+  BACKUP_COMPLETE=1
+  unmount_completed_backup
   echo "$backup_size"
 }
 
@@ -569,10 +611,9 @@ backup_stopped_vm() {
 
   find "$dest" -type f -exec stat -c '%s' {} +
 
-  # Unmount on success so the EXIT trap's cleanup (which removes an incomplete $dest)
-  # does not delete the just-completed backup. Mirrors backup_running_vm/delete_backup.
-  umount $mount_point
-  rmdir $mount_point
+  # The backup is complete from here on: cleanup() must not delete it if the unmount fails.
+  BACKUP_COMPLETE=1
+  unmount_completed_backup
 }
 
 delete_backup() {
@@ -671,14 +712,22 @@ cleanup() {
     exit $EXIT_CLEANUP_FAILED
   fi
 
-  if [[ -n "$dest" && -d "$dest" ]]; then
+  # Only an unfinished backup is removed. A completed backup is kept even when its unmount
+  # failed, and delete/stats never remove anything here: for stats $dest can be the root of
+  # the backup store, and delete has already removed what it was asked to.
+  if [[ "$OP" == "backup" && $BACKUP_COMPLETE -eq 0 && -n "$dest" && -d "$dest" ]]; then
     rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
   fi
   if [[ -n "$mount_point" && -d "$mount_point" ]]; then
     # Only umount if it is actually a mount. Otherwise (mount failed, or stats/delete
     # already unmounted) a umount error would wrongly flag cleanup as failed via the EXIT trap.
     if mountpoint -q "$mount_point"; then
-      umount "$mount_point" 2>/dev/null || { echo "Failed to unmount $mount_point"; status=1; }
+      if [[ $BACKUP_COMPLETE -eq 1 ]]; then
+        # unmount_completed_backup already retried and logged; do not fail a good backup.
+        umount "$mount_point" 2>/dev/null || log "WARNING: $mount_point is still mounted, the backup is intact"
+      else
+        umount "$mount_point" 2>/dev/null || { echo "Failed to unmount $mount_point"; status=1; }
+      fi
     fi
     rmdir "$mount_point" 2>/dev/null || true
   fi
