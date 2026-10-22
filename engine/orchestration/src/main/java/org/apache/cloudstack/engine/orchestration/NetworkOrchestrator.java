@@ -3573,11 +3573,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public boolean destroyNetwork(final long networkId, final ReservationContext context, final boolean forced) {
         final Account callerAccount = context.getAccount();
 
-        NetworkVO network = _networksDao.findById(networkId);
+        // held for the whole destroy, same lock implementNetwork()/shutdownNetwork() already use on this id.
+        // Nested acquisition (shutdownNetwork() call below) is reentrant.
+        NetworkVO network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
         if (network == null) {
-            logger.debug("Unable to find network with id: {}", networkId);
+            logger.debug("Unable to find network with id or lock it: {}", networkId);
             return false;
         }
+        try {
         // Make sure that there are no user vms in the network that are not Expunged/Error
         final List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
@@ -3728,6 +3731,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         return success;
+        } finally {
+            _networksDao.releaseFromLockTable(networkId);
+        }
     }
 
     /**

@@ -1131,6 +1131,7 @@ public class NetworkOrchestratorTest extends TestCase {
         when(network.getId()).thenReturn(1L);
         when(network.getDataCenterId()).thenReturn(1L);
         when(testOrchestrator._networksDao.findById(1L)).thenReturn(network);
+        when(testOrchestrator._networksDao.acquireInLockTable(Mockito.eq(1L), Mockito.anyInt())).thenReturn(network);
         when(testOrchestrator._userVmDao.listByNetworkIdAndStates(1L)).thenReturn(new ArrayList<UserVmVO>());
         when(testOrchestrator._nicNetworkMapDao.listByNetworkId(1L)).thenReturn(Collections.singletonList(mock(NicNetworkMapVO.class)));
 
@@ -1148,6 +1149,7 @@ public class NetworkOrchestratorTest extends TestCase {
             when(network.getId()).thenReturn(1L);
             when(network.getDataCenterId()).thenReturn(1L);
             when(testOrchestrator._networksDao.findById(1L)).thenReturn(network);
+            when(testOrchestrator._networksDao.acquireInLockTable(Mockito.eq(1L), Mockito.anyInt())).thenReturn(network);
             when(testOrchestrator._userVmDao.listByNetworkIdAndStates(1L)).thenReturn(new ArrayList<UserVmVO>());
             when(testOrchestrator._nicNetworkMapDao.listByNetworkId(1L)).thenReturn(Collections.singletonList(mock(NicNetworkMapVO.class)));
 

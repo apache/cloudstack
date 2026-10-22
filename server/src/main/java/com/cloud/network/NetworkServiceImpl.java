@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -1037,7 +1038,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (_nicDao.acquireInLockTable(nic.getId()) == null) {
             throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic %s", nic.getUuid()));
         }
+        // also serializes against destroyNetwork() per requested network, same lock it already uses.
+        // Sorted to avoid lock-order deadlock with another associate call on the same networks.
+        List<Long> sortedNetworkIds = new ArrayList<>(new TreeSet<>(requestedNetworkIds));
+        List<Long> lockedNetworkIds = new ArrayList<>();
         try {
+            for (Long networkId : sortedNetworkIds) {
+                if (_networksDao.acquireInLockTable(networkId, NetworkOrchestrationService.NetworkLockTimeout.value()) == null) {
+                    throw new ConcurrentOperationException(String.format("Unable to acquire lock on network %d", networkId));
+                }
+                lockedNetworkIds.add(networkId);
+            }
+
             NetworkVO primaryNetwork = _networksDao.findById(nic.getNetworkId());
             if (primaryNetwork == null) {
                 throw new CloudRuntimeException(String.format("Nic %s has no primary network", nic.getUuid()));
@@ -1063,6 +1075,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
             return requestedNetworks;
         } finally {
+            for (Long networkId : lockedNetworkIds) {
+                _networksDao.releaseFromLockTable(networkId);
+            }
             _nicDao.releaseFromLockTable(nic.getId());
         }
     }

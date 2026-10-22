@@ -374,6 +374,7 @@ public class NetworkServiceImplTest {
         service._networksDao = networkDao;
         service._nicDao = nicDao;
         Mockito.when(nicDao.acquireInLockTable(Mockito.anyLong())).thenReturn(Mockito.mock(NicVO.class));
+        Mockito.when(networkDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(Mockito.mock(NetworkVO.class));
         service._ipAddressDao = ipAddressDao;
         service.routerDao = routerDao;
         service.commandSetupHelper = commandSetupHelper;
