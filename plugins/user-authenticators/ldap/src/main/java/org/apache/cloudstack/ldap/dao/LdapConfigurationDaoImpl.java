@@ -19,6 +19,7 @@ package org.apache.cloudstack.ldap.dao;
 import java.util.List;
 
 
+import com.cloud.utils.db.Filter;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.ldap.LdapConfigurationVO;
@@ -63,29 +64,29 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
 
     @Override
     public LdapConfigurationVO find(String hostname, int port, Long domainId) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, false);
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, false, null, null);
         return findOneBy(sc);
     }
 
     @Override
     public LdapConfigurationVO find(String hostname, int port, Long domainId, boolean listAll) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, listAll);
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, listAll, null, null);
         return findOneBy(sc);
     }
 
     @Override
-    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, false);
-        return searchAndCount(sc, null);
+    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId, Long offset, Long limit) {
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, false, offset, limit);
+        return searchAndCount(sc, new Filter(LdapConfigurationVO.class, "id", true, offset, limit));
     }
 
     @Override
-    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId, final boolean listAll) {
-        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, listAll);
-        return searchAndCount(sc, null);
+    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId, final boolean listAll, Long offset, Long limit) {
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId, listAll, offset, limit);
+        return searchAndCount(sc, new Filter(LdapConfigurationVO.class, "id", true, offset, limit));
     }
 
-    private SearchCriteria<LdapConfigurationVO> getSearchCriteria(String hostname, int port, Long domainId,boolean listAll) {
+    private SearchCriteria<LdapConfigurationVO> getSearchCriteria(String hostname, int port, Long domainId,boolean listAll, Long offset, Long limit) {
         SearchCriteria<LdapConfigurationVO> sc;
         if (domainId != null) {
             // If domainid is present, ignore listall
