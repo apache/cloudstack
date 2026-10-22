@@ -33,8 +33,6 @@ import com.cloud.utils.net.NetUtils;
 
 public class SetNetworkACLCommand extends NetworkElementCommand {
     public static final String RULE_DETAIL_SEPARATOR = ";";
-    private static final int TCP_PROTO_NUMBER = 6;
-    private static final int UDP_PROTO_NUMBER = 17;
 
     NetworkACLTO[] rules;
     NicTO nic;
@@ -128,10 +126,10 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
         if (number == NetUtils.ICMP_PROTO_NUMBER) {
             return NetUtils.ICMP_PROTO;
         }
-        if (hasPorts && number == TCP_PROTO_NUMBER) {
+        if (hasPorts && number == NetUtils.TCP_PROTO_NUMBER) {
             return NetUtils.TCP_PROTO;
         }
-        if (hasPorts && number == UDP_PROTO_NUMBER) {
+        if (hasPorts && number == NetUtils.UDP_PROTO_NUMBER) {
             return NetUtils.UDP_PROTO;
         }
         return String.valueOf(number);

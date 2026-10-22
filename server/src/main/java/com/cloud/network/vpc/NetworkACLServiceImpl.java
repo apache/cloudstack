@@ -117,8 +117,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcManager vpcManager;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
-    private static final int TCP_PROTO_NUMBER = 6;
-    private static final int UDP_PROTO_NUMBER = 17;
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
@@ -703,9 +701,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             return;
         }
         int protoNumber = NumberUtils.toInt(protocol, -1);
-        if (protoNumber != TCP_PROTO_NUMBER && protoNumber != UDP_PROTO_NUMBER) {
+        if (protoNumber != NetUtils.TCP_PROTO_NUMBER && protoNumber != NetUtils.UDP_PROTO_NUMBER) {
             throw new InvalidParameterValueException(String.format("Start and end port can only be given for TCP or UDP (protocol number %d or %d), not for protocol number [%s]",
-                    TCP_PROTO_NUMBER, UDP_PROTO_NUMBER, protocol));
+                    NetUtils.TCP_PROTO_NUMBER, NetUtils.UDP_PROTO_NUMBER, protocol));
         }
     }
 

@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
@@ -101,15 +100,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     }
 
     public String getProtocol() {
-        if (protocol == null) {
-            return null;
-        }
-        String p = protocol.trim();
-        // As on create, protocol number 1 is ICMP so that it keeps its icmp type and code
-        if (StringUtils.isNumeric(p) && Integer.parseInt(p) == NetUtils.ICMP_PROTO_NUMBER) {
-            p = NetUtils.ICMP_PROTO;
-        }
-        return p;
+        return NetUtils.icmpProtocolNumberAsName(protocol);
     }
 
     public List<String> getSourceCidrList() {
