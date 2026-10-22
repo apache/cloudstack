@@ -22,9 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -40,8 +38,6 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     StoragePoolAllocator _localStoragePoolAllocator;
     @Inject
     StorageManager storageMgr;
-    @Inject
-    ConfigurationDao _configDao;
     boolean _storagePoolCleanupEnabled;
 
     @Override
@@ -78,8 +74,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         _localStoragePoolAllocator = ComponentContext.inject(LocalStoragePoolAllocator.class);
         _localStoragePoolAllocator.configure("GCLocalStoragePoolAllocator", params);
 
-        String storagePoolCleanupEnabled = _configDao.getValue("storage.pool.cleanup.enabled");
-        _storagePoolCleanupEnabled = (storagePoolCleanupEnabled == null) ? true : Boolean.parseBoolean(storagePoolCleanupEnabled);
+        _storagePoolCleanupEnabled = StorageManager.StoragePoolCleanupEnabled.value();
 
         return true;
     }

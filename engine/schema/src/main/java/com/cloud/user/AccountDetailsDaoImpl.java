@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
@@ -50,8 +49,17 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
     protected DomainDao _domainDao;
     @Inject
     protected DomainDetailsDao _domainDetailsDao;
-    @Inject
-    private ConfigurationDao _configDao;
+
+    // Registered/owned by com.cloud.configuration.ConfigurationManagerImpl#ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN;
+    // declared here too so this module can read it without a reverse dependency on the server module.
+    private static final ConfigKey<Boolean> EnableAccountSettingsForDomain = new ConfigKey<>("Advanced", Boolean.class, "enable.account.settings.for.domain", "false",
+            "Indicates whether to add Account settings for domain. If True, Account settings will be added to domain settings, all Accounts in the domain will inherit the domain setting if Account setting is not set.", true);
+
+    // Registered/owned by com.cloud.configuration.ConfigurationManagerImpl#ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN;
+    // declared here too so this module can read it without a reverse dependency on the server module.
+    private static final ConfigKey<Boolean> EnableDomainSettingsForChildDomain = new ConfigKey<>("Advanced", Boolean.class, "enable.domain.settings.for.child.domain", "false",
+            "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
+            true);
 
     protected AccountDetailsDaoImpl() {
         accountSearch = createSearchBuilder();
@@ -131,14 +139,12 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
 
         // if account level setting is not configured then check if
         // we can take value from domain
-        String enableAccountSettingsForDomain = _configDao.getValue("enable.account.settings.for.domain");
-        if (! Boolean.parseBoolean(enableAccountSettingsForDomain)) {
+        if (!EnableAccountSettingsForDomain.value()) {
             return null;
         }
 
         // check if we can traverse till ROOT domain to get the value
-        String enableDomainSettingsForChildDomain = _configDao.getValue("enable.domain.settings.for.child.domain");
-        if (Boolean.parseBoolean(enableDomainSettingsForChildDomain)) {
+        if (EnableDomainSettingsForChildDomain.value()) {
             Optional<AccountVO> account = Optional.ofNullable(_accountDao.findById(id));
             if (account.isPresent()) {
                 DomainVO domain = _domainDao.findById(account.get().getDomainId());
