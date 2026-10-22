@@ -733,6 +733,23 @@ public class UnifiedNASStrategyTest {
     }
 
     @Test
+    public void testCloneCloudStackVolume_InvalidDatastoreId_ThrowsBeforeClone() {
+        VolumeObject volumeObject = mock(VolumeObject.class);
+        FileInfo source = new FileInfo();
+        source.setPath("template-uuid");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setDatastoreId("not-a-pool");
+        request.setVolumeInfo(volumeObject);
+        request.setFile(source);
+        request.setDestinationPath("volume-uuid");
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> strategy.cloneCloudStackVolume(request));
+        assertTrue(ex.getMessage().contains("not-a-pool"));
+        verify(nasFeignClient, never()).cloneFile(anyString(), any(FileCloneRequest.class));
+    }
+
+    @Test
     public void testCloneCloudStackVolume_MissingDatastoreId_Throws() {
         FileInfo source = new FileInfo();
         source.setPath("template-uuid");

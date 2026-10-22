@@ -157,6 +157,11 @@ public class UnifiedSANStrategy extends SANStrategy {
         try {
             String uuid = lunUuid;
             if (uuid == null || uuid.isEmpty()) {
+                if (svmName == null || svmName.trim().isEmpty() || lunName == null || lunName.trim().isEmpty()) {
+                    logger.warn("bestEffortDeleteTemplateCacheLun: Cannot look up leftover template cache LUN; "
+                            + "svm [{}] or lun name [{}] is missing", svmName, lunName);
+                    return;
+                }
                 Map<String, String> lookup = Map.of(
                         OntapStorageConstants.NAME, lunName,
                         OntapStorageConstants.SVM_DOT_NAME, svmName);

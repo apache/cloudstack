@@ -933,6 +933,30 @@ class OntapPrimaryDatastoreDriverTest {
         }
     }
 
+    @Test
+    void testCreateAsync_Volume_InvalidCloneOfTemplateDetail() {
+        when(dataStore.getId()).thenReturn(1L);
+        when(dataStore.getName()).thenReturn("ontap-pool");
+        when(volumeInfo.getType()).thenReturn(VOLUME);
+        when(volumeInfo.getId()).thenReturn(100L);
+        when(volumeInfo.getName()).thenReturn("test-volume");
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(volumeDao.findById(100L)).thenReturn(volumeVO);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.CLONE_OF_TEMPLATE))
+                .thenReturn(new VolumeDetailVO(100L, OntapStorageConstants.CLONE_OF_TEMPLATE, "not-a-number", false));
+
+        driver.createAsync(dataStore, volumeInfo, createCallback);
+
+        ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+        verify(createCallback).complete(resultCaptor.capture());
+        assertFalse(resultCaptor.getValue().isSuccess());
+        assertTrue(resultCaptor.getValue().getResult().contains("not-a-number"));
+        assertTrue(resultCaptor.getValue().getResult().contains("100"));
+        verify(sanStrategy, never()).cloneCloudStackVolume(any());
+        verify(nasStrategy, never()).cloneCloudStackVolume(any());
+    }
+
     /**
      * Sets up a volume create that the orchestrator has marked as a clone of a cached template.
      */

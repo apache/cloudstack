@@ -100,6 +100,8 @@ public class UnifiedNASStrategy extends NASStrategy {
     /**
      * NFS template cache: nothing is pre-created on the array. The KVM agent writes the qcow2
      * into the mounted FlexVolume; the framework records {@code install_path} afterward.
+     *
+     * @return {@code null}. The driver records the template uuid as the create path.
      */
     @Override
     public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
@@ -150,8 +152,9 @@ public class UnifiedNASStrategy extends NASStrategy {
         if (cloudstackVolume.getVolumeInfo() == null) {
             throw new CloudRuntimeException("Failed to clone file, volume info is missing from the request");
         }
+        final long poolId = parseDatastoreId(cloudstackVolume.getDatastoreId());
 
-        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(Long.parseLong(cloudstackVolume.getDatastoreId()));
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(poolId);
         String flexVolUuid = details.get(OntapStorageConstants.VOLUME_UUID);
         String flexVolName = details.get(OntapStorageConstants.VOLUME_NAME);
         if (flexVolUuid == null || flexVolUuid.isEmpty()) {
@@ -446,6 +449,18 @@ public class UnifiedNASStrategy extends NASStrategy {
         exportPolicy.setName(exportPolicyName);
 
         return exportPolicy;
+    }
+
+    /**
+     * Parses the pool id carried on a file-clone request. A non-numeric value fails before any
+     * ONTAP call, with the stored value in the error.
+     */
+    private long parseDatastoreId(String datastoreId) {
+        try {
+            return Long.parseLong(datastoreId);
+        } catch (NumberFormatException e) {
+            throw new CloudRuntimeException("Failed to clone file, datastore id [" + datastoreId + "] is not a number", e);
+        }
     }
 
     private String updateCloudStackVolumeMetadata(String dataStoreId, DataObject volumeInfo) {

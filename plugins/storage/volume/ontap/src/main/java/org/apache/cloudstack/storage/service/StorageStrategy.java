@@ -506,15 +506,16 @@ public abstract class StorageStrategy {
      * into the mounted FlexVolume.</p>
      *
      * <p>Returns a {@link CloudStackVolume} so the driver can map it to {@code CreateCmdResult}
-     * and update {@code template_spool_ref}. SAN populates {@code lun}; NAS returns an empty
-     * volume (no LUN / file yet).</p>
+     * and update {@code template_spool_ref}. SAN populates {@code lun}. NAS does not pre-create
+     * an object on the array and returns {@code null}; the driver treats that as no LUN and
+     * records the template uuid as the create path.</p>
      *
      * @param storagePool   CloudStack primary storage pool (one FlexVolume)
      * @param templateInfo  template being cached
      * @param details       pool details (SVM, protocol, etc.)
      * @param sizeInBytes   virtual size for the cache object (required for SAN; ignored for NAS)
-     * @return created cache identity, or an empty {@link CloudStackVolume} when nothing is
-     *         pre-created on the array
+     * @return SAN cache identity with {@code lun} set, or {@code null} when nothing is
+     *         pre-created on the array (NAS)
      */
     abstract public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
             Map<String, String> details, long sizeInBytes);

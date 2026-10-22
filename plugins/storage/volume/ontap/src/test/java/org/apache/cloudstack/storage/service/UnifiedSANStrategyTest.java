@@ -324,6 +324,34 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
+    void testCreateTemplateCache_CreateFails_MissingSvmName_SkipsLookup() {
+        org.apache.cloudstack.storage.datastore.db.StoragePoolVO storagePool =
+                mock(org.apache.cloudstack.storage.datastore.db.StoragePoolVO.class);
+        when(storagePool.getName()).thenReturn("vol1");
+        when(storagePool.getHypervisor()).thenReturn(com.cloud.hypervisor.Hypervisor.HypervisorType.KVM);
+
+        org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo templateInfo =
+                mock(org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo.class);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        FeignException createEx = mock(FeignException.class);
+        when(createEx.status()).thenReturn(500);
+        when(createEx.getMessage()).thenReturn("create failed");
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class))).thenThrow(createEx);
+
+            CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.createTemplateCache(storagePool, templateInfo, new HashMap<>(), 5368709120L));
+            assertTrue(thrown.getMessage().contains("create failed") || thrown.getMessage().contains("Failed to create"));
+            verify(sanFeignClient, never()).getLunResponse(any(), anyMap());
+            verify(sanFeignClient, never()).deleteLun(any(), any(), anyMap());
+        }
+    }
+
+    @Test
     void testCreateCloudStackVolume_NullRequest_ThrowsException() {
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.createCloudStackVolume(null));

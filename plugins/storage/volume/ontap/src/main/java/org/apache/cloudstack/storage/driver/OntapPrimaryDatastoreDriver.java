@@ -321,7 +321,12 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         if (detail == null || detail.getValue() == null || detail.getValue().isEmpty()) {
             return null;
         }
-        return Long.valueOf(detail.getValue());
+        try {
+            return Long.valueOf(detail.getValue());
+        } catch (NumberFormatException e) {
+            throw new CloudRuntimeException("Stored cloneOfTemplate value [" + detail.getValue()
+                    + "] for volume [" + volumeId + "] is not a template id", e);
+        }
     }
 
     private VMTemplateStoragePoolVO findTemplatePoolRef(long poolId, long templateId) {
