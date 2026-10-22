@@ -49,7 +49,6 @@ import com.cloud.agent.api.RecurringNetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
@@ -78,7 +77,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -222,9 +220,9 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
 
-        _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
-        _TSinclZones = _configDao.getValue(Config.TrafficSentinelIncludeZones.key());
-        _TSexclZones = _configDao.getValue(Config.TrafficSentinelExcludeZones.key());
+        _networkStatsInterval = DirectNetworkStatsInterval.value();
+        _TSinclZones = TrafficSentinelIncludeZones.value();
+        _TSexclZones = TrafficSentinelExcludeZones.value();
         _agentMgr.registerForHostEvents(new DirectNetworkStatsListener(_networkStatsInterval), true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
