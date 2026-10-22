@@ -497,7 +497,7 @@ public class NASBackupProviderTest {
         ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
                 new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
                         "nas.backup.incremental.enabled", "true",
-                        "test override — enabled", true,
+                        "test override - enabled", true,
                         org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
 
         Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(null);
@@ -514,7 +514,7 @@ public class NASBackupProviderTest {
         ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
                 new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
                         "nas.backup.incremental.enabled", "true",
-                        "test override — enabled", true,
+                        "test override - enabled", true,
                         org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
     }
 

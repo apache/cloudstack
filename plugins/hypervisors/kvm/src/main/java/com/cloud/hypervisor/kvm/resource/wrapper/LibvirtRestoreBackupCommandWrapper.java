@@ -207,6 +207,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                                             List<String> backupFiles, String mountDirectory, BackupLayout layout, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
+            verifyRbdRestoreTargets(storagePoolMgr, restoreVolumePools, restoreVolumePaths, layout);
             for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
                 PrimaryDataStoreTO restoreVolumePool = restoreVolumePools.get(idx);
                 String restoreVolumePath = restoreVolumePaths.get(idx);
@@ -226,11 +227,44 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
+    /**
+     * Refuse an RBD diff restore that cannot complete before it touches any volume. Restoring a
+     * volume removes its image, so a failure found only on the second volume would leave the first
+     * one already rewound and the instance half restored. Every target therefore has to be on RBD
+     * storage and free of snapshots this backup path did not take.
+     */
+    private void verifyRbdRestoreTargets(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> volumePools,
+                                         List<String> volumePaths, BackupLayout layout) {
+        if (!layout.isRbdDiff()) {
+            return;
+        }
+        for (int i = 0; i < volumePaths.size(); i++) {
+            if (!Storage.StoragePoolType.RBD.equals(volumePools.get(i).getPoolType())) {
+                throw new CloudRuntimeException(String.format("The backup was taken from RBD storage and can only be restored "
+                        + "to RBD storage, but volume [%s] is on %s storage.", volumePaths.get(i), volumePools.get(i).getPoolType()));
+            }
+        }
+        for (int i = 0; i < volumePaths.size(); i++) {
+            PrimaryDataStoreTO volumePool = volumePools.get(i);
+            KVMStoragePool pool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
+            Path keyFile = null;
+            try {
+                keyFile = writeCephKeyFile(pool.getAuthSecret());
+                failIfImageCarriesForeignSnapshots(volumePaths.get(i), rbdSnapshots(rbdConnectionArgs(pool, keyFile), volumePaths.get(i)));
+            } catch (IOException e) {
+                throw new CloudRuntimeException(String.format("Failed to prepare the Ceph credentials needed to check volume [%s]", volumePaths.get(i)), e);
+            } finally {
+                deleteCephKeyFile(keyFile);
+            }
+        }
+    }
+
     private void restoreVolumesOfDestroyedVMs(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> volumePools,
                                               List<String> volumePaths, List<String> backupFiles, String mountDirectory,
                                               BackupLayout layout, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
+            verifyRbdRestoreTargets(storagePoolMgr, volumePools, volumePaths, layout);
             for (int i = 0; i < volumePaths.size(); i++) {
                 PrimaryDataStoreTO volumePool = volumePools.get(i);
                 String volumePath = volumePaths.get(i);
@@ -369,7 +403,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath,
                                             List<String> backupFiles, BackupLayout layout, int timeout, boolean createTargetVolume, Long size) {
         if (layout.isRbdDiff()) {
-            return restoreRbdImageFromDiffChain(storagePoolMgr, volumePool, volumePath, backupFiles, size);
+            return restoreRbdImageFromDiffChain(storagePoolMgr, volumePool, volumePath, backupFiles, size, timeout);
         }
 
         String backupPath = backupFiles.get(backupFiles.size() - 1);
@@ -477,7 +511,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
      * image carrying one is refused rather than rewound.</p>
      */
     private boolean restoreRbdImageFromDiffChain(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool,
-                                                 String volumePath, List<String> diffFiles, Long size) {
+                                                 String volumePath, List<String> diffFiles, Long size, int timeout) {
         if (!Storage.StoragePoolType.RBD.equals(volumePool.getPoolType())) {
             logger.error("Backup [{}] holds RBD diffs but volume [{}] is on {} storage; it cannot be restored there.",
                     diffFiles.get(0), volumePath, volumePool.getPoolType());
@@ -508,7 +542,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
             for (String diff : diffFiles) {
                 logger.debug("Applying backup diff {} to RBD image {}", diff, image);
-                if (Script.executeCommandForExitValue(rbdCommand(connection, "import-diff", diff, image)) != 0) {
+                if (Script.executeCommandForExitValue(timeout, rbdCommand(connection, "import-diff", diff, image)) != 0) {
                     logger.error("Failed to apply backup diff {} to RBD image {}", diff, image);
                     return false;
                 }
@@ -621,7 +655,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         return true;
     }
 
-    /** The snapshots an image still carries, for explaining why it could not be removed. */
     /**
      * Stop before a restore removes a snapshot that this backup path did not take. The chain
      * anchors it does take are its own to drop, but a CloudStack volume snapshot kept on primary

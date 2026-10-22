@@ -407,7 +407,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         String parentFormat = chainFormatOf(parent);
         String requiredFormat = flavorToFormat(flavor);
         if (!requiredFormat.equals(parentFormat)) {
-            LOG.debug("VM {} parent backup {} is a {} chain but the VM's storage now needs {} — forcing full",
+            LOG.debug("VM {} parent backup {} is a {} chain but the VM's storage now needs {} - forcing full",
                     vm.getInstanceName(), parent.getUuid(), parentFormat, requiredFormat);
             return fullDecision(flavor, newAnchor);
         }
@@ -520,7 +520,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 volumeFlavor = IncrementalFlavor.RBD;
             } else {
                 LOG.debug("VM {} volume {} is on {} (scope {}) which supports neither checkpoints nor "
-                                + "RBD snapshots — forcing legacy full",
+                                + "RBD snapshots - forcing legacy full",
                         vm.getInstanceName(), volume.getUuid(), pool.getPoolType(), pool.getScope());
                 return IncrementalFlavor.UNSUPPORTED;
             }
@@ -528,7 +528,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 flavor = volumeFlavor;
             } else if (!flavor.equals(volumeFlavor)) {
                 LOG.debug("VM {} has volumes on both checkpoint-capable and RBD storage; a single backup "
-                        + "cannot mix the two mechanisms — forcing legacy full", vm.getInstanceName());
+                        + "cannot mix the two mechanisms - forcing legacy full", vm.getInstanceName());
                 return IncrementalFlavor.UNSUPPORTED;
             }
         }

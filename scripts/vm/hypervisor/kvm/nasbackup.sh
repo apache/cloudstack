@@ -305,7 +305,7 @@ backup_rbd_vm() {
     for d in "${disks[@]}"; do
       parse_rbd_opts "$d"
       if ! rbd_snapshot_exists "$BITMAP_PARENT"; then
-        log -e "rbd incremental: parent snapshot $BITMAP_PARENT missing on $RBD_IMAGE — falling back to full"
+        log -e "rbd incremental: parent snapshot $BITMAP_PARENT missing on $RBD_IMAGE - falling back to full"
         echo "INCREMENTAL_FALLBACK=true"
         effective_mode="full"
         break
@@ -320,11 +320,24 @@ backup_rbd_vm() {
   # Freezing the guest filesystems makes the snapshot set filesystem-consistent instead of merely
   # crash-consistent. Only possible while the VM runs and its guest agent answers.
   local thaw=0
+  local resume=0
   local vm_state
   vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
   if [[ ${QUIESCE} == "true" && "$vm_state" == "running" ]]; then
     if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
       thaw=1
+    fi
+  fi
+
+  # Without a freeze the snapshots of a VM with several disks are taken one after another while
+  # the guest keeps writing, so the set would not be crash consistent. Pausing the VM for the few
+  # moments the snapshots take restores that, much as a backup-begin checkpoint does. A single
+  # disk needs no pause: one snapshot is already a single point in time.
+  if [[ $thaw -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
+    if virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
+      resume=1
+    else
+      log -ne "WARNING: unable to pause VM $VM, the disk snapshots will not be taken at the same instant"
     fi
   fi
 
@@ -347,6 +360,15 @@ backup_rbd_vm() {
   if [[ $thaw -eq 1 ]]; then
     if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
       echo "Failed to thaw the filesystem for vm $VM: $response"
+      rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+      cleanup
+      exit 1
+    fi
+  fi
+
+  if [[ $resume -eq 1 ]]; then
+    if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+      echo "Failed to resume vm $VM after taking the disk snapshots"
       rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
       cleanup
       exit 1
