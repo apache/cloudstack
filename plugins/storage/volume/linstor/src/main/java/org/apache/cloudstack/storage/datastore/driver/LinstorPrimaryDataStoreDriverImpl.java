@@ -72,6 +72,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -81,6 +82,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -673,9 +675,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         final String rscName)
     throws ApiException {
         String resultMsg = null;
-        String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
-        int _backupsnapshotwait = NumbersUtil.parseInt(
-            value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
+        int _backupsnapshotwait = SnapshotManager.BackupSnapshotWait.value();
 
         LinstorRevertBackupSnapshotCommand cmd = new LinstorRevertBackupSnapshotCommand(
             snapshot.getTO(),
@@ -1025,8 +1025,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         // uses the format of the base volume and we backup snapshots as QCOW2
         // https://github.com/apache/cloudstack/pull/8802#issuecomment-2024019927
         to.setFormat(Storage.ImageFormat.RAW);
-        int nMaxExecutionSeconds = NumbersUtil.parseInt(
-                _configDao.getValue(Config.CopyVolumeWait.key()), 10800);
+        int nMaxExecutionSeconds = VolumeApiService.CopyVolumeWait.value();
         CopyCommand cmd = new CopyCommand(
                 to,
                 dstData.getTO(),
@@ -1113,9 +1112,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     protected Answer copySnapshot(DataObject srcData, DataObject destData) {
-        String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
-        int _backupsnapshotwait = NumbersUtil.parseInt(
-            value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
+        int _backupsnapshotwait = SnapshotManager.BackupSnapshotWait.value();
 
         SnapshotObject snapshotObject = (SnapshotObject)srcData;
         Boolean snapshotFullBackup = snapshotObject.getFullBackup();

@@ -516,10 +516,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                         internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
                         NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
-        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
+        cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
+        cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getInternalLbControlIp(internalLbVm.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestNic.getIPv4Address());
