@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.SnapshotJoinVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -226,11 +227,7 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
     @Override
     public List<SnapshotJoinVO> searchBySnapshotStorePair(String... pairs) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", QueryService.SortKeyAscending.value(), null, null);
         List<SnapshotJoinVO> uvList = new ArrayList<>();

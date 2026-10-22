@@ -706,7 +706,6 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -1166,8 +1165,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         }
 
         //Alerts purge configurations
-        final int alertPurgeInterval = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeInterval.key()), 60 * 60 * 24); // 1 day.
-        _alertPurgeDelay = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeDelay.key()), 0);
+        final int alertPurgeInterval = AlertPurgeInterval.value();
+        _alertPurgeDelay = AlertPurgeDelay.value();
         if (_alertPurgeDelay != 0) {
             _alertExecutor.scheduleAtFixedRate(new AlertPurgeTask(), alertPurgeInterval, alertPurgeInterval, TimeUnit.SECONDS);
         }
@@ -5153,7 +5152,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     @Override
     public List<String> getHypervisors(final Long zoneId) {
         final List<String> result = new ArrayList<>();
-        final String hypers = _configDao.getValue(Config.HypervisorList.key());
+        final String hypers = HypervisorList.value();
         final String[] hypervisors = hypers.split(",");
 
         if (zoneId != null) {

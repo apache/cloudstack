@@ -55,7 +55,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -399,16 +398,16 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         _mgmtHost = configs.get("host");
-        _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        _mgmtCidr = ManagementServer.ManagementNetwork.value();
 
-        final String offUUID = configs.get(Config.InternalLbVmServiceOfferingId.key());
+        final String offUUID = configs.get(ManagementServer.InternalLbVmServiceOfferingId.key());
         if (offUUID != null && !offUUID.isEmpty()) {
             //get the id by offering UUID
             final ServiceOfferingVO off = _serviceOfferingDao.findByUuid(offUUID);
             if (off != null) {
                 _internalLbVmOfferingId = off.getId();
             } else {
-                logger.warn("Invalid offering UUID is passed in " + Config.InternalLbVmServiceOfferingId.key() + "; the default offering will be used instead");
+                logger.warn("Invalid offering UUID is passed in " + ManagementServer.InternalLbVmServiceOfferingId.key() + "; the default offering will be used instead");
             }
         }
 

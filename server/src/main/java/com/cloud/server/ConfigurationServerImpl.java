@@ -393,12 +393,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
-                String pvdriverversion = Config.XenServerPVdriverVersion.getDefaultValue();
+                String pvdriverversion = ManagementServer.XenServerPVdriverVersion.defaultValue();
                 PreparedStatement pstmt = null;
                 ResultSet rs1 = null;
                 ResultSet rs2 = null;
                 try {
-                    String oldValue = _configDao.getValue(Config.XenServerPVdriverVersion.key());
+                    String oldValue = ManagementServer.XenServerPVdriverVersion.value();
                     if (oldValue == null) {
                         String sql = "select resource from host where hypervisor_type='XenServer' and removed is null and status not in ('Error', 'Removed') group by resource";
                         pstmt = txn.prepareAutoCloseStatement(sql);
@@ -416,8 +416,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 break;
                             }
                         }
-                        _configDao.getValueAndInitIfNotExist(Config.XenServerPVdriverVersion.key(), Config.XenServerPVdriverVersion.getCategory(), pvdriverversion,
-                                Config.XenServerPVdriverVersion.getDescription());
+                        _configDao.getValueAndInitIfNotExist(ManagementServer.XenServerPVdriverVersion.key(), ManagementServer.XenServerPVdriverVersion.category(), pvdriverversion,
+                                ManagementServer.XenServerPVdriverVersion.description());
                         sql = "select id from vm_template where hypervisor_type='XenServer'  and format!='ISO' and removed is null";
                         pstmt = txn.prepareAutoCloseStatement(sql);
                         rs2 = pstmt.executeQuery();
@@ -926,13 +926,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                     }
 
-                    String ipNums = _configDao.getValue("linkLocalIp.nums");
-                    int nums = Integer.parseInt(ipNums);
+                    int nums = ManagementServer.LinkLocalIpNums.value();
                     if (nums > 16 || nums <= 0) {
                         throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
                     }
                     /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(ManagementServer.ControlCidr.value());
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
             });

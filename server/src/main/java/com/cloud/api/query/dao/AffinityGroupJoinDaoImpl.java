@@ -29,6 +29,7 @@ import org.apache.cloudstack.dedicated.DedicatedResourceResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -156,11 +157,7 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
     @Override
     public List<AffinityGroupJoinVO> searchByIds(Long... agIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         List<AffinityGroupJoinVO> uvList = new ArrayList<AffinityGroupJoinVO>();
         // query details by batches

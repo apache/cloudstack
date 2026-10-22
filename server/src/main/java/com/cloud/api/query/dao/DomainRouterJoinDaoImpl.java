@@ -41,6 +41,7 @@ import com.cloud.host.ControlState;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -300,11 +301,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     @Override
     public List<DomainRouterJoinVO> searchByIds(Long... vrIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         List<DomainRouterJoinVO> uvList = new ArrayList<DomainRouterJoinVO>();
         // query details by batches
