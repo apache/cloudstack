@@ -28,6 +28,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -116,7 +118,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase implements ExternalFirewallDeviceManager, ResourceStateAdapter {
+public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase implements ExternalFirewallDeviceManager, ResourceStateAdapter, Configurable {
 
     @Inject
     HostDao _hostDao;
@@ -834,5 +836,15 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         sendPortForwardingRules(pfRules, zone, externalFirewall.getId());
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ExternalFirewallDeviceManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {DefaultExternalFirewallCapacity};
     }
 }

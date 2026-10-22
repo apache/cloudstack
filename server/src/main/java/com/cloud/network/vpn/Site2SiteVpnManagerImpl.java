@@ -1187,7 +1187,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return new ConfigKey<?>[] { VpnCustomerGatewayExcludedEncryptionAlgorithms, VpnCustomerGatewayExcludedHashingAlgorithms,
                 VpnCustomerGatewayExcludedIkeVersions, VpnCustomerGatewayExcludedDhGroup, VpnCustomerGatewayObsoleteEncryptionAlgorithms,
                 VpnCustomerGatewayObsoleteHashingAlgorithms, VpnCustomerGatewayObsoleteIkeVersions, VpnCustomerGatewayObsoleteDhGroup,
-                VpnCustomerGatewayObsoleteCheckInterval};
+                VpnCustomerGatewayObsoleteCheckInterval, Site2SiteVpnConnectionPerVpnGatewayLimit, Site2SiteVpnSubnetsPerCustomerGatewayLimit};
     }
 
     protected class CheckVpnCustomerGatewayObsoleteParametersTask extends ManagedContextRunnable {

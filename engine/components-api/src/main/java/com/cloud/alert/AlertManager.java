@@ -53,6 +53,59 @@ public interface AlertManager extends Manager, AlertService {
             "alert.allowed.repetitive.types", "",
             "Comma-separated list of alert types (by name) that can be sent multiple times", true);
 
+    ConfigKey<String> AlertEmailAddresses = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, String.class,
+            "alert.email.addresses", null,
+            "Comma separated list of email addresses which are going to receive alert emails.", true,
+            ConfigKey.Kind.CSV, null);
+
+    ConfigKey<String> AlertEmailSender = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, String.class,
+            "alert.email.sender", null,
+            "Sender of alert email (will be in the From header of the email).", true);
+
+    ConfigKey<String> AlertSMTPHost = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, String.class,
+            "alert.smtp.host", null,
+            "SMTP hostname used for sending out email alerts.", true);
+
+    ConfigKey<Integer> AlertSMTPPort = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Integer.class,
+            "alert.smtp.port", "465",
+            "Port the SMTP server is listening on.", true);
+
+    ConfigKey<String> AlertSMTPUsername = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, String.class,
+            "alert.smtp.username", null,
+            "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).", true);
+
+    ConfigKey<String> AlertSMTPPassword = new ConfigKey<>("Secure", String.class,
+            "alert.smtp.password", null,
+            "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).", true);
+
+    ConfigKey<Integer> CapacityCheckPeriod = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Integer.class,
+            "capacity.check.period", "300000",
+            "The interval in milliseconds between capacity checks", true);
+
+    ConfigKey<Double> PublicIpCapacityThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class,
+            "zone.virtualnetwork.publicip.capacity.notificationthreshold", "0.75",
+            "Percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent.", true);
+
+    ConfigKey<Double> PrivateIpCapacityThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class,
+            "pod.privateip.capacity.notificationthreshold", "0.75",
+            "Percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent.", true);
+
+    ConfigKey<Double> SecondaryStorageCapacityThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class,
+            "zone.secstorage.capacity.notificationthreshold", "0.75",
+            "Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.", true);
+
+    ConfigKey<Double> VlanCapacityThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class,
+            "zone.vlan.capacity.notificationthreshold", "0.75",
+            "Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.", true);
+
+    ConfigKey<Double> DirectNetworkPublicIpCapacityThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class,
+            "zone.directnetwork.publicip.capacity.notificationthreshold", "0.75",
+            "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", true);
+
+    ConfigKey<Double> LocalStorageCapacityThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class,
+            "cluster.localStorage.capacity.notificationthreshold", "0.75",
+            "Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low local storage available.", true);
+
     void clearAlert(AlertType alertType, long dataCenterId, long podId);
 
     void recalculateCapacity();

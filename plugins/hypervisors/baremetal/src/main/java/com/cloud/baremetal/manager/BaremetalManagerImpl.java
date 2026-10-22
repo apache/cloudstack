@@ -32,6 +32,8 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaremetalProvisionDoneNotificationCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import org.apache.cloudstack.api.AddBaremetalHostCmd;
 
@@ -44,7 +46,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 
-public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     @Inject
     protected HostDao _hostDao;
@@ -150,5 +152,16 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
         vmDao.update(vm.getId(), vm);
         logger.debug(String.format("received baremetal provision done notification for vm %s running on host %s [mac:%s, ip:%s]",
                 vm, host, host.getPrivateMacAddress(), host.getPrivateIpAddress()));
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return BaremetalManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {BaremetalInternalStorageServer, BaremetalProvisionDoneNotificationTimeout, ExternalBaremetalResourceClassName,
+                EnableBaremetalSecurityGroupAgentEcho, BaremetalIpmiLanInterface, BaremetalIpmiRetryTimes};
     }
 }

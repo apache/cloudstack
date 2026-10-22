@@ -37,6 +37,13 @@ public interface DeploymentPlanningManager extends Manager {
     static final ConfigKey<Boolean> allowAdminVmOnDisabledResource = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.admin.vm.on.disabled.resources", "false",
             "Allow deploying VMs owned by the admin account in disabled Clusters, Pods, and Zones", true);
 
+    ConfigKey<Integer> HostReservationReleasePeriod = new ConfigKey<>("Advanced", Integer.class, "host.reservation.release.period", "300000",
+            "The interval in milliseconds between host reservation release checks", true);
+
+    ConfigKey<String> VmDeploymentPlanner = new ConfigKey<>("Advanced", String.class, "vm.deployment.planner", "FirstFitPlanner",
+            "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
+            true, ConfigKey.Kind.Select, "FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner");
+
     /**
      * Manages vm deployment stages: First Process Affinity/Anti-affinity - Call
      * the chain of AffinityGroupProcessor adapters to set deploymentplan scope

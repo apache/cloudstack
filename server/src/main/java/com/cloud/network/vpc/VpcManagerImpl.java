@@ -3728,7 +3728,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
                 VpcTierNamePrepend,
-                VpcTierNamePrependDelimiter
+                VpcTierNamePrependDelimiter,
+                VpcCleanupInterval,
+                VpcMaxNetworks
         };
     }
 
