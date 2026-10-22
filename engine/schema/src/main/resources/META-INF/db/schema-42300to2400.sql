@@ -19,6 +19,19 @@
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
 
+-- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the cumulative and
+-- per-VM volume usage records introduced in 4.22.1 can coexist. See #13399.
+CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
+-- Reclaim VNETs belonging to Netris deleted networks
+UPDATE op_dc_vnet_alloc a
+    JOIN networks n ON n.broadcast_uri = CONCAT('netris://', a.vnet)
+    SET a.account_id = NULL,
+        a.reservation_id = NULL,
+        a.taken = NULL
+WHERE n.removed IS NOT NULL;
+
 -- VMware CBT warm migration session state
 CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
