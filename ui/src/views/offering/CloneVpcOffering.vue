@@ -550,6 +550,7 @@ export default {
       const r = this.resource
       this.form.name = r.name + ' - Clone'
       this.form.displaytext = r.displaytext || r.name
+      if (r.conservemode !== undefined) this.form.conservemode = r.conservemode
 
       if (r.internetprotocol) {
         this.form.internetprotocol = r.internetprotocol.toLowerCase()
