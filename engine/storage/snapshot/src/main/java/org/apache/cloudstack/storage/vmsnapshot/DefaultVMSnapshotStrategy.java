@@ -38,7 +38,6 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections4.CollectionUtils;
@@ -71,7 +70,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -83,6 +81,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -98,8 +97,6 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     @Inject
     VMSnapshotDao vmSnapshotDao;
     int _wait;
-    @Inject
-    ConfigurationDao configurationDao;
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -129,8 +126,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        String value = configurationDao.getValue("vmsnapshot.create.wait");
-        _wait = NumbersUtil.parseInt(value, 1800);
+        _wait = VMSnapshotManager.VMSnapshotCreateWait.value();
         return true;
     }
 
