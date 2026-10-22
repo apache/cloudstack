@@ -10121,6 +10121,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
     }
 
+    // Unmanage drops nic_network_map rows without closing their usage records, leaking billed associations; reject until that's fixed.
+    private void validateVmHasNoTrunkNicForUnmanage(UserVmVO vm) {
+        for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
+            if (nic.getMultiNetwork()) {
+                throw new InvalidParameterValueException(String.format(
+                        "Instance [%s] has a trunk nic [%s] with network associations; unmanaging such instances is not supported.",
+                        vm.getUuid(), nic.getUuid()));
+            }
+        }
+    }
+
     @Override
     public Pair<Boolean, String> unmanageUserVM(Long vmId, Long paramHostId) {
         UserVmVO vm = _vmDao.findById(vmId);
@@ -10141,6 +10152,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new UnsupportedServiceException("Unmanaging a VM is currently not supported on hypervisor " +
                         vm.getHypervisorType().toString());
             }
+
+            validateVmHasNoTrunkNicForUnmanage(vm);
 
             List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
             checkUnmanagingVMOngoingVolumeSnapshots(vm);

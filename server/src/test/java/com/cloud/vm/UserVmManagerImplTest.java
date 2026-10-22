@@ -4811,6 +4811,30 @@ public class UserVmManagerImplTest {
     }
 
     @Test
+    public void testUnmanageUserVMRejectsTrunkNic() {
+        when(userVmVoMock.getId()).thenReturn(vmId);
+        when(userVmVoMock.getUuid()).thenReturn(vmUuid);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        unmanagedVMsManagerMockedStatic.when(() -> UnmanagedVMsManager.isSupported(Hypervisor.HypervisorType.KVM)).thenReturn(true);
+        NicVO trunkNic = mock(NicVO.class);
+        when(trunkNic.getMultiNetwork()).thenReturn(true);
+        when(trunkNic.getUuid()).thenReturn("trunk-nic-uuid");
+        when(nicDao.listByVmId(vmId)).thenReturn(Collections.singletonList(trunkNic));
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
+            userVmManagerImpl.unmanageUserVM(vmId, null);
+        });
+
+        assertEquals("Instance [" + vmUuid + "] has a trunk nic [trunk-nic-uuid] with network associations; unmanaging such instances is not supported.",
+                exception.getCause().getMessage());
+        verify(virtualMachineManager, never()).unmanage(anyString(), any());
+        verify(userVmDao, times(1)).releaseFromLockTable(vmId);
+    }
+
+    @Test
     public void testUnmanageUserVMItManagerReturnsFalse() {
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
         when(userVmVoMock.getId()).thenReturn(vmId);
