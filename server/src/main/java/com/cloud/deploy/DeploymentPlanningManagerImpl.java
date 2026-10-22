@@ -2130,7 +2130,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {allowRouterOnDisabledResource, allowAdminVmOnDisabledResource};
+        return new ConfigKey<?>[] {allowRouterOnDisabledResource, allowAdminVmOnDisabledResource, HostReservationReleasePeriod, VmDeploymentPlanner};
     }
 
     @Override
