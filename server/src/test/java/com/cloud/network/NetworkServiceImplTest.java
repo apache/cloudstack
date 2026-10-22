@@ -1687,6 +1687,24 @@ public class NetworkServiceImplTest {
         service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
     }
 
+    @Test(expected = PermissionDeniedException.class)
+    public void associateNetworkToNicChecksAccessBeforeRevealingAlreadyAssociatedState() throws Exception {
+        // requesting the primary network again would normally fail with "already associated" -
+        // access must be checked first, so a caller without access gets PermissionDeniedException instead,
+        // never learning whether the network is already associated
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        Mockito.doThrow(new PermissionDeniedException("no access to network 205"))
+                .when(accountManager).checkAccess(accountMock, null, true, primaryNetwork);
+
+        service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(205L)));
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void associateNetworkToNicFailsWhenAlreadyAssociatedWithPrimaryNetwork() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
