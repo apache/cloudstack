@@ -1699,8 +1699,10 @@ public class NetworkServiceImplTest {
         NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
         Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
         Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        Mockito.when(vm.getAccountId()).thenReturn(5L);
+        Mockito.when(accountManager.getAccount(5L)).thenReturn(accountMock);
         Mockito.doThrow(new PermissionDeniedException("no access to network 205"))
-                .when(accountManager).checkAccess(accountMock, null, true, primaryNetwork);
+                .when(networkModel).checkNetworkPermissions(accountMock, primaryNetwork);
 
         service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(205L)));
     }
@@ -1771,11 +1773,13 @@ public class NetworkServiceImplTest {
     }
 
     @Test
-    public void associateNetworkToNicChecksCallerAccessToRequestedNetwork() throws Exception {
+    public void associateNetworkToNicChecksVmOwnerPermissionsOnRequestedNetwork() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
         UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        Mockito.when(vm.getAccountId()).thenReturn(5L);
+        Mockito.when(accountManager.getAccount(5L)).thenReturn(accountMock);
         NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
         Mockito.when(primaryNetwork.getCidr()).thenReturn("10.1.1.0/24");
         Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
@@ -1787,22 +1791,24 @@ public class NetworkServiceImplTest {
 
         service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
 
-        Mockito.verify(accountManager).checkAccess(accountMock, null, true, requestedNetwork);
+        Mockito.verify(networkModel).checkNetworkPermissions(accountMock, requestedNetwork);
     }
 
     @Test(expected = PermissionDeniedException.class)
-    public void associateNetworkToNicFailsWhenCallerLacksAccessToRequestedNetwork() throws Exception {
+    public void associateNetworkToNicFailsWhenVmOwnerLacksAccessToRequestedNetwork() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
         UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        Mockito.when(vm.getAccountId()).thenReturn(5L);
+        Mockito.when(accountManager.getAccount(5L)).thenReturn(accountMock);
         NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
         Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
         Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
         NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
         Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
         Mockito.doThrow(new PermissionDeniedException("no access to network 206"))
-                .when(accountManager).checkAccess(accountMock, null, true, requestedNetwork);
+                .when(networkModel).checkNetworkPermissions(accountMock, requestedNetwork);
 
         service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
     }

@@ -1048,7 +1048,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 vnfTemplateManager.validateVnfApplianceTrunkNic(template, nic.getDeviceId());
             }
 
-            Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds, caller);
+            Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds);
             List<NetworkVO> resultingSet = networkSets.first();
             List<NetworkVO> requestedNetworks = networkSets.second();
 
@@ -1306,7 +1306,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private Pair<List<NetworkVO>, List<NetworkVO>> buildResultingNetworkSet(VirtualMachine vm, NicVO nic, NetworkVO primaryNetwork, List<Long> requestedNetworkIds, Account caller) {
+    private Pair<List<NetworkVO>, List<NetworkVO>> buildResultingNetworkSet(VirtualMachine vm, NicVO nic, NetworkVO primaryNetwork, List<Long> requestedNetworkIds) {
         List<NicNetworkMapVO> existingAssociations = _nicNetworkMapDao.listByNicId(nic.getId());
         Set<Long> associatedNetworkIds = new HashSet<>();
         associatedNetworkIds.add(primaryNetwork.getId());
@@ -1321,6 +1321,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         Set<Long> networksOnOtherNics = getNetworksTouchedByOtherNics(vm, nic.getId());
+        Account vmOwner = _accountMgr.getAccount(vm.getAccountId());
 
         List<NetworkVO> requestedNetworks = new ArrayList<>();
         for (Long requestedNetworkId : requestedNetworkIds) {
@@ -1328,8 +1329,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (requestedNetwork == null) {
                 throw new InvalidParameterValueException(String.format("Unable to find network with id %d", requestedNetworkId));
             }
-            // authorize before revealing any association state about the network below
-            _accountMgr.checkAccess(caller, null, true, requestedNetwork);
+            // check the Instance owner's entitlement to the network, like addNicToVirtualMachine does - not
+            // the caller's, since this is reachable with the caller being root admin (associateNetworkToNic
+            // is admin-only), whose own access always passes unconditionally and proves nothing about whether
+            // the Instance's account is actually allowed to use this network
+            _networkModel.checkNetworkPermissions(vmOwner, requestedNetwork);
             if (associatedNetworkIds.contains(requestedNetworkId)) {
                 throw new InvalidParameterValueException(String.format("Nic %s is already associated with network %s", nic.getUuid(), requestedNetwork.getUuid()));
             }
