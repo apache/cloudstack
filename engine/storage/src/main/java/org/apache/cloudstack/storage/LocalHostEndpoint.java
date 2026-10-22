@@ -33,8 +33,8 @@ import org.apache.cloudstack.storage.resource.LocalNfsSecondaryStorageResource;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.configuration.Config;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.net.NetUtils;
 
@@ -51,7 +51,7 @@ public class LocalHostEndpoint implements EndPoint {
     private void configure() {
         // get mount parent folder configured in global setting, if set, this will overwrite _parent in NfsSecondaryStorageResource to work
         // around permission issue for default /mnt folder
-        String mountParent = configDao.getValue(Config.MountParent.key());
+        String mountParent = SecondaryStorageVmManager.MountParent.value();
 
         String path = mountParent + File.separator + "secStorage";
 

@@ -99,6 +99,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ManagementServer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -193,8 +195,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
 
-        if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
-            buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        if (SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
+            buf.append(" vmpassword=").append(ManagementServer.SystemVMPassword.value());
         }
 
         NicProfile controlNic = null;
@@ -231,7 +233,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     buf.append(" localgw=").append(dest.getPod().getGateway());
                 }
             }
-            String msPublicKey = _configDao.getValue("ssh.publickey");
+            String msPublicKey = ManagementServer.SshPublicKey.value();
             buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
         }
 
