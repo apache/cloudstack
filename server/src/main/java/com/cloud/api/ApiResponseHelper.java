@@ -4819,6 +4819,16 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
      */
     @Override
     public NicResponse createNicResponse(Nic result) {
+        return createNicResponse(result, null);
+    }
+
+    /**
+     * Same as {@link #createNicResponse(Nic)}, but when {@code networkId} is given (a {@code listNics?networkid=}
+     * query), the trunk nic's {@code associatednetworks} is narrowed to that one network instead of every
+     * network the nic trunks - callers that asked about one specific network shouldn't get every other one back.
+     */
+    @Override
+    public NicResponse createNicResponse(Nic result, Long networkId) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
@@ -4894,7 +4904,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         /*trunked / associatednetworks - multi-VLAN trunk nic, if any*/
         response.setTrunked(result.getMultiNetwork());
         if (result.getMultiNetwork()) {
-            response.setAssociatedNetworks(ApiDBUtils.findAssociatedNetworkResponses(result.getId()));
+            response.setAssociatedNetworks(ApiDBUtils.findAssociatedNetworkResponses(result.getId(), networkId));
         }
         /*18: extra dhcp options */
         List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs

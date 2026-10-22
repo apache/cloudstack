@@ -230,12 +230,13 @@ export default {
       this.selectedVm = e.target.value
       this.nicIpOptions = []
       this.loading = true
+      const networkId = this.resource.associatednetworkid || this.selectedVpcTier
       getAPI('listNics', {
         virtualmachineid: this.selectedVm,
-        networkid: this.resource.associatednetworkid || this.selectedVpcTier
+        networkid: networkId
       }).then(response => {
         const nics = response.listnicsresponse.nic || []
-        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic))
+        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic, networkId))
         this.selectedNic = this.nicIpOptions[0]
       }).catch(error => {
         this.$notifyError(error)

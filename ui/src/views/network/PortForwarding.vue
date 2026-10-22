@@ -816,12 +816,13 @@ export default {
       this.nicIpOptions = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: networkId
       }).then(response => {
         const nics = response.listnicsresponse.nic || []
-        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic))
+        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic, networkId))
         this.newRule.vmguestip = this.nicIpOptions[0]?.ip
         this.addVmModalNicLoading = false
       }).catch(error => {

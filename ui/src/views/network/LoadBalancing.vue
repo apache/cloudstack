@@ -1854,13 +1854,14 @@ export default {
       this.newRule.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
 
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: networkId
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
         const nicsReturned = response.listnicsresponse.nic || []
-        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic))
+        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic, networkId))
         this.newRule.vmguestip[index] = [this.nics[index][0]?.ip]
         this.addVmModalNicLoading = false
       }).catch(error => {

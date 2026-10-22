@@ -188,13 +188,14 @@ export default {
       }
       this.iLb.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
+      const networkId = this.resource.networkid
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: this.resource.networkid
+        networkid: networkId
       }).then(response => {
         if (!response.listnicsresponse.nic[0]) return
         const nicsReturned = response.listnicsresponse.nic || []
-        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic))
+        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic, networkId))
         this.iLb.vmguestip[index] = this.nics[index][0]?.ip
         this.addVmModalNicLoading = false
       }).catch(error => {

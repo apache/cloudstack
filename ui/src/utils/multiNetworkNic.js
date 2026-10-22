@@ -52,15 +52,26 @@ export function fetchMultiNetworkNicEnabledForZone (zoneid) {
 // Each option carries the networkid a rule-creation call (enableStaticNat/createPortForwardingRule/
 // assignToLoadBalancerRule) must submit alongside its ip - an associated option's networkid differs from
 // the nic's own, which is the one real behavioral difference from a secondary IP.
-export function buildNicIpOptions (nic) {
+//
+// targetNetworkId, when given (the rule's own network - e.g. the public IP's network), excludes the
+// primary/secondary options when the nic's primary network isn't that one: a trunk nic listed as a
+// candidate only because one of its *associated* networks matches must not also offer its unrelated
+// primary IP, which is never valid for this rule.
+export function buildNicIpOptions (nic, targetNetworkId) {
   const options = []
-  if (nic.ipaddress) {
+  const primaryMatches = !targetNetworkId || nic.networkid === targetNetworkId
+  if (nic.ipaddress && primaryMatches) {
     options.push({ kind: 'primary', ip: nic.ipaddress, networkid: nic.networkid, networkname: nic.networkname, nicid: nic.id })
   }
-  for (const secondary of (nic.secondaryip || [])) {
-    options.push({ kind: 'secondary', ip: secondary.ipaddress, networkid: nic.networkid, networkname: nic.networkname, nicid: nic.id })
+  if (primaryMatches) {
+    for (const secondary of (nic.secondaryip || [])) {
+      options.push({ kind: 'secondary', ip: secondary.ipaddress, networkid: nic.networkid, networkname: nic.networkname, nicid: nic.id })
+    }
   }
   for (const association of (nic.associatednetworks || [])) {
+    if (targetNetworkId && association.networkid !== targetNetworkId) {
+      continue
+    }
     options.push({ kind: 'associated', ip: association.ipaddress, networkid: association.networkid, networkname: association.networkname, nicid: nic.id })
   }
   return options

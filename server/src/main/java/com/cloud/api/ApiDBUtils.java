@@ -2262,9 +2262,21 @@ public class ApiDBUtils {
      * identical shape, so it's built once here rather than duplicated per builder.
      */
     public static List<NicNetworkMapResponse> findAssociatedNetworkResponses(long nicId) {
+        return findAssociatedNetworkResponses(nicId, null);
+    }
+
+    /**
+     * Same as {@link #findAssociatedNetworkResponses(long)}, narrowed to the given network when one is passed -
+     * for callers like {@code listNics?networkid=X} that asked about one specific network and should not get
+     * back every other network this nic happens to trunk too.
+     */
+    public static List<NicNetworkMapResponse> findAssociatedNetworkResponses(long nicId, Long networkId) {
         List<NicNetworkMapVO> associations = s_nicNetworkMapDao.listByNicId(nicId);
         List<NicNetworkMapResponse> associatedNetworkResponses = new ArrayList<>();
         for (NicNetworkMapVO association : associations) {
+            if (networkId != null && association.getNetworkId() != networkId) {
+                continue;
+            }
             NetworkVO associatedNetwork = findNetworkById(association.getNetworkId());
             if (associatedNetwork == null) {
                 continue;
