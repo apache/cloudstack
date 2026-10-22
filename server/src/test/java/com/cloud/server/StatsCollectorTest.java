@@ -64,12 +64,16 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStatsVO;
 import com.cloud.storage.dao.VolumeStatsDao;
 import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.VmStatsVO;
@@ -117,6 +121,12 @@ public class StatsCollectorTest {
 
     @Mock
     private StoragePoolVO mockPool;
+
+    @Mock
+    private HostDao hostDaoMock;
+
+    @Mock
+    private HostGpuGroupsDao hostGpuGroupsDaoMock;
 
     private static Gson gson = new Gson();
 
@@ -376,6 +386,42 @@ public class StatsCollectorTest {
         volumeStatsCleaner.run();
 
         Mockito.verify(statsCollector).cleanUpVolumeStats();
+    }
+
+    @SuppressWarnings("unchecked")
+    private SearchCriteria<HostVO> mockHostSearch() {
+        SearchCriteria<HostVO> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
+        when(hostDaoMock.createSearchCriteria()).thenReturn(searchCriteriaMock);
+        when(hostDaoMock.search(searchCriteriaMock, null)).thenReturn(new ArrayList<>());
+        ReflectionTestUtils.setField(statsCollector, "_hostDao", hostDaoMock);
+        return searchCriteriaMock;
+    }
+
+    @Test
+    public void vmStatsCollectorTestOnlyCollectsFromHostsConnectedToThisManagementServer() {
+        SearchCriteria<HostVO> searchCriteriaMock = mockHostSearch();
+        // Example msid (the management server's MAC address as a long); any value works
+        long msid = 90520745551922L;
+        statsCollector.managementServerNodeId = msid;
+        StatsCollector.VmStatsCollector vmStatsCollector = statsCollector.new VmStatsCollector();
+
+        vmStatsCollector.run();
+
+        Mockito.verify(searchCriteriaMock).addAnd("managementServerId", SearchCriteria.Op.EQ, msid);
+        Mockito.verify(hostDaoMock).search(searchCriteriaMock, null);
+    }
+
+    @Test
+    public void hostCollectorTestCollectsFromAllHosts() {
+        SearchCriteria<HostVO> searchCriteriaMock = mockHostSearch();
+        when(hostGpuGroupsDaoMock.listHostIds()).thenReturn(new ArrayList<>());
+        ReflectionTestUtils.setField(statsCollector, "_hostGpuGroupsDao", hostGpuGroupsDaoMock);
+        StatsCollector.HostCollector hostCollector = statsCollector.new HostCollector();
+
+        hostCollector.run();
+
+        Mockito.verify(searchCriteriaMock, Mockito.never()).addAnd(Mockito.eq("managementServerId"), Mockito.any(), Mockito.any());
+        Mockito.verify(hostDaoMock).search(searchCriteriaMock, null);
     }
 
     @Test
