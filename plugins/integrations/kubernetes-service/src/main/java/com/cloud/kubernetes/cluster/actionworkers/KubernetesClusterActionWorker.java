@@ -75,7 +75,7 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -167,8 +167,13 @@ public class KubernetesClusterActionWorker {
 
     @Inject
     protected CAManager caManager;
-    @Inject
-    protected ConfigurationDao configurationDao;
+
+    // Registered/owned by ManagementServer (server module); declared here too so this module can read them
+    // without a reverse dependency on the server module.
+    protected static final ConfigKey<Boolean> DeveloperMode = new ConfigKey<>("Advanced", Boolean.class, "developer", "false",
+            "Whether the management server is running in developer mode.", false);
+    protected static final ConfigKey<String> SshPublicKey = new ConfigKey<>("Hidden", String.class, "ssh.publickey", null,
+            "Public key for the entire CloudStack, generated once and stored on first management server start.", false);
     @Inject
     protected DataCenterDao dataCenterDao;
     @Inject
@@ -408,7 +413,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected File getManagementServerSshPublicKeyFile() {
-        boolean devel = Boolean.parseBoolean(configurationDao.getValue("developer"));
+        boolean devel = DeveloperMode.value();
         String keyFile = String.format("%s/.ssh/id_rsa", System.getProperty("user.home"));
         if (devel) {
             keyFile += ".cloud";
@@ -1049,7 +1054,7 @@ public class KubernetesClusterActionWorker {
                 routerIp = routerNicOnNetwork.getIPv4Address();
             }
         }
-        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
+        String pubKey = "- \"" + SshPublicKey.value() + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
