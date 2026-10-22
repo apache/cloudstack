@@ -681,6 +681,22 @@ public class AgentProperties{
         = new Property<>("kvm.heartbeat.fence.include.system.vms", true);
 
     /**
+     * Seconds the {@code restart-agent} and {@code log-only} fence actions may spend stopping VMs before the host is
+     * hard-rebooted instead. Before stopping any VM the fence arms a detached deadman that keeps running even if the
+     * agent kills the heartbeat script when {@link #HEARTBEAT_UPDATE_TIMEOUT} runs out (stopping a VM can block for a
+     * long time on hung storage). If the VMs are not all confirmed stopped within this budget, the deadman
+     * hard-reboots the host. Each virsh call is also limited to 10 seconds, or this value if lower, when coreutils
+     * {@code timeout} is installed. Keep it below {@link #HEARTBEAT_UPDATE_TIMEOUT}. A value that is not a positive
+     * integer falls back to the default. No effect on {@code hard-reboot} and {@code graceful-reboot}, or when
+     * {@link #KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING} is true.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>30</code>
+     */
+    public static final Property<Integer> KVM_HEARTBEAT_FENCE_STOP_VMS_TIMEOUT
+        = new Property<>("kvm.heartbeat.fence.stop.vms.timeout", 30);
+
+    /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
      * Data type: Boolean.<br>
      * Default value: <code>true</code>

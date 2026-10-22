@@ -32,6 +32,23 @@
 # kvm.heartbeat.fence.keep.vms.running=true skips the step entirely and wins over
 # include.system.vms; it is only safe when no VM on this host can be restarted elsewhere.
 #
+# The agent kills this script once heartbeat.update.timeout (60 s by default) runs out, and
+# on hung storage stopping a VM can block for much longer than that. So before stopping any
+# VM the fence arms a detached deadman that survives the agent killing this script: unless
+# every VM the fence must stop is confirmed gone within kvm.heartbeat.fence.stop.vms.timeout
+# seconds (default 30, keep it below heartbeat.update.timeout), the deadman hard-reboots the
+# host. Each virsh call is also bounded by coreutils timeout, when present, to at most 10 s
+# (or the budget if lower) so one stuck domain cannot use up the whole budget.
+#
+# Properties read from agent.properties:
+#   kvm.heartbeat.fence.action              hard-reboot (default), graceful-reboot,
+#                                           restart-agent or log-only
+#   kvm.heartbeat.fence.keep.vms.running    false (default); true stops nothing
+#   kvm.heartbeat.fence.include.system.vms  true (default); false stops only user VMs
+#   kvm.heartbeat.fence.stop.vms.timeout    30 (default); seconds the VM stop phase may take
+#                                           before the deadman hard-reboots the host. A value
+#                                           that is not a positive integer means 30.
+#
 # Usage from caller:
 #   source "$(dirname "$0")/kvmha-fence.sh"
 #   fence_action "kvmheartbeat.sh"   # script name passed for log tagging
@@ -39,10 +56,104 @@
 AGENT_PROPS="${AGENT_PROPS:-/etc/cloudstack/agent/agent.properties}"
 FENCE_LOGGER="${FENCE_LOGGER:-/usr/bin/logger}"
 FENCE_SYSRQ_TRIGGER="${FENCE_SYSRQ_TRIGGER:-/proc/sysrq-trigger}"
+# Where the deadman keeps its arm file; /run is a local tmpfs, so hung storage cannot block it.
+FENCE_DEADMAN_DIR="${FENCE_DEADMAN_DIR:-/run/cloudstack-agent/kvmha-fence}"
+FENCE_STOP_VMS_TIMEOUT_DEFAULT=30
+FENCE_VIRSH_TIMEOUT_MAX=10
+# Per-call virsh timeout in seconds; empty means unbounded. Set by fence_action.
+FENCE_VIRSH_TIMEOUT=""
+FENCE_DEADMAN_ARM=""
 
 read_agent_property() {
   [ -r "$AGENT_PROPS" ] || return 0
   grep "^$1=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]'
+}
+
+# Prints the VM stop budget in seconds from kvm.heartbeat.fence.stop.vms.timeout. Unset gives
+# the default; anything else that is not a positive integer (up to 6 digits) gives the default
+# with a warning in syslog.
+stop_vms_budget() {
+  local source_script="$1" val
+  val=$(read_agent_property "kvm.heartbeat.fence.stop.vms.timeout")
+  if [[ "$val" =~ ^[0-9]{1,6}$ ]] && [ $((10#$val)) -gt 0 ]; then
+    echo $((10#$val))
+    return 0
+  fi
+  if [ -n "$val" ]; then
+    "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING kvm.heartbeat.fence.stop.vms.timeout='${val}' is not a positive number of seconds; using the default of ${FENCE_STOP_VMS_TIMEOUT_DEFAULT} s."
+  fi
+  echo "$FENCE_STOP_VMS_TIMEOUT_DEFAULT"
+}
+
+# Runs virsh against the system libvirt, bounded by FENCE_VIRSH_TIMEOUT seconds when coreutils
+# timeout is available. Without timeout the call is unbounded and only the deadman covers it.
+fence_virsh() {
+  if [ -n "$FENCE_VIRSH_TIMEOUT" ] && command -v timeout > /dev/null 2>&1; then
+    timeout -k 2 "$FENCE_VIRSH_TIMEOUT" virsh -c qemu:///system "$@"
+  else
+    virsh -c qemu:///system "$@"
+  fi
+}
+
+# Body of the deadman; runs in its own detached bash (see arm_deadman), never in the fence
+# script itself. Waits up to budget seconds in 1 s steps and exits quietly as soon as the arm
+# file is removed. If the arm file is still there when the budget runs out, the VM stop phase
+# did not finish in time (or the agent killed the fence script), so it hard-reboots the host.
+fence_deadman() {
+  local arm="$1" budget="$2" source_script="$3"
+  local deadline=$((SECONDS + budget))
+  # Survive the agent or a service stop sending TERM or HUP; only disarm_deadman stops it early.
+  trap '' HUP INT TERM
+  echo "$$" > "${arm}.pid"
+  trap 'rm -f "${arm}.pid"' EXIT
+  "$FENCE_LOGGER" -t heartbeat "${source_script}: fence deadman (pid $$) armed; the host will be hard-rebooted in ${budget} s unless every VM the fence must stop is confirmed stopped."
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    [ -e "$arm" ] || exit 0
+    sleep 1
+  done
+  [ -e "$arm" ] || exit 0
+  "$FENCE_LOGGER" -t heartbeat "${source_script}: VMs were not confirmed stopped within kvm.heartbeat.fence.stop.vms.timeout (${budget} s); fence deadman is hard-rebooting the host so no VM keeps running while HA may start it elsewhere."
+  sync &
+  sleep 5
+  echo b > "$FENCE_SYSRQ_TRIGGER"
+}
+
+# Starts the deadman for a budget of $2 seconds, detached from this script (its own session
+# when setsid exists) so it keeps running if the agent kills the fence script on timeout.
+# Fails if it cannot be armed.
+arm_deadman() {
+  local source_script="$1" budget="$2" arm
+  # The deadman runs a new bash, so it gets the values it needs passed in explicitly.
+  # shellcheck disable=SC2016
+  local body='source "$1"; fence_deadman "$2" "$3" "$4"'
+  mkdir -p "$FENCE_DEADMAN_DIR" 2> /dev/null || return 1
+  arm="${FENCE_DEADMAN_DIR}/armed.$$"
+  : > "$arm" 2> /dev/null || return 1
+  FENCE_DEADMAN_ARM="$arm"
+  if command -v setsid > /dev/null 2>&1; then
+    FENCE_LOGGER="$FENCE_LOGGER" FENCE_SYSRQ_TRIGGER="$FENCE_SYSRQ_TRIGGER" \
+      setsid nohup /bin/bash -c "$body" fence-deadman "${BASH_SOURCE[0]}" "$arm" "$budget" "$source_script" \
+      < /dev/null > /dev/null 2>&1 &
+  else
+    FENCE_LOGGER="$FENCE_LOGGER" FENCE_SYSRQ_TRIGGER="$FENCE_SYSRQ_TRIGGER" \
+      nohup /bin/bash -c "$body" fence-deadman "${BASH_SOURCE[0]}" "$arm" "$budget" "$source_script" \
+      < /dev/null > /dev/null 2>&1 &
+  fi
+  disown 2> /dev/null || true
+}
+
+# Stops the deadman: removing the arm file is enough on its own (it checks every second),
+# killing it just makes it go away at once.
+disarm_deadman() {
+  local arm="$FENCE_DEADMAN_ARM" pid
+  [ -n "$arm" ] || return 0
+  rm -f "$arm"
+  pid=$(cat "${arm}.pid" 2> /dev/null)
+  if [[ "$pid" =~ ^[0-9]+$ ]]; then
+    kill -KILL "$pid" 2> /dev/null
+  fi
+  rm -f "${arm}.pid"
+  FENCE_DEADMAN_ARM=""
 }
 
 # True when the libvirt domain name is a CloudStack system VM, using the names the management
@@ -58,7 +169,7 @@ is_system_vm() {
 vms_to_stop() {
   local include_system_vms="$1"
   local vms vm
-  vms=$(virsh -c qemu:///system list --name 2>/dev/null) || return 1
+  vms=$(fence_virsh list --name 2>/dev/null) || return 1
   for vm in $vms; do
     if [ "$include_system_vms" = "true" ] || ! is_system_vm "$vm"; then
       echo "$vm"
@@ -76,7 +187,7 @@ stop_vms() {
   vms=$(vms_to_stop "$include_system_vms") || return 1
   for vm in $vms; do
     "$FENCE_LOGGER" -t heartbeat "${source_script}: stopping VM ${vm} so it cannot run here while HA starts it on another host."
-    virsh -c qemu:///system destroy "$vm" > /dev/null 2>&1
+    fence_virsh destroy "$vm" > /dev/null 2>&1
   done
   vms=$(vms_to_stop "$include_system_vms") || return 1
   [ -z "$(echo "$vms" | tr -d '[:space:]')" ]
@@ -101,9 +212,20 @@ fence_action() {
         if [ "$include_system_vms" = "false" ]; then
           "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING fence action '${FENCE_ACTION}' with kvm.heartbeat.fence.include.system.vms=false stops only user VMs and leaves system VMs running. If the management server marks this host Down it may start those system VMs on another host, and a virtual router could then run twice with the same IP and MAC addresses."
         fi
-        if ! stop_vms "$source_script" "$include_system_vms"; then
+        local budget
+        budget=$(stop_vms_budget "$source_script")
+        FENCE_VIRSH_TIMEOUT=$(( budget < FENCE_VIRSH_TIMEOUT_MAX ? budget : FENCE_VIRSH_TIMEOUT_MAX ))
+        "$FENCE_LOGGER" -t heartbeat "${source_script}: stopping VMs for fence action '${FENCE_ACTION}' with a budget of ${budget} s (kvm.heartbeat.fence.stop.vms.timeout) and at most ${FENCE_VIRSH_TIMEOUT} s per virsh call."
+        if ! arm_deadman "$source_script" "$budget"; then
+          "$FENCE_LOGGER" -t heartbeat "${source_script}: could not arm the fence deadman in ${FENCE_DEADMAN_DIR}; falling back to hard-reboot because the VM stop phase could not be bounded."
+          FENCE_ACTION="hard-reboot"
+        elif ! stop_vms "$source_script" "$include_system_vms"; then
+          # The deadman stays armed: if this script is killed before it reboots, the deadman still does.
           "$FENCE_LOGGER" -t heartbeat "${source_script}: could not stop every VM on this host that the fence must stop for action '${FENCE_ACTION}'; falling back to hard-reboot so no VM keeps running while HA may start it elsewhere."
           FENCE_ACTION="hard-reboot"
+        else
+          # Every selected VM is confirmed gone, so the host may stay up.
+          disarm_deadman
         fi
       fi
       ;;
