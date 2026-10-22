@@ -5125,12 +5125,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (HypervisorType.KVM.equals(hypervisorType)) {
             options.put(VmDetailConstants.CPU_THREAD_PER_CORE, Collections.emptyList());
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("e1000", "virtio", "rtl8139", "vmxnet3", "ne2k_pci"));
-            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
-            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
+            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
             options.put(VmDetailConstants.IOTHREADS, List.of("enabled"));
+            options.put(VmDetailConstants.DISK_DISCARD, Arrays.asList("unmap", "ignore"));
             options.put(VmDetailConstants.NIC_MULTIQUEUE_NUMBER, Collections.emptyList());
             options.put(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, Arrays.asList("true", "false"));
             options.put(VmDetailConstants.VIRTUAL_TPM_MODEL, Arrays.asList("tpm-tis", "tpm-crb"));
