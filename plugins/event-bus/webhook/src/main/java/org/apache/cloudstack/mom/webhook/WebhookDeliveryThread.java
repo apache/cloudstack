@@ -47,12 +47,19 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
@@ -102,17 +109,30 @@ public class WebhookDeliveryThread implements Runnable {
         return true;
     }
 
-    protected void setHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    protected SSLConnectionSocketFactory getSslConnectionSocketFactory() throws NoSuchAlgorithmException,
+            KeyStoreException, KeyManagementException {
         if (webhook.isSslVerification()) {
-            httpClient = HttpClients.custom().disableRedirectHandling().build();
-            return;
+            return SSLConnectionSocketFactory.getSocketFactory();
         }
+        return new SSLConnectionSocketFactory(new SSLContextBuilder().loadTrustMaterial(null,
+                TrustAllStrategy.INSTANCE).build(), NoopHostnameVerifier.INSTANCE);
+    }
+
+    protected DnsResolver getDnsResolver() {
+        return new WebhookUrlValidator.DestinationPolicyDnsResolver(destinationBlocklist, blockLocalAddresses);
+    }
+
+    protected void setHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                .register("https", getSslConnectionSocketFactory())
+                .build();
+        // Destination addresses are validated by the DNS resolver
         httpClient = HttpClients
                 .custom()
                 .disableRedirectHandling()
-                .setSSLContext(new SSLContextBuilder().loadTrustMaterial(null,
-                        TrustAllStrategy.INSTANCE).build())
-                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .setConnectionManager(new BasicHttpClientConnectionManager(socketFactoryRegistry, null, null,
+                        getDnsResolver()))
                 .build();
     }
 
@@ -205,18 +225,34 @@ public class WebhookDeliveryThread implements Runnable {
             callback.complete(new WebhookDeliveryResult(headers, payload, success, response, new Date()));
             return;
         }
-        if (payloadUri == null) {
-            payloadUri = WebhookUrlValidator.validateWebhookDestinationUrl(webhook.getPayloadUrl(), allowHttp,
-                    destinationBlocklist, blockLocalAddresses);
-        }
-        while (attempt < deliveryTries) {
-            attempt++;
-            if (delivery(attempt)) {
-                success = true;
-                break;
+        try {
+            if (payloadUri == null) {
+                payloadUri = URI.create(webhook.getPayloadUrl());
+                WebhookUrlValidator.validateScheme(payloadUri, allowHttp);
             }
+            while (attempt < deliveryTries) {
+                attempt++;
+                if (delivery(attempt)) {
+                    success = true;
+                    break;
+                }
+            }
+        } catch (InvalidParameterValueException | IllegalArgumentException e) {
+            LOGGER.warn("Failed to deliver {} due to invalid payload URL: {}", webhook, e.getMessage());
+            response = String.format("Failed due to : %s", e.getMessage());
+        } finally {
+            closeHttpClient();
         }
-        callback.complete(new WebhookDeliveryResult(headers, payload, success, response, startTime));
+        callback.complete(new WebhookDeliveryResult(headers, payload, success, response,
+                startTime != null ? startTime : new Date()));
+    }
+
+    protected void closeHttpClient() {
+        try {
+            httpClient.close();
+        } catch (IOException e) {
+            LOGGER.debug("Failed to close HTTP client for {}: {}", webhook, e.getMessage());
+        }
     }
 
     protected void updateResponseFromRequest(HttpEntity entity) {
@@ -271,16 +307,19 @@ public class WebhookDeliveryThread implements Runnable {
                                 MAX_REDIRECT_HOPS);
                         return false;
                     }
-                    currentUri = WebhookUrlValidator.validateWebhookDestinationURI(
-                            currentUri.resolve(locationHeader.getValue()),
-                            allowHttp,destinationBlocklist, blockLocalAddresses);
+                    currentUri = currentUri.resolve(locationHeader.getValue());
+                    WebhookUrlValidator.validateScheme(currentUri, allowHttp);
                 }
             }
+        } catch (WebhookUrlValidator.BlockedDestinationException e) {
+            LOGGER.warn("Failed to deliver {}, in attempt #{} due to security policy: {}",
+                    webhook, attempt, e.getMessage());
+            response = String.format("Failed due to : %s", e.getMessage());
         } catch (IOException | DecoderException | NoSuchAlgorithmException | InvalidKeyException e) {
             LOGGER.warn("Failed to deliver {}, in attempt #{} due to: {}",
                     webhook, attempt, e.getMessage());
             response = String.format("Failed due to : %s", e.getMessage());
-        } catch (InvalidParameterValueException e) {
+        } catch (InvalidParameterValueException | IllegalArgumentException e) {
             LOGGER.warn("Failed to deliver {}, in attempt #{} due to security policy: {}",
                     webhook, attempt, e.getMessage());
             response = String.format("Failed due to : %s", e.getMessage());

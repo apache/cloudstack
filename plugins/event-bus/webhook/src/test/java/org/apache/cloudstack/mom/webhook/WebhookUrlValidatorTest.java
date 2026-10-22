@@ -19,6 +19,7 @@ package org.apache.cloudstack.mom.webhook;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -90,6 +91,47 @@ public class WebhookUrlValidatorTest {
     public void testValidateWebhookDestinationUrlAllowsLoopbackWhenLocalAddressBlockingDisabled() {
         URI resolvedUri = WebhookUrlValidator.validateWebhookDestinationUrl("https://127.0.0.1/hook", true, "", false);
         Assert.assertEquals(URI.create("https://127.0.0.1/hook"), resolvedUri);
+    }
+
+    @Test
+    public void testValidateWebhookDestinationUrlKeepsHostname() {
+        URI uri = WebhookUrlValidator.validateWebhookDestinationUrl("https://localhost:8443/hook?a=b", false, "",
+                false);
+        Assert.assertEquals(URI.create("https://localhost:8443/hook?a=b"), uri);
+    }
+
+    @Test
+    public void testDestinationPolicyDnsResolverReturnsAllowedAddresses() throws Exception {
+        InetAddress[] addresses = {InetAddress.getByName("8.8.8.8"), InetAddress.getByName("8.8.4.4")};
+        WebhookUrlValidator.DestinationPolicyDnsResolver resolver =
+                new WebhookUrlValidator.DestinationPolicyDnsResolver(host -> addresses, "10.0.0.0/8", true);
+        Assert.assertArrayEquals(addresses, resolver.resolve("webhook.test"));
+    }
+
+    @Test
+    public void testDestinationPolicyDnsResolverFailsClosedWhenAnyAddressIsBlocked() throws Exception {
+        InetAddress[] addresses = {InetAddress.getByName("8.8.8.8"), InetAddress.getByName("10.1.1.1")};
+        WebhookUrlValidator.DestinationPolicyDnsResolver resolver =
+                new WebhookUrlValidator.DestinationPolicyDnsResolver(host -> addresses, "10.0.0.0/8", true);
+        try {
+            resolver.resolve("webhook.test");
+            Assert.fail("Expected BlockedDestinationException");
+        } catch (WebhookUrlValidator.BlockedDestinationException e) {
+            Assert.assertTrue(e.getMessage().contains("webhook.test"));
+        }
+    }
+
+    @Test(expected = WebhookUrlValidator.BlockedDestinationException.class)
+    public void testDestinationPolicyDnsResolverBlocksLoopback() throws Exception {
+        InetAddress[] addresses = {InetAddress.getByName("127.0.0.1")};
+        new WebhookUrlValidator.DestinationPolicyDnsResolver(host -> addresses, "", true)
+                .resolve("webhook.test");
+    }
+
+    @Test(expected = UnknownHostException.class)
+    public void testDestinationPolicyDnsResolverFailsOnEmptyResolution() throws Exception {
+        new WebhookUrlValidator.DestinationPolicyDnsResolver(host -> new InetAddress[0], "", true)
+                .resolve("webhook.test");
     }
 
     @Test
