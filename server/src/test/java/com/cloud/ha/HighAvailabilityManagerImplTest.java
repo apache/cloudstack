@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.ha;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -265,6 +266,194 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.VMware);
 
         highAvailabilityManager.scheduleRestart(vm, true);
+    }
+
+    @Test
+    public void scheduleRestartVMInErrorState() {
+        VMInstanceVO vm = createVmForProcessing(VirtualMachine.State.Error);
+
+        for (boolean investigate : new boolean[] {true, false}) {
+            highAvailabilityManager.scheduleRestart(vm, investigate);
+        }
+
+        Mockito.verifyNoInteractions(_haDao, _itMgr, _alertMgr);
+    }
+
+    @Test
+    public void restartVMInErrorState() throws ReflectiveOperationException {
+        verifyErrorRestartWorkCompletes(true);
+    }
+
+    @Test
+    public void restartVMInErrorStateWithHADisabled() throws ReflectiveOperationException {
+        verifyErrorRestartWorkCompletes(false);
+    }
+
+    private void verifyErrorRestartWorkCompletes(boolean haEnabled) throws ReflectiveOperationException {
+        VMInstanceVO vm = createVmForProcessing(VirtualMachine.State.Error);
+        Mockito.when(_instanceDao.findById(1L)).thenReturn(vm);
+        // Neither retry path should be reached for a VM already in Error.
+        Mockito.lenient().when(_haDao.listRunningHaWorkForVm(1L)).thenReturn(Arrays.asList(createWorkForProcessing(WorkType.HA, VirtualMachine.State.Stopped)));
+        ConfigKey<Boolean> originalHaEnabled = HighAvailabilityManagerImpl.VmHaEnabled;
+        ConfigKey<Boolean> haEnabledConfig = Mockito.mock(ConfigKey.class);
+        Mockito.lenient().when(haEnabledConfig.valueIn(Mockito.anyLong())).thenReturn(haEnabled);
+        HighAvailabilityManagerImpl.VmHaEnabled = haEnabledConfig;
+        try {
+            for (VirtualMachine.State previousState : Arrays.asList(VirtualMachine.State.Stopped, VirtualMachine.State.Error)) {
+                HaWorkVO work = createWorkForProcessing(WorkType.HA, previousState);
+
+                processWorkMethod.invoke(highAvailabilityManager, work);
+
+                assertEquals(Step.Done, work.getStep());
+                assertEquals(0, work.getTimesTried());
+                Mockito.verify(_haDao).update(2L, work);
+            }
+            Mockito.verifyNoMoreInteractions(_haDao);
+            Mockito.verifyNoInteractions(_itMgr, _hostDao, _alertMgr, userVmManager, volumeMgr, haEnabledConfig);
+        } finally {
+            HighAvailabilityManagerImpl.VmHaEnabled = originalHaEnabled;
+        }
+    }
+
+    private VMInstanceVO createVmForProcessing(VirtualMachine.State state) {
+        VMInstanceVO vm = new VMInstanceVO(1L, 1L, "vm-1", "i-1-VM", VirtualMachine.Type.User,
+                1L, HypervisorType.KVM, 1L, 1L, 1L, 1L, true);
+        vm.setState(state);
+        vm.setDataCenterId(1L);
+        vm.setHostId(1L);
+        vm.setUuid("vm-1");
+        return vm;
+    }
+
+    private HaWorkVO createWorkForProcessing(WorkType type, VirtualMachine.State previousState) throws ReflectiveOperationException {
+        HaWorkVO work = new HaWorkVO(1L, VirtualMachine.Type.User, type, Step.Scheduled,
+                1L, previousState, 0, 0L, null);
+        Field id = HaWorkVO.class.getDeclaredField("id");
+        id.setAccessible(true);
+        id.set(work, 2L);
+        return work;
+    }
+
+    @Test
+    public void restartVMNotInErrorStateWithHADisabledStillRetries() throws ReflectiveOperationException {
+        VMInstanceVO vm = createVmForProcessing(VirtualMachine.State.Running);
+        Mockito.when(_instanceDao.findById(1L)).thenReturn(vm);
+        ConfigKey<Boolean> originalHaEnabled = HighAvailabilityManagerImpl.VmHaEnabled;
+        ConfigKey<Boolean> haEnabledConfig = Mockito.mock(ConfigKey.class);
+        Mockito.when(haEnabledConfig.valueIn(Mockito.anyLong())).thenReturn(false);
+        HighAvailabilityManagerImpl.VmHaEnabled = haEnabledConfig;
+        try {
+            HaWorkVO work = createWorkForProcessing(WorkType.HA, VirtualMachine.State.Running);
+
+            processWorkMethod.invoke(highAvailabilityManager, work);
+
+            assertEquals(Step.Scheduled, work.getStep());
+            assertEquals(1, work.getTimesTried());
+            Mockito.verify(_haDao).update(2L, work);
+            Mockito.verifyNoInteractions(_itMgr, _hostDao, _alertMgr, userVmManager, volumeMgr);
+        } finally {
+            HighAvailabilityManagerImpl.VmHaEnabled = originalHaEnabled;
+        }
+    }
+
+    @Test
+    public void errorVMStillProcessesStopAndDestroyWork() throws Exception {
+        VMInstanceVO vm = createVmForProcessing(VirtualMachine.State.Error);
+        Mockito.when(_instanceDao.findById(1L)).thenReturn(vm);
+        Mockito.when(_itMgr.findById(1L)).thenReturn(vm);
+        ConfigKey<Boolean> originalHaEnabled = HighAvailabilityManagerImpl.VmHaEnabled;
+        ConfigKey<Boolean> haEnabledConfig = Mockito.mock(ConfigKey.class);
+        Mockito.when(haEnabledConfig.valueIn(Mockito.anyLong())).thenReturn(true);
+        HighAvailabilityManagerImpl.VmHaEnabled = haEnabledConfig;
+        try {
+            for (WorkType type : Arrays.asList(WorkType.Stop, WorkType.CheckStop, WorkType.ForceStop, WorkType.Destroy)) {
+                HaWorkVO work = createWorkForProcessing(type, VirtualMachine.State.Error);
+
+                processWorkMethod.invoke(highAvailabilityManager, work);
+
+                assertEquals(Step.Done, work.getStep());
+                assertEquals(0, work.getTimesTried());
+                Mockito.verify(_haDao).update(2L, work);
+            }
+            Mockito.verify(_itMgr, Mockito.times(2)).advanceStop("vm-1", false);
+            Mockito.verify(_itMgr).advanceStop("vm-1", true);
+            Mockito.verify(_itMgr).destroy("vm-1", false);
+        } finally {
+            HighAvailabilityManagerImpl.VmHaEnabled = originalHaEnabled;
+        }
+    }
+
+    @Test
+    public void restartVMNotInErrorStateContinuesProcessing() throws ReflectiveOperationException {
+        VMInstanceVO vm = createVmForProcessing(VirtualMachine.State.Running);
+        Mockito.when(_instanceDao.findById(1L)).thenReturn(vm);
+        Mockito.when(_itMgr.findById(1L)).thenReturn(vm);
+        Mockito.when(_hostDao.findById(1L)).thenReturn(hostVO);
+        Investigator investigator = Mockito.mock(CheckOnAgentInvestigator.class);
+        Mockito.when(investigator.isAgentAlive(hostVO)).thenReturn(Status.Up);
+        highAvailabilityManager.setInvestigators(Arrays.asList(investigator));
+        ConfigKey<Boolean> originalHaEnabled = HighAvailabilityManagerImpl.VmHaEnabled;
+        ConfigKey<Boolean> haEnabledConfig = Mockito.mock(ConfigKey.class);
+        Mockito.when(haEnabledConfig.valueIn(Mockito.anyLong())).thenReturn(true);
+        HighAvailabilityManagerImpl.VmHaEnabled = haEnabledConfig;
+        try {
+            HaWorkVO work = createWorkForProcessing(WorkType.HA, VirtualMachine.State.Running);
+            work.setStep(Step.Investigating);
+            work.setReasonType(HighAvailabilityManager.ReasonType.HostMaintenance);
+
+            processWorkMethod.invoke(highAvailabilityManager, work);
+
+            assertEquals(Step.Done, work.getStep());
+            Mockito.verify(investigator).isAgentAlive(hostVO);
+            Mockito.verify(_haDao).update(2L, work);
+            Mockito.verify(_itMgr).findById(1L);
+            Mockito.verifyNoMoreInteractions(_itMgr);
+        } finally {
+            HighAvailabilityManagerImpl.VmHaEnabled = originalHaEnabled;
+        }
+    }
+
+    @Test
+    public void vmEnteringErrorAfterDispatchDoesNotRestart() throws ReflectiveOperationException {
+        verifyVmEnteringErrorAfterDispatchCompletes(false);
+    }
+
+    @Test
+    public void vmEnteringErrorAfterDispatchWithRunningHaWorkDoesNotRetry() throws ReflectiveOperationException {
+        verifyVmEnteringErrorAfterDispatchCompletes(true);
+    }
+
+    private void verifyVmEnteringErrorAfterDispatchCompletes(boolean runningHaWork) throws ReflectiveOperationException {
+        VMInstanceVO scheduledVm = createVmForProcessing(VirtualMachine.State.Stopped);
+        Mockito.when(_instanceDao.findById(1L)).thenReturn(scheduledVm);
+        VMInstanceVO currentVm = createVmForProcessing(VirtualMachine.State.Error);
+        Mockito.when(_itMgr.findById(1L)).thenReturn(currentVm);
+        if (runningHaWork) {
+            Mockito.lenient().when(_haDao.listRunningHaWorkForVm(1L)).thenReturn(Arrays.asList(createWorkForProcessing(WorkType.HA, VirtualMachine.State.Stopped)));
+        }
+        ConfigKey<Boolean> originalHaEnabled = HighAvailabilityManagerImpl.VmHaEnabled;
+        ConfigKey<Boolean> haEnabledConfig = Mockito.mock(ConfigKey.class);
+        Mockito.when(haEnabledConfig.valueIn(Mockito.anyLong())).thenReturn(true);
+        HighAvailabilityManagerImpl.VmHaEnabled = haEnabledConfig;
+        try {
+            for (Step step : Arrays.asList(Step.Scheduled, Step.Investigating)) {
+                HaWorkVO work = createWorkForProcessing(WorkType.HA, VirtualMachine.State.Stopped);
+                work.setStep(step);
+                work.setReasonType(HighAvailabilityManager.ReasonType.HostMaintenance);
+
+                processWorkMethod.invoke(highAvailabilityManager, work);
+
+                assertEquals(Step.Done, work.getStep());
+                assertEquals(0, work.getTimesTried());
+                Mockito.verify(_haDao).update(2L, work);
+            }
+            Mockito.verify(_itMgr, Mockito.times(2)).findById(1L);
+            Mockito.verifyNoMoreInteractions(_itMgr);
+            Mockito.verifyNoInteractions(_hostDao, _alertMgr, userVmManager, volumeMgr);
+            Mockito.verifyNoMoreInteractions(_haDao);
+        } finally {
+            HighAvailabilityManagerImpl.VmHaEnabled = originalHaEnabled;
+        }
     }
 
     @Test

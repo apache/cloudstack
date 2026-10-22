@@ -433,6 +433,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     @Override
     public void scheduleRestart(VMInstanceVO vm, boolean investigate, ReasonType reasonType) {
+        if (VirtualMachine.State.Error.equals(vm.getState())) {
+            logger.info("Skipping HA restart for VM {} because it is in Error state", vm);
+            return;
+        }
+
         if (!VmHaEnabled.valueIn(vm.getDataCenterId())) {
             String message = String.format("Unable to schedule restart for the VM %s (%d), VM high availability manager is disabled.", vm.getName(), vm.getId());
             if (logger.isDebugEnabled()) {
@@ -571,6 +576,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     protected Long restart(final HaWorkVO work) {
         logger.debug("RESTART with HAWORK");
+        long vmId = work.getInstanceId();
+        VirtualMachine vm = _itMgr.findById(vmId);
+        if (vm != null && VirtualMachine.State.Error.equals(vm.getState())) {
+            logger.info("Skipping HA restart for VM {} because it is in Error state", vm);
+            return null;
+        }
+
         List<HaWorkVO> items = _haDao.listFutureHaWorkForVm(work.getInstanceId(), work.getId());
         if (items.size() > 0) {
             StringBuilder str = new StringBuilder("Cancelling this work item because newer ones have been scheduled.  Work Ids = [");
@@ -593,9 +605,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return (System.currentTimeMillis() >> 10) + _investigateRetryInterval;
         }
 
-        long vmId = work.getInstanceId();
-
-        VirtualMachine vm = _itMgr.findById(work.getInstanceId());
         if (vm == null) {
             logger.info("Unable to find vm: " + vmId);
             return null;
@@ -1037,6 +1046,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         final WorkType wt = work.getWorkType();
         final VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
         try {
+            if (wt == WorkType.HA && vm != null && VirtualMachine.State.Error.equals(vm.getState())) {
+                logger.info("Skipping HA restart for VM {} because it is in Error state", vm);
+                work.setStep(Step.Done);
+                return;
+            }
+
             if (vm != null && !VmHaEnabled.valueIn(vm.getDataCenterId())) {
                 logger.debug("VM high availability manager is disabled, rescheduling the HA work {}, for the VM {} (id: {}) to retry later in case VM high availability manager is enabled on retry attempt", work, vm.getName(), vm.getId());
                 long nextTime = getRescheduleTime(wt);
