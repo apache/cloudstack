@@ -511,7 +511,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(hostId);
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
             StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
-            if (primaryDataStoreVO != null && (primaryDataStoreVO.getPoolType() == StoragePoolType.LVM || primaryDataStoreVO.getPoolType() == StoragePoolType.EXT)) {
+            if (primaryDataStoreVO != null && (primaryDataStoreVO.getPoolType() == StoragePoolType.LVM || primaryDataStoreVO.getPoolType() == StoragePoolType.EXT || primaryDataStoreVO.getPoolType() == StoragePoolType.Filesystem)) {
                 SearchBuilder<VolumeVO> volumeSB = volumeDao.createSearchBuilder();
                 volumeSB.and("poolId", volumeSB.entity().getPoolId(), SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(), SearchCriteria.Op.NULL);
