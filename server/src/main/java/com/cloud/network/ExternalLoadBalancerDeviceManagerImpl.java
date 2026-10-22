@@ -27,7 +27,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -49,7 +48,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -1143,7 +1141,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _defaultLbCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalLoadBalancerCapacity.key()), 50);
+        _defaultLbCapacity = DefaultExternalLoadBalancerCapacity.value();
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }

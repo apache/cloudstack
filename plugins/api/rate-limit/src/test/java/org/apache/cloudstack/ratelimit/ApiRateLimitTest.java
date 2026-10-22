@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,10 +35,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 
-import com.cloud.configuration.Config;
 import com.cloud.exception.RequestLimitException;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
@@ -55,10 +58,10 @@ public class ApiRateLimitTest {
     @BeforeClass
 public static void setUp() throws ConfigurationException {
 
-        when(s_configDao.getValue(Config.ApiLimitInterval.key())).thenReturn(null);
-        when(s_configDao.getValue(Config.ApiLimitMax.key())).thenReturn(null);
-        when(s_configDao.getValue(Config.ApiLimitCacheSize.key())).thenReturn(null);
-        when(s_configDao.getValue(Config.ApiLimitEnabled.key())).thenReturn("true"); // enable api rate limiting
+        when(s_configDao.getValue(ManagementServer.ApiLimitInterval.key())).thenReturn(null);
+        when(s_configDao.getValue(ManagementServer.ApiLimitMax.key())).thenReturn(null);
+        when(s_configDao.getValue(ApiRateLimitService.ApiLimitCacheSize.key())).thenReturn(null);
+        when(s_configDao.getValue(ManagementServer.ApiLimitEnabled.key())).thenReturn("true"); // enable api rate limiting
         s_limitService._configDao = s_configDao;
 
         s_limitService.configure("ApiRateLimitTest", Collections.<String, Object> emptyMap());
@@ -238,6 +241,58 @@ public static void setUp() throws ConfigurationException {
         // using <= to account for inaccurate System.currentTimeMillis() clock in Windows environment
         assertTrue("expiredAfter is incorrect", response.getExpireAfter() <= 1000);
 
+    }
+
+    // configure() assigns enabled/timeToLive/maxAllowed from the persisted config
+    // values before it (re-)creates the shared "api-limit-cache" ehcache; since that
+    // cache name is already owned by s_limitService for the lifetime of this test
+    // class, a second configure() call on a fresh instance may throw when it tries to
+    // register a cache of the same name again. That's fine here — the fields we're
+    // asserting on are already set by the time that happens, so we only care that
+    // configure() didn't fail for some other reason first.
+    private void configureTolerantOfDuplicateCache(ApiRateLimitServiceImpl service, Map<String, Object> params) throws ConfigurationException {
+        try {
+            service.configure("ApiRateLimitTest-wiring", params);
+        } catch (RuntimeException e) {
+            if (!(e instanceof net.sf.ehcache.CacheException)) {
+                throw e;
+            }
+        }
+    }
+
+    @Test
+    public void configureAppliesPersistedGlobalSettings() throws Exception {
+        ApiRateLimitServiceImpl service = new ApiRateLimitServiceImpl();
+        ConfigDepotImpl configDepot = mock(ConfigDepotImpl.class);
+        when(configDepot.getConfigStringValue(ManagementServer.ApiLimitEnabled.key(), ConfigKey.Scope.Global, null)).thenReturn("true");
+        when(configDepot.getConfigStringValue(ManagementServer.ApiLimitInterval.key(), ConfigKey.Scope.Global, null)).thenReturn("5");
+        when(configDepot.getConfigStringValue(ManagementServer.ApiLimitMax.key(), ConfigKey.Scope.Global, null)).thenReturn("100");
+        when(configDepot.getConfigStringValue(ApiRateLimitService.ApiLimitCacheSize.key(), ConfigKey.Scope.Global, null)).thenReturn("20000");
+        ConfigKey.init(configDepot);
+        try {
+            configureTolerantOfDuplicateCache(service, Collections.<String, Object> emptyMap());
+        } finally {
+            ConfigKey.init(null);
+        }
+
+        assertTrue(service.isEnabled());
+        assertEquals(5, service.getTimeToLive());
+        assertEquals(100, service.getMaxAllowed());
+    }
+
+    @Test
+    public void configureFallsBackToConfigKeyDefaultsWhenNothingPersisted() throws Exception {
+        ApiRateLimitServiceImpl service = new ApiRateLimitServiceImpl();
+        ConfigKey.init(mock(ConfigDepotImpl.class));
+        try {
+            configureTolerantOfDuplicateCache(service, Collections.<String, Object> emptyMap());
+        } finally {
+            ConfigKey.init(null);
+        }
+
+        assertEquals(Boolean.parseBoolean(ManagementServer.ApiLimitEnabled.defaultValue()), service.isEnabled());
+        assertEquals(Integer.parseInt(ManagementServer.ApiLimitInterval.defaultValue()), service.getTimeToLive());
+        assertEquals(Integer.parseInt(ManagementServer.ApiLimitMax.defaultValue()), service.getMaxAllowed());
     }
 
     @Test
