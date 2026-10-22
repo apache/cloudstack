@@ -1324,22 +1324,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         List<NetworkVO> requestedNetworks = new ArrayList<>();
         for (Long requestedNetworkId : requestedNetworkIds) {
-            if (associatedNetworkIds.contains(requestedNetworkId)) {
-                NetworkVO alreadyAssociated = _networksDao.findById(requestedNetworkId);
-                throw new InvalidParameterValueException(String.format("Nic %s is already associated with network %s", nic.getUuid(),
-                        alreadyAssociated != null ? alreadyAssociated.getUuid() : requestedNetworkId));
-            }
-            if (networksOnOtherNics.contains(requestedNetworkId)) {
-                NetworkVO conflictingNetwork = _networksDao.findById(requestedNetworkId);
-                throw new InvalidParameterValueException(String.format(
-                        "Instance %s already has network %s on a different nic; a network can only be reachable through one of an Instance's nics at a time",
-                        vm.getUuid(), conflictingNetwork != null ? conflictingNetwork.getUuid() : requestedNetworkId));
-            }
             NetworkVO requestedNetwork = _networksDao.findById(requestedNetworkId);
             if (requestedNetwork == null) {
                 throw new InvalidParameterValueException(String.format("Unable to find network with id %d", requestedNetworkId));
             }
+            // authorize before revealing any association state about the network below
             _accountMgr.checkAccess(caller, null, true, requestedNetwork);
+            if (associatedNetworkIds.contains(requestedNetworkId)) {
+                throw new InvalidParameterValueException(String.format("Nic %s is already associated with network %s", nic.getUuid(), requestedNetwork.getUuid()));
+            }
+            if (networksOnOtherNics.contains(requestedNetworkId)) {
+                throw new InvalidParameterValueException(String.format(
+                        "Instance %s already has network %s on a different nic; a network can only be reachable through one of an Instance's nics at a time",
+                        vm.getUuid(), requestedNetwork.getUuid()));
+            }
             requestedNetworks.add(requestedNetwork);
             resultingSet.add(requestedNetwork);
         }
