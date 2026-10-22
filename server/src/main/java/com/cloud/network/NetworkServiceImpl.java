@@ -1043,6 +1043,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<Long> sortedNetworkIds = new ArrayList<>(new TreeSet<>(requestedNetworkIds));
         List<Long> lockedNetworkIds = new ArrayList<>();
         try {
+            // re-read: nic was fetched before the lock, and a concurrent changeNicPrimaryNetwork() call
+            // (locked out until just now) may have already changed its primary network
+            nic = _nicDao.findById(nic.getId());
             for (Long networkId : sortedNetworkIds) {
                 if (_networksDao.acquireInLockTable(networkId, NetworkOrchestrationService.NetworkLockTimeout.value()) == null) {
                     throw new ConcurrentOperationException(String.format("Unable to acquire lock on network %d", networkId));
@@ -1091,51 +1094,63 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
-        long targetNetworkId = cmd.getNetworkId();
-        if (targetNetworkId == nic.getNetworkId()) {
-            throw new InvalidParameterValueException(String.format(
-                    "Network %s is nic %s's primary network and cannot be disassociated; add a new nic with the desired primary network instead",
-                    cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
+        // serializes against associateNetworksInternal()/changeNicPrimaryNetwork() on this nic: nothing
+        // else prevents two trunk calls on one nic from interleaving their reads and writes
+        if (_nicDao.acquireInLockTable(nic.getId()) == null) {
+            throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic %s", nic.getUuid()));
         }
-
-        NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), targetNetworkId);
-        if (association == null) {
-            throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
-        }
-        checkNoActiveRulesOnAssociation(vm.getId(), targetNetworkId, association.getIp4Address());
-
-        boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
-        if (vmRunning) {
-            checkHostReadyForVlanTrunk(vm);
-        }
-
-        NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
-
-        // a Shared network's ip4 is also tracked in user_ip_address and must be released there too
-        releaseSharedAssociationIp(targetNetwork, association.getIp4Address());
-        _nicNetworkMapDao.remove(association.getId());
-
-        boolean nicMultiNetworkCleared = nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty();
-        if (nicMultiNetworkCleared) {
-            nic.setMultiNetwork(false);
-            _nicDao.update(nic.getId(), nic);
-        }
-
-        if (vmRunning) {
-            try {
-                updateLiveVlanTrunkMembership(vm, nic);
-            } catch (ResourceUnavailableException | CloudRuntimeException ex) {
-                rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
-                throw ex;
+        try {
+            // re-read: nic was fetched before the lock, and a concurrent call on this nic (locked out
+            // until just now) may have already changed its primary network or multi-network state
+            nic = _nicDao.findById(nic.getId());
+            long targetNetworkId = cmd.getNetworkId();
+            if (targetNetworkId == nic.getNetworkId()) {
+                throw new InvalidParameterValueException(String.format(
+                        "Network %s is nic %s's primary network and cannot be disassociated; add a new nic with the desired primary network instead",
+                        cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
             }
-            cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
-            if (targetNetwork != null) {
-                publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
-            }
-            refreshNicVlanMappingMetadata(nic);
-        }
 
-        return _nicDao.findById(nic.getId());
+            NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), targetNetworkId);
+            if (association == null) {
+                throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
+            }
+            checkNoActiveRulesOnAssociation(vm.getId(), targetNetworkId, association.getIp4Address());
+
+            boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
+            if (vmRunning) {
+                checkHostReadyForVlanTrunk(vm);
+            }
+
+            NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
+
+            // a Shared network's ip4 is also tracked in user_ip_address and must be released there too
+            releaseSharedAssociationIp(targetNetwork, association.getIp4Address());
+            _nicNetworkMapDao.remove(association.getId());
+
+            boolean nicMultiNetworkCleared = nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty();
+            if (nicMultiNetworkCleared) {
+                nic.setMultiNetwork(false);
+                _nicDao.update(nic.getId(), nic);
+            }
+
+            if (vmRunning) {
+                try {
+                    updateLiveVlanTrunkMembership(vm, nic);
+                } catch (ResourceUnavailableException | CloudRuntimeException ex) {
+                    rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
+                    throw ex;
+                }
+                cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
+                if (targetNetwork != null) {
+                    publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
+                }
+                refreshNicVlanMappingMetadata(nic);
+            }
+
+            return _nicDao.findById(nic.getId());
+        } finally {
+            _nicDao.releaseFromLockTable(nic.getId());
+        }
     }
 
     @Override
@@ -1153,39 +1168,52 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     nic.getUuid(), vm.getUuid()));
         }
 
-        long newPrimaryNetworkId = cmd.getNetworkId();
-        if (newPrimaryNetworkId == nic.getNetworkId()) {
-            throw new InvalidParameterValueException(String.format("Network %s is already nic %s's primary network", cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
+        // serializes against associateNetworksInternal()/disassociateNetworkFromNic() on this nic: two
+        // calls here would otherwise both read the nic's current primary/association state before
+        // either writes it
+        if (_nicDao.acquireInLockTable(nic.getId()) == null) {
+            throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic %s", nic.getUuid()));
         }
+        try {
+            // re-read: nic was fetched before the lock, and a concurrent call on this nic (locked out
+            // until just now) may have already changed its primary network
+            nic = _nicDao.findById(nic.getId());
+            long newPrimaryNetworkId = cmd.getNetworkId();
+            if (newPrimaryNetworkId == nic.getNetworkId()) {
+                throw new InvalidParameterValueException(String.format("Network %s is already nic %s's primary network", cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
+            }
 
-        NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), newPrimaryNetworkId);
-        if (association == null) {
-            throw new InvalidParameterValueException(String.format(
-                    "Network %s must already be associated with nic %s before it can become the primary; associate it first",
-                    cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
+            NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), newPrimaryNetworkId);
+            if (association == null) {
+                throw new InvalidParameterValueException(String.format(
+                        "Network %s must already be associated with nic %s before it can become the primary; associate it first",
+                        cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
+            }
+
+            NetworkVO newPrimaryNetwork = _networksDao.findById(newPrimaryNetworkId);
+            if (newPrimaryNetwork == null) {
+                throw new CloudRuntimeException(String.format("Unable to find network %s", cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
+            }
+
+            long oldPrimaryNetworkId = nic.getNetworkId();
+            String oldPrimaryIp4 = nic.getIPv4Address();
+            String oldPrimaryIp6 = nic.getIPv6Address();
+
+            // reuses the IP already reserved for this network as an association - no new allocation needed,
+            // it's simply moving which table (nics vs nic_network_map) tracks the same reservation
+            _nicNetworkMapDao.remove(association.getId());
+            _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), oldPrimaryNetworkId, oldPrimaryIp4, oldPrimaryIp6));
+
+            nic.setNetworkId(newPrimaryNetworkId);
+            nic.setIPv4Address(association.getIp4Address());
+            nic.setIPv6Address(association.getIp6Address());
+            applyNetworkAddressingToNic(nic, newPrimaryNetwork);
+            _nicDao.update(nic.getId(), nic);
+
+            return _nicDao.findById(nic.getId());
+        } finally {
+            _nicDao.releaseFromLockTable(nic.getId());
         }
-
-        NetworkVO newPrimaryNetwork = _networksDao.findById(newPrimaryNetworkId);
-        if (newPrimaryNetwork == null) {
-            throw new CloudRuntimeException(String.format("Unable to find network %s", cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
-        }
-
-        long oldPrimaryNetworkId = nic.getNetworkId();
-        String oldPrimaryIp4 = nic.getIPv4Address();
-        String oldPrimaryIp6 = nic.getIPv6Address();
-
-        // reuses the IP already reserved for this network as an association - no new allocation needed,
-        // it's simply moving which table (nics vs nic_network_map) tracks the same reservation
-        _nicNetworkMapDao.remove(association.getId());
-        _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), oldPrimaryNetworkId, oldPrimaryIp4, oldPrimaryIp6));
-
-        nic.setNetworkId(newPrimaryNetworkId);
-        nic.setIPv4Address(association.getIp4Address());
-        nic.setIPv6Address(association.getIp6Address());
-        applyNetworkAddressingToNic(nic, newPrimaryNetwork);
-        _nicDao.update(nic.getId(), nic);
-
-        return _nicDao.findById(nic.getId());
     }
 
     /**

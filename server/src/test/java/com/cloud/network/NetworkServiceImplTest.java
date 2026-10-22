@@ -89,6 +89,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -2139,6 +2140,17 @@ public class NetworkServiceImplTest {
         }
     }
 
+    @Test(expected = ConcurrentOperationException.class)
+    public void disassociateNetworkFromNicFailsWhenNicLockCannotBeAcquired() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, true);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        Mockito.when(nicDao.acquireInLockTable(11L)).thenReturn(null);
+
+        service.disassociateNetworkFromNic(mockDisassociateCmd(11L, 206L));
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void disassociateNetworkFromNicFailsWhenTargetIsPrimaryNetwork() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, true);
@@ -2348,6 +2360,17 @@ public class NetworkServiceImplTest {
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
         UserVmVO vm = mockVm(VirtualMachine.State.Running, 1L);
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+
+        service.changeNicPrimaryNetwork(mockChangePrimaryCmd(11L, 206L));
+    }
+
+    @Test(expected = ConcurrentOperationException.class)
+    public void changeNicPrimaryNetworkFailsWhenNicLockCannotBeAcquired() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, true);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        Mockito.when(nicDao.acquireInLockTable(11L)).thenReturn(null);
 
         service.changeNicPrimaryNetwork(mockChangePrimaryCmd(11L, 206L));
     }
