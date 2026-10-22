@@ -1429,7 +1429,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Map<Long, Network.IpAddresses> safeRequestedIps = requestedIps != null ? requestedIps : Collections.emptyMap();
         for (NetworkVO network : requestedNetworks) {
             NetworkVO refreshed = _networksDao.findById(network.getId());
-            Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()), vm);
+            Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()), vm, nic);
             _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), network.getId(), allocatedIps.first(), allocatedIps.second()));
         }
         if (!nic.getMultiNetwork()) {
@@ -1448,12 +1448,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private Pair<String, String> allocateIpsForAssociation(NetworkVO network, Network.IpAddresses requested, VirtualMachine vm) throws InsufficientAddressCapacityException {
+    private Pair<String, String> allocateIpsForAssociation(NetworkVO network, Network.IpAddresses requested, VirtualMachine vm, NicVO nic) throws InsufficientAddressCapacityException {
         if (network.getGuestType() == Network.GuestType.L2) {
             return new Pair<>(null, null);
         }
         String requestedIp4 = requested != null ? requested.getIp4Address() : null;
-        String requestedIp6 = requested != null ? requested.getIp6Address() : null;
         String ip4Address = network.getGuestType() == Network.GuestType.Shared
                 ? allocateSharedIpForAssociation(network, vm, requestedIp4)
                 : _ipAddrMgr.allocateGuestIP(network, requestedIp4);
@@ -1462,8 +1461,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     String.format("Unable to allocate a guest IPv4 address in network [name=%s, id=%s, uuid=%s]", network.getName(), network.getId(), network.getUuid()),
                     DataCenter.class, network.getDataCenterId());
         }
-        String ip6Address = StringUtils.isNotBlank(network.getIp6Cidr()) ? ipv6AddrMgr.allocateGuestIpv6(network, requestedIp6) : null;
+        String ip6Address = resolveIp6ForAssociation(network, nic);
         return new Pair<>(ip4Address, ip6Address);
+    }
+
+    // Mirrors setNicIp6Address: a guest nic's v6 is always SLAAC EUI-64 from its MAC, for every guest type.
+    private String resolveIp6ForAssociation(NetworkVO network, NicVO nic) {
+        if (StringUtils.isBlank(network.getIp6Cidr())) {
+            return null;
+        }
+        return NetUtils.EUI64Address(network.getIp6Cidr(), nic.getMacAddress()).toString();
     }
 
     // mirrors the Isolated/Shared branch in allocateSecondaryGuestIP: Shared ips live in user_ip_address

@@ -1941,6 +1941,56 @@ public class NetworkServiceImplTest {
                 map.getNicId() == 11L && map.getNetworkId() == 206L && "10.1.1.99".equals(map.getIp4Address())));
     }
 
+    @Test
+    public void associateNetworksToNicDerivesEui64Ipv6ForIsolatedDualStackNetwork() throws Exception {
+        // Isolated has no ip6_range - must not go through the range-based allocator.
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nic.getMacAddress()).thenReturn("06:7a:88:00:00:8b");
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(requestedNetwork.getIp6Cidr()).thenReturn("2001:db8:100::/64");
+        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
+        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.1.60");
+        String expectedIp6 = NetUtils.EUI64Address("2001:db8:100::/64", "06:7a:88:00:00:8b").toString();
+
+        service.associateNetworksToNic(nic, Arrays.asList(206L), null);
+
+        Mockito.verify(nicNetworkMapDao).persist(Mockito.argThat(map ->
+                map.getNicId() == 11L && map.getNetworkId() == 206L && expectedIp6.equals(map.getIp6Address())));
+        Mockito.verifyNoInteractions(ipv6AddressManager);
+    }
+
+    @Test
+    public void associateNetworksToNicDerivesEui64Ipv6ForSharedDualStackNetworkToo() throws Exception {
+        // Shared nics get v6 the same way - EUI-64, never the range-based allocator.
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nic.getMacAddress()).thenReturn("06:7a:88:00:00:8b");
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Shared, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Shared, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(requestedNetwork.getIp6Cidr()).thenReturn("2001:db8:100::/64");
+        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
+        Mockito.when(entityMgr.findById(DataCenter.class, 1L)).thenReturn(dc);
+        Mockito.when(ipAddressManagerMock.allocatePublicIpForGuestNic(Mockito.eq(requestedNetwork), Mockito.isNull(), Mockito.any(), Mockito.isNull()))
+                .thenReturn("10.1.1.60");
+        String expectedIp6 = NetUtils.EUI64Address("2001:db8:100::/64", "06:7a:88:00:00:8b").toString();
+
+        service.associateNetworksToNic(nic, Arrays.asList(206L), null);
+
+        Mockito.verify(nicNetworkMapDao).persist(Mockito.argThat(map ->
+                map.getNicId() == 11L && map.getNetworkId() == 206L && expectedIp6.equals(map.getIp6Address())));
+        Mockito.verifyNoInteractions(ipv6AddressManager);
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void associateNetworksToNicRejectsVnfManagementNic() throws Exception {
         // the live associate-network-to-nic path must reject trunking a VNF template's management nic, same as
