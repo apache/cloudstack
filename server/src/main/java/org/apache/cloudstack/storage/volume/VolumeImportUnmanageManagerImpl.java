@@ -69,6 +69,8 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -120,6 +122,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VolumeApiService volumeApiService;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
@@ -250,6 +254,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword) {
+        if (pool.getPoolType() == Storage.StoragePoolType.Linstor && StringUtils.isNotBlank(volumePath)) {
+            ((PrimaryDataStoreDriver) dataStoreManager.getPrimaryDataStore(pool.getId()).getDriver())
+                    .validateVolumeForImport(pool, volumePath);
+        }
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
         HostVO host = hostAndLocalPath.first();
         checkIfHostAndPoolSupported(host, pool);
@@ -461,8 +469,25 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null, getImageFormat(volume.getFormat()));
         return volumeDao.findById(diskProfile.getVolumeId());
+    }
+
+    /**
+     * Maps the format the hypervisor reported for the volume on the pool onto an image format, so that
+     * the imported volume records what is actually on the pool (raw on RBD, qcow2 on file based pools)
+     * instead of the cluster default for the hypervisor. Returns null when the format is not recognised.
+     */
+    protected Storage.ImageFormat getImageFormat(String format) {
+        if (StringUtils.isBlank(format)) {
+            return null;
+        }
+        try {
+            return Storage.ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unrecognised image format {} reported for the volume being imported, falling back to the hypervisor default", format);
+            return null;
+        }
     }
 
     protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume, DiskOfferingVO diskOffering, List<Reserver> reservations) {

@@ -132,7 +132,7 @@
       <div class="card-footer">
         <a-button
           v-if="vcenterSelectedOption == 'existing' || vcenterSelectedOption == 'new'"
-          :disabled="(vcenterSelectedOption === 'new' && (vcenter === '' || datacentername === '' || username === '' || password === '')) ||
+          :disabled="(vcenterSelectedOption === 'new' && (vcenter === '' || datacenter === '' || username === '' || password === '')) ||
             (vcenterSelectedOption === 'existing' && selectedExistingVcenterId === '')"
           :loading="loading"
           type="primary"
@@ -268,7 +268,7 @@ export default {
       })
     },
     onSelectExternalVmwareDatacenter (value) {
-      if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
+      if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacenter === '' || this.username === '' || this.password === '')) {
         this.listVmwareDatacenterVms()
       }
     },
