@@ -1733,6 +1733,7 @@ export default {
 
       try {
         await this.enableZone(params)
+        await this.$store.dispatch('RefreshZones').catch(() => {})
         await this.$message.success('Success')
         this.loading = false
         this.steps = []
