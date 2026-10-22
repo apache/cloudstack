@@ -3588,9 +3588,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        // A network with no primary nics can still be actively used as a secondary (trunk) network by a nic
-        // whose primary is a different network entirely - nics.network_id alone would miss this
-        if (MultiNetworkNicEnabled.valueIn(network.getDataCenterId()) && !_nicNetworkMapDao.listByNetworkId(networkId).isEmpty()) {
+        // A network with no primary nics can still be used as a secondary (trunk) network by a nic
+        // whose primary is different - nics.network_id alone would miss this.
+        if (!_nicNetworkMapDao.listByNetworkId(networkId).isEmpty()) {
             logger.warn("Can't delete the Network {}, it is still associated with at least one NIC as a secondary network", network);
             return false;
         }
@@ -3834,10 +3834,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
 
                     final NetworkVO network = _networksDao.findById(networkId);
-                    if (network != null && MultiNetworkNicEnabled.valueIn(network.getDataCenterId())
-                            && !_nicNetworkMapDao.listByNetworkId(networkId).isEmpty()) {
-                        // only zones with the feature enabled can ever have nic_network_map rows at all,
-                        // so this check is skipped entirely everywhere else instead of querying needlessly
+                    if (network != null && !_nicNetworkMapDao.listByNetworkId(networkId).isEmpty()) {
                         logger.debug("Network {} is still associated with at least one NIC as a secondary network, skipping", networkId);
                         continue;
                     }

@@ -1127,7 +1127,22 @@ public class NetworkOrchestratorTest extends TestCase {
 
     @Test
     public void destroyNetworkFailsWhenActivelyAssociatedAsSecondaryNetwork() throws Exception {
-        overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "true");
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(1L);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(testOrchestrator._networksDao.findById(1L)).thenReturn(network);
+        when(testOrchestrator._userVmDao.listByNetworkIdAndStates(1L)).thenReturn(new ArrayList<UserVmVO>());
+        when(testOrchestrator._nicNetworkMapDao.listByNetworkId(1L)).thenReturn(Collections.singletonList(mock(NicNetworkMapVO.class)));
+
+        boolean result = testOrchestrator.destroyNetwork(1L, mock(ReservationContext.class), false);
+
+        assertFalse(result);
+        verify(testOrchestrator._networksDao, never()).getActiveNicsIn(ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    public void destroyNetworkChecksAssociationRegardlessOfFeatureFlag() throws Exception {
+        overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "false");
         try {
             NetworkVO network = mock(NetworkVO.class);
             when(network.getId()).thenReturn(1L);
@@ -1139,33 +1154,10 @@ public class NetworkOrchestratorTest extends TestCase {
             boolean result = testOrchestrator.destroyNetwork(1L, mock(ReservationContext.class), false);
 
             assertFalse(result);
+            verify(testOrchestrator._nicNetworkMapDao).listByNetworkId(1L);
             verify(testOrchestrator._networksDao, never()).getActiveNicsIn(ArgumentMatchers.anyLong());
         } finally {
             overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "false");
         }
-    }
-
-    @Test
-    public void destroyNetworkSkipsAssociationCheckWhenFeatureDisabledInZone() throws Exception {
-        overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "false");
-
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getId()).thenReturn(1L);
-        when(network.getDataCenterId()).thenReturn(1L);
-        when(testOrchestrator._networksDao.findById(1L)).thenReturn(network);
-        when(testOrchestrator._userVmDao.listByNetworkIdAndStates(1L)).thenReturn(new ArrayList<UserVmVO>());
-        DataCenter zone = mock(DataCenter.class);
-        when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
-        when(testOrchestrator._entityMgr.findById(DataCenter.class, 1L)).thenReturn(zone);
-
-        try {
-            testOrchestrator.destroyNetwork(1L, mock(ReservationContext.class), false);
-        } catch (Exception ignored) {
-            // destroyNetwork continues well beyond what this test cares about (network element shutdown, etc.,
-            // none of it mocked here) - only the association-check skip behavior matters for this test
-        }
-
-        verify(testOrchestrator._nicNetworkMapDao, never()).listByNetworkId(ArgumentMatchers.anyLong());
-        verify(testOrchestrator._networksDao).getActiveNicsIn(1L);
     }
 }
