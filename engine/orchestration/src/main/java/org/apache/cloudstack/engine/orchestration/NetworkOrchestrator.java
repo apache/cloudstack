@@ -52,7 +52,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -229,7 +228,6 @@ import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.AdapterBase;
@@ -295,8 +293,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     IPAddressDao _ipAddressDao;
     @Inject
     AccountDao _accountDao;
-    @Inject
-    ConfigurationDao _configDao;
     @Inject
     UserVmDao _userVmDao;
     @Inject
@@ -775,7 +771,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         _agentMgr.registerForHostEvents(this, true, false, true);
 
-        Network.State.getStateMachine().registerListener(new NetworkStateListener(_configDao));
+        Network.State.getStateMachine().registerListener(new NetworkStateListener());
 
         logger.info("Network Manager is configured.");
 
@@ -784,7 +780,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public boolean start() {
-        final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
+        final int netGcInterval = NetworkGcInterval.value();
         logger.info("Network Manager will run the NetworkGarbageCollector every '{}' seconds.", netGcInterval);
 
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), netGcInterval, netGcInterval, TimeUnit.SECONDS);

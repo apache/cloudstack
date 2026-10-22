@@ -564,10 +564,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         Map<String, String> configs = _configDao.getConfiguration(params);
 
-        String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
+        String loginAttempts = configs.get(IncorrectLoginAttemptsAllowed.key());
         _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
 
-        String value = configs.get(Config.AccountCleanupInterval.key());
+        String value = configs.get(AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         return true;
@@ -3190,16 +3190,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return null;
         }
 
-        String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
-        if (singleSignOnTolerance == null) {
-            // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
-            // valid),
-            // don't authenticate
-            return null;
-        }
-
         UserAccount user = null;
-        long tolerance = Long.parseLong(singleSignOnTolerance);
+        long tolerance = AccountManager.SSOAuthTolerance.value();
         String signature = null;
         long timestamp = 0L;
         String unsignedRequest;
