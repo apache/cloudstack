@@ -60,6 +60,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     BackupOfferingDao backupOfferingDao;
 
     private SearchBuilder<BackupVO> backupSearch;
+    private SearchBuilder<BackupVO> zoneStatusSearch;
 
     public BackupDaoImpl() {
     }
@@ -72,6 +73,19 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("backup_offering_id", backupSearch.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.done();
+
+        zoneStatusSearch = createSearchBuilder();
+        zoneStatusSearch.and("zone_id", zoneStatusSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        zoneStatusSearch.and("status", zoneStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        zoneStatusSearch.done();
+    }
+
+    @Override
+    public List<BackupVO> listByZoneAndStatus(long zoneId, Backup.Status status) {
+        SearchCriteria<BackupVO> sc = zoneStatusSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        sc.setParameters("status", status);
+        return listBy(sc);
     }
 
     @Override
