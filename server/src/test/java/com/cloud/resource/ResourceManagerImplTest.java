@@ -64,9 +64,11 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -682,5 +684,50 @@ public class ResourceManagerImplTest {
         when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, never()).updateAndRemoveVolume(any(VolumeVO.class));
+    }
+
+    private HostVO invokeGetNewHost(StartupCommand[] cmds) throws Exception {
+        Method method = ResourceManagerImpl.class.getDeclaredMethod("getNewHost", StartupCommand[].class);
+        method.setAccessible(true);
+        return (HostVO) method.invoke(resourceManager, (Object) cmds);
+    }
+
+    @Test
+    public void testGetNewHostRevivesRemovedHostOnGuidCollision() throws Exception {
+        String guid = "s-14-VM-PremiumSecondaryStorageResource";
+        String guidPrefix = "s-14-VM";
+        StartupCommand cmd = Mockito.mock(StartupCommand.class);
+        when(cmd.getGuid()).thenReturn(guid);
+        when(cmd.getGuidWithoutResource()).thenReturn(guidPrefix);
+
+        Mockito.doReturn(null).when(resourceManager).findHostByGuid(guid);
+        Mockito.doReturn(null).when(resourceManager).findHostByGuidPrefix(guidPrefix);
+
+        HostVO removedHost = Mockito.mock(HostVO.class);
+        when(removedHost.getId()).thenReturn(99L);
+        when(removedHost.getRemoved()).thenReturn(new Date());
+        when(hostDao.findByGuidIncludingRemoved(guid)).thenReturn(removedHost);
+
+        HostVO result = invokeGetNewHost(new StartupCommand[]{cmd});
+
+        Assert.assertSame(removedHost, result);
+        Mockito.verify(removedHost).setRemoved(null);
+    }
+
+    @Test
+    public void testGetNewHostReturnsNullWhenNoHostAndNoRemovedMatch() throws Exception {
+        String guid = "unknown-guid";
+        String guidPrefix = "unknown";
+        StartupCommand cmd = Mockito.mock(StartupCommand.class);
+        when(cmd.getGuid()).thenReturn(guid);
+        when(cmd.getGuidWithoutResource()).thenReturn(guidPrefix);
+
+        Mockito.doReturn(null).when(resourceManager).findHostByGuid(guid);
+        Mockito.doReturn(null).when(resourceManager).findHostByGuidPrefix(guidPrefix);
+        when(hostDao.findByGuidIncludingRemoved(guid)).thenReturn(null);
+
+        HostVO result = invokeGetNewHost(new StartupCommand[]{cmd});
+
+        Assert.assertNull(result);
     }
 }

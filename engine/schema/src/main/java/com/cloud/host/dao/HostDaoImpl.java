@@ -609,6 +609,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return findOneBy(sc);
     }
 
+    @Override
+    public HostVO findByGuidIncludingRemoved(String guid) {
+        SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
+        return findOneIncludingRemovedBy(sc);
+    }
+
     /*
      * Find hosts which is in Disconnected, Down, Alert and ping timeout and server is not null, set server to null
      */
