@@ -38,6 +38,9 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.OutOfBandManagementResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
+import org.apache.cloudstack.ha.HAConfigManager;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import org.apache.cloudstack.ha.HAResource;
 
 import javax.inject.Inject;
 
@@ -45,6 +48,9 @@ import javax.inject.Inject;
         responseObject = OutOfBandManagementResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0", authorized = {RoleType.Admin})
 public class DisableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
+
+    @Inject
+    private HAConfigManager haConfigManager;
 
     @Inject
     private OutOfBandManagementService outOfBandManagementService;
@@ -61,11 +67,20 @@ public class DisableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
-    final public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+   @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         final Host host = _resourceService.getHost(getHostId());
         if (host == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
+        }
+
+        if (host.getHypervisorType() == HypervisorType.KVM) {
+            java.util.List<org.apache.cloudstack.ha.HAConfig> haConfigs = haConfigManager.listHAResources(host.getId(), HAResource.ResourceType.Host);
+            if (haConfigs != null && !haConfigs.isEmpty()) {
+                if (haConfigs.get(0).isEnabled()) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Cannot disable Out-of-Band Management (OOBM) because HA is currently enabled on this KVM host. Please disable HA first.");
+                }
+            }
         }
 
         OutOfBandManagementResponse response = outOfBandManagementService.disableOutOfBandManagement(host);
