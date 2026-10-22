@@ -957,7 +957,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void getConfigurationTypeWrapperClassTestReturnsConfigType() {
-        Config configuration = Config.AlertEmailAddresses;
+        Config configuration = Config.AlertSMTPConnectionTimeout;
 
         Assert.assertEquals(configuration.getType(), configurationManagerImplSpy.getConfigurationTypeWrapperClass(configuration.key()));
     }

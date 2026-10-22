@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -91,7 +90,9 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenPortForwardingCommand;
@@ -143,8 +144,6 @@ public class TungstenElementTest {
     TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
     @Mock
     IpAddressManager ipAddressMgr;
-    @Mock
-    ConfigurationDao configDao;
     @Mock
     LoadBalancerDao lbDao;
     @Mock
@@ -199,7 +198,6 @@ public class TungstenElementTest {
         tungstenElement.lbVmMapDao = lbVmMapDao;
         tungstenElement.tungstenGuestNetworkIpAddressDao = tungstenGuestNetworkIpAddressDao;
         tungstenElement.ipAddressMgr = ipAddressMgr;
-        tungstenElement.configDao = configDao;
         tungstenElement.lbDao = lbDao;
         tungstenElement.accountMgr = accountMgr;
         tungstenElement.hostDao = hostDao;
@@ -383,7 +381,6 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
         when(EncryptionUtil.generateSignature(anyString(), anyString())).thenReturn("generatedString");
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
@@ -432,11 +429,18 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("disabled");
+        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+        ConfigKey.init(configDepotMock);
+        Mockito.when(configDepotMock.getConfigStringValue(Mockito.eq(NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.key()), Mockito.any(), Mockito.any()))
+                .thenReturn("disabled");
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
 
-        assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
+        try {
+            assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
+        } finally {
+            ConfigKey.init(null);
+        }
     }
 
     @Test

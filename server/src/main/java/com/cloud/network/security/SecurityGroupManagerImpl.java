@@ -65,7 +65,6 @@ import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -94,7 +93,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -946,10 +944,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        Map<String, String> configs = _configDao.getConfiguration("Network", params);
-        _numWorkerThreads = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkerThreads.key()), WORKER_THREAD_COUNT);
-        _timeBetweenCleanups = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkCleanupInterval.key()), TIME_BETWEEN_CLEANUPS);
-        _globalWorkLockTimeout = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkGlobalLockTimeout.key()), 300);
+        _numWorkerThreads = SecurityGroupWorkerThreads.value();
+        _timeBetweenCleanups = SecurityGroupWorkCleanupInterval.value();
+        _globalWorkLockTimeout = SecurityGroupWorkGlobalLockTimeout.value();
         /* register state listener, no matter security group is enabled or not */
         VirtualMachine.State.getStateMachine().registerListener(this);
 

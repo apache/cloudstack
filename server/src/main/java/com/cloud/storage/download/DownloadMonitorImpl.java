@@ -53,6 +53,7 @@ import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.upload.UploadListener;
@@ -336,7 +337,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private Long getMaxVolumeSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+            return VolumeApiService.MaxUploadVolumeSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }
@@ -344,7 +345,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private Long getMaxSnapshotSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+            return VolumeApiService.MaxUploadVolumeSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }
