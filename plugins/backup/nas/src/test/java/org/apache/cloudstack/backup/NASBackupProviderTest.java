@@ -56,6 +56,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -440,6 +441,71 @@ public class NASBackupProviderTest {
         Mockito.verify(hostDao).findById(hostId);
         Mockito.verify(hostDao).findHypervisorHostInCluster(clusterId);
         Mockito.verify(resourceManager).findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+    }
+
+    private VolumeVO volume(String uuid, String path, long deviceId) {
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.lenient().when(volume.getUuid()).thenReturn(uuid);
+        Mockito.lenient().when(volume.getPath()).thenReturn(path);
+        Mockito.lenient().when(volume.getDeviceId()).thenReturn(deviceId);
+        return volume;
+    }
+
+    private Backup.VolumeInfo backedVolume(String uuid, long deviceId) {
+        return new Backup.VolumeInfo(uuid, uuid, deviceId == 0 ? Volume.Type.ROOT : Volume.Type.DATADISK, 1024L, deviceId, null, null, null);
+    }
+
+    @Test
+    public void getVolumesToRestoreIntoMatchesByUuidNotByPathOrDeviceId() {
+        // data-a was migrated (its path is no longer its uuid) and the data disks swapped device ids
+        VolumeVO root = volume("root", "root", 0L);
+        VolumeVO dataB = volume("data-b", "data-b", 1L);
+        VolumeVO dataA = volume("data-a", "migrated-path-of-a", 2L);
+        List<Backup.VolumeInfo> backed = List.of(backedVolume("root", 0L), backedVolume("data-a", 1L), backedVolume("data-b", 2L));
+
+        List<VolumeVO> result = nasBackupProvider.getVolumesToRestoreInto(backed, List.of(root, dataB, dataA));
+
+        Assert.assertEquals(List.of(root, dataA, dataB), result);
+    }
+
+    @Test
+    public void getVolumesToRestoreIntoRefusesWhenABackedUpVolumeIsNoLongerAttached() {
+        List<Backup.VolumeInfo> backed = List.of(backedVolume("root", 0L), backedVolume("data-z", 1L));
+        List<VolumeVO> vmVolumes = List.of(volume("root", "root", 0L), volume("data-a", "data-a", 1L));
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class,
+                () -> nasBackupProvider.getVolumesToRestoreInto(backed, vmVolumes));
+        Assert.assertTrue(e.getMessage().contains("data-z"));
+    }
+
+    @Test
+    public void getVolumesToRestoreIntoUsesDeviceIdOrderForBrandNewVolumes() {
+        // an instance created from the backup: none of its volumes has a uuid recorded in the backup
+        VolumeVO newRoot = volume("new-root", "new-root", 0L);
+        VolumeVO newData = volume("new-data", "new-data", 1L);
+        List<Backup.VolumeInfo> backed = List.of(backedVolume("root", 0L), backedVolume("data-a", 1L));
+
+        Assert.assertEquals(List.of(newRoot, newData), nasBackupProvider.getVolumesToRestoreInto(backed, List.of(newRoot, newData)));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getVolumesToRestoreIntoRefusesBrandNewVolumesOfADifferentCount() {
+        nasBackupProvider.getVolumesToRestoreInto(List.of(backedVolume("root", 0L), backedVolume("data-a", 1L)),
+                List.of(volume("new-root", "new-root", 0L)));
+    }
+
+    @Test
+    public void restoreVMFromBackupSendsNothingWhenABackedUpVolumeIsNoLongerAttached() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        BackupVO backup = mock(BackupVO.class);
+        Mockito.when(backup.getBackedUpVolumes()).thenReturn(List.of(backedVolume("root", 0L), backedVolume("data-z", 1L)));
+        VolumeVO root = volume("root", "root", 0L);
+        VolumeVO dataA = volume("data-a", "data-a", 1L);
+        Mockito.when(volumeDao.findByInstance(1L)).thenReturn(List.of(root, dataA));
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> nasBackupProvider.restoreVMFromBackup(vm, backup));
+        Mockito.verify(agentManager, Mockito.never()).send(anyLong(), Mockito.any(com.cloud.agent.api.Command.class));
     }
 
     // -- nas.backup.incremental.enabled master switch ------------------------------------
