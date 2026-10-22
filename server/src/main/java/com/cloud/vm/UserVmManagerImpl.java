@@ -8175,6 +8175,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getName(), destinationHost.getUuid()));
         }
 
+        if (!isHostReadyForMultiNetworkNics(vm, destinationHost)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Cannot migrate VM, VM has a multi-VLAN trunk nic but destination host: %s does not have VLAN filtering enabled", destinationHost));
+        }
+
         validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
 
         return new Pair<>(srcHost, destinationHost);
