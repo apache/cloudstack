@@ -1601,6 +1601,7 @@ export default {
         params['details[2].value'] = this.prefillContent.secondaryStorageSMBDomain
       } else if (this.prefillContent.secondaryStorageProvider === 'S3') {
         params.provider = this.prefillContent.secondaryStorageProvider
+        params.zoneid = this.stepData.zoneReturned.id
         params['details[0].key'] = 'accesskey'
         params['details[0].value'] = this.prefillContent.secondaryStorageAccessKey
         params['details[1].key'] = 'secretkey'
@@ -2200,13 +2201,11 @@ export default {
     },
     createSecondaryStagingStore (args) {
       return new Promise((resolve, reject) => {
-        let message = ''
-
         api('createSecondaryStagingStore', args).then(json => {
-          const result = json.addimagestoreresponse.secondarystorage
+          const result = json.createsecondarystagingstoreresponse.secondarystorage
           resolve(result)
         }).catch(error => {
-          message = error.response.headers['x-description']
+          const message = error?.response?.headers?.['x-description'] || error.message || error
           reject(message)
         })
       })
