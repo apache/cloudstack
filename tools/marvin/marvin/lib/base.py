@@ -1150,7 +1150,8 @@ class Volume:
 
     @classmethod
     def create(cls, apiclient, services, zoneid=None, account=None,
-               domainid=None, diskofferingid=None, projectid=None, size=None, snapshotid=None):
+               domainid=None, diskofferingid=None, projectid=None, size=None, snapshotid=None,
+               storageid=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1183,6 +1184,11 @@ class Volume:
 
         if snapshotid:
             cmd.snapshotid = snapshotid
+
+        if storageid:
+            cmd.storageid = storageid
+        elif "storageid" in services:
+            cmd.storageid = services["storageid"]
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
