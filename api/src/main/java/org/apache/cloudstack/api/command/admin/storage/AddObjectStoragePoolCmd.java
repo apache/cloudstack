@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 @APICommand(name = "addObjectStoragePool", description = "Adds a object storage pool", responseObject = ObjectStoreResponse.class, since = "4.19.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddObjectStoragePoolCmd extends BaseCmd {
 
     /////////////////////////////////////////////////////
