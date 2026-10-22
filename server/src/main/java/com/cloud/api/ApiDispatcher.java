@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -66,9 +65,6 @@ public class ApiDispatcher {
     @Inject()
     protected DispatchChainFactory dispatchChainFactory;
 
-    @Inject
-    AsyncJobManagerImpl asyncJobManager;
-
     protected DispatchChain standardDispatchChain;
 
     protected DispatchChain asyncCreationDispatchChain;
@@ -91,7 +87,7 @@ public class ApiDispatcher {
     }
 
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
-        if (asyncJobManager.isAsyncJobsEnabled()) {
+        if (_asyncMgr.isAsyncJobsEnabled()) {
             asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
         } else {
             throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new async creation jobs");

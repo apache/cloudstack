@@ -211,6 +211,10 @@ public class AsyncJobResponse extends BaseResponse {
         this.cancellable = cancellable;
     }
 
+    public boolean getCancellable() {
+        return Boolean.TRUE.equals(cancellable);
+    }
+
     public void setJobInstanceName(String jobInstanceName) {
         this.jobInstanceName = jobInstanceName;
     }
