@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
+
+    private static final List<StoragePoolType> MOUNT_BASED_POOL_TYPES = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
 
     private final Map<String, HAStoragePool> haStoragePools = new ConcurrentHashMap<>();
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
@@ -54,7 +56,9 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         synchronized (haStoragePools) {
             HAStoragePool pool = haStoragePools.get(uuid);
             if (pool != null) {
-                Script.runSimpleBashScript("umount " + pool.getMountDestPath());
+                if (isMountBased(pool)) {
+                    Script.runSimpleBashScript("umount " + pool.getMountDestPath());
+                }
                 haStoragePools.remove(uuid);
             }
         }
@@ -72,12 +76,16 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
     }
 
+    private boolean isMountBased(HAStoragePool pool) {
+        return MOUNT_BASED_POOL_TYPES.contains(pool.getPool().getType());
+    }
+
     protected void runHeartBeat() {
         synchronized (haStoragePools) {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : haStoragePools.keySet()) {
                 HAStoragePool primaryStoragePool = haStoragePools.get(uuid);
-                if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
+                if (isMountBased(primaryStoragePool)) {
                     checkForNotExistingLibvirtStoragePools(removedPools, uuid);
                     if (removedPools.contains(uuid)) {
                         continue;
