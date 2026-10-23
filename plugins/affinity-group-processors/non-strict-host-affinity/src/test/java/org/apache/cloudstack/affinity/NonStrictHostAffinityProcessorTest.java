@@ -170,4 +170,37 @@ public class NonStrictHostAffinityProcessorTest {
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
         Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
     }
+
+    @Test
+    public void testPlannedHostWinsOverStaleDatabaseHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        when(vm.getId()).thenReturn(vmId);
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        when(vmProfile.getVirtualMachine()).thenReturn(vm);
+
+        List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+        vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+
+        DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+        ExcludeList avoid = new ExcludeList();
+
+        AffinityGroupVO affinityGroupVO = Mockito.mock(AffinityGroupVO.class);
+        when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+        when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId))
+                .thenReturn(new ArrayList<>(Arrays.asList(vmId, vm2Id)));
+
+        // the plan being built has already moved vm2 to host3; the database is not consulted
+        VMInstanceVO planned = Mockito.mock(VMInstanceVO.class);
+        when(planned.getId()).thenReturn(vm2Id);
+        when(planned.getHostId()).thenReturn(host3Id);
+
+        processor.process(vmProfile, plan, avoid, Arrays.asList(planned));
+
+        Assert.assertEquals(1, plan.getHostPriorities().size());
+        Assert.assertNotNull(plan.getHostPriorities().get(host3Id));
+        Assert.assertNull(plan.getHostPriorities().get(host2Id));
+        Mockito.verify(vmInstanceDao, Mockito.never()).findById(vm2Id);
+    }
 }
