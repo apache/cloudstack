@@ -1059,6 +1059,24 @@ public class UnmanagedVMsManagerImplTest {
         verify(deploymentPlanningManager).planDeployment(any(), planCaptor.capture(), any(), any());
         Assert.assertEquals(poolPodId, planCaptor.getValue().getPodId());
         Assert.assertEquals(poolClusterId, planCaptor.getValue().getClusterId());
+        // the clusterid parameter is not used, the cluster is derived from the storage pool
+        Mockito.verify(cmd, Mockito.never()).getClusterId();
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testImportVmFromVmwareMissingClusterId() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getName()).thenReturn("testVm");
+        when(cmd.getImportSource()).thenReturn("vmware");
+        unmanagedVMsManager.importVm(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testImportVmFromUnmanagedMissingClusterId() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getName()).thenReturn("testVm");
+        when(cmd.getImportSource()).thenReturn("unmanaged");
+        unmanagedVMsManager.importVm(cmd);
     }
 
     @Test

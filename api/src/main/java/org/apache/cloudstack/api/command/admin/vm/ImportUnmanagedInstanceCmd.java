@@ -75,8 +75,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID,
             type = CommandType.UUID,
             entityType = ClusterResponse.class,
-            required = true,
-            description = "The cluster ID")
+            description = "The cluster ID. Required when importing an unmanaged Instance or importing from VMware. " +
+                    "Not used when importing a KVM Instance from an external host, local storage or shared storage")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.NAME,
