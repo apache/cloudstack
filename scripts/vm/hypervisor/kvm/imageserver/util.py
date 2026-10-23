@@ -17,7 +17,7 @@
 
 import json
 import time
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 def coalesce_allocation_extents(
@@ -70,45 +70,88 @@ def json_bytes(obj: Any) -> bytes:
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
+def _normalize_extents(
+    extents: List[Tuple[int, int, bool]], size: int
+) -> List[Tuple[int, int, bool]]:
+    """
+    Sort (start, length, flag) extents, clip them to [0, size) and drop
+    overlaps (the earliest extent covering a byte wins).  Returns
+    (start, end_exclusive, flag) tuples; gaps are left uncovered.
+    """
+    out: List[Tuple[int, int, bool]] = []
+    pos = 0
+    for start, length, flag in sorted(extents, key=lambda e: e[0]):
+        begin = max(start, pos)
+        end = min(start + length, size)
+        if begin >= end:
+            continue
+        out.append((begin, end, flag))
+        pos = end
+    return out
+
+
+def append_coalesced(
+    result: List[Dict[str, Any]], extents: List[Dict[str, Any]]
+) -> None:
+    """
+    Append dirty/zero *extents* to *result*, extending the last extent of
+    *result* when the first new one continues it with the same flags.
+    """
+    for e in extents:
+        if result:
+            prev = result[-1]
+            if (
+                prev["start"] + prev["length"] == e["start"]
+                and prev["dirty"] == e["dirty"]
+                and prev["zero"] == e["zero"]
+            ):
+                prev["length"] += e["length"]
+                continue
+        result.append(e)
+
+
 def merge_dirty_zero_extents(
     allocation_extents: List[Tuple[int, int, bool]],
     dirty_extents: List[Tuple[int, int, bool]],
     size: int,
+    start: int = 0,
 ) -> List[Dict[str, Any]]:
     """
     Merge allocation (start, length, zero) and dirty (start, length, dirty) extents
-    into a single list of {start, length, dirty, zero} with unified boundaries.
-    """
-    boundaries: Set[int] = {0, size}
-    for start, length, _ in allocation_extents:
-        boundaries.add(start)
-        boundaries.add(start + length)
-    for start, length, _ in dirty_extents:
-        boundaries.add(start)
-        boundaries.add(start + length)
-    sorted_boundaries = sorted(boundaries)
+    into a single list of {start, length, dirty, zero} with unified boundaries,
+    covering [start, size).
 
-    def lookup(
-        extents: List[Tuple[int, int, bool]], offset: int, default: bool
-    ) -> bool:
-        for start, length, flag in extents:
-            if start <= offset < start + length:
-                return flag
-        return default
+    Ranges not covered by any dirty extent are reported dirty, and ranges not
+    covered by any allocation extent are reported as data (zero=False), so a
+    missing or short block status reply can never hide changed data.
+
+    Runs in O(n log n + m log m) (sorting) plus a single linear sweep.
+    """
+    alloc = _normalize_extents(allocation_extents, size)
+    dirty = _normalize_extents(dirty_extents, size)
+
+    def flag_at(
+        intervals: List[Tuple[int, int, bool]], idx: int, pos: int, default: bool
+    ) -> Tuple[int, bool, int]:
+        """Return (new_idx, flag at pos, end of that flag run)."""
+        while idx < len(intervals) and intervals[idx][1] <= pos:
+            idx += 1
+        if idx < len(intervals):
+            begin, end, flag = intervals[idx]
+            if begin <= pos:
+                return idx, flag, end
+            return idx, default, begin
+        return idx, default, size
 
     result: List[Dict[str, Any]] = []
-    for i in range(len(sorted_boundaries) - 1):
-        a, b = sorted_boundaries[i], sorted_boundaries[i + 1]
-        if a >= b:
-            continue
-        result.append(
-            {
-                "start": a,
-                "length": b - a,
-                "dirty": lookup(dirty_extents, a, False),
-                "zero": lookup(allocation_extents, a, False),
-            }
-        )
+    ai = di = 0
+    pos = start
+    while pos < size:
+        ai, zero, alloc_end = flag_at(alloc, ai, pos, False)
+        di, is_dirty, dirty_end = flag_at(dirty, di, pos, True)
+        end = min(alloc_end, dirty_end)
+        result.append({"start": pos, "length": end - pos, "dirty": is_dirty, "zero": zero})
+        pos = end
     return coalesce_dirty_zero_extents(result)
 
 
