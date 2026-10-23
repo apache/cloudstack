@@ -84,7 +84,7 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
-import com.cloud.hypervisor.vmware.mo.VirtualStorageObjectManagerMO;
+import com.cloud.hypervisor.vmware.mo.VmdkAdapterType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -107,7 +107,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
-import com.vmware.vim25.BaseConfigInfoDiskFileBackingInfo;
 import com.vmware.vim25.DatastoreHostMount;
 import com.vmware.vim25.HostHostBusAdapter;
 import com.vmware.vim25.HostInternetScsiHba;
@@ -126,7 +125,6 @@ import com.vmware.vim25.HostUnresolvedVmfsResignatureSpec;
 import com.vmware.vim25.HostUnresolvedVmfsVolume;
 import com.vmware.vim25.InvalidStateFaultMsg;
 import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.VStorageObject;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
@@ -2057,7 +2055,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String datastoreVolumePath;
             boolean datastoreChangeObserved = false;
             boolean volumePathChangeObserved = false;
+            boolean updateVmdkAdapter = true;
             String chainInfo = null;
+            String diskController = null;
+
+            if (isAttach) {
+                String rootDiskControllerDetail = DiskControllerType.ide.toString();
+                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER))) {
+                    rootDiskControllerDetail = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+                }
+                String dataDiskControllerDetail = getLegacyVmDataDiskController();
+                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
+                    dataDiskControllerDetail = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
+                }
+
+                VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
+                Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail), vmMo, null, null);
+                diskController = VmwareHelper.getControllerBasedOnDiskType(chosenDiskControllers, disk);
+            }
 
             if (isAttach) {
                 if (isManaged) {
@@ -2066,7 +2081,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
                         datastoreVolumePath = VmwareStorageLayoutHelper.getDatastoreVolumePath(dsMo, vmName, volumePath);
                     } else {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumePath, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        VmdkAdapterType targetAdapterType = VmdkAdapterType.getAdapterType(DiskControllerType.getType(diskController));
+                        Pair<String, Boolean> syncResult = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo,
+                                volumePath, VmwareManager.s_vmwareSearchExcludeFolder.value(), targetAdapterType, volumeTO.getProvisioningType());
+                        datastoreVolumePath = syncResult.first();
+                        updateVmdkAdapter = !syncResult.second();
                     }
                 }
             } else {
@@ -2102,20 +2121,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
-                String rootDiskControllerDetail = DiskControllerType.ide.toString();
-                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER))) {
-                    rootDiskControllerDetail = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
-                }
-                String dataDiskControllerDetail = getLegacyVmDataDiskController();
-                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
-                    dataDiskControllerDetail = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
-                }
-
-                VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
-                Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail), vmMo, null, null);
-                String diskController = VmwareHelper.getControllerBasedOnDiskType(chosenDiskControllers, disk);
-
-                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId,
+                    volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate(), updateVmdkAdapter);
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
                 chainInfo = _gson.toJson(diskInfo);
@@ -2416,49 +2423,42 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VirtualMachineMO vmMo = null;
             String volumeUuid = UUID.randomUUID().toString().replace("-", "");
 
-            String volumeDatastorePath = VmwareStorageLayoutHelper.getDatastorePathBaseFolderFromVmdkFileName(dsMo, volumeUuid + ".vmdk");
-            VolumeObjectTO newVol = new VolumeObjectTO();
-
+            String volumeDatastorePath = VmwareStorageLayoutHelper.getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, volumeUuid + ".vmdk");
+            String dummyVmName = hostService.getWorkerName(context, cmd, 0, dsMo);
             try {
-                VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(context);
-                VStorageObject virtualDisk = vStorageObjectManagerMO.createDisk(morDatastore, volume.getProvisioningType(), volume.getSize(), volumeDatastorePath, volumeUuid);
-                DatastoreFile file = new DatastoreFile(((BaseConfigInfoDiskFileBackingInfo)virtualDisk.getConfig().getBacking()).getFilePath());
-                newVol.setPath(file.getFileBaseName());
+                logger.info(String.format("Creating worker VM [%s].", dummyVmName));
+                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
+                if (vmMo == null) {
+                    throw new CloudRuntimeException("Unable to create a dummy VM for volume creation.");
+                }
+
+                synchronized (this) {
+                    try {
+                        vmMo.createDisk(volumeDatastorePath, volume.getProvisioningType(), (int)(volume.getSize() / (1024L * 1024L)), morDatastore,
+                                vmMo.getScsiDeviceControllerKey(), vSphereStoragePolicyId);
+                        vmMo.detachDisk(volumeDatastorePath, false);
+                    }
+                    catch (Exception e) {
+                        logger.error(String.format("Deleting file [%s] due to [%s].", volumeDatastorePath, e.getMessage()), e);
+                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        throw new CloudRuntimeException(String.format("Unable to create volume due to [%s].", e.getMessage()));
+                    }
+                }
+
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(volumeUuid);
                 newVol.setSize(volume.getSize());
-            } catch (Exception e) {
-                logger.error(String.format("Create disk using vStorageObject manager failed due to [%s], retrying using worker VM.", e.getMessage()), e);
-                String dummyVmName = hostService.getWorkerName(context, cmd, 0, dsMo);
-                try {
-                    logger.info(String.format("Creating worker VM [%s].", dummyVmName));
-                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
-                    if (vmMo == null) {
-                        throw new CloudRuntimeException("Unable to create a dummy VM for volume creation.");
-                    }
-
-                    synchronized (this) {
-                        try {
-                            vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey(), vSphereStoragePolicyId);
-                            vmMo.detachDisk(volumeDatastorePath, false);
-                        }
-                        catch (Exception e1) {
-                            logger.error(String.format("Deleting file [%s] due to [%s].", volumeDatastorePath, e1.getMessage()), e1);
-                            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                            throw new CloudRuntimeException(String.format("Unable to create volume due to [%s].", e1.getMessage()));
-                        }
-                    }
-
-                    newVol = new VolumeObjectTO();
-                    newVol.setPath(volumeUuid);
-                    newVol.setSize(volume.getSize());
-                    return new CreateObjectAnswer(newVol);
-                } finally {
-                    logger.info("Destroying dummy VM after volume creation.");
-                    if (vmMo != null) {
+                return new CreateObjectAnswer(newVol);
+            } finally {
+                logger.info("Destroying dummy VM after volume creation.");
+                if (vmMo != null) {
+                    try {
                         vmMo.detachAllDisksAndDestroy();
+                    } catch (Exception e) {
+                        logger.warn(String.format("Failed to destroy worker VM [%s] after volume creation due to: [%s].", dummyVmName, e.getMessage()), e);
                     }
                 }
             }
-            return new CreateObjectAnswer(newVol);
         } catch (Throwable e) {
             return new CreateObjectAnswer(hostService.createLogMessageException(e, cmd));
         }
