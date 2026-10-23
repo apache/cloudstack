@@ -35,7 +35,7 @@ from marvin.lib.base import (Account,
                              Host)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                list_hosts)
 from marvin.lib.utils import *
 from nose.plugins.attrib import attr
@@ -155,7 +155,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         if extra_config is not None:
             cmd.extraconfig = extra_config
 
-        template = get_template(
+        template = get_suitable_test_template(
             self.apiclient,
             self.zone.id,
             hypervisor=hypervisor

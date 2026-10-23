@@ -20,7 +20,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib import utils
 from marvin.lib.base import (Account, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
                              Backup, Configurations, Volume, StoragePool)
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (get_template, get_domain, get_zone)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
 import time
