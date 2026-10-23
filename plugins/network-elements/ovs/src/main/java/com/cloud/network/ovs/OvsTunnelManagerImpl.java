@@ -47,7 +47,6 @@ import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -236,7 +235,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             throws AgentUnavailableException, OperationTimedoutException {
         String endpointIp = null;
         // Fetch fefault name for network label from configuration
-        String physNetLabel = _configDao.getValue(Config.OvsTunnelNetworkDefaultLabel.key());
+        String physNetLabel = OvsTunnelNetworkDefaultLabel.value();
         Long physNetId = nw.getPhysicalNetworkId();
         PhysicalNetworkTrafficType physNetTT =
                 _physNetTTDao.findBy(physNetId, TrafficType.Guest);
