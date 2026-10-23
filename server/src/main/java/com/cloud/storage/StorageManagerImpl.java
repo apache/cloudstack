@@ -4654,7 +4654,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 StoragePoolHostConnectWorkers,
                 ObjectStorageCapacityThreshold,
                 COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES,
-                AgentMaxDataMigrationWaitTime
+                AgentMaxDataMigrationWaitTime,
+                VmDiskThrottlingIopsReadRate,
+                VmDiskThrottlingIopsWriteRate,
+                VmDiskThrottlingBytesReadRate,
+                VmDiskThrottlingBytesWriteRate,
+                ExpungeWorkers
         };
     }
 

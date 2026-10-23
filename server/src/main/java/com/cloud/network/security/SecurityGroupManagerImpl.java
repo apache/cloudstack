@@ -48,6 +48,8 @@ import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupI
 import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -124,7 +126,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGroupManager, SecurityGroupService, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGroupManager, SecurityGroupService, StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     @Inject
     SecurityGroupDao _securityGroupDao;
@@ -1487,5 +1489,15 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return SecurityGroupManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {SecurityGroupWorkCleanupInterval, SecurityGroupWorkerThreads, SecurityGroupWorkGlobalLockTimeout, SecurityGroupWorkPerAgentMaxQueueSize};
     }
 }

@@ -3393,7 +3393,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
                 RemoveControlIpOnStop,
-                VirtualRouterUserData
+                VirtualRouterUserData,
+                NetworkRouterRpFilter,
+                EnableServiceMonitoring,
+                RouterRamSize,
+                RouterCpuMHz,
+                RouterStatsInterval,
+                RouterCheckInterval,
+                RouterCheckPoolSize,
+                RouterExtraPublicNics,
+                DnsBasicZoneUpdates,
+                RedundantRouterVrrpInterval,
+                DirectAttachNetworkEnabled,
+                DirectAttachNetworkExternalAPIURL
         };
     }
 

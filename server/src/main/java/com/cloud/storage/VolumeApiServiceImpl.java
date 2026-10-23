@@ -5786,7 +5786,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 MatchStoragePoolTagsWithDiskOffering,
                 UseHttpsToUpload,
                 WaitDetachDevice,
-                AllowCheckAndRepairVolume
+                AllowCheckAndRepairVolume,
+                CopyVolumeWait,
+                CreateVolumeFromSnapshotWait,
+                MaxUploadVolumeSize,
+                StoragePoolMaxWaitSeconds
         };
     }
 }

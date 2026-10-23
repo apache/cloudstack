@@ -39,6 +39,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.logging.log4j.Logger;
@@ -67,7 +69,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
 import com.cloud.utils.xmlobject.XmlObjectParser;
 
-public class UcsManagerImpl implements UcsManager {
+public class UcsManagerImpl implements UcsManager, Configurable {
     protected Logger logger = LogManager.getLogger(getClass());
     public static final Long COOKIE_TTL = TimeUnit.MILLISECONDS.convert(100L, TimeUnit.MINUTES);
     public static final Long COOKIE_REFRESH_TTL = TimeUnit.MILLISECONDS.convert(10L, TimeUnit.MINUTES);
@@ -508,5 +510,15 @@ public class UcsManagerImpl implements UcsManager {
             bladeDao.remove(vo.getId());
         }
         ucsDao.remove(id);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return UcsManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {UCSSyncBladeInterval};
     }
 }
