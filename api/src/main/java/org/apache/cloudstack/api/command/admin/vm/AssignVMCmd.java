@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -87,7 +88,8 @@ public class AssignVMCmd extends BaseCmd  {
             description = "one entry per nic, each naming the set of networks that nic is associated with as a multi-VLAN trunk."
                     + " The first network id in each entry is the nic's primary network. Carries a trunk nic's associations across"
                     + " this move instead of rebuilding them as separate nics. Can't be specified with networkIds."
-                    + " Example: nicnetworkslist[0].networkids=uuid1,uuid2,uuid3")
+                    + " Example: nicnetworkslist[0].networkids=uuid1,uuid2,uuid3",
+            authorized = {RoleType.Admin})
     private Map nicNetworksList;
 
     @Parameter(name = ApiConstants.SECURITY_GROUP_IDS,
@@ -122,6 +124,7 @@ public class AssignVMCmd extends BaseCmd  {
     }
 
     public List<Long> getNetworkIds() {
+        BaseDeployVMCmd.rejectNicNetworksListForNonRootAdmin(nicNetworksList, getFullUrlParams());
         if (MapUtils.isNotEmpty(nicNetworksList)) {
             if (CollectionUtils.isNotEmpty(networkIds)) {
                 throw new InvalidParameterValueException(String.format("%s can't be specified along with %s",
@@ -141,6 +144,7 @@ public class AssignVMCmd extends BaseCmd  {
      * nicnetworkslist wasn't supplied, in which case the plain networkIds param keeps its exact present meaning.
      */
     public List<NicNetworkGrouping> getNicNetworksList() {
+        BaseDeployVMCmd.rejectNicNetworksListForNonRootAdmin(nicNetworksList, getFullUrlParams());
         return BaseDeployVMCmd.parseNicNetworksList(nicNetworksList, _networkService);
     }
 

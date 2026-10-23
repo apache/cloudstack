@@ -525,7 +525,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     public List<Long> getNetworkIds() {
-        rejectNicNetworksListForNonRootAdmin();
+        rejectNicNetworksListForNonRootAdmin(nicNetworksList, getFullUrlParams());
         if (MapUtils.isNotEmpty(nicNetworksList)) {
             if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null
                     || MapUtils.isNotEmpty(ipToNetworkList) || MapUtils.isNotEmpty(vAppNetworks)) {
@@ -558,11 +558,11 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     // nicnetworkslist is authorized={RoleType.Admin}; the framework drops it silently for other callers instead of rejecting it.
-    private void rejectNicNetworksListForNonRootAdmin() {
-        if (MapUtils.isNotEmpty(nicNetworksList)) {
+    // Shared with AssignVMCmd, which carries the same parameter.
+    public static void rejectNicNetworksListForNonRootAdmin(Map parsedNicNetworksList, Map<String, String> rawParams) {
+        if (MapUtils.isNotEmpty(parsedNicNetworksList)) {
             return;
         }
-        Map<String, String> rawParams = getFullUrlParams();
         boolean nicNetworksListWasSupplied = rawParams != null && rawParams.keySet().stream()
                 .anyMatch(key -> key.startsWith(ApiConstants.NIC_NETWORKS_LIST));
         if (!nicNetworksListWasSupplied) {

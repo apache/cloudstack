@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,11 +29,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
 import com.cloud.user.Account;
@@ -137,5 +143,45 @@ public class AssignVMCmdTest {
         AssignVMCmd assignVMCmd = new AssignVMCmd();
         ReflectionTestUtils.setField(assignVMCmd, "skipNetwork", true);
         Assert.assertTrue(assignVMCmd.isSkipNetwork());
+    }
+
+    private void runAsCallerOfType(Account.Type type, Runnable action) {
+        Account caller = mock(Account.class);
+        when(caller.getType()).thenReturn(type);
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(caller);
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+            action.run();
+        }
+    }
+
+    private AssignVMCmd buildCmdWithRawNicNetworksListDropped() {
+        AssignVMCmd cmd = new AssignVMCmd();
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("nicnetworkslist[0].networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+        return cmd;
+    }
+
+    @Test
+    public void getNicNetworksListRejectsNonRootAdminCaller() {
+        AssignVMCmd cmd = buildCmdWithRawNicNetworksListDropped();
+        runAsCallerOfType(Account.Type.DOMAIN_ADMIN, () -> {
+            PermissionDeniedException thrown = assertThrows(PermissionDeniedException.class, cmd::getNicNetworksList);
+            assertTrue(thrown.getMessage().contains(ApiConstants.NIC_NETWORKS_LIST));
+        });
+    }
+
+    @Test
+    public void getNetworkIdsRejectsNonRootAdminCaller() {
+        AssignVMCmd cmd = buildCmdWithRawNicNetworksListDropped();
+        runAsCallerOfType(Account.Type.DOMAIN_ADMIN, () -> assertThrows(PermissionDeniedException.class, cmd::getNetworkIds));
+    }
+
+    @Test
+    public void getNicNetworksListAllowsRootAdminCaller() {
+        AssignVMCmd cmd = buildCmdWithRawNicNetworksListDropped();
+        runAsCallerOfType(Account.Type.ADMIN, () -> assertTrue(cmd.getNicNetworksList().isEmpty()));
     }
 }

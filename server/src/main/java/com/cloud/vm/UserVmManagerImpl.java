@@ -8510,7 +8510,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .collect(Collectors.toList());
             throw new InvalidParameterValueException(String.format(
                     "Nic [%s] of Instance [%s] is associated with network(s) %s. Assigning this Instance would drop "
-                            + "those associations; use %s to carry them to the new account instead of %s.",
+                            + "those associations; a root admin must use %s to carry them to the new account instead of %s.",
                     nic.getUuid(), vm.getUuid(), associatedNetworkIds, ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS));
         }
     }
