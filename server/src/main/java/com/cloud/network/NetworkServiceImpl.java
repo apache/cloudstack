@@ -1307,7 +1307,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Answer answer = _agentMgr.easySend(vm.getHostId(), updateCmd);
         if (answer == null || !answer.getResult()) {
             throw new CloudRuntimeException(String.format("Failed to update live VLAN trunk membership for nic %s: %s",
-                    nic.getUuid(), answer != null ? answer.getDetails() : "no response from host"));
+                    nic.getUuid(), answer != null ? StringUtils.substringBefore(answer.getDetails(), "\n") : "no response from host"));
         }
     }
 

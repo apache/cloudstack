@@ -355,20 +355,39 @@ public class BridgeVifDriver extends VifDriverBase {
         if (StringUtils.isBlank(tapName)) {
             throw new InternalErrorException("Cannot update VLAN trunk membership: tap device name unknown");
         }
-        Map<Integer, Boolean> currentMembership = readCurrentVlanMembership(tapName);
-        Set<Integer> desiredSet = new LinkedHashSet<>(desiredVlanTags);
+        Map<Integer, Boolean> originalMembership = readCurrentVlanMembership(tapName);
+        Map<Integer, Boolean> desiredMembership = new LinkedHashMap<>();
+        for (Integer vlan : desiredVlanTags) {
+            desiredMembership.put(vlan, vlan.equals(primaryVlanTag));
+        }
+        try {
+            syncVlanMembership(tapName, originalMembership, desiredMembership);
+        } catch (InternalErrorException e) {
+            restoreVlanMembership(tapName, originalMembership);
+            throw e;
+        }
+    }
 
+    private void syncVlanMembership(String tapName, Map<Integer, Boolean> currentMembership, Map<Integer, Boolean> desiredMembership) throws InternalErrorException {
         for (Integer currentVlan : currentMembership.keySet()) {
-            if (!desiredSet.contains(currentVlan)) {
+            if (!desiredMembership.containsKey(currentVlan)) {
                 runBridgeVlanCommand("del", tapName, String.valueOf(currentVlan), false);
             }
         }
-        for (Integer desiredVlan : desiredSet) {
-            boolean shouldBePvid = desiredVlan.equals(primaryVlanTag);
-            Boolean currentlyPvid = currentMembership.get(desiredVlan);
-            if (currentlyPvid == null || currentlyPvid != shouldBePvid) {
-                runBridgeVlanCommand("add", tapName, String.valueOf(desiredVlan), shouldBePvid);
+        for (Map.Entry<Integer, Boolean> desired : desiredMembership.entrySet()) {
+            Boolean currentlyPvid = currentMembership.get(desired.getKey());
+            if (currentlyPvid == null || !currentlyPvid.equals(desired.getValue())) {
+                runBridgeVlanCommand("add", tapName, String.valueOf(desired.getKey()), desired.getValue());
             }
+        }
+    }
+
+    // best-effort: a failed partial apply must not leave the tap on a membership the management server doesn't know about
+    private void restoreVlanMembership(String tapName, Map<Integer, Boolean> originalMembership) {
+        try {
+            syncVlanMembership(tapName, readCurrentVlanMembership(tapName), originalMembership);
+        } catch (InternalErrorException e) {
+            logger.warn("Failed to restore VLAN membership on {} after a failed update: {}", tapName, e.getMessage());
         }
     }
 

@@ -262,6 +262,30 @@ public class BridgeVifDriverTest {
         Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "200", false);
     }
 
+    @Test
+    public void updateVlanTrunkMembershipRestoresOriginalMembershipWhenLaterAddFailsOnOldLibvirt() throws Exception {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(false);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        NicTO nic = buildTrunkNic(100, java.util.Arrays.asList(200, 300));
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.setDevName("vnet5");
+        Map<Integer, Boolean> original = new java.util.LinkedHashMap<>();
+        original.put(100, true);
+        Map<Integer, Boolean> afterPartialApply = new java.util.LinkedHashMap<>(original);
+        afterPartialApply.put(200, false);
+        Mockito.doReturn(original, afterPartialApply).when(driver).readCurrentVlanMembership("vnet5");
+        Mockito.doNothing().when(driver).runBridgeVlanCommand("add", "vnet5", "200", false);
+        Mockito.doThrow(new InternalErrorException("boom")).when(driver).runBridgeVlanCommand("add", "vnet5", "300", false);
+        Mockito.doNothing().when(driver).runBridgeVlanCommand("del", "vnet5", "200", false);
+
+        try {
+            driver.updateVlanTrunkMembership(Mockito.mock(org.libvirt.Domain.class), intf, nic);
+            Assert.fail("expected InternalErrorException");
+        } catch (InternalErrorException expected) {
+            Mockito.verify(driver).runBridgeVlanCommand("del", "vnet5", "200", false);
+        }
+    }
+
     @Test(expected = InternalErrorException.class)
     public void ensureVlanTrunkMembershipFailsWhenTapNameUnknown() throws InternalErrorException {
         Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(false);
