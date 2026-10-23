@@ -101,7 +101,7 @@ public interface ManagementServer extends ManagementService, PluggableService {
             "enable or disable publishing of alert events on the event bus", true);
 
     ConfigKey<Boolean> PublishResourceStateEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.resource.state.events", "true",
-            "enable or disable publishing of alert events on the event bus", true);
+            "enable or disable publishing of resource state events on the event bus", true);
 
     ConfigKey<Boolean> PublishUsageEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.usage.events", "true",
             "enable or disable publishing of usage events on the event bus", true);
