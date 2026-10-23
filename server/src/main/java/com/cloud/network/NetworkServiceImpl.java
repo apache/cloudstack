@@ -1319,6 +1319,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    @Override
+    public void refreshTrunkNicsAssociatedToNetwork(Network network) {
+        NetworkVO networkVO = _networksDao.findById(network.getId());
+        for (Long nicId : _nicNetworkMapDao.listNicIdsByNetworkId(network.getId())) {
+            NicVO nic = _nicDao.findById(nicId);
+            UserVmVO vm = nic == null ? null : _userVmDao.findById(nic.getInstanceId());
+            if (vm == null || vm.getState() != VirtualMachine.State.Running || vm.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
+                continue;
+            }
+            try {
+                updateLiveVlanTrunkMembership(vm, nic);
+                pushDhcpEntryForAssociation(vm, nic, networkVO);
+            } catch (ResourceUnavailableException | CloudRuntimeException e) {
+                logger.warn("Failed to refresh trunk nic {} of Instance {} after migration of network {}", nic.getUuid(), vm.getUuid(), network.getUuid(), e);
+            }
+        }
+    }
+
     private void updateLiveVlanTrunkMembership(VirtualMachine vm, NicVO nic) throws ResourceUnavailableException {
         if (vm.getHostId() == null) {
             throw new CloudRuntimeException(String.format("Instance %s is Running but has no host assigned", vm.getUuid()));

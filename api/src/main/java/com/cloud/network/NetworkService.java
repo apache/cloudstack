@@ -314,4 +314,7 @@ public interface NetworkService {
 
     // Re-applies each nic's VLAN membership on the host of a Running Instance, e.g. after a memory revert recreates its taps.
     void reapplyLiveVlanMembership(VirtualMachine vm) throws ResourceUnavailableException;
+
+    // Pushes a migrated network's new VLAN and DHCP entries to the Running Instances that carry it as a trunk nic association.
+    void refreshTrunkNicsAssociatedToNetwork(Network network);
 }

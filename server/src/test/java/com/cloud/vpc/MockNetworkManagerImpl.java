@@ -1194,6 +1194,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void refreshTrunkNicsAssociatedToNetwork(Network network) {
+    }
+
+    @Override
     public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
         return null;
     }
