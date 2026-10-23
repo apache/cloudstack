@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.response.SamlUserAccountResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
+import org.apache.cloudstack.saml.SAML2UserAuthenticator;
 import org.apache.cloudstack.saml.SAMLUtils;
 
 import com.cloud.api.ApiServer;
@@ -157,8 +158,14 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     logger.info("User [" + currentUserAccount.getUsername() + "] user profile switch is accepted: from [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] with account [" + nextUserAccount.getAccountName() + "]");
                     // need to set a sessoin variable to inform the login function of the specific user to login as, rather than using email only (which could have multiple matches)
                     session.setAttribute("nextUserId", user.getId());
-                    final LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, nextUserAccount.getUsername(), nextUserAccount.getUsername() + nextUserAccount.getSource().toString(),
-                            nextUserAccount.getDomainId(), null, remoteAddress, params);
+                    SAML2UserAuthenticator.markAssertionValidated();
+                    final LoginCmdResponse loginResponse;
+                    try {
+                        loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, nextUserAccount.getUsername(), nextUserAccount.getUsername() + nextUserAccount.getSource().toString(),
+                                nextUserAccount.getDomainId(), null, remoteAddress, params);
+                    } finally {
+                        SAML2UserAuthenticator.clearAssertionValidated();
+                    }
                     SAMLUtils.setupSamlUserCookies(loginResponse, resp);
                     session.removeAttribute("nextUserId");
                     logger.debug("User [" + currentUserAccount.getUsername() + "] user profile switch cookies set: from [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] with account [" + nextUserAccount.getAccountName() + "]");
