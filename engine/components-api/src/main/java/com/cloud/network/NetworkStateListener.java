@@ -39,7 +39,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     // Registered/owned by com.cloud.server.ManagementServer#PublishResourceStateEvent; declared here too so this
     // module can read it without a reverse dependency on the server module.
     private static final ConfigKey<Boolean> PublishResourceStateEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.resource.state.events", "true",
-            "enable or disable publishing of alert events on the event bus", true);
+            "enable or disable publishing of resource state events on the event bus", true);
 
     private EventDistributor eventDistributor;
 
