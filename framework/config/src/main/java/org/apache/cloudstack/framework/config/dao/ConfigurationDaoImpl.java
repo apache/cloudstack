@@ -174,7 +174,17 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
     public String getValue(String name) {
         ConfigurationVO config = findByName(name);
-        return (config == null) ? null : config.getValue();
+        if (config == null) {
+            return null;
+        }
+        try {
+            return config.getValue();
+        } catch (CloudRuntimeException ex) {
+            logger.error("Unable to get global configuration {}: {}. " +
+                    "We expect the value of setting to be encrypted in the database with the Management Server's key, " +
+                    "but we were unable to decrypt it using this key", name, ex.getMessage());
+            throw ex;
+        }
     }
 
     @Override
