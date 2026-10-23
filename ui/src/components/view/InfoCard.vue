@@ -213,12 +213,14 @@
                   </a-tooltip>
                 </span>
                 <span v-else>{{ resource.cputotal }}</span>
-                <a-tag v-if="resource.arch" style="margin-left: 10px">
+                <a-tooltip v-if="resource.details && resource.details['host.cpu.max.speed.mhz']" :title="$t('label.host.cpu.max.speed')">
+                  <a-tag>
+                    <RocketOutlined /> {{ (resource.details['host.cpu.max.speed.mhz'] / 1000.0).toFixed(2) }} GHz
+                  </a-tag>
+                </a-tooltip>
+                <a-tag v-if="resource.arch">
                   {{ resource.arch }}
                 </a-tag>
-              </div>
-              <div v-if="resource.details && resource.details['host.cpu.max.speed.mhz']">
-                {{ $t('label.host.cpu.max.speed') }}: {{ (resource.details['host.cpu.max.speed.mhz'] / 1000.0).toFixed(2) }} GHz
               </div>
               <div>
                 <span v-if="resource.cpuused">
