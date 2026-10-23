@@ -702,6 +702,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             } catch (InsufficientCapacityException e) {
                 if (templateIterator.hasNext()) {
                     logger.debug("Unable to allocate secondary storage {} with {} due to [{}]. Retrying with another template", secStorageVm, template, e.getMessage(), e);
+                    _itMgr.cleanupAllocatedResources(secStorageVm);
                     continue;
                 }
                 throw new CloudRuntimeException("Failed to allocate secondary storage VM [%s] in zone [%s] with available templates", e);

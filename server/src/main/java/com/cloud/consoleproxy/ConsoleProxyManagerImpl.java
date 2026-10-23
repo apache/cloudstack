@@ -731,6 +731,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             } catch (InsufficientCapacityException e) {
                 if (templateIterator.hasNext()) {
                     logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
+                    virtualMachineManager.cleanupAllocatedResources(proxy);
                     continue;
                 }
                 throw new CloudRuntimeException(String.format("Failed to allocate proxy [%s] in zone [%s] with available templates", proxy, dc), e);
