@@ -1530,7 +1530,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 : _ipAddrMgr.allocateGuestIP(network, requestedIp4);
         if (ip4Address == null) {
             throw new InsufficientAddressCapacityException(
-                    String.format("Unable to allocate a guest IPv4 address in network [name=%s, id=%s, uuid=%s]", network.getName(), network.getId(), network.getUuid()),
+                    String.format("Unable to allocate a guest IPv4 address in network [name=%s, uuid=%s]", network.getName(), network.getUuid()),
                     DataCenter.class, network.getDataCenterId());
         }
         String ip6Address = resolveIp6ForAssociation(network, nic);
