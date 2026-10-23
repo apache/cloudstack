@@ -1116,44 +1116,55 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         cmd.getResourceUuid(ApiConstants.NETWORK_ID), nic.getUuid()));
             }
 
-            NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), targetNetworkId);
-            if (association == null) {
-                throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
+            // serializes against destroyNetwork() on this network: without it, a concurrent delete can
+            // remove the network after the association row below is dropped but before the host finishes
+            // removing the VLAN, and a host failure then re-adds the association for a network that no
+            // longer exists
+            if (_networksDao.acquireInLockTable(targetNetworkId, NetworkOrchestrationService.NetworkLockTimeout.value()) == null) {
+                throw new ConcurrentOperationException(String.format("Unable to acquire lock on network %s", cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
             }
-            checkNoActiveRulesOnAssociation(vm.getId(), targetNetworkId, association.getIp4Address());
-
-            boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
-            if (vmRunning) {
-                checkHostReadyForVlanTrunk(vm);
-            }
-
-            NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
-
-            // a Shared network's ip4 is also tracked in user_ip_address and must be released there too
-            releaseSharedAssociationIp(targetNetwork, association.getIp4Address());
-            _nicNetworkMapDao.remove(association.getId());
-
-            boolean nicMultiNetworkCleared = nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty();
-            if (nicMultiNetworkCleared) {
-                nic.setMultiNetwork(false);
-                _nicDao.update(nic.getId(), nic);
-            }
-
-            if (vmRunning) {
-                try {
-                    updateLiveVlanTrunkMembership(vm, nic);
-                } catch (ResourceUnavailableException | CloudRuntimeException ex) {
-                    rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
-                    throw ex;
+            try {
+                NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), targetNetworkId);
+                if (association == null) {
+                    throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), cmd.getResourceUuid(ApiConstants.NETWORK_ID)));
                 }
-                cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
-                if (targetNetwork != null) {
-                    publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
-                }
-                refreshNicVlanMappingMetadata(nic);
-            }
+                checkNoActiveRulesOnAssociation(vm.getId(), targetNetworkId, association.getIp4Address());
 
-            return _nicDao.findById(nic.getId());
+                boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
+                if (vmRunning) {
+                    checkHostReadyForVlanTrunk(vm);
+                }
+
+                NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
+
+                // a Shared network's ip4 is also tracked in user_ip_address and must be released there too
+                releaseSharedAssociationIp(targetNetwork, association.getIp4Address());
+                _nicNetworkMapDao.remove(association.getId());
+
+                boolean nicMultiNetworkCleared = nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty();
+                if (nicMultiNetworkCleared) {
+                    nic.setMultiNetwork(false);
+                    _nicDao.update(nic.getId(), nic);
+                }
+
+                if (vmRunning) {
+                    try {
+                        updateLiveVlanTrunkMembership(vm, nic);
+                    } catch (ResourceUnavailableException | CloudRuntimeException ex) {
+                        rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
+                        throw ex;
+                    }
+                    cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
+                    if (targetNetwork != null) {
+                        publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
+                    }
+                    refreshNicVlanMappingMetadata(nic);
+                }
+
+                return _nicDao.findById(nic.getId());
+            } finally {
+                _networksDao.releaseFromLockTable(targetNetworkId);
+            }
         } finally {
             _nicDao.releaseFromLockTable(nic.getId());
         }
