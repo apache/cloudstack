@@ -658,6 +658,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         networkACLRule.setAction(NetworkACLItem.Action.Allow.toString());
 
+        networkACLRule.setReason(getVpcTierAclRuleReason());
+
         NetworkACLItem aclRule = networkACLService.createNetworkACLItem(networkACLRule);
         networkACLService.moveRuleToTheTopInACLList(aclRule);
         networkACLService.applyNetworkACL(aclRule.getAclId());
@@ -675,9 +677,25 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                                                                networkACLItem.getAction().equals(NetworkACLItem.Action.Allow)))
                 .collect(Collectors.toList());
 
-        for (NetworkACLItemVO aclItem : aclItems) {
+        // Only remove the rules this cluster created, other clusters may use the same ACL list
+        List<NetworkACLItemVO> clusterAclItems = aclItems.stream()
+                .filter(networkACLItem -> getVpcTierAclRuleReason().equals(networkACLItem.getReason()))
+                .collect(Collectors.toList());
+        if (clusterAclItems.isEmpty()) {
+            // Rules created before they were marked with the cluster, remove only one of them
+            clusterAclItems = aclItems.stream()
+                    .filter(networkACLItem -> StringUtils.isEmpty(networkACLItem.getReason()))
+                    .limit(1)
+                    .collect(Collectors.toList());
+        }
+
+        for (NetworkACLItemVO aclItem : clusterAclItems) {
             networkACLService.revokeNetworkACLItem(aclItem.getId());
         }
+    }
+
+    protected String getVpcTierAclRuleReason() {
+        return String.format("Kubernetes cluster %s", kubernetesCluster.getUuid());
     }
 
     protected void provisionLoadBalancerRule(final IpAddress publicIp, final Network network,

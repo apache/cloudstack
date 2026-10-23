@@ -23,6 +23,11 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.network.Network;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +35,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterResourceModifierActionWorkerTest {
@@ -51,6 +58,15 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
     @Mock
     private KubernetesCluster kubernetesClusterMock;
 
+    @Mock
+    private NetworkACLItemDao networkACLItemDaoMock;
+
+    @Mock
+    private NetworkACLService networkACLServiceMock;
+
+    @Mock
+    private Network networkMock;
+
     private KubernetesClusterResourceModifierActionWorker kubernetesClusterResourceModifierActionWorker;
 
     @Before
@@ -61,6 +77,49 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
         kubernetesClusterManagerMock.kubernetesClusterVmMapDao = kubernetesClusterVmMapDaoMock;
 
         kubernetesClusterResourceModifierActionWorker = new KubernetesClusterResourceModifierActionWorker(kubernetesClusterMock, kubernetesClusterManagerMock);
+        kubernetesClusterResourceModifierActionWorker.networkACLItemDao = networkACLItemDaoMock;
+        kubernetesClusterResourceModifierActionWorker.networkACLService = networkACLServiceMock;
+    }
+
+    private NetworkACLItemVO mockAclItem(long id, int port, String reason) {
+        NetworkACLItemVO aclItem = Mockito.mock(NetworkACLItemVO.class);
+        Mockito.lenient().when(aclItem.getId()).thenReturn(id);
+        Mockito.lenient().when(aclItem.getProtocol()).thenReturn("TCP");
+        Mockito.lenient().when(aclItem.getSourcePortStart()).thenReturn(port);
+        Mockito.lenient().when(aclItem.getSourcePortEnd()).thenReturn(port);
+        Mockito.lenient().when(aclItem.getAction()).thenReturn(NetworkACLItem.Action.Allow);
+        Mockito.lenient().when(aclItem.getReason()).thenReturn(reason);
+        return aclItem;
+    }
+
+    @Test
+    public void removeVpcTierAllowPortACLRuleTestRemovesOnlyThisClusterRules() throws Exception {
+        Mockito.when(kubernetesClusterMock.getUuid()).thenReturn("cluster-a");
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(10L);
+        NetworkACLItemVO clusterARule = mockAclItem(1L, 6443, "Kubernetes cluster cluster-a");
+        NetworkACLItemVO clusterBRule = mockAclItem(2L, 6443, "Kubernetes cluster cluster-b");
+        NetworkACLItemVO oldRule = mockAclItem(3L, 6443, null);
+        Mockito.when(networkACLItemDaoMock.listByACL(10L)).thenReturn(List.of(clusterARule, clusterBRule, oldRule));
+
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 6443, 6443);
+
+        Mockito.verify(networkACLServiceMock).revokeNetworkACLItem(1L);
+        Mockito.verifyNoMoreInteractions(networkACLServiceMock);
+    }
+
+    @Test
+    public void removeVpcTierAllowPortACLRuleTestRemovesOneUnmarkedRuleForOlderClusters() throws Exception {
+        Mockito.when(kubernetesClusterMock.getUuid()).thenReturn("cluster-a");
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(10L);
+        NetworkACLItemVO clusterBRule = mockAclItem(2L, 22, "Kubernetes cluster cluster-b");
+        NetworkACLItemVO oldRule1 = mockAclItem(3L, 22, null);
+        NetworkACLItemVO oldRule2 = mockAclItem(4L, 22, null);
+        Mockito.when(networkACLItemDaoMock.listByACL(10L)).thenReturn(List.of(clusterBRule, oldRule1, oldRule2));
+
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 22, 22);
+
+        Mockito.verify(networkACLServiceMock).revokeNetworkACLItem(3L);
+        Mockito.verifyNoMoreInteractions(networkACLServiceMock);
     }
 
     @Test
