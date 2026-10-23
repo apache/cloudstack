@@ -40,8 +40,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.StoragePoolInfo;
@@ -83,6 +86,8 @@ public class PrimaryDataStoreHelper {
     private AnnotationDao annotationDao;
     @Inject
     DataStoreProviderManager dataStoreProviderMgr;
+    @Inject
+    private StoragePoolDetailsDao storagePoolDetailsDao;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
         if (params == null) {
@@ -250,9 +255,22 @@ public class PrimaryDataStoreHelper {
 
     public boolean cancelMaintain(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
-        pool.setStatus(StoragePoolStatus.Up);
+        pool.setStatus(getStatusAfterMaintenance(pool.getId()));
         dataStoreDao.update(store.getId(), pool);
+        storagePoolDetailsDao.removeDetail(pool.getId(), PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE);
         return true;
+    }
+
+    /**
+     * A pool that was Disabled before entering maintenance goes back to Disabled, so that cancelling
+     * maintenance doesn't re-open it for provisioning; any other pool goes back to Up.
+     */
+    protected StoragePoolStatus getStatusAfterMaintenance(long poolId) {
+        StoragePoolDetailVO statusBeforeMaintenance = storagePoolDetailsDao.findDetail(poolId, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE);
+        if (statusBeforeMaintenance != null && StoragePoolStatus.Disabled.name().equals(statusBeforeMaintenance.getValue())) {
+            return StoragePoolStatus.Disabled;
+        }
+        return StoragePoolStatus.Up;
     }
 
     public boolean disable(DataStore store) {
