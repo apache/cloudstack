@@ -94,7 +94,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
 
-    VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch);
+    VMTemplateVO findLatestTemplateByName(String name, HypervisorType hypervisorType, CPU.CPUArch arch);
 
     List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId);
 
@@ -103,4 +103,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     List<Long> listIdsByTemplateTag(String tag);
 
     List<Long> listIdsByExtensionId(long extensionId);
+
+    VMTemplateVO findActiveSystemTemplateByHypervisorArchAndUrlPath(HypervisorType hypervisorType,
+                CPU.CPUArch arch, String urlPathSuffix);
 }
