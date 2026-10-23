@@ -67,7 +67,6 @@ import com.cloud.api.commands.StopNetScalerVMCmd;
 import com.cloud.api.response.NetScalerServicePackageResponse;
 import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -141,7 +140,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.user.Account;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -297,7 +295,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
             hostDetails.put("username", nccVO.getUsername());
             hostDetails.put("password", DBEncryptionUtil.decrypt(nccVO.getPassword()));
             hostDetails.put("deviceName", "netscaler control center");
-            hostDetails.put("cmdTimeOut", Long.toString(NumbersUtil.parseInt(_configDao.getValue(Config.NCCCmdTimeOut.key()), 600000)));
+            hostDetails.put("cmdTimeOut", Long.toString(NCCCmdTimeOut.value()));
             ServerResource resource = new NetScalerControlCenterResource();
             resource.configure(hostName, hostDetails);
             final Host host = _resourceMgr.addHost(guestConfig.getDataCenterId(), resource, Host.Type.NetScalerControlCenter, hostDetails);
@@ -947,8 +945,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
         if (lbDeviceVO.getCapacity() == 0) {
-            long defaultLbCapacity = NumbersUtil
-                    .parseLong(_configDao.getValue(Config.DefaultExternalLoadBalancerCapacity.key()), 50);
+            long defaultLbCapacity = DefaultExternalLoadBalancerCapacity.value();
             response.setDeviceCapacity(defaultLbCapacity);
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
@@ -1161,8 +1158,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
             return false;
         }
 
-        boolean multiNetScalerDeployment = Boolean
-                .valueOf(_configDao.getValue(Config.EIPWithMultipleNetScalersEnabled.key()));
+        boolean multiNetScalerDeployment = EIPWithMultipleNetScalersEnabled.value();
 
         try {
             if (!multiNetScalerDeployment) {
