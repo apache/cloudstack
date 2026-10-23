@@ -1526,6 +1526,43 @@ public class AutoScaleManagerImplTest {
         }
     }
 
+    /**
+     * Regression test for #14185: VirtualMachineManagerImpl.start() wraps a failed start into an unchecked
+     * CloudRuntimeException rather than the checked exceptions startNewVM converts to ServerApiException.
+     * Before the fix, doScaleUp's catch(ServerApiException) missed it, the VM was never destroyed, and its
+     * autoscale_vmgroup_vm_map row leaked forever (the VM stays in State.Stopped, invisible to both
+     * getErroredInstanceCount() and countAvailableVmsByGroup(), so the group scales up again next interval).
+     */
+    @Test
+    public void testDoScaleUpDestroysVmWhenStartThrowsCloudRuntimeException() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
+            when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+            when(asVmGroupMock.getAccountId()).thenReturn(accountId);
+            when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
+            when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(maxMembers - 1);
+            when(autoScaleVmGroupVmMapDao.getErroredInstanceCount(vmGroupId)).thenReturn(0);
+            when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+
+            when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
+            when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.SCALING, AutoScaleVmGroup.State.ENABLED)).thenReturn(true);
+            Mockito.doReturn(userVmMock).when(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
+            when(userVmMock.getId()).thenReturn(virtualMachineId);
+
+            Mockito.doThrow(new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [Resource unavailable].", virtualMachineId)))
+                    .when(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
+            Mockito.doReturn(true).when(autoScaleManagerImplSpy).destroyVm(virtualMachineId);
+
+            autoScaleManagerImplSpy.doScaleUp(vmGroupId, 1);
+
+            Mockito.verify(autoScaleVmGroupVmMapDao).persist(any(AutoScaleVmGroupVmMapVO.class));
+            Mockito.verify(autoScaleManagerImplSpy).destroyVm(virtualMachineId);
+            Mockito.verify(loadBalancingRulesService, Mockito.never()).assignToLoadBalancer(anyLong(), any(), any(), eq(true));
+            // the group must leave SCALING even though the start failed, so the next monitor interval can retry
+            Mockito.verify(autoScaleVmGroupDao).updateState(vmGroupId, AutoScaleVmGroup.State.SCALING, AutoScaleVmGroup.State.ENABLED);
+        }
+    }
+
     @Test
     public void testDoScaleDown() {
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
