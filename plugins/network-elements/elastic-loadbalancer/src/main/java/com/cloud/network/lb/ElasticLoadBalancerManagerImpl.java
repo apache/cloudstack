@@ -222,7 +222,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, elbVm.getInstanceName());
         //FIXME: why are we setting attributes directly? Ick!! There should be accessors and
         //the constructor should set defaults.
-        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisibility.value();
         cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
         cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
         cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();

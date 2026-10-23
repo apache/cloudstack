@@ -403,7 +403,7 @@ public class CommandSetupHelper {
                 router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
                 NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
-        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisibility.value();
         cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
         cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
         cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();

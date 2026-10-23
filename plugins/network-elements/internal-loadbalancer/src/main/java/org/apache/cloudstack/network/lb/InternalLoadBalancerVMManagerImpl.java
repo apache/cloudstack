@@ -516,7 +516,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                         internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
                         NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
-        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisibility.value();
         cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
         cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
         cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
