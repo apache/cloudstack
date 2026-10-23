@@ -35,6 +35,25 @@ function debconf_packages() {
   echo "libc6 libraries/restart-without-asking boolean false" | debconf-set-selections
 }
 
+# cloud-init 25.1.x of Debian 13 fails in the CloudStack datasource when there is no DHCP lease
+# (https://github.com/canonical/cloud-init/pull/6554), so the user data of the CKS nodes and the
+# shared filesystem VMs is not applied. Install a newer one if the installed one is older.
+CLOUD_INIT_VERSION="26.2-1"
+CLOUD_INIT_SHA256="17fc7a7f428dbea1195543259955a75f170870473990a43375de99009bd60462"
+
+function upgrade_cloud_init() {
+  local installed=$(dpkg-query -W -f='${Version}' cloud-init 2>/dev/null || true)
+  if [[ -n "${installed}" ]] && dpkg --compare-versions "${installed}" ge "${CLOUD_INIT_VERSION}"; then
+    return
+  fi
+
+  local deb="/tmp/cloud-init_${CLOUD_INIT_VERSION}_all.deb"
+  wget https://deb.debian.org/debian/pool/main/c/cloud-init/cloud-init_${CLOUD_INIT_VERSION}_all.deb -O ${deb}
+  echo "${CLOUD_INIT_SHA256}  ${deb}" | sha256sum -c -
+  apt-get --no-install-recommends -q -y install ${deb}
+  rm -f ${deb}
+}
+
 function apt_clean() {
   apt-get -y autoremove --purge
   apt-get clean
@@ -81,6 +100,7 @@ function install_packages() {
     conntrack apt-transport-https ca-certificates curl gnupg  gnupg-agent
 
   apt-get install -y python3-json-pointer python3-jsonschema cloud-init
+  upgrade_cloud_init
 
   apt_clean
 
