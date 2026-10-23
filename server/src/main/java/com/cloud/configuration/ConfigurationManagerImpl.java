@@ -750,7 +750,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // As it is so common for people to forget about configuring
         // management.network.cidr,
-        final String mgtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        final String mgtCidr = ManagementServer.ManagementNetwork.value();
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             final String[] localCidrs = NetUtils.getLocalCidrs();
             if (localCidrs != null && localCidrs.length > 0) {
@@ -758,7 +758,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, 0L, "Management network CIDR is not configured originally. Set it default to "
                         + localCidrs[0], "");
-                _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
+                _configDao.update(ManagementServer.ManagementNetwork.key(), ManagementServer.ManagementNetwork.category(), localCidrs[0]);
             } else {
                 logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, 0L,
@@ -1015,8 +1015,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
      */
     private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
-        String hypervisorListConfigName = Config.HypervisorList.key();
-        String hypervisors = _configDao.getValue(hypervisorListConfigName);
+        String hypervisorListConfigName = ManagementServer.HypervisorList.key();
+        String hypervisors = ManagementServer.HypervisorList.value();
         if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
             hypervisors = hypervisors.replace(previousValue, newValue);
             logger.info("Updating the hypervisor list configuration '{}' to match the new custom hypervisor display name",
@@ -2700,7 +2700,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _zoneDao.addPrivateIpAddress(zone.getId(), pod.getId(), startIpFinal, endIpFinal, false, null);
             }
 
-            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(ManagementServer.ControlCidr.value());
             if (linkLocalIpRanges.length > 1) {
                 _zoneDao.addLinkLocalIpAddress(zone.getId(), pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }

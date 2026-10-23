@@ -108,7 +108,6 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -178,6 +177,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -1232,7 +1232,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         // If this cluster is of type vmware, and if the nexus vswitch
                         // global parameter setting is turned
                         // on, remove the row in cluster_vsm_map for this cluster id.
-                        if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
+                        if (hypervisorType == HypervisorType.VMware && ManagementServer.VmwareUseNexusVSwitch.value()) {
                             _clusterVSMMapDao.removeByClusterId(cmd.getId());
                         }
                         // remove from dedicated resources
@@ -3980,7 +3980,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _hostDao.loadDetails(host);
         final String password = host.getDetail("password");
         final String username = host.getDetail("username");
-        final String privateKey = _configDao.getValue("ssh.privatekey");
+        final String privateKey = ManagementServer.SshPrivateKey.value();
         if ((password == null && privateKey == null) || username == null) {
             throw new CloudRuntimeException("SSH to agent is enabled, but username and password or private key are not found");
         }
