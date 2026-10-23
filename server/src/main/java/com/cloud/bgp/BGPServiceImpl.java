@@ -34,6 +34,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.BgpServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -396,9 +397,12 @@ public class BGPServiceImpl implements BGPService {
         if (!routedIpv4Manager.isDynamicRoutedNetwork(network)) {
             return true;
         }
-        final String gatewayProviderStr = ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Network.Service.Gateway);
-        if (gatewayProviderStr != null) {
-            NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
+        NetworkOffering networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
+        final String bgpServiceProvider = NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode()) ?
+                ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Network.Service.Gateway):
+                ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Network.Service.SourceNat);
+        if (bgpServiceProvider != null) {
+            NetworkElement provider = networkModel.getElementImplementingProvider(bgpServiceProvider);
             if (provider != null && provider instanceof BgpServiceProvider) {
                 List<? extends BgpPeer> bgpPeers = getBgpPeersForNetwork(network);
                 LOGGER.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
@@ -413,9 +417,12 @@ public class BGPServiceImpl implements BGPService {
         if (!routedIpv4Manager.isDynamicRoutedVpc(vpc)) {
             return true;
         }
-        final String gatewayProviderStr = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Network.Service.Gateway);
-        if (gatewayProviderStr != null) {
-            NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
+        VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+        final String bgpServiceProvider = NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode()) ?
+                vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Network.Service.Gateway):
+                vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Network.Service.SourceNat);
+        if (bgpServiceProvider != null) {
+            NetworkElement provider = networkModel.getElementImplementingProvider(bgpServiceProvider);
             if (provider != null && provider instanceof BgpServiceProvider) {
                 List<? extends BgpPeer> bgpPeers = getBgpPeersForVpc(vpc);
                 LOGGER.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
