@@ -35,10 +35,14 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
+    private static final String FIELD_RESOURCE_ID = "resourceId";
+    private static final String FIELD_RESOURCE_TYPE = "resourceType";
+
     protected final SearchBuilder<EventVO> CompletedEventSearch;
     protected final SearchBuilder<EventVO> ToArchiveOrDeleteEventSearch;
     protected final SearchBuilder<EventVO> ArchiveByIdsSearch;
     protected final SearchBuilder<EventVO> LastStartEventSearch;
+    protected final SearchBuilder<EventVO> LatestEventsByResourceSearch;
 
     public EventDaoImpl() {
         CompletedEventSearch = createSearchBuilder();
@@ -46,6 +50,13 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
         CompletedEventSearch.and("archived", CompletedEventSearch.entity().getArchived(), Op.EQ);
         CompletedEventSearch.done();
+
+        LatestEventsByResourceSearch = createSearchBuilder();
+        LatestEventsByResourceSearch.and(FIELD_RESOURCE_ID, LatestEventsByResourceSearch.entity().getResourceId(), Op.EQ);
+        LatestEventsByResourceSearch.and(FIELD_RESOURCE_TYPE, LatestEventsByResourceSearch.entity().getResourceType(), Op.EQ);
+        LatestEventsByResourceSearch.and("type", LatestEventsByResourceSearch.entity().getType(), Op.EQ);
+        LatestEventsByResourceSearch.and("archived", LatestEventsByResourceSearch.entity().getArchived(), Op.EQ);
+        LatestEventsByResourceSearch.done();
 
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
         ToArchiveOrDeleteEventSearch.and("id", ToArchiveOrDeleteEventSearch.entity().getId(), Op.IN);
@@ -63,8 +74,8 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         LastStartEventSearch = createSearchBuilder();
         LastStartEventSearch.and("type", LastStartEventSearch.entity().getType(), Op.EQ);
         LastStartEventSearch.and("state", LastStartEventSearch.entity().getState(), Op.EQ);
-        LastStartEventSearch.and("resourceId", LastStartEventSearch.entity().getResourceId(), Op.EQ);
-        LastStartEventSearch.and("resourceType", LastStartEventSearch.entity().getResourceType(), Op.EQ);
+        LastStartEventSearch.and(FIELD_RESOURCE_ID, LastStartEventSearch.entity().getResourceId(), Op.EQ);
+        LastStartEventSearch.and(FIELD_RESOURCE_TYPE, LastStartEventSearch.entity().getResourceType(), Op.EQ);
         LastStartEventSearch.and("archived", LastStartEventSearch.entity().getArchived(), Op.EQ);
         LastStartEventSearch.done();
     }
@@ -98,8 +109,8 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         SearchCriteria<EventVO> sc = LastStartEventSearch.create();
         sc.setParameters("type", type);
         sc.setParameters("state", state);
-        sc.setParameters("resourceId", resourceId);
-        sc.setParameters("resourceType", resourceType);
+        sc.setParameters(FIELD_RESOURCE_ID, resourceId);
+        sc.setParameters(FIELD_RESOURCE_TYPE, resourceType);
         sc.setParameters("archived", false);
         return findLastOneBy(sc);
     }
@@ -123,6 +134,17 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         }
         sc.setParameters("archived", false);
         return search(sc, null);
+    }
+
+    @Override
+    public List<EventVO> listLatestEventsByResource(long resourceId, String resourceType, String type, int limit) {
+        SearchCriteria<EventVO> sc = LatestEventsByResourceSearch.create();
+        sc.setParameters(FIELD_RESOURCE_ID, resourceId);
+        sc.setParameters(FIELD_RESOURCE_TYPE, resourceType);
+        sc.setParameters("type", type);
+        sc.setParameters("archived", false);
+        Filter filter = new Filter(EventVO.class, "createDate", false, 0L, (long) limit);
+        return listBy(sc, filter);
     }
 
     @Override
