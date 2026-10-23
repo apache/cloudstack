@@ -63,7 +63,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String QEMU_IMG_HAS_BACKING_COMMAND =
             "qemu-img info --output=json %s 2>/dev/null | grep -q '\"backing-filename\"'";
 
-    private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
+    static String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
             Path path = Paths.get(volumePath);
             String rscName = path.getParent().getFileName().toString();
@@ -330,15 +330,22 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
         QemuImg qemu;
         try {
-            qemu = new QemuImg(timeout, true, false);
             String volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
             KVMPhysicalDisk disk = null;
+            boolean targetExists = true;
+            // Let qemu-img skip the backup's zero regions (--target-is-zero) only on a volume that
+            // provably reads as zeroes. An in-place restore overwrites a volume that still holds its
+            // old data, and a new LINSTOR volume reads as zeroes only on thin or ZFS backed pools.
+            boolean targetReadsAsZero = false;
             if (createTargetVolume) {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
                     if (size == null) {
                         throw new CloudRuntimeException("Restore volume size is required for Linstor pool when creating target volume");
                     }
                     disk = volumeStoragePool.createPhysicalDisk(volumeUuid, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, size, null);
+                    targetReadsAsZero = volumeStoragePool.newVolumeReadsAsZero(volumeUuid);
+                } else {
+                    targetExists = false;
                 }
             } else {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
@@ -346,8 +353,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 } else {
                     disk = volumeStoragePool.getPhysicalDisk(volumePath);
                 }
-                qemu.setSkipTargetVolumeCreation(true);
             }
+            qemu = new QemuImg(timeout, targetReadsAsZero, false);
+            qemu.setSkipTargetVolumeCreation(targetExists);
             if (disk != null) {
                 logger.debug("Restoring volume: {}", disk.toString());
             }
