@@ -1308,6 +1308,25 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return result;
     }
 
+    SearchBuilder<NicVO> createNicSearchBuilder(Long vpcId, boolean hasAssociatedNics) {
+        SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
+        if (hasAssociatedNics) {
+            // trunk nics list networkId as an association, not as their primary network
+            nicSearch.and().op("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+            nicSearch.or("associatedNicIdIN", nicSearch.entity().getId(), Op.IN);
+            nicSearch.cp();
+        } else {
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+        }
+        nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
+        if (vpcId != null) {
+            SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
+            networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
+            nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        }
+        return nicSearch;
+    }
+
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Pair<List<Long>, Integer> vmIdPage = searchForUserVMIdsAndCount(cmd);
 
@@ -1471,15 +1490,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.and("podId", userVmSearchBuilder.entity().getPodIdToDeployIn(), Op.EQ);
         }
 
+        List<Long> associatedNicIds = networkId != null ? nicNetworkMapDao.listNicIdsByNetworkId(networkId) : new ArrayList<>();
         if (networkId != null || vpcId != null) {
-            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
-            nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
-            if (vpcId != null) {
-                SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
-                networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
-                nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
-            }
+            SearchBuilder<NicVO> nicSearch = createNicSearchBuilder(vpcId, !associatedNicIds.isEmpty());
             userVmSearchBuilder.join("nic", nicSearch, nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
@@ -1711,6 +1724,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkId != null) {
             userVmSearchCriteria.setJoinParameters("nic", "networkId", networkId);
+            if (!associatedNicIds.isEmpty()) {
+                userVmSearchCriteria.setJoinParameters("nic", "associatedNicIdIN", associatedNicIds.toArray());
+            }
         }
 
         if (vpcId != null) {
@@ -1783,42 +1799,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> vmIds = uniqueVmPair.first().stream().map(VMInstanceVO::getId).collect(Collectors.toList());
 
-        if (networkId != null) {
-            return addVmsWithNetworkAssociation(vmIds, count, networkId, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }
         return new Pair<>(vmIds, count);
-    }
-
-    // A nic whose primary network is something else but is also associated with networkId (multi-VLAN trunk nic)
-    // is invisible to the primary-nic-only search above, so it needs a separate, additive lookup here. The ACL
-    // check is re-applied via the same builder the primary search above already used, rather than re-implemented,
-    // so visibility rules can't drift between the two.
-    private Pair<List<Long>, Integer> addVmsWithNetworkAssociation(List<Long> vmIds, Integer count, Long networkId, Long domainId, Boolean isRecursive,
-            List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        Set<Long> candidateVmIds = new HashSet<>();
-        for (Long nicId : nicNetworkMapDao.listNicIdsByNetworkId(networkId)) {
-            NicVO nic = nicDao.findById(nicId);
-            if (nic != null && !vmIds.contains(nic.getInstanceId())) {
-                candidateVmIds.add(nic.getInstanceId());
-            }
-        }
-        if (candidateVmIds.isEmpty()) {
-            return new Pair<>(vmIds, count);
-        }
-
-        SearchBuilder<UserVmVO> assocSearchBuilder = userVmDao.createSearchBuilder();
-        accountMgr.buildACLSearchBuilder(assocSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        assocSearchBuilder.and("idIN", assocSearchBuilder.entity().getId(), Op.IN);
-        SearchCriteria<UserVmVO> assocCriteria = assocSearchBuilder.create();
-        accountMgr.buildACLSearchCriteria(assocCriteria, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        assocCriteria.setParameters("idIN", candidateVmIds.toArray());
-        List<UserVmVO> visibleAssociatedVms = userVmDao.search(assocCriteria, null);
-
-        List<Long> mergedIds = new ArrayList<>(vmIds);
-        for (UserVmVO vm : visibleAssociatedVms) {
-            mergedIds.add(vm.getId());
-        }
-        return new Pair<>(mergedIds, count + visibleAssociatedVms.size());
     }
 
     @Override
