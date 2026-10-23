@@ -125,7 +125,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             mergeConfigs(configs, params);
         }
 
-        String usageAggregationTimeZoneStr = ObjectUtils.defaultIfNull(UsageService.UsageAggregationTimezone.value(), "GMT");
+        // also runs in the usage server, which has no ConfigDepot: read the value from the DB map
+        String usageAggregationTimeZoneStr = ObjectUtils.defaultIfNull(configs.get(UsageService.UsageAggregationTimezone.key()), "GMT");
         usageAggregationTimeZone = TimeZone.getTimeZone(usageAggregationTimeZoneStr);
 
         return true;

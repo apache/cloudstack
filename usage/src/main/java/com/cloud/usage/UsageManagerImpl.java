@@ -42,6 +42,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
@@ -92,6 +93,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
@@ -143,6 +145,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject
     protected UsageEventDetailsDao _usageEventDetailsDao;
     @Inject
+    ConfigurationDao _configDao;
+    @Inject
     private UsageVMSnapshotDao _usageVMSnapshotDao;
     @Inject
     private UsageVMSnapshotOnPrimaryDao _usageSnapshotOnPrimaryDao;
@@ -192,6 +196,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     public UsageManagerImpl() {
     }
 
+    private void mergeConfigs(Map<String, String> dbParams, Map<String, Object> xmlParams) {
+        for (Map.Entry<String, Object> param : xmlParams.entrySet()) {
+            dbParams.put(param.getKey(), (String)param.getValue());
+        }
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         final String run = "usage.vmops.pid";
@@ -208,15 +218,30 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             logger.info("Implementation Version is " + _version);
         }
 
-        String execTime = UsageService.UsageStatsJobExecTime.value();
-        Integer aggregationRange = UsageService.UsageStatsJobAggregationRange.value();
-        String execTimeZone = UsageService.UsageExecutionTimezone.value();
-        String aggregationTimeZone = UsageService.UsageAggregationTimezone.value();
-        Integer sanityCheckInterval = UsageService.UsageSanityCheckInterval.value();
-        _runQuota = QuotaConfig.QuotaPluginEnabled.value();
-        usageSnapshotSelection = UsageService.UsageSnapshotVirtualSizeSelect.value();
+        // the usage server has no ConfigDepot, so ConfigKey.value() would only return the defaults here
+        Map<String, String> configs;
+        try {
+            configs = _configDao.getConfiguration(params);
+
+            if (params != null) {
+                mergeConfigs(configs, params);
+                logger.info("configs = " + configs);
+            }
+        } catch (CloudRuntimeException e) {
+            logger.error("Unhandled configuration exception: " + e.getMessage());
+            throw new CloudRuntimeException("Unhandled configuration exception", e);
+        }
+
+        String execTime = configs.get(UsageService.UsageStatsJobExecTime.key());
+        String aggregationRange = configs.get(UsageService.UsageStatsJobAggregationRange.key());
+        String execTimeZone = configs.get(UsageService.UsageExecutionTimezone.key());
+        String aggregationTimeZone = configs.get(UsageService.UsageAggregationTimezone.key());
+        String sanityCheckInterval = configs.get(UsageService.UsageSanityCheckInterval.key());
+        String quotaEnable = configs.get(QuotaConfig.QuotaPluginEnabled.key());
+        _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
+        usageSnapshotSelection  = Boolean.valueOf(configs.get(UsageService.UsageSnapshotVirtualSizeSelect.key()));
         if (sanityCheckInterval != null) {
-            _sanityCheckInterval = sanityCheckInterval;
+            _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
 
         if (aggregationTimeZone != null && !aggregationTimeZone.isEmpty()) {
@@ -246,7 +271,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     usageExecutionTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(usageExecutionTimeZone, new Date()),
                     DateUtil.displayDateInTimezone(usageExecutionTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
 
-            _aggregationDuration = aggregationRange;
+            _aggregationDuration = Integer.parseInt(aggregationRange);
             if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
                 logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
                 _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
