@@ -611,7 +611,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
 
     @Override
     public String getConfigComponentName() {
-        return ResourceCleanupService.class.getName();
+        return ResourceCleanupService.class.getSimpleName();
     }
 
     @Override
