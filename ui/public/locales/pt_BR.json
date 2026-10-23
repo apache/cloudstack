@@ -563,6 +563,7 @@
 "label.community": "Comunidade",
 "label.complete": "Complete",
 "label.compress": "Comprimir",
+"label.compressasync": "Comprimir assincronamente",
 "label.compressionstatus": "Estado de compress\u00e3o",
 "label.compressionlibrary": "Biblioteca de compress\u00e3o",
 "label.compute": "Computa\u00e7\u00e3o",
