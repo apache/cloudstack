@@ -818,6 +818,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
                 String vlanFilteringEnabled = detailsMap.get(Host.HOST_VLAN_FILTERING_ENABLED);
+                String guestBridgeStpEnabled = detailsMap.get(Host.HOST_GUEST_BRIDGE_STP_ENABLED);
                 String vlanTrunkXmlSupported = detailsMap.get(Host.HOST_VLAN_TRUNK_XML_SUPPORTED);
                 String vmwareCbtSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_SUPPORT);
                 String vmwareCbtInPlaceFinalizationSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT);
@@ -831,7 +832,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkRbdDirectImportSupport = detailsMap.get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
                 if (ObjectUtils.anyNotNull(uefiEnabled, diskOnlyVmSnapshotNvramSupport, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
-                        vlanFilteringEnabled, vlanTrunkXmlSupported,
+                        vlanFilteringEnabled, guestBridgeStpEnabled, vlanTrunkXmlSupported,
                         vmwareCbtSupport, vmwareCbtInPlaceFinalizationSupport, vmwareCbtRbdSupport, qemuImgVersion, qemuNbdVersion, qemuIoVersion, virtV2vInPlaceVersion,
                         virtv2vInPlaceSupport, qemuImgRbdSupport, vddkRbdDirectImportSupport)) {
                     _hostDao.loadDetails(host);
@@ -855,6 +856,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         updateNeeded = true;
                     }
                     if (syncBooleanHostCapability(host, Host.HOST_VLAN_FILTERING_ENABLED, vlanFilteringEnabled)) {
+                        updateNeeded = true;
+                    }
+                    if (syncBooleanHostCapability(host, Host.HOST_GUEST_BRIDGE_STP_ENABLED, guestBridgeStpEnabled)) {
                         updateNeeded = true;
                     }
                     if (syncBooleanHostCapability(host, Host.HOST_VLAN_TRUNK_XML_SUPPORTED, vlanTrunkXmlSupported)) {

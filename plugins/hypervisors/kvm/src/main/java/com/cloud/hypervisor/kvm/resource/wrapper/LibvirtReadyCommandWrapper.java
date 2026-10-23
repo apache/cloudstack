@@ -71,6 +71,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         }
 
         hostDetails.put(Host.HOST_VLAN_FILTERING_ENABLED, Boolean.toString(libvirtComputingResource.hostSupportsVlanFiltering()));
+        hostDetails.put(Host.HOST_GUEST_BRIDGE_STP_ENABLED, Boolean.toString(libvirtComputingResource.isGuestBridgeStpEnabled()));
         hostDetails.put(Host.HOST_VLAN_TRUNK_XML_SUPPORTED, Boolean.toString(libvirtComputingResource.hostSupportsVlanTrunkXml()));
 
         return new ReadyAnswer(command, hostDetails);
