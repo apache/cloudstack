@@ -38,6 +38,7 @@ import com.google.gson.JsonParser;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.joda.time.Duration;
 import org.libvirt.Connect;
+import org.libvirt.Error;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StorageVol;
@@ -86,6 +87,54 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         } catch (Exception e) {
             decStoragePoolRefCount(name);
             throw new CloudRuntimeException("Failed to create CLVM storage pool: " + name, e);
+        }
+    }
+
+    @Override
+    public boolean deleteStoragePool(String uuid) {
+        logger.info("Attempting to remove CLVM/CLVM_NG storage pool {} from libvirt", uuid);
+
+        if (decStoragePoolRefCount(uuid)) {
+            logger.info("deleteStoragePool: CLVM/CLVM_NG storage pool {} still in use", uuid);
+            return true;
+        }
+
+        try {
+            return undefineInactiveClvmPool(LibvirtConnection.getConnection(), uuid);
+        } catch (LibvirtException e) {
+            throw new CloudRuntimeException(e.toString(), e);
+        }
+    }
+
+    private boolean undefineInactiveClvmPool(Connect conn, String uuid) throws LibvirtException {
+        StoragePool sp = lookupClvmPool(conn, uuid);
+        if (sp == null) {
+            logger.warn("CLVM/CLVM_NG storage pool {} doesn't exist in libvirt. Assuming it is already removed", uuid);
+            return true;
+        }
+
+        try {
+            if (sp.isActive() == 1) {
+                sp.destroy();
+            }
+            if (sp.isPersistent() == 1) {
+                sp.undefine();
+            }
+        } finally {
+            sp.free();
+        }
+        logger.info("CLVM/CLVM_NG storage pool {} was successfully removed from libvirt", uuid);
+        return true;
+    }
+
+    private StoragePool lookupClvmPool(Connect conn, String uuid) throws LibvirtException {
+        try {
+            return conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException e) {
+            if (e.getError() != null && e.getError().getCode() == Error.ErrorNumber.VIR_ERR_NO_STORAGE_POOL) {
+                return null;
+            }
+            throw e;
         }
     }
 
@@ -290,7 +339,6 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         try {
             StoragePool pool = conn.storagePoolDefineXML(poolDef.toString(), 0);
             logger.info("Created libvirt pool definition for CLVM/CLVM_NG VG: {} (pool will remain inactive)", volgroupName);
-            pool.setAutostart(1);
             return pool;
         } catch (LibvirtException e) {
             logger.warn("Failed to define CLVM/CLVM_NG pool in libvirt: {}", e.getMessage());
