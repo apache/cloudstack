@@ -420,6 +420,12 @@ backup_running_vm_pull() {
     fi
   fi
 
+  # The pull path copies through libvirt's NBD export with qemu-img create/rebase, which
+  # has no rate option, and the push-mode blockjob throttle does not apply to it.
+  if [[ -n "$BANDWIDTH" ]]; then
+    log -ne "WARNING: backup bandwidth limit of ${BANDWIDTH} MiB/s is not applied to pull-mode (content-based) backups; $VM is backed up unthrottled"
+  fi
+
   # backup-begin establishes the point-in-time and starts the NBD server.
   local backup_begin=0
   local backup_out
