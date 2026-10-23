@@ -138,7 +138,7 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
             "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
 
-    ConfigKey<String> NetworkLBHaproxyStatsVisbility = new ConfigKey<>("Network", String.class,
+    ConfigKey<String> NetworkLBHaproxyStatsVisibility = new ConfigKey<>("Network", String.class,
             "network.loadbalancer.haproxy.stats.visibility", "global",
             "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
             true, ConfigKey.Kind.Select, "global,guest-network,link-local,disabled,all,default");

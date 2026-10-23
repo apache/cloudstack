@@ -5117,7 +5117,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 GuestDomainSuffix, NetworkThrottlingRate, VmNetworkThrottlingRate, MinVRVersion, DhcpLeaseTimeout,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
                 TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN,
-                NETWORK_LB_HAPROXY_IDLE_TIMEOUT, NetworkLBHaproxyStatsVisbility, NetworkLBHaproxyStatsUri,
+                NETWORK_LB_HAPROXY_IDLE_TIMEOUT, NetworkLBHaproxyStatsVisibility, NetworkLBHaproxyStatsUri,
                 NetworkLBHaproxyStatsAuth, NetworkLBHaproxyStatsPort};
     }
 }
