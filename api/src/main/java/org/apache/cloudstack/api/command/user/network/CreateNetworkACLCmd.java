@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -102,15 +101,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     }
 
     public String getProtocol() {
-        String p = protocol.trim();
-        // Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
-        if (StringUtils.isNumeric(p)) {
-            int protoNumber = Integer.parseInt(p);
-            if (protoNumber == 1) {
-                p = "icmp";
-            }
-        }
-        return p;
+        return NetUtils.icmpProtocolNumberAsName(protocol);
     }
 
     public void setProtocol(String protocol) {
