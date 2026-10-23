@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -1082,7 +1083,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             throws Exception {
         Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("replaceBlockDeviceWithBackup",
                 KVMStoragePoolManager.class, PrimaryDataStoreTO.class, String.class, String.class, int.class,
-                boolean.class, Long.class);
+                boolean.class, Long.class, File.class);
         method.setAccessible(true);
 
         PrimaryDataStoreTO volumePool = Mockito.mock(PrimaryDataStoreTO.class);
@@ -1094,11 +1095,16 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, "pool-uuid")).thenReturn(linstorPool);
 
         final List<?>[] ctorArgs = new List<?>[1];
-        try (MockedConstruction<QemuImg> qemuMock = mockConstruction(QemuImg.class,
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class);
+             MockedConstruction<QemuImg> qemuMock = mockConstruction(QemuImg.class,
                 (mock, context) -> ctorArgs[0] = context.arguments())) {
+            // The encryption probe reads the backup header with qemu-img info; show it a plain qcow2.
+            scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(PLAIN_QCOW2_INFO);
             boolean result = (boolean) method.invoke(wrapper, storagePoolMgr, volumePool,
                     "/dev/drbd/by-res/cs-volume-123/0", "/mnt/backup/root.volume-123.qcow2", 60,
-                    createTargetVolume, 1024L);
+                    createTargetVolume, 1024L, (File) null);
 
             Assert.assertTrue(result);
             Assert.assertEquals(1, qemuMock.constructed().size());
