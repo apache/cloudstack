@@ -33,4 +33,10 @@
     <bean id="ontapVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.OntapVMSnapshotStrategy" />
 
+    <bean id="ontapAsupManager"
+        class="org.apache.cloudstack.storage.asup.OntapAsupManager" />
+
+    <bean id="ontapConfigurationManager"
+        class="org.apache.cloudstack.storage.utils.OntapConfigurationManager" />
+
 </beans>
