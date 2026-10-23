@@ -88,7 +88,6 @@ public class KVMFencerTest {
         Mockito.when(host.getDataCenterId()).thenReturn(1l);
         Mockito.when(host.getPodId()).thenReturn(1l);
         Mockito.when(host.getStatus()).thenReturn(Status.Down);
-        Mockito.when(host.getId()).thenReturn(1l);
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
 
         Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Collections.singletonList(host));

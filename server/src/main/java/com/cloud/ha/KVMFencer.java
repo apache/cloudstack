@@ -108,8 +108,8 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
         }
 
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(),
-                            "Unable to fence off host: " + host.getId(),
-                            "Fencing off host " + host.getId() + " did not succeed after asking " + i + " hosts. " +
+                            "Unable to fence off host: " + host,
+                            "Fencing off host " + host + " did not succeed after asking " + i + " hosts. " +
                             "Check Agent logs for more information.");
 
         logger.error("Unable to fence off {} on {}", vm.toString(), host.toString());
