@@ -42,6 +42,7 @@ import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.DomainVO;
@@ -261,7 +262,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 userNames = userNames.substring(0, userNames.length() - 1);
             }
 
-            String currencySymbol = QuotaConfig.QuotaCurrencySymbol.value();
+            String currencySymbol = ObjectUtils.defaultIfNull(_configDao.getValue(QuotaConfig.QuotaCurrencySymbol.key()), QuotaConfig.QuotaCurrencySymbol.defaultValue());
             NumberFormat localeFormat = getLocaleFormatIfCurrencyLocaleNotNull();
 
             String balanceStr = String.format("%s %s", currencySymbol, NumbersUtil.formatBigDecimalAccordingToNumberFormat(balance, localeFormat));
@@ -297,7 +298,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     }
 
     private NumberFormat getLocaleFormatIfCurrencyLocaleNotNull() {
-        String currencyLocale = QuotaConfig.QuotaCurrencyLocale.value();
+        String currencyLocale = _configDao.getValue(QuotaConfig.QuotaCurrencyLocale.key());
         NumberFormat localeFormat = null;
         if (currencyLocale != null) {
             Locale locale = Locale.forLanguageTag(currencyLocale);
