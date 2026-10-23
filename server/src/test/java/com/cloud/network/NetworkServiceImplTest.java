@@ -1868,6 +1868,37 @@ public class NetworkServiceImplTest {
                 map.getNicId() == 11L && map.getNetworkId() == 206L && "10.1.1.51".equals(map.getIp4Address())));
     }
 
+    @Test
+    public void associateNetworkToNicRollsBackEarlierAssociationsWhenALaterNetworkHasNoFreeIp() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        NetworkVO firstNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(networkDao.findById(206L)).thenReturn(firstNetwork);
+        Mockito.when(ipAddressManagerMock.allocateGuestIP(firstNetwork, null)).thenReturn("10.1.1.50");
+        NetworkVO fullNetwork = mockNetwork(207L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1190));
+        Mockito.when(networkDao.findById(207L)).thenReturn(fullNetwork);
+        Mockito.when(ipAddressManagerMock.allocateGuestIP(fullNetwork, null)).thenReturn(null);
+        NicNetworkMapVO firstAssociation = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
+        Mockito.when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(firstAssociation);
+
+        try {
+            service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L, 207L)));
+            Assert.fail("expected InsufficientAddressCapacityException");
+        } catch (InsufficientAddressCapacityException expected) {
+            // the second network's allocation failure must undo the first network's row
+        }
+
+        Mockito.verify(nicNetworkMapDao).persist(Mockito.argThat(map -> map.getNetworkId() == 206L));
+        Mockito.verify(nicNetworkMapDao).remove(firstAssociation.getId());
+        Mockito.verify(nicNetworkMapDao, Mockito.never()).persist(Mockito.argThat(map -> map.getNetworkId() == 207L));
+        Mockito.verify(nicDao, Mockito.never()).update(Mockito.eq(11L), Mockito.any(NicVO.class));
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void associateNetworkToNicFailsWhenRequestedNetworkIsSecurityGroupEnabled() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);

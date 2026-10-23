@@ -1500,10 +1500,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private void persistAssociations(NicVO nic, VirtualMachine vm, List<NetworkVO> requestedNetworks, Map<Long, Network.IpAddresses> requestedIps)
             throws InsufficientAddressCapacityException {
         Map<Long, Network.IpAddresses> safeRequestedIps = requestedIps != null ? requestedIps : Collections.emptyMap();
-        for (NetworkVO network : requestedNetworks) {
-            NetworkVO refreshed = _networksDao.findById(network.getId());
-            Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()), vm, nic);
-            _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), network.getId(), allocatedIps.first(), allocatedIps.second()));
+        List<NetworkVO> persistedNetworks = new ArrayList<>();
+        try {
+            for (NetworkVO network : requestedNetworks) {
+                NetworkVO refreshed = _networksDao.findById(network.getId());
+                Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()), vm, nic);
+                _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), network.getId(), allocatedIps.first(), allocatedIps.second()));
+                persistedNetworks.add(network);
+            }
+        } catch (InsufficientAddressCapacityException | RuntimeException ex) {
+            // multi_network is only set after this loop, so there is no flag to reset
+            rollbackNetworkAssociations(nic, persistedNetworks, true);
+            throw ex;
         }
         if (!nic.getMultiNetwork()) {
             nic.setMultiNetwork(true);
