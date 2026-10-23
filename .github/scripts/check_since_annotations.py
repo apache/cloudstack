@@ -43,7 +43,7 @@ ANNOTATION_START_RE = re.compile(r"@(Param|Parameter|APICommand)\s*\(")
 SINCE_RE = re.compile(r'since\s*=\s*"(4\.\d[\w.]*)"')
 HAS_SINCE_RE = re.compile(r"\bsince\s*=")
 VERSION_RE = re.compile(r"<artifactId>cloudstack</artifactId>\s*<version>([^<]+)</version>")
-FIELD_DECL_RE = re.compile(r"^\s*(?:private|protected|public)\b[^=;(){}]*?(\w+)\s*;\s*$")
+FIELD_DECL_RE = re.compile(r"^\s*(?:private|protected|public)\b[^=;(){}]*?(\w+)\s*(?:=[^;]*)?;\s*$")
 CLASS_DECL_RE = re.compile(r"^\s*(?:public\s+)?(?:final\s+)?class\s+(\w+)")
 
 
@@ -159,7 +159,7 @@ def find_missing_since_violations(files: dict) -> list:
                     continue  # declaration wasn't (re)added alongside the annotation -> a modification, not new
 
                 name = decl_match.group(1)
-                if re.search(rf"\b{re.escape(name)}\b\s*[;{{]", removed_text):
+                if re.search(rf"\b{re.escape(name)}\b\s*[;{{=]", removed_text):
                     continue  # same name also removed elsewhere in this file's diff -> likely a move/reformat
 
                 violations.append(("missing_since", path, annotation_text.strip(), kind))
