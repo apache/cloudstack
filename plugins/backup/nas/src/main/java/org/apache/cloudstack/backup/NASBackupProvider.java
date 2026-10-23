@@ -789,19 +789,54 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (hostHasRbdCli(vmHost)) {
             return vmHost;
         }
-        if (!VirtualMachine.State.Stopped.equals(vm.getState()) || vmHost.getClusterId() == null) {
+        if (!VirtualMachine.State.Stopped.equals(vm.getState())) {
             return null;
         }
-        for (final Host candidate : hostDao.findHypervisorHostInCluster(vmHost.getClusterId())) {
-            if (Status.Up.equals(candidate.getStatus())
+        return findOtherHostWithRbdCli(vmHost);
+    }
+
+    /** Another Up, enabled KVM host of {@code host}'s cluster that has the {@code rbd} command, or {@code null}. */
+    private Host findOtherHostWithRbdCli(Host host) {
+        if (host.getClusterId() == null) {
+            return null;
+        }
+        for (final Host candidate : hostDao.findHypervisorHostInCluster(host.getClusterId())) {
+            if (candidate.getId() != host.getId()
+                    && Status.Up.equals(candidate.getStatus())
                     && ResourceState.Enabled.equals(candidate.getResourceState())
                     && Hypervisor.HypervisorType.KVM.equals(candidate.getHypervisorType())
                     && hostHasRbdCli(candidate)) {
-                logger.debug("Host {} has no rbd command, taking the backup of stopped VM {} on host {}", vmHost, vm, candidate);
+                logger.debug("Host {} has no rbd command, using host {} instead", host, candidate);
                 return candidate;
             }
         }
         return null;
+    }
+
+    /**
+     * The host a restore of an RBD chain has to run on: it recreates the image and replays the
+     * chain with the {@code rbd} command. {@code preferred} is used when it has the command;
+     * otherwise, if {@code canMove}, another host of its cluster that has it. A restore that
+     * attaches the volume to a running Instance has to stay on that Instance's host, so it cannot
+     * move.
+     *
+     * @throws CloudRuntimeException when no usable host has the {@code rbd} command, since an RBD
+     *         chain cannot be restored without it
+     */
+    protected Host findHostForRbdRestore(Host preferred, boolean canMove) {
+        if (hostHasRbdCli(preferred)) {
+            return preferred;
+        }
+        Host other = canMove ? findOtherHostWithRbdCli(preferred) : null;
+        if (other == null) {
+            throw new CloudRuntimeException(String.format("Restoring a backup of RBD volumes needs the rbd command (ceph-common) on the host, "
+                    + "and host %s does not have it%s.", preferred.getName(), canMove ? ", nor does any other host of its cluster" : ""));
+        }
+        return other;
+    }
+
+    private boolean isRbdChain(Backup backup) {
+        return NASBackupChainKeys.FORMAT_RBD_DIFF.equals(chainFormatOf(backup));
     }
 
     @Override
@@ -990,7 +1025,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(backup);
 
-        final Host host = getVMHypervisorHost(vm);
+        Host host = getVMHypervisorHost(vm);
+        if (isRbdChain(backup)) {
+            host = findHostForRbdRestore(host, !VirtualMachine.State.Running.equals(vm.getState()));
+        }
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
@@ -1176,9 +1214,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupFiles(Collections.singletonList(matchingVolume.getPath()));
         applyBackupFormatToRestoreCommand(restoreCommand, backup);
 
+        Host restoreHost = hostVO;
+        if (isRbdChain(backup)) {
+            restoreHost = findHostForRbdRestore(hostVO, !VirtualMachine.State.Running.equals(vmNameAndState.second()));
+        }
+
         BackupAnswer answer;
         try {
-            answer = (BackupAnswer) agentManager.send(hostVO.getId(), restoreCommand);
+            answer = (BackupAnswer) agentManager.send(restoreHost.getId(), restoreCommand);
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {

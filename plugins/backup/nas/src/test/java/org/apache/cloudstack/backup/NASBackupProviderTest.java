@@ -349,6 +349,45 @@ public class NASBackupProviderTest {
         Mockito.verify(hostDao, Mockito.never()).findHypervisorHostInCluster(Mockito.anyLong());
     }
 
+    @Test
+    public void findHostForRbdRestoreKeepsTheHostWhenItHasTheRbdCommand() {
+        HostVO host = hostWithRbdCli(2L, true, 10L);
+
+        Assert.assertSame(host, nasBackupProvider.findHostForRbdRestore(host, true));
+    }
+
+    @Test
+    public void findHostForRbdRestoreMovesToAHostThatHasTheRbdCommand() {
+        HostVO host = hostWithRbdCli(2L, false, 10L);
+        HostVO withCli = hostWithRbdCli(3L, true, 10L);
+        Mockito.when(hostDao.findHypervisorHostInCluster(10L)).thenReturn(List.of(host, withCli));
+
+        Assert.assertSame(withCli, nasBackupProvider.findHostForRbdRestore(host, true));
+    }
+
+    @Test
+    public void findHostForRbdRestoreStaysOnTheHostWhenTheVolumeIsAttachedThere() {
+        HostVO host = hostWithRbdCli(2L, false, 10L);
+        Mockito.when(host.getName()).thenReturn("kvm1");
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class,
+                () -> nasBackupProvider.findHostForRbdRestore(host, false));
+        Assert.assertTrue(e.getMessage().contains("ceph-common"));
+        Mockito.verify(hostDao, Mockito.never()).findHypervisorHostInCluster(Mockito.anyLong());
+    }
+
+    @Test
+    public void findHostForRbdRestoreFailsWhenNoHostOfTheClusterHasTheRbdCommand() {
+        HostVO host = hostWithRbdCli(2L, false, 10L);
+        Mockito.when(host.getName()).thenReturn("kvm1");
+        HostVO other = hostWithRbdCli(3L, false, 10L);
+        Mockito.when(hostDao.findHypervisorHostInCluster(10L)).thenReturn(List.of(host, other));
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class,
+                () -> nasBackupProvider.findHostForRbdRestore(host, true));
+        Assert.assertTrue(e.getMessage().contains("kvm1"));
+    }
+
     /**
      * No host with the rbd command: the backup must not fail on the missing command, it is taken
      * as a plain full and sent to the host the VM runs on.
