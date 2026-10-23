@@ -1670,6 +1670,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             throw new CloudRuntimeException(errMessage);
         }
 
+        final String cancelledBy = reason + " via " + managementServerName(getMsid());
+        if (CallContext.current() != null) {
+            CallContext.current().setEventDetails("Job id: " + job.getUuid() + ". " + cancelledBy);
+        }
+
         boolean onlyQueuedWork = false;
         if (job.getExecutingMsid() != null || isActiveJob(jobId)) {
             try {
@@ -1715,10 +1720,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         }
 
-        final String cancelledBy = reason + " via " + managementServerName(getMsid());
-        if (CallContext.current() != null) {
-            CallContext.current().setEventDetails("Job id: " + job.getUuid() + ". " + cancelledBy);
-        }
         logger.info("Cancellation of job-{} requested: {}", jobId, cancelledBy);
         requestJobCancel(job, cancelledBy);
         // the flag stops a queued work job from starting; one taken by a server before the flag is work under way that cannot be stopped
