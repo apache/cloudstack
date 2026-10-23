@@ -1552,10 +1552,6 @@ public class VolumeServiceImpl implements VolumeService {
 
                 if (templateOnPrimary == null) {
                     templateOnPrimary = createManagedTemplateVolume(srcTemplateInfo, destPrimaryDataStore);
-
-                    if (templateOnPrimary == null) {
-                        throw new CloudRuntimeException(String.format("Failed to create template %s on primary storage: %s", srcTemplateInfo, destPrimaryDataStore));
-                    }
                 }
 
                 // Copy the template to the template volume.
