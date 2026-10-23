@@ -869,7 +869,7 @@ for dev in data.get("return", []) or []:
   # Encrypt backup files if requested
   if ! encrypt_backup "$dest"; then
     cleanup
-    return 1
+    exit 1
   fi
 
   sync
@@ -878,7 +878,7 @@ for dev in data.get("return", []) or []:
   if [[ "$VERIFY" == "true" ]]; then
     if ! verify_backup "$dest"; then
       cleanup
-      return 1
+      exit 1
     fi
   fi
 
@@ -958,7 +958,7 @@ backup_stopped_vm() {
   # Encrypt backup files if requested
   if ! encrypt_backup "$dest"; then
     cleanup
-    return 1
+    exit 1
   fi
 
   sync
@@ -967,7 +967,7 @@ backup_stopped_vm() {
   if [[ "$VERIFY" == "true" ]]; then
     if ! verify_backup "$dest"; then
       cleanup
-      return 1
+      exit 1
     fi
   fi
 
