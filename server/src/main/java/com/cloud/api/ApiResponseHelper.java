@@ -2859,7 +2859,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
             response.setNetworkSpannedZones(networkSpannedZones);
         }
-        response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
         response.setCreated(network.getCreated());
         response.setSupportsVmAutoScaling(networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId()).isSupportsVmAutoScaling());

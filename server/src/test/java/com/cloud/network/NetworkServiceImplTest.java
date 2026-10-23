@@ -454,13 +454,16 @@ public class NetworkServiceImplTest {
         Mockito.when(_networkMgr.finalizeServicesAndProvidersForNetwork(ArgumentMatchers.any(NetworkOffering.class), anyLong())).thenReturn(networkProvidersMap);
         Mockito.when(configMgr.isOfferingForVpc(offering)).thenReturn(false);
         Mockito.when(offering.isInternalLb()).thenReturn(false);
+        Mockito.when(_networkMgr.createGuestNetwork(1L, "testNetwork", "Test Network", null, null, null, false, null, accountMock,
+                null, phyNet, 1L, null, null, null, null, null, true, null, null, null, null, null, null, null,
+                null, new Pair<>(1500, privateMtu), null)).thenReturn(network);
 
         service.createGuestNetwork(createNetworkCmd);
         Mockito.verify(_networkMgr, times(1)).createGuestNetwork(1L, "testNetwork", "Test Network", null,
                 null, null, false, null, accountMock, null, phyNet,
                 1L, null, null, null, null, null,
-                true, null, null, null, null, null,
-                null, null, null, null, new Pair<>(1500, privateMtu), null, true);
+                true, null, null, null,
+                null, null, null, null, null, new Pair<>(1500, privateMtu), null);
     }
     @Test
     public void testValidateMtuConfigWhenMtusExceedThreshold() {
@@ -504,12 +507,15 @@ public class NetworkServiceImplTest {
         Mockito.when(dc.getId()).thenReturn(1L);
         Mockito.when(configMgr.isOfferingForVpc(offering)).thenReturn(true);
         Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpc);
+        Mockito.when(vpcMgr.createVpcGuestNetwork(1L, "testNetwork", "Test Network", null, null, null, null, accountMock,
+                null, phyNet, 1L, null, null, 1L, null, accountMock, true, null, null, null, null,  null, null, new Pair<>(0, 1000),
+                null)).thenReturn(network);
 
         service.createGuestNetwork(createNetworkCmd);
         Mockito.verify(vpcMgr, times(1)).createVpcGuestNetwork(1L, "testNetwork", "Test Network", null,
                 null, null, null, accountMock, null, phyNet,
                 1L, null, null, 1L, null, accountMock,
-                true, null, null, null, null, null, null, null, new Pair<>(0, 1000), null);
+                true, null, null, null, null, null, null, new Pair<>(0, 1000), null);
 
     }
 
@@ -614,12 +620,18 @@ public class NetworkServiceImplTest {
     }
 
     @Test
-    public void testCreateNetworkDnsVpcFailure() {
+    public void testCreateNetworkDnsVpcFailure() throws InsufficientCapacityException, ResourceAllocationException {
         registerCallContext();
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         Mockito.when(cmd.getIp4Dns1()).thenReturn(ip4Dns[0]);
         Mockito.when(cmd.getCidrSize()).thenReturn(null);
+        Mockito.when(_networkMgr.createGuestNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any())).thenReturn(network);
         try {
             service.createGuestNetwork(cmd);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
@@ -765,7 +777,7 @@ public class NetworkServiceImplTest {
     }
 
     @Test
-    public void testCreateIpv4RoutedNetwork() {
+    public void testCreateIpv4RoutedNetwork() throws InsufficientCapacityException, ResourceAllocationException {
         registerCallContext();
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
         Mockito.when(cmd.getCidrSize()).thenReturn(24);
@@ -780,6 +792,13 @@ public class NetworkServiceImplTest {
         when(cmd.getZoneId()).thenReturn(zoneId);
         when(_dcDao.findById(zoneId)).thenReturn(zone);
         when(zone.getId()).thenReturn(zoneId);
+
+        Mockito.when(_networkMgr.createGuestNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any())).thenReturn(network);
 
         try {
             service.createGuestNetwork(cmd);
@@ -822,7 +841,7 @@ public class NetworkServiceImplTest {
 
         Mockito.verify(vpcMgr, times(1)).createVpcGuestNetwork(networkOfferingId, "Vpc 1 -- testNetwork", "Test Network", null, null,
                 null, null, accountMock, null, phyNet, zoneId, null, null, vpcId, null, accountMock, true,
-                null, null, null, null, null, null, null, new Pair<>(0, privateMtu), null);
+                null, null, null, null, null, null, null, null);
     }
 
     public void testCreateIpv4RoutedNetworkWithBgpPeersFailure1() {
