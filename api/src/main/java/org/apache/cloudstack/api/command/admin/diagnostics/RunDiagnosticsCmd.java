@@ -69,7 +69,10 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
             description = "The IP/Domain address to test connection to")
     private String address;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true,
+    @Parameter(name = ApiConstants.TYPE,
+            type = CommandType.STRING,
+            required = true,
+            allowedValues = {"ping", "traceroute", "arping"},
             description = "The System VM diagnostics type valid options are: ping, traceroute, arping")
     private String type;
 

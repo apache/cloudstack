@@ -41,6 +41,11 @@ public class CPU {
             return type;
         }
 
+        @Override
+        public String toString() {
+            return type;
+        }
+
         public int getBits() {
             return bits;
         }

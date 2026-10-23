@@ -27,8 +27,9 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
-import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.template.TemplateApiType;
 import com.cloud.user.Account;
+import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "updateTemplate", description = "Updates attributes of a Template.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -39,7 +40,9 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE,
+            type = CommandType.STRING,
+            allowedValueType = TemplateApiType.class,
             description = "The type of the Template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).")
     private String templateType;
 
