@@ -20,6 +20,7 @@ import org.apache.commons.lang.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class Storage {
     public static enum ImageFormat {
@@ -223,6 +224,47 @@ public class Storage {
         }
         return nonSharedStoragePoolTypes;
 
+    }
+
+    // pool types whose volumes are files, on KVM
+    public static final Set<StoragePoolType> KVM_FILE_BASED_POOL_TYPES = Set.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint,
+            StoragePoolType.Filesystem);
+
+    /**
+     * True if a volume is migrated between two pools of the same type.
+     */
+    public static boolean arePoolsSameType(StoragePoolType srcType, StoragePoolType destType) {
+        return srcType != null && srcType.equals(destType);
+    }
+
+    /**
+     * True if at least one of the pools is file based (NFS, SharedMountPoint or local) on KVM, whether it is the
+     * source or the destination, and whether the other one is file based as well.
+     */
+    public static boolean isAnyPoolFileBased(StoragePoolType srcType, StoragePoolType destType) {
+        return KVM_FILE_BASED_POOL_TYPES.contains(srcType) || KVM_FILE_BASED_POOL_TYPES.contains(destType);
+    }
+
+    /**
+     * True if KVM copies a volume in place with a libvirt block copy: between two RBD pools, or between an RBD pool and
+     * a file based pool (NFS, SharedMountPoint or local). Both pools are then reachable from the host the Instance runs
+     * on, so the volume of a running Instance can be copied without moving the Instance.
+     */
+    public static boolean isCopiedInPlaceOnKvm(StoragePoolType srcType, StoragePoolType destType) {
+        if (!StoragePoolType.RBD.equals(srcType) && !StoragePoolType.RBD.equals(destType)) {
+            return false;
+        }
+        return arePoolsSameType(srcType, destType) || isAnyPoolFileBased(srcType, destType);
+    }
+
+    /**
+     * True if a volume is migrated between two file based pools (NFS, SharedMountPoint or local) on KVM. Such a volume
+     * is copied with qemu-img, which reads and writes an encrypted volume with its passphrase, so it is not limited to
+     * the pools a libvirt block copy can reach. It is the way a volume is moved when it is not in use by a running
+     * Instance.
+     */
+    public static boolean areBothPoolsFileBased(StoragePoolType srcType, StoragePoolType destType) {
+        return KVM_FILE_BASED_POOL_TYPES.contains(srcType) && KVM_FILE_BASED_POOL_TYPES.contains(destType);
     }
 
     public static enum StorageResourceType {
