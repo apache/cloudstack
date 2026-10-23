@@ -669,8 +669,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 return new Pair<>(false, backupVO);
             }
             backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
-            return new Pair<>(false, null);
+            backupDao.update(backupVO.getId(), backupVO);
+            return new Pair<>(false, backupVO);
         }
     }
 
