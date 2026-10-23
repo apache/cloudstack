@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
@@ -25,11 +26,8 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class KVMPhysicalDisk {
@@ -51,7 +49,7 @@ public class KVMPhysicalDisk {
         String dataPool = (details == null) ? null : details.get(RBD_DEFAULT_DATA_POOL);
 
         String rbdOpts = "rbd:" + image;
-        rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
+        rbdOpts += ":mon_host=" + RbdUtils.composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
             rbdOpts += ":auth_client_required=none";
@@ -69,25 +67,6 @@ public class KVMPhysicalDisk {
         rbdOpts += ":client_mount_timeout=30";
 
         return rbdOpts;
-    }
-
-    private static String composeOptionForMonHosts(String monHost, int monPort) {
-        List<String> hosts = new ArrayList<>();
-        for (String host : monHost.split(",")) {
-            if (monPort > 0) {
-                hosts.add(replaceHostAddress(host) + "\\:" + monPort);
-            } else {
-                hosts.add(replaceHostAddress(host));
-            }
-        }
-        return StringUtils.join(hosts, "\\;");
-    }
-
-    private static String replaceHostAddress(String hostIp) {
-        if (hostIp != null && hostIp.startsWith("[") && hostIp.endsWith("]")) {
-            return hostIp.replaceAll("\\:", "\\\\:");
-        }
-        return hostIp;
     }
 
     public static long getVirtualSizeFromFile(String path) {

@@ -78,6 +78,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.TemplateDownloaderUtil;
@@ -1435,7 +1436,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
 
                     Rados r = new Rados(srcPool.getAuthUserName());
-                    r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
                     r.confSet("key", srcPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
                     if (dataPool != null) {
@@ -1508,14 +1509,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
 
                     Rados rSrc = new Rados(srcPool.getAuthUserName());
-                    rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    rSrc.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
                     rSrc.confSet("key", srcPool.getAuthSecret());
                     rSrc.confSet("client_mount_timeout", "30");
                     rSrc.connect();
                     logger.debug("Successfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
                     Rados rDest = new Rados(destPool.getAuthUserName());
-                    rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+                    rDest.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
                     rDest.confSet("key", destPool.getAuthSecret());
                     rDest.confSet("client_mount_timeout", "30");
                     if (dataPool != null) {
@@ -1580,7 +1581,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         RbdImage templateImage = null;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
             radosConnection.confSet("key", destPool.getAuthSecret());
             radosConnection.confSet("client_mount_timeout", "30");
             radosConnection.connect();
@@ -1641,7 +1642,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         IoCTX ioContext = null;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
             radosConnection.confSet("key", destPool.getAuthSecret());
             radosConnection.confSet("client_mount_timeout", "30");
             radosConnection.connect();
@@ -1820,7 +1821,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 /* We have to stat the RBD image to see how big it became afterwards */
                 Rados r = new Rados(destPool.getAuthUserName());
-                r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+                r.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
                 r.confSet("key", destPool.getAuthSecret());
                 r.confSet("client_mount_timeout", "30");
                 r.connect();
