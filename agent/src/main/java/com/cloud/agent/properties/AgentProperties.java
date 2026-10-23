@@ -632,11 +632,13 @@ public class AgentProperties{
      *       where a stale NFSv3 mount can prevent a graceful shutdown from completing.</li>
      *   <li>{@code graceful-reboot}: {@code systemctl reboot} instead of sysrq; allows VMs
      *       to stop cleanly. Use only if a stale storage mount cannot block shutdown.</li>
-     *   <li>{@code restart-agent}: stop every VM on the host, then restart cloudstack-agent; the host stays up.</li>
+     *   <li>{@code restart-agent}: stop every VM on the host, then restart cloudstack-agent; the host stays up. If it
+     *       already fired within {@link #KVM_HEARTBEAT_FENCE_RESTART_AGENT_COOLDOWN}, hard-reboot instead.</li>
      *   <li>{@code log-only}: stop every VM on the host, then only write a message to the host's syslog (no
      *       reboot, no agent restart, no management server alert); the operator must investigate.</li>
      * </ul>
-     * Any other value falls back to {@code hard-reboot}.<br>
+     * Any other value falls back to {@code hard-reboot}. {@code restart-agent} and {@code graceful-reboot} need
+     * systemctl; if it is missing or the systemctl call fails, the fence hard-reboots.<br>
      * {@code restart-agent} and {@code log-only} stop the VMs because, once the heartbeat is stale, the management
      * server may declare the host Down and HA may start the same VMs on another host, where both copies would write
      * to the same disks. If any VM cannot be stopped the fence falls back to {@code hard-reboot}. See
@@ -695,6 +697,20 @@ public class AgentProperties{
      */
     public static final Property<Integer> KVM_HEARTBEAT_FENCE_STOP_VMS_TIMEOUT
         = new Property<>("kvm.heartbeat.fence.stop.vms.timeout", 30);
+
+    /**
+     * Loop guard for the {@code restart-agent} fence action, in seconds. While storage keeps failing, the restarted
+     * agent runs the heartbeat again, it fails again and {@code restart-agent} would restart the agent again, over and
+     * over. Each {@code restart-agent} fence records its time under /run (kept across agent restarts, cleared by a
+     * reboot); if {@code restart-agent} already fired less than this many seconds ago, the fence hard-reboots the host
+     * instead. 0 turns the guard off. A value that is not a whole number of seconds falls back to the default. No
+     * effect on {@code hard-reboot}, {@code graceful-reboot} and {@code log-only}.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>600</code>
+     */
+    public static final Property<Integer> KVM_HEARTBEAT_FENCE_RESTART_AGENT_COOLDOWN
+        = new Property<>("kvm.heartbeat.fence.restart.agent.cooldown", 600);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>

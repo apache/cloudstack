@@ -40,14 +40,32 @@
 # host. Each virsh call is also bounded by coreutils timeout, when present, to at most 10 s
 # (or the budget if lower) so one stuck domain cannot use up the whole budget.
 #
+# restart-agent and graceful-reboot need systemctl. If it is missing, or the systemctl call
+# fails, the fence logs an ERROR and hard-reboots instead.
+#
+# restart-agent could loop while storage keeps failing: the restarted agent runs the
+# heartbeat again, it fails again and the agent is restarted again. So each restart-agent
+# fence records its time in a marker file under /run (kept across agent restarts, cleared
+# by a reboot). If restart-agent already fired less than
+# kvm.heartbeat.fence.restart.agent.cooldown seconds ago, the fence escalates to hard-reboot.
+#
 # Properties read from agent.properties:
-#   kvm.heartbeat.fence.action              hard-reboot (default), graceful-reboot,
-#                                           restart-agent or log-only
-#   kvm.heartbeat.fence.keep.vms.running    false (default); true stops nothing
-#   kvm.heartbeat.fence.include.system.vms  true (default); false stops only user VMs
-#   kvm.heartbeat.fence.stop.vms.timeout    30 (default); seconds the VM stop phase may take
-#                                           before the deadman hard-reboots the host. A value
-#                                           that is not a positive integer means 30.
+#   kvm.heartbeat.fence.action                  hard-reboot (default), graceful-reboot,
+#                                               restart-agent or log-only
+#   kvm.heartbeat.fence.keep.vms.running        false (default); true stops nothing
+#   kvm.heartbeat.fence.include.system.vms      true (default); false stops only user VMs
+#   kvm.heartbeat.fence.stop.vms.timeout        30 (default); seconds the VM stop phase may
+#                                               take before the deadman hard-reboots the host.
+#                                               A value that is not a positive integer means 30.
+#   kvm.heartbeat.fence.restart.agent.cooldown  600 (default); seconds after a restart-agent
+#                                               fence during which another fence hard-reboots
+#                                               instead. 0 turns the guard off. A value that is
+#                                               not a whole number of seconds means 600.
+#
+# Keys are matched exactly, the way java.util.Properties reads agent.properties: leading
+# whitespace is ignored, the key ends at the first '=', ':' or whitespace, whitespace around
+# the separator and at the end of the value is dropped, lines starting with '#' or '!' are
+# comments, and the last definition of a key wins.
 #
 # Usage from caller:
 #   source "$(dirname "$0")/kvmha-fence.sh"
@@ -58,15 +76,43 @@ FENCE_LOGGER="${FENCE_LOGGER:-/usr/bin/logger}"
 FENCE_SYSRQ_TRIGGER="${FENCE_SYSRQ_TRIGGER:-/proc/sysrq-trigger}"
 # Where the deadman keeps its arm file; /run is a local tmpfs, so hung storage cannot block it.
 FENCE_DEADMAN_DIR="${FENCE_DEADMAN_DIR:-/run/cloudstack-agent/kvmha-fence}"
+# Time of the last restart-agent fence. Under /run so it survives an agent restart but not a reboot.
+FENCE_RESTART_MARKER="${FENCE_RESTART_MARKER:-${FENCE_DEADMAN_DIR}/restart-agent.last}"
+FENCE_SYSTEMCTL="${FENCE_SYSTEMCTL:-systemctl}"
 FENCE_STOP_VMS_TIMEOUT_DEFAULT=30
+FENCE_RESTART_COOLDOWN_DEFAULT=600
 FENCE_VIRSH_TIMEOUT_MAX=10
 # Per-call virsh timeout in seconds; empty means unbounded. Set by fence_action.
 FENCE_VIRSH_TIMEOUT=""
 FENCE_DEADMAN_ARM=""
 
+# Prints the value of property $1 from agent.properties, or nothing if it is not set. The key is
+# compared as a plain string (so the dots in it are not wildcards); see the header for the rules.
 read_agent_property() {
   [ -r "$AGENT_PROPS" ] || return 0
-  grep "^$1=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]'
+  awk -v key="$1" '
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      sub(/^[ \t\f]+/, "", line)
+      if (line == "" || line ~ /^[#!]/) next
+      if (match(line, /[=: \t\f]/)) {
+        k = substr(line, 1, RSTART - 1)
+        v = substr(line, RSTART)
+      } else {
+        k = line
+        v = ""
+      }
+      if (k != key) next
+      sub(/^[ \t\f]*/, "", v)
+      sub(/^[=:]/, "", v)
+      sub(/^[ \t\f]+/, "", v)
+      sub(/[ \t\f]+$/, "", v)
+      value = v
+      found = 1
+    }
+    END { if (found) print value }
+  ' "$AGENT_PROPS"
 }
 
 # Prints the VM stop budget in seconds from kvm.heartbeat.fence.stop.vms.timeout. Unset gives
@@ -83,6 +129,47 @@ stop_vms_budget() {
     "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING kvm.heartbeat.fence.stop.vms.timeout='${val}' is not a positive number of seconds; using the default of ${FENCE_STOP_VMS_TIMEOUT_DEFAULT} s."
   fi
   echo "$FENCE_STOP_VMS_TIMEOUT_DEFAULT"
+}
+
+# Prints the restart-agent loop guard in seconds from kvm.heartbeat.fence.restart.agent.cooldown.
+# Unset gives the default; 0 turns the guard off; anything else that is not a whole number of
+# seconds (up to 6 digits) gives the default with a warning in syslog.
+restart_agent_cooldown() {
+  local source_script="$1" val
+  val=$(read_agent_property "kvm.heartbeat.fence.restart.agent.cooldown")
+  if [[ "$val" =~ ^[0-9]{1,6}$ ]]; then
+    echo $((10#$val))
+    return 0
+  fi
+  if [ -n "$val" ]; then
+    "$FENCE_LOGGER" -t heartbeat "${source_script}: WARNING kvm.heartbeat.fence.restart.agent.cooldown='${val}' is not a whole number of seconds; using the default of ${FENCE_RESTART_COOLDOWN_DEFAULT} s."
+  fi
+  echo "$FENCE_RESTART_COOLDOWN_DEFAULT"
+}
+
+# Prints how many seconds ago the last restart-agent fence ran, or nothing if there is no valid
+# record of one since the host booted.
+last_agent_restart_age() {
+  local last
+  last=$(cat "$FENCE_RESTART_MARKER" 2> /dev/null)
+  [[ "$last" =~ ^[0-9]{1,12}$ ]] || return 0
+  echo $(( $(date +%s) - 10#$last ))
+}
+
+# Records that a restart-agent fence is about to restart the agent. Fails if it cannot be written.
+record_agent_restart() {
+  mkdir -p "$(dirname "$FENCE_RESTART_MARKER")" 2> /dev/null || return 1
+  date +%s > "$FENCE_RESTART_MARKER" 2> /dev/null
+}
+
+# Hard-reboots the host through sysrq, exactly as the heartbeat scripts always did. Never returns.
+fence_hard_reboot() {
+  local source_script="$1"
+  "$FENCE_LOGGER" -t heartbeat "${source_script} will reboot system because it was unable to write the heartbeat to the storage."
+  sync &
+  sleep 5
+  echo b > "$FENCE_SYSRQ_TRIGGER"
+  exit $?
 }
 
 # Runs virsh against the system libvirt, bounded by FENCE_VIRSH_TIMEOUT seconds when coreutils
@@ -196,9 +283,27 @@ stop_vms() {
 fence_action() {
   local source_script="${1:-kvmha}"
   local FENCE_ACTION="hard-reboot"
-  local val
+  local val restart_cooldown=0 age
   val=$(read_agent_property "kvm.heartbeat.fence.action")
   [ -n "$val" ] && FENCE_ACTION="$val"
+
+  case "$FENCE_ACTION" in
+    restart-agent|graceful-reboot)
+      if ! command -v "$FENCE_SYSTEMCTL" > /dev/null 2>&1; then
+        "$FENCE_LOGGER" -t heartbeat "${source_script}: ERROR fence action '${FENCE_ACTION}' needs systemctl, which is not available on this host; falling back to hard-reboot."
+        FENCE_ACTION="hard-reboot"
+      fi
+      ;;
+  esac
+
+  if [ "$FENCE_ACTION" = "restart-agent" ]; then
+    restart_cooldown=$(restart_agent_cooldown "$source_script")
+    age=$(last_agent_restart_age)
+    if [ "$restart_cooldown" -gt 0 ] && [ -n "$age" ] && [ "$age" -lt "$restart_cooldown" ]; then
+      "$FENCE_LOGGER" -t heartbeat "${source_script}: fence action 'restart-agent' already restarted cloudstack-agent ${age} s ago, within kvm.heartbeat.fence.restart.agent.cooldown (${restart_cooldown} s), and the heartbeat is still failing; escalating to hard-reboot instead of restarting the agent again."
+      FENCE_ACTION="hard-reboot"
+    fi
+  fi
 
   case "$FENCE_ACTION" in
     log-only|restart-agent)
@@ -238,26 +343,33 @@ fence_action() {
       exit 0
       ;;
     restart-agent)
+      # Recorded before the restart: stopping the agent also kills this script.
+      if [ "$restart_cooldown" -gt 0 ] && ! record_agent_restart; then
+        "$FENCE_LOGGER" -t heartbeat "${source_script}: ERROR could not record this restart in ${FENCE_RESTART_MARKER}, so a restart loop could not be detected; falling back to hard-reboot."
+        fence_hard_reboot "$source_script"
+      fi
       "$FENCE_LOGGER" -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'restart-agent', restarting cloudstack-agent."
       sync &
       sleep 2
-      systemctl restart cloudstack-agent
-      exit $?
+      if "$FENCE_SYSTEMCTL" restart cloudstack-agent; then
+        exit 0
+      fi
+      "$FENCE_LOGGER" -t heartbeat "${source_script}: ERROR 'systemctl restart cloudstack-agent' failed; falling back to hard-reboot."
+      fence_hard_reboot "$source_script"
       ;;
     graceful-reboot)
       "$FENCE_LOGGER" -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'graceful-reboot', rebooting via systemctl (allows running VMs to stop cleanly)."
       sync &
       sleep 5
-      systemctl reboot
-      exit $?
+      if "$FENCE_SYSTEMCTL" reboot; then
+        exit 0
+      fi
+      "$FENCE_LOGGER" -t heartbeat "${source_script}: ERROR 'systemctl reboot' failed; falling back to hard-reboot."
+      fence_hard_reboot "$source_script"
       ;;
     hard-reboot|*)
       # Default, and the fallback for any unrecognised value: identical to the pre-existing behaviour.
-      "$FENCE_LOGGER" -t heartbeat "${source_script} will reboot system because it was unable to write the heartbeat to the storage."
-      sync &
-      sleep 5
-      echo b > "$FENCE_SYSRQ_TRIGGER"
-      exit $?
+      fence_hard_reboot "$source_script"
       ;;
   esac
 }

@@ -22,8 +22,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +45,7 @@ import org.junit.Test;
 public class KvmHaFenceScriptTest {
 
     private static final File SCRIPT = new File("../scripts/vm/hypervisor/kvm/kvmha-fence.sh");
+    private static final File SCRIPT_DIR = SCRIPT.getParentFile();
 
     private Path dir;
     private Path running;
@@ -51,6 +55,8 @@ public class KvmHaFenceScriptTest {
     private Path props;
     private Path deadmanDir;
     private Path hangPids;
+    private Path marker;
+    private final Map<String, String> extraEnv = new HashMap<>();
 
     @Before
     public void setUp() throws IOException {
@@ -64,6 +70,7 @@ public class KvmHaFenceScriptTest {
         props = dir.resolve("agent.properties");
         deadmanDir = dir.resolve("deadman");
         hangPids = dir.resolve("hang-pids");
+        marker = deadmanDir.resolve("restart-agent.last");
         Files.createFile(calls);
         Files.createFile(syslog);
         stub("virsh", "echo \"virsh $*\" >> '" + calls + "'\n"
@@ -113,10 +120,15 @@ public class KvmHaFenceScriptTest {
     }
 
     private Process start(final String properties, final String... runningVms) throws IOException {
+        return start(Arrays.asList("/bin/bash", "-c", "source \"$1\"; fence_action test.sh", "fence", SCRIPT.getAbsolutePath()),
+                properties, runningVms);
+    }
+
+    private Process start(final List<String> command, final String properties, final String... runningVms) throws IOException {
         Files.write(props, properties.getBytes(StandardCharsets.UTF_8));
         Files.write(running, (String.join("\n", runningVms) + "\n").getBytes(StandardCharsets.UTF_8));
-        final ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "source \"$1\"; fence_action test.sh", "fence",
-                SCRIPT.getAbsolutePath());
+        final ProcessBuilder pb = new ProcessBuilder(command);
+        pb.environment().putAll(extraEnv);
         pb.environment().put("PATH", dir + File.pathSeparator + System.getenv("PATH"));
         pb.environment().put("AGENT_PROPS", props.toString());
         pb.environment().put("FENCE_LOGGER", dir.resolve("logger").toString());
@@ -125,6 +137,26 @@ public class KvmHaFenceScriptTest {
         pb.redirectErrorStream(true);
         pb.redirectOutput(dir.resolve("out").toFile());
         return pb.start();
+    }
+
+    /** Runs a copy of the heartbeat script {@code name} with -c from a directory where kvmha-fence.sh is {@code helper}. */
+    private int heartbeatCleanup(final String name, final String helper, final String... args) throws Exception {
+        final Path callerDir = Files.createDirectories(dir.resolve("caller"));
+        final Path caller = callerDir.resolve(name);
+        Files.copy(new File(SCRIPT_DIR, name).toPath(), caller);
+        if (helper != null) {
+            Files.write(callerDir.resolve("kvmha-fence.sh"), helper.getBytes(StandardCharsets.UTF_8));
+        }
+        final List<String> command = new ArrayList<>(Arrays.asList("/bin/bash", caller.toString()));
+        command.addAll(Arrays.asList(args));
+        final Process process = start(command, "", "i-2-10-VM");
+        Assert.assertTrue("heartbeat script did not finish", process.waitFor(60, TimeUnit.SECONDS));
+        return process.exitValue();
+    }
+
+    private void writeMarker(final long secondsAgo) throws IOException {
+        Files.createDirectories(deadmanDir);
+        Files.write(marker, (System.currentTimeMillis() / 1000 - secondsAgo + "\n").getBytes(StandardCharsets.UTF_8));
     }
 
     /** Pids of every deadman the script started, as each one logs its own pid when it starts. */
@@ -313,5 +345,142 @@ public class KvmHaFenceScriptTest {
         final String log = read(syslog);
         Assert.assertTrue(log.contains("with a budget of 30 s"));
         Assert.assertFalse(log.contains("is not a positive number"));
+    }
+
+    @Test
+    public void gracefulRebootCallsSystemctlRebootAndLeavesStoppingVmsToTheShutdown() throws Exception {
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=graceful-reboot\n", "i-2-10-VM", "r-4-VM"));
+        final String log = read(calls);
+        Assert.assertTrue(log.contains("systemctl reboot"));
+        // The orderly shutdown stops the VMs; the fence itself neither destroys them nor lists them.
+        Assert.assertFalse(log.contains("virsh"));
+        Assert.assertEquals("i-2-10-VM\nr-4-VM", read(running).trim());
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
+    public void failingSystemctlRebootFallsBackToHardReboot() throws Exception {
+        stub("systemctl", "echo \"systemctl $*\" >> '" + calls + "'\nexit 1\n");
+        fence("kvm.heartbeat.fence.action=graceful-reboot\n", "i-2-10-VM");
+        Assert.assertTrue(read(calls).contains("systemctl reboot"));
+        Assert.assertTrue(read(syslog).contains("ERROR 'systemctl reboot' failed; falling back to hard-reboot"));
+        Assert.assertTrue(rebooted());
+    }
+
+    @Test
+    public void failingAgentRestartFallsBackToHardReboot() throws Exception {
+        stub("systemctl", "echo \"systemctl $*\" >> '" + calls + "'\nexit 1\n");
+        fence("kvm.heartbeat.fence.action=restart-agent\n", "i-2-10-VM");
+        Assert.assertTrue(read(calls).contains("destroy i-2-10-VM"));
+        Assert.assertTrue(read(calls).contains("systemctl restart cloudstack-agent"));
+        Assert.assertTrue(read(syslog).contains("ERROR 'systemctl restart cloudstack-agent' failed; falling back to hard-reboot"));
+        Assert.assertTrue(rebooted());
+    }
+
+    @Test
+    public void missingSystemctlFallsBackToHardReboot() throws Exception {
+        extraEnv.put("FENCE_SYSTEMCTL", "no-such-systemctl");
+        for (final String action : new String[] {"restart-agent", "graceful-reboot"}) {
+            Files.write(sysrq, new byte[0]);
+            Files.write(syslog, new byte[0]);
+            fence("kvm.heartbeat.fence.action=" + action + "\n", "i-2-10-VM");
+            Assert.assertTrue(action + " without systemctl must hard-reboot", rebooted());
+            Assert.assertTrue(read(syslog).contains("ERROR fence action '" + action + "' needs systemctl"));
+        }
+        // The host reboots anyway, so no VM is stopped first.
+        Assert.assertFalse(read(calls).contains("destroy"));
+    }
+
+    @Test
+    public void whitespaceAndColonAroundTheSeparatorAreAccepted() throws Exception {
+        Assert.assertEquals(0, fence("  kvm.heartbeat.fence.action = log-only  \nkvm.heartbeat.fence.keep.vms.running\t=\ttrue\n",
+                "i-2-10-VM"));
+        Assert.assertFalse("keep.vms.running = true must be honoured", read(calls).contains("destroy"));
+        Assert.assertFalse(rebooted());
+
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action: log-only\nkvm.heartbeat.fence.keep.vms.running true\n", "i-2-10-VM"));
+        Assert.assertFalse(read(calls).contains("destroy"));
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
+    public void lastDefinitionWinsAndCommentsAreIgnored() throws Exception {
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=restart-agent\nkvm.heartbeat.fence.action = log-only\n"
+                + "# kvm.heartbeat.fence.action=restart-agent\n! kvm.heartbeat.fence.action=restart-agent\n", "i-2-10-VM"));
+        Assert.assertFalse(read(calls).contains("systemctl"));
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
+    public void dotsInTheKeyAreNotWildcards() throws Exception {
+        fence("kvmXheartbeatXfenceXaction=log-only\nkvm.heartbeat.fence.action.old=log-only\n", "i-2-10-VM");
+        Assert.assertTrue("no exact kvm.heartbeat.fence.action key, so the default hard-reboot applies", rebooted());
+        Assert.assertFalse(read(calls).contains("destroy"));
+    }
+
+    @Test
+    public void restartAgentRecordsWhenItRestartedTheAgent() throws Exception {
+        final long before = System.currentTimeMillis() / 1000;
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=restart-agent\n", "i-2-10-VM"));
+        Assert.assertTrue(read(calls).contains("systemctl restart cloudstack-agent"));
+        final long recorded = Long.parseLong(read(marker).trim());
+        Assert.assertTrue(recorded >= before && recorded <= System.currentTimeMillis() / 1000);
+    }
+
+    @Test
+    public void restartAgentWithinTheCooldownEscalatesToHardReboot() throws Exception {
+        writeMarker(30);
+        fence("kvm.heartbeat.fence.action=restart-agent\n", "i-2-10-VM");
+        Assert.assertTrue("a second restart-agent within the default 600 s must hard-reboot", rebooted());
+        Assert.assertFalse(read(calls).contains("systemctl restart cloudstack-agent"));
+        Assert.assertFalse("the host reboots anyway, so no VM is stopped first", read(calls).contains("destroy"));
+        Assert.assertTrue(read(syslog).contains("within kvm.heartbeat.fence.restart.agent.cooldown (600 s)"));
+        Assert.assertTrue(read(syslog).contains("escalating to hard-reboot"));
+    }
+
+    @Test
+    public void restartAgentAfterTheCooldownRestartsTheAgentAgain() throws Exception {
+        writeMarker(120);
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=restart-agent\nkvm.heartbeat.fence.restart.agent.cooldown = 60\n",
+                "i-2-10-VM"));
+        Assert.assertTrue(read(calls).contains("systemctl restart cloudstack-agent"));
+        Assert.assertFalse(rebooted());
+        Assert.assertTrue("the marker must be refreshed", Long.parseLong(read(marker).trim()) >= System.currentTimeMillis() / 1000 - 5);
+    }
+
+    @Test
+    public void restartAgentCooldownZeroTurnsTheGuardOff() throws Exception {
+        writeMarker(1);
+        Assert.assertEquals(0, fence("kvm.heartbeat.fence.action=restart-agent\nkvm.heartbeat.fence.restart.agent.cooldown=0\n",
+                "i-2-10-VM"));
+        Assert.assertTrue(read(calls).contains("systemctl restart cloudstack-agent"));
+        Assert.assertFalse(rebooted());
+    }
+
+    @Test
+    public void invalidRestartAgentCooldownFallsBackToTheDefault() throws Exception {
+        writeMarker(300);
+        fence("kvm.heartbeat.fence.action=restart-agent\nkvm.heartbeat.fence.restart.agent.cooldown=ten\n", "i-2-10-VM");
+        Assert.assertTrue(read(syslog).contains("kvm.heartbeat.fence.restart.agent.cooldown='ten'"));
+        Assert.assertTrue("300 s ago is within the default 600 s", rebooted());
+    }
+
+    @Test
+    public void heartbeatScriptsHardRebootWhenTheFenceHelperIsMissing() throws Exception {
+        heartbeatCleanup("kvmspheartbeat.sh", null, "-c");
+        Assert.assertTrue(rebooted());
+        Assert.assertTrue(read(syslog).contains("kvmspheartbeat.sh: ERROR could not load kvmha-fence.sh; falling back to hard-reboot."));
+        Assert.assertTrue(read(syslog).contains("kvmspheartbeat.sh will reboot system"));
+    }
+
+    @Test
+    public void heartbeatScriptsHardRebootWhenTheFenceHelperDoesNotDefineTheFence() throws Exception {
+        // An empty or truncated helper (partial upgrade) loads fine but leaves fence_action undefined.
+        stub("mount", "exit 0\n");
+        stub("ps", "exit 0\n");
+        heartbeatCleanup("kvmheartbeat.sh", "", "-i", "192.0.2.1", "-p", "/export", "-m", dir.resolve("mnt").toString(),
+                "-h", "192.0.2.2", "-c");
+        Assert.assertTrue(rebooted());
+        Assert.assertTrue(read(syslog).contains("kvmheartbeat.sh: ERROR could not load kvmha-fence.sh; falling back to hard-reboot."));
     }
 }
