@@ -700,9 +700,14 @@ setup_ntp() {
     fi
 }
 
-# cloud-init 25.1 and later (Debian 13) does not have cloud-init.service anymore: cloud-init-main is
+# cloud-init is disabled in the template with /etc/cloud/cloud-init.disabled, and the units of
+# cloud-init 25.1 and later (Debian 13) are skipped by systemd while that file exists. The generator
+# of cloud-init decides at boot, so it has to run again after the file is removed.
+# cloud-init 25.1 and later also does not have cloud-init.service anymore: cloud-init-main is
 # a single process which runs all the stages, and the units of the stages hand over to it
 start_cloud_init() {
+  rm -f /etc/cloud/cloud-init.disabled /run/cloud-init/disabled
+  systemctl daemon-reload
   if systemctl cat cloud-init-main.service > /dev/null 2>&1; then
     systemctl start --no-block cloud-init-main cloud-init-local cloud-init-network cloud-config cloud-final
   else
@@ -720,6 +725,7 @@ stop_cloud_init() {
       systemctl disable ${svc}
     fi
   done
+  touch /etc/cloud/cloud-init.disabled
 }
 
 routing_svcs() {
