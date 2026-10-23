@@ -55,8 +55,9 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
-        senderAddress = AlertEmailSender.value();
-        String emailAddressList = AlertEmailAddresses.value();
+        // the usage server has no ConfigDepot, so ConfigKey.value() would only return the defaults here
+        senderAddress = configs.get(AlertEmailSender.key());
+        String emailAddressList = configs.get(AlertEmailAddresses.key());
         recipients = null;
         if (emailAddressList != null) {
             recipients = emailAddressList.split(",");
