@@ -82,7 +82,8 @@ repos:
           ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
           ^systemvm/agent/certs/localhost\.key$|
           ^systemvm/agent/certs/realhostip\.key$|
-          ^test/integration/smoke/test_ssl_offloading\.py$
+          ^test/integration/smoke/test_ssl_offloading\.py$|
+          ^utils/src/test/java/com/cloud/utils/ssh/SSHKeysHelperTest\.java$
       - id: end-of-file-fixer
         exclude: \.vhd$
       - id: file-contents-sorter

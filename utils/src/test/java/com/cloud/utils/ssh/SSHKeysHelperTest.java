@@ -19,7 +19,13 @@
 
 package com.cloud.utils.ssh;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import org.junit.Test;
 
@@ -69,5 +75,57 @@ public class SSHKeysHelperTest {
         assertTrue(storedDssKey.equals(parsedKey));
         assertTrue("fc:6e:ef:31:93:f8:92:2b:a9:03:c7:06:90:f5:ec:bb".equals(fingerprint));
 
+    }
+
+    @Test
+    public void getPublicKeyFromKeyMaterialShouldHandleSupportedPrefixes() {
+        assertEquals("ecdsa-sha2-nistp256 AAAA", SSHKeysHelper.getPublicKeyFromKeyMaterial("ecdsa-sha2-nistp256 AAAA comment"));
+        assertEquals("ecdsa-sha2-nistp384 AAAA", SSHKeysHelper.getPublicKeyFromKeyMaterial("ecdsa-sha2-nistp384 AAAA comment"));
+        assertEquals("ecdsa-sha2-nistp521 AAAA", SSHKeysHelper.getPublicKeyFromKeyMaterial("ecdsa-sha2-nistp521 AAAA comment"));
+        assertEquals("ssh-ed25519 AAAA", SSHKeysHelper.getPublicKeyFromKeyMaterial("ssh-ed25519 AAAA comment"));
+    }
+
+    @Test
+    public void getPublicKeyFromKeyMaterialShouldParseBase64EncodedMaterial() {
+        String keyMaterial = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKeyData comment";
+        String encoded = Base64.getEncoder().encodeToString(keyMaterial.getBytes(StandardCharsets.UTF_8));
+
+        assertEquals("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKeyData", SSHKeysHelper.getPublicKeyFromKeyMaterial(encoded));
+    }
+
+    @Test
+    public void getPublicKeyFromKeyMaterialShouldReturnNullForInvalidFormats() {
+        assertNull(SSHKeysHelper.getPublicKeyFromKeyMaterial("not-a-valid-key"));
+        assertNull(SSHKeysHelper.getPublicKeyFromKeyMaterial("ssh-unknown AAAA"));
+        assertNull(SSHKeysHelper.getPublicKeyFromKeyMaterial("ssh-rsa"));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getPublicKeyFingerprintShouldThrowForInvalidPublicKey() {
+        SSHKeysHelper.getPublicKeyFingerprint("invalid-key-format");
+    }
+
+    @Test
+    public void generatedKeysShouldBeWellFormedAndFingerprintConsistent() {
+        SSHKeysHelper helper = new SSHKeysHelper(2048);
+
+        String publicKey = helper.getPublicKey();
+        String privateKey = helper.getPrivateKey();
+        String fingerprint = helper.getPublicKeyFingerPrint();
+
+        assertNotNull(publicKey);
+        assertTrue(publicKey.startsWith("ssh-rsa "));
+
+        String[] keyParts = publicKey.split(" ");
+        assertEquals(2, keyParts.length);
+
+        assertNotNull(privateKey);
+        assertTrue(privateKey.contains("BEGIN RSA PRIVATE KEY"));
+        assertTrue(privateKey.contains("END RSA PRIVATE KEY"));
+
+        assertNotNull(fingerprint);
+        assertEquals(SSHKeysHelper.getPublicKeyFingerprint(publicKey), fingerprint);
+
+        assertTrue("Legacy MD5 fingerprint should be colon-separated hex", fingerprint.matches("^([0-9a-f]{2}:){15}[0-9a-f]{2}$"));
     }
 }
