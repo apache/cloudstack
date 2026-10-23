@@ -39,6 +39,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.inject.Inject;
 import java.io.Closeable;
@@ -65,6 +66,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -76,14 +78,20 @@ import java.util.concurrent.TimeUnit;
 public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(PKCS11HSMProvider.class);
     private static final String PROVIDER_NAME = "pkcs11";
-    // Security note: AES-CBC provides confidentiality but not authenticity (no
-    // HMAC).
-    // While AES-GCM is preferred, SunPKCS11 support for GCM is often buggy or
-    // missing
-    // depending on the underlying driver. We rely on the HSM/storage for tamper
-    // resistance.
-    // AES-CBC with PKCS5Padding: FIPS-compliant (NIST SP 800-38A) with universal PKCS#11 support
-    private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+    // Name of the HSM profile detail that selects how DEKs are wrapped under this profile's KEKs.
+    static final String WRAP_ALGORITHM_DETAIL = "wrap_algorithm";
+    // Authenticated: a modified blob fails to unwrap (AES-GCM, NIST SP 800-38D).
+    static final String ALG_GCM = "AES/GCM/NoPadding";
+    // Authenticated key wrap with padding (RFC 5649, NIST SP 800-38F). Needs SunPKCS11 support, i.e. Java 18+.
+    static final String ALG_KWP = "AES/KWP/NoPadding";
+    // Legacy format of 4.23 and earlier. Not authenticated, so a modified blob can unwrap to a different key
+    // without an error. Kept for HSMs that support neither of the above and to read existing blobs.
+    static final String ALG_CBC = "AES/CBC/PKCS5Padding";
+    private static final Set<String> WRAP_ALGORITHMS = Set.of(ALG_GCM, ALG_KWP, ALG_CBC);
+    private static final int KWP_MIN_JAVA_FEATURE_VERSION = 18;
+    private static final int GCM_IV_LENGTH = 12;
+    private static final int GCM_TAG_BITS = 128;
+    private static final int AES_BLOCK_LENGTH = 16;
 
     private static final long SESSION_ACQUIRE_TIMEOUT_MS = 5000L;
 
@@ -117,8 +125,13 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
     @Override
     public void deleteKek(String kekId) throws KMSException {
-        Long hsmProfileId = resolveProfileId(kekId);
-        executeWithSession(hsmProfileId, session -> {
+        deleteKek(kekId, null);
+    }
+
+    @Override
+    public void deleteKek(String kekId, Long hsmProfileId) throws KMSException {
+        Long profileId = hsmProfileId != null ? hsmProfileId : resolveProfileId(kekId);
+        executeWithSession(profileId, session -> {
             session.deleteKey(kekId);
             return null;
         });
@@ -140,13 +153,15 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * Validates:
      * <ul>
      * <li>{@code library}: Required, should point to PKCS#11 library</li>
-     * <li>{@code slot}, {@code slot_list_index}, or {@code token_label}: At least
-     * one required</li>
+     * <li>{@code slot} or {@code slot_list_index}: At least one required</li>
      * <li>{@code pin}: Required for HSM authentication</li>
      * <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
+     * <li>{@code wrap_algorithm}: Optional, one of {@code AES/GCM/NoPadding} (default, added to
+     * {@code config} when absent), {@code AES/KWP/NoPadding} (needs Java 18+) or
+     * {@code AES/CBC/PKCS5Padding} (legacy, unauthenticated)</li>
      * </ul>
      *
-     * @param config Configuration map from HSM profile details
+     * @param config Configuration map from HSM profile details; the default wrap algorithm is added to it
      * @throws KMSException with {@code INVALID_PARAMETER} if validation fails
      */
     @Override
@@ -158,10 +173,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
         String slot = config.get("slot");
         String slotListIndex = config.get("slot_list_index");
-        String tokenLabel = config.get("token_label");
-        if (StringUtils.isAllBlank(slot, slotListIndex, tokenLabel)) {
+        if (StringUtils.isAllBlank(slot, slotListIndex)) {
             throw KMSException.invalidParameter(
-                    "One of 'slot', 'slot_list_index', or 'token_label' is required for PKCS#11 HSM profile");
+                    "One of 'slot' or 'slot_list_index' is required for PKCS#11 HSM profile");
         }
 
         if (StringUtils.isNotBlank(slot)) {
@@ -201,6 +215,17 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw KMSException.invalidParameter("max_sessions must be a valid integer: " + max_sessions);
             }
         }
+
+        String wrapAlgorithm = config.get(WRAP_ALGORITHM_DETAIL);
+        if (StringUtils.isBlank(wrapAlgorithm)) {
+            config.put(WRAP_ALGORITHM_DETAIL, ALG_GCM);
+        } else if (!WRAP_ALGORITHMS.contains(wrapAlgorithm)) {
+            throw KMSException.invalidParameter(String.format("%s must be one of %s: %s", WRAP_ALGORITHM_DETAIL,
+                    WRAP_ALGORITHMS, wrapAlgorithm));
+        } else if (ALG_KWP.equals(wrapAlgorithm) && Runtime.version().feature() < KWP_MIN_JAVA_FEATURE_VERSION) {
+            throw KMSException.invalidParameter(ALG_KWP + " requires Java " + KWP_MIN_JAVA_FEATURE_VERSION
+                    + " or later on the management server");
+        }
     }
 
     @Override
@@ -214,14 +239,23 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     }
 
     @Override
+    public String getWrapAlgorithm(Long hsmProfileId) throws KMSException {
+        if (hsmProfileId == null) {
+            throw KMSException.invalidParameter("HSM Profile ID is required for PKCS#11 provider");
+        }
+        return getSessionPool(hsmProfileId).wrapAlgorithm;
+    }
+
+    @Override
     public WrappedKey wrapKey(byte[] plainDek, KeyPurpose purpose, String kekLabel,
             Long hsmProfileId) throws KMSException {
         if (hsmProfileId == null) {
             hsmProfileId = resolveProfileId(kekLabel);
         }
 
-        byte[] wrappedBlob = executeWithSession(hsmProfileId, session -> session.wrapKey(plainDek, kekLabel));
-        return new WrappedKey(kekLabel, purpose, CIPHER_ALGORITHM, wrappedBlob, PROVIDER_NAME, new Date(), null);
+        String algorithm = getWrapAlgorithm(hsmProfileId);
+        byte[] wrappedBlob = executeWithSession(hsmProfileId, session -> session.wrapKey(plainDek, kekLabel, algorithm));
+        return new WrappedKey(kekLabel, purpose, algorithm, wrappedBlob, PROVIDER_NAME, new Date(), null);
     }
 
     @Override
@@ -230,15 +264,19 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             hsmProfileId = resolveProfileId(wrappedKey.getKekId());
         }
 
-        return executeWithSession(hsmProfileId,
-                session -> session.unwrapKey(wrappedKey.getWrappedKeyMaterial(), wrappedKey.getKekId()));
+        // The blob is unwrapped with the algorithm it was wrapped with, which can differ from the profile's
+        // current algorithm (e.g. blobs written before the profile was switched, or by an older release).
+        return executeWithSession(hsmProfileId, session -> session.unwrapKey(wrappedKey.getWrappedKeyMaterial(),
+                wrappedKey.getKekId(), wrappedKey.getAlgorithm()));
     }
 
     @Override
     public WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits,
             Long hsmProfileId) throws KMSException {
-        byte[] dekBytes = new byte[keyBits / 8];
-        new SecureRandom().nextBytes(dekBytes);
+        if (hsmProfileId == null) {
+            hsmProfileId = resolveProfileId(kekLabel);
+        }
+        byte[] dekBytes = executeWithSession(hsmProfileId, session -> session.generateRandom(keyBits / 8));
 
         try {
             return wrapKey(dekBytes, purpose, kekLabel, hsmProfileId);
@@ -350,6 +388,11 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             // isValid() check that discards stale idle sessions on the next poll.
             if (session != null && e.getErrorType() == KMSException.ErrorType.CONNECTION_FAILED) {
                 invalidateProfileCache(hsmProfileId);
+            } else if (session != null) {
+                // Don't reuse a session whose operation failed. PKCS#11 ends an operation when it fails, but some
+                // HSMs leave it active , and every later operation on that session then fails with CKR_OPERATION_ACTIVE.
+                pool.discardSession(session);
+                session = null;
             }
             throw e;
         } finally {
@@ -363,7 +406,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return sessionPools.computeIfAbsent(profileId, id -> {
             Map<String, String> config = loadProfileConfig(id);
             int maxSessions = Integer.parseInt(config.getOrDefault("max_sessions", "10"));
-            return new HSMSessionPool(id, maxSessions, this);
+            return new HSMSessionPool(id, maxSessions, config.get(WRAP_ALGORITHM_DETAIL), this);
         });
     }
 
@@ -406,14 +449,17 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         private final Long profileId;
         private final PKCS11HSMProvider provider;
         private final int maxSessions;
+        // Algorithm used to wrap new keys under this profile. Profile details cannot be changed after creation.
+        private final String wrapAlgorithm;
         // Counts total sessions (idle + active). Acquired on creation, released on close.
         private final Semaphore sessionPermits;
         private volatile boolean invalidated = false;
 
-        HSMSessionPool(Long profileId, int maxSessions, PKCS11HSMProvider provider) {
+        HSMSessionPool(Long profileId, int maxSessions, String wrapAlgorithm, PKCS11HSMProvider provider) {
             this.profileId = profileId;
             this.provider = provider;
             this.maxSessions = maxSessions;
+            this.wrapAlgorithm = wrapAlgorithm;
             this.sessionPermits = new Semaphore(maxSessions);
             this.availableSessions = new ArrayBlockingQueue<>(maxSessions);
         }
@@ -477,6 +523,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         }
 
         /**
+         * Closes a checked-out session instead of returning it to the pool, so the next caller gets a new one.
+         */
+        void discardSession(PKCS11Session session) {
+            session.close();
+            sessionPermits.release();
+        }
+
+        /**
          * Marks the pool as invalidated and closes all idle sessions.
          * Any session currently checked out will be closed (and its permit released) when
          * it is returned via {@link #releaseSession} — the invalidated flag prevents re-pooling.
@@ -498,8 +552,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * <p>Key operations supported:
      * <ul>
      *   <li>Key generation: Generate AES keys directly in the HSM</li>
-     *   <li>Key wrapping: Encrypt DEKs using KEKs stored in the HSM (AES-CBC/PKCS5Padding)</li>
-     *   <li>Key unwrapping: Decrypt DEKs using KEKs stored in the HSM (AES-CBC/PKCS5Padding)</li>
+     *   <li>Key wrapping: Encrypt DEKs using KEKs stored in the HSM (AES-GCM, AES-KWP or legacy AES-CBC)</li>
+     *   <li>Key unwrapping: Decrypt DEKs using KEKs stored in the HSM (AES-GCM, AES-KWP or legacy AES-CBC)</li>
      *   <li>Key deletion: Remove keys from the HSM</li>
      *   <li>Key existence check: Verify if a key exists in the HSM</li>
      * </ul>
@@ -507,7 +561,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * <p>Configuration requirements:
      * <ul>
      *   <li>{@code library}: Path to PKCS#11 library (required)</li>
-     *   <li>{@code slot} or {@code token_label}: HSM slot/token selection (at least one required)</li>
+     *   <li>{@code slot} or {@code slot_list_index}: HSM slot selection (at least one required)</li>
      *   <li>{@code pin}: PIN for HSM authentication (required, sensitive)</li>
      * </ul>
      *
@@ -515,7 +569,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * {@link KMSException.ErrorType} values for proper retry logic and error reporting.
      */
     private static class PKCS11Session {
-        private static final int IV_LENGTH = 16; // 128 bits for CBC mode
+        private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
         // Counter to bypass JDK SunPKCS11 caching when the HSM restarts. The JDK's
         // PKCS11.getInstance caches the native module in a static map keyed by the library
@@ -534,7 +588,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          * The config map (including any sensitive values such as the PIN) is used only
          * during connection setup and is not retained as a field.
          *
-         * @param config HSM profile configuration containing library, slot/token_label, and pin
+         * @param config HSM profile configuration containing library, slot/slot_list_index, and pin
          * @throws KMSException if connection fails or configuration is invalid
          */
         PKCS11Session(Map<String, String> config) throws KMSException {
@@ -546,7 +600,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          *
          * <p>This method:
          * <ol>
-         *   <li>Validates required configuration (library, slot/token_label, pin)</li>
+         *   <li>Validates required configuration (library, slot/slot_list_index, pin)</li>
          *   <li>Creates a SunPKCS11 provider with the HSM library</li>
          *   <li>Loads the PKCS#11 KeyStore</li>
          *   <li>Authenticates using the provided PIN</li>
@@ -554,7 +608,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          *
          * <p>Slot/token selection:
          * <ul>
-         *   <li>If {@code token_label} is provided, it is used (more reliable)</li>
+         *   <li>If {@code slot_list_index} is provided, it is used</li>
          *   <li>Otherwise, {@code slot} (numeric ID) is used</li>
          * </ul>
          *
@@ -621,6 +675,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 connected = true;
 
                 logger.debug("Successfully connected to PKCS#11 HSM at {}", config.get("library"));
+            } catch (KMSException e) {
+                // Already specific, e.g. a missing PIN or slot
+                throw e;
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 handlePKCS11Exception(e, "Failed to initialize PKCS#11 connection");
             } catch (IOException e) {
@@ -675,18 +732,15 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             configBuilder.append("name=CloudStackHSM-").append(nameSuffix).append("\n");
             configBuilder.append("library=").append(libraryPath).append("\n");
 
-            String tokenLabel = config.get("token_label");
             String slotListIndex = config.get("slot_list_index");
             String slot = config.get("slot");
 
-            if (StringUtils.isNotBlank(tokenLabel)) {
-                configBuilder.append("tokenLabel=").append(tokenLabel).append("\n");
-            } else if (StringUtils.isNotBlank(slotListIndex)) {
+            if (StringUtils.isNotBlank(slotListIndex)) {
                 configBuilder.append("slotListIndex=").append(slotListIndex).append("\n");
             } else if (StringUtils.isNotBlank(slot)) {
                 configBuilder.append("slot=").append(slot).append("\n");
             } else {
-                throw KMSException.invalidParameter("One of 'slot', 'slot_list_index', or 'token_label' is required");
+                throw KMSException.invalidParameter("One of 'slot' or 'slot_list_index' is required");
             }
 
             // Explicitly configure SunPKCS11 to generate AES keys as Data Encryption Keys.
@@ -926,57 +980,109 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         }
 
         /**
+         * Generates random bytes with the token's random number generator (C_GenerateRandom), so that keys come from
+         * the HSM. Falls back to the JVM's {@link SecureRandom} if the token has no random number generator.
+         *
+         * @param length Number of bytes to generate
+         * @return Random bytes; the caller zeroizes them once they're no longer needed
+         */
+        byte[] generateRandom(int length) {
+            SecureRandom random;
+            try {
+                random = SecureRandom.getInstance("PKCS11", provider);
+            } catch (NoSuchAlgorithmException e) {
+                // SunPKCS11 only offers SecureRandom when the token reports a random number generator
+                logger.debug("HSM token has no random number generator, using the JVM's SecureRandom");
+                random = SECURE_RANDOM;
+            }
+            byte[] bytes = new byte[length];
+            random.nextBytes(bytes);
+            return bytes;
+        }
+
+        /**
          * Wraps (encrypts) a plaintext DEK using a KEK stored in the HSM.
          *
-         * <p>Uses AES-CBC with PKCS5Padding (FIPS 197 + NIST SP 800-38A):
+         * <p>Blob format by algorithm:
          * <ul>
-         *   <li>Generates a random 128-bit IV</li>
-         *   <li>Encrypts the DEK using AES-CBC with the KEK from HSM</li>
-         *   <li>Returns format: [IV (16 bytes)][ciphertext]</li>
+         *   <li>{@code AES/GCM/NoPadding}: [IV (12 bytes)][ciphertext][tag (16 bytes)]</li>
+         *   <li>{@code AES/KWP/NoPadding}: [wrapped key] (no IV)</li>
+         *   <li>{@code AES/CBC/PKCS5Padding}: [IV (16 bytes)][ciphertext] (legacy, unauthenticated)</li>
          * </ul>
          *
          * <p>Security: The plaintext DEK should be zeroized by the caller after wrapping.
          *
-         * @param plainDek Plaintext DEK to wrap (will be encrypted)
-         * @param kekLabel Label of the KEK stored in the HSM
-         * @return Wrapped key blob: [IV][ciphertext]
+         * @param plainDek  Plaintext DEK to wrap (will be encrypted)
+         * @param kekLabel  Label of the KEK stored in the HSM
+         * @param algorithm Wrap algorithm, one of {@link #ALG_GCM}, {@link #ALG_KWP} or {@link #ALG_CBC}
+         * @return Wrapped key blob
          * @throws KMSException with appropriate ErrorType:
          *                      <ul>
-         *                        <li>{@code INVALID_PARAMETER} if plainDek is null or empty</li>
+         *                        <li>{@code INVALID_PARAMETER} if plainDek is null or empty, or the algorithm is unsupported</li>
          *                        <li>{@code KEK_NOT_FOUND} if KEK with label doesn't exist or is not accessible</li>
          *                        <li>{@code WRAP_UNWRAP_FAILED} if wrapping operation fails</li>
          *                      </ul>
          */
-        byte[] wrapKey(byte[] plainDek, String kekLabel) throws KMSException {
+        byte[] wrapKey(byte[] plainDek, String kekLabel, String algorithm) throws KMSException {
             if (plainDek == null || plainDek.length == 0) {
                 throw KMSException.invalidParameter("Plain DEK cannot be null or empty");
             }
+            int ivLength = ivLength(algorithm);
 
             SecretKey kek = getKekFromKeyStore(kekLabel);
             try {
-                byte[] iv = new byte[IV_LENGTH];
-                new SecureRandom().nextBytes(iv);
+                byte[] iv = new byte[ivLength];
+                SECURE_RANDOM.nextBytes(iv);
 
-                Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM, provider);
-                cipher.init(Cipher.ENCRYPT_MODE, kek, new IvParameterSpec(iv));
+                Cipher cipher = Cipher.getInstance(algorithm, provider);
+                initCipher(cipher, Cipher.ENCRYPT_MODE, kek, algorithm, iv);
                 byte[] ciphertext = cipher.doFinal(plainDek);
 
-                byte[] result = new byte[IV_LENGTH + ciphertext.length];
-                System.arraycopy(iv, 0, result, 0, IV_LENGTH);
-                System.arraycopy(ciphertext, 0, result, IV_LENGTH, ciphertext.length);
+                byte[] result = new byte[ivLength + ciphertext.length];
+                System.arraycopy(iv, 0, result, 0, ivLength);
+                System.arraycopy(ciphertext, 0, result, ivLength, ciphertext.length);
 
-                logger.debug("Wrapped key with KEK '{}' using AES-CBC", kekLabel);
+                logger.debug("Wrapped key with KEK '{}' using {}", kekLabel, algorithm);
                 return result;
             } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
                 handlePKCS11Exception(e, "Invalid key or data for wrapping");
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                handlePKCS11Exception(e, "AES-CBC not supported by HSM");
+                handlePKCS11Exception(e, algorithm + " not supported by HSM");
             } catch (InvalidAlgorithmParameterException e) {
-                handlePKCS11Exception(e, "Invalid IV for CBC mode");
+                handlePKCS11Exception(e, "Invalid parameters for " + algorithm);
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to wrap key with HSM");
             }
             return null;
+        }
+
+        private static boolean isEncryptedDataError(ProviderException e) {
+            String message = e.getMessage() + " " + (e.getCause() != null ? e.getCause().getMessage() : "");
+            return message.contains("CKR_ENCRYPTED_DATA_INVALID") || message.contains("CKR_ENCRYPTED_DATA_LEN_RANGE");
+        }
+
+        private static int ivLength(String algorithm) throws KMSException {
+            if (ALG_GCM.equals(algorithm)) {
+                return GCM_IV_LENGTH;
+            }
+            if (ALG_CBC.equals(algorithm)) {
+                return AES_BLOCK_LENGTH;
+            }
+            if (ALG_KWP.equals(algorithm)) {
+                return 0;
+            }
+            throw KMSException.invalidParameter("Unsupported wrap algorithm: " + algorithm);
+        }
+
+        private static void initCipher(Cipher cipher, int mode, SecretKey kek, String algorithm, byte[] iv)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
+            if (ALG_GCM.equals(algorithm)) {
+                cipher.init(mode, kek, new GCMParameterSpec(GCM_TAG_BITS, iv));
+            } else if (ALG_CBC.equals(algorithm)) {
+                cipher.init(mode, kek, new IvParameterSpec(iv));
+            } else {
+                cipher.init(mode, kek);
+            }
         }
 
         /**
@@ -1015,57 +1121,65 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          * Unwraps (decrypts) a wrapped DEK using a KEK stored in the HSM.
          *
          * <p>
-         * Uses AES-CBC with PKCS5Padding. Expected format: [IV (16 bytes)][ciphertext].
+         * The blob is decrypted with the algorithm it was wrapped with; see
+         * {@link #wrapKey(byte[], String, String)} for the format of each algorithm.
          *
          * <p>
          * Security: The returned plaintext DEK must be zeroized by the caller after
          * use.
          *
-         * @param wrappedBlob Wrapped DEK blob (IV + ciphertext)
+         * @param wrappedBlob Wrapped DEK blob
          * @param kekLabel    Label of the KEK stored in the HSM
+         * @param algorithm   Algorithm the blob was wrapped with
          * @return Plaintext DEK
          * @throws KMSException with appropriate ErrorType:
          *                      <ul>
          *                      <li>{@code INVALID_PARAMETER} if wrappedBlob is null,
-         *                      empty, or too short</li>
+         *                      empty, or too short, or the algorithm is unsupported</li>
          *                      <li>{@code KEK_NOT_FOUND} if KEK with label doesn't
          *                      exist or is not accessible</li>
          *                      <li>{@code WRAP_UNWRAP_FAILED} if unwrapping fails</li>
          *                      </ul>
          */
-        byte[] unwrapKey(byte[] wrappedBlob, String kekLabel) throws KMSException {
+        byte[] unwrapKey(byte[] wrappedBlob, String kekLabel, String algorithm) throws KMSException {
             if (wrappedBlob == null || wrappedBlob.length == 0) {
                 throw KMSException.invalidParameter("Wrapped blob cannot be null or empty");
             }
+            int ivLength = ivLength(algorithm);
 
-            // Minimum size: IV (16 bytes) + at least one AES block (16 bytes)
-            if (wrappedBlob.length < IV_LENGTH + 16) {
+            // Minimum size: IV + at least one AES block (the GCM tag and the smallest KWP output are one block)
+            if (wrappedBlob.length < ivLength + AES_BLOCK_LENGTH) {
                 throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
-                                                    (IV_LENGTH + 16) + " bytes");
+                                                    (ivLength + AES_BLOCK_LENGTH) + " bytes");
             }
 
             SecretKey kek = getKekFromKeyStore(kekLabel);
             try {
-                byte[] iv = new byte[IV_LENGTH];
-                System.arraycopy(wrappedBlob, 0, iv, 0, IV_LENGTH);
-                byte[] ciphertext = new byte[wrappedBlob.length - IV_LENGTH];
-                System.arraycopy(wrappedBlob, IV_LENGTH, ciphertext, 0, ciphertext.length);
+                byte[] iv = Arrays.copyOfRange(wrappedBlob, 0, ivLength);
+                byte[] ciphertext = Arrays.copyOfRange(wrappedBlob, ivLength, wrappedBlob.length);
 
-                Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM, provider);
-                cipher.init(Cipher.DECRYPT_MODE, kek, new IvParameterSpec(iv));
+                Cipher cipher = Cipher.getInstance(algorithm, provider);
+                initCipher(cipher, Cipher.DECRYPT_MODE, kek, algorithm, iv);
                 byte[] plainDek = cipher.doFinal(ciphertext);
 
-                logger.debug("Unwrapped key with KEK '{}' using AES-CBC", kekLabel);
+                logger.debug("Unwrapped key with KEK '{}' using {}", kekLabel, algorithm);
                 return plainDek;
-            } catch (BadPaddingException e) {
-                throw KMSException.wrapUnwrapFailed(
-                        "Decryption failed: wrapped key may be corrupted or KEK is incorrect", e);
-            } catch (IllegalBlockSizeException | InvalidKeyException e) {
-                handlePKCS11Exception(e, "Invalid key or data for unwrapping");
+            } catch (BadPaddingException | IllegalBlockSizeException e) {
+                // Report every padding, tag or block failure the same way and without the cause, so the outcome
+                // of an unwrap of a modified blob can't be used as a padding oracle (API error, event or log).
+                throw KMSException.wrapUnwrapFailed("Failed to unwrap key");
+            } catch (ProviderException e) {
+                // An HSM that removes the padding itself (CKM_AES_CBC_PAD) reports bad padding this way
+                if (isEncryptedDataError(e)) {
+                    throw KMSException.wrapUnwrapFailed("Failed to unwrap key");
+                }
+                handlePKCS11Exception(e, "Failed to unwrap key with HSM");
+            } catch (InvalidKeyException e) {
+                handlePKCS11Exception(e, "Invalid key for unwrapping");
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                handlePKCS11Exception(e, "AES-CBC not supported by HSM");
+                handlePKCS11Exception(e, algorithm + " not supported by HSM");
             } catch (InvalidAlgorithmParameterException e) {
-                handlePKCS11Exception(e, "Invalid IV for CBC mode");
+                handlePKCS11Exception(e, "Invalid parameters for " + algorithm);
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to unwrap key with HSM");
             }
@@ -1104,6 +1218,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 } else {
                     handlePKCS11Exception(e, "Failed to delete key from HSM");
                 }
+            } catch (KMSException e) {
+                // e.g. KEK_NOT_FOUND from above, which callers rely on
+                throw e;
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to delete key from HSM");
             }

@@ -72,9 +72,11 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -85,6 +87,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +128,8 @@ public class VolumeObject implements VolumeInfo {
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
     @Inject
     PassphraseDao passphraseDao;
+    @Inject
+    SnapshotDao snapshotDao;
     @Inject
     VolumeOrchestrationService
     orchestrationService;
@@ -955,6 +960,8 @@ public class VolumeObject implements VolumeInfo {
 
     /**
      * Removes passphrase reference from underlying volume. Also removes the associated passphrase entry if it is the last user.
+     * A volume that still has snapshots keeps its reference, as restoring or deleting a snapshot needs the passphrase
+     * of its volume; the storage garbage collector calls this again for such a volume once its snapshots are gone.
      */
     public void deletePassphrase() {
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -962,13 +969,19 @@ public class VolumeObject implements VolumeInfo {
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 Long passphraseId = volumeVO.getPassphraseId();
                 if (passphraseId != null) {
+                    if (snapshotDao.listByVolumeId(volumeVO.getId()).stream()
+                            .anyMatch(snapshot -> snapshot.getState() != Snapshot.State.Destroyed)) {
+                        logger.debug("Volume {} still has snapshots, keeping its passphrase", volumeVO);
+                        return;
+                    }
                     volumeVO.setPassphraseId(null);
                     volumeDao.persist(volumeVO);
 
                     logger.debug("Checking to see if we can delete passphrase id {} for volume {}", passphraseId, volumeVO);
-                    List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
+                    // Removed volumes count too: they keep their reference while they have snapshots
+                    List<VolumeVO> volumes = volumeDao.listIncludingRemovedByPassphraseId(passphraseId);
 
-                    if (volumes != null && !volumes.isEmpty()) {
+                    if (!volumes.isEmpty()) {
                         logger.debug("Other volumes use this passphrase, skipping deletion");
                         return;
                     }
@@ -988,20 +1001,26 @@ public class VolumeObject implements VolumeInfo {
     public byte[] getPassphrase() {
         // First check for KMS-encrypted volume
         if (volumeVO.getKmsWrappedKeyId() != null) {
+            byte[] dekBytes;
             try {
                 // Unwrap the DEK from KMS (returns raw binary bytes)
-                byte[] dekBytes = kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
-                // Base64-encode the DEK for consistency with legacy passphrases
-                // and for use with qemu-img which expects base64 format
-                String base64Dek = java.util.Base64.getEncoder().encodeToString(dekBytes);
-                // Zeroize the raw DEK bytes
-                java.util.Arrays.fill(dekBytes, (byte) 0);
-                // Return UTF-8 bytes of the base64 string
-                return base64Dek.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                dekBytes = kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
             } catch (KMSException e) {
+                if (volumeVO.getRemoved() != null && e.getErrorType() == KMSException.ErrorType.KEK_NOT_FOUND) {
+                    // The key of a removed volume can be gone, e.g. released by an older release while snapshots of
+                    // the volume still existed. Deleting such a snapshot doesn't need the key, so don't fail it.
+                    // Other errors (e.g. the HSM is unreachable) must not look like an unencrypted volume.
+                    logger.warn("Failed to unwrap KMS key for removed volume {}: {}", volumeVO, e.getMessage());
+                    return new byte[0];
+                }
                 logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO, e.getMessage(), e);
                 throw e;
             }
+            // Base64-encode the DEK for consistency with legacy passphrases and for use with qemu-img, which expects
+            // base64 format. Encoding straight to bytes avoids an immutable String copy of the key.
+            byte[] passphrase = Base64.getEncoder().encode(dekBytes);
+            Arrays.fill(dekBytes, (byte) 0);
+            return passphrase;
         }
 
         // Fallback to legacy passphrase-based encryption

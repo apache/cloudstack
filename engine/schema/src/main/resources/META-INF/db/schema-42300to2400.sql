@@ -239,3 +239,36 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- KMS: record the algorithm each key was wrapped with. Keys of the PKCS#11 provider were wrapped with
+-- AES/CBC/PKCS5Padding (the column default), keys of the database provider with AES/GCM/NoPadding.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kms_wrapped_key', 'wrap_algorithm', 'VARCHAR(64) NOT NULL DEFAULT ''AES/CBC/PKCS5Padding'' COMMENT ''Algorithm the key was wrapped with''');
+UPDATE `cloud`.`kms_wrapped_key` w
+    JOIN `cloud`.`kms_kek_versions` v ON v.id = w.kek_version_id
+    JOIN `cloud`.`kms_hsm_profiles` p ON p.id = v.hsm_profile_id
+SET w.wrap_algorithm = 'AES/GCM/NoPadding'
+WHERE LOWER(p.protocol) = 'database';
+
+-- KMS: 4.23 migrated legacy volume passphrases to KMS in a wrong format. Flag every existing key for a one-time
+-- check by the management server, which repairs the affected ones.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kms_wrapped_key', 'format_check_pending', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT ''1 if the key still has to be checked for the format 4.23 migrated legacy passphrases in''');
+UPDATE `cloud`.`kms_wrapped_key` SET format_check_pending = 1;
+
+-- KMS: existing PKCS#11 HSM profiles keep wrapping keys with AES/CBC/PKCS5Padding. New profiles default to
+-- AES/GCM/NoPadding.
+INSERT INTO `cloud`.`kms_hsm_profile_details` (profile_id, name, value)
+    SELECT p.id, 'wrap_algorithm', 'AES/CBC/PKCS5Padding' FROM `cloud`.`kms_hsm_profiles` p
+    WHERE LOWER(p.protocol) = 'pkcs11'
+      AND NOT EXISTS (SELECT 1 FROM `cloud`.`kms_hsm_profile_details` d WHERE d.profile_id = p.id AND d.name = 'wrap_algorithm');
+UPDATE `cloud`.`kms_keys` k
+    JOIN `cloud`.`kms_hsm_profiles` p ON p.id = k.hsm_profile_id
+SET k.algorithm = 'AES/CBC/PKCS5Padding'
+WHERE LOWER(p.protocol) = 'pkcs11';
+
+-- KMS: the database provider doesn't use an HSM
+UPDATE `cloud`.`kms_hsm_profiles` SET name = 'Database Provider' WHERE protocol = 'database' AND name = 'HSM Database Provider';
+
+-- KMS: remove legacy passphrases no volume refers to anymore, e.g. those left behind when 4.23 migrated a volume to KMS
+DELETE p FROM `cloud`.`passphrase` p
+    LEFT JOIN `cloud`.`volumes` v ON v.passphrase_id = p.id
+WHERE v.id IS NULL;

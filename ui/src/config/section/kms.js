@@ -237,7 +237,7 @@ export default {
           },
           mapping: {
             details: {
-              optionalKeys: ['pin', 'library', 'slot', 'slot_list_index', 'token_label']
+              optionalKeys: ['pin', 'library', 'slot', 'slot_list_index', 'wrap_algorithm']
             }
           }
         },
