@@ -35,6 +35,8 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
@@ -184,6 +186,8 @@ import com.google.gson.reflect.TypeToken;
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
 
     @Inject
+    FirewallRuleDetailsDao _firewallRuleDetailsDao;
+    @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
     NetworkModel _networkModel;
@@ -280,6 +284,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     NicSecondaryIpDao _nicSecondaryIpDao;
 
     private static final int DNS_PORT = 53;
+    private static final List<String> CONNECTION_SETTINGS = List.of(LoadBalancer.KEEPALIVE, LoadBalancer.IDLE_TIMEOUT, LoadBalancer.KEEPALIVE_TIMEOUT);
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
     @Override
@@ -2285,6 +2290,74 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return dstList;
     }
 
+    /**
+     * Haproxy rejects a negative timeout, and a rejected file leaves every rule on the router
+     * running its previous config. Refuse the value here rather than let it reach the VR.
+     */
+    protected void validateConnectionTimeout(String name, Long value) {
+        if (value != null && value < 0) {
+            throw new InvalidParameterValueException(String.format("%s must be 0 or greater, got [%s]. 0 means no timeout.", name, value));
+        }
+    }
+
+    @Override
+    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup) {
+        validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, idleTimeout);
+        validateConnectionTimeout(ApiConstants.KEEPALIVE_TIMEOUT, keepAliveTimeout);
+
+        Map<String, String> current = getConnectionSettings(lbRuleId);
+        Map<String, String> wanted = cleanup ? new HashMap<>() : new HashMap<>(current);
+        if (keepAlive != null) {
+            wanted.put(LoadBalancer.KEEPALIVE, keepAlive.toString());
+        }
+        if (idleTimeout != null) {
+            wanted.put(LoadBalancer.IDLE_TIMEOUT, idleTimeout.toString());
+        }
+        if (keepAliveTimeout != null) {
+            wanted.put(LoadBalancer.KEEPALIVE_TIMEOUT, keepAliveTimeout.toString());
+        }
+        if (wanted.equals(current)) {
+            return false;
+        }
+        setConnectionSettings(lbRuleId, wanted);
+        return true;
+    }
+
+    /**
+     * The per rule settings the rule holds itself, keyed by detail name. A setting the rule
+     * inherits is absent.
+     */
+    protected Map<String, String> getConnectionSettings(long lbRuleId) {
+        Map<String, String> settings = new HashMap<>();
+        for (String key : CONNECTION_SETTINGS) {
+            FirewallRuleDetailVO detail = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+            if (detail != null) {
+                settings.put(key, detail.getValue());
+            }
+        }
+        return settings;
+    }
+
+    /**
+     * Makes the rule hold exactly these settings: a key in the map is stored, a key missing
+     * from it is removed so the rule inherits it again.
+     */
+    protected void setConnectionSettings(long lbRuleId, Map<String, String> settings) {
+        for (String key : CONNECTION_SETTINGS) {
+            String value = settings.get(key);
+            FirewallRuleDetailVO existing = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+            if (existing != null && Objects.equals(value, existing.getValue())) {
+                continue;
+            }
+            if (existing != null) {
+                _firewallRuleDetailsDao.removeDetail(lbRuleId, key);
+            }
+            if (value != null) {
+                _firewallRuleDetailsDao.addDetail(lbRuleId, key, value, true);
+            }
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
@@ -2348,6 +2421,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException(String.format("Modifications in lb rule %s are not supported.", lb));
         }
 
+        // The settings are written straight to the details table, unlike the fields above that wait
+        // for _lbDao.update, so they are stored only once nothing else can reject the update
+        Map<String, String> settingsBackup = getConnectionSettings(lbRuleId);
+        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout(),
+                cmd.isCleanupConnectionSettings());
+
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
         boolean success = _lbDao.update(lbRuleId, lb);
 
@@ -2356,7 +2435,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean protocolChanged = !Objects.equals(lbProtocol, tmplbVo.getLbProtocol());
         boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
 
-        if (algorithmChanged || protocolChanged || cidrListChanged) {
+        if (algorithmChanged || protocolChanged || cidrListChanged || settingsChanged) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
@@ -2385,6 +2464,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
+                    if (settingsChanged) {
+                        setConnectionSettings(lbRuleId, settingsBackup);
+                    }
 
                     logger.debug("LB Rollback rule: {} while updating LB rule.", lb);
                 }
