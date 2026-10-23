@@ -30,6 +30,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
@@ -156,6 +157,9 @@ public class StorageManagerImplTest {
 
     @Mock
     private StoragePoolAndAccessGroupMapDao storagePoolAccessGroupMapDao;
+
+    @Mock
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Mock
     private ResourceManager resourceMgr;
@@ -1715,5 +1719,128 @@ public class StorageManagerImplTest {
         Mockito.when(lifeCycle.initialize(Mockito.any())).thenThrow(new RuntimeException("Initialization failed"));
 
         storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    private Pair<HostVO, StoragePoolVO> mockHostAndPool(long hostId, long poolId) {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.lenient().doReturn(hostId).when(host).getId();
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.lenient().doReturn(poolId).when(pool).getId();
+        return new Pair<>(host, pool);
+    }
+
+    @Test
+    public void canHostAccessOrPrepareStoragePoolTestNullArguments() {
+        Assert.assertFalse(storageManagerImpl.canHostAccessOrPrepareStoragePool(null, Mockito.mock(StoragePoolVO.class)));
+        Assert.assertFalse(storageManagerImpl.canHostAccessOrPrepareStoragePool(Mockito.mock(HostVO.class), null));
+    }
+
+    @Test
+    public void canHostAccessOrPrepareStoragePoolTestNoCommonStorageAccessGroups() {
+        Pair<HostVO, StoragePoolVO> hostAndPool = mockHostAndPool(1L, 2L);
+        HostVO host = hostAndPool.first();
+        StoragePoolVO pool = hostAndPool.second();
+        Mockito.doReturn(false).when(storageManagerImpl).checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool);
+
+        Assert.assertFalse(storageManagerImpl.canHostAccessOrPrepareStoragePool(host, pool));
+        Mockito.verify(storageManagerImpl, Mockito.never()).canHostPrepareStoragePoolAccess(host, pool);
+    }
+
+    @Test
+    public void canHostAccessOrPrepareStoragePoolTestHostAlreadyConnectedToPool() {
+        Pair<HostVO, StoragePoolVO> hostAndPool = mockHostAndPool(1L, 2L);
+        HostVO host = hostAndPool.first();
+        StoragePoolVO pool = hostAndPool.second();
+        Mockito.doReturn(true).when(storageManagerImpl).checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool);
+        Mockito.doReturn(Mockito.mock(StoragePoolHostVO.class)).when(storagePoolHostDao).findByPoolHost(2L, 1L);
+        Mockito.doReturn(true).when(storageManagerImpl).canHostAccessStoragePool(host, pool);
+
+        Assert.assertTrue(storageManagerImpl.canHostAccessOrPrepareStoragePool(host, pool));
+        Mockito.verify(storageManagerImpl, Mockito.never()).canHostPrepareStoragePoolAccess(host, pool);
+    }
+
+    @Test
+    public void canHostAccessOrPrepareStoragePoolTestNoPoolHostRefButAccessCanBePrepared() {
+        Pair<HostVO, StoragePoolVO> hostAndPool = mockHostAndPool(1L, 2L);
+        HostVO host = hostAndPool.first();
+        StoragePoolVO pool = hostAndPool.second();
+        Mockito.doReturn(true).when(storageManagerImpl).checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool);
+        Mockito.doReturn(null).when(storagePoolHostDao).findByPoolHost(2L, 1L);
+        Mockito.doReturn(true).when(storageManagerImpl).canHostPrepareStoragePoolAccess(host, pool);
+
+        Assert.assertTrue(storageManagerImpl.canHostAccessOrPrepareStoragePool(host, pool));
+    }
+
+    @Test
+    public void canHostAccessOrPrepareStoragePoolTestNeitherAccessNorPreparePossible() {
+        Pair<HostVO, StoragePoolVO> hostAndPool = mockHostAndPool(1L, 2L);
+        HostVO host = hostAndPool.first();
+        StoragePoolVO pool = hostAndPool.second();
+        Mockito.doReturn(true).when(storageManagerImpl).checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool);
+        Mockito.doReturn(null).when(storagePoolHostDao).findByPoolHost(2L, 1L);
+        Mockito.doReturn(false).when(storageManagerImpl).canHostPrepareStoragePoolAccess(host, pool);
+
+        Assert.assertFalse(storageManagerImpl.canHostAccessOrPrepareStoragePool(host, pool));
+    }
+
+    @Test
+    public void findUpAndEnabledHostWithAccessToStoragePoolsTestReturnsConnectedHost() {
+        List<Long> poolIds = Arrays.asList(1L, 2L);
+        HostVO connectedHost = Mockito.mock(HostVO.class);
+        Mockito.doReturn(new ArrayList<>(Arrays.asList(10L))).when(storagePoolHostDao).findHostsConnectedToPools(poolIds);
+        Mockito.doReturn(connectedHost).when(hostDao).findById(10L);
+        Mockito.doReturn(Mockito.mock(StoragePoolVO.class)).when(storagePoolDao).findById(Mockito.anyLong());
+        Mockito.doReturn(true).when(storageManagerImpl).canHostAccessStoragePool(Mockito.eq(connectedHost), Mockito.any());
+
+        Assert.assertEquals(connectedHost, storageManagerImpl.findUpAndEnabledHostWithAccessToStoragePools(poolIds));
+        Mockito.verify(resourceMgr, Mockito.never()).listAllUpAndEnabledHostsInOneZoneByType(Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void findUpAndEnabledHostWithAccessToStoragePoolsTestFallsBackToHostThatCanPrepareAccess() {
+        List<Long> poolIds = Arrays.asList(1L, 2L);
+        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(1L).when(srcPool).getDataCenterId();
+        Mockito.doReturn(1L).when(destPool).getDataCenterId();
+        Mockito.doReturn(srcPool).when(storagePoolDao).findById(1L);
+        Mockito.doReturn(destPool).when(storagePoolDao).findById(2L);
+        Mockito.doReturn(new ArrayList<Long>()).when(storagePoolHostDao).findHostsConnectedToPools(poolIds);
+
+        HostVO preparableHost = Mockito.mock(HostVO.class);
+        Mockito.doReturn(new ArrayList<>(Arrays.asList(preparableHost))).when(resourceMgr)
+                .listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, 1L);
+        Mockito.doReturn(true).when(storageManagerImpl).canHostAccessOrPrepareStoragePool(Mockito.eq(preparableHost), Mockito.any());
+
+        Assert.assertEquals(preparableHost, storageManagerImpl.findUpAndEnabledHostWithAccessToStoragePools(poolIds));
+    }
+
+    @Test
+    public void findUpAndEnabledHostWithAccessToStoragePoolsTestNoHostCanPrepareAccess() {
+        List<Long> poolIds = Arrays.asList(1L, 2L);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(1L).when(pool).getDataCenterId();
+        Mockito.doReturn(pool).when(storagePoolDao).findById(Mockito.anyLong());
+        Mockito.doReturn(new ArrayList<Long>()).when(storagePoolHostDao).findHostsConnectedToPools(poolIds);
+
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.doReturn(new ArrayList<>(Arrays.asList(host))).when(resourceMgr)
+                .listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, 1L);
+        Mockito.doReturn(false).when(storageManagerImpl).canHostAccessOrPrepareStoragePool(Mockito.eq(host), Mockito.any());
+
+        Assert.assertNull(storageManagerImpl.findUpAndEnabledHostWithAccessToStoragePools(poolIds));
+    }
+
+    @Test
+    public void findUpAndEnabledHostAbleToPrepareAccessToStoragePoolsTestPoolsInDifferentZones() {
+        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(1L).when(srcPool).getDataCenterId();
+        Mockito.doReturn(2L).when(destPool).getDataCenterId();
+        Mockito.doReturn(srcPool).when(storagePoolDao).findById(1L);
+        Mockito.doReturn(destPool).when(storagePoolDao).findById(2L);
+
+        Assert.assertNull(storageManagerImpl.findUpAndEnabledHostAbleToPrepareAccessToStoragePools(Arrays.asList(1L, 2L)));
+        Mockito.verify(resourceMgr, Mockito.never()).listAllUpAndEnabledHostsInOneZoneByType(Mockito.any(), Mockito.anyLong());
     }
 }

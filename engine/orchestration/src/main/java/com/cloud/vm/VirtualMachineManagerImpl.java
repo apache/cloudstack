@@ -260,7 +260,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -371,8 +370,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private HypervisorGuruManager _hvGuruMgr;
     @Inject
     private NetworkDao _networkDao;
-    @Inject
-    private StoragePoolHostDao _poolHostDao;
     @Inject
     private VMSnapshotDao _vmSnapshotDao;
     @Inject
@@ -3422,7 +3419,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
             executeManagedStorageChecksWhenTargetStoragePoolProvided(currentPool, volume, targetPool);
-            if (targetHost != null && _poolHostDao.findByPoolHost(targetPool.getId(), targetHost.getId()) == null) {
+            if (targetHost != null && !storageMgr.canHostAccessOrPrepareStoragePool(targetHost, targetPool)) {
                 throw new CloudRuntimeException(
                         String.format("Cannot migrate the volume [%s] to the storage pool [%s] while migrating VM [%s] to target host [%s]. The host does not have access to the storage pool entered.",
                                 volume.getUuid(), targetPool.getUuid(), profile.getUuid(), targetHost.getUuid()));
@@ -3503,7 +3500,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (!currentPool.isManaged()) {
             return;
         }
-        if (targetHost != null && _poolHostDao.findByPoolHost(currentPool.getId(), targetHost.getId()) == null) {
+        if (targetHost != null && !storageMgr.canHostAccessOrPrepareStoragePool(targetHost, currentPool)) {
             throw new CloudRuntimeException(String.format("The target host does not have access to the volume's managed storage pool. [volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
                     currentPool.getUuid(), targetHost.getUuid()));
         }

@@ -143,13 +143,11 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -226,8 +224,6 @@ public class VirtualMachineManagerImplTest {
     private VolumeVO volumeVoMock;
     private long volumeMockId = 1111L;
 
-    @Mock
-    private StoragePoolHostDao storagePoolHostDaoMock;
 
     @Mock
     private StoragePoolAllocator storagePoolAllocatorMock;
@@ -587,7 +583,7 @@ public class VirtualMachineManagerImplTest {
         userDefinedVolumeToStoragePoolMap.put(volumeMockId, storagePoolVoMockId);
 
         Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolProvided(any(StoragePoolVO.class), any(VolumeVO.class), any(StoragePoolVO.class));
-        Mockito.doReturn(null).when(storagePoolHostDaoMock).findByPoolHost(storagePoolVoMockId, hostMockId);
+        Mockito.doReturn(false).when(storageManager).canHostAccessOrPrepareStoragePool(hostMock, storagePoolVoMock);
 
         virtualMachineManagerImpl.buildMapUsingUserInformation(virtualMachineProfileMock, hostMock, userDefinedVolumeToStoragePoolMap);
 
@@ -600,7 +596,7 @@ public class VirtualMachineManagerImplTest {
 
         Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolProvided(any(StoragePoolVO.class), any(VolumeVO.class),
                 any(StoragePoolVO.class));
-        Mockito.doReturn(Mockito.mock(StoragePoolHostVO.class)).when(storagePoolHostDaoMock).findByPoolHost(storagePoolVoMockId, hostMockId);
+        Mockito.doReturn(true).when(storageManager).canHostAccessOrPrepareStoragePool(hostMock, storagePoolVoMock);
 
         Map<Volume, StoragePool> volumeToPoolObjectMap = virtualMachineManagerImpl.buildMapUsingUserInformation(virtualMachineProfileMock, hostMock, userDefinedVolumeToStoragePoolMap);
 
@@ -635,24 +631,24 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
 
         verify(storagePoolVoMock).isManaged();
-        verify(storagePoolHostDaoMock, Mockito.times(0)).findByPoolHost(anyLong(), anyLong());
+        Mockito.verify(storageManager, Mockito.times(0)).canHostAccessOrPrepareStoragePool(any(Host.class), any(StoragePool.class));
     }
 
     @Test
     public void executeManagedStorageChecksWhenTargetStoragePoolNotProvidedTestCurrentStoragePoolManagedIsConnectedToHost() {
         Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
-        Mockito.doReturn(Mockito.mock(StoragePoolHostVO.class)).when(storagePoolHostDaoMock).findByPoolHost(storagePoolVoMockId, hostMockId);
+        Mockito.doReturn(true).when(storageManager).canHostAccessOrPrepareStoragePool(hostMock, storagePoolVoMock);
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
 
         verify(storagePoolVoMock).isManaged();
-        verify(storagePoolHostDaoMock, Mockito.times(1)).findByPoolHost(storagePoolVoMockId, hostMockId);
+        Mockito.verify(storageManager, Mockito.times(1)).canHostAccessOrPrepareStoragePool(hostMock, storagePoolVoMock);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void executeManagedStorageChecksWhenTargetStoragePoolNotProvidedTestCurrentStoragePoolManagedIsNotConnectedToHost() {
         Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
-        Mockito.doReturn(null).when(storagePoolHostDaoMock).findByPoolHost(storagePoolVoMockId, hostMockId);
+        Mockito.doReturn(false).when(storageManager).canHostAccessOrPrepareStoragePool(hostMock, storagePoolVoMock);
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
     }
