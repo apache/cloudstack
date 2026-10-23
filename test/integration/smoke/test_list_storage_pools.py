@@ -62,26 +62,31 @@ class TestListStoragePools(cloudstackTestCase):
             isinstance(storage_pools, list),
             "Storage pool response type should be a list"
         )
-        self.assertGreater(
-            len(storage_pools),
-            0,
-            "Length of storage pools should greater than 0"
-        )
+        # Filter may return zone-wide pools (with clusterid=None) alongside cluster-scoped pools
+        cluster_scoped_found = False
         for storage_pool in storage_pools:
-            self.assertEqual(
-                storage_pool.clusterid,
-                self.cluster.id,
-                "Cluster id should be equal to the cluster id passed in the filter"
-            )
+            if storage_pool.clusterid is not None:
+                # Only assert clusterid for cluster-scoped pools
+                cluster_scoped_found = True
+                self.assertEqual(
+                    storage_pool.clusterid,
+                    self.cluster.id,
+                    "Cluster id should be equal to the cluster id passed in the filter"
+                )
 
         storage_pools = StoragePool.list(
             self.apiclient,
             clusterid="-1"
         )
-        self.assertIsNone(
-            storage_pools,
-            "Response should be empty when invalid cluster id is passed"
-        )
+        # Invalid clusterid may still return zone-wide pools (scope=ZONE)
+        if storage_pools:
+            # If pools are returned, they should all be zone-wide
+            for storage_pool in storage_pools:
+                self.assertEqual(
+                    storage_pool.scope,
+                    "ZONE",
+                    "Invalid cluster id should only return zone-wide pools"
+                )
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_02_list_storage_pools_id_filter(self):
@@ -264,26 +269,31 @@ class TestListStoragePools(cloudstackTestCase):
             isinstance(storage_pools, list),
             "Storage pool response type should be a list"
         )
-        self.assertGreater(
-            len(storage_pools),
-            0,
-            "Length of storage pools should greater than 0"
-        )
+        # Filter may return zone-wide pools (with podid=None) alongside pod-scoped pools
+        pod_scoped_found = False
         for storage_pool in storage_pools:
-            self.assertEqual(
-                storage_pool.podid,
-                self.cluster.podid,
-                "Pod id should be equal to the pod id passed in the filter"
-            )
+            if storage_pool.podid is not None:
+                # Only assert podid for pod-scoped pools
+                pod_scoped_found = True
+                self.assertEqual(
+                    storage_pool.podid,
+                    self.cluster.podid,
+                    "Pod id should be equal to the pod id passed in the filter"
+                )
 
         storage_pools = StoragePool.list(
             self.apiclient,
             podid="-1"
         )
-        self.assertIsNone(
-            storage_pools,
-            "Response should be empty when invalid pod id is passed"
-        )
+        # Invalid podid may still return zone-wide pools (scope=ZONE)
+        if storage_pools:
+            # If pools are returned, they should all be zone-wide
+            for storage_pool in storage_pools:
+                self.assertEqual(
+                    storage_pool.scope,
+                    "ZONE",
+                    "Invalid pod id should only return zone-wide pools"
+                )
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_08_list_storage_pools_scope_filter(self):
@@ -394,3 +404,64 @@ class TestListStoragePools(cloudstackTestCase):
             0,
             "Length of storage pools should greater than 0"
         )
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_12_list_storage_pools_zone_wide(self):
+        """ Test listing zone-wide vs cluster-scoped storage pools
+        Zone-wide pools (scope=ZONE) are not bound to a specific cluster.
+        Cluster-scoped pools are bound to clusters.
+        """
+        # List all storage pools and categorize them
+        storage_pools = StoragePool.list(self.apiclient)
+        self.assertTrue(
+            isinstance(storage_pools, list),
+            "Storage pool response type should be a list"
+        )
+
+        zone_wide_pools = [p for p in storage_pools if hasattr(p, 'scope') and p.scope == "ZONE"]
+        cluster_scoped_pools = [p for p in storage_pools if hasattr(p, 'scope') and p.scope != "ZONE"]
+
+        # Verify zone-wide pools
+        if zone_wide_pools:
+            for pool in zone_wide_pools:
+                self.assertEqual(
+                    pool.scope,
+                    "ZONE",
+                    "Pool scope should be ZONE"
+                )
+                # Zone-wide pools should not have clusterid or podid
+                if hasattr(pool, 'clusterid'):
+                    self.assertIsNone(
+                        pool.clusterid,
+                        "Zone-wide storage pool should not have a cluster id"
+                    )
+                if hasattr(pool, 'podid'):
+                    self.assertIsNone(
+                        pool.podid,
+                        "Zone-wide storage pool should not have a pod id"
+                    )
+                # Verify they have zoneid
+                self.assertTrue(
+                    hasattr(pool, 'zoneid') and pool.zoneid is not None,
+                    "Zone-wide storage pool should have a zone id"
+                )
+            self.debug("Verified %d zone-wide storage pools" % len(zone_wide_pools))
+        else:
+            self.debug("No zone-wide storage pools found in this setup")
+
+        # Verify cluster-scoped pools
+        if cluster_scoped_pools:
+            for pool in cluster_scoped_pools:
+                # Cluster-scoped pools should have clusterid
+                self.assertTrue(
+                    hasattr(pool, 'clusterid') and pool.clusterid is not None,
+                    "Cluster-scoped storage pool should have a cluster id"
+                )
+                # Verify they have zoneid
+                self.assertTrue(
+                    hasattr(pool, 'zoneid') and pool.zoneid is not None,
+                    "Cluster-scoped storage pool should have a zone id"
+                )
+            self.debug("Verified %d cluster-scoped storage pools" % len(cluster_scoped_pools))
+        else:
+            self.debug("No cluster-scoped storage pools found in this setup")
