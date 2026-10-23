@@ -76,14 +76,23 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "job_cmd")
     private String cmd;
 
+    @Column(name = "job_init_msid")
+    private Long initMsid;
+
     @Column(name = "job_executing_msid")
     private Long executingMsid;
+
+    @Column(name = "job_complete_msid")
+    private Long completeMsid;
 
     @Column(name = "job_status")
     private int status;
 
     @Column(name = "job_process_status")
     private int processStatus;
+
+    @Column(name = "cancel_requested")
+    private boolean cancelRequested;
 
     @Column(name = "job_result_code")
     private int resultCode;
@@ -106,6 +115,12 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name = "instance_uuid")
     private String instanceUuid;
+
+    @Column(name = "instance_name")
+    private String instanceName;
+
+    @Column(name = "related")
+    private String related;
 
     public AsyncJobJoinVO() {
     }
@@ -172,6 +187,10 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
         return cmd;
     }
 
+    public boolean isCancelRequested() {
+        return cancelRequested;
+    }
+
     public int getStatus() {
         return status;
     }
@@ -208,6 +227,14 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
         return instanceUuid;
     }
 
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public String getRelated() {
+        return related;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return AsyncJob.class;
@@ -218,8 +245,16 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
         return null;
     }
 
+    public Long getInitMsid() {
+        return initMsid;
+    }
+
     public Long getExecutingMsid() {
         return executingMsid;
+    }
+
+    public Long getCompleteMsid() {
+        return completeMsid;
     }
 
     @Override

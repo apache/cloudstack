@@ -518,6 +518,12 @@ export default {
           show: () => { return 'listEvents' in store.getters.apis }
         },
         {
+          name: 'jobs',
+          resourceType: 'VmSnapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue'))),
+          show: () => { return 'listAsyncJobs' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }

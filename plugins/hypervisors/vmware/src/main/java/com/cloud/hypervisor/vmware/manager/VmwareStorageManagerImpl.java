@@ -1227,14 +1227,18 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg, e);
+            logger.error("failed to create snapshot for vm:{} due to {}", vmName, msg, e);
 
             try {
-                if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
+                if (vmMo != null && vmMo.getSnapshotMor(vmSnapshotName) != null) {
                     vmMo.removeSnapshot(vmSnapshotName, false);
                 }
+                if (vmMo != null && vmMo.isConsolidationNeeded()) {
+                    logger.info("Consolidating the disks of VM {} after its snapshot was not created", vmName);
+                    vmMo.consolidateVmDisks();
+                }
             } catch (Exception e1) {
-                logger.info("[ignored]" + "error during snapshot remove: " + e1.getLocalizedMessage());
+                logger.info("[ignored]error during snapshot remove: {}", e1.getLocalizedMessage());
             }
 
             return new CreateVMSnapshotAnswer(cmd, false, e.getMessage());

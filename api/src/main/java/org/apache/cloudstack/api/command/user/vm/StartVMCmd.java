@@ -48,7 +48,7 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts  an Instance.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, cancellable = true)
 public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     private static final String s_name = "startvirtualmachineresponse";
