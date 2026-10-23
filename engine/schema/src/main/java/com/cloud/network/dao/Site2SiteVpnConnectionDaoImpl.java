@@ -23,6 +23,7 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -39,6 +40,7 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
     private SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
     private SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;
     private SearchBuilder<Site2SiteVpnGatewayVO> VpnGatewaySearch;
+    private SearchBuilder<Site2SiteVpnConnectionVO> StateSearch;
 
     public Site2SiteVpnConnectionDaoImpl() {
     }
@@ -55,6 +57,10 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
         VpnGatewaySearch.and("vpcId", VpnGatewaySearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         VpcSearch.join("vpnGatewaySearch", VpnGatewaySearch, VpnGatewaySearch.entity().getId(), VpcSearch.entity().getVpnGatewayId(), JoinType.INNER);
         VpcSearch.done();
+
+        StateSearch = createSearchBuilder();
+        StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
+        StateSearch.done();
     }
 
     @Override
@@ -75,6 +81,13 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
     public List<Site2SiteVpnConnectionVO> listByVpcId(long vpcId) {
         SearchCriteria<Site2SiteVpnConnectionVO> sc = VpcSearch.create();
         sc.setJoinParameters("vpnGatewaySearch", "vpcId", vpcId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<Site2SiteVpnConnectionVO> listByStates(Site2SiteVpnConnection.State... states) {
+        SearchCriteria<Site2SiteVpnConnectionVO> sc = StateSearch.create();
+        sc.setParameters("state", (Object[]) states);
         return listBy(sc);
     }
 

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.utils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -82,6 +83,43 @@ public class NsxControllerUtilsTest {
         Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
         NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, zoneId);
         Assert.assertNotNull(nsxAnswer);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testSendCommandRejectsFailedNsxAnswer() {
+        NsxCommand cmd = Mockito.mock(NsxCommand.class);
+        NsxAnswer answer = Mockito.mock(NsxAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
+
+        nsxControllerUtils.sendNsxCommand(cmd, zoneId);
+    }
+
+    @Test
+    public void testSendCommandRejectsGenericFailedAnswer() {
+        NsxCommand cmd = Mockito.mock(NsxCommand.class);
+        Answer answer = new Answer(cmd, false, "transport failure");
+        Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> nsxControllerUtils.sendNsxCommand(cmd, zoneId));
+
+        Assert.assertEquals("Failed API call to NSX controller", exception.getMessage());
+    }
+
+    @Test
+    public void testSendCommandForResultPreservesFailedNsxAnswer() {
+        NsxCommand cmd = Mockito.mock(NsxCommand.class);
+        NsxAnswer answer = Mockito.mock(NsxAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(answer.isEndpointMayBeInUse()).thenReturn(true);
+        Mockito.when(agentMgr.easySend(nsxProviderHostId, cmd)).thenReturn(answer);
+
+        NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommandForResult(cmd, zoneId);
+
+        Assert.assertSame(answer, nsxAnswer);
+        Assert.assertFalse(nsxAnswer.getResult());
+        Assert.assertTrue(nsxAnswer.isEndpointMayBeInUse());
     }
 
     @Test
