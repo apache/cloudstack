@@ -122,7 +122,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Create a file and take backup
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch test_backup_and_recovery.txt")
+            ssh_client_vm.execute("touch test_backup_and_recovery.txt; sync")
         except Exception as err:
             self.fail("SSH failed for Virtual machine: %s due to %s" % (self.vm.ipaddress, err))
 
@@ -314,7 +314,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self._set_full_every(3)
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/incremental_marker_1.txt")
+            ssh_client_vm.execute("touch /root/incremental_marker_1.txt; sync")
 
             created = []
             for i in range(5):
@@ -435,15 +435,15 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self._set_full_every(5)
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/marker_full.txt")
+            ssh_client_vm.execute("touch /root/marker_full.txt; sync")
             Backup.create(self.apiclient, self.vm.id, "rfi_full")
             time.sleep(3)
 
-            ssh_client_vm.execute("touch /root/marker_inc1.txt")
+            ssh_client_vm.execute("touch /root/marker_inc1.txt; sync")
             Backup.create(self.apiclient, self.vm.id, "rfi_inc1")
             time.sleep(3)
 
-            ssh_client_vm.execute("touch /root/marker_inc2.txt")
+            ssh_client_vm.execute("touch /root/marker_inc2.txt; sync")
             Backup.create(self.apiclient, self.vm.id, "rfi_inc2")
             time.sleep(3)
 
@@ -484,13 +484,13 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self._set_full_every(5)
         try:
             ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/dmi_full.txt")
+            ssh_client_vm.execute("touch /root/dmi_full.txt; sync")
             Backup.create(self.apiclient, self.vm.id, "dmi_full")
             time.sleep(3)
-            ssh_client_vm.execute("touch /root/dmi_inc1.txt")
+            ssh_client_vm.execute("touch /root/dmi_inc1.txt; sync")
             Backup.create(self.apiclient, self.vm.id, "dmi_inc1")
             time.sleep(3)
-            ssh_client_vm.execute("touch /root/dmi_inc2.txt")
+            ssh_client_vm.execute("touch /root/dmi_inc2.txt; sync")
             Backup.create(self.apiclient, self.vm.id, "dmi_inc2")
             time.sleep(3)
 
