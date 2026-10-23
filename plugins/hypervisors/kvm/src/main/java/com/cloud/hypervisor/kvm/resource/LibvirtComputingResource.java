@@ -43,7 +43,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -267,7 +266,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -461,7 +459,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String setupTungstenVrouterPath;
     private String updateTungstenLoadbalancerStatsPath;
     private String updateTungstenLoadbalancerSslPath;
-    private String host;
 
     private String dcId;
     private String clusterId;
@@ -621,7 +618,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private boolean isReconcileCommandsEnabled = false;
 
-    private static Gson gson = new Gson();
 
     /**
      * Virsh command to set the memory balloon stats period.<br><br>
@@ -2353,19 +2349,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return element.getAsLong();
     }
 
-    boolean isDirectAttachedNetwork(final String type) {
-        if ("untagged".equalsIgnoreCase(type)) {
-            return true;
-        } else {
-            try {
-                Long.valueOf(type);
-            } catch (final NumberFormatException e) {
-                return true;
-            }
-            return false;
-        }
-    }
-
     public String startVM(final Connect conn, final String vmName, final String domainXML) throws LibvirtException, InternalErrorException {
         return startVM(conn, vmName, domainXML, 0);
     }
@@ -2789,7 +2772,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
             Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
             final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
-            Integer devNum = macAddressToNicNumPair.second();
 
             final IpAddressTO[] ips = cmd.getIpAddresses();
             for (final IpAddressTO ip : ips) {
@@ -4159,10 +4141,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return storagePoolManager.disconnectPhysicalDiskByPath(path);
     }
 
-    protected KVMStoragePoolManager getPoolManager() {
-        return storagePoolManager;
-    }
-
     public void detachAndAttachConfigDriveISO(final Connect conn, final String vmName) {
         // detach and re-attach configdrive ISO
         List<DiskDef> disks = getDisks(conn, vmName);
@@ -5028,14 +5006,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return db != DiskDef.DiskBus.IDE;
     }
 
-    public boolean isCentosHost() {
-        if (hvVersion <= 9) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     public DiskDef.DiskBus getDiskModelFromVMDetail(final VirtualMachineTO vmTO) {
         Map<String, String> details = vmTO.getDetails();
         if (details == null) {
@@ -5154,10 +5124,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 LOGGER.trace("Ignoring libvirt error.", e);
             }
         }
-    }
-
-    private String executeBashScript(final String script) {
-        return createScript(script).execute();
     }
 
     private Script createScript(final String script) {
@@ -5682,7 +5648,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final InterfaceDef intf = intfs.get(nic.getDeviceId());
-        final String brname = intf.getBrName();
         final String vif = intf.getDevName();
 
         final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
@@ -5796,41 +5761,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (checkBeforeApply) {
             cmd.add("--check");
         }
-        final String result = cmd.execute();
-        if (result != null) {
-            return false;
-        }
-        return true;
-    }
-
-    protected boolean post_default_network_rules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final InetAddress dhcpServerIp, final String hostIp, final String hostMacAddr) {
-        if (!canBridgeFirewall) {
-            return false;
-        }
-
-        final List<InterfaceDef> intfs = getInterfaces(conn, vmName);
-        if (intfs.size() < nic.getDeviceId()) {
-            return false;
-        }
-
-        final InterfaceDef intf = intfs.get(nic.getDeviceId());
-        final String brname = intf.getBrName();
-        final String vif = intf.getDevName();
-
-        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
-        cmd.add("post_default_network_rules");
-        cmd.add("--vmname", vmName);
-        cmd.add("--vmid", vmId.toString());
-        cmd.add("--vmip", nic.getIp());
-        cmd.add("--vmmac", nic.getMac());
-        cmd.add("--vif", vif);
-        cmd.add("--brname", brname);
-        if (dhcpServerIp != null) {
-            cmd.add("--dhcpSvr", dhcpServerIp.getHostAddress());
-        }
-
-        cmd.add("--hostIp", hostIp);
-        cmd.add("--hostMacAddr", hostMacAddr);
         final String result = cmd.execute();
         if (result != null) {
             return false;
@@ -6073,16 +6003,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return states;
     }
 
-    /* online snapshot supported by enhanced qemu-kvm */
-    private boolean isSnapshotSupported() {
-        final String result = executeBashScript("qemu-img --help|grep convert");
-        if (result != null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     public Pair<Double, Double> getNicStats(final String nicName) {
         return new Pair<Double, Double>(readDouble(nicName, "rx_bytes"), readDouble(nicName, "tx_bytes"));
     }
@@ -6244,10 +6164,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 continue;
             }
         }
-    }
-
-    public String getHostDistro() {
-        return hostDistro;
     }
 
     public boolean isHostSecured() {

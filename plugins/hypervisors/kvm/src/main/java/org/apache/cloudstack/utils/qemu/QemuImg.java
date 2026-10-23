@@ -1015,14 +1015,6 @@ public class QemuImg {
         return new Script(path, timeout);
     }
 
-    /**
-     * Does qemu-img support --target-is-zero
-     * @return boolean
-     */
-    public boolean supportsSkipZeros() {
-        return this.skipZero;
-    }
-
     public void setSkipZero(boolean skipZero) {
         this.skipZero = skipZero;
     }
