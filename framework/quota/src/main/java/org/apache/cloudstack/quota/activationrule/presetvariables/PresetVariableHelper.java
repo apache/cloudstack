@@ -41,7 +41,7 @@ import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
@@ -189,12 +189,10 @@ public class PresetVariableHelper {
     VpcDao vpcDao;
 
     @Inject
-    ClusterDetailsDao clusterDetailsDao;
+    ConfigurationDao configDao;
 
-    // Registered/owned by HighAvailabilityManager (engine/components-api); declared here too so this module
-    // can read it without a dependency on that module.
-    private static final ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
-            "Force High-Availability to happen even if the VM says no.", true);
+    @Inject
+    ClusterDetailsDao clusterDetailsDao;
 
     @Inject
     VpcOfferingDao vpcOfferingDao;
@@ -317,7 +315,7 @@ public class PresetVariableHelper {
         if (forceHa != null) {
             forceHaValue = forceHa.getValue();
         } else {
-            forceHaValue = String.valueOf(ForceHA.value());
+            forceHaValue = configDao.getValue("force.ha");
         }
 
         configuration.setForceHa((Boolean.parseBoolean(forceHaValue)));
