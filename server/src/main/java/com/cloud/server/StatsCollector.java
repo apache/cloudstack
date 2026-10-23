@@ -461,7 +461,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         vmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
-        storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        storageStatsInterval = StorageStatsInterval.value();
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = AutoScaleManager.AutoScaleStatsInterval.value();
         ManagementServerStatusAdministrator managementServerStatusAdministrator = new ManagementServerStatusAdministrator();

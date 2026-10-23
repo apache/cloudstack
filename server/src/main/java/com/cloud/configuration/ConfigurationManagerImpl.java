@@ -261,6 +261,7 @@ import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -277,6 +278,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -305,7 +307,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
@@ -513,7 +514,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     protected DataCenterLinkLocalIpAddressDao _linkLocalIpAllocDao;
 
-    private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
+    private long _defaultPageSize = Long.parseLong(ManagementServer.DefaultPageSize.defaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     private Set<String> configValuesForValidation = new HashSet<>();
     private Set<String> configKeysAllowedOnlyForDefaultAdmin = new HashSet<>();
@@ -586,8 +587,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        final String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
-        _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, Long.parseLong(Config.DefaultPageSize.getDefaultValue()));
+        _defaultPageSize = ManagementServer.DefaultPageSize.value();
 
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
@@ -619,7 +619,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.retrieval.interval");
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
-        configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(RemoteAccessVpnService.RemoteAccessVpnPskLength.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
@@ -637,12 +637,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.MemoryCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.PublicIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.PrivateIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.SecondaryStorageCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.VlanCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.DirectNetworkPublicIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.PublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.PrivateIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.SecondaryStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.VlanCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.DirectNetworkPublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.LocalStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key());
@@ -925,7 +925,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         _configDepot.invalidateConfigCache(name, ConfigKey.Scope.Global, null);
 
         PreparedStatement pstmt;
-        if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
+        if (NetworkService.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -936,7 +936,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -947,7 +947,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -958,7 +958,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -969,7 +969,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
             }
-        } else if (Config.XenServerStorageNetwork2.key().equals(name)) {
+        } else if (NetworkService.XenServerStorageNetwork2.key().equals(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -1540,7 +1540,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
                     return String.format("Please enter a value greater than 5 for the configuration parameter: [%s].",  name);
                 }
-                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name) && (val < 8 || val > 256)) {
+                if (RemoteAccessVpnService.RemoteAccessVpnPskLength.key().equalsIgnoreCase(name) && (val < 8 || val > 256)) {
                     return String.format("Please enter a value greater than 7 and less than 257 for the configuration parameter: [%s].", name);
                 }
                 if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name) && val > 1048576) {
@@ -1869,8 +1869,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        final String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
-        if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
+        if (ManagementServer.CheckPodCIDRs.value()) {
             checkPodCidrSubnets(zone.getId(), podId, cidr);
         }
     }
@@ -7640,8 +7639,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
 
-        final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
-        final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
+        final int multicastRate = ManagementServer.MulticastThrottlingRate.value();
         tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
         // specifyIpRanges should always be true for Shared networks

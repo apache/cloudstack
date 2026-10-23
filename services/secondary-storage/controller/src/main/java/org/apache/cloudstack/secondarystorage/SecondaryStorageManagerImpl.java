@@ -337,7 +337,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 String nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
                 setupCmd.setNfsVersion(nfsVersion);
 
-                String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
+                String postUploadKey = TemplateManager.SSVMPSK.value();
                 setupCmd.setPostUploadKey(postUploadKey);
 
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);

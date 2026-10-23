@@ -1608,7 +1608,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());
 
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
 
             VolumeApiResult result = future.get(storagePoolMaxWaitSeconds, TimeUnit.SECONDS);
 
