@@ -168,6 +168,9 @@ public class AgentShell implements IAgentShell, Daemon {
                     .map(String::trim)
                     .anyMatch(candidate::equalsIgnoreCase);
             host = alreadyPresent ? _host : _host + "," + candidate;
+            if (!alreadyPresent) {
+                LOGGER.warn("Using last successful host [{}] as fallback; it is not in the configured host list [{}]", candidate, _host);
+            }
         } else {
             host = _host;
         }
