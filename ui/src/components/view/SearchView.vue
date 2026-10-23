@@ -172,6 +172,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import Status from '@/components/widgets/Status'
 import { i18n } from '@/locales'
+import { RESOURCE_TYPE_LABELS } from '@/views/resourcealert/resourceAlertOptions'
 
 export default {
   name: 'SearchView',
@@ -342,6 +343,8 @@ export default {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        } else if (item === 'resourcetype' && this.isResourceAlertsView()) {
+          type = 'list'
         } else if (['resourcetype', 'apikeyaccess'].includes(item)) {
           type = 'autocomplete'
         } else if (item === 'isencrypted') {
@@ -469,6 +472,9 @@ export default {
           { value: 'Volume' },
           { value: 'QuotaTariff' }
         ]
+        if (this.isResourceAlertsView()) {
+          this.fields[resourceTypeIndex].opts = Object.entries(RESOURCE_TYPE_LABELS).map(([id, name]) => ({ id, name }))
+        }
         this.fields[resourceTypeIndex].loading = false
       }
 
@@ -928,6 +934,9 @@ export default {
           this.fillFormFieldValues()
         }
       })
+    },
+    isResourceAlertsView () {
+      return this.$route.path.startsWith('/resourcealerts')
     },
     initFormFieldData () {
       const arrayField = this.initFields()

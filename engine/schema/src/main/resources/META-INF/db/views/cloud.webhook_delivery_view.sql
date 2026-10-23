@@ -28,9 +28,9 @@ CREATE VIEW `cloud`.`webhook_delivery_view` AS
         webhook_delivery.response,
         webhook_delivery.start_time,
         webhook_delivery.end_time,
-        event.id event_id,
+        webhook_delivery.event_id,
         event.uuid event_uuid,
-        event.type event_type,
+        IFNULL(event.type, webhook_delivery.event_type) event_type,
         webhook.id webhook_id,
         webhook.uuid webhook_uuid,
         webhook.name webhook_name,
@@ -40,7 +40,7 @@ CREATE VIEW `cloud`.`webhook_delivery_view` AS
         mshost.name mshost_name
     FROM
         `cloud`.`webhook_delivery`
-            INNER JOIN
+            LEFT JOIN
         `cloud`.`event` ON webhook_delivery.event_id = event.id
             INNER JOIN
         `cloud`.`webhook` ON webhook_delivery.webhook_id = webhook.id
