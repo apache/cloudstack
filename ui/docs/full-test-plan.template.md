@@ -105,7 +105,7 @@ This requires configuring and setting up CKS: https://docs.cloudstack.apache.org
 - [ ] Delete affinity group
 
 **Storage > Volumes**
-- [ ] Basic earch
+- [ ] Basic search
 - [ ] Extended search
 - [ ] Sort
 - [ ] Links
@@ -176,7 +176,7 @@ This requires configuring and setting up CKS: https://docs.cloudstack.apache.org
 - [ ] Delete public IP address (only for isolated networks)
 - [ ] Add/delete egress rule (only for isolated networks)
 
-**Network > VPC **
+**Network > VPC**
 - [ ] Basic search
 - [ ] Extended search
 - [ ] Sort
