@@ -277,6 +277,11 @@ backup_rbd_vm() {
     exit 1
   fi
 
+  if ! command -v rbd > /dev/null 2>&1; then
+    echo "RBD backup mode requires the rbd command (ceph-common) on this host"
+    exit 1
+  fi
+
   local effective_mode="$MODE"
   case "$effective_mode" in
     full|incremental)

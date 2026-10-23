@@ -42,11 +42,14 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
 import com.cloud.host.Host;
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -99,6 +102,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private HostDetailsDao hostDetailsDao;
 
     @Mock
     private BackupManager backupManager;
@@ -273,6 +279,116 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao).persist(Mockito.any(BackupVO.class));
         Mockito.verify(backupDao).update(Mockito.anyLong(), Mockito.any(BackupVO.class));
         Mockito.verify(agentManager).send(anyLong(), Mockito.any(TakeBackupCommand.class));
+    }
+
+    private HostVO hostWithRbdCli(long id, boolean hasRbdCli, Long clusterId) {
+        HostVO host = mock(HostVO.class);
+        Mockito.lenient().when(host.getId()).thenReturn(id);
+        Mockito.lenient().when(host.getClusterId()).thenReturn(clusterId);
+        Mockito.lenient().when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.lenient().when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.lenient().when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        DetailVO detail = mock(DetailVO.class);
+        Mockito.lenient().when(detail.getValue()).thenReturn(String.valueOf(hasRbdCli));
+        Mockito.lenient().when(hostDetailsDao.findDetail(id, Host.HOST_RBD_CLI)).thenReturn(detail);
+        return host;
+    }
+
+    @Test
+    public void findHostForRbdBackupKeepsTheVmHostWhenItHasTheRbdCommand() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        HostVO vmHost = hostWithRbdCli(2L, true, 10L);
+
+        Assert.assertSame(vmHost, nasBackupProvider.findHostForRbdBackup(vm, vmHost));
+    }
+
+    @Test
+    public void findHostForRbdBackupTreatsAHostThatNeverReportedTheCommandAsLackingIt() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        HostVO vmHost = mock(HostVO.class);
+        Mockito.when(vmHost.getId()).thenReturn(2L);
+        Mockito.when(hostDetailsDao.findDetail(2L, Host.HOST_RBD_CLI)).thenReturn(null);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+
+        Assert.assertNull(nasBackupProvider.findHostForRbdBackup(vm, vmHost));
+    }
+
+    @Test
+    public void findHostForRbdBackupMovesAStoppedVmToAHostThatHasTheRbdCommand() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Stopped);
+        HostVO vmHost = hostWithRbdCli(2L, false, 10L);
+        HostVO withoutCli = hostWithRbdCli(3L, false, 10L);
+        HostVO withCli = hostWithRbdCli(4L, true, 10L);
+        Mockito.when(hostDao.findHypervisorHostInCluster(10L)).thenReturn(List.of(vmHost, withoutCli, withCli));
+
+        Assert.assertSame(withCli, nasBackupProvider.findHostForRbdBackup(vm, vmHost));
+    }
+
+    @Test
+    public void findHostForRbdBackupSkipsHostsThatAreDownOrInMaintenance() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Stopped);
+        HostVO vmHost = hostWithRbdCli(2L, false, 10L);
+        HostVO down = hostWithRbdCli(3L, true, 10L);
+        Mockito.when(down.getStatus()).thenReturn(Status.Down);
+        HostVO inMaintenance = hostWithRbdCli(4L, true, 10L);
+        Mockito.when(inMaintenance.getResourceState()).thenReturn(ResourceState.Maintenance);
+        Mockito.when(hostDao.findHypervisorHostInCluster(10L)).thenReturn(List.of(vmHost, down, inMaintenance));
+
+        Assert.assertNull(nasBackupProvider.findHostForRbdBackup(vm, vmHost));
+    }
+
+    @Test
+    public void findHostForRbdBackupDoesNotMoveARunningVm() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+        HostVO vmHost = hostWithRbdCli(2L, false, 10L);
+
+        Assert.assertNull(nasBackupProvider.findHostForRbdBackup(vm, vmHost));
+        Mockito.verify(hostDao, Mockito.never()).findHypervisorHostInCluster(Mockito.anyLong());
+    }
+
+    /**
+     * No host with the rbd command: the backup must not fail on the missing command, it is taken
+     * as a plain full and sent to the host the VM runs on.
+     */
+    @Test
+    public void takeBackupFallsBackToAFullWhenNoHostHasTheRbdCommand() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L;
+        Long hostId = 2L;
+        Long backupOfferingId = 3L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getHostId()).thenReturn(hostId);
+        Mockito.when(vm.getInstanceName()).thenReturn("test-vm");
+        Mockito.when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+
+        BackupRepository backupRepository = mock(BackupRepository.class);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(backupOfferingId)).thenReturn(backupRepository);
+
+        HostVO host = hostWithRbdCli(hostId, false, 10L);
+        Mockito.when(host.getName()).thenReturn("kvm1");
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of());
+
+        Mockito.doReturn(NASBackupProvider.ChainDecision.rbdFullStart("csbackup-1")).when(nasBackupProvider).decideChain(vm);
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(agentManager.send(anyLong(), Mockito.any(TakeBackupCommand.class))).thenReturn(answer);
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
+
+        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false, false);
+
+        Assert.assertTrue(result.first());
+        ArgumentCaptor<TakeBackupCommand> sent = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.verify(agentManager).send(Mockito.eq(hostId), sent.capture());
+        Assert.assertEquals(NASBackupChainKeys.TYPE_LEGACY_FULL, sent.getValue().getMode());
+        Assert.assertNull("a plain full needs no per-volume RBD paths", sent.getValue().getVolumePaths());
     }
 
     @Test

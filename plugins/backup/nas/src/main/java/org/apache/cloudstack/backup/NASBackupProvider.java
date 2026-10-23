@@ -22,13 +22,16 @@ import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -146,6 +149,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private HostDao hostDao;
+
+    @Inject
+    private HostDetailsDao hostDetailsDao;
 
     @Inject
     private VolumeDao volumeDao;
@@ -760,9 +766,47 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return host;
     }
 
+    /**
+     * Whether the agent of {@code host} reported the {@code rbd} command line tool. ceph-common is
+     * only suggested by the agent package, and a host that never reported it (an agent older than
+     * the report) is taken to lack it.
+     */
+    protected boolean hostHasRbdCli(Host host) {
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), Host.HOST_RBD_CLI);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
+    }
+
+    /**
+     * The host an RBD backup has to run on, as it drives the {@code rbd} command against the images.
+     * A running Instance is backed up from the host it runs on, because its guest is frozen or paused
+     * through the libvirt domain there, so that host is the only choice. A stopped Instance has no
+     * such tie: when its own host lacks the command, any other Up host of the cluster that has it
+     * can take the backup.
+     *
+     * @return the host to use, or {@code null} when none has the {@code rbd} command
+     */
+    protected Host findHostForRbdBackup(VirtualMachine vm, Host vmHost) {
+        if (hostHasRbdCli(vmHost)) {
+            return vmHost;
+        }
+        if (!VirtualMachine.State.Stopped.equals(vm.getState()) || vmHost.getClusterId() == null) {
+            return null;
+        }
+        for (final Host candidate : hostDao.findHypervisorHostInCluster(vmHost.getClusterId())) {
+            if (Status.Up.equals(candidate.getStatus())
+                    && ResourceState.Enabled.equals(candidate.getResourceState())
+                    && Hypervisor.HypervisorType.KVM.equals(candidate.getHypervisorType())
+                    && hostHasRbdCli(candidate)) {
+                logger.debug("Host {} has no rbd command, taking the backup of stopped VM {} on host {}", vmHost, vm, candidate);
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     @Override
     public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm, Boolean quiesceVM, boolean isolated) {
-        final Host host = getVMHypervisorHostForBackup(vm);
+        Host host = getVMHypervisorHostForBackup(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
         if (backupRepository == null) {
@@ -782,6 +826,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // Decide full vs incremental for this backup. Stopped VMs are always full
         // (libvirt backup-begin requires a running QEMU process).
         ChainDecision decision = decideChain(vm);
+
+        // An RBD backup runs the rbd command on the host, which not every host has installed. When
+        // no usable host has it, take a plain full backup through libvirt rather than fail: it needs
+        // no rbd command, and the next backup starts a new chain on a host that has it.
+        if (decision.isRbd()) {
+            final Host rbdHost = findHostForRbdBackup(vm, host);
+            if (rbdHost == null) {
+                logger.warn("No host able to back up VM {} has the rbd command (ceph-common) installed, taking a full backup without it. "
+                        + "Install ceph-common on host {} to take incremental backups of its RBD volumes.", vm.getInstanceName(), host.getName());
+                decision = ChainDecision.legacyFull();
+            } else {
+                host = rbdHost;
+            }
+        }
 
         BackupVO backupVO = createBackupObject(vm, backupPath, decision.isIncremental() ? "INCREMENTAL" : "FULL");
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
