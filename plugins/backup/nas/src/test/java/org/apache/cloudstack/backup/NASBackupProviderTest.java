@@ -60,6 +60,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
