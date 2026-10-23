@@ -67,6 +67,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "CloudStack managed address space, all CloudStack managed Instances get IP address from CIDR")
     private String cidr;
 
+    @SerializedName(ApiConstants.START_IP)
+    @Param(description = "the start of the custom DHCP range for an isolated network, within its CIDR", since = "4.24.0")
+    private String dhcpStartIp;
+
+    @SerializedName(ApiConstants.END_IP)
+    @Param(description = "the end of the custom DHCP range for an isolated network, within its CIDR", since = "4.24.0")
+    private String dhcpEndIp;
+
     @SerializedName(ApiConstants.NETWORK_CIDR)
     @Param(description = "The Network CIDR of the guest Network configured with IP reservation. It is the summation of CIDR and RESERVED_IP_RANGE")
     private String networkCidr;
@@ -509,6 +517,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+
+    public void setDhcpStartIp(String dhcpStartIp) {
+        this.dhcpStartIp = dhcpStartIp;
+    }
+
+    public void setDhcpEndIp(String dhcpEndIp) {
+        this.dhcpEndIp = dhcpEndIp;
     }
 
     public void setNetworkCidr(String networkCidr) {
