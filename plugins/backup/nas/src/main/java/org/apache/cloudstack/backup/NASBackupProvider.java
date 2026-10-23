@@ -137,7 +137,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     ConfigKey<Integer> NASBackupBandwidthLimitMbps = new ConfigKey<>("Advanced", Integer.class,
             "nas.backup.bandwidth.limit.mbps",
             "0",
-            "Bandwidth limit in MiB/s for backup operations (0 = unlimited).",
+            "Bandwidth limit in MiB/s per disk for backup operations (0 = unlimited). The limit counts the virtual size of each disk, unallocated regions included, so a backup of a running VM takes about virtual size / limit regardless of how much of the disk is in use.",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
