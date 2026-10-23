@@ -261,6 +261,7 @@ import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -1526,6 +1527,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // 0 is considered as disabled.
                 if (val < 0 || val > 255){
                     return String.format("[%s] value should be between 0 and 255. 0 value will disable this feature.", name);
+                }
+            }
+            if (NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.key().equalsIgnoreCase(name)) {
+                if (val < -1) {
+                    return String.format("Please enter -1 (unlimited) or a positive value for the configuration parameter: [%s].", name);
                 }
             }
             if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||
@@ -9056,6 +9062,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // networkRate is unsigned int in networkOfferings table, and can't be
         // set to -1
         // so 0 means unlimited; we convert it to -1, so we are consistent with
+        // all our other resources where -1 means unlimited
+        if (networkRate == 0) {
+            networkRate = -1;
+        }
+
+        return networkRate;
+    }
+
+    @Override
+    public Integer getVpcOfferingNetworkRate(final long vpcOfferingId, final Long dataCenterId) {
+
+        final VpcOffering vpcOffering = _entityMgr.findById(VpcOffering.class, vpcOfferingId);
+        if (vpcOffering == null) {
+            throw new InvalidParameterValueException("Unable to find VPC offering by id=" + vpcOfferingId);
+        }
+
+        Integer networkRate;
+        if (vpcOffering.getPublicNetworkRate() != null) {
+            networkRate = vpcOffering.getPublicNetworkRate();
+        } else {
+            networkRate = NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.valueIn(dataCenterId);
+        }
+
+        // 0 also means unlimited; we convert it to -1, so we are consistent with
         // all our other resources where -1 means unlimited
         if (networkRate == 0) {
             networkRate = -1;

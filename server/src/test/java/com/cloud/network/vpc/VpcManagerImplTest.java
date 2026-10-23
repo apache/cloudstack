@@ -23,6 +23,7 @@ import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -50,6 +51,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -69,6 +71,8 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.vpc.CloneVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -78,11 +82,13 @@ import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -171,6 +177,12 @@ public class VpcManagerImplTest {
     NetworkACLVO networkACLVOMock;
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
+    @Mock
+    ConfigurationManager configMgr;
+    @Mock
+    VpcDetailsDao vpcDetailsDao;
+    @Mock
+    VpcOfferingDetailsDao vpcOfferingDetailsDao;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -230,6 +242,9 @@ public class VpcManagerImplTest {
         manager._ntwkSvc = networkServiceMock;
         manager._firewallDao = firewallDao;
         manager._networkAclDao = networkACLDaoMock;
+        manager._configMgr = configMgr;
+        manager.vpcDetailsDao = vpcDetailsDao;
+        manager.vpcOfferingDetailsDao = vpcOfferingDetailsDao;
         manager.routedIpv4Manager = routedIpv4Manager;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
@@ -486,6 +501,66 @@ public class VpcManagerImplTest {
         manager.createVpcOffering(cmd);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateVpcOfferingRejectsNetworkRateBelowMinusOne() {
+        CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
+        Mockito.when(cmd.getPublicNetworkRate()).thenReturn(-5);
+        manager.createVpcOffering(cmd);
+    }
+
+    @Test
+    public void testRestartVpcWithoutCleanupDoesNotRefreshPublicNetworkRate() throws Exception {
+        final long vpcId = 5L;
+        Vpc vpc = Mockito.mock(Vpc.class);
+        Mockito.when(vpcDao.getActiveVpcById(vpcId)).thenReturn(vpc);
+        Mockito.when(vpc.isRedundant()).thenReturn(false);
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        Mockito.when(accountManager.getActiveAccountById(1L)).thenReturn(Mockito.mock(Account.class));
+        Mockito.when(networkModel.listNetworksByVpc(vpcId)).thenReturn(Collections.emptyList());
+        VpcVO vpcVO = Mockito.mock(VpcVO.class);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpcVO);
+        VpcManagerImpl spyManager = Mockito.spy(manager);
+        doReturn(true).when(spyManager).startVpc(vpcId, false);
+
+        Assert.assertTrue(spyManager.restartVpc(vpcId, false, false, false, user));
+
+        // the VR is not recreated, so its public NIC keeps the old rate: the stored rate must not change either
+        Mockito.verify(vpcDetailsDao, Mockito.never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        Mockito.verify(configMgr, Mockito.never()).getVpcOfferingNetworkRate(Mockito.anyLong(), Mockito.any());
+    }
+
+    private Integer createVpcOfferingAndCaptureStoredRate(Integer requestedRate) {
+        CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
+        Mockito.when(cmd.getPublicNetworkRate()).thenReturn(requestedRate);
+        VpcManagerImpl spyManager = Mockito.spy(manager);
+        ArgumentCaptor<Integer> rateCaptor = ArgumentCaptor.forClass(Integer.class);
+        doReturn(Mockito.mock(VpcOffering.class)).when(spyManager).createVpcOffering(any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), anyBoolean(), anyBoolean(), rateCaptor.capture());
+        spyManager.createVpcOffering(cmd);
+        return rateCaptor.getValue();
+    }
+
+    @Test
+    public void testCreateVpcOfferingStoresZeroNetworkRateAsUnlimited() {
+        Assert.assertEquals(Integer.valueOf(-1), createVpcOfferingAndCaptureStoredRate(0));
+    }
+
+    @Test
+    public void testCreateVpcOfferingStoresUnlimitedNetworkRate() {
+        Assert.assertEquals(Integer.valueOf(-1), createVpcOfferingAndCaptureStoredRate(-1));
+    }
+
+    @Test
+    public void testCreateVpcOfferingStoresPositiveNetworkRate() {
+        Assert.assertEquals(Integer.valueOf(200), createVpcOfferingAndCaptureStoredRate(200));
+    }
+
+    @Test
+    public void testCreateVpcOfferingKeepsNetworkRateUnsetWhenNotSpecified() {
+        Assert.assertNull(createVpcOfferingAndCaptureStoredRate(null));
+    }
+
     private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {
         Mockito.when(accountManager.getAccount(vpcOwnerId)).thenReturn(account);
         vpcOfferingVO = Mockito.mock(VpcOfferingVO.class);
@@ -656,6 +731,95 @@ public class VpcManagerImplTest {
         List<VpcProvider> result = manager.getVpcElements();
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isEmpty());
+    }
+
+    private VpcManagerImpl spyForRestartWithCleanup(long vpcId, long offeringId, long zoneId) {
+        Vpc vpc = Mockito.mock(Vpc.class);
+        Mockito.when(vpc.getId()).thenReturn(vpcId);
+        Mockito.when(vpc.getVpcOfferingId()).thenReturn(offeringId);
+        Mockito.when(vpc.getZoneId()).thenReturn(zoneId);
+        Mockito.when(vpc.isRedundant()).thenReturn(false);
+        Mockito.when(vpcDao.getActiveVpcById(vpcId)).thenReturn(vpc);
+        Mockito.when(accountManager.getActiveAccountById(1L)).thenReturn(Mockito.mock(Account.class));
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(Mockito.mock(VpcVO.class));
+        return Mockito.spy(manager);
+    }
+
+    private User userOfAccount() {
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        return user;
+    }
+
+    @Test
+    public void testRestartVpcWithCleanupRefreshesPublicNetworkRate() throws Exception {
+        final long vpcId = 5L;
+        VpcManagerImpl spyManager = spyForRestartWithCleanup(vpcId, 7L, 8L);
+        doReturn(true).when(spyManager).startVpc(any(Vpc.class), any(), any());
+        Mockito.when(networkMgr.areRoutersRunning(any())).thenReturn(true);
+        Mockito.doNothing().when(spyManager).reconfigStaticNatForVpcVr(vpcId);
+        Mockito.when(configMgr.getVpcOfferingNetworkRate(7L, 8L)).thenReturn(150);
+
+        Assert.assertTrue(spyManager.restartVpc(vpcId, true, false, false, userOfAccount()));
+
+        Mockito.verify(vpcDetailsDao).addDetail(vpcId, ApiConstants.PUBLIC_NETWORK_RATE, "150", true);
+    }
+
+    @Test
+    public void testRestartVpcWithCleanupStoresUnlimitedPublicNetworkRate() throws Exception {
+        final long vpcId = 5L;
+        VpcManagerImpl spyManager = spyForRestartWithCleanup(vpcId, 7L, 8L);
+        doReturn(true).when(spyManager).startVpc(any(Vpc.class), any(), any());
+        Mockito.when(networkMgr.areRoutersRunning(any())).thenReturn(true);
+        Mockito.doNothing().when(spyManager).reconfigStaticNatForVpcVr(vpcId);
+        Mockito.when(configMgr.getVpcOfferingNetworkRate(7L, 8L)).thenReturn(-1);
+
+        Assert.assertTrue(spyManager.restartVpc(vpcId, true, false, false, userOfAccount()));
+
+        Mockito.verify(vpcDetailsDao).addDetail(vpcId, ApiConstants.PUBLIC_NETWORK_RATE, "-1", true);
+    }
+
+    @Test
+    public void testRestartVpcWithFailedCleanupKeepsStoredPublicNetworkRate() throws Exception {
+        final long vpcId = 5L;
+        VpcManagerImpl spyManager = spyForRestartWithCleanup(vpcId, 7L, 8L);
+        doReturn(true).when(spyManager).startVpc(any(Vpc.class), any(), any());
+        Mockito.when(networkMgr.areRoutersRunning(any())).thenReturn(false);
+
+        Assert.assertFalse(spyManager.restartVpc(vpcId, true, false, false, userOfAccount()));
+
+        Mockito.verify(vpcDetailsDao, Mockito.never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    private CloneVPCOfferingCmd applyResolvedValuesWithSourceRate(CloneVPCOfferingCmd cmd, Integer sourceRate) {
+        VpcOfferingVO source = Mockito.mock(VpcOfferingVO.class);
+        Mockito.when(source.getPublicNetworkRate()).thenReturn(sourceRate);
+        ReflectionTestUtils.invokeMethod(manager, "applyResolvedValuesToCommand", cmd, source,
+                new ArrayList<String>(), new HashMap<String, List<String>>(), null, null, new HashMap<String, String>());
+        return cmd;
+    }
+
+    @Test
+    public void testCloneVpcOfferingInheritsPublicNetworkRateFromSource() {
+        Assert.assertEquals(Integer.valueOf(80), applyResolvedValuesWithSourceRate(new CloneVPCOfferingCmd(), 80).getPublicNetworkRate());
+    }
+
+    @Test
+    public void testCloneVpcOfferingInheritsUnlimitedPublicNetworkRateFromSource() {
+        Assert.assertEquals(Integer.valueOf(-1), applyResolvedValuesWithSourceRate(new CloneVPCOfferingCmd(), -1).getPublicNetworkRate());
+    }
+
+    @Test
+    public void testCloneVpcOfferingKeepsRequestedPublicNetworkRate() {
+        CloneVPCOfferingCmd cmd = new CloneVPCOfferingCmd();
+        ReflectionTestUtils.setField(cmd, "publicNetworkRate", 50);
+
+        Assert.assertEquals(Integer.valueOf(50), applyResolvedValuesWithSourceRate(cmd, 80).getPublicNetworkRate());
+    }
+
+    @Test
+    public void testCloneVpcOfferingKeepsPublicNetworkRateUnsetWhenSourceHasNone() {
+        Assert.assertNull(applyResolvedValuesWithSourceRate(new CloneVPCOfferingCmd(), null).getPublicNetworkRate());
     }
 
 }
