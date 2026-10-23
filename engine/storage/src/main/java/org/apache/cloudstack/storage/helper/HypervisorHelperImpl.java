@@ -29,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
@@ -51,10 +50,10 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public class HypervisorHelperImpl implements HypervisorHelper {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -66,8 +65,6 @@ public class HypervisorHelperImpl implements HypervisorHelper {
     GuestOSDao guestOSDao;
     @Inject
     GuestOSHypervisorDao guestOsHypervisorDao;
-    @Inject
-    ConfigurationDao configurationDao;
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -117,8 +114,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
 
     @Override
     public VMSnapshotTO quiesceVm(VirtualMachine virtualMachine) {
-        String value = configurationDao.getValue("vmsnapshot.create.wait");
-        int wait = NumbersUtil.parseInt(value, 1800);
+        int wait = VMSnapshotManager.VMSnapshotCreateWait.value();
         Long hostId = vmSnapshotHelper.pickRunningHost(virtualMachine.getId());
         VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(1L,  UUID.randomUUID().toString(), VMSnapshot.Type.Disk, null, null, false,
                 null, true);

@@ -40,6 +40,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -138,11 +139,7 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     @Override
     public List<ProjectJoinVO> searchByIds(Long... prjIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         List<ProjectJoinVO> uvList = new ArrayList<ProjectJoinVO>();
         // query details by batches

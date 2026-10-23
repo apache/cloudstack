@@ -26,7 +26,6 @@ import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -216,8 +215,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
 
-        when(configDao.getValue(Config.MigrateWait.key())).thenReturn("3600");
-
         GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
         when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
         when(getVolumeStatAnswer.getResult()).thenReturn(true);
@@ -265,8 +262,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Mockito.lenient().when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         Mockito.lenient().doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
-
-        Mockito.lenient().when(configDao.getValue(Config.MigrateWait.key())).thenReturn("3600");
 
         GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
         Mockito.lenient().when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
@@ -512,8 +507,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Test
     public void testCopyOfflineVolume() {
-        when(configDao.getValue(Config.CopyVolumeWait.key())).thenReturn("3600");
-
         DataObject srcData = Mockito.mock(DataObject.class);
         DataTO srcDataTO = Mockito.mock(DataTO.class);
         when(srcData.getTO()).thenReturn(srcDataTO);
@@ -535,8 +528,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Test
     public void testCopyOfflineVolumeFailureWhenNoEndpointFound() {
-        when(configDao.getValue(Config.CopyVolumeWait.key())).thenReturn("3600");
-
         DataObject srcData = Mockito.mock(DataObject.class);
         DataTO srcDataTO = Mockito.mock(DataTO.class);
         when(srcData.getTO()).thenReturn(srcDataTO);

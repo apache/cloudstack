@@ -49,10 +49,11 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.upload.UploadListener;
@@ -85,7 +86,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-        _proxy = configs.get(Config.SecStorageProxy.key());
+        _proxy = configs.get(AgentManager.SecStorageProxy.key());
 
         _copyAuthPasswd = configs.get("secstorage.copy.password");
 
@@ -328,7 +329,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private Long getMaxTemplateSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
+            return SecondaryStorageVmManager.MaxTemplateAndIsoSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }
@@ -336,7 +337,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private Long getMaxVolumeSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+            return VolumeApiService.MaxUploadVolumeSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }
@@ -344,7 +345,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     private Long getMaxSnapshotSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+            return VolumeApiService.MaxUploadVolumeSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }

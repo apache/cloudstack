@@ -38,6 +38,7 @@ import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
@@ -293,11 +294,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
     @Override
     public List<AccountJoinVO> searchByIds(Long... accountIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
 
         List<AccountJoinVO> uvList = new ArrayList<>();
         // query details by batches

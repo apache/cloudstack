@@ -101,7 +101,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.Config;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -139,7 +138,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -753,8 +751,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         _volumeService.grantAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
 
-        String value = _configDao.getValue(Config.MigrateWait.key());
-        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+        int waitInterval = AgentManager.MigrateWait.value();
 
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destVolumeInfo.getDataStore().getId(), DataStoreRole.Primary);
 
@@ -1608,7 +1605,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());
 
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
 
             VolumeApiResult result = future.get(storagePoolMaxWaitSeconds, TimeUnit.SECONDS);
 

@@ -49,7 +49,6 @@ import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -84,6 +83,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -351,15 +351,15 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 boolean securityGroupEnabled = zone.isSecurityGroupEnabled() || _networkMgr.isSecurityGroupSupportedForZone(zone.getId());
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
-                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
-                params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
-                params.put(Config.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenServerMaxNics.toString()));
-                params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
-                params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
-                params.put(Config.InstanceName.toString().toLowerCase(), _instance);
-                details.put(Config.InstanceName.toString().toLowerCase(), _instance);
+                params.put("migratewait", String.valueOf(AgentManager.MigrateWait.value()));
+                params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), String.valueOf(AgentManager.XenServerMaxNics.value()));
+                params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatTimeout.value()));
+                params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatInterval.value()));
+                params.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
+                details.put(AgentManager.InstanceName.toString().toLowerCase(), _instance);
                 try {
                     resource.configure("XenServer", params);
                 } catch (ConfigurationException e) {
@@ -473,7 +473,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     protected void serverConfig() {
-        String value = _params.get(Config.XenServerSetupMultipath.key());
+        String value = _params.get(ManagementServer.XenServerSetupMultipath.key());
         _setupMultipath = Boolean.parseBoolean(value);
     }
 
@@ -482,10 +482,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         super.configure(name, params);
         serverConfig();
 
-        String value = _params.get(Config.XapiWait.toString());
-        _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.XapiWait.getDefaultValue()));
+        String value = _params.get(AgentManager.XapiWait.toString());
+        _wait = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.XapiWait.defaultValue()));
 
-        _instance = _params.get(Config.InstanceName.key());
+        _instance = _params.get(AgentManager.InstanceName.key());
 
         value = _params.get("xenserver.check.hvm");
         _checkHvm = Boolean.parseBoolean(value);

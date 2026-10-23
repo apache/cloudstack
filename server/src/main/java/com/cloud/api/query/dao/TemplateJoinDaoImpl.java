@@ -44,7 +44,6 @@ import org.apache.cloudstack.api.response.VnfTemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -93,8 +92,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<TemplateJoinVO, TemplateResponse> implements TemplateJoinDao {
 
 
-    @Inject
-    private ConfigurationDao  _configDao;
     @Inject
     private AccountService _accountService;
     @Inject
