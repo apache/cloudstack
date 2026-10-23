@@ -27,21 +27,37 @@ import org.libvirt.event.BlockJobListener;
 import org.libvirt.event.BlockJobStatus;
 import org.libvirt.event.BlockJobType;
 
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 public class BlockCommitListener implements BlockJobListener {
     private String result;
     private String vmName;
 
     private Logger logger;
     private String logid;
+    private Semaphore semaphore;
 
     protected BlockCommitListener(String vmName, String logid) {
         this.vmName = vmName;
         this.logid = logid;
-        logger = LogManager.getLogger(getClass());
+        this.logger = LogManager.getLogger(getClass());
+        this.semaphore = new Semaphore(0);
+        this.result = String.format("Failed to block commit disk of VM [%s]. Libvirt did not launch an event for it.", vmName);
     }
 
-    protected String getResult() {
+    protected String getResult(int timeout) {
+        this.waitBlockCommit(timeout);
         return result;
+    }
+
+    protected void waitBlockCommit(int timeout) {
+        try {
+            logger.debug("Trying to acquire result semaphore. If the correct event was not launched, will wait for [{}] seconds before giving up.", timeout);
+            this.semaphore.tryAcquire(timeout, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            logger.error("Thread that was tracking the progress for the block commit job of vm {} was interrupted.", vmName, ex);
+        }
     }
 
     @Override
@@ -55,6 +71,7 @@ public class BlockCommitListener implements BlockJobListener {
         switch (status) {
             case COMPLETED:
                 result = null;
+                semaphore.release();
                 return;
             case READY:
                 try {
@@ -62,10 +79,12 @@ public class BlockCommitListener implements BlockJobListener {
                     domain.blockJobAbort(diskPath, Domain.BlockJobAbortFlags.PIVOT);
                 } catch (LibvirtException ex) {
                     result = String.format("Failed to pivot disk due to [%s].", ex.getMessage());
+                    semaphore.release();
                 }
                 return;
             default:
                 result = String.format("Failed to block commit disk with status [%s].", status);
+                semaphore.release();
         }
     }
 }
