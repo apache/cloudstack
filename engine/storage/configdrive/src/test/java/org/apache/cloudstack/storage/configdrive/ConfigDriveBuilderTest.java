@@ -35,7 +35,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.vm.NicProfile;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -381,6 +383,94 @@ public class ConfigDriveBuilderTest {
                         Mockito.eq("content2"), Mockito.anyMap());
             });
         }
+    }
+
+    private static final String KEY_ONE = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFeMnwadvS7Z/sN0yCVnfcMgvxrmlNr2zElAMlFvbsP2";
+    private static final String KEY_TWO = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEPnHzS1LN+3VoXrUBWhRlIbWlSiqVdPynRNDy4bnLOn";
+
+    private JsonObject buildOpenStackKeys(String content) {
+        JsonObject metadata = new JsonObject();
+        ConfigDriveBuilder.buildOpenStackMetaData(metadata, NetworkModel.METATDATA_DIR, NetworkModel.PUBLIC_KEYS_FILE, content);
+        return metadata;
+    }
+
+    private void assertOpenStackKey(JsonObject metadata, int index, String name, String data) {
+        JsonObject key = metadata.getAsJsonArray("keys").get(index).getAsJsonObject();
+        Assert.assertEquals("ssh", key.get("type").getAsString());
+        Assert.assertEquals(name, key.get("name").getAsString());
+        Assert.assertEquals(data, key.get("data").getAsString());
+        Assert.assertEquals(data, metadata.getAsJsonObject("public_keys").get(name).getAsString());
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestSingleKey() {
+        JsonObject metadata = buildOpenStackKeys(KEY_ONE);
+
+        Assert.assertEquals(1, metadata.getAsJsonArray("keys").size());
+        Assert.assertEquals(1, metadata.getAsJsonObject("public_keys").size());
+        assertOpenStackKey(metadata, 0, "key", KEY_ONE);
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestSingleKeyNamedAfterComment() {
+        JsonObject metadata = buildOpenStackKeys(KEY_ONE + " user@laptop\n");
+
+        Assert.assertEquals(1, metadata.getAsJsonArray("keys").size());
+        assertOpenStackKey(metadata, 0, "user@laptop", KEY_ONE + " user@laptop");
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestMultipleKeysBecomeSeparateEntries() {
+        JsonObject metadata = buildOpenStackKeys(KEY_ONE + "\n" + KEY_TWO + " user@laptop");
+
+        Assert.assertEquals(2, metadata.getAsJsonArray("keys").size());
+        Assert.assertEquals(2, metadata.getAsJsonObject("public_keys").size());
+        assertOpenStackKey(metadata, 0, "key0", KEY_ONE);
+        assertOpenStackKey(metadata, 1, "user@laptop", KEY_TWO + " user@laptop");
+        for (Map.Entry<String, JsonElement> entry : metadata.getAsJsonObject("public_keys").entrySet()) {
+            Assert.assertFalse(entry.getValue().getAsString().contains("\n"));
+        }
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestDuplicateCommentsAndBlankLines() {
+        JsonObject metadata = buildOpenStackKeys("\r\n" + KEY_ONE + " shared\n\n" + KEY_TWO + " shared\n");
+
+        Assert.assertEquals(2, metadata.getAsJsonArray("keys").size());
+        assertOpenStackKey(metadata, 0, "shared", KEY_ONE + " shared");
+        assertOpenStackKey(metadata, 1, "key1", KEY_TWO + " shared");
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestUnnamedKeyDoesNotOverwriteCommentName() {
+        JsonObject metadata = buildOpenStackKeys(KEY_ONE + " key1\n" + KEY_TWO);
+
+        Assert.assertEquals(2, metadata.getAsJsonArray("keys").size());
+        Assert.assertEquals(2, metadata.getAsJsonObject("public_keys").size());
+        assertOpenStackKey(metadata, 0, "key1", KEY_ONE + " key1");
+        assertOpenStackKey(metadata, 1, "key2", KEY_TWO);
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestDuplicateCommentSkipsOccupiedFallbackNames() {
+        JsonObject metadata = buildOpenStackKeys(KEY_ONE + " key2\n" + KEY_TWO + " key3\n" + KEY_ONE + " key2");
+
+        Assert.assertEquals(3, metadata.getAsJsonArray("keys").size());
+        Assert.assertEquals(3, metadata.getAsJsonObject("public_keys").size());
+        assertOpenStackKey(metadata, 0, "key2", KEY_ONE + " key2");
+        assertOpenStackKey(metadata, 1, "key3", KEY_TWO + " key3");
+        assertOpenStackKey(metadata, 2, "key4", KEY_ONE + " key2");
+    }
+
+    @Test
+    public void buildOpenStackMetaDataTestOtherFilesAndDataTypesUntouched() {
+        JsonObject metadata = new JsonObject();
+        ConfigDriveBuilder.buildOpenStackMetaData(metadata, NetworkModel.METATDATA_DIR, NetworkModel.PUBLIC_KEYS_FILE, "");
+        ConfigDriveBuilder.buildOpenStackMetaData(metadata, NetworkModel.USERDATA_DIR, NetworkModel.PUBLIC_KEYS_FILE, KEY_ONE);
+        Assert.assertEquals(0, metadata.size());
+
+        ConfigDriveBuilder.buildOpenStackMetaData(metadata, NetworkModel.METATDATA_DIR, NetworkModel.LOCAL_HOSTNAME_FILE, "vm-1");
+        Assert.assertEquals("vm-1", metadata.get(NetworkModel.openStackFileMapping.get(NetworkModel.LOCAL_HOSTNAME_FILE)).getAsString());
     }
 
     @Test
