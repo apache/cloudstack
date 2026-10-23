@@ -143,7 +143,7 @@ public class ListNicsCmd extends BaseListCmd {
                 if (results != null) {
                     resList = new ArrayList<NicResponse>(results.size());
                     for (Nic r : results) {
-                        NicResponse resp = _responseGenerator.createNicResponse(r);
+                        NicResponse resp = _responseGenerator.createNicResponse(r, this.getNetworkId());
                         resp.setObjectName("nic");
                         resList.add(resp);
                     }

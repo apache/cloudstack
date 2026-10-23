@@ -22,10 +22,14 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PostMigrationAnswer;
 import com.cloud.agent.api.PostMigrationCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.VifDriver;
+import com.cloud.network.Networks;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,6 +86,49 @@ public class LibvirtPostMigrationCommandWrapperTest {
 
             Assert.assertTrue(answer.getResult());
             Assert.assertTrue(answer instanceof PostMigrationAnswer);
+        }
+    }
+
+    @Test
+    public void testExecute_VlanNic_AppliesManualVlanTrunkMembership() throws LibvirtException, com.cloud.exception.InternalErrorException {
+        NicTO vlanNic = new NicTO();
+        vlanNic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        vlanNic.setMac("02:00:00:00:00:01");
+        when(virtualMachineTO.getNics()).thenReturn(new NicTO[]{vlanNic});
+
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        when(libvirtComputingResource.getInterface(connect, VM_NAME, vlanNic.getMac())).thenReturn(liveInterface);
+        when(libvirtComputingResource.getVifDriver(vlanNic.getType(), vlanNic.getName())).thenReturn(vifDriver);
+
+        List<DiskDef> disks = createNonClvmDisks();
+        try (MockedStatic<LibvirtConnection> mockedConnection = Mockito.mockStatic(LibvirtConnection.class)) {
+            mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+            when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+
+            Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
+
+            Assert.assertTrue(answer.getResult());
+            Mockito.verify(vifDriver).ensureVlanTrunkMembership(liveInterface, vlanNic);
+        }
+    }
+
+    @Test
+    public void testExecute_NonVlanNic_SkipsManualVlanTrunkMembership() throws LibvirtException {
+        NicTO publicNic = new NicTO();
+        publicNic.setBroadcastType(Networks.BroadcastDomainType.Native);
+        publicNic.setMac("02:00:00:00:00:02");
+        when(virtualMachineTO.getNics()).thenReturn(new NicTO[]{publicNic});
+
+        List<DiskDef> disks = createNonClvmDisks();
+        try (MockedStatic<LibvirtConnection> mockedConnection = Mockito.mockStatic(LibvirtConnection.class)) {
+            mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+            when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+
+            Answer answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
+
+            Assert.assertTrue(answer.getResult());
+            Mockito.verify(libvirtComputingResource, Mockito.never()).getInterface(any(), any(), any());
         }
     }
 

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -99,6 +100,7 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.VNF;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
@@ -116,10 +118,13 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -148,6 +153,12 @@ public class QueryManagerImplTest {
 
     @Mock
     TemplateJoinDao templateJoinDaoMock;
+
+    @Mock
+    NicDao nicDao;
+
+    @Mock
+    NetworkDao networkDao;
 
     @Mock
     SearchCriteria searchCriteriaMock;
@@ -890,5 +901,47 @@ public class QueryManagerImplTest {
         queryManagerImplSpy.addVmCurrentClusterHostTags(vmInstance, hostTags);
         assertEquals(1, hostTags.size());
         assertTrue(hostTags.contains(tag1));
+    }
+
+    private SearchBuilder<NicVO> mockNicSearchBuilder() {
+        SearchBuilder<NicVO> nicSearch = mock(SearchBuilder.class);
+        when(nicSearch.entity()).thenReturn(mock(NicVO.class));
+        when(nicSearch.and()).thenReturn(nicSearch);
+        when(nicDao.createSearchBuilder()).thenReturn(nicSearch);
+        return nicSearch;
+    }
+
+    @Test
+    public void testCreateNicSearchBuilderMatchesAssociatedNicsWhenPresent() {
+        SearchBuilder<NicVO> nicSearch = mockNicSearchBuilder();
+
+        queryManagerImplSpy.createNicSearchBuilder(null, true);
+
+        verify(nicSearch).op(Mockito.eq("networkId"), any(), Mockito.eq(SearchCriteria.Op.EQ));
+        verify(nicSearch).or(Mockito.eq("associatedNicIdIN"), Mockito.<Object>any(), Mockito.eq(SearchCriteria.Op.IN));
+        verify(nicSearch).cp();
+    }
+
+    @Test
+    public void testCreateNicSearchBuilderPrimaryOnlyWithoutAssociatedNics() {
+        SearchBuilder<NicVO> nicSearch = mockNicSearchBuilder();
+
+        queryManagerImplSpy.createNicSearchBuilder(null, false);
+
+        verify(nicSearch).and(Mockito.eq("networkId"), any(), Mockito.eq(SearchCriteria.Op.EQ));
+        verify(nicSearch, never()).or(Mockito.eq("associatedNicIdIN"), Mockito.<Object>any(), Mockito.<SearchCriteria.Op>any());
+        verify(networkDao, never()).createSearchBuilder();
+    }
+
+    @Test
+    public void testCreateNicSearchBuilderJoinsVpcWhenVpcIdGiven() {
+        SearchBuilder<NicVO> nicSearch = mockNicSearchBuilder();
+        SearchBuilder<NetworkVO> networkSearch = mock(SearchBuilder.class);
+        when(networkSearch.entity()).thenReturn(mock(NetworkVO.class));
+        when(networkDao.createSearchBuilder()).thenReturn(networkSearch);
+
+        queryManagerImplSpy.createNicSearchBuilder(1L, false);
+
+        verify(nicSearch).join(Mockito.eq("vpc"), Mockito.eq(networkSearch), Mockito.<Object>any(), Mockito.<Object>any(), Mockito.<JoinBuilder.JoinType>any());
     }
 }

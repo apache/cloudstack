@@ -67,11 +67,19 @@ public class UsageNetworkOfferingVO implements InternalIdentity {
     @Column(name = "nic_id")
     private Long nicId;
 
+    @Column(name = "network_id")
+    private Long networkId;
+
     protected UsageNetworkOfferingVO() {
     }
 
     public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, boolean isDefault, Date created,
             Date deleted) {
+        this(zoneId, accountId, domainId, vmInstanceId, networkOfferingId, nicId, null, isDefault, created, deleted);
+    }
+
+    public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, Long networkId, boolean isDefault,
+            Date created, Date deleted) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -81,6 +89,7 @@ public class UsageNetworkOfferingVO implements InternalIdentity {
         this.created = created;
         this.deleted = deleted;
         this.nicId = nicId;
+        this.networkId = networkId;
     }
 
     public long getZoneId() {
@@ -125,6 +134,14 @@ public class UsageNetworkOfferingVO implements InternalIdentity {
 
     public void setNicId(Long nicId) {
         this.nicId = nicId;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
     }
 
     @Override
