@@ -54,8 +54,8 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
 
         Set<String> secondaryStorageUuids = new HashSet<>();
         try {
-            KVMStoragePool secondaryStorage = mountSecondaryStorages(secondaryStorageUrls, backupToAndVolumeObjectPairs.stream().findFirst().get().first().getDataStore().getUrl(),
-                    storagePoolManager, secondaryStorageUuids);
+            KVMStoragePool secondaryStorage = resource.mountSecondaryStorages(secondaryStorageUrls,
+                    backupToAndVolumeObjectPairs.stream().findFirst().get().first().getDataStore().getUrl(), storagePoolManager, secondaryStorageUuids);
 
             restoreVolumes(backupToAndVolumeObjectPairs, secondaryStorage, storagePoolManager, cmd.isQuickRestore(), cmd.getWait() * 1000);
 
@@ -109,15 +109,5 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
             logger.debug("Deleting leftover delta [{}].", fullDeltaPath);
             Files.deleteIfExists(Path.of(fullDeltaPath));
         }
-    }
-
-    protected KVMStoragePool mountSecondaryStorages(Set<String> parentSecondaryStorageUrls, String secondaryStorageUrl, KVMStoragePoolManager storagePoolManager, Set<String> secondaryStorageUuids) {
-        for (String url : parentSecondaryStorageUrls) {
-            KVMStoragePool pool = storagePoolManager.getStoragePoolByURI(url);
-            secondaryStorageUuids.add(pool.getUuid());
-        }
-        KVMStoragePool pool = storagePoolManager.getStoragePoolByURI(secondaryStorageUrl);
-        secondaryStorageUuids.add(pool.getUuid());
-        return pool;
     }
 }
