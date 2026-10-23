@@ -28,6 +28,7 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Networks;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.NicDao;
 
 public class VlanTrunkMigrationHelper {
@@ -61,9 +62,12 @@ public class VlanTrunkMigrationHelper {
         }
         DetailVO vlanFilteringDetail = hostDetailsDao.findDetail(dstHostId, Host.HOST_VLAN_FILTERING_ENABLED);
         boolean destVlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
-        return nicDao.listByVmId(vmId).stream()
-                .anyMatch(nic -> nic.getBroadcastUri() != null && Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()) == Networks.BroadcastDomainType.Vlan
-                        && (nic.getMultiNetwork() || destVlanFilteringEnabled));
+        return nicDao.listByVmId(vmId).stream().anyMatch(nic -> nicNeedsManualVlanMembership(nic, destVlanFilteringEnabled));
+    }
+
+    public static boolean nicNeedsManualVlanMembership(NicVO nic, boolean vlanFilteringEnabled) {
+        return nic.getBroadcastUri() != null && Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()) == Networks.BroadcastDomainType.Vlan
+                && (nic.getMultiNetwork() || vlanFilteringEnabled);
     }
 
     public static void sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,

@@ -1190,6 +1190,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void reapplyLiveVlanMembership(VirtualMachine vm) {
+    }
+
+    @Override
     public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
         return null;
     }

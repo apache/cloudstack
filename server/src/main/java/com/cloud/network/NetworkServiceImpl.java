@@ -102,6 +102,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.UpdateNicVlanMembershipCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
@@ -289,6 +290,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.googlecode.ipv6.IPv6Address;
 
 /**
@@ -349,6 +351,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NicDao _nicDao = null;
     @Inject
     NicNetworkMapDao _nicNetworkMapDao = null;
+    @Inject
+    VMSnapshotDao _vmSnapshotDao;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -924,6 +928,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
         checkMultiNetworkNicEnabled(vm);
+        checkNoVmSnapshots(vm);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -1098,6 +1103,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
         checkMultiNetworkNicEnabled(vm);
+        checkNoVmSnapshots(vm);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -1177,6 +1183,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
         checkMultiNetworkNicEnabled(vm);
+        checkNoVmSnapshots(vm);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -1296,6 +1303,21 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    @Override
+    public void reapplyLiveVlanMembership(VirtualMachine vm) throws ResourceUnavailableException {
+        if (vm.getHostId() == null
+                || !VlanTrunkMigrationHelper.vmNeedsPostMigrationVlanTrunkMembership(vm.getId(), vm.getHostId(), _nicDao, _hostDetailsDao)) {
+            return;
+        }
+        DetailVO vlanFilteringDetail = _hostDetailsDao.findDetail(vm.getHostId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        boolean vlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
+        for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
+            if (VlanTrunkMigrationHelper.nicNeedsManualVlanMembership(nic, vlanFilteringEnabled)) {
+                updateLiveVlanTrunkMembership(vm, nic);
+            }
+        }
+    }
+
     private void updateLiveVlanTrunkMembership(VirtualMachine vm, NicVO nic) throws ResourceUnavailableException {
         if (vm.getHostId() == null) {
             throw new CloudRuntimeException(String.format("Instance %s is Running but has no host assigned", vm.getUuid()));
@@ -1364,6 +1386,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             DataCenter zone = _dcDao.findById(vm.getDataCenterId());
             throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s",
                     zone != null ? zone.getUuid() : vm.getDataCenterId()));
+        }
+    }
+
+    private void checkNoVmSnapshots(VirtualMachine vm) {
+        if (!_vmSnapshotDao.findByVm(vm.getId()).isEmpty()) {
+            throw new InvalidParameterValueException("Trunk NIC networks cannot be changed for Instance with Instance Snapshots");
         }
     }
 

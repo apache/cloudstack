@@ -118,6 +118,8 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -208,6 +210,8 @@ public class NetworkServiceImplTest {
     HostDetailsDao hostDetailsDao;
     @Mock
     NicNetworkMapDao nicNetworkMapDao;
+    @Mock
+    VMSnapshotDao vmSnapshotDao;
     @Mock
     Ipv6AddressManager ipv6AddressManager;
     @Mock
@@ -386,6 +390,7 @@ public class NetworkServiceImplTest {
         service._hostDao = hostDao;
         service._hostDetailsDao = hostDetailsDao;
         service._nicNetworkMapDao = nicNetworkMapDao;
+        service._vmSnapshotDao = vmSnapshotDao;
         service.ipv6AddrMgr = ipv6AddressManager;
         service._networkModel = networkModel;
         service._entityMgr = entityMgr;
@@ -1525,6 +1530,22 @@ public class NetworkServiceImplTest {
             Assert.assertTrue(e.getMessage().contains("not enabled"));
         } finally {
             overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "true");
+        }
+    }
+
+    @Test
+    public void associateNetworkToNicFailsWhenVmHasVmSnapshots() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+        Mockito.when(vmSnapshotDao.findByVm(Mockito.anyLong())).thenReturn(Arrays.asList(vmSnapshot));
+        try {
+            service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
+            Assert.fail("expected InvalidParameterValueException");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage().contains("Instance Snapshots"));
         }
     }
 

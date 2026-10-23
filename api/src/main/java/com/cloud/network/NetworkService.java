@@ -62,6 +62,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
@@ -310,4 +311,7 @@ public interface NetworkService {
     String getNicVlanValueForExternalVm(NicTO nic);
 
     Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
+
+    // Re-applies each nic's VLAN membership on the host of a Running Instance, e.g. after a memory revert recreates its taps.
+    void reapplyLiveVlanMembership(VirtualMachine vm) throws ResourceUnavailableException;
 }
