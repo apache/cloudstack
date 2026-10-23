@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -92,16 +94,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             BackupFrameworkEnabled.key());
 
-    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
-            "nas.backup.full.every",
-            "10",
-            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
-                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
-                    "Set to 1 to disable incrementals (every backup is full).",
-            true,
-            ConfigKey.Scope.Zone,
-            BackupFrameworkEnabled.key());
-
     ConfigKey<Boolean> NASBackupIncrementalEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.backup.incremental.enabled",
             "false",
@@ -111,6 +103,25 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     "Toggling this is safe at any time: switching off forces the next backup to be a fresh " +
                     "full anchor (existing chains stay restorable), switching back on resumes incrementals " +
                     "on the next full + incremental cycle.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.full.every",
+            "10",
+            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
+                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
+                    "Set to 1 to disable incrementals (every backup is full).",
+            true,
+            ConfigKey.Scope.Zone,
+            NASBackupIncrementalEnabled.key());
+
+    ConfigKey<Integer> NASBackupQuiesceAgentTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.quiesce.agent.timeout",
+            "30",
+            "Timeout in seconds for the guest agent filesystem freeze and thaw commands of a quiesced NAS backup. " +
+                    "Set to 0 to use the libvirt default (5 seconds unless changed on the host).",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
@@ -168,6 +179,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private BackupDetailsDao backupDetailsDao;
+
+    @Inject
+    private AlertManager alertManager;
 
     private Long getClusterIdFromRootVolume(VirtualMachine vm) {
         VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
@@ -392,7 +406,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return null;
         }
         String v = d.getValue();
-        return (v == null || v.isEmpty()) ? null : v;
+        return StringUtils.isBlank(v) ? null : v;
     }
 
     /**
@@ -402,7 +416,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      */
     private Backup findLatestBackedUpBackup(long vmId) {
         List<Backup> history = backupDao.listByVmId(null, vmId);
-        if (history == null || history.isEmpty()) {
+        if (CollectionUtils.isEmpty(history)) {
             return null;
         }
         return history.stream()
@@ -434,17 +448,21 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // backupPath is stored as externalId by createBackupObject — e.g.
         // "i-2-1234-VM/2026.04.27.13.45.00".
         String dir = parent.getExternalId();
-        if (dir == null || dir.isEmpty()) {
+        if (StringUtils.isBlank(dir)) {
+            LOG.debug("Parent backup {} has no backup path recorded; cannot compose parent backup paths", parent.getUuid());
             return null;
         }
 
         List<Backup.VolumeInfo> parentVols = parent.getBackedUpVolumes();
-        if (parentVols == null || parentVols.isEmpty()) {
+        if (CollectionUtils.isEmpty(parentVols)) {
+            LOG.debug("Parent backup {} has no backed up volumes recorded; cannot compose parent backup paths", parent.getUuid());
             return null;
         }
 
         List<VolumeVO> currentVols = volumeDao.findByInstance(vmId);
-        if (currentVols == null || currentVols.size() != parentVols.size()) {
+        if (CollectionUtils.isEmpty(currentVols) || currentVols.size() != parentVols.size()) {
+            LOG.debug("VM id={} currently has {} volume(s) but parent backup {} recorded {}; cannot compose parent backup paths",
+                    vmId, currentVols == null ? 0 : currentVols.size(), parent.getUuid(), parentVols.size());
             return null;
         }
 
@@ -578,6 +596,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
+        command.setQuiesceTimeout(NASBackupQuiesceAgentTimeout.valueIn(vm.getDataCenterId()));
         command.setMode(decision.mode);
         command.setBitmapNew(decision.bitmapNew);
         command.setBitmapParent(decision.bitmapParent);
@@ -643,14 +662,28 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             logger.error("Failed to take backup for VM {}: {}", vm.getInstanceName(), answer != null ? answer.getDetails() : "No answer received");
             if (answer != null && answer.getNeedsCleanup()) {
                 logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state. Backup should be manually deleted to free up the space", vm.getInstanceName());
+                sendBackupCleanupFailedAlert(vm, host, answer.getDetails());
                 backupVO.setStatus(Backup.Status.Error);
                 backupDao.update(backupVO.getId(), backupVO);
-            } else {
-                backupVO.setStatus(Backup.Status.Failed);
-                backupDao.update(backupVO.getId(), backupVO);
+                // Return the row to the caller to record its schedule - e.g. Scheduled or Manual.
+                return new Pair<>(false, backupVO);
             }
+            backupVO.setStatus(Backup.Status.Failed);
+            backupDao.remove(backupVO.getId());
             return new Pair<>(false, null);
         }
+    }
+
+    /**
+     * Alerts when nasbackup.sh could not clean up after a failed backup. The script's output
+     * names the backup repository mount point it left on the host.
+     */
+    private void sendBackupCleanupFailedAlert(VirtualMachine vm, Host host, String details) {
+        String subject = String.format("NAS backup cleanup failed for VM %s on host %s", vm.getInstanceName(), host.getName());
+        String body = String.format("A failed backup of VM %s could not be cleaned up on host %s (%s). " +
+                "The backup repository may still be mounted on that host. Script output: %s",
+                vm.getInstanceName(), host.getName(), host.getPrivateIpAddress(), details);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE, vm.getDataCenterId(), host.getPodId(), subject, body);
     }
 
     private BackupVO createBackupObject(VirtualMachine vm, String backupPath, String type) {
@@ -726,9 +759,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
         }
-        // After a restore the QEMU dirty-bitmap chain is gone — clear active_checkpoint_id so
+        if (answer == null) {
+            throw new CloudRuntimeException(String.format("No answer received from the backend control plane while restoring VM %s from backup %s", vm.getInstanceName(), backup.getUuid()));
+        }
+        // After a restore the QEMU dirty-bitmap chain is gone, so clear active_checkpoint_id so
         // the next backup is taken as a fresh full and starts a new chain. See decideChain.
-        if (answer != null && answer.getResult()) {
+        if (answer.getResult()) {
             clearVmActiveCheckpoint(vm.getId());
         }
         return new Pair<>(answer.getResult(), answer.getDetails());
@@ -1257,7 +1293,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return new ConfigKey[]{
                 NASBackupRestoreMountTimeout,
                 NASBackupFullEvery,
-                NASBackupIncrementalEnabled
+                NASBackupIncrementalEnabled,
+                NASBackupQuiesceAgentTimeout
         };
     }
 

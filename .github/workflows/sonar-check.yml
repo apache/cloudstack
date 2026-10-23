@@ -47,10 +47,13 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: Run Build and Tests with Coverage
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: mvn -B -T$(nproc) -P developer,systemvm,quality -Dsimulator -Dnoredist clean install
       - name: Upload to SonarQube
         if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
         env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PR_ID: ${{ github.event.pull_request.number }}
@@ -69,7 +72,7 @@ jobs:
         id: grade
         run: bash scripts/coverage-grade.sh client/target/site/jacoco-aggregate/jacoco.xml
       - name: Post Coverage Grade Comment on PR
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -77,7 +80,7 @@ jobs:
             const grade     = '${{ steps.grade.outputs.coverage_grade }}';
             const label     = '${{ steps.grade.outputs.coverage_grade_label }}';
             const linePct   = '${{ steps.grade.outputs.line_coverage }}';
-            const branchPct = '${{ steps.grade.outputs.branch_coverage }}';
+            const branchPct = '${{ steps.grade.outputs.branch_coverage || 'N/A' }}';
             const emojiMap  = { A: '🟢', B: '🟡', C: '🟠', D: '🔴', F: '⛔' };
             const emoji     = emojiMap[grade] ?? '❓';
             const runUrl    = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
