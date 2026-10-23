@@ -3706,6 +3706,8 @@ class Network:
             cmd.cidrsize = cidrsize
         elif "cidrsize" in services:
             cmd.cidrsize = services["cidrsize"]
+        if "cidr" in services:
+            cmd.cidr = services["cidr"]
         if "startip" in services:
             cmd.startip = services["startip"]
         if "endip" in services:
