@@ -21,6 +21,8 @@ package org.apache.cloudstack.storage.vmsnapshot;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -30,12 +32,16 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -57,8 +63,12 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.DeleteDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotAnswer;
+import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.SnapshotMergeTreeTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -66,8 +76,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.uservm.UserVm;
@@ -546,5 +559,174 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(storagePool.getDataCenterId()).thenReturn(dataCenterId);
         when(host.getId()).thenReturn(hostId);
         when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null)).thenReturn(List.of(host));
+    }
+
+    @Test
+    public void testGetMergedVolumeUuidsUsesPerVolumeResultsAndFallsBackForLegacyAnswers() {
+        List<SnapshotMergeTreeTO> trees = List.of(mergeTree(volumeTo(1L, "vol-a"), "snap-a", 101L), mergeTree(volumeTo(2L, "vol-b"), "snap-b", 102L));
+
+        assertEquals(Set.of("vol-a"), strategy.getMergedVolumeUuids(new MergeDiskOnlyVmSnapshotAnswer(null, false, "aborted", List.of("vol-a")), trees));
+        assertEquals(Set.of("vol-a", "vol-b"), strategy.getMergedVolumeUuids(new Answer(null, true, null), trees));
+        assertTrue(strategy.getMergedVolumeUuids(new Answer(null, false, "failed"), trees).isEmpty());
+        assertTrue(strategy.getMergedVolumeUuids(null, trees).isEmpty());
+    }
+
+    @Test
+    public void testSendMergeCommandExposesTheManagementServerWaitToTheHost() {
+        MergeDiskOnlyVmSnapshotCommand command = new MergeDiskOnlyVmSnapshotCommand(new ArrayList<>(), VirtualMachine.State.Running, "vm");
+
+        strategy.sendMergeCommand(40L, command);
+        assertEquals(AgentManager.Wait.value().intValue(), command.getWait());
+
+        command.setWait(20);
+        strategy.sendMergeCommand(40L, command);
+        assertEquals(20, command.getWait());
+        verify(agentMgr, times(2)).easySend(40L, command);
+    }
+
+    @Test
+    public void testMergeCurrentDeltaOnSnapshotOnlyUpdatesTheVolumesThatWereMerged() throws Exception {
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+        VolumeObjectTO volumeA = volumeTo(1L, "vol-a");
+        VolumeObjectTO volumeB = volumeTo(2L, "vol-b");
+        VMSnapshotDetailsVO detailA = volumeSnapshotDetail(11L, 101L);
+        VMSnapshotDetailsVO detailB = volumeSnapshotDetail(12L, 102L);
+        VolumeVO volumeVoA = mock(VolumeVO.class);
+        SnapshotVO snapshotVoA = mock(SnapshotVO.class);
+        strategy.snapshotDao = mock(SnapshotDao.class);
+
+        when(vmSnapshot.getId()).thenReturn(20L);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(vmSnapshotDetailsDao.findDetails(eq(20L), anyString())).thenReturn(List.of(detailA, detailB));
+        mockVolumeSnapshot(volumeA, 101L, "snap-a");
+        mockVolumeSnapshot(volumeB, 102L, "snap-b");
+        when(strategy.volumeDao.findById(1L)).thenReturn(volumeVoA);
+        when(volumeVoA.getId()).thenReturn(1L);
+        when(volumeVoA.getPoolId()).thenReturn(5L);
+        when(snapshotVoA.getId()).thenReturn(101L);
+        when(strategy.snapshotDao.findById(101L)).thenReturn(snapshotVoA);
+        when(agentMgr.easySend(eq(40L), any(MergeDiskOnlyVmSnapshotCommand.class)))
+                .thenReturn(new MergeDiskOnlyVmSnapshotAnswer(null, false, "the block commits did not finish in time", List.of("vol-a")));
+
+        try {
+            invokeMergeCurrentDeltaOnSnapshot(vmSnapshot, List.of(volumeA, volumeB));
+            fail("The merge should fail as volume [vol-b] was not merged.");
+        } catch (CloudRuntimeException ex) {
+            assertTrue(ex.getMessage(), ex.getMessage().contains("vol-b"));
+        }
+
+        verify(volumeVoA).setPath("snap-a");
+        verify(strategy.volumeDao).update(1L, volumeVoA);
+        verify(strategy.volumeDao, never()).findById(2L);
+        verify(snapshotDataStoreDao).expungeReferenceBySnapshotIdAndDataStoreRole(101L, 5L, DataStoreRole.Primary);
+        verify(snapshotDataStoreDao, never()).expungeReferenceBySnapshotIdAndDataStoreRole(eq(102L), anyLong(), any());
+        verify(vmSnapshotDetailsDao).remove(11L);
+        verify(vmSnapshotDetailsDao, never()).remove(12L);
+        verify(snapshotVoA).setState(Snapshot.State.Destroyed);
+        verify(vmSnapshot, never()).setCurrent(Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testMergeCurrentDeltaOnSnapshotOnlyMergesTheVolumesLeftByAPreviousAttempt() throws Exception {
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+        VolumeObjectTO volumeA = volumeTo(1L, "vol-a");
+        VolumeObjectTO volumeB = volumeTo(2L, "vol-b");
+        VolumeVO volumeVoB = mock(VolumeVO.class);
+        VMSnapshotDetailsVO detailB = volumeSnapshotDetail(12L, 102L);
+        strategy.snapshotDao = mock(SnapshotDao.class);
+
+        when(vmSnapshot.getId()).thenReturn(20L);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(vmSnapshot.getParent()).thenReturn(null);
+        when(vmSnapshotDetailsDao.findDetails(eq(20L), anyString())).thenReturn(List.of(detailB));
+        mockVolumeSnapshot(volumeB, 102L, "snap-b");
+        when(strategy.volumeDao.findById(2L)).thenReturn(volumeVoB);
+        when(volumeVoB.getId()).thenReturn(2L);
+        when(agentMgr.easySend(eq(40L), any(MergeDiskOnlyVmSnapshotCommand.class)))
+                .thenReturn(new MergeDiskOnlyVmSnapshotAnswer(null, true, null, List.of("vol-b")));
+
+        invokeMergeCurrentDeltaOnSnapshot(vmSnapshot, List.of(volumeA, volumeB));
+
+        ArgumentCaptor<MergeDiskOnlyVmSnapshotCommand> commandCaptor = ArgumentCaptor.forClass(MergeDiskOnlyVmSnapshotCommand.class);
+        verify(agentMgr).easySend(eq(40L), commandCaptor.capture());
+        assertEquals(1, commandCaptor.getValue().getSnapshotMergeTreeToList().size());
+        assertSame(volumeB, commandCaptor.getValue().getSnapshotMergeTreeToList().get(0).getChild());
+        assertEquals(AgentManager.Wait.value().intValue(), commandCaptor.getValue().getWait());
+        verify(volumeVoB).setPath("snap-b");
+        verify(vmSnapshot).setCurrent(false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeleteVMSnapshotMarksSnapshotAsErrorWhenTheDeletionFails() throws Exception {
+        long vmId = 10L;
+        UserVmVO userVm = mock(UserVmVO.class);
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+
+        when(vmSnapshot.getVmId()).thenReturn(vmId);
+        when(vmSnapshot.getId()).thenReturn(20L);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(40L);
+        when(vmSnapshotHelper.getVolumeTOList(vmId)).thenThrow(new CloudRuntimeException("Failed to merge volumes [vol-b] of VM snapshot [vm-snapshot]."));
+
+        try {
+            strategy.deleteVMSnapshot(vmSnapshot);
+        } finally {
+            InOrder inOrder = inOrder(vmSnapshotHelper);
+            inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+            inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        }
+    }
+
+    private void invokeMergeCurrentDeltaOnSnapshot(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) throws Exception {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVm.getName()).thenReturn("vm");
+
+        Method method = KvmFileBasedStorageVmSnapshotStrategy.class.getDeclaredMethod("mergeCurrentDeltaOnSnapshot", VMSnapshotVO.class, UserVmVO.class, Long.class,
+                List.class);
+        method.setAccessible(true);
+        try {
+            method.invoke(strategy, vmSnapshot, userVm, 40L, volumeTOs);
+        } catch (InvocationTargetException ex) {
+            throw (Exception) ex.getCause();
+        }
+    }
+
+    private VolumeObjectTO volumeTo(long id, String uuid) {
+        VolumeObjectTO volumeTO = mock(VolumeObjectTO.class);
+        when(volumeTO.getId()).thenReturn(id);
+        when(volumeTO.getUuid()).thenReturn(uuid);
+        return volumeTO;
+    }
+
+    private SnapshotMergeTreeTO mergeTree(VolumeObjectTO volumeTO, String parentPath, long parentId) {
+        SnapshotObjectTO parent = mock(SnapshotObjectTO.class);
+        when(parent.getVolume()).thenReturn(volumeTO);
+        when(parent.getPath()).thenReturn(parentPath);
+        when(parent.getId()).thenReturn(parentId);
+        return new SnapshotMergeTreeTO(parent, volumeTO, new ArrayList<>());
+    }
+
+    private VMSnapshotDetailsVO volumeSnapshotDetail(long detailId, long volumeSnapshotId) {
+        VMSnapshotDetailsVO detail = mock(VMSnapshotDetailsVO.class);
+        when(detail.getId()).thenReturn(detailId);
+        when(detail.getValue()).thenReturn(String.valueOf(volumeSnapshotId));
+        return detail;
+    }
+
+    private void mockVolumeSnapshot(VolumeObjectTO volumeTO, long volumeSnapshotId, String path) {
+        SnapshotDataStoreVO snapshotDataStoreVO = mock(SnapshotDataStoreVO.class);
+        SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
+        DataTO parent = mergeTree(volumeTO, path, volumeSnapshotId).getParent();
+        long volumeId = volumeTO.getId();
+
+        when(snapshotDataStoreVO.getSnapshotId()).thenReturn(volumeSnapshotId);
+        when(snapshotDataStoreVO.getDataStoreId()).thenReturn(5L);
+        when(snapshotDataStoreVO.getVolumeId()).thenReturn(volumeId);
+        when(snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(volumeSnapshotId, DataStoreRole.Primary)).thenReturn(snapshotDataStoreVO);
+        when(strategy.snapshotDataFactory.getSnapshot(volumeSnapshotId, 5L, DataStoreRole.Primary)).thenReturn(snapshotInfo);
+        when(snapshotInfo.getTO()).thenReturn(parent);
     }
 }
