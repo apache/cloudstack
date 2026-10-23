@@ -139,11 +139,53 @@
         <a-input
           v-model:value="form.backupchainsize"/>
       </a-form-item>
+      <a-form-item name="maxschedules" ref="maxschedules">
+        <template #label>
+          <tooltip-label :title="$t('label.maxschedules')" :tooltip="apiParams.maxschedules.description"/>
+        </template>
+        <div style="display: flex ">
+          <div v-for="(max,schedule) in maxSchedule" :key="schedule">
+            <a-tooltip :title="schedule + ': ' + max ">
+              <a-tag style="margin:2px" >
+                {{ (schedule + ': ' + max) }}
+                <edit-outlined class="traffic-type-action" @click="editSchedule(schedule)"/>
+              </a-tag>
+            </a-tooltip>
+          </div>
+        </div>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
+    <a-modal
+      :title="$t('label.edit.max.schedules')"
+      v-model:visible="showEditMaxSchedules"
+      :closable="true"
+      :maskClosable="false"
+      centered
+      :footer="null">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        layout="vertical"
+      >
+        <a-form-item
+          name="maxSchedule"
+          ref="maxSchedule"
+          v-bind="formItemLayout"
+          style="margin-top:16px;"
+          :label="$t('label.maxschedules') + ' of ' + this.scheduleInEdit + ' type'">
+          <a-input v-model:value="form.maxSchedule" />
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="cancelEditSchedule">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="updateMaxSchedule(scheduleInEdit)">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -176,7 +218,14 @@ export default {
         { value: 'wait_for_boot', label: 'wait_for_boot' },
         { value: 'screenshot', label: 'screenshot' },
         { value: 'execute_command', label: 'execute_command' }
-      ]
+      ],
+      maxSchedule: {
+        HOURLY: 1,
+        DAILY: 1,
+        WEEKLY: 1,
+        MONTHLY: 1
+      },
+      showEditMaxSchedules: false
     }
   },
   beforeCreate () {
@@ -198,7 +247,8 @@ export default {
         allowextractfile: true,
         backupchainsize: null,
         validationsteps: [],
-        compressionlibrary: null
+        compressionlibrary: null,
+        maxSchedule: 1
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -245,7 +295,11 @@ export default {
         const params = {}
         for (const key in values) {
           const input = values[key]
-          if (key === 'zoneid') {
+          if (key === 'maxSchedule') {
+            Object.keys(this.maxSchedule).forEach(key => {
+              params['maxschedules[0].' + key] = this.maxSchedule[key]
+            })
+          } else if (key === 'zoneid') {
             params[key] = this.zones.opts.filter(zone => zone.name === input)[0].id || null
           } else if (input !== null && key !== 'validationsteps') {
             params[key] = input
@@ -281,6 +335,25 @@ export default {
     closeAction () {
       this.$emit('close-action')
       this.$emit('refresh-data')
+    },
+    editSchedule (maxSchedule) {
+      this.scheduleInEdit = maxSchedule
+      this.form.maxSchedule = this.maxSchedule[maxSchedule]
+      this.showEditMaxSchedules = true
+    },
+    updateMaxSchedule (scheduleInEdit) {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.showEditMaxSchedules = false
+        this.maxSchedule[scheduleInEdit] = values.maxSchedule
+        this.scheduleInEdit = null
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    cancelEditSchedule () {
+      this.showEditMaxSchedules = false
+      this.scheduleInEdit = null
     }
   }
 }

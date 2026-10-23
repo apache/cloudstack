@@ -102,10 +102,10 @@ export default {
 </script>
 
 <style scoped lang="less">
-  .backup-layout {
-    width: 80vw;
-    @media (min-width: 800px) {
-      width: 600px;
-    }
+.backup-layout {
+  width: 80vw;
+  @media (min-width: 800px) {
+    width: 600px;
   }
+}
 </style>

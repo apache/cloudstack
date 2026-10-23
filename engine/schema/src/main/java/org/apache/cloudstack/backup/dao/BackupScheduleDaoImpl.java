@@ -62,11 +62,11 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     }
 
     @Override
-    public BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType) {
+    public List<BackupScheduleVO> listByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType) {
         SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
         sc.setParameters("interval_type", intervalType.ordinal());
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override
