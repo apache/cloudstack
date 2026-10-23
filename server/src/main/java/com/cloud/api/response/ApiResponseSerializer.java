@@ -20,7 +20,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.serializer.Param;
-import com.cloud.server.ManagementServerImpl;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.encoding.URLEncoder;
@@ -178,7 +178,7 @@ public class ApiResponseSerializer {
             log.append("<").append(result.getResponseName());
 
             boolean authenticated = CallContext.current().getCallingAccount().getId() != Account.ACCOUNT_ID_SYSTEM;
-            if (ManagementServerImpl.exposeCloudStackVersionInApiXmlResponse.value() && authenticated) {
+            if (ManagementServer.exposeCloudStackVersionInApiXmlResponse.value() && authenticated) {
                 sb.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
                 log.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
             }

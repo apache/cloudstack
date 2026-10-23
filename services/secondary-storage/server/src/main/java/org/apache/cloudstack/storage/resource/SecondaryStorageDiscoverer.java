@@ -29,7 +29,6 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import com.cloud.agent.AgentManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
@@ -40,6 +39,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.component.ComponentContext;
@@ -174,7 +174,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         }
         params.put("guid", uri.toString());
         params.put("secondary.storage.vm", "false");
-        params.put("max.template.iso.size", _configDao.getValue("max.template.iso.size"));
+        params.put("max.template.iso.size", String.valueOf(SecondaryStorageVmManager.MaxTemplateAndIsoSize.value()));
 
         try {
             storage.configure("Storage", params);
