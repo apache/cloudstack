@@ -54,6 +54,7 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -124,7 +125,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             mergeConfigs(configs, params);
         }
 
-        String usageAggregationTimeZoneStr = ObjectUtils.defaultIfNull(configs.get("usage.aggregation.timezone"), "GMT");
+        // also runs in the usage server, which has no ConfigDepot: read the value from the DB map
+        String usageAggregationTimeZoneStr = ObjectUtils.defaultIfNull(configs.get(UsageService.UsageAggregationTimezone.key()), "GMT");
         usageAggregationTimeZone = TimeZone.getTimeZone(usageAggregationTimeZoneStr);
 
         return true;
