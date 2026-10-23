@@ -16,9 +16,13 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.lang.reflect.Field;
 
@@ -33,6 +37,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
@@ -640,4 +645,47 @@ public class VolumeOrchestratorTest {
         Assert.assertEquals(1, result.second().size());
     }
 
+    @SuppressWarnings("unchecked")
+    private Optional<StoragePool> invokeGetPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm, Long volumePoolId) throws Exception {
+        Method m = VolumeOrchestrator.class.getDeclaredMethod("getPreferredStoragePool", List.class, VirtualMachine.class, Long.class);
+        m.setAccessible(true);
+        return (Optional<StoragePool>) m.invoke(volumeOrchestrator, poolList, vm, volumePoolId);
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolReusesExistingVolumePool() throws Exception {
+        StoragePool other = Mockito.mock(StoragePool.class);
+        Mockito.when(other.getId()).thenReturn(3L);
+        StoragePool matching = Mockito.mock(StoragePool.class);
+        Mockito.when(matching.getId()).thenReturn(2L);
+        List<StoragePool> poolList = Arrays.asList(other, matching);
+
+        Optional<StoragePool> result = invokeGetPreferredStoragePool(poolList, null, 2L);
+
+        Assert.assertTrue(result.isPresent());
+        Assert.assertSame(matching, result.get());
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolFallsBackWhenVolumePoolNotInList() throws Exception {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        Mockito.when(pool.getId()).thenReturn(3L);
+        Mockito.when(pool.getUuid()).thenReturn("uuid-3");
+        List<StoragePool> poolList = Collections.singletonList(pool);
+
+        Optional<StoragePool> result = invokeGetPreferredStoragePool(poolList, null, 99L);
+
+        Assert.assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolNoVolumePoolIdFallsBack() throws Exception {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        Mockito.when(pool.getUuid()).thenReturn("uuid-3");
+        List<StoragePool> poolList = Collections.singletonList(pool);
+
+        Optional<StoragePool> result = invokeGetPreferredStoragePool(poolList, null, null);
+
+        Assert.assertFalse(result.isPresent());
+    }
 }
