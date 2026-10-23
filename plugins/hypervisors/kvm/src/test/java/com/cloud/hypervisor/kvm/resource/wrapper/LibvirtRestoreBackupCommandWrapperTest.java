@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
@@ -628,42 +629,78 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         return captured[0];
     }
 
-    @Test
-    public void testGetDeviceToAttachDiskTrimsOutputBeforeIncrementing() throws Exception {
+    private static String domblklistOutput(String... rows) {
+        String sep = System.lineSeparator();
+        StringBuilder output = new StringBuilder(" Type   Device   Target   Source").append(sep)
+                .append("------------------------------------------------").append(sep);
+        for (String row : rows) {
+            output.append(row).append(sep);
+        }
+        return output.toString();
+    }
+
+    private String getDeviceToAttachDiskFor(String domblklistOutput) throws Exception {
         try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
             scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            // executePipedCommands appends a line separator to each line it reads.
             scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
-                    .thenReturn(new Pair<>(0, "vda" + System.lineSeparator()));
-
-            Assert.assertEquals("vdb", invokeGetDeviceToAttachDisk("test-vm"));
+                    .thenReturn(new Pair<>(0, domblklistOutput));
+            return invokeGetDeviceToAttachDisk("test-vm");
         }
     }
 
     @Test
-    public void testGetDeviceToAttachDiskPassesUnquotedAwkProgram() throws Exception {
+    public void testGetDeviceToAttachDiskRunsOnlyDomblklistWithDetails() throws Exception {
         try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
             scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            final List<String[]>[] captured = new List[1];
+            final AtomicReference<List<String[]>> captured = new AtomicReference<>();
             scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
                     .thenAnswer(invocation -> {
-                        captured[0] = invocation.getArgument(0);
-                        return new Pair<>(0, "vda" + System.lineSeparator());
+                        captured.set(invocation.getArgument(0));
+                        return new Pair<>(0, domblklistOutput(" file   disk     vda      /path/root"));
                     });
 
-            invokeGetDeviceToAttachDisk("test-vm");
+            Assert.assertEquals("vdb", invokeGetDeviceToAttachDisk("test-vm"));
 
-            String[] awkCmd = captured[0].get(captured[0].size() - 1);
-            // The commands are executed without a shell, so the program must carry no shell quotes.
-            Assert.assertEquals("awk", awkCmd[0]);
-            Assert.assertEquals("{print $1}", awkCmd[1]);
+            // virsh must be the only command, so the exit code checked is its own and not that of a
+            // command it is piped into. --details adds the Device column used to skip cdrom rows.
+            Assert.assertEquals(1, captured.get().size());
+            Assert.assertArrayEquals(new String[] { "virsh", "domblklist", "--domain", "test-vm", "--details" }, captured.get().get(0));
         }
+    }
+
+    @Test
+    public void testGetDeviceToAttachDiskSkipsCdromAndIdeDisks() throws Exception {
+        // IDE root disk and cdroms, as on a VM with rootDiskController=ide; vda is not taken by the root disk.
+        Assert.assertEquals("vda", getDeviceToAttachDiskFor(domblklistOutput(
+                " file   disk     hda      /path/root",
+                " file   cdrom    hdc      -",
+                " file   cdrom    hdd      -",
+                " file   disk     vdb      /path/data")));
+    }
+
+    @Test
+    public void testGetDeviceToAttachDiskUsesVdaWhenVmHasNoVirtioDisk() throws Exception {
+        // hdb would be picked otherwise, and IDE disks cannot be hot-plugged.
+        Assert.assertEquals("vda", getDeviceToAttachDiskFor(domblklistOutput(
+                " file   disk     hda      /path/root",
+                " file   cdrom    hdc      -",
+                " file   cdrom    hdd      -")));
+    }
+
+    @Test
+    public void testGetDeviceToAttachDiskDoesNotRelyOnTargetOrder() throws Exception {
+        // vdb was detached and re-attached, so it is listed after vdc and vdd.
+        Assert.assertEquals("vde", getDeviceToAttachDiskFor(domblklistOutput(
+                " file   disk     vda      /path/root",
+                " file   disk     vdc      /path/data1",
+                " file   disk     vdd      /path/data2",
+                " block  disk     vdb      /dev/data3")));
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testGetDeviceToAttachDiskFailsWhenNoDeviceIsReturned() throws Exception {
+    public void testGetDeviceToAttachDiskFailsWhenDomblklistFails() throws Exception {
         try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
             scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                     .thenAnswer(invocation -> invocation.getArgument(0));
