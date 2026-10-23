@@ -83,8 +83,10 @@ export default {
           fields.splice(2, 0, 'instancename')
           fields.push('hostname')
           fields.push('account')
+          fields.push('domain')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+          fields.push('domain')
         } else {
           fields.push('serviceofferingname')
         }
@@ -582,6 +584,7 @@ export default {
         var fields = ['name', 'state', 'clustertype', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         if (store.listAllProjects) {
           fields.push('project')
@@ -897,6 +900,9 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account']
+        if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+          fields.push('domain')
+        }
         if (store.listAllProjects) {
           fields.push('project')
         }
