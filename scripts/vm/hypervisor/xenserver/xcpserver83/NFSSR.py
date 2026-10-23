@@ -28,6 +28,13 @@ import vhdutil
 from lock import Lock
 import cleanup
 
+try:
+    # sm >= 3.2.12-18 (e.g. XCP-ng 8.3), where LOCK_TYPE_SR moved to lock.py
+    from lock import LOCK_TYPE_SR
+except ImportError:
+    # older sm (XenServer and XCP-ng releases prior to the 8.3 SM refactor)
+    LOCK_TYPE_SR = vhdutil.LOCK_TYPE_SR
+
 CAPABILITIES = ["SR_PROBE","SR_UPDATE", "SR_CACHING", \
                 "VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH", \
                 "VDI_UPDATE", "VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE", \
@@ -64,7 +71,7 @@ class NFSSR(FileSR.FileSR):
 
     def load(self, sr_uuid):
         self.ops_exclusive = FileSR.OPS_EXCLUSIVE
-        self.lock = Lock(vhdutil.LOCK_TYPE_SR, self.uuid)
+        self.lock = Lock(LOCK_TYPE_SR, self.uuid)
         self.sr_vditype = SR.DEFAULT_TAP
         if 'server' not in self.dconf:
             raise xs_errors.XenError('ConfigServerMissing')
