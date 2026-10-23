@@ -358,7 +358,7 @@ write_files:
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 
-  {% if registry is defined %}
+  {% if "{{ registry.enabled }}" == "true" %}
   - path: /opt/bin/setup-containerd
     permissions: '0755'
     owner: root:root
