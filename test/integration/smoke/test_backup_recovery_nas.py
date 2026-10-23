@@ -18,13 +18,20 @@
 
 from marvin.cloudstackAPI import listZones
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account, Network, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
-                             NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool)
+                             NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool, Template,
+                             SSHKeyPair)
 from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.utils import (cleanup_resources, random_gen)
 from nose.plugins.attrib import attr
-from marvin.codes import FAILED
+import os
+import re
+import shlex
+import tempfile
 import time
+from urllib.parse import urlsplit
+
+SUPPORTED_PRIMARY_STORAGE_POOL_TYPES = ['networkfilesystem', 'rbd']
 
 class TestNASBackupAndRecovery(cloudstackTestCase):
 
@@ -39,19 +46,68 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
-        cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
-        if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-        cls.services["small"]["zoneid"] = cls.zone.id
-        cls.services["small"]["template"] = cls.template.id
         cls._cleanup = []
 
         if cls.hypervisor.lower() != 'kvm':
             cls.skipTest(cls, reason="Test can be run only on KVM hypervisor")
 
-        cls.storage_pool = StoragePool.list(cls.api_client)[0]
-        if cls.storage_pool.type.lower() != 'networkfilesystem':
-            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS")
+        # A cloud-init template (Ubuntu 24.04) rather than the legacy CentOS 5.5 one:
+        # a modern kernel/udev enumerates hot-attached virtio disks and has mkfs.ext4,
+        # sidestepping guest-side workarounds the older template needed, and cloud-init
+        # grows the root filesystem to fill the disk on first boot on its own.
+        cls.template = Template.register(
+            cls.api_client,
+            cls.services["test_templates_cloud_init"][cls.hypervisor.lower()],
+            zoneid=cls.zone.id,
+            hypervisor=cls.hypervisor,
+        )
+        cls.template.download(cls.api_client)
+        # Not added to cls._cleanup here: cleanup_resources() deletes items in list
+        # order, and a template can't be deleted while any VM still uses it -- it must
+        # be appended after cls.vm (and hence the account that owns it) further down,
+        # so the account/VM cleanup earlier in the list runs first.
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["small"]["template"] = cls.template.id
+
+        # Pick a pool that's actually usable, not just list()[0] -- environments that
+        # added Ceph/RBD storage after the zone's original NFS primary storage keep the
+        # old NFS pool around in Disabled state, and it still sorts first. Falling back
+        # to index 0 there silently exercises the disabled NFS pool's path as if it were
+        # the primary storage in use, rather than the RBD pool VMs actually deploy on.
+        storage_pools = StoragePool.list(cls.api_client)
+        usable_pools = [p for p in storage_pools if getattr(p, 'state', 'Up') == 'Up']
+        cls.storage_pool = usable_pools[0] if usable_pools else storage_pools[0]
+        if cls.storage_pool.type.lower() not in SUPPORTED_PRIMARY_STORAGE_POOL_TYPES:
+            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS or RBD (Ceph)")
+
+        # The NAS backup repository needs an NFS export to mount. When the primary
+        # storage is itself NFS, its own path can double as that export (the
+        # historical behaviour). When the primary storage is Ceph/RBD, the primary
+        # storage location can't be reused as a NAS export, so fall back to the
+        # "nfs" test data entry -- the same NFS mount point test_primary_storage.py
+        # uses to create its temporary NFS primary storage pool, and something every
+        # marvin environment already has configured (services["nfs"]["url"], e.g.
+        # "nfs://nfs/export/automation/1/testprimary"). An explicit
+        # "nas_backup_repository_address" test data entry or NAS_BACKUP_REPO_ADDRESS
+        # environment variable, if set, takes precedence over both.
+        if cls.storage_pool.type.lower() == 'networkfilesystem':
+            default_nas_repository_address = cls.storage_pool.ipaddress + ":" + cls.storage_pool.path
+        else:
+            nfs_test_data = cls.services.get("nfs")
+            if nfs_test_data and nfs_test_data.get("url"):
+                nfs_url = urlsplit(nfs_test_data["url"])
+                default_nas_repository_address = "%s:%s" % (nfs_url.hostname, nfs_url.path)
+            else:
+                default_nas_repository_address = None
+        cls.nas_repository_address = cls.services.get("nas_backup_repository_address") \
+            or os.environ.get("NAS_BACKUP_REPO_ADDRESS") \
+            or default_nas_repository_address
+        if not cls.nas_repository_address:
+            cls.skipTest(cls, reason="No NAS backup repository export configured. Set "
+                                     "'nas_backup_repository_address' in the test data, the "
+                                     "NAS_BACKUP_REPO_ADDRESS environment variable, or the standard "
+                                     "'nfs' test data entry, when the primary storage is not NFS "
+                                     "(e.g. Ceph/RBD)")
 
         # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
@@ -70,16 +126,41 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
 
-        cls._cleanup = [cls.account]
+        cls._cleanup.append(cls.account)
 
-        # Create NAS backup repository and offering. Use the same directory as the storage pool
+        # The cloud-init template's cloud-image hardening disables SSH password auth
+        # outright (/etc/ssh/sshd_config.d/60-cloudimg-settings.conf sets
+        # "PasswordAuthentication no", regardless of any password baked into the
+        # image), so guest access here uses an SSH keypair and the stock cloud image
+        # "ubuntu" user instead, matching the pattern used for cloud-init templates
+        # elsewhere (e.g. test_network.py's TestSharedNetworkWithConfigDrive).
+        cls.keypair = SSHKeyPair.create(cls.api_client, name="nas-backup-%s" % random_gen(),
+                                        account=cls.account.name, domainid=cls.account.domainid)
+        cls.ssh_key_file = os.path.join(tempfile.gettempdir(), cls.keypair.name)
+        with open(cls.ssh_key_file, "w") as key_file:
+            key_file.write(cls.keypair.privatekey)
+        os.chmod(cls.ssh_key_file, 0o400)
+        # createSSHKeyPair's response has no .delete() (it isn't wrapped as an
+        # SSHKeyPair instance), so it isn't added to cls._cleanup; it is removed
+        # along with everything else owned by cls.account when that gets deleted.
+        cls.services["small"]["username"] = "ubuntu"
+
+        # Create NAS backup repository and offering.
         cls.backup_repository = BackupRepository.add(cls.api_client, zoneid=cls.zone.id, name="Nas",
-                                                     address=cls.storage_pool.ipaddress + ":" + cls.storage_pool.path,
+                                                     address=cls.nas_repository_address,
                                                      provider="nas", type="nfs",)
         cls._cleanup.append(cls.backup_repository)
+        # Match the external offering to the repository just created above by externalid
+        # (== the repository's own id for the nas provider) rather than blindly taking
+        # index 0 -- a stray repository left over from an earlier interrupted run (e.g.
+        # one whose backups didn't get cleaned up, so its own teardown couldn't remove
+        # it either) sorts alongside the new one, and index 0 has no guarantee of being
+        # the one this run owns.
         cls.provider_offerings = BackupOffering.listExternal(cls.api_client, cls.zone.id)
-        cls.backup_offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, cls.provider_offerings[0].externalid,
-                                                            cls.provider_offerings[0].name, cls.provider_offerings[0].description)
+        matching_offerings = [o for o in cls.provider_offerings if o.externalid == cls.backup_repository.id]
+        provider_offering = matching_offerings[0] if matching_offerings else cls.provider_offerings[0]
+        cls.backup_offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, provider_offering.externalid,
+                                                            provider_offering.name, provider_offering.description)
         cls._cleanup.append(cls.backup_offering)
 
         cls.offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
@@ -87,7 +168,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         cls._cleanup.extend([cls.offering, cls.diskoffering, cls.account])
         cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
                                        domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
-                                       diskofferingid=cls.diskoffering.id, mode=cls.services["mode"])
+                                       diskofferingid=cls.diskoffering.id, mode=cls.services["mode"],
+                                       keypair=cls.keypair.name)
+        # Appended last so cleanup_resources() (which deletes cls._cleanup in list
+        # order) removes cls.account -- and with it cls.vm, the template's only user
+        # -- before it gets here.
+        cls._cleanup.append(cls.template)
 
 
     @classmethod
@@ -95,6 +181,10 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         try:
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
+
+            ssh_key_file = getattr(cls, "ssh_key_file", None)
+            if ssh_key_file and os.path.exists(ssh_key_file):
+                os.remove(ssh_key_file)
 
             if cls.backup_provider != "nas":
                 Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider)
@@ -121,8 +211,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         # Create a file and take backup
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch test_backup_and_recovery.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            # sync is required here: without it, this file's data can still be sitting
+            # in the guest's page cache (ext4 delayed allocation) rather than on the
+            # RBD-backed disk when the backup is taken a few seconds later, and the
+            # restored VM then comes up without it.
+            ssh_client_vm.execute("touch test_backup_and_recovery.txt; sync")
         except Exception as err:
             self.fail("SSH failed for Virtual machine: %s due to %s" % (self.vm.ipaddress, err))
 
@@ -157,6 +251,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             templateid=templateid
         )
         self.cleanup.append(new_vm)
+        new_vm.username = "ubuntu"
 
         # Verify the new VM was created successfully
         self.assertIsNotNone(new_vm, "Failed to create VM from backup")
@@ -183,7 +278,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         # Verify that the file is present in the Instance created from backup
         try:
-            ssh_client_new_vm = new_vm.get_ssh_client(reconnect=True)
+            ssh_client_new_vm = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
             result = ssh_client_new_vm.execute("ls test_backup_and_recovery.txt")
             self.assertEqual(result[0], "test_backup_and_recovery.txt",
                              "Instance created from Backup should have the same file as the backup.")
@@ -303,6 +398,19 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Backup objects expose `type`; for chained backups it's "INCREMENTAL", else "FULL".
         return getattr(backup, 'type', 'FULL') or 'FULL'
 
+    def _is_rbd_storage(self):
+        """
+        Whether this environment's primary storage is Ceph/RBD, which uses a different
+        incremental mechanism: NASBackupProvider.getIncrementalFlavor() picks RBD snapshots +
+        `rbd export-diff` there, instead of the QEMU dirty bitmaps / libvirt checkpoints it uses
+        on file-based qcow2 storage (raw RBD images have nowhere to persist a bitmap).
+
+        Both mechanisms produce the same FULL/INCREMENTAL chain semantics, so the chain tests
+        run on either. Only the handful of assertions that are specific to one mechanism branch
+        on this.
+        """
+        return self.storage_pool.type.lower() == 'rbd'
+
     @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_incremental_chain_cadence(self):
         """
@@ -313,14 +421,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         original_full_every = self._get_full_every()
         self._set_full_every(3)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/incremental_marker_1.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("touch /root/incremental_marker_1.txt"))
 
             created = []
             for i in range(5):
                 Backup.create(self.apiclient, self.vm.id, "inc_chain_%d" % i)
                 # write a small change so each incremental has something to capture
-                ssh_client_vm.execute("dd if=/dev/urandom of=/root/delta_%d bs=64k count=4 2>/dev/null" % i)
+                ssh_client_vm.execute(self._sudo("dd if=/dev/urandom of=/root/delta_%d bs=64k count=4 2>/dev/null" % i))
                 time.sleep(2)
                 created = Backup.list(self.apiclient, self.vm.id)
 
@@ -353,6 +461,9 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         saved checkpoint XML) rather than a fresh create — a fresh create fails with
         "Bitmap already exists", and qemu-img cannot drop the bitmap on a running disk.
 
+        On Ceph/RBD the anchor is an RBD snapshot that lives in the cluster rather than in the
+        QEMU process, so a restart cannot disturb it; the same end-to-end assertions apply.
+
         How this was reproduced manually on a libvirt 10.0.0 host, and what this test
         automates:
             FULL + marker1  ->  stop/start the VM (wipes the checkpoint registry)
@@ -364,8 +475,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self._set_full_every(100)
         backups = []
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("echo restart-test-1 > /root/restart_marker_1.txt; sync")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo restart-test-1 > /root/restart_marker_1.txt; sync"))
 
             # 1) FULL anchor
             Backup.create(self.apiclient, self.vm.id, "restart_full")
@@ -374,8 +485,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             # 2) Restart the VM — wipes libvirt's checkpoint registry (the bug trigger).
             self.vm.stop(self.apiclient)
             self.vm.start(self.apiclient)
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("echo restart-test-2 > /root/restart_marker_2.txt; sync")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo restart-test-2 > /root/restart_marker_2.txt; sync"))
 
             # 3) INCREMENTAL after the restart — the previously-broken path.
             Backup.create(self.apiclient, self.vm.id, "restart_incr")
@@ -404,12 +515,13 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 zoneid=self.zone.id
             )
             self.cleanup.append(new_vm)
+            new_vm.username = "ubuntu"
             self.assertIsNotNone(new_vm, "Failed to create VM from the post-restart incremental backup")
             self.assertEqual(new_vm.state, "Running", "Restored VM should be Running")
 
-            ssh_new = new_vm.get_ssh_client(reconnect=True)
-            r1 = "".join(ssh_new.execute("cat /root/restart_marker_1.txt"))
-            r2 = "".join(ssh_new.execute("cat /root/restart_marker_2.txt"))
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            r1 = "".join(ssh_new.execute(self._sudo("cat /root/restart_marker_1.txt")))
+            r2 = "".join(ssh_new.execute(self._sudo("cat /root/restart_marker_2.txt")))
             self.assertIn("restart-test-1", r1,
                 "Marker written before the restart is missing from the restore")
             self.assertIn("restart-test-2", r2,
@@ -434,16 +546,16 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/marker_full.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("touch /root/marker_full.txt"))
             Backup.create(self.apiclient, self.vm.id, "rfi_full")
             time.sleep(3)
 
-            ssh_client_vm.execute("touch /root/marker_inc1.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/marker_inc1.txt"))
             Backup.create(self.apiclient, self.vm.id, "rfi_inc1")
             time.sleep(3)
 
-            ssh_client_vm.execute("touch /root/marker_inc2.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/marker_inc2.txt"))
             Backup.create(self.apiclient, self.vm.id, "rfi_inc2")
             time.sleep(3)
 
@@ -459,10 +571,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 accountname=self.account.name, domainid=self.account.domainid,
                 zoneid=self.zone.id)
             self.cleanup.append(new_vm)
+            # createVMFromBackup wraps its response with an empty services dict, so
+            # it always defaults to username "root" regardless of self.services --
+            # override it to match the account this VM (and its SSH key) actually use.
+            new_vm.username = "ubuntu"
 
-            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
             for marker in ("marker_full.txt", "marker_inc1.txt", "marker_inc2.txt"):
-                result = ssh_new.execute("ls /root/%s" % marker)
+                result = ssh_new.execute(self._sudo("ls /root/%s" % marker))
                 self.assertIn(marker, result[0],
                     "Restored VM should have %s (chain flattened correctly)" % marker)
 
@@ -483,14 +599,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/dmi_full.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("touch /root/dmi_full.txt"))
             Backup.create(self.apiclient, self.vm.id, "dmi_full")
             time.sleep(3)
-            ssh_client_vm.execute("touch /root/dmi_inc1.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/dmi_inc1.txt"))
             Backup.create(self.apiclient, self.vm.id, "dmi_inc1")
             time.sleep(3)
-            ssh_client_vm.execute("touch /root/dmi_inc2.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/dmi_inc2.txt"))
             Backup.create(self.apiclient, self.vm.id, "dmi_inc2")
             time.sleep(3)
 
@@ -510,11 +626,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 accountname=self.account.name, domainid=self.account.domainid,
                 zoneid=self.zone.id)
             self.cleanup.append(new_vm)
-            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            new_vm.username = "ubuntu"
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
             # Both the FULL marker and (importantly) the deleted-INC1 marker should still
             # be present, because the rebase merged INC1's blocks into INC2.
             for marker in ("dmi_full.txt", "dmi_inc1.txt", "dmi_inc2.txt"):
-                result = ssh_new.execute("ls /root/%s" % marker)
+                result = ssh_new.execute(self._sudo("ls /root/%s" % marker))
                 self.assertIn(marker, result[0],
                     "After mid-incremental delete and rebase, %s should still be restorable" % marker)
 
@@ -567,7 +684,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         When a backup is requested while the VM is stopped, even if the chain cadence
         would call for an incremental, the agent must fall back to a full and start a
         new chain. The incrementalFallback flag should be reflected in backup.type=FULL.
+
+        Specific to the qcow2 mechanism: libvirt's backup-begin needs a live QEMU process to
+        hold the dirty bitmap. RBD has the opposite behaviour, covered by
+        test_stopped_rbd_vm_keeps_incremental_cadence.
         """
+        if self._is_rbd_storage():
+            self.skipTest("On RBD a stopped VM keeps its incremental cadence; "
+                          "see test_stopped_rbd_vm_keeps_incremental_cadence")
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(2)  # next backup after the first should be incremental
@@ -594,3 +718,333 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         finally:
             self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_stopped_rbd_vm_keeps_incremental_cadence(self):
+        """
+        The RBD counterpart of test_stopped_vm_falls_back_to_full.
+
+        An RBD chain is anchored on an `rbd snap`, which is created inside Ceph against the image
+        itself. Unlike a QEMU dirty bitmap it needs no live QEMU process, so stopping the VM must
+        not break the chain: with nas.backup.full.every=2 the backup taken while the VM is stopped
+        is still an INCREMENTAL, and restoring it brings back data written before the stop.
+        """
+        if not self._is_rbd_storage():
+            self.skipTest("Test is specific to Ceph/RBD primary storage")
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(2)  # the backup after the first should be an incremental
+        backups = []
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo rbd-stopped-marker > /root/rbd_stopped_marker.txt; sync"))
+
+            Backup.create(self.apiclient, self.vm.id, "srv_full")
+            time.sleep(3)
+
+            self.vm.stop(self.apiclient)
+            time.sleep(5)
+            Backup.create(self.apiclient, self.vm.id, "srv_inc")
+            time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(len(backups), 2)
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL')
+            self.assertEqual(self._backup_type(backups[1]).upper(), 'INCREMENTAL',
+                "An RBD snapshot anchor survives the VM being stopped, so the cadence must hold")
+
+            # Restoring the incremental replays the full diff and then the incremental one.
+            Backup.restoreVM(self.apiclient, backups[1].id)
+            self.vm.start(self.apiclient)
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            marker = ssh_client_vm.execute(self._sudo("cat /root/rbd_stopped_marker.txt"))
+            self.assertIn("rbd-stopped-marker", "".join(marker),
+                "Data written before the stop must survive a restore from the stopped-VM incremental")
+        finally:
+            for b in reversed(backups):
+                Backup.delete(self.apiclient, b.id)
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    # ------------------------------------------------------------------
+    # Restore-volume-and-attach regression (PR apache/cloudstack#14007)
+    # ------------------------------------------------------------------
+    # This test exercises the fixed path end to end via restoreVolumeFromBackupAndAttachToVM,
+    # on whichever primary storage this environment is running with (NFS or Ceph/RBD).
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_restore_volume_and_attach_to_vm(self):
+        """
+        Test restoring the ROOT and DATADISK volumes of a backup and attaching them
+        to a different Instance (restoreVolumeFromBackupAndAttachToVM).
+        """
+        target_vm = None
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo restore-attach-marker > /root/restore_attach_marker.txt; sync"))
+
+            Backup.create(self.apiclient, self.vm.id, "restore_attach_backup")
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
+            backup = backups[0]
+
+            volumes = Volume.list(self.apiclient, virtualmachineid=self.vm.id, listall=True)
+            self.assertTrue(isinstance(volumes, list), "List volumes should return a valid list")
+            root_disk_id = None
+            data_disk_id = None
+            for volume in volumes:
+                if volume.type == 'ROOT':
+                    root_disk_id = volume.id
+                elif volume.type == 'DATADISK':
+                    data_disk_id = volume.id
+            self.assertIsNotNone(root_disk_id, "The backed up VM should have a ROOT volume")
+
+            # Target Instance that will receive the restored volumes. The nas provider
+            # (unlike KBOSS) requires the target Instance to be stopped before a volume
+            # can be restored and attached to it.
+            target_vm = VirtualMachine.create(
+                self.apiclient, self.services["small"], accountid=self.account.name,
+                domainid=self.account.domainid, serviceofferingid=self.offering.id,
+                mode=self.services["mode"], keypair=self.keypair.name
+            )
+            target_vm.stop(self.apiclient)
+
+            # Restore and attach the ROOT volume backup as an extra disk.
+            Backup.restoreVolumeFromBackupAndAttachToVM(
+                self.apiclient, backupid=backup.id, volumeid=root_disk_id, virtualmachineid=target_vm.id
+            )
+            target_volumes = Volume.list(self.apiclient, virtualmachineid=target_vm.id, listall=True)
+            self.assertTrue(isinstance(target_volumes, list), "List volumes should return a valid list")
+            self.assertEqual(2, len(target_volumes),
+                "Target Instance should have its own ROOT volume plus the restored volume")
+
+            if data_disk_id:
+                # Restore and attach the DATADISK volume backup as well.
+                Backup.restoreVolumeFromBackupAndAttachToVM(
+                    self.apiclient, backupid=backup.id, volumeid=data_disk_id, virtualmachineid=target_vm.id
+                )
+                target_volumes = Volume.list(self.apiclient, virtualmachineid=target_vm.id, listall=True)
+                self.assertEqual(3, len(target_volumes),
+                    "Target Instance should have 3 volumes after restoring both the ROOT and DATADISK backups")
+
+            # Start the target Instance to verify the restored disk(s) are actually
+            # usable and libvirt accepted the attach-device/attach-disk calls.
+            target_vm.start(self.apiclient)
+
+            Backup.delete(self.apiclient, backup.id)
+        finally:
+            if target_vm is not None:
+                try:
+                    target_vm.delete(self.apiclient)
+                except Exception:
+                    pass
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    # ------------------------------------------------------------------
+    # Whole-chain validation: every backup is restorable and bootable, and
+    # stays so after a backup is removed from the middle of the chain
+    # ------------------------------------------------------------------
+    # The other chain tests each check one property of one backup. This one walks
+    # the whole chain: FULL + 3 INCREMENTALs, then restores from every backup and
+    # builds a VM from every backup, deletes the 2nd incremental, and repeats both
+    # sweeps over what survives.
+    #
+    # It is the mid-chain delete that makes this worth its runtime on RBD. An
+    # `rbd export-diff` stream carries no pointer to the diff before it, so a restore
+    # replays the whole sequence from the full anchor; a diff whose descendant still
+    # needs it therefore cannot be dropped when it is deleted, only hidden. Restoring
+    # the tip across that gap is what breaks if the provider ever sends a chain with a
+    # hole in it, and no other test exercises it.
+    #
+    # Sizes are asserted throughout: an incremental must be a small fraction of the
+    # full, which is what distinguishes a real `export-diff` delta from the whole
+    # image being re-exported every cycle. Nothing else in this file asserts on size,
+    # so a provider that silently fell back to full-every-time would still pass.
+
+    def _assert_chain_sizes(self, backups, context):
+        """A FULL carries the allocated image; an INCREMENTAL must carry only a delta."""
+        full = backups[0]
+        full_size = int(full.size)
+        self.assertGreater(full_size, 0, "%s: FULL reports a size of 0" % context)
+        for inc in backups[1:]:
+            inc_size = int(inc.size)
+            self.assertGreater(inc_size, 0, "%s: incremental reports a size of 0" % context)
+            self.assertLess(inc_size, full_size / 10,
+                "%s: incremental is %d bytes against a FULL of %d -- an export-diff delta "
+                "should be a small fraction of the full, not the whole image again"
+                % (context, inc_size, full_size))
+
+    def _restore_in_place_and_check(self, backup, expected_markers, absent_markers, context):
+        """Restore over the Instance's own volume and verify the guest's contents.
+
+        A restore rewinds the volume wholesale, so markers written after the backup
+        was taken must be gone -- checking only that the expected ones are present
+        would pass even if the restore had quietly done nothing.
+        """
+        self.vm.stop(self.apiclient)
+        time.sleep(5)
+        Backup.restoreVM(self.apiclient, backup.id)
+        self.vm.start(self.apiclient)
+        ssh = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+        listing = "".join(ssh.execute(self._sudo("ls /root")))
+        for marker in expected_markers:
+            self.assertIn(marker, listing,
+                "%s: marker %s written before this backup is missing after the restore"
+                % (context, marker))
+        for marker in absent_markers:
+            self.assertNotIn(marker, listing,
+                "%s: marker %s was written AFTER this backup, so the restore should have "
+                "rolled it back" % (context, marker))
+
+    def _create_vm_from_backup_and_check(self, backup, expected_markers, absent_markers, context):
+        """Build a VM from a backup and verify the guest it comes up with.
+
+        Reaching Running only proves the image boots. The markers are what prove the
+        diff chain was replayed into the new volume correctly, so the guest is checked
+        the same way an in-place restore is -- markers taken up to this backup present,
+        markers written after it absent.
+        """
+        name = "chain-%s-%d" % (context, int(time.time()))
+        new_vm = Backup.createVMFromBackup(
+            self.apiclient,
+            self.services["small"],
+            mode=self.services["mode"],
+            backupid=backup.id,
+            vmname=name,
+            accountname=self.account.name,
+            domainid=self.account.domainid,
+            zoneid=self.zone.id,
+            networkids=None,
+            templateid=None
+        )
+        self.assertIsNotNone(new_vm, "%s: createVMFromBackup returned nothing" % context)
+        try:
+            vms = VirtualMachine.list(self.apiclient, id=new_vm.id, listall=True)
+            self.assertTrue(vms and str(vms[0].state).lower() == "running",
+                "%s: VM created from the backup is not Running (state=%s)"
+                % (context, vms[0].state if vms else "<not listed>"))
+
+            # The backup carries the source Instance's authorized_keys, so the new VM
+            # accepts the same keypair and the stock cloud-image "ubuntu" user.
+            new_vm.username = "ubuntu"
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            listing = "".join(ssh_new.execute(self._sudo("ls /root")))
+            for marker in expected_markers:
+                self.assertIn(marker, listing,
+                    "%s: marker %s written before this backup is missing from the VM created "
+                    "from it" % (context, marker))
+            for marker in absent_markers:
+                self.assertNotIn(marker, listing,
+                    "%s: marker %s was written AFTER this backup, so a VM created from it "
+                    "should not have it" % (context, marker))
+        finally:
+            # Destroyed as we go rather than via cls._cleanup: this test builds seven
+            # of these, and keeping them all alive to the end risks exhausting the
+            # environment's capacity partway through the run.
+            try:
+                new_vm.delete(self.apiclient, expunge=True)
+            except Exception:
+                pass
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_full_chain_restore_and_create_vm_survive_mid_chain_delete(self):
+        """
+        FULL + 3 INCREMENTALs: restore from every backup and create a VM from every
+        backup; then delete the 2nd incremental and repeat over the survivors. Backup
+        sizes are checked at each stage, and the chain must be gone at the end.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        # High enough that every backup after the first stays an incremental.
+        self._set_full_every(10)
+        backups = []
+        try:
+            ssh = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+
+            # --- build FULL -> INC1 -> INC2 -> INC3, a marker per backup ---------
+            markers = []
+            for idx in range(4):
+                marker = "chain_marker_%d.txt" % idx
+                # sync: without it the file can still be in the guest page cache rather
+                # than on the RBD image when the snapshot is taken moments later.
+                ssh.execute(self._sudo("touch /root/%s; sync" % marker))
+                markers.append(marker)
+                Backup.create(self.apiclient, self.vm.id, "chain_%d" % idx)
+                time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(len(backups), 4, "Expected FULL + 3 INCREMENTAL backups")
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL')
+            for inc in backups[1:]:
+                self.assertEqual(self._backup_type(inc).upper(), 'INCREMENTAL')
+            self._assert_chain_sizes(backups, "complete chain")
+            sizes_before = [int(b.size) for b in backups]
+
+            # --- restore from each, then build a VM from each --------------------
+            for idx, backup in enumerate(backups):
+                self._restore_in_place_and_check(
+                    backup, markers[:idx + 1], markers[idx + 1:], "complete chain, backup %d" % idx)
+            for idx, backup in enumerate(backups):
+                self._create_vm_from_backup_and_check(
+                    backup, markers[:idx + 1], markers[idx + 1:], "full%d" % idx)
+
+            # --- delete the 2nd incremental --------------------------------------
+            # Its diff stays on the repository while INC3 still needs it to replay;
+            # it is swept once the last backup depending on it is gone.
+            deleted = backups[2]
+            Backup.delete(self.apiclient, deleted.id)
+            survivors = Backup.list(self.apiclient, self.vm.id)
+            survivors.sort(key=lambda b: b.created)
+            self.assertEqual(len(survivors), 3,
+                "Deleting one backup should leave exactly the other three")
+            self.assertNotIn(deleted.id, [b.id for b in survivors],
+                "The deleted backup must no longer be listed")
+
+            # Removing a sibling must not alter what the others report.
+            surviving_sizes = [int(b.size) for b in survivors]
+            self.assertEqual(surviving_sizes,
+                             [sizes_before[0], sizes_before[1], sizes_before[3]],
+                "Deleting a backup changed the reported size of the backups that remain")
+            self._assert_chain_sizes(survivors, "after mid-chain delete")
+
+            # --- restore from each survivor, then build a VM from each -----------
+            # survivors[2] is the old INC3: restoring it replays the chain across the
+            # deleted INC2, so its marker must still come back.
+            expected = [markers[:1], markers[:2], markers[:4]]
+            absent = [markers[1:], markers[2:], []]
+            for idx, backup in enumerate(survivors):
+                self._restore_in_place_and_check(
+                    backup, expected[idx], absent[idx], "after delete, backup %d" % idx)
+            for idx, backup in enumerate(survivors):
+                self._create_vm_from_backup_and_check(
+                    backup, expected[idx], absent[idx], "post%d" % idx)
+
+            # --- the chain must leave nothing behind ------------------------------
+            for backup in reversed(survivors):
+                Backup.delete(self.apiclient, backup.id)
+            backups = []
+            remaining = Backup.list(self.apiclient, self.vm.id)
+            self.assertFalse(remaining,
+                "Every backup was deleted, so none should be left for this Instance "
+                "(still listed: %s)" % remaining)
+        finally:
+            for b in reversed(backups):
+                try:
+                    Backup.delete(self.apiclient, b.id)
+                except Exception:
+                    pass
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    def _sudo(self, cmd):
+        """Wrap a shell command to run as root via sudo (the cloud-init "ubuntu" user
+        this test SSHes in as has passwordless sudo) -- needed for anything touching
+        /root or a raw block device, since the SSH session itself lands unprivileged.
+        Runs the whole command through `sh -c` under sudo rather than just prefixing
+        `sudo` onto the first word, so redirects and ';'-separated commands run with
+        root's privileges too, not just whatever the first word happens to be."""
+        return "sudo sh -c %s" % shlex.quote(cmd)

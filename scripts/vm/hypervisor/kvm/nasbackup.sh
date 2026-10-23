@@ -33,11 +33,13 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
-QUIESCE_TIMEOUT=""    # Seconds to wait for the guest agent freeze/thaw; empty => libvirt default
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
-BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
-BITMAP_PARENT=""      # For incremental: parent bitmap name to read changes since
+METHOD="qcow2"        # How the backup is taken: "qcow2" (push mode, incrementals from dirty bitmaps) or
+                      # "rbd" (Ceph-native, incrementals from rbd export-diff --from-snap)
+BITMAP_NEW=""         # Anchor to create with this backup: a QEMU bitmap/checkpoint name for qcow2
+                      # chains (e.g. "backup-1711586400"), an RBD snapshot name for the rbd method
+BITMAP_PARENT=""      # Anchor to read changes since (incremental modes only)
 PARENT_PATHS=""       # For incremental: comma-separated list of parent backup file paths,
                       # one per VM volume in the same order as DISK_PATHS. Each new qcow2
                       # is rebased onto its corresponding parent file. Required because
@@ -46,7 +48,6 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
 logFile="/var/log/cloudstack/agent/agent.log"
 UNMOUNT_TIMEOUT=60
 EXIT_CLEANUP_FAILED=20
-BACKUP_JOB_ACTIVE=0
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -135,6 +136,309 @@ get_linstor_uuid_from_device() {
   # Without a by-res symlink we cannot derive the volume UUID. Falling back to the
   # raw device name would produce a backup that restore cannot find, so fail hard.
   return 1
+}
+
+# Globals populated by parse_rbd_opts() for the disk it was last called with.
+RBD_IMAGE=""          # "<pool>/<image>"
+RBD_ARGS=()           # connection arguments to pass to every rbd invocation
+RBD_KEYFILE=""        # temporary cephx keyfile, removed by rbd_cleanup_keyfile
+# Prefix NASBackupProvider names every chain anchor with. Snapshots carrying it belong to this
+# tool and no other, which is what makes the stale-anchor sweep safe.
+RBD_SNAPSHOT_PREFIX="csbackup-"
+
+rbd_cleanup_keyfile() {
+  if [[ -n "$RBD_KEYFILE" ]]; then
+    rm -f "$RBD_KEYFILE"
+    RBD_KEYFILE=""
+  fi
+}
+
+# Split an RBD disk string produced by KVMPhysicalDisk.RBDStringBuilder into the image name and
+# the connection arguments the rbd CLI needs:
+#   rbd:<pool>/<image>:mon_host=<h1>\;<h2>:auth_client_required=cephx:id=<user>:key=<secret>:...
+# ':' and ';' are backslash-escaped inside mon_host so that option splitting stays unambiguous;
+# they are masked before the split and restored afterwards.
+parse_rbd_opts() {
+  local s="${1#rbd:}"
+  s="${s//\\:/$'\x01'}"
+  s="${s//\\;/$'\x02'}"
+  local -a parts=()
+  IFS=':' read -ra parts <<< "$s"
+
+  rbd_cleanup_keyfile
+  RBD_IMAGE="${parts[0]}"
+  RBD_ARGS=()
+
+  local p monHost="" authId="" authKey=""
+  for p in "${parts[@]:1}"; do
+    case "$p" in
+      mon_host=*) monHost="${p#mon_host=}" ;;
+      id=*)       authId="${p#id=}" ;;
+      key=*)      authKey="${p#key=}" ;;
+    esac
+  done
+  monHost="${monHost//$'\x01'/:}"   # host\:port  -> host:port
+  monHost="${monHost//$'\x02'/,}"   # monitor list -> the comma-separated form rbd -m accepts
+
+  if [[ -n "$monHost" ]]; then
+    RBD_ARGS+=(-m "$monHost")
+  fi
+  if [[ -n "$authId" ]]; then
+    RBD_ARGS+=(--id "$authId")
+    if [[ -n "$authKey" ]]; then
+      RBD_KEYFILE=$(mktemp -t csbackup-ceph.XXXXXX)
+      chmod 600 "$RBD_KEYFILE"
+      printf '%s' "$authKey" > "$RBD_KEYFILE"
+      RBD_ARGS+=(--keyfile "$RBD_KEYFILE")
+    fi
+  fi
+}
+
+# Best-effort removal of snapshot $1 from each of the remaining disk arguments. Used both to roll
+# back a half-created anchor and to drop the previous anchor once its delta has been exported.
+rbd_remove_snapshots() {
+  local snapName="$1"
+  shift
+  local d
+  for d in "$@"; do
+    [[ -z "$d" ]] && continue
+    parse_rbd_opts "$d"
+    if ! rbd "${RBD_ARGS[@]}" snap rm "$RBD_IMAGE@$snapName" >> "$logFile" 2>&1; then
+      log -e "cleanup: failed to remove RBD snapshot $RBD_IMAGE@$snapName (non-fatal)"
+    fi
+  done
+  rbd_cleanup_keyfile
+}
+
+# Remove every snapshot carrying the backup prefix except $1, across the remaining disk arguments.
+# Only snapshots this tool created are ever touched: user and CloudStack volume snapshots do not
+# use the prefix.
+rbd_sweep_stale_anchors() {
+  local keepSnap="$1"
+  shift
+  local d stale
+  for d in "$@"; do
+    [[ -z "$d" ]] && continue
+    parse_rbd_opts "$d"
+    while read -r stale; do
+      [[ -z "$stale" || "$stale" == "$keepSnap" ]] && continue
+      if ! rbd "${RBD_ARGS[@]}" snap rm "$RBD_IMAGE@$stale" >> "$logFile" 2>&1; then
+        log -e "cleanup: failed to remove stale RBD snapshot $RBD_IMAGE@$stale (non-fatal)"
+      fi
+    done < <(
+      rbd "${RBD_ARGS[@]}" snap ls "$RBD_IMAGE" --format json 2>>"$logFile" | python3 -c '
+import sys, json
+try:
+    snaps = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for s in snaps or []:
+    name = (s or {}).get("name") or ""
+    if name.startswith(sys.argv[1]):
+        print(name)
+' "$RBD_SNAPSHOT_PREFIX" 2>/dev/null || true
+    )
+  done
+  rbd_cleanup_keyfile
+}
+
+rbd_snapshot_exists() {
+  local snapName="$1"
+  rbd "${RBD_ARGS[@]}" snap ls "$RBD_IMAGE" --format json 2>>"$logFile" | python3 -c '
+import sys, json
+try:
+    snaps = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+sys.exit(0 if any((s or {}).get("name") == sys.argv[1] for s in snaps or []) else 1)
+' "$snapName"
+}
+
+# Incremental backup of Ceph/RBD volumes.
+#
+# RBD images are raw, so they have nowhere to persist a QEMU dirty bitmap and cannot take part in
+# the libvirt-checkpoint scheme backup_running_vm uses. Ceph provides the equivalent natively: an
+# `rbd snap` per cycle as the anchor, and `rbd export-diff --from-snap` to stream out exactly the
+# extents that changed between two anchors (computed inside Ceph from the image object-map).
+#
+# Because the snapshot lives in Ceph rather than in the QEMU process, this works identically for
+# running and stopped VMs, and survives a live migration of the VM between hosts.
+#
+# Only the newest anchor is kept on each image: once this run's delta is exported, the parent
+# snapshot is removed. A full additionally sweeps every other snapshot carrying the backup prefix,
+# so anchors abandoned by a deleted chain, an unassigned offering or a restore cannot accumulate.
+backup_rbd_vm() {
+  if [[ -z "$DISK_PATHS" ]]; then
+    echo "RBD backup mode requires the volume paths (-d|--diskpaths)"
+    exit 1
+  fi
+  if [[ -z "$BITMAP_NEW" ]]; then
+    echo "RBD backup mode requires --bitmap-new (the snapshot to create)"
+    exit 1
+  fi
+
+  if ! command -v rbd > /dev/null 2>&1; then
+    echo "RBD backup mode requires the rbd command (ceph-common) on this host"
+    exit 1
+  fi
+
+  local effective_mode="$MODE"
+  case "$effective_mode" in
+    full|incremental)
+      ;;
+    *)
+      echo "Mode $effective_mode is not supported by the rbd method"
+      cleanup
+      exit 1
+      ;;
+  esac
+  local -a disks=()
+  IFS=',' read -ra disks <<< "$DISK_PATHS"
+
+  local d
+  for d in "${disks[@]}"; do
+    if [[ "$d" != rbd:* ]]; then
+      echo "RBD backup mode was requested but disk $d is not an RBD volume"
+      exit 1
+    fi
+  done
+
+  # The parent anchor must still be present on EVERY disk. A volume migration or an out-of-band
+  # snapshot purge can drop it; fall back to a full rather than letting export-diff fail. Checked
+  # before anything is mounted or created so the fallback costs nothing.
+  if [[ "$effective_mode" == "incremental" ]]; then
+    for d in "${disks[@]}"; do
+      parse_rbd_opts "$d"
+      if ! rbd_snapshot_exists "$BITMAP_PARENT"; then
+        log -e "rbd incremental: parent snapshot $BITMAP_PARENT missing on $RBD_IMAGE - falling back to full"
+        echo "INCREMENTAL_FALLBACK=true"
+        effective_mode="full"
+        break
+      fi
+    done
+    rbd_cleanup_keyfile
+  fi
+
+  mount_operation
+  mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
+
+  # Freezing the guest filesystems makes the snapshot set filesystem-consistent instead of merely
+  # crash-consistent. Only possible while the VM runs and its guest agent answers.
+  local thaw=0
+  local resume=0
+  local vm_state
+  vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
+  if [[ ${QUIESCE} == "true" && "$vm_state" == "running" ]]; then
+    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
+      thaw=1
+    fi
+  fi
+
+  # Without a freeze the snapshots of a VM with several disks are taken one after another while
+  # the guest keeps writing, so the set would not be crash consistent. Pausing the VM for the few
+  # moments the snapshots take restores that, much as a backup-begin checkpoint does. A single
+  # disk needs no pause: one snapshot is already a single point in time.
+  if [[ $thaw -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
+    if virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
+      resume=1
+    else
+      log -ne "WARNING: unable to pause VM $VM, the disk snapshots will not be taken at the same instant"
+    fi
+  fi
+
+  # Create this cycle's anchor on every disk back to back, so the set is as close to a single
+  # point in time for the VM as a whole as Ceph allows.
+  local -a snapped=()
+  local snap_failed=0
+  for d in "${disks[@]}"; do
+    parse_rbd_opts "$d"
+    if rbd "${RBD_ARGS[@]}" snap create "$RBD_IMAGE@$BITMAP_NEW" >> "$logFile" 2>&1; then
+      snapped+=("$d")
+    else
+      log -e "Failed to create RBD snapshot $RBD_IMAGE@$BITMAP_NEW"
+      snap_failed=1
+      break
+    fi
+  done
+  rbd_cleanup_keyfile
+
+  if [[ $thaw -eq 1 ]]; then
+    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
+      echo "Failed to thaw the filesystem for vm $VM: $response"
+      rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+      cleanup
+      exit 1
+    fi
+  fi
+
+  if [[ $resume -eq 1 ]]; then
+    if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+      echo "Failed to resume vm $VM after taking the disk snapshots"
+      rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+      cleanup
+      exit 1
+    fi
+  fi
+
+  if [[ $snap_failed -eq 1 ]]; then
+    echo "Failed to create RBD snapshot $BITMAP_NEW for vm $VM"
+    rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+    cleanup
+    exit 1
+  fi
+
+  # Export each disk's delta. A full exports every allocated extent of the image, which replayed
+  # into a freshly created image of the same size reproduces it exactly.
+  local name="root"
+  local volUuid output
+  for d in "${disks[@]}"; do
+    parse_rbd_opts "$d"
+    volUuid=$(get_ceph_uuid_from_path "$d")
+    output="$dest/$name.$volUuid.rbddiff"
+    if [[ "$effective_mode" == "incremental" ]]; then
+      if ! rbd "${RBD_ARGS[@]}" export-diff --from-snap "$BITMAP_PARENT" "$RBD_IMAGE@$BITMAP_NEW" "$output" >> "$logFile" 2>&1; then
+        echo "rbd export-diff --from-snap $BITMAP_PARENT failed for $RBD_IMAGE"
+        rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+        cleanup
+        exit 1
+      fi
+    else
+      if ! rbd "${RBD_ARGS[@]}" export-diff "$RBD_IMAGE@$BITMAP_NEW" "$output" >> "$logFile" 2>&1; then
+        echo "rbd export-diff failed for $RBD_IMAGE"
+        rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+        cleanup
+        exit 1
+      fi
+    fi
+    name="datadisk"
+  done
+  rbd_cleanup_keyfile
+
+  # Backup domain information (running VMs only — a stopped VM has no libvirt domain defined).
+  if [[ "$vm_state" == "running" ]]; then
+    virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null || true
+    virsh -c qemu:///system dominfo $VM > $dest/dominfo.xml 2>/dev/null || true
+    virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null || true
+    virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null || true
+  fi
+
+  sync
+
+  # The parent anchor has served its purpose: its delta is on the NAS and BITMAP_NEW tracks
+  # changes from here on. Dropping it keeps exactly one backup snapshot per image.
+  if [[ "$effective_mode" == "incremental" && -n "$BITMAP_PARENT" && "$BITMAP_PARENT" != "$BITMAP_NEW" ]]; then
+    rbd_remove_snapshots "$BITMAP_PARENT" "${disks[@]}"
+  else
+    # A full starts a new chain, so every anchor this tool left on the image before it is stale --
+    # including ones whose chain was abandoned without a chance to clean up. Sweep them all.
+    rbd_sweep_stale_anchors "$BITMAP_NEW" "${disks[@]}"
+  fi
+
+  local backup_size
+  backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }
+  timeout "$UNMOUNT_TIMEOUT" umount "$mount_point" 2>>"$logFile" || { log "WARNING: umount of $mount_point failed or timed out"; true; }
+  rmdir "$mount_point" 2>>"$logFile" || { log "WARNING: rmdir of $mount_point failed"; true; }
+  echo "$backup_size"
 }
 
 qemu_agent_command() {
@@ -307,15 +611,9 @@ print(len(files))
   fi
 
   local thaw=0
-  local freeze_ok=0
   if [[ ${QUIESCE} == "true" ]]; then
-    # Always thaw after a freeze attempt: a freeze that times out on the host can still
-    # complete inside the guest, and nothing else would unfreeze it.
-    thaw=1
-    if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
-      freeze_ok=1
-    else
-      log -e "Failed to freeze the filesystem for vm $VM, continuing without quiescing: $freeze_err"
+    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
+      thaw=1
     fi
   fi
 
@@ -332,13 +630,13 @@ print(len(files))
       backup_begin=1;
     fi
   fi
-  if [[ $backup_begin -eq 1 ]]; then
-    BACKUP_JOB_ACTIVE=1
-  fi
 
-  if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
-    cleanup
-    exit 1
+  if [[ $thaw -eq 1 ]]; then
+    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
+      echo "Failed to thaw the filesystem for vm $VM: $response"
+      cleanup
+      exit 1
+    fi
   fi
 
   if [[ $backup_begin -ne 1 ]]; then
@@ -352,27 +650,12 @@ print(len(files))
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
-  local info query_failures=0
   while true; do
-    # A failed query says nothing about the job, so retry before giving up on it.
-    if ! info=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>&1); then
-      log -e "Backup job query $((query_failures + 1)) for vm $VM failed: $info"
-      if (( ++query_failures >= 12 )); then
-        echo "Unable to query the backup job for vm $VM"
-        cleanup
-        exit 1
-      fi
-      sleep 5
-      continue
-    fi
-    query_failures=0
-    status=$(awk '/Job type:/ {print $3}' <<< "$info")
+    status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
     case "$status" in
       Completed)
-        BACKUP_JOB_ACTIVE=0
         break ;;
       Failed)
-        BACKUP_JOB_ACTIVE=0
         echo "Virsh backup job failed"
         cleanup
         exit 1 ;;
@@ -543,6 +826,25 @@ backup_stopped_vm() {
   find "$dest" -type f -exec stat -c '%s' {} +
 }
 
+# Remove every backup anchor (csbackup-*) from the RBD disks named by -d. The anchor of a chain is
+# only kept to export the next incremental from it, so once the chain is gone - its last backup was
+# deleted, or the Instance left its backup offering - the next backup is a full one and the anchor
+# only pins the space of the data it still references in the pool.
+remove_rbd_anchors() {
+  if [[ -z "$DISK_PATHS" ]]; then
+    echo "Removing the RBD anchors requires the volume paths (-d|--diskpaths)"
+    exit 1
+  fi
+  local -a disks=()
+  local d
+  IFS=',' read -ra disks <<< "$DISK_PATHS"
+  for d in "${disks[@]}"; do
+    # a volume of any other pool type carries no anchor, and is not an rbd image to ask about
+    [[ "$d" == rbd:* ]] || continue
+    rbd_sweep_stale_anchors "" "$d"
+  done
+}
+
 delete_backup() {
   mount_operation
 
@@ -576,27 +878,10 @@ mount_operation() {
   fi
 }
 
-abort_backup_job() {
-  [[ $BACKUP_JOB_ACTIVE -eq 1 ]] || return 0
-
-  # The push backup job writes into $dest until it ends, so it must be gone before the
-  # destination is removed or unmounted.
-  virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>>"$logFile" || true
-  local i info
-  for ((i = 0; i < 60; i++)); do
-    # Only a successful query reporting no job proves the job has ended.
-    if info=$(virsh -c qemu:///system domjobinfo "$VM" 2>>"$logFile") \
-        && [[ "$(awk '/Job type:/ {print $3}' <<< "$info")" == "None" ]]; then
-      BACKUP_JOB_ACTIVE=0
-      return 0
-    fi
-    sleep 1
-  done
-  return 1
-}
-
 cleanup() {
   local status=0
+
+  rbd_cleanup_keyfile
 
   # Resume the VM if it was paused during backup to prevent it from
   # remaining indefinitely paused when the backup job fails (e.g. due
@@ -609,12 +894,6 @@ cleanup() {
       echo "Failed to resume VM $VM"
       status=1
     fi
-  fi
-
-  if ! abort_backup_job; then
-    echo "Backup job for vm $VM is still running after abort, leaving $dest mounted at $mount_point"
-    echo "Backup cleanup failed"
-    exit $EXIT_CLEANUP_FAILED
   fi
 
   rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
@@ -630,8 +909,12 @@ cleanup() {
 function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
-  echo "         [--quiesce-timeout <seconds>]"
   echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
+  echo ""
+  echo "Operations: backup, delete, stats, removeanchors"
+  echo "  removeanchors           Remove every backup anchor (csbackup-*) from the RBD volumes given with -d|--disks."
+  echo "                          Used once a chain is gone, as the next backup is a full one and the anchor would"
+  echo "                          only keep the data it references allocated in the pool."
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
   echo "  -M|--mode full          Take a full backup AND create a checkpoint (--bitmap-new required) for future incrementals."
@@ -639,6 +922,13 @@ function usage {
   echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-paths (comma-separated list, one"
   echo "                          parent qcow2 path per disk: root.<uuid>.qcow2, datadisk.<uuid>.qcow2, … same order"
   echo "                          as -d|--disks)."
+  echo "  --method qcow2              Default. Push-mode backup; incrementals come from QEMU dirty bitmaps."
+  echo "  --method rbd                Ceph-native backup of RBD volumes. With -M full, snapshots every volume"
+  echo "                              (--bitmap-new) and exports it whole with rbd export-diff; --bitmap-parent,"
+  echo "                              if given, names the previous chain's snapshot and is removed once the"
+  echo "                              export succeeds. With -M incremental, exports only what changed since"
+  echo "                              --bitmap-parent. Requires -d|--disks, and falls back to a full when the"
+  echo "                              parent snapshot is missing on any disk."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1
@@ -681,11 +971,6 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    --quiesce-timeout)
-      QUIESCE_TIMEOUT="$2"
-      shift
-      shift
-      ;;
     -d|--diskpaths)
       DISK_PATHS="$2"
       shift
@@ -693,6 +978,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -M|--mode)
       MODE="$2"
+      shift
+      shift
+      ;;
+    --method)
+      METHOD="$2"
       shift
       shift
       ;;
@@ -722,18 +1012,30 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# The cephx key file is written to /tmp for the lifetime of an rbd call. cleanup() removes it,
+# but only the failure paths call cleanup, so leave its removal to the shell as well: every exit
+# from here on drops the key, including the ones that end the script without reaching cleanup.
+trap rbd_cleanup_keyfile EXIT
+
 # Perform initial environment sanity checks (QEMU/libvirt version).
 sanity_checks
 
 if [ "$OP" = "backup" ]; then
-  STATE=$(virsh -c qemu:///system list | awk -v vm="$VM" '$2 == vm {print $3}')
-  if [ -n "$STATE" ] && [ "$STATE" = "running" ]; then
-    backup_running_vm
+  if [[ "$METHOD" == "rbd" ]]; then
+    # RBD chains snapshot inside Ceph, so the VM's run state does not change the procedure.
+    backup_rbd_vm
   else
-    backup_stopped_vm
+    STATE=$(virsh -c qemu:///system list | awk -v vm="$VM" '$2 == vm {print $3}')
+    if [ -n "$STATE" ] && [ "$STATE" = "running" ]; then
+      backup_running_vm
+    else
+      backup_stopped_vm
+    fi
   fi
 elif [ "$OP" = "delete" ]; then
   delete_backup
+elif [ "$OP" = "removeanchors" ]; then
+  remove_rbd_anchors
 elif [ "$OP" = "stats" ]; then
   get_backup_stats
 fi

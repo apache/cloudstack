@@ -39,6 +39,7 @@ public class TakeBackupCommand extends Command {
 
     // Incremental backup fields (NAS provider; null/empty for legacy full-only callers).
     private String mode;          // "full" or "incremental"; null => legacy behaviour (script default)
+    private String method;        // "qcow2" (bitmaps, push mode), "content" (pull mode) or "rbd" (Ceph export-diff); null => "qcow2"
     private String bitmapNew;     // Checkpoint/bitmap name to create with this backup (timestamp-based)
     private String bitmapParent;  // Incremental: parent bitmap to read changes since
 
@@ -132,6 +133,14 @@ public class TakeBackupCommand extends Command {
 
     public void setMode(String mode) {
         this.mode = mode;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
     }
 
     public String getBitmapNew() {
