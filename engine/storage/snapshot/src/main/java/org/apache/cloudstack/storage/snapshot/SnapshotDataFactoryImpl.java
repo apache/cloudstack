@@ -205,7 +205,6 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         } else {
             return null;
         }
-
     }
 
     @Override

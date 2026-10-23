@@ -688,6 +688,11 @@ public class VolumeVO implements Volume {
     public void setEncryptFormat(String encryptFormat) { this.encryptFormat = encryptFormat; }
 
     @Override
+    public boolean isEncrypted() {
+        return this.passphraseId != null || this.encryptFormat != null;
+    }
+
+    @Override
     public boolean isDeleteProtection() {
         return deleteProtection;
     }
