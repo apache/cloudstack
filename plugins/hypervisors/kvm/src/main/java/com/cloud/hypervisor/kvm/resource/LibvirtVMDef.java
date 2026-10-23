@@ -1996,6 +1996,7 @@ public class LibvirtVMDef {
     public static class CpuModeDef {
         private String _mode;
         private String _model;
+        private String _modelFallback = "allow";
         private List<String> _features;
         private int _coresPerSocket = -1;
         private int _threadsPerCore = -1;
@@ -2003,6 +2004,12 @@ public class LibvirtVMDef {
 
         public void setMode(String mode) {
             _mode = mode;
+        }
+
+        public void setModelFallback(String modelFallback) {
+            if ("allow".equals(modelFallback) || "forbid".equals(modelFallback)) {
+                _modelFallback = modelFallback;
+            }
         }
 
         public void setFeatures(List<String> features) {
@@ -2027,7 +2034,7 @@ public class LibvirtVMDef {
 
             // start cpu def, adding mode, model
             if ("custom".equalsIgnoreCase(_mode) && _model != null){
-                modeBuilder.append("<cpu mode='custom' match='exact'><model fallback='allow'>" + _model + "</model>");
+                modeBuilder.append("<cpu mode='custom' match='exact'><model fallback='" + _modelFallback + "'>" + _model + "</model>");
             } else if ("host-model".equals(_mode)) {
                 modeBuilder.append("<cpu mode='host-model'><model fallback='allow'></model>");
             } else if ("host-passthrough".equals(_mode)) {

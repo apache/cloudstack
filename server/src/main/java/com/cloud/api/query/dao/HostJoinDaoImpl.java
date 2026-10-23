@@ -283,6 +283,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     } else {
                         hostResponse.setUefiCapability(new Boolean(false));
                     }
+                    if (hostDetails.containsKey(Host.HOST_MIGRATION_IP)) {
+                        hostResponse.setMigrationIp((String) hostDetails.get(Host.HOST_MIGRATION_IP));
+                    }
                 }
                 if (details.contains(HostDetails.all) &&
                         Arrays.asList(Hypervisor.HypervisorType.KVM,
