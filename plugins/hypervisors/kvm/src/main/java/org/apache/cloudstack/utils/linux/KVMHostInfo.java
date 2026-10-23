@@ -22,6 +22,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,6 +45,7 @@ import org.xml.sax.InputSource;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
@@ -53,13 +56,20 @@ public class KVMHostInfo {
     private int allocatableCpus;
     private int cpusockets;
     private long cpuSpeed;
+    private long cpuMaxSpeed;
     private String cpuArch;
     private long totalMemory;
     private long reservedMemory;
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
-    private static String cpuArchRetrieveExecutable = "arch";
-    private static List<String> cpuInfoFreqFileNames = List.of("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency","/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
+    private static final String LSCPU_CPU_INFO_COMMAND = "lscpu | grep -iE 'Model name|CPU max MHz|CPU dynamic MHz'";
+    private static final String LSCPU_MODEL_NAME_FIELD = "Model name";
+    private static final String LSCPU_CPU_MAX_MHZ_FIELD = "CPU max MHz";
+    private static final String LSCPU_CPU_DYNAMIC_MHZ_FIELD = "CPU dynamic MHz";
+    private static final Pattern LSCPU_MODEL_NAME_FREQUENCY_PATTERN = Pattern.compile("([0-9]\\.[0-9]+)GHz");
+    private static final int MHZ_PER_GHZ = 1000;
+    private static final String cpuArchRetrieveExecutable = "arch";
+    private static final List<String> cpuInfoFreqFileNames = List.of("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency","/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed, int reservedCpus) {
         this.cpuSpeed = manualSpeed;
@@ -90,6 +100,14 @@ public class KVMHostInfo {
         return this.cpuSpeed;
     }
 
+    /**
+     * @return the maximum frequency of the CPU, in MHz, which may include the turbo frequency; or 0 if it could not be retrieved. This value is only
+     * informative; {@link #getCpuSpeed()} is the one used to calculate the capacity of the host.
+     */
+    public long getCpuMaxSpeed() {
+        return this.cpuMaxSpeed;
+    }
+
     public long getTotalMemory() {
         return this.totalMemory;
     }
@@ -114,59 +132,100 @@ public class KVMHostInfo {
        return "s390x".equals(System.getProperty("os.arch"));
     }
 
-    protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
-        long speed = 0L;
-        speed = getCpuSpeedFromCommandLscpu();
-        if(speed > 0L) {
+    protected static long getCpuSpeed(final String lscpuOutput, final String capabilities, final NodeInfo nodeInfo) {
+        long speed = getBaseCpuSpeedFromLscpuOutput(lscpuOutput);
+        if (speed > 0L) {
             return speed;
         }
 
         speed = getCpuSpeedFromFile();
-        if(speed > 0L) {
+        if (speed > 0L) {
             return speed;
         }
 
-        speed = getCpuSpeedFromHostCapabilities(cpabilities);
-        if(speed > 0L) {
+        speed = getCpuMaxSpeedFromLscpuOutput(lscpuOutput);
+        if (speed > 0L) {
             return speed;
         }
 
-        LOGGER.info(String.format("Using the value [%s] provided by Libvirt.", nodeInfo.mhz));
-        speed = nodeInfo.mhz;
+        speed = getCpuSpeedFromHostCapabilities(capabilities);
+        if (speed > 0L) {
+            return speed;
+        }
+
+        LOGGER.info("Using the value [{}] provided by Libvirt.", nodeInfo.mhz);
+        return nodeInfo.mhz;
+    }
+
+    /**
+     * Retrieves the base CPU speed from the output of the {@code lscpu} command. The frequency advertised in the model name is preferred because the CPU speed
+     * is used to calculate the capacity of the host and the CPU quota of the VMs with CPU cap enabled; thus, it must be a frequency that the CPU is able to
+     * sustain. On s390x, the "CPU dynamic MHz" value is used instead.
+     *
+     * @return the base CPU speed, in MHz, or 0 if it could not be retrieved.
+     */
+    protected static long getBaseCpuSpeedFromLscpuOutput(final String lscpuOutput) {
+        return getBaseCpuSpeedFromLscpuOutput(lscpuOutput, isHostS390x());
+    }
+
+    /**
+     * @param lscpuOutput the output of the {@code lscpu} command.
+     * @param isS390x whether the host CPU architecture is s390x; on s390x the base speed is read from the "CPU dynamic MHz" field.
+     * @return the base CPU speed, in MHz, or 0 if it could not be retrieved.
+     */
+    protected static long getBaseCpuSpeedFromLscpuOutput(final String lscpuOutput, final boolean isS390x) {
+        if (isS390x) {
+            final long speed = (long) NumbersUtil.parseFloat(getLscpuFieldValue(lscpuOutput, LSCPU_CPU_DYNAMIC_MHZ_FIELD), 0f);
+            logCpuSpeedFromLscpuField(LSCPU_CPU_DYNAMIC_MHZ_FIELD, speed);
+            return speed;
+        }
+        final String modelName = getLscpuFieldValue(lscpuOutput, LSCPU_MODEL_NAME_FIELD);
+        final Matcher matcher = LSCPU_MODEL_NAME_FREQUENCY_PATTERN.matcher(StringUtils.defaultString(modelName));
+        if (matcher.find()) {
+            final long speed = (long) (NumbersUtil.parseFloat(matcher.group(1), 0f) * MHZ_PER_GHZ);
+            logCpuSpeedFromLscpuField(LSCPU_MODEL_NAME_FIELD, speed);
+            return speed;
+        }
+        logCpuSpeedFromLscpuField(LSCPU_MODEL_NAME_FIELD, 0L);
+        return 0L;
+    }
+
+    /**
+     * @return the maximum frequency of the CPU, in MHz, from the output of the {@code lscpu} command; or 0 if it could not be retrieved. This value may
+     * include the turbo frequency; it is only informative.
+     */
+    protected static long getCpuMaxSpeedFromLscpuOutput(final String lscpuOutput) {
+        final long speed = (long) NumbersUtil.parseFloat(getLscpuFieldValue(lscpuOutput, LSCPU_CPU_MAX_MHZ_FIELD), 0f);
+        logCpuSpeedFromLscpuField(LSCPU_CPU_MAX_MHZ_FIELD, speed);
         return speed;
     }
 
-    private static long getCpuSpeedFromCommandLscpu() {
-        long speed = 0L;
+    private static void logCpuSpeedFromLscpuField(final String field, final long speed) {
+        if (speed > 0L) {
+            LOGGER.info("Retrieved the CPU speed [{}] MHz from the \"{}\" field of the lscpu command output.", speed, field);
+        } else {
+            LOGGER.debug("Unable to retrieve the CPU speed from the \"{}\" field of the lscpu command output.", field);
+        }
+    }
+
+    private static String getLscpuFieldValue(final String lscpuOutput, final String field) {
+        if (StringUtils.isBlank(lscpuOutput)) {
+            return null;
+        }
+        for (final String line : lscpuOutput.split("\n")) {
+            if (StringUtils.startsWithIgnoreCase(line.trim(), field)) {
+                return StringUtils.substringAfter(line, ":").trim();
+            }
+        }
+        return null;
+    }
+
+    private static String getLscpuOutput() {
         LOGGER.info("Fetching CPU speed from command \"lscpu\".");
-        try {
-            String command = "lscpu | grep -i 'CPU max MHz' | head -n 1 | sed 's/^.*: //' | xargs";
-            if(isHostS390x()) {
-                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
-            }
-            String result = Script.runSimpleBashScript(command);
-            speed = (long) (Float.parseFloat(result));
-            LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
-            return speed;
-        } catch (NullPointerException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
-        }
-        try {
-            String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
-            if(isHostS390x()) {
-                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
-            }
-            String result = Script.runSimpleBashScript(command);
-            speed = (long) (Float.parseFloat(result) * 1000);
-            LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
-            return speed;
-        } catch (NullPointerException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
-        }
-        return speed;
+        return Script.executeCommand(LSCPU_CPU_INFO_COMMAND).first();
     }
 
-    private static long getCpuSpeedFromFile() {
+    protected static long getCpuSpeedFromFile() {
         for (final String cpuInfoFreqFileName:  cpuInfoFreqFileNames) {
             LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
             try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
@@ -213,11 +272,13 @@ public class KVMHostInfo {
             final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
             final String capabilities = conn.getCapabilities();
+            final String lscpuOutput = getLscpuOutput();
             if (this.cpuSpeed == 0) {
-                this.cpuSpeed = getCpuSpeed(capabilities, hosts);
+                this.cpuSpeed = getCpuSpeed(lscpuOutput, capabilities, hosts);
             } else {
                 LOGGER.debug(String.format("Using existing configured CPU frequency %s", this.cpuSpeed));
             }
+            this.cpuMaxSpeed = getCpuMaxSpeedFromLscpuOutput(lscpuOutput);
 
             /*
              * Some CPUs report a single socket and multiple NUMA cells.
