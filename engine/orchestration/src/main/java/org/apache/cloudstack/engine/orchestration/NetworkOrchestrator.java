@@ -82,6 +82,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
@@ -195,6 +196,8 @@ import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.guru.NetworkGuruAdditionalFunctions;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
@@ -336,6 +339,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected IPAddressDao _publicIpAddressDao;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    CommandSetupHelper commandSetupHelper;
+    @Inject
+    NetworkHelper networkHelper;
     @Inject
     MessageBus _messageBus;
     @Inject
@@ -2740,6 +2747,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     protected void removeNic(final VirtualMachineProfile vm, final NicVO nic) {
+        // release/deallocate below clears the nic's own mac - capture it now for the association DHCP removal further down
+        final String nicMacAddress = nic.getMacAddress();
 
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start && nic.getState() != Nic.State.Allocated) {
             // Nics with reservation strategy 'Start' should go through release phase in the Nic life cycle.
@@ -2846,8 +2855,52 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // remove any multi-VLAN trunk associations this nic held as a primary - otherwise they're left
         // permanently orphaned, referencing a nic that no longer exists
         for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
-            _nicNetworkMapDao.remove(association.getId());
+            cleanupNicNetworkAssociation(vm, nic, nicMacAddress, association);
         }
+    }
+
+    // without this, nic removal (expunge, or live nic remove) leaks the association's Shared IP and leaves a stale DHCP entry
+    private void cleanupNicNetworkAssociation(final VirtualMachineProfile vm, final NicVO nic, final String nicMacAddress, final NicNetworkMapVO association) {
+        final NetworkVO associatedNetwork = _networksDao.findById(association.getNetworkId());
+        if (associatedNetwork == null) {
+            _nicNetworkMapDao.remove(association.getId());
+            return;
+        }
+
+        if (associatedNetwork.getGuestType() == GuestType.Shared && association.getIp4Address() != null) {
+            final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(associatedNetwork.getId(), association.getIp4Address());
+            if (ip != null) {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                        _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                        _ipAddressDao.unassignIpAddress(ip.getId());
+                    }
+                });
+            }
+        }
+
+        final UserVmVO userVm = vm.getType() == Type.User ? _userVmDao.findById(vm.getId()) : null;
+        if (userVm != null) {
+            for (final DomainRouterVO router : routerDao.findByNetwork(associatedNetwork.getId())) {
+                if (router.getState() != VirtualMachine.State.Running) {
+                    continue;
+                }
+                try {
+                    final Commands cmds = new Commands(Command.OnError.Stop);
+                    commandSetupHelper.createDhcpEntryCommand(router, userVm, nicMacAddress, association.getIp4Address(),
+                            association.getIp6Address(), associatedNetwork.getGateway(), associatedNetwork.getIp6Gateway(), associatedNetwork.getId(),
+                            false, true, cmds);
+                    networkHelper.sendCommandsToRouter(router, cmds);
+                } catch (final ResourceUnavailableException ex) {
+                    logger.warn("Failed to remove DHCP entry for nic {}'s association with network {} due to", nic, associatedNetwork, ex);
+                }
+            }
+            UsageEventUtils.publishNicNetworkOfferingUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, userVm.getAccountId(), userVm.getDataCenterId(),
+                    userVm.getId(), VirtualMachine.class.getName(), userVm.getUuid(), nic.getId(), associatedNetwork, 0L, userVm.isDisplay());
+        }
+
+        _nicNetworkMapDao.remove(association.getId());
     }
 
     public boolean isDhcpAccrossMultipleSubnetsSupported(final DhcpServiceProvider dhcpServiceProvider) {
@@ -2900,7 +2953,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
             for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
-                _nicNetworkMapDao.remove(association.getId());
+                cleanupNicNetworkAssociation(vm, nic, nic.getMacAddress(), association);
             }
             _nicDao.remove(nic.getId());
         }

@@ -18,6 +18,9 @@ package org.apache.cloudstack.engine.orchestration;
 
 import static org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService.NetworkLockTimeout;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -52,6 +55,8 @@ import org.mockito.Mockito;
 
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.dc.Vlan;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -74,6 +79,8 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.RouterNetworkDao;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
@@ -253,6 +260,60 @@ public class NetworkOrchestratorTest extends TestCase {
 
         verify(testOrchestrator._nicNetworkMapDao).remove(association.getId());
         verify(testOrchestrator._nicDao).remove(25L);
+    }
+
+    @Test
+    public void removeNicsReleasesSharedIpAndRemovesDhcpEntryForAssociation() throws Exception {
+        testOrchestrator.commandSetupHelper = mock(CommandSetupHelper.class);
+        testOrchestrator.networkHelper = mock(NetworkHelper.class);
+
+        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+        when(vm.getId()).thenReturn(13L);
+        when(vm.getType()).thenReturn(Type.User);
+
+        NicVO nic = mock(NicVO.class);
+        when(nic.getId()).thenReturn(25L);
+        when(nic.getMacAddress()).thenReturn("02:01:01:82:00:01");
+        when(testOrchestrator._nicDao.listByVmId(13L)).thenReturn(Collections.singletonList(nic));
+
+        NicNetworkMapVO association = new NicNetworkMapVO(25L, 210L, "10.1.1.50", null);
+        when(testOrchestrator._nicNetworkMapDao.listByNicId(25L)).thenReturn(Collections.singletonList(association));
+
+        NetworkVO associatedNetwork = mock(NetworkVO.class);
+        when(associatedNetwork.getId()).thenReturn(210L);
+        when(associatedNetwork.getGuestType()).thenReturn(GuestType.Shared);
+        when(testOrchestrator._networksDao.findById(210L)).thenReturn(associatedNetwork);
+
+        IPAddressVO sharedIp = mock(IPAddressVO.class);
+        when(sharedIp.getId()).thenReturn(99L);
+        when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(210L, "10.1.1.50")).thenReturn(sharedIp);
+
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(testOrchestrator._userVmDao.findById(13L)).thenReturn(userVm);
+
+        DomainRouterVO router = mock(DomainRouterVO.class);
+        when(router.getState()).thenReturn(VirtualMachine.State.Running);
+        when(testOrchestrator.routerDao.findByNetwork(210L)).thenReturn(Collections.singletonList(router));
+
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class);
+                MockedStatic<UsageEventUtils> usageEventMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenAnswer(invocation -> {
+                TransactionCallback<?> callback = invocation.getArgument(0);
+                return callback.doInTransaction(null);
+            });
+
+            testOrchestrator.removeNics(vm);
+
+            usageEventMocked.verify(() -> UsageEventUtils.publishNicNetworkOfferingUsageEvent(eq(EventTypes.EVENT_NETWORK_OFFERING_REMOVE),
+                    anyLong(), anyLong(), anyLong(), any(), any(), eq(25L), eq(associatedNetwork), anyLong(), anyBoolean()));
+        }
+
+        verify(testOrchestrator._ipAddrMgr).markIpAsUnavailable(99L);
+        verify(testOrchestrator._ipAddressDao).unassignIpAddress(99L);
+        verify(testOrchestrator.commandSetupHelper).createDhcpEntryCommand(eq(router), eq(userVm), eq("02:01:01:82:00:01"),
+                eq("10.1.1.50"), any(), any(), any(), eq(210L), eq(false), eq(true), any());
+        verify(testOrchestrator.networkHelper).sendCommandsToRouter(eq(router), any());
+        verify(testOrchestrator._nicNetworkMapDao).remove(association.getId());
     }
 
     @Test
