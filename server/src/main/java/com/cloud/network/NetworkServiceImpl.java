@@ -947,6 +947,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 rollbackNetworkAssociations(nic, newlyAssociatedNetworks, nicWasAlreadyMultiNetwork);
                 throw ex;
             }
+            nic = _nicDao.findById(nic.getId());
             refreshNicVlanMappingMetadata(nic);
             for (NetworkVO network : newlyAssociatedNetworks) {
                 pushDhcpEntryForAssociation(vm, nic, network);

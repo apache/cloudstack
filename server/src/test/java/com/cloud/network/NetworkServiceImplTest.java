@@ -1469,6 +1469,33 @@ public class NetworkServiceImplTest {
         return nic;
     }
 
+    private UserVmVO mockRunningVmOnReadyHost() {
+        UserVmVO vm = mockVm(VirtualMachine.State.Running, 1L);
+        Mockito.when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(vm.getInstanceName()).thenReturn("i-2-11-VM");
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        DetailVO readyDetail = Mockito.mock(DetailVO.class);
+        Mockito.when(readyDetail.getValue()).thenReturn("true");
+        Mockito.when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
+        return vm;
+    }
+
+    private void stubPrimaryAndRequestedNetworks() throws Exception {
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
+        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.1.50");
+    }
+
+    private void stubLiveVlanMembershipUpdate(UserVmVO vm) throws Exception {
+        Mockito.when(networkModel.getNicProfile(Mockito.eq(vm), Mockito.any(NicVO.class), Mockito.any())).thenReturn(null);
+        Mockito.when(hvGuruMgr.getGuru(Hypervisor.HypervisorType.KVM)).thenReturn(hypervisorGuru);
+        Mockito.when(hypervisorGuru.toNicTO(null)).thenReturn(Mockito.mock(NicTO.class));
+        Mockito.when(agentMgr.easySend(Mockito.eq(1L), Mockito.any())).thenReturn(new UpdateNicVlanMembershipAnswer(null, true, "success"));
+    }
+
     private NetworkVO mockNetwork(long networkId, Network.GuestType guestType, long physicalNetworkId, long dataCenterId, Long vpcId,
             Networks.BroadcastDomainType broadcastType, URI broadcastUri) {
         NetworkVO network = Mockito.mock(NetworkVO.class);
@@ -1573,23 +1600,9 @@ public class NetworkServiceImplTest {
     public void associateNetworkToNicUpdatesLiveVlanMembershipOnARunningVmWhenHostIsReady() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
-        UserVmVO vm = mockVm(VirtualMachine.State.Running, 1L);
-        Mockito.when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-        Mockito.when(vm.getInstanceName()).thenReturn("i-2-11-VM");
-        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
-        DetailVO readyDetail = Mockito.mock(DetailVO.class);
-        Mockito.when(readyDetail.getValue()).thenReturn("true");
-        Mockito.when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
-        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
-        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
-        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
-        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
-        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
-        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.1.50");
-        Mockito.when(networkModel.getNicProfile(Mockito.eq(vm), Mockito.eq(nic), Mockito.any())).thenReturn(null);
-        Mockito.when(hvGuruMgr.getGuru(Hypervisor.HypervisorType.KVM)).thenReturn(hypervisorGuru);
-        Mockito.when(hypervisorGuru.toNicTO(null)).thenReturn(Mockito.mock(NicTO.class));
-        Mockito.when(agentMgr.easySend(Mockito.eq(1L), Mockito.any())).thenReturn(new UpdateNicVlanMembershipAnswer(null, true, "success"));
+        UserVmVO vm = mockRunningVmOnReadyHost();
+        stubPrimaryAndRequestedNetworks();
+        stubLiveVlanMembershipUpdate(vm);
         DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
         Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(routerDao.findByNetwork(205L)).thenReturn(Arrays.asList(router));
@@ -1603,27 +1616,35 @@ public class NetworkServiceImplTest {
     }
 
     @Test
+    public void associateNetworkToNicRefreshesMetadataWithTheNicAsPersistedWhenItBecomesMultiNetwork() throws Exception {
+        NicVO staleNic = mockNic(11L, 5L, 205L, false);
+        NicVO persistedNic = mockNic(11L, 5L, 205L, true);
+        java.util.concurrent.atomic.AtomicBoolean associationPersisted = new java.util.concurrent.atomic.AtomicBoolean(false);
+        Mockito.when(nicDao.findById(11L)).thenAnswer(invocation -> associationPersisted.get() ? persistedNic : staleNic);
+        Mockito.when(nicNetworkMapDao.persist(Mockito.any())).thenAnswer(invocation -> {
+            associationPersisted.set(true);
+            return invocation.getArgument(0);
+        });
+        UserVmVO vm = mockRunningVmOnReadyHost();
+        stubPrimaryAndRequestedNetworks();
+        stubLiveVlanMembershipUpdate(vm);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(routerDao.findByNetwork(205L)).thenReturn(Arrays.asList(router));
+
+        service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
+
+        Mockito.verify(commandSetupHelper).createVmDataCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.same(persistedNic), Mockito.any(), Mockito.any());
+    }
+
+    @Test
     public void associateNetworkToNicPushesDhcpEntryForNewlyAssociatedNetworkOnARunningVm() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
-        UserVmVO vm = mockVm(VirtualMachine.State.Running, 1L);
-        Mockito.when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-        Mockito.when(vm.getInstanceName()).thenReturn("i-2-11-VM");
-        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
-        DetailVO readyDetail = Mockito.mock(DetailVO.class);
-        Mockito.when(readyDetail.getValue()).thenReturn("true");
-        Mockito.when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
-        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
-        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
-        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
-        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
-        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
-        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.1.50");
+        UserVmVO vm = mockRunningVmOnReadyHost();
+        stubPrimaryAndRequestedNetworks();
         Mockito.when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(new NicNetworkMapVO(11L, 206L, "10.1.1.50", null));
-        Mockito.when(networkModel.getNicProfile(Mockito.eq(vm), Mockito.eq(nic), Mockito.any())).thenReturn(null);
-        Mockito.when(hvGuruMgr.getGuru(Hypervisor.HypervisorType.KVM)).thenReturn(hypervisorGuru);
-        Mockito.when(hypervisorGuru.toNicTO(null)).thenReturn(Mockito.mock(NicTO.class));
-        Mockito.when(agentMgr.easySend(Mockito.eq(1L), Mockito.any())).thenReturn(new UpdateNicVlanMembershipAnswer(null, true, "success"));
+        stubLiveVlanMembershipUpdate(vm);
         Mockito.when(routerDao.findByNetwork(205L)).thenReturn(new ArrayList<>());
         DomainRouterVO associatedNetworkRouter = Mockito.mock(DomainRouterVO.class);
         Mockito.when(associatedNetworkRouter.getState()).thenReturn(VirtualMachine.State.Running);
@@ -1642,12 +1663,7 @@ public class NetworkServiceImplTest {
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
         UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
-        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
-        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
-        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
-        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
-        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
-        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.1.50");
+        stubPrimaryAndRequestedNetworks();
 
         service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
 
@@ -1659,23 +1675,9 @@ public class NetworkServiceImplTest {
     public void associateNetworkToNicDoesNotRefreshMetadataOnRoutersThatAreNotRunning() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
-        UserVmVO vm = mockVm(VirtualMachine.State.Running, 1L);
-        Mockito.when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-        Mockito.when(vm.getInstanceName()).thenReturn("i-2-11-VM");
-        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
-        DetailVO readyDetail = Mockito.mock(DetailVO.class);
-        Mockito.when(readyDetail.getValue()).thenReturn("true");
-        Mockito.when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
-        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
-        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
-        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
-        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
-        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
-        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.1.50");
-        Mockito.when(networkModel.getNicProfile(Mockito.eq(vm), Mockito.eq(nic), Mockito.any())).thenReturn(null);
-        Mockito.when(hvGuruMgr.getGuru(Hypervisor.HypervisorType.KVM)).thenReturn(hypervisorGuru);
-        Mockito.when(hypervisorGuru.toNicTO(null)).thenReturn(Mockito.mock(NicTO.class));
-        Mockito.when(agentMgr.easySend(Mockito.eq(1L), Mockito.any())).thenReturn(new UpdateNicVlanMembershipAnswer(null, true, "success"));
+        UserVmVO vm = mockRunningVmOnReadyHost();
+        stubPrimaryAndRequestedNetworks();
+        stubLiveVlanMembershipUpdate(vm);
         DomainRouterVO stoppedRouter = Mockito.mock(DomainRouterVO.class);
         Mockito.when(stoppedRouter.getState()).thenReturn(VirtualMachine.State.Stopped);
         Mockito.when(routerDao.findByNetwork(205L)).thenReturn(Arrays.asList(stoppedRouter));
