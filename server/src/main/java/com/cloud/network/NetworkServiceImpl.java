@@ -1031,6 +1031,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (requestedNetworkIds == null || requestedNetworkIds.isEmpty()) {
             throw new InvalidParameterValueException("networkids must not be empty");
         }
+        Set<Long> seenNetworkIds = new HashSet<>();
+        for (Long networkId : requestedNetworkIds) {
+            if (!seenNetworkIds.add(networkId)) {
+                throw new InvalidParameterValueException(String.format("networkids lists the same network more than once: %d", networkId));
+            }
+        }
 
         // serializes concurrent associate calls on the same nic: the "already associated" check in
         // buildResultingNetworkSet() and the insert in persistAssociations() are otherwise a check-then-act
