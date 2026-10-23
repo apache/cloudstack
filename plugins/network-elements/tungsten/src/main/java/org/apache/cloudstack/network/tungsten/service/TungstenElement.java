@@ -433,7 +433,7 @@ public class TungstenElement extends AdapterBase
 
         // update haproxy
         TungstenCommand updateTungstenLoadBalancerPoolCommand;
-        String lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        String lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisibility.value();
         if (!lbStatsVisibility.equals("disabled")) {
             String lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
             String lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();

@@ -1123,7 +1123,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     private boolean updateHaproxyStats(List<HostVO> hostList, String lbUuid) {
         // update haproxy stats
-        String lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        String lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisibility.value();
         if (!lbStatsVisibility.equals("disabled")) {
             String lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
             String lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();

@@ -431,7 +431,7 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
         ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
         ConfigKey.init(configDepotMock);
-        Mockito.when(configDepotMock.getConfigStringValue(Mockito.eq(NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.key()), Mockito.any(), Mockito.any()))
+        Mockito.when(configDepotMock.getConfigStringValue(Mockito.eq(NetworkOrchestrationService.NetworkLBHaproxyStatsVisibility.key()), Mockito.any(), Mockito.any()))
                 .thenReturn("disabled");
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
