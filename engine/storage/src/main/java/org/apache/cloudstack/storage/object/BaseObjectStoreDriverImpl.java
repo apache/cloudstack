@@ -18,8 +18,12 @@
  */
 package org.apache.cloudstack.storage.object;
 
+import com.cloud.agent.api.to.BucketCredentialTO;
+import com.cloud.agent.api.to.BucketKeyTO;
+import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.host.Host;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -31,9 +35,64 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
+import java.util.Set;
 
 public abstract class BaseObjectStoreDriverImpl implements ObjectStoreDriver {
     protected Logger logger = LogManager.getLogger(getClass());
+
+    protected static final String BUCKET_CREDENTIALS_UNSUPPORTED = "Per-bucket credentials are not supported by this object store provider";
+
+    @Override
+    public boolean supportsBucketCredentials(long storeId) {
+        return false;
+    }
+
+    @Override
+    public String bucketCredentialsUnsupportedReason(long storeId) {
+        // a provider that implements per-bucket credentials overrides this with its own diagnosis;
+        // for the rest, the reason is simply that they do not offer them
+        return "This object storage provider does not offer per-bucket credentials";
+    }
+
+    @Override
+    public boolean accountSupportsBucketCredentials(long accountId, long storeId) {
+        return false;
+    }
+
+    @Override
+    public boolean migrateAccountForBucketCredentials(long accountId, long storeId) {
+        throw new CloudRuntimeException(BUCKET_CREDENTIALS_UNSUPPORTED);
+    }
+
+    @Override
+    public BucketCredentialTO createBucketCredential(BucketTO bucket, long storeId) {
+        throw new CloudRuntimeException(BUCKET_CREDENTIALS_UNSUPPORTED);
+    }
+
+    @Override
+    public BucketKeyTO createBucketCredentialKey(BucketTO bucket, long storeId, Set<String> knownAccessKeys) {
+        throw new CloudRuntimeException(BUCKET_CREDENTIALS_UNSUPPORTED);
+    }
+
+    @Override
+    public boolean removeBucketCredentialKey(BucketTO bucket, long storeId, String accessKey) {
+        throw new CloudRuntimeException(BUCKET_CREDENTIALS_UNSUPPORTED);
+    }
+
+    @Override
+    public boolean deleteBucketCredential(BucketTO bucket, long storeId) {
+        throw new CloudRuntimeException(BUCKET_CREDENTIALS_UNSUPPORTED);
+    }
+
+    @Override
+    public BucketKeyTO rotateAccountKey(long accountId, long storeId) {
+        throw new CloudRuntimeException(BUCKET_CREDENTIALS_UNSUPPORTED);
+    }
+
+    @Override
+    public boolean isAccountKeyRotationPending(long accountId, long storeId) {
+        return false;
+    }
 
     @Override
     public Map<String, String> getCapabilities() {
