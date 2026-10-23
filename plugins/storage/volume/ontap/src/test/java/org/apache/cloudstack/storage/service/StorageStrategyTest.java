@@ -61,7 +61,10 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -125,6 +128,13 @@ public class StorageStrategyTest {
         }
 
         @Override
+        public CloudStackVolume createTemplateCache(org.apache.cloudstack.storage.datastore.db.StoragePoolVO storagePool,
+                org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo templateInfo,
+                Map<String, String> details, long sizeInBytes) {
+            return null;
+        }
+
+        @Override
         CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
             return null;
         }
@@ -134,8 +144,12 @@ public class StorageStrategyTest {
         }
 
         @Override
-        public void copyCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        public CloudStackVolume cloneCloudStackVolume(CloudStackVolume cloudstackVolume) {
+            return null;
+        }
 
+        @Override
+        public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes) {
         }
 
         @Override
@@ -658,6 +672,39 @@ public class StorageStrategyTest {
         Exception ex = assertThrows(CloudRuntimeException.class,
                 () -> storageStrategy.deleteStorageVolume(volume));
         assertTrue(ex.getMessage().contains("Job failed"));
+    }
+
+    @Test
+    public void testPollJobIfPresent_failedPollThrowsWithOperationAndJobUuid() {
+        TestableStorageStrategy spyStrategy = spy(storageStrategy);
+        doReturn(false).when(spyStrategy).jobPollForSuccess(eq("job-uuid-1"), eq(60), eq(2000));
+
+        Job job = new Job();
+        job.setUuid("job-uuid-1");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> spyStrategy.pollJobIfPresent(jobResponse, "clone file"));
+        assertTrue(ex.getMessage().contains("job-uuid-1"));
+        assertTrue(ex.getMessage().contains("clone file"));
+    }
+
+    @Test
+    public void testPollJobIfPresent_noJobSkipsPolling() {
+        TestableStorageStrategy spyStrategy = spy(storageStrategy);
+
+        spyStrategy.pollJobIfPresent(new JobResponse(), "clone file");
+        spyStrategy.pollJobIfPresent(null, "clone file");
+
+        verify(spyStrategy, never()).jobPollForSuccess(anyString(), eq(60), eq(2000));
+    }
+
+    @Test
+    public void testDeleteFileByPath_unsupportedStrategyThrows() {
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.deleteFileByPath("flexvol-uuid", "template-uuid"));
+        assertTrue(ex.getMessage().contains("TestableStorageStrategy"));
     }
 
     @Test
