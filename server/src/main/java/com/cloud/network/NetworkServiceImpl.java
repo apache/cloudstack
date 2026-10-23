@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -3881,9 +3882,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return (_ntwkSrvcDao.areServicesSupportedInNetwork(networkId, services));
     }
 
+    private static final Set<VirtualMachine.State> NON_STOPPED_VM_STATES = EnumSet.of(VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
+
     private boolean checkForNonStoppedVmInNetwork(long networkId) {
         List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
-        return vms.isEmpty();
+        return vms.isEmpty() && !hasNonStoppedVmAssociatedToNetwork(networkId);
+    }
+
+    // trunk nics carry the network via nic_network_map, which listByNetworkIdAndStates does not see
+    private boolean hasNonStoppedVmAssociatedToNetwork(long networkId) {
+        for (Long nicId : _nicNetworkMapDao.listNicIdsByNetworkId(networkId)) {
+            NicVO nic = _nicDao.findById(nicId);
+            VMInstanceVO vm = nic == null ? null : _vmDao.findById(nic.getInstanceId());
+            if (vm != null && NON_STOPPED_VM_STATES.contains(vm.getState())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void replugNicsForUpdatedNetwork(NetworkVO network) throws ResourceUnavailableException, InsufficientCapacityException {
