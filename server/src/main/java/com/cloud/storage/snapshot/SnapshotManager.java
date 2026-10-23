@@ -73,7 +73,7 @@ public interface SnapshotManager extends Configurable {
             true, ConfigKey.Scope.StoragePool, null);
 
     ConfigKey<Integer> BackupSnapshotWait = new ConfigKey<>("Storage", Integer.class, "backup.snapshot.wait", "21600",
-            "In second, timeout for BackupSnapshotCommand", true);
+            "Timeout (in seconds) for BackupSnapshotCommand", true);
 
     ConfigKey<Integer> TotalRetries = new ConfigKey<>("Storage", Integer.class, "total.retries", "4",
             "The number of times each command sent to a host should be retried in case of failure.", true);
