@@ -24,6 +24,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -55,6 +56,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -668,5 +670,42 @@ public class SnapshotManagerImplTest {
 
         Mockito.verify(snapshotStoreDao, Mockito.never()).removeBySnapshotStore(
                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void copySnapshotOnPoolChargesPrimaryStorageToTheSnapshotOwnerAccount() throws Exception {
+        long ownerAccountId = 42L;
+        long snapshotSize = 1024L;
+        Long poolId = 5L;
+
+        SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+        SnapshotInfo snapshotOnStore = Mockito.mock(SnapshotInfo.class);
+        SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
+        DataStore store = Mockito.mock(DataStore.class);
+        AsyncCallFuture<SnapshotResult> future = Mockito.mock(AsyncCallFuture.class);
+        SnapshotResult result = Mockito.mock(SnapshotResult.class);
+
+        Mockito.when(snapshot.getId()).thenReturn(100L);
+        Mockito.when(snapshot.getSize()).thenReturn(snapshotSize);
+        Mockito.when(snapshot.getAccountId()).thenReturn(ownerAccountId);
+        Mockito.when(dataStoreManager.getDataStore(poolId, DataStoreRole.Primary)).thenReturn(store);
+        Mockito.when(store.create(snapshot)).thenReturn(snapshotOnStore);
+        Mockito.when(snapshotOnStore.getDataCenterId()).thenReturn(2L);
+        Mockito.when(snapshotService.copySnapshot(snapshot, snapshotOnStore, strategy)).thenReturn(future);
+        Mockito.when(future.get()).thenReturn(result);
+        Mockito.when(result.isFailed()).thenReturn(false);
+
+        try (MockedStatic<CallContext> ctxMock = Mockito.mockStatic(CallContext.class)) {
+            CallContext ctx = Mockito.mock(CallContext.class);
+            ctxMock.when(CallContext::current).thenReturn(ctx);
+            // A SYSTEM calling account skips the usage-event branch; this test only covers which account is charged.
+            Mockito.when(ctx.getCallingAccountId()).thenReturn(Account.ACCOUNT_ID_SYSTEM);
+
+            snapshotManager.copySnapshotOnPool(snapshot, strategy, poolId);
+        }
+
+        Mockito.verify(resourceLimitService).incrementResourceCount(
+                Mockito.eq(ownerAccountId), Mockito.eq(ResourceType.primary_storage), Mockito.eq(snapshotSize));
     }
 }
