@@ -61,6 +61,7 @@ public class ApiConstants {
     public static final String BACKUP_AVAILABLE = "backupavailable";
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_LIMIT = "backuplimit";
+    public static final String BACKUP_PATHS = "backuppaths";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BACKUP_OFFERING_DETAILS = "backupofferingdetails";

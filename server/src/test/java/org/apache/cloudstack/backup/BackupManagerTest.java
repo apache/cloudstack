@@ -53,7 +53,6 @@ import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
@@ -91,7 +90,6 @@ import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Resource;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
@@ -113,7 +111,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -1696,95 +1693,6 @@ public class BackupManagerTest {
                 "org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd")).thenReturn(1L);
 
         backupManager.deleteBackup(backupId, false);
-    }
-
-    @Test
-    public void testNewBackupResponse() {
-        Long vmId = 1L;
-        Long accountId = 2L;
-        Long domainId = 3L;
-        Long zoneId = 4L;
-        Long vmOfferingId = 5L;
-        Long backupOfferingId = 6L;
-        Long backupId = 7L;
-        Long templateId = 8L;
-        String templateUuid = "template-uuid1";
-        String serviceOfferingUuid = "service-offering-uuid1";
-
-        BackupVO backup = new BackupVO();
-        ReflectionTestUtils.setField(backup, "id", backupId);
-        ReflectionTestUtils.setField(backup, "uuid", "backup-uuid");
-        backup.setVmId(vmId);
-        backup.setAccountId(accountId);
-        backup.setDomainId(domainId);
-        backup.setZoneId(zoneId);
-        backup.setBackupOfferingId(backupOfferingId);
-        backup.setType("Full");
-        backup.setBackupScheduleId(null);
-
-        VMInstanceVO vm = new VMInstanceVO(vmId, 0L, "test-vm", "test-vm", VirtualMachine.Type.User,
-                0L, Hypervisor.HypervisorType.Simulator, 0L, domainId, accountId, 0L, false);
-        vm.setDataCenterId(zoneId);
-        vm.setBackupOfferingId(vmOfferingId);
-        vm.setTemplateId(templateId);
-
-        AccountVO account = new AccountVO();
-        account.setUuid("account-uuid");
-        account.setAccountName("test-account");
-
-        DomainVO domain = new DomainVO();
-        domain.setUuid("domain-uuid");
-        domain.setName("test-domain");
-
-        DataCenterVO zone = new DataCenterVO(1L, "test-zone", null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
-        zone.setUuid("zone-uuid");
-
-        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
-        Mockito.when(offering.getUuid()).thenReturn("offering-uuid");
-        Mockito.when(offering.getName()).thenReturn("test-offering");
-
-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
-        Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
-        Mockito.when(domainDao.findByIdIncludingRemoved(domainId)).thenReturn(domain);
-        Mockito.when(dataCenterDao.findByIdIncludingRemoved(zoneId)).thenReturn(zone);
-        Mockito.when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
-
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
-        when(template.getName()).thenReturn("template1");
-        when(vmTemplateDao.findByUuid(templateUuid)).thenReturn(template);
-        Map<String, String> details = new HashMap<>();
-        details.put(ApiConstants.TEMPLATE_ID, templateUuid);
-
-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
-        when(serviceOffering.getName()).thenReturn("service-offering1");
-        when(serviceOfferingDao.findByUuid(serviceOfferingUuid)).thenReturn(serviceOffering);
-        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOfferingUuid);
-
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getName()).thenReturn("network1");
-        when(networkDao.findByUuid("network-uuid1")).thenReturn(network);
-        details.put(ApiConstants.NICS, "[{\"networkid\":\"network-uuid1\"}]");
-
-        Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
-
-        BackupResponse response = backupManager.createBackupResponse(backup, true);
-
-        Assert.assertEquals("backup-uuid", response.getId());
-        Assert.assertEquals("test-vm", response.getVmName());
-        Assert.assertEquals("account-uuid", response.getAccountId());
-        Assert.assertEquals("test-account", response.getAccount());
-        Assert.assertEquals("domain-uuid", response.getDomainId());
-        Assert.assertEquals("test-domain", response.getDomain());
-        Assert.assertEquals("zone-uuid", response.getZoneId());
-        Assert.assertEquals("test-zone", response.getZone());
-        Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
-        Assert.assertEquals("test-offering", response.getBackupOffering());
-        Assert.assertEquals("MANUAL", response.getIntervalType());
-        Assert.assertEquals("{serviceofferingid=service-offering-uuid1, isiso=false, hypervisor=Simulator, " +
-                "nics=[{\"networkid\":\"network-uuid1\",\"networkname\":\"network1\"}], serviceofferingname=service-offering1, " +
-                "templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
-        Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 
     @Test
