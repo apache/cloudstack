@@ -46,12 +46,11 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
-
     protected static Logger LOGGER = LogManager.getLogger(KVMHostInfo.class);
 
     private int totalCpus;
     private int allocatableCpus;
-    private int cpusockets;
+    private int cpuSockets;
     private long cpuSpeed;
     private String cpuArch;
     private long totalMemory;
@@ -69,7 +68,7 @@ public class KVMHostInfo {
         this.totalMemory = new MemStat(this.getReservedMemory(), this.getOverCommitMemory()).getTotal();
         this.allocatableCpus = totalCpus - reservedCpus;
         if (allocatableCpus < 1) {
-            LOGGER.warn(String.format("Aggressive reserved CPU config leaves no usable CPUs for VMs! Total system CPUs: %d, Reserved: %d, Allocatable: %d", totalCpus, reservedCpus, allocatableCpus));
+            LOGGER.warn("Aggressive reserved CPU config leaves no usable CPUs for VMs! Total system CPUs: {}, Reserved: {}, Allocatable: {}", totalCpus, reservedCpus, allocatableCpus);
             allocatableCpus = 0;
         }
     }
@@ -83,7 +82,7 @@ public class KVMHostInfo {
     }
 
     public int getCpuSockets() {
-        return this.cpusockets;
+        return this.cpuSockets;
     }
 
     public long getCpuSpeed() {
@@ -114,7 +113,7 @@ public class KVMHostInfo {
        return "s390x".equals(System.getProperty("os.arch"));
     }
 
-    protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
+    protected static long getCpuSpeed(final String capabilities, final NodeInfo nodeInfo) {
         long speed = 0L;
         speed = getCpuSpeedFromCommandLscpu();
         if(speed > 0L) {
@@ -126,12 +125,12 @@ public class KVMHostInfo {
             return speed;
         }
 
-        speed = getCpuSpeedFromHostCapabilities(cpabilities);
+        speed = getCpuSpeedFromHostCapabilities(capabilities);
         if(speed > 0L) {
             return speed;
         }
 
-        LOGGER.info(String.format("Using the value [%s] provided by Libvirt.", nodeInfo.mhz));
+        LOGGER.info("Using the value [{}] provided by Libvirt.", nodeInfo.mhz);
         speed = nodeInfo.mhz;
         return speed;
     }
@@ -139,42 +138,44 @@ public class KVMHostInfo {
     private static long getCpuSpeedFromCommandLscpu() {
         long speed = 0L;
         LOGGER.info("Fetching CPU speed from command \"lscpu\".");
+        String command = null;
         try {
-            String command = "lscpu | grep -i 'CPU max MHz' | head -n 1 | sed 's/^.*: //' | xargs";
+            command = "lscpu | grep -i 'CPU max MHz' | head -n 1 | sed 's/^.*: //' | xargs";
             if(isHostS390x()) {
                 command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
             }
             String result = Script.runSimpleBashScript(command);
             speed = (long) (Float.parseFloat(result));
-            LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
+            logCpuSpeedCommandAndSpeed(command, speed);
             return speed;
         } catch (NullPointerException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
+            logFailureToGetCpuSpeedAndException(command, e);
         }
+
         try {
-            String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
             if(isHostS390x()) {
                 command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
             }
             String result = Script.runSimpleBashScript(command);
             speed = (long) (Float.parseFloat(result) * 1000);
-            LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
+            logCpuSpeedCommandAndSpeed(command, speed);
             return speed;
         } catch (NullPointerException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
+            logFailureToGetCpuSpeedAndException(command, e);
         }
         return speed;
     }
 
     private static long getCpuSpeedFromFile() {
         for (final String cpuInfoFreqFileName:  cpuInfoFreqFileNames) {
-            LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
+            LOGGER.info("Fetching CPU speed from file [{}].", cpuInfoFreqFileName);
             try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
                 Long cpuInfoFreq = Long.parseLong(IOUtils.toString(reader).trim());
-                LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000));
+                LOGGER.info("Retrieved value [{}] from file [{}]. This corresponds to a CPU speed of [{}] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000);
                 return cpuInfoFreq / 1000;
             } catch (IOException | NumberFormatException e) {
-                LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
+                LOGGER.error("Unable to retrieve the CPU speed from file [{}]", cpuInfoFreqFileName, e);
             }
         }
         return 0L;
@@ -198,7 +199,7 @@ public class KVMHostInfo {
                 Node freqNode = attributes.getNamedItem("frequency");
                 if (nameNode != null && "tsc".equals(nameNode.getNodeValue()) && freqNode != null && StringUtils.isNotEmpty(freqNode.getNodeValue())) {
                     speed = Long.parseLong(freqNode.getNodeValue()) / 1000000;
-                    LOGGER.info(String.format("Retrieved value [%s] from \"host capabilities\". This corresponds to a CPU speed of [%s] MHz.", freqNode.getNodeValue(), speed));
+                    LOGGER.info("Retrieved value [{}] from \"host capabilities\". This corresponds to a CPU speed of [{}] MHz.", freqNode.getNodeValue(), speed);
                 }
             }
         } catch (Exception ex) {
@@ -216,16 +217,16 @@ public class KVMHostInfo {
             if (this.cpuSpeed == 0) {
                 this.cpuSpeed = getCpuSpeed(capabilities, hosts);
             } else {
-                LOGGER.debug(String.format("Using existing configured CPU frequency %s", this.cpuSpeed));
+                LOGGER.debug("Using existing configured CPU frequency {}", this.cpuSpeed);
             }
 
             /*
              * Some CPUs report a single socket and multiple NUMA cells.
              * We need to multiply them to get the correct socket count.
              */
-            this.cpusockets = hosts.sockets;
+            this.cpuSockets = hosts.sockets;
             if (hosts.nodes > 0) {
-                this.cpusockets = hosts.sockets * hosts.nodes;
+                this.cpuSockets = hosts.sockets * hosts.nodes;
             }
             this.totalCpus = hosts.cpus;
             this.cpuArch = getCPUArchFromCommand();
@@ -252,12 +253,21 @@ public class KVMHostInfo {
             */
             this.capabilities.add("snapshot");
         } catch (final LibvirtException e) {
-            LOGGER.error("Caught libvirt exception while fetching host information", e);
+            LOGGER.error("Caught Libvirt exception while fetching host information", e);
         }
     }
 
     private String getCPUArchFromCommand() {
         LOGGER.info("Fetching host CPU arch");
         return Script.runSimpleBashScript(Script.getExecutableAbsolutePath(cpuArchRetrieveExecutable));
+    }
+
+    private static void logCpuSpeedCommandAndSpeed(String command, long speed) {
+        LOGGER.info("Command [{}] resulted in the value [{}] for CPU speed.", command, speed);
+    }
+
+    private static void logFailureToGetCpuSpeedAndException(String command, Exception e) {
+        LOGGER.debug("Unable to retrieve the CPU speed from command [{}]. Trying another way to retrieve the CPU speed.", command);
+        LOGGER.trace(e);
     }
 }
