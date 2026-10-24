@@ -134,7 +134,7 @@ function configure_services() {
 
   # Disable cloud init by default
   cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
-datasource_list: ['CloudStack']
+datasource_list: ['ConfigDrive', 'CloudStack']
 datasource:
   CloudStack:
     max_wait: 120
@@ -145,6 +145,9 @@ system_info:
   network:
     dhcp_client_priority: [dhclient, dhcpcd, udhcpc]
 EOF
+
+  # Enable cloud-init without any aid from ds-identify, when it is started by the setup scripts
+  echo "policy: enabled" > /etc/cloud/ds-identify.cfg
 
   touch /etc/cloud/cloud-init.disabled
   # cloud-init.service was split into several units in newer cloud-init versions
