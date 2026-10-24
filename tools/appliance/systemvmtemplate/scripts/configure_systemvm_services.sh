@@ -139,6 +139,11 @@ datasource:
   CloudStack:
     max_wait: 120
     timeout: 50
+# cloud-init of Debian 13 asks dhcpcd for the DHCP lease by default, which is not running in the
+# system VMs. Prefer dhclient, installed in the template, otherwise no datasource is found
+system_info:
+  network:
+    dhcp_client_priority: [dhclient, dhcpcd, udhcpc]
 EOF
 
   touch /etc/cloud/cloud-init.disabled
