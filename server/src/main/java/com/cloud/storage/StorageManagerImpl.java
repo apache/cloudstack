@@ -1262,22 +1262,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             _storagePoolTagsDao.persist(pool.getId(), storagePoolTags, cmd.isTagARule());
         }
 
-        boolean changes = false;
         Long updatedCapacityBytes = null;
         Long capacityBytes = cmd.getCapacityBytes();
-        // retrieve current details and merge/overlay input to capture changes
-        Map<String, String> details = null;
-        details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
-        if (inputDetails != null) {
-            details.putAll(inputDetails);
-            changes = true;
+        // keep track of what this call actually changes, so only those values are persisted
+        Map<String, String> details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        Map<String, String> changedDetails = new HashMap<>();
+        if (!inputDetails.isEmpty()) {
+            changedDetails.putAll(inputDetails);
         }
 
         if (capacityBytes != null) {
             if (capacityBytes != pool.getCapacityBytes()) {
                 updatedCapacityBytes = capacityBytes;
-                details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(updatedCapacityBytes));
-                changes = true;
+                changedDetails.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(updatedCapacityBytes));
             }
         }
 
@@ -1286,18 +1283,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (capacityIops != null) {
             if (!capacityIops.equals(pool.getCapacityIops())) {
                 updatedCapacityIops = capacityIops;
-                details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, String.valueOf(updatedCapacityIops));
-                changes = true;
+                changedDetails.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, String.valueOf(updatedCapacityIops));
             }
         }
 
-        if (changes) {
+        if (cmd.getUrl() != null) {
+            changedDetails.put("url", cmd.getUrl());
+        }
+
+        if (!changedDetails.isEmpty()) {
+            details.putAll(changedDetails);
             DataStoreProvider dataStoreProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
             DataStoreLifeCycle dataStoreLifeCycle = dataStoreProvider.getDataStoreLifeCycle();
             if (dataStoreLifeCycle instanceof PrimaryDataStoreLifeCycle) {
-                if (cmd.getUrl() != null) {
-                   details.put("url", cmd.getUrl());
-                }
                 ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(pool, details);
                 if (updatedCapacityBytes != null) {
                     pool.setCapacityBytes(updatedCapacityBytes);
@@ -1306,7 +1304,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     pool.setCapacityIops(updatedCapacityIops);
                 }
                 _storagePoolDao.update(id, pool);
-                _storagePoolDao.updateDetails(id, details);
+                // re-read the details so values written by the lifecycle above are preserved,
+                // then overlay only the values changed by this call
+                Map<String, String> detailsToPersist = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+                detailsToPersist.putAll(changedDetails);
+                _storagePoolDao.updateDetails(id, detailsToPersist);
             }
         }
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
