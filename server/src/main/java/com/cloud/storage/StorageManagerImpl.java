@@ -1296,13 +1296,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             DataStoreProvider dataStoreProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
             DataStoreLifeCycle dataStoreLifeCycle = dataStoreProvider.getDataStoreLifeCycle();
             if (dataStoreLifeCycle instanceof PrimaryDataStoreLifeCycle) {
-                ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(pool, details);
                 if (updatedCapacityBytes != null) {
                     pool.setCapacityBytes(updatedCapacityBytes);
                 }
                 if (updatedCapacityIops != null) {
                     pool.setCapacityIops(updatedCapacityIops);
                 }
+                ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(pool, details);
                 _storagePoolDao.update(id, pool);
                 // re-read the details so values written by the lifecycle above are preserved,
                 // then overlay only the values changed by this call
