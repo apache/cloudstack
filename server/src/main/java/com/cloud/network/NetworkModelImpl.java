@@ -3045,7 +3045,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getValidNetworkCidr(Network guestNetwork) {
         String networkCidr = guestNetwork.getNetworkCidr();
-        return networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+        String cidr = networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+        return com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(cidr);
     }
 
     @Override

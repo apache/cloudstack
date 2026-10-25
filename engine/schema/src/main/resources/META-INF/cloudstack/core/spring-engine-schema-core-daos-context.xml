@@ -284,6 +284,7 @@
   <bean id="internalBackupJoinDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupJoinDaoImpl" />
   <bean id="internalBackupServiceJobDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupServiceJobDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
+  <bean id="backupUsageMetricDaoImpl" class="org.apache.cloudstack.backup.dao.BackupUsageMetricDaoImpl" />
   <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
