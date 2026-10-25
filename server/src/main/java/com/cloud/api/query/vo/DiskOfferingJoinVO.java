@@ -118,6 +118,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "cache_mode")
     String cacheMode;
 
+    @Column(name = "error_policy")
+    String errorPolicy;
+
     @Column(name = "compute_only")
     boolean computeOnly;
 
@@ -227,6 +230,14 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
+    }
+
+    public void setErrorPolicy(String errorPolicy) {
+        this.errorPolicy = errorPolicy;
     }
 
     public boolean isDisplayOffering() {

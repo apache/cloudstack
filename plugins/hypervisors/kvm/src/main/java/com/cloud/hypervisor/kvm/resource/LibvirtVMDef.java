@@ -926,6 +926,20 @@ public class LibvirtVMDef {
             }
         }
 
+        public enum DiskErrorPolicy {
+            REPORT("report"), STOP("stop"), IGNORE("ignore"), ENOSPACE("enospace");
+            String _diskErrorPolicy;
+
+            DiskErrorPolicy(String errorPolicy) {
+                _diskErrorPolicy = errorPolicy;
+            }
+
+            @Override
+            public String toString() {
+                return _diskErrorPolicy;
+            }
+        }
+
         public enum DiscardType {
             IGNORE("ignore"), UNMAP("unmap");
             String _discardType;
@@ -982,6 +996,7 @@ public class LibvirtVMDef {
         private Long _iopsWriteRateMax;
         private Long _iopsWriteRateMaxLength;
         private DiskCacheMode _diskCacheMode;
+        private DiskErrorPolicy _errorPolicy;
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
@@ -1328,6 +1343,14 @@ public class LibvirtVMDef {
             return _diskCacheMode;
         }
 
+        public void setErrorPolicy(DiskErrorPolicy errorPolicy) {
+            _errorPolicy = errorPolicy;
+        }
+
+        public DiskErrorPolicy getErrorPolicy() {
+            return _errorPolicy;
+        }
+
         public void setQemuDriver(boolean qemuDriver){
             this.qemuDriver = qemuDriver;
         }
@@ -1389,6 +1412,10 @@ public class LibvirtVMDef {
 
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
+
+                if (_errorPolicy != null) {
+                    diskBuilder.append("error_policy='" + _errorPolicy + "' ");
+                }
                 }
 
                 if(ioDriver != null) {
