@@ -3929,6 +3929,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
 
+                if (volumeObjectTO.getErrorPolicy() != null) {
+                    disk.setErrorPolicy(DiskDef.DiskErrorPolicy.valueOf(volumeObjectTO.getErrorPolicy().toString().toUpperCase()));
+                }
+
                 if (volumeObjectTO.requiresEncryption() &&
                         pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
