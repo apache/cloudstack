@@ -1197,10 +1197,6 @@ public class VolumeApiServiceImplTest {
         Mockito.lenient().doNothing().when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
         Mockito.lenient().doNothing().when(volumeApiServiceImpl).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
         Mockito.lenient().doNothing().when(volumeApiServiceImpl).cleanVolumesCache(volumeVoMock);
-
-        Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
-        Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-
         boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
 
         Assert.assertTrue(result);
@@ -1231,7 +1227,7 @@ public class VolumeApiServiceImplTest {
 
         Assert.assertTrue(result);
         Mockito.verify(volumeDaoMock, Mockito.times(1)).remove(volumeMockId);
-        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).destroyVolumeIfPossible(volumeVoMock);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
@@ -1251,7 +1247,7 @@ public class VolumeApiServiceImplTest {
         volumeApiServiceImpl.destroyVolume(volumeMockId);
 
         Mockito.verify(volumeDaoMock, Mockito.times(1)).remove(volumeMockId);
-        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
     }
 
