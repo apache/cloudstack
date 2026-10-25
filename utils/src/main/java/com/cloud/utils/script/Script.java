@@ -371,7 +371,7 @@ public class Script implements Callable<String> {
 
             String error;
             if (interpreter != null) {
-                error = interpreter.processError(reader);
+                error = interpreter.drain() ? task.getResult() : interpreter.processError(reader);
             } else {
                 error = String.valueOf(_process.exitValue());
             }
@@ -494,7 +494,7 @@ public class Script implements Callable<String> {
 
             String error;
             if (interpreter != null) {
-                error = interpreter.processError(reader);
+                error = interpreter.drain() ? task.getResult() : interpreter.processError(reader);
             } else {
                 error = String.valueOf(_process.exitValue());
             }

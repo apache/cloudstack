@@ -145,8 +145,8 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         logger.debug("Failed to obtain module context: ", e);
                     }
                 } catch (BeansException e) {
-                    logger.error("Failed to load module [{}] due to: {}", def.getName(), e);
-                    throw new RuntimeException(String.format("Failed to load module [%s]", def.getName()));
+                    logger.error("Failed to load module [{}]", def.getName(), e);
+                    throw new RuntimeException(String.format("Failed to load module [%s]", def.getName()), e);
                 }
             }
         });
