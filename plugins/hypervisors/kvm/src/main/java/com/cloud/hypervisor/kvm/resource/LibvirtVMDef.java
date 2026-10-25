@@ -1412,10 +1412,10 @@ public class LibvirtVMDef {
 
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
+                }
 
                 if (_errorPolicy != null) {
                     diskBuilder.append("error_policy='" + _errorPolicy + "' ");
-                }
                 }
 
                 if(ioDriver != null) {
