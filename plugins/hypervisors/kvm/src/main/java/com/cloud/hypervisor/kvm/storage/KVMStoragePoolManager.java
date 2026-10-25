@@ -446,7 +446,7 @@ public class KVMStoragePoolManager {
     public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         if (type == StoragePoolType.NetworkFilesystem) {
-            _haMonitor.removeStoragePool(uuid);
+            _haMonitor.unregisterStoragePool(uuid);
         }
         boolean deleteStatus = adaptor.deleteStoragePool(uuid);
         synchronized (_storagePools) {
