@@ -79,6 +79,7 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_CDROM_MAX_COUNT = "host.cdrom.max.count";
     String GUEST_OS_CATEGORY_ID = "guest.os.category.id";
     String GUEST_OS_RULE = "guest.os.rule";
+    String HOST_CPU_MAX_SPEED_MHZ = "host.cpu.max.speed.mhz";
 
     int DEFAULT_SSH_PORT = 22;
 

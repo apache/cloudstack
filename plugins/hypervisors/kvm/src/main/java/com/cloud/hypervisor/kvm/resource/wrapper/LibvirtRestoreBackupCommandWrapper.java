@@ -126,7 +126,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
-    private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
+    static String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
             Path path = Paths.get(volumePath);
             String rscName = path.getParent().getFileName().toString();
@@ -208,6 +208,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String diskType = "root";
         try {
             verifyRbdRestoreTargets(storagePoolMgr, restoreVolumePools, restoreVolumePaths, layout);
+            // The management server sends the instance's volumes in the order of the backed up volumes,
+            // each one being the volume that backup has to be written into (it matches them by uuid, see
+            // NASBackupProvider#getVolumesToRestoreInto), so they are paired by position here.
             for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
                 PrimaryDataStoreTO restoreVolumePool = restoreVolumePools.get(idx);
                 String restoreVolumePath = restoreVolumePaths.get(idx);
@@ -437,15 +440,22 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
         QemuImg qemu;
         try {
-            qemu = new QemuImg(timeout, true, false);
             String volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
             KVMPhysicalDisk disk = null;
+            boolean targetExists = true;
+            // Let qemu-img skip the backup's zero regions (--target-is-zero) only on a volume that
+            // provably reads as zeroes. An in-place restore overwrites a volume that still holds its
+            // old data, and a new LINSTOR volume reads as zeroes only on thin or ZFS backed pools.
+            boolean targetReadsAsZero = false;
             if (createTargetVolume) {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
                     if (size == null) {
                         throw new CloudRuntimeException("Restore volume size is required for Linstor pool when creating target volume");
                     }
                     disk = volumeStoragePool.createPhysicalDisk(volumeUuid, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, size, null);
+                    targetReadsAsZero = volumeStoragePool.newVolumeReadsAsZero(volumeUuid);
+                } else {
+                    targetExists = false;
                 }
             } else {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
@@ -453,8 +463,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 } else {
                     disk = volumeStoragePool.getPhysicalDisk(volumePath);
                 }
-                qemu.setSkipTargetVolumeCreation(true);
             }
+            qemu = new QemuImg(timeout, targetReadsAsZero, false);
+            qemu.setSkipTargetVolumeCreation(targetExists);
             if (disk != null) {
                 logger.debug("Restoring volume: {}", disk.toString());
             }

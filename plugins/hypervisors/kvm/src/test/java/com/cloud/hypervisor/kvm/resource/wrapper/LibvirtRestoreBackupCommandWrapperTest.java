@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
@@ -35,10 +37,13 @@ import java.util.List;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -904,6 +909,64 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         }
     }
 
+    /**
+     * The management server sends the volumes to restore into in the order of the backed up volumes (it
+     * matches them by uuid). Their paths do not have to contain the backed up uuid: a volume migrated to
+     * another pool, or created from a snapshot, has a path that differs from its uuid. Each backup file
+     * has to be written into the volume at the same position.
+     */
+    @Test
+    public void testRestoreOfExistingVmWritesEachBackupIntoTheVolumeAtTheSamePosition() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO pool = Mockito.mock(PrimaryDataStoreTO.class);
+        lenient().when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(pool, pool, pool));
+        // data-vol-a was migrated, so its path is a different name than its uuid
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList(
+                "/var/lib/libvirt/images/root-vol",
+                "/var/lib/libvirt/images/migrated-path-of-a",
+                "/var/lib/libvirt/images/data-vol-b"
+        ));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("root-vol", "data-vol-a", "data-vol-b"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("root-vol", "data-vol-a", "data-vol-b"));
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
+                        .thenAnswer(invocation -> {
+                            String command = invocation.getArgument(0);
+                            // No backing chain, so the restore takes the rsync path this test asserts on.
+                            return command.contains("backing-filename") ? 1 : 0;
+                        });
+                filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/root.root-vol.qcow2", "/var/lib/libvirt/images/root-vol"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/migrated-path-of-a"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-b"})));
+            }
+        }
+    }
+
     private String invokeGetDeviceToAttachDisk(String vmName) throws Exception {
         Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("getDeviceToAttachDisk", String.class);
         method.setAccessible(true);
@@ -1128,5 +1191,68 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertEquals(30 * 1000L, umountTimeout[0]);
             }
         }
+    }
+
+    /**
+     * Restores a backup onto a LINSTOR volume through replaceBlockDeviceWithBackup and returns
+     * the QemuImg instance used for the copy together with its constructor arguments.
+     */
+    private Pair<QemuImg, List<?>> restoreOntoLinstorVolume(boolean createTargetVolume, boolean newVolumeReadsAsZero)
+            throws Exception {
+        Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("replaceBlockDeviceWithBackup",
+                KVMStoragePoolManager.class, PrimaryDataStoreTO.class, String.class, String.class, int.class,
+                boolean.class, Long.class);
+        method.setAccessible(true);
+
+        PrimaryDataStoreTO volumePool = Mockito.mock(PrimaryDataStoreTO.class);
+        when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        when(volumePool.getUuid()).thenReturn("pool-uuid");
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool linstorPool = Mockito.mock(KVMStoragePool.class);
+        lenient().when(linstorPool.newVolumeReadsAsZero("volume-123")).thenReturn(newVolumeReadsAsZero);
+        when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, "pool-uuid")).thenReturn(linstorPool);
+
+        final List<?>[] ctorArgs = new List<?>[1];
+        try (MockedConstruction<QemuImg> qemuMock = mockConstruction(QemuImg.class,
+                (mock, context) -> ctorArgs[0] = context.arguments())) {
+            boolean result = (boolean) method.invoke(wrapper, storagePoolMgr, volumePool,
+                    "/dev/drbd/by-res/cs-volume-123/0", "/mnt/backup/root.volume-123.qcow2", 60,
+                    createTargetVolume, 1024L);
+
+            Assert.assertTrue(result);
+            Assert.assertEquals(1, qemuMock.constructed().size());
+            QemuImg qemu = qemuMock.constructed().get(0);
+            Mockito.verify(qemu).convert(any(QemuImgFile.class), any(QemuImgFile.class));
+            if (!createTargetVolume) {
+                Mockito.verify(linstorPool, Mockito.never()).newVolumeReadsAsZero(anyString());
+            }
+            return new Pair<>(qemu, ctorArgs[0]);
+        }
+    }
+
+    @Test
+    public void testInPlaceLinstorRestoreDoesNotSkipZeroes() throws Exception {
+        // Even on a thin pool: the volume still holds its old data, so the backup's zero regions
+        // must be written.
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(false, true);
+
+        Assert.assertEquals(Boolean.FALSE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
+    }
+
+    @Test
+    public void testLinstorRestoreToNewThickVolumeDoesNotSkipZeroes() throws Exception {
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(true, false);
+
+        Assert.assertEquals(Boolean.FALSE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
+    }
+
+    @Test
+    public void testLinstorRestoreToNewThinVolumeSkipsZeroes() throws Exception {
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(true, true);
+
+        Assert.assertEquals(Boolean.TRUE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
     }
 }
