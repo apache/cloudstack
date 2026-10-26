@@ -376,11 +376,11 @@ datasource:
     None: {}
 EOF
   # sshd uses the first value it reads, so 40- loads before cloud-init's 50-cloud-init.conf
-  printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' > "$tmp/40-password-login.conf"
+  printf 'PermitRootLogin yes\n' > "$tmp/40-root-login.conf"
 
   # the drop-in only works if sshd_config includes sshd_config.d (not in EL8, Ubuntu 20.04, ...);
   # otherwise put the settings at the top of sshd_config, as the first value wins
-  local sshd_fix='f=/etc/ssh/sshd_config; d=/etc/ssh/sshd_config.d/40-password-login.conf;
+  local sshd_fix='f=/etc/ssh/sshd_config; d=/etc/ssh/sshd_config.d/40-root-login.conf;
 if [ -f "$f" ] && ! grep -qiE "^[[:space:]]*Include[[:space:]].*sshd_config\.d" "$f"; then
   { cat "$d"; cat "$f"; } > "$f.new" && cat "$f.new" > "$f" && rm -f "$f.new"
 fi'
@@ -392,13 +392,13 @@ fi'
     --upload "$tmp/ds-identify.cfg:/etc/cloud/ds-identify.cfg" \
     --upload "$tmp/cloudstack.cfg:/etc/cloud/cloud.cfg.d/cloudstack.cfg" \
     --mkdir /etc/ssh/sshd_config.d \
-    --upload "$tmp/40-password-login.conf:/etc/ssh/sshd_config.d/40-password-login.conf" \
+    --upload "$tmp/40-root-login.conf:/etc/ssh/sshd_config.d/40-root-login.conf" \
     --run-command "$sshd_fix" \
     --run-command "$CLEANUP"
   rm -rf "$tmp"
 
   echo "--- verification ---"
-  virt-cat -a "$WORK_IMAGE" /etc/cloud/ds-identify.cfg /etc/cloud/cloud.cfg.d/cloudstack.cfg /etc/ssh/sshd_config.d/40-password-login.conf
+  virt-cat -a "$WORK_IMAGE" /etc/cloud/ds-identify.cfg /etc/cloud/cloud.cfg.d/cloudstack.cfg /etc/ssh/sshd_config.d/40-root-login.conf
   local d
   for d in /usr/sbin /usr/bin; do
     virt-ls -a "$WORK_IMAGE" $d | grep -E '^(qemu-ga|vmtoolsd|xenstore)' | sed "s#^#$d/#" || true
