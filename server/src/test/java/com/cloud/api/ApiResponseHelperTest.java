@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
@@ -66,6 +67,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
@@ -98,6 +100,7 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
@@ -112,7 +115,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiResponseHelperTest {
@@ -840,5 +842,51 @@ public class ApiResponseHelperTest {
         Assert.assertEquals(Integer.valueOf(-1), nicResponse(null).getNetworkRate());
         Assert.assertEquals(Integer.valueOf(-1), nicResponse(0).getNetworkRate());
         Assert.assertEquals(Integer.valueOf(-1), nicResponse(-1).getNetworkRate());
+    }
+
+    @Test
+    public void showVmInfoForSharedNetworksTestRouterIp() {
+        IpAddress ipAddress = Mockito.mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(new Ip("10.1.1.2"));
+        when(ipAddress.getNetworkId()).thenReturn(1L);
+        NicVO placeholderNic = new NicVO(null, null, 1L, VirtualMachine.Type.DomainRouter);
+        placeholderNic.setReservationStrategy(Nic.ReservationStrategy.PlaceHolder);
+        NicVO routerNic = new NicVO("DirectNetworkGuru", 2L, 1L, VirtualMachine.Type.DomainRouter);
+        IPAddressResponse ipResponse = Mockito.mock(IPAddressResponse.class);
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(placeholderNic);
+            when(ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(routerNic);
+            when(ApiDBUtils.findVMInstanceById(2L)).thenReturn(vmInstanceVOMock);
+            when(vmInstanceVOMock.getUuid()).thenReturn("router-uuid");
+            when(vmInstanceVOMock.getHostName()).thenReturn("r-2-VM");
+            when(vmInstanceVOMock.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+
+            apiResponseHelper.showVmInfoForSharedNetworks(false, ipAddress, ipResponse);
+
+            verify(ipResponse).setIsSystem(true);
+            verify(ipResponse).setVirtualMachineId("router-uuid");
+            verify(ipResponse).setVirtualMachineName("r-2-VM");
+        }
+    }
+
+    @Test
+    public void showVmInfoForSharedNetworksTestRouterPlaceholderOnly() {
+        IpAddress ipAddress = Mockito.mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(new Ip("10.1.1.2"));
+        when(ipAddress.getNetworkId()).thenReturn(1L);
+        NicVO placeholderNic = new NicVO(null, null, 1L, VirtualMachine.Type.DomainRouter);
+        placeholderNic.setReservationStrategy(Nic.ReservationStrategy.PlaceHolder);
+        IPAddressResponse ipResponse = Mockito.mock(IPAddressResponse.class);
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(null);
+            when(ApiDBUtils.findByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(placeholderNic);
+
+            apiResponseHelper.showVmInfoForSharedNetworks(false, ipAddress, ipResponse);
+
+            verify(ipResponse).setIsSystem(true);
+            verify(ipResponse, Mockito.never()).setVirtualMachineId(Mockito.anyString());
+        }
     }
 }
