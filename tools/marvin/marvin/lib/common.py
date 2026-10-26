@@ -521,7 +521,7 @@ def get_suitable_test_template(apiclient, zoneid=None, ostypeid=None, hypervisor
     '''
     @Name : get_suitable_test_template
     @Desc : Retrieves the test template information based upon inputs provided
-            For XenServer and KVM, get_test_template is used for retrieving the
+            For XenServer, KVM and VMware, get_test_template is used for retrieving the
             shared public test template (tiny), which is registered by the
             admin only when it is missing. get_template is used for other
             hypervisors or when get_test_template fails
@@ -533,7 +533,7 @@ def get_suitable_test_template(apiclient, zoneid=None, ostypeid=None, hypervisor
     template = FAILED
     if hypervisor is None:
         hypervisor = get_hypervisor_type(apiclient)
-    if hypervisor.lower() in ["xenserver", "kvm"] or (hypervisor.lower() in ["vmware"] and deploy_as_is):
+    if hypervisor.lower() in ["xenserver", "kvm", "vmware"]:
         template = get_test_template(
             apiclient,
             zoneid,

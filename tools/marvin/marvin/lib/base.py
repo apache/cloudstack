@@ -369,6 +369,13 @@ class User:
         return apiclient.login(cmd)
 
 
+# cloud-init userdata to allow ssh login with password (root/password) on the built-in templates
+BUILTIN_TEMPLATE_USERDATA = """#cloud-config
+ssh_pwauth: true
+disable_root: false
+"""
+
+
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
 
@@ -556,6 +563,15 @@ class VirtualMachine:
                     "The following exception appeared while programming ssh access - %s" % e)
 
     @classmethod
+    def is_builtin_template(cls, apiclient, templateid):
+        """Check if the template is a built-in template"""
+        cmd = listTemplates.listTemplatesCmd()
+        cmd.id = templateid
+        cmd.templatefilter = "all"
+        templates = apiclient.listTemplates(cmd)
+        return bool(templates and templates[0].templatetype == "BUILTIN")
+
+    @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                domainid=None, zoneid=None, networkids=None,
                serviceofferingid=None, securitygroupids=None,
@@ -664,6 +680,9 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
+        elif userdataid is None and getattr(cmd, "templateid", None) and cls.is_builtin_template(apiclient, cmd.templateid):
+            # the built-in templates do not allow ssh login with password by default
+            cmd.userdata = base64.urlsafe_b64encode(BUILTIN_TEMPLATE_USERDATA.encode()).decode()
 
         if userdataid is not None:
             cmd.userdataid = userdataid
