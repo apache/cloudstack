@@ -108,12 +108,10 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
 
     @Override
-    public ProjectAccountVO findByProjectIdUserId(long projectId, long accountId, Long userId) {
+    public ProjectAccountVO findByProjectIdUserId(long projectId, long accountId, long userId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("projectId", projectId);
-        if (userId != null) {
-            sc.setParameters("userId", userId);
-        }
+        sc.setParameters("userId", userId);
         sc.setParameters("accountId", accountId);
 
         return findOneBy(sc);
