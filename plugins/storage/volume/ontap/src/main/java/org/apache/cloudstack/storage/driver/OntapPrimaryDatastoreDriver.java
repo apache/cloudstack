@@ -191,7 +191,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                      *      via this path; bootable recovery is createTemplate(snapshotid) → deploy).
                      *    - Backend: iSCSI → POST /api/storage/luns (clone.source in .snapshot/);
                      *      NFS → POST /api/storage/file/clone with snapshot.name.
-                     *    - IOPS: MIN_IOPS/MAX_IOPS may be on snapshot_details; apply is TODO below.
+                     *    - IOPS: the new volume's min/max (snapshot values, or the root offering when one
+                     *      is supplied). Applied here; the temporary template clone does not get a policy.
                      *
                      * 2) cloneOfTemplate — deploy / create from cached template on this pool.
                      *
@@ -205,9 +206,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     CloudStackVolume clonedCloudStackVolume;
                     if (cloneOfSnapshotId != null) {
                         clonedCloudStackVolume = cloneCloudStackVolumeFromSnapshot(
-                                storagePool, volInfo, details, cloneOfSnapshotId);
-                        // TODO(CSTACKEX-306): apply persisted MIN_IOPS / MAX_IOPS from snapshot_details
-                        // onto this CloudStack volume (and ONTAP QoS if applicable) after successful clone.
+                                storagePool, volInfo, details, cloneOfSnapshotId, true);
                     } else if (cloneOfTemplateId != null) {
                         clonedCloudStackVolume = cloneCloudStackVolumeFromTemplate(
                                 storagePool, volInfo, details, cloneOfTemplateId);
@@ -511,9 +510,15 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      *
      * <p>Optional grow when the disk offering is larger than the snapshot size (same pattern as
      * clone-from-template).</p>
+     *
+     * <p>When {@code applyQos} is true, the new volume's min and max IOPS are applied the same way
+     * as a template clone: iSCSI carries the policy on the clone request, NFS attaches it after
+     * the file exists. The temporary volume used for {@code createTemplate(snapshotid)} passes
+     * false and is left without a policy.</p>
      */
     private CloudStackVolume cloneCloudStackVolumeFromSnapshot(StoragePoolVO storagePool, VolumeInfo volumeInfo,
-                                                               Map<String, String> details, long csSnapshotId) {
+                                                               Map<String, String> details, long csSnapshotId,
+                                                               boolean applyQos) {
         String snapshotName = requireSnapshotDetail(csSnapshotId, OntapStorageConstants.ONTAP_SNAP_NAME);
         String volumePath = requireSnapshotDetail(csSnapshotId, OntapStorageConstants.VOLUME_PATH);
         String primaryPoolId = requireSnapshotDetail(csSnapshotId, OntapStorageConstants.PRIMARY_POOL_ID);
@@ -532,30 +537,56 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         }
 
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        boolean iscsi = isIscsi(details);
+        VolumeQosPolicy qosPolicy = null;
 
         logger.info("cloneCloudStackVolumeFromSnapshot: Cloning from CS snapshot [{}] (ONTAP snap [{}], path [{}]) "
                         + "for volume [{}] on pool [{}] protocol [{}]",
                 csSnapshotId, snapshotName, volumePath, volumeInfo.getId(), storagePool.getId(), poolProtocol);
 
-        CloudStackVolume request = isIscsi(details)
-                ? createCloneLunFromSnapshotRequest(storagePool, details, volumeInfo, volumePath, snapshotName)
-                : createCloneFileFromSnapshotRequest(storagePool, details, volumeInfo, volumePath, snapshotName);
-        CloudStackVolume cloned = storageStrategy.cloneCloudStackVolume(request);
-        if (cloned == null) {
-            throw new CloudRuntimeException("ONTAP returned nothing when cloning snapshot [" + csSnapshotId
-                    + "] for volume [" + volumeInfo.getId() + "]");
-        }
+        try {
+            if (applyQos) {
+                verifySufficientIopsForStoragePool(storagePool, volumeInfo.getMinIops(), volumeInfo.getId());
+                Volume.Type volumeType = volumeInfo.getVolumeType();
+                if (volumeType == Volume.Type.DATADISK || volumeType == Volume.Type.ROOT) {
+                    qosPolicy = createQosPolicyIfNeeded(storageStrategy, details,
+                            volumeInfo.getMinIops(), volumeInfo.getMaxIops(), storagePool.getId());
+                }
+            }
 
-        long requestedSize = getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, storagePool);
-        long snapshotSize = resolveSnapshotSizeBytes(csSnapshotId);
-        if (snapshotSize > 0 && requestedSize > snapshotSize) {
-            logger.info("cloneCloudStackVolumeFromSnapshot: Growing clone of snapshot [{}] from {} to {} bytes for volume [{}]",
-                    csSnapshotId, snapshotSize, requestedSize, volumeInfo.getId());
-            resizeClonedVolumeOrCleanup(storageStrategy, cloned, requestedSize,
-                    "cloneCloudStackVolumeFromSnapshot snapshot [" + csSnapshotId + "] volume [" + volumeInfo.getId() + "]");
-        }
+            CloudStackVolume request = iscsi
+                    ? createCloneLunFromSnapshotRequest(storagePool, details, volumeInfo, volumePath, snapshotName, qosPolicy)
+                    : createCloneFileFromSnapshotRequest(storagePool, details, volumeInfo, volumePath, snapshotName);
+            CloudStackVolume cloned = storageStrategy.cloneCloudStackVolume(request);
+            if (cloned == null) {
+                throw new CloudRuntimeException("ONTAP returned nothing when cloning snapshot [" + csSnapshotId
+                        + "] for volume [" + volumeInfo.getId() + "]");
+            }
 
-        return cloned;
+            long requestedSize = getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, storagePool);
+            long snapshotSize = resolveSnapshotSizeBytes(csSnapshotId);
+            if (snapshotSize > 0 && requestedSize > snapshotSize) {
+                logger.info("cloneCloudStackVolumeFromSnapshot: Growing clone of snapshot [{}] from {} to {} bytes for volume [{}]",
+                        csSnapshotId, snapshotSize, requestedSize, volumeInfo.getId());
+                resizeClonedVolumeOrCleanup(storageStrategy, cloned, requestedSize,
+                        "cloneCloudStackVolumeFromSnapshot snapshot [" + csSnapshotId + "] volume [" + volumeInfo.getId() + "]");
+            }
+
+            if (!iscsi && qosPolicy != null) {
+                CloudStackVolume cloudStackVolume = createCloudStackVolumeRequestByProtocol(
+                        storagePool, details, volumeInfo, qosPolicy);
+                storageStrategy.updateCloudStackVolume(cloudStackVolume);
+            }
+            if (applyQos) {
+                persistQosPolicyDetails(volumeInfo.getId(), qosPolicy);
+            }
+            return cloned;
+        } catch (Exception e) {
+            if (qosPolicy != null) {
+                storageStrategy.deleteVolumeQosPolicy(qosPolicy.getUuid());
+            }
+            throw e;
+        }
     }
 
     /**
@@ -765,10 +796,24 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
                 logger.info("createCloudStackVolumeForTypeVolume: Connection to Ontap SVM [{}] successful, preparing CloudStackVolumeRequest", details.get(OntapStorageConstants.SVM_NAME));
                 VolumeInfo volumeInfo = (VolumeInfo) data;
-                VolumeDetailVO qosPolicyDetail = volumeDetailsDao.findDetail(
-                        volumeInfo.getId(), OntapStorageConstants.QOS_POLICY_UUID);
-                CloudStackVolume cloudStackVolumeRequest = createDeleteCloudStackVolumeRequest(storagePool, details, volumeInfo);
-                storageStrategy.deleteCloudStackVolume(cloudStackVolumeRequest);
+                VolumeDetailVO qosPolicyDetail = volumeDetailsDao.findDetail(volumeInfo.getId(), OntapStorageConstants.QOS_POLICY_UUID);
+
+                // NFS file delete leaves the QoS assignment in place unless the file is set to none first.
+                // iSCSI LUN delete already drops object_count.
+                // TODO: revisit this NFS none-policy step when the file is deleted from ONTAP instead of KVM.
+                boolean qosCleared = false;
+                if (!isIscsi(details)) {
+                    qosCleared = clearQosPolicyBeforeDelete(storageStrategy, storagePool, details, volumeInfo, qosPolicyDetail);
+                }
+                try {
+                    CloudStackVolume cloudStackVolumeRequest = createDeleteCloudStackVolumeRequest(storagePool, details, volumeInfo);
+                    storageStrategy.deleteCloudStackVolume(cloudStackVolumeRequest);
+                } catch (Exception e) {
+                    if (qosCleared) {
+                        restoreQosPolicyAfterFailedDelete(storageStrategy, storagePool, details, volumeInfo, qosPolicyDetail);
+                    }
+                    throw e;
+                }
                 if (qosPolicyDetail != null) {
                     deleteUnusedQosPolicy(storageStrategy, qosPolicyDetail.getValue());
                 }
@@ -796,6 +841,51 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             if (callback != null) {
                 callback.complete(commandResult);
             }
+        }
+    }
+
+    /**
+     * Sets the NFS file QoS policy to {@code none} before the file is deleted.
+     * Failure must not block volume delete.
+     *
+     * @return true when the file was moved off its policy
+     */
+    private boolean clearQosPolicyBeforeDelete(StorageStrategy storageStrategy, StoragePoolVO storagePool,
+                                               Map<String, String> details, VolumeInfo volumeInfo,
+                                               VolumeDetailVO qosPolicyDetail) {
+        if (qosPolicyDetail == null || qosPolicyDetail.getValue() == null) {
+            return false;
+        }
+        VolumeQosPolicy nonePolicy = new VolumeQosPolicy();
+        nonePolicy.setName(OntapStorageConstants.QOS_POLICY_NONE);
+        try {
+            CloudStackVolume request = createCloudStackVolumeRequestByProtocol(storagePool, details, volumeInfo, nonePolicy);
+            storageStrategy.updateCloudStackVolume(request);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Could not clear QoS policy [{}] on volume [{}] before delete: {}",
+                    qosPolicyDetail.getValue(), volumeInfo.getId(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Puts the previous QoS policy back on an NFS file when delete fails after the policy was cleared.
+     */
+    private void restoreQosPolicyAfterFailedDelete(StorageStrategy storageStrategy, StoragePoolVO storagePool,
+                                                   Map<String, String> details, VolumeInfo volumeInfo,
+                                                   VolumeDetailVO qosPolicyDetail) {
+        if (qosPolicyDetail == null || qosPolicyDetail.getValue() == null) {
+            return;
+        }
+        VolumeQosPolicy previousPolicy = new VolumeQosPolicy();
+        previousPolicy.setUuid(qosPolicyDetail.getValue());
+        try {
+            CloudStackVolume request = createCloudStackVolumeRequestByProtocol(storagePool, details, volumeInfo, previousPolicy);
+            storageStrategy.updateCloudStackVolume(request);
+        } catch (Exception e) {
+            logger.warn("Could not restore QoS policy [{}] on volume [{}] after delete failed: {}",
+                    qosPolicyDetail.getValue(), volumeInfo.getId(), e.getMessage());
         }
     }
 
@@ -970,7 +1060,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             renameTemporarySnapshotCopy(volInfo, volumeVO, srcData.getId());
             logger.info("copySnapshotToTemporaryVolume: Cloning CS snapshot [{}] into temporary volume [{}] on pool [{}] for template creation",
                     srcData.getId(), volInfo.getId(), storagePool.getId());
-            CloudStackVolume cloned = cloneCloudStackVolumeFromSnapshot(storagePool, volInfo, details, srcData.getId());
+            CloudStackVolume cloned = cloneCloudStackVolumeFromSnapshot(storagePool, volInfo, details, srcData.getId(), false);
             if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
                 volumeVO.setPath(volInfo.getUuid());
             }
@@ -1752,7 +1842,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             snapshotDetails.put(OntapStorageConstants.PROTOCOL, protocol);
             // iSCSI only — needed for LUN restore / identity; null (skipped) for NFS.
             snapshotDetails.put(OntapStorageConstants.LUN_DOT_UUID, lunUuid);
-            // TODO(CSTACKEX-306): on create-volume-from-snapshot, read these and apply to the new volume.
+            // Source-disk IOPS at snapshot time. Create-volume-from-snapshot applies the new volume's
+            // min/max (these values, or a root disk offering) rather than reading this detail back.
             putPositiveIopsDetail(snapshotDetails, OntapStorageConstants.MIN_IOPS, volumeVO.getMinIops());
             putPositiveIopsDetail(snapshotDetails, OntapStorageConstants.MAX_IOPS, volumeVO.getMaxIops());
             updateSnapshotDetails(snapshot.getId(), snapshotDetails);
@@ -2179,7 +2270,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      */
     private CloudStackVolume createCloneLunFromSnapshotRequest(StoragePoolVO storagePool, Map<String, String> details,
                                                                VolumeInfo volumeInfo, String sourceVolumePath,
-                                                               String snapshotName) {
+                                                               String snapshotName, VolumeQosPolicy qosPolicy) {
         String lunName = volumeInfo.getName().replace(OntapStorageConstants.HYPHEN, OntapStorageConstants.UNDERSCORE);
         if (!OntapStorageUtils.isValidName(lunName)) {
             throw new CloudRuntimeException("Invalid dataObject name [" + lunName
@@ -2203,6 +2294,12 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         lunRequest.setSvm(svm);
         lunRequest.setName(OntapStorageUtils.getLunName(storagePool.getName(), lunName));
         lunRequest.setClone(clone);
+        if (qosPolicy != null) {
+            VolumeQosPolicy qosPolicyReference = new VolumeQosPolicy();
+            qosPolicyReference.setName(qosPolicy.getName());
+            qosPolicyReference.setUuid(qosPolicy.getUuid());
+            lunRequest.setQosPolicy(qosPolicyReference);
+        }
 
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lunRequest);

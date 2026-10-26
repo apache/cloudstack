@@ -112,8 +112,7 @@ public class OntapStorageConstants {
     public static final String LUN_DOT_UUID = "lun.uuid";
     public static final String QOS_POLICY_UUID = "qosPolicyUuid";
     public static final String IS_AFF = "isAFF";
-    public static final String MIN_IOPS_NOT_SUPPORTED_ON_FAS =
-            "Minimum IOPS is not supported on FAS/non-AFF ONTAP platforms; only maximum IOPS is supported";
+    public static final String MIN_IOPS_NOT_SUPPORTED_ON_FAS = "Minimum IOPS must be 0 for FAS. Only a Maximum IOPS limit is supported";
     public static final String QOS_POLICY_NONE = "none";
     public static final String QOS_POLICY_NAME_PREFIX = "cs_";
     public static final String QOS_POLICY_NAME_TO = "to_";

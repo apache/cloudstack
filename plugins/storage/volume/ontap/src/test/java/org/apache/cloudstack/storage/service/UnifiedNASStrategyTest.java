@@ -299,7 +299,7 @@ public class UnifiedNASStrategyTest {
 
         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
                 () -> strategy.createCloudStackVolume(cloudStackVolume));
-        assertTrue(ex.getMessage().contains("Failed to apply QoS policy to NFS volume file"));
+        assertTrue(ex.getMessage().contains("Failed to update NFS volume file"));
         verify(endPoint).sendMessage(any(DeleteCommand.class));
     }
 
@@ -329,9 +329,62 @@ public class UnifiedNASStrategyTest {
     }
 
     @Test
-    public void testUpdateCloudStackVolume_InvalidRequest_ThrowsException() {
-        assertThrows(CloudRuntimeException.class, () -> strategy.updateCloudStackVolume(new CloudStackVolume()));
+    public void testUpdateCloudStackVolume_UnexpectedException_IsWrapped() {
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volumeInfo.getUuid()).thenReturn("volume-uuid-123");
+
+        VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
+        qosPolicy.setName("cs_100_to_200_iops_svm1");
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setQosPolicy(qosPolicy);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setVolumeInfo(volumeInfo);
+        request.setFlexVolumeUuid("flex-uuid");
+        request.setFile(fileInfo);
+
+        doThrow(new IllegalStateException("decoder failed")).when(nasFeignClient)
+                .updateFile(anyString(), eq("flex-uuid"), eq("volume-uuid-123"), any(FileInfo.class));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> strategy.updateCloudStackVolume(request));
+        assertTrue(ex.getMessage().contains("Failed to update NFS volume file"));
+        assertTrue(ex.getCause() instanceof IllegalStateException);
+    }
+
+    @Test
+    public void testUpdateCloudStackVolume_NoQosPolicy_SkipsPatch() {
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volumeInfo.getUuid()).thenReturn("volume-uuid-123");
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setVolumeInfo(volumeInfo);
+        request.setFlexVolumeUuid("flex-uuid");
+        request.setFile(new FileInfo());
+
+        CloudStackVolume result = strategy.updateCloudStackVolume(request);
+
+        assertSame(request, result);
         verify(nasFeignClient, never()).updateFile(anyString(), anyString(), anyString(), any(FileInfo.class));
+    }
+
+    @Test
+    public void testUpdateCloudStackVolume_InvalidRequest_ThrowsException() {
+        CloudStackVolume missingFile = new CloudStackVolume();
+        missingFile.setVolumeInfo(mock(VolumeInfo.class));
+        missingFile.setFlexVolumeUuid("flex-uuid");
+
+        assertInvalidNfsVolumeUpdate(null);
+        assertInvalidNfsVolumeUpdate(new CloudStackVolume());
+        assertInvalidNfsVolumeUpdate(missingFile);
+
+        verify(nasFeignClient, never()).updateFile(anyString(), anyString(), anyString(), any(FileInfo.class));
+    }
+
+    private void assertInvalidNfsVolumeUpdate(CloudStackVolume request) {
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> strategy.updateCloudStackVolume(request));
+        assertEquals("Invalid NFS volume request", ex.getMessage());
     }
 
     // Test createCloudStackVolume - Volume Not Found

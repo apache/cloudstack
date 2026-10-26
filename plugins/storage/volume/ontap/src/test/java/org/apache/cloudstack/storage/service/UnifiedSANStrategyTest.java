@@ -1372,7 +1372,34 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testUpdateCloudStackVolume_ReturnsNull() {
+    void testUpdateCloudStackVolume_AppliesQosPolicy() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
+        qosPolicy.setName("cs_0_to_5000_iops_svm1");
+        qosPolicy.setUuid("qos-uuid");
+        lun.setQosPolicy(qosPolicy);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class)))
+                    .thenReturn(null);
+
+            CloudStackVolume result = unifiedSANStrategy.updateCloudStackVolume(request);
+
+            assertSame(request, result);
+            ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+            verify(sanFeignClient).updateLun(eq(authHeader), eq("lun-uuid-123"), lunCaptor.capture());
+            assertEquals("cs_0_to_5000_iops_svm1", lunCaptor.getValue().getQosPolicy().getName());
+            assertEquals("qos-uuid", lunCaptor.getValue().getQosPolicy().getUuid());
+        }
+    }
+
+    @Test
+    void testUpdateCloudStackVolume_UnexpectedException_IsWrapped() {
         Lun lun = new Lun();
         lun.setUuid("lun-uuid-123");
         VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
@@ -1381,9 +1408,48 @@ class UnifiedSANStrategyTest {
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
 
-        assertNull(unifiedSANStrategy.updateCloudStackVolume(request));
-        assertNull(unifiedSANStrategy.updateCloudStackVolume(new CloudStackVolume()));
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class)))
+                    .thenThrow(new IllegalStateException("decoder failed"));
+
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.updateCloudStackVolume(request));
+            assertTrue(ex.getMessage().contains("Failed to update LUN"));
+            assertTrue(ex.getCause() instanceof IllegalStateException);
+        }
+    }
+
+    @Test
+    void testUpdateCloudStackVolume_NoQosPolicy_SkipsPatch() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        CloudStackVolume result = unifiedSANStrategy.updateCloudStackVolume(request);
+
+        assertSame(request, result);
         verify(sanFeignClient, never()).updateLun(any(), any(), any());
+    }
+
+    @Test
+    void testUpdateCloudStackVolume_InvalidRequest_ThrowsException() {
+        CloudStackVolume lunWithoutUuid = new CloudStackVolume();
+        lunWithoutUuid.setLun(new Lun());
+
+        assertInvalidIscsiVolumeUpdate(null);
+        assertInvalidIscsiVolumeUpdate(new CloudStackVolume());
+        assertInvalidIscsiVolumeUpdate(lunWithoutUuid);
+
+        verify(sanFeignClient, never()).updateLun(any(), any(), any());
+    }
+
+    private void assertInvalidIscsiVolumeUpdate(CloudStackVolume request) {
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> unifiedSANStrategy.updateCloudStackVolume(request));
+        assertEquals("Invalid iSCSI volume request", ex.getMessage());
     }
 
     @Test

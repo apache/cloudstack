@@ -55,6 +55,7 @@ import org.apache.cloudstack.storage.feign.model.Nas;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.Volume;
+import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -150,19 +151,23 @@ public class UnifiedNASStrategy extends NASStrategy {
     public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
         if (cloudstackVolume == null || cloudstackVolume.getVolumeInfo() == null
                 || cloudstackVolume.getFlexVolumeUuid() == null || cloudstackVolume.getFile() == null) {
-            throw new CloudRuntimeException("Invalid NFS volume QoS update request");
+            throw new CloudRuntimeException("Invalid NFS volume request");
+        }
+        VolumeQosPolicy qosPolicy = cloudstackVolume.getFile().getQosPolicy();
+        if (qosPolicy == null) {
+            return cloudstackVolume;
         }
         FileInfo fileInfo = new FileInfo();
-        fileInfo.setQosPolicy(cloudstackVolume.getFile().getQosPolicy());
+        fileInfo.setQosPolicy(qosPolicy);
         String filePath = cloudstackVolume.getVolumeInfo().getUuid();
         try {
             nasFeignClient.updateFile(getAuthHeader(), cloudstackVolume.getFlexVolumeUuid(), filePath, fileInfo);
         } catch (FeignException e) {
-            throw new CloudRuntimeException("Failed to apply QoS policy to NFS volume file: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update NFS volume file: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to update NFS volume file: " + e.getMessage(), e);
         }
-        logger.info("Applied QoS policy [{}] to NFS volume file [{}]",
-                cloudstackVolume.getFile().getQosPolicy() != null
-                        ? cloudstackVolume.getFile().getQosPolicy().getName() : null, filePath);
+        logger.info("Updated NFS volume file [{}] with QoS policy [{}]", filePath, qosPolicy.getName());
         return cloudstackVolume;
     }
 

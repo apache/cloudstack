@@ -201,7 +201,28 @@ public class UnifiedSANStrategy extends SANStrategy {
 
     @Override
     public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        return null;
+        if (cloudstackVolume == null || cloudstackVolume.getLun() == null
+                || cloudstackVolume.getLun().getUuid() == null) {
+            throw new CloudRuntimeException("Invalid iSCSI volume request");
+        }
+        VolumeQosPolicy qosPolicy = cloudstackVolume.getLun().getQosPolicy();
+        if (qosPolicy == null) {
+            return cloudstackVolume;
+        }
+        Lun lunUpdate = new Lun();
+        lunUpdate.setQosPolicy(qosPolicy);
+        try {
+            JobResponse response = sanFeignClient.updateLun(
+                    getAuthHeader(), cloudstackVolume.getLun().getUuid(), lunUpdate);
+            pollJobIfPresent(response, "update LUN [" + cloudstackVolume.getLun().getUuid() + "]");
+        } catch (FeignException e) {
+            throw new CloudRuntimeException("Failed to update LUN: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to update LUN: " + e.getMessage(), e);
+        }
+        logger.info("Updated LUN [{}] with QoS policy [{}]",
+                cloudstackVolume.getLun().getUuid(), qosPolicy.getName());
+        return cloudstackVolume;
     }
 
     @Override
@@ -331,7 +352,9 @@ public class UnifiedSANStrategy extends SANStrategy {
             lunSpace.setSize(sizeInBytes);
             Lun lunPatch = new Lun();
             lunPatch.setSpace(lunSpace);
-            lunPatch.setQosPolicy(qosPolicy);
+            if (qosPolicy != null) {
+                lunPatch.setQosPolicy(qosPolicy);
+            }
             JobResponse response = sanFeignClient.updateLun(authHeader, lunUuid, lunPatch);
             pollJobIfPresent(response, "resize Lun [" + lunUuid + "]");
             logger.debug("resizeCloudStackVolume: Lun {} resized to {} bytes", lunUuid, sizeInBytes);
