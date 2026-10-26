@@ -2266,7 +2266,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
-            resource.mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
+            resource.mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn, cmd.getWait() * 1000L);
 
             validateConvertResult(convertResult, snapshotPath);
         } catch (LibvirtException e) {

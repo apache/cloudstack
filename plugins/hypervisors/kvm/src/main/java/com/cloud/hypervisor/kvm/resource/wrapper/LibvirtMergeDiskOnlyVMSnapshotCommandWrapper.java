@@ -38,8 +38,10 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainBlockJobInfo;
 import org.libvirt.LibvirtException;
 
 import java.io.IOException;
@@ -66,24 +68,32 @@ public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper
     }
 
     protected Answer mergeDiskOnlySnapshotsForStoppedVM(MergeDiskOnlyVmSnapshotCommand cmd, LibvirtComputingResource resource) throws QemuImgException, LibvirtException {
-        QemuImg qemuImg = new QemuImg(resource.getCmdsTimeout());
         KVMStoragePoolManager storageManager = resource.getStoragePoolMgr();
-
         List<SnapshotMergeTreeTO> snapshotMergeTreeTOList = cmd.getSnapshotMergeTreeToList();
 
         logger.debug("Merging disk-only snapshots for stopped VM [{}] using the following Snapshot Merge Trees [{}].", cmd.getVmName(), snapshotMergeTreeTOList);
-
+        long timeout = cmd.getWait() * 1000L;
         for (SnapshotMergeTreeTO snapshotMergeTreeTO : snapshotMergeTreeTOList) {
-            DataTO parentTo = snapshotMergeTreeTO.getParent();
+            if (timeout <= 0) {
+                logger.warn("Disk-only VM snapshot for VM [{}] timed out. Consider increasing the timeout and try again later.", cmd.getVmName());
+                return new Answer(cmd, false, null);
+            }
+            long startTime = System.currentTimeMillis();
+            QemuImg qemuImg = new QemuImg(timeout);
+            SnapshotObjectTO parentTo = (SnapshotObjectTO) snapshotMergeTreeTO.getParent();
             PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) parentTo.getDataStore();
             KVMStoragePool storagePool = storageManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
             String childLocalPath = storagePool.getLocalPathFor(snapshotMergeTreeTO.getChild().getPath());
-
+            Path childPath = Path.of(childLocalPath);
             QemuImgFile parent = new QemuImgFile(storagePool.getLocalPathFor(parentTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
             QemuImgFile child = new QemuImgFile(childLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
 
-            logger.debug("Committing child delta [{}] into parent snapshot [{}].", parentTo, snapshotMergeTreeTO.getChild());
-            qemuImg.commit(child, parent, true);
+            if (!childPath.toFile().exists()) {
+                logger.info("Volume [{}] was already merged in a previous attempt. Skipping merge for it.", parentTo.getVolume().getUuid());
+            } else {
+                logger.debug("Committing child delta [{}] into parent snapshot [{}].", parentTo, snapshotMergeTreeTO.getChild());
+                qemuImg.commit(child, parent, true);
+            }
 
             List<QemuImgFile> grandChildren = snapshotMergeTreeTO.getGrandChildren().stream()
                     .map(snapshotTo -> new QemuImgFile(storagePool.getLocalPathFor(snapshotTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2))
@@ -96,10 +106,11 @@ public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper
 
             logger.debug("Deleting child at [{}] as it is useless.", childLocalPath);
             try {
-                Files.deleteIfExists(Path.of(childLocalPath));
+                Files.deleteIfExists(childPath);
             } catch (IOException e) {
                 return new Answer(cmd, e);
             }
+            timeout = timeout - (System.currentTimeMillis() - startTime);
         }
         return new Answer(cmd, true, null);
     }
@@ -113,38 +124,83 @@ public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper
         Domain domain = resource.getDomain(conn, vmName);
         List<LibvirtVMDef.DiskDef> disks = resource.getDisks(conn, vmName);
         KVMStoragePoolManager storageManager = resource.getStoragePoolMgr();
-        QemuImg qemuImg = new QemuImg(resource.getCmdsTimeout());
+        long timeout = cmd.getWait() * 1000L;
 
         logger.debug("Merging disk-only snapshots for running VM [{}] using the following Snapshot Merge Trees [{}].", vmName, snapshotMergeTreeTOList);
 
         for (SnapshotMergeTreeTO mergeTreeTO : snapshotMergeTreeTOList) {
+            if (timeout <= 0) {
+                logger.warn("Disk-only VM snapshot for VM [{}] timed out. Consider increasing the timeout and try again later.", vmName);
+                return new Answer(cmd, false, null);
+            }
+            long startTime = System.currentTimeMillis();
             DataTO childTO = mergeTreeTO.getChild();
             SnapshotObjectTO parentSnapshotTO = (SnapshotObjectTO) mergeTreeTO.getParent();
             VolumeObjectTO volumeObjectTO = parentSnapshotTO.getVolume();
             KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(volumeObjectTO, storageManager);
 
             boolean active = DataObjectType.VOLUME.equals(childTO.getObjectType());
-            String label = resource.getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO).getDiskLabel();
+
+            LibvirtVMDef.DiskDef diskDef = getDiskDef(disks, volumeObjectTO, childTO, parentSnapshotTO);
+            if (diskDef == null) {
+                logger.warn("Volume [{}] does not match any record we have. This must be manually normalized.", volumeObjectTO.getUuid());
+                return new Answer(cmd, false, null);
+            }
+            String label = diskDef.getDiskLabel();
+
+            DomainBlockJobInfo jobInfo = domain.getBlockJobInfo(label, 0);
+            if (jobInfo == null || jobInfo.type == 0 && jobInfo.end == 0 && jobInfo.cur == 0) {
+                logger.debug("No block job found for disk [{}] of VM [{}]. Continuing the merge process.", label, vmName);
+            } else {
+                logger.debug("Found a block job for disk [{}] of VM [{}]. We will abort it to continue with the VM snapshot merge process.", label, vmName);
+                domain.blockJobAbort(label, 0);
+            }
+
+            boolean volumeAlreadyMerged = isVolumeAlreadyMerged(diskDef, childTO);
             String parentSnapshotLocalPath = storagePool.getLocalPathFor(parentSnapshotTO.getPath());
-            String childDeltaPath = storagePool.getLocalPathFor(childTO.getPath());
 
-            logger.debug("Found label [{}] for [{}]. Will merge delta at [{}] into delta at [{}].", label, volumeObjectTO, parentSnapshotLocalPath, childDeltaPath);
-
-            resource.mergeSnapshotIntoBaseFile(domain, label, parentSnapshotLocalPath, childDeltaPath, active, childTO.getPath(),
-                    volumeObjectTO, conn);
+            if (volumeAlreadyMerged) {
+                logger.info("Volume [{}] was already merged in a previous attempt. Skipping merge for it.", volumeObjectTO.getUuid());
+            } else {
+                String childDeltaPath = storagePool.getLocalPathFor(childTO.getPath());
+                logger.debug("Found label [{}] for [{}]. Will merge delta at [{}] into delta at [{}].", label, volumeObjectTO, parentSnapshotLocalPath, childDeltaPath);
+                resource.mergeSnapshotIntoBaseFile(domain, label, parentSnapshotLocalPath, childDeltaPath, active, childTO.getPath(), volumeObjectTO, conn, timeout);
+            }
 
             QemuImgFile parent = new QemuImgFile(parentSnapshotLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
-
             List<QemuImgFile> grandChildren = mergeTreeTO.getGrandChildren().stream()
                     .map(snapshotTo -> new QemuImgFile(storagePool.getLocalPathFor(snapshotTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2))
                     .collect(Collectors.toList());
 
             logger.debug("Rebasing grandChildren [{}] into parent at [{}].", grandChildren, parentSnapshotLocalPath);
             for (QemuImgFile grandChild : grandChildren) {
+                QemuImg qemuImg = new QemuImg(timeout);
                 qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
             }
+            timeout = timeout - (System.currentTimeMillis() - startTime);
         }
 
         return new Answer(cmd, true, null);
+    }
+
+    protected boolean isVolumeAlreadyMerged(LibvirtVMDef.DiskDef diskDef, DataTO childTO) {
+        if (diskDef.getDiskPath().contains(childTO.getPath())) {
+            return false;
+        }
+        boolean isVolumeAlreadyMerged = true;
+        for (String filePath : diskDef.getBackingStoreList()) {
+            if (filePath.contains(childTO.getPath())) {
+                isVolumeAlreadyMerged = false;
+            }
+        }
+        return isVolumeAlreadyMerged;
+    }
+
+    protected LibvirtVMDef.DiskDef getDiskDef(List<LibvirtVMDef.DiskDef> disks, VolumeObjectTO volumeObjectTO, DataTO childTO, SnapshotObjectTO parentSnapshotTO) {
+        return disks.stream().filter(disk -> StringUtils.contains(disk.getDiskPath(), volumeObjectTO.getPath()) ||
+                StringUtils.contains(disk.getDiskPath(), childTO.getPath()) ||
+                StringUtils.contains(disk.getDiskPath(), parentSnapshotTO.getPath()))
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -6363,14 +6363,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param snapshotName Name of the snapshot;
      * @param volume VolumeObjectTO of the corresponding volume;
      * @param conn Libvirt connection;
+     * @param timeout the timeout in milisseconds
      * @throws LibvirtException
      */
     public void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
-            Connect conn) throws LibvirtException {
+            Connect conn, long timeout) throws LibvirtException {
         if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
             mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         } else {
-            mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
+            mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn, timeout);
         }
     }
 
@@ -6435,27 +6436,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     /**
      * Merges the snapshot into base file to keep volume and VM behavior after stopping - starting.
-     * @param vm Domain of the VM;
-     * @param diskLabel Disk label to manage snapshot and base file;
-     * @param baseFilePath Path of the base file;
-     * @param snapshotName Name of the snapshot;
+     *
+     * @param vm
+     *         Domain of the VM;
+     * @param diskLabel
+     *         Disk label to manage snapshot and base file;
+     * @param baseFilePath
+     *         Path of the base file;
+     * @param snapshotName
+     *         Name of the snapshot;
+     * @param timeout
      * @throws LibvirtException
      */
-    protected void mergeSnapshotIntoBaseFileWithoutEvents(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume, Connect conn) throws LibvirtException {
+    protected void mergeSnapshotIntoBaseFileWithoutEvents(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume, Connect conn,
+            long timeout) throws LibvirtException {
         boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
         String vmName = vm.getName();
         String mergeCommand = buildMergeCommand(vmName, diskLabel, baseFilePath, topFilePath, active, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit);
-        String mergeResult = Script.runSimpleBashScript(mergeCommand);
+        Script mergeScript = new Script("/bin/bash", new Duration(timeout));
+        mergeScript.add("-c");
+        mergeScript.add(mergeCommand);
+        String mergeResult = mergeScript.execute(new OutputInterpreter.OneLineParser());
+        int exitCode = -1;
+        try {
+             exitCode = mergeScript.getExitValue();
+        } catch (IllegalThreadStateException ignored) {
+        }
 
-        if (mergeResult == null) {
+        if (mergeResult == null && exitCode == 0) {
             logger.debug("Successfully merged snapshot [{}] into VM [{}] {} base file.", snapshotName, vmName, volume);
             manuallyDeleteUnusedSnapshotFile(isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, getSnapshotTemporaryPath(baseFilePath, snapshotName));
             return;
         }
 
-        String errorMsg = String.format("Failed to merge snapshot [%s] into VM [%s] %s base file. Command [%s] resulted in [%s]. If the VM is stopped and then started, it"
-                + " will start to write in the base file again. All changes made between the snapshot and the VM stop will be in the snapshot. If the VM is stopped, the snapshot must be"
-                + " merged into the base file manually.", snapshotName, vmName, volume, mergeCommand, mergeResult);
+        String errorMsg = String.format("Failed to merge snapshot [%s] into VM [%s] %s base file. Command [%s] resulted in [%s] with exit code [%s]." +
+                " If the VM is stopped and then started, it" +
+                " will start to write in the base file again. All changes made between the snapshot and the VM stop will be in the snapshot. If the VM is stopped," +
+                " the snapshot must be merged into the base file manually.", snapshotName, vmName, volume, mergeCommand, mergeResult, exitCode);
 
         logger.warn("%s VM XML: [{}].", errorMsg, vm.getXMLDesc(0));
         throw new CloudRuntimeException(errorMsg);
