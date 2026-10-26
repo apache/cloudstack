@@ -96,21 +96,21 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
 
         if (decStoragePoolRefCount(uuid)) {
             logger.info("deleteStoragePool: CLVM/CLVM_NG storage pool {} still in use", uuid);
-            return true;
+        } else {
+            try {
+                undefineInactiveClvmPool(LibvirtConnection.getConnection(), uuid);
+            } catch (LibvirtException e) {
+                throw new CloudRuntimeException(e.toString(), e);
+            }
         }
-
-        try {
-            return undefineInactiveClvmPool(LibvirtConnection.getConnection(), uuid);
-        } catch (LibvirtException e) {
-            throw new CloudRuntimeException(e.toString(), e);
-        }
+        return true;
     }
 
-    private boolean undefineInactiveClvmPool(Connect conn, String uuid) throws LibvirtException {
+    private void undefineInactiveClvmPool(Connect conn, String uuid) throws LibvirtException {
         StoragePool sp = lookupClvmPool(conn, uuid);
         if (sp == null) {
             logger.warn("CLVM/CLVM_NG storage pool {} doesn't exist in libvirt. Assuming it is already removed", uuid);
-            return true;
+            return;
         }
 
         try {
@@ -124,7 +124,6 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
             sp.free();
         }
         logger.info("CLVM/CLVM_NG storage pool {} was successfully removed from libvirt", uuid);
-        return true;
     }
 
     private StoragePool lookupClvmPool(Connect conn, String uuid) throws LibvirtException {
