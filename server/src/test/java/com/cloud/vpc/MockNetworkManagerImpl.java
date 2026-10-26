@@ -863,6 +863,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     }
 
+    @Override
+    public void ensureRouterForLazilyImplementedAssociation(Network network, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#finalizeServicesAndProvidersForNetwork(com.cloud.offering.NetworkOffering, java.lang.Long)
      */
