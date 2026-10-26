@@ -1656,6 +1656,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (implemented == null || implemented.first() == null) {
             throw new CloudRuntimeException(String.format("Failed to implement network %s as part of associating it to a nic", network.getUuid()));
         }
+        _networkMgr.ensureRouterForLazilyImplementedAssociation(network, dest, context);
         _networkMgr.markNetworkImplemented(network.getId());
     }
 

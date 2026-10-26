@@ -313,6 +313,10 @@ public interface NetworkOrchestrationService {
     void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering findById)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
+    // Deploys a lazily-implemented network's router on demand, for a trunk association that would otherwise never get one.
+    void ensureRouterForLazilyImplementedAssociation(Network network, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
     Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);
 
     boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException;

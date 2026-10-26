@@ -2305,11 +2305,28 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 logger.warn("Failed to implement associated Network: {} as a part of preparing NIC {}", network, nic);
                 throw new CloudRuntimeException(String.format("Failed to implement associated Network ID=%s as a part of preparing NIC %s", network, nic));
             }
+            ensureRouterForLazilyImplementedAssociation(implemented.second(), dest, context);
             markNetworkImplemented(association.getNetworkId());
         }
         if (!associations.isEmpty()) {
             validateNoDuplicateVlanAcrossTrunk(nic, associations);
         }
+    }
+
+    @Override
+    public void ensureRouterForLazilyImplementedAssociation(final Network network, final DeployDestination dest, final ReservationContext context)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        if (network.getState() != Network.State.Setup) {
+            return;
+        }
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        final DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+        final boolean treatedAsAlreadyImplemented = !isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && !offering.isPersistent()
+                || zone.getNetworkType() == NetworkType.Basic;
+        if (!treatedAsAlreadyImplemented) {
+            return;
+        }
+        implementNetworkElementsAndResources(dest, context, network, offering);
     }
 
     @Override
