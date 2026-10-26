@@ -234,3 +234,6 @@ UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`gues
     WHERE `id` = 5 AND `unique_name` = 'debian13-x86_64-xen' AND `type` = 'BUILTIN';
 UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
     WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN';
+
+-- Deploy the built-in Debian 13 VMware template as is, with the NIC and disk controller of the OVA (vmxnet3, pvscsi).
+UPDATE `cloud`.`vm_template` SET `deploy_as_is` = 1 WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN';
