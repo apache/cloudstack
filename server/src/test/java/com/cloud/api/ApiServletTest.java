@@ -26,19 +26,32 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.HttpUtils;
+import com.cloud.utils.StringUtils;
+import com.cloud.api.dispatch.DispatchTask;
+import com.cloud.api.dispatch.ParamUnpackWorker;
 import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -52,9 +65,14 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.nullable;
@@ -460,5 +478,349 @@ public class ApiServletTest {
                 responseType, request, response);
 
         Assert.assertEquals(false, result);
+    }
+
+    @Test
+    public void preservesPostParameterLoggingPolicy() {
+        for (String command : new String[] {"addObjectStoragePool", "addHost", "createAccount"}) {
+            Assert.assertFalse(servlet.shouldLogRequestParameters(command, new HashMap<>()));
+        }
+        Assert.assertTrue(servlet.shouldLogRequestParameters("listZones", new HashMap<>()));
+        Map<String, String[]> params = new HashMap<>();
+        params.put(ApiConstants.USER_DATA, new String[] {"USER_DATA_SENTINEL"});
+        Assert.assertFalse(servlet.shouldLogRequestParameters("deployVirtualMachine", params));
+    }
+
+    @Test
+    public void preservesAddHostQueryContextInAllRequestLogs() {
+        String query = "command=addHost&zoneid=zone-1&username=test-user&password=PASSWORD_HEAD%26PASSWORD_TAIL&response=json";
+        List<String> logs = captureRequestLogs("GET", query, queryParameters(query), true, false, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=addHost&zoneid=zone-1&username=test-user&response=json", "PASSWORD_HEAD", "PASSWORD_TAIL");
+        Mockito.verify(apiServer).handleRequest(Mockito.anyMap(), Mockito.eq("json"), Mockito.any(StringBuilder.class));
+    }
+
+    @Test
+    public void preservesCreateAccountQueryContextInAllRequestLogs() {
+        String query = "command=createAccount&username=test-user&account=test-account&password=PASSWORD_SENTINEL&response=json";
+        List<String> logs = captureRequestLogs("GET", query, queryParameters(query), true, false, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=createAccount&username=test-user&account=test-account&response=json", "PASSWORD_SENTINEL");
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void redactsUserDataWithoutRemovingItsQueryContextOrChangingTheRequest() {
+        String query = "command=deployVirtualMachine&id=vm-1&userdata=USER_DATA_HEAD%26USER_DATA_TAIL&response=json";
+        List<String> logs = captureRequestLogs("GET", query, queryParameters(query), true, false, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=deployVirtualMachine&id=vm-1&response=json", "USER_DATA_HEAD", "USER_DATA_TAIL");
+        ArgumentCaptor<Map> captured = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(apiServer).handleRequest(captured.capture(), Mockito.eq("json"), Mockito.any(StringBuilder.class));
+        Assert.assertArrayEquals(new String[] {"USER_DATA_HEAD&USER_DATA_TAIL"}, (Object[]) captured.getValue().get(ApiConstants.USER_DATA));
+    }
+
+    @Test
+    public void preservesPostEnforcementAndRedactsRejectedObjectStoreGet() {
+        String query = "command=addObjectStoragePool&name=store-1&provider=MinIO&details[0].key=accesskey"
+                + "&details[0].value=ACCESS_SENTINEL&details[1].key=secretkey"
+                + "&details[1].value=SECRET_HEAD%2B%26SECRET_TAIL%3D&response=json";
+        List<String> logs = captureRequestLogs("GET", query, queryParameters(query), false, true, HttpServletResponse.SC_BAD_REQUEST);
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=store-1&provider=MinIO&response=json", "ACCESS_SENTINEL", "SECRET_HEAD", "SECRET_TAIL");
+        Mockito.verify(apiServer, Mockito.never()).verifyRequest(Mockito.anyMap(), nullable(Long.class), Mockito.any(InetAddress.class));
+        Mockito.verify(apiServer, Mockito.never()).handleRequest(Mockito.anyMap(), Mockito.anyString(), Mockito.any(StringBuilder.class));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void acceptsObjectStorePostWithoutLoggingOrChangingItsBody() {
+        Map<String, String[]> params = queryParameters("command=addObjectStoragePool&name=store-1&provider=MinIO&response=json");
+        params.put("url", new String[] {"https://storage.example.test"});
+        params.put("details[0].key", new String[] {"accesskey"});
+        params.put("details[0].value", new String[] {"BODY_ACCESS_SENTINEL"});
+        params.put("details[1].key", new String[] {"secretkey"});
+        params.put("details[1].value", new String[] {"BODY_SECRET+&=SENTINEL"});
+        String responseBody = "{\"addobjectstoragepoolresponse\":{\"objectstore\":{\"id\":\"store-id\"}}}";
+        Mockito.when(apiServer.handleRequest(Mockito.anyMap(), Mockito.eq("json"), Mockito.any(StringBuilder.class))).thenReturn(responseBody);
+        List<String> logs = captureRequestLogs("POST", null, params, true, true, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=addObjectStoragePool", "BODY_ACCESS_SENTINEL", "BODY_SECRET", "SENTINEL");
+        Assert.assertEquals(responseBody, responseWriter.toString());
+        ArgumentCaptor<Map> captured = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(apiServer).handleRequest(captured.capture(), Mockito.eq("json"), Mockito.any(StringBuilder.class));
+        Assert.assertArrayEquals(new String[] {"BODY_SECRET+&=SENTINEL"}, (Object[]) captured.getValue().get("details[1].value"));
+        Assert.assertArrayEquals(new String[] {"POST"}, (Object[]) captured.getValue().get("httpmethod"));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void protectsMixedQueryAndBodyDetailsWithoutReinterpretingFieldCase() {
+        String query = "command=addObjectStoragePool&name=store-1&provider=MinIO&response=json"
+                + "&details[1].KEY=public&details[1].value=MIXED_SECRET_SENTINEL";
+        Map<String, String[]> params = queryParameters(query);
+        params.put("details[1].key", new String[] {"secretkey"});
+        params.put("details[0].key", new String[] {"accesskey"});
+        params.put("details[0].value", new String[] {"BODY_ACCESS_SENTINEL"});
+        List<String> logs = captureRequestLogs("POST", query, params, true, true, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=store-1&provider=MinIO&response=json", "MIXED_SECRET_SENTINEL", "BODY_ACCESS_SENTINEL");
+
+        ArgumentCaptor<Map> captured = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(apiServer).handleRequest(captured.capture(), Mockito.eq("json"), Mockito.any(StringBuilder.class));
+        Map<String, String> commandParameters = new HashMap<>();
+        Map<String, Object[]> forwarded = captured.getValue();
+        forwarded.forEach((key, values) -> commandParameters.put(key, (String) values[0]));
+        AddObjectStoragePoolCmd command = new AddObjectStoragePoolCmd();
+        DispatchTask task = new DispatchTask(command, commandParameters);
+        new ParamUnpackWorker().handle(task);
+        command.setDetails((Map) task.getParams().get(ApiConstants.DETAILS));
+        Assert.assertEquals("MIXED_SECRET_SENTINEL", command.getDetails().get("secretkey"));
+        Assert.assertEquals("BODY_ACCESS_SENTINEL", command.getDetails().get("accesskey"));
+    }
+
+    @Test
+    public void retainsQueryMetadataButNeverCopiesPostOnlyFieldsIntoTheAccessLog() {
+        String query = "name=query-store&provider=MinIO&response=json";
+        Map<String, String[]> params = queryParameters(query);
+        params.put(ApiConstants.COMMAND, new String[] {"addObjectStoragePool"});
+        params.put("details[1].key", new String[] {"secretkey"});
+        params.put("details[1].value", new String[] {"BODY_SECRET_SENTINEL"});
+        params.put("tags", new String[] {"BODY_ONLY_TAG_SENTINEL"});
+        List<String> logs = captureRequestLogs("POST", query, params, true, true, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=query-store&provider=MinIO&response=json", "BODY_SECRET_SENTINEL", "BODY_ONLY_TAG_SENTINEL");
+    }
+
+    @Test
+    public void preservesAuthorizationRejectionWithoutLoggingProviderDetails() {
+        String query = "command=addObjectStoragePool&name=store-1&provider=Cloudian%20HyperStore"
+                + "&details[2].key=s3Url&details[2].value=PROVIDER_DETAIL_SENTINEL&response=json";
+        List<String> logs = captureRequestLogs("POST", query, queryParameters(query), false, true, HttpServletResponse.SC_UNAUTHORIZED);
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=store-1&provider=Cloudian%20HyperStore&response=json", "PROVIDER_DETAIL_SENTINEL");
+        Mockito.verify(apiServer, Mockito.never()).handleRequest(Mockito.anyMap(), Mockito.anyString(), Mockito.any(StringBuilder.class));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void doesNotPrintDuplicateCredentialValuesAndKeepsExistingLastQueryValue() {
+        String query = "command=addObjectStoragePool&name=store-1&details[1].key=secretkey"
+                + "&details[1].value=FIRST_SECRET_SENTINEL&details[1].value=LAST_SECRET_SENTINEL&response=json";
+        List<String> logs = captureRequestLogs("POST", query, queryParameters(query), true, true, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=store-1&response=json", "FIRST_SECRET_SENTINEL", "LAST_SECRET_SENTINEL");
+        Assert.assertTrue(logs.stream().anyMatch(line -> line.contains("has 2 values")));
+        ArgumentCaptor<Map> captured = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(apiServer).handleRequest(captured.capture(), Mockito.eq("json"), Mockito.any(StringBuilder.class));
+        Assert.assertArrayEquals(new String[] {"LAST_SECRET_SENTINEL"}, (Object[]) captured.getValue().get("details[1].value"));
+    }
+
+    @Test
+    public void doesNotEchoUnstructuredQueryTokensBeforeRedaction() {
+        String query = "command=addObjectStoragePool&name=store-1&MALFORMED_SECRET_SENTINEL&response=json";
+        List<String> logs = captureRequestLogs("POST", query, queryParameters(query), false, false, HttpServletResponse.SC_UNAUTHORIZED);
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=store-1&response=json", "MALFORMED_SECRET_SENTINEL");
+        Assert.assertTrue(logs.stream().anyMatch(line -> line.contains("Invalid parameter in URL found")));
+    }
+
+    @Test
+    public void preservesBackendFailureStatusAndDescription() {
+        String query = "command=addObjectStoragePool&name=store-1&details[1].key=secretkey"
+                + "&details[1].value=ERROR_SECRET_SENTINEL&response=json";
+        Mockito.when(apiServer.handleRequest(Mockito.anyMap(), Mockito.eq("json"), Mockito.any(StringBuilder.class)))
+                .thenThrow(new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Provider unavailable"));
+        List<String> logs = captureRequestLogs("POST", query, queryParameters(query), true, true, ApiErrorCode.INTERNAL_ERROR.getHttpCode());
+        assertRequestLogs(logs, "command=addObjectStoragePool&name=store-1&response=json", "ERROR_SECRET_SENTINEL");
+        Mockito.verify(response).setHeader("X-Description", "Provider unavailable");
+    }
+
+    @Test
+    public void keepsOrdinaryGetAndPostDiagnostics() {
+        String query = "command=listZones&name=zone-1&response=json";
+        List<String> logs = captureRequestLogs("POST", query, queryParameters(query), true, false, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, query);
+        Assert.assertTrue(logs.stream().anyMatch(line -> line.contains("===START===") && line.contains("\n") && line.contains("name=zone-1")));
+        Assert.assertEquals(query, servlet.getCleanQueryString("listZones", query, queryParameters(query)));
+    }
+
+    @Test
+    public void excludesObjectStorageDetailsRegardlessOfEncodingOrderOrDescriptor() {
+        for (String fields : new String[] {
+                "details%5b001%5d.KEY=public&DETAILS[%2B1].value=SECRET_SENTINEL",
+                "details[1].value=SECRET_SENTINEL&details[1].key=secretkey",
+                "details[-1]suffix.VALUE=SECRET_SENTINEL",
+                "details[invalid].value=SECRET_SENTINEL",
+                "details[1].value=SECRET_SENTINEL",
+                "details=SECRET_SENTINEL"}) {
+            String query = "command=addObjectStoragePool&name=store-1&" + fields + "&response=json";
+            Assert.assertEquals("command=addObjectStoragePool&name=store-1&response=json",
+                    servlet.getCleanQueryString("addObjectStoragePool", query, new HashMap<>()));
+        }
+    }
+
+    @Test
+    public void redactsCompleteSensitiveTopLevelValuesButKeepsNonSensitiveFlags() {
+        String query = "command=listZones&userdataid=id-1&passwordenabled=true&newPassword=PASSWORD_HEAD%26PASSWORD_TAIL"
+                + "&ACCESSKEY=ACCESS_SENTINEL&privatekey=PRIVATE_SENTINEL&SeSsIoNkEy=SESSION_SENTINEL%2B%3D"
+                + "&secretcode=CODE_SENTINEL&token=RESET_TOKEN_SENTINEL&UserData=DATA_SENTINEL&response=json";
+        Assert.assertEquals("command=listZones&userdataid=id-1&passwordenabled=true&response=json",
+                servlet.getCleanQueryString("listZones", query, new HashMap<>()));
+    }
+
+    @Test
+    public void keepsExistingNestedUrlCleaningAndOrdinaryDetails() {
+        String query = "command=addHost&zoneid=zone-1&url=cifs%3A%2F%2Fstorage%2Fshare%3Fuser%3Dtest"
+                + "%26password%3DPASSWORD_SENTINEL%26domain%3Dexample";
+        Assert.assertEquals(StringUtils.cleanString(query), servlet.getCleanQueryString("addHost", query, new HashMap<>()));
+        String ordinary = "command=deployVirtualMachine&details[0].key=keyboard&details[0].value=us&response=json";
+        Assert.assertEquals(ordinary, servlet.getCleanQueryString("deployVirtualMachine", ordinary, new HashMap<>()));
+    }
+
+    @Test
+    public void cannotEchoAnUndecodableQueryAndSanitizesCommandMetadata() {
+        String query = "details%ZZ.value=SECRET_SENTINEL";
+        Assert.assertEquals("command=addObjectStoragePool", servlet.getCleanQueryString("addObjectStoragePool", query, new HashMap<>()));
+        Assert.assertEquals("", servlet.getCleanQueryString("listZones", query, new HashMap<>()));
+        Map<String, String[]> params = new HashMap<>();
+        params.put(ApiConstants.USER_DATA, new String[] {"DATA_SENTINEL"});
+        Assert.assertEquals("command=unknown_command__", servlet.getCleanQueryString("unknown\ncommand\r\t", null, params));
+    }
+
+    @Test
+    public void preservesContextWithoutExposingOtherSensitiveCommandsIndexedMaps() {
+        String[][] cases = {
+                {"createStoragePool", "details[0].key=secretkey&details[0].value=STORAGE_SECRET_SENTINEL%26TAIL"},
+                {"createAccount", "accountdetails[0].key=secretkey&accountdetails[0].value=ACCOUNT_SECRET_SENTINEL"},
+                {"addHost", "externaldetails[0].endpoint.password=HOST_SECRET_SENTINEL"}
+        };
+        for (String[] testCase : cases) {
+            String query = "command=" + testCase[0] + "&name=resource-1&" + testCase[1] + "&response=json";
+            Assert.assertEquals("command=" + testCase[0] + "&name=resource-1&response=json",
+                    servlet.getCleanQueryString(testCase[0], query, new HashMap<>()));
+        }
+        String reset = "command=resetPassword&username=test-user&token=RESET_TOKEN_SENTINEL&password=PASSWORD_SENTINEL";
+        Assert.assertEquals("command=resetPassword&username=test-user",
+                servlet.getCleanQueryString("resetPassword", reset, new HashMap<>()));
+    }
+
+    @Test
+    public void preservesImageStoreCredentialRedactionAfterRemovingTrailingSessionKey() {
+        assertImageStoreQueryRemainsRedacted(false);
+    }
+
+    @Test
+    public void preservesEncodedImageStoreCredentialRedactionAfterRemovingTrailingSessionKey() {
+        assertImageStoreQueryRemainsRedacted(true);
+    }
+
+    @Test
+    public void preservesIndexedCredentialRedactionAfterFilteringOtherTrailingFields() {
+        String context = "command=addImageStore&provider=S3&name=store-1";
+        String credentials = "&details[1].value=SECRET_SENTINEL&details[1].key=secretkey";
+        for (String trailing : new String[] {"", "&sessionkey=SESSION_SENTINEL", "&password=PASSWORD_SENTINEL",
+                "&token=TOKEN_SENTINEL", "&privatekey=PRIVATE_SENTINEL", "&userdata=USERDATA_SENTINEL"}) {
+            String query = context + credentials + trailing;
+            String cleaned = servlet.getCleanQueryString("addImageStore", query, queryParameters(query));
+            Assert.assertTrue("Missing metadata: " + cleaned, cleaned.startsWith(context));
+            Assert.assertFalse("Credential survived filtering: " + cleaned, cleaned.contains("SENTINEL"));
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void assertImageStoreQueryRemainsRedacted(boolean encodedBrackets) {
+        String context = "command=addImageStore&provider=S3&name=store-1&response=json"
+                + "&details[2].key=bucket&details[2].value=archive";
+        String query = context + "&details[0].key=accesskey&details[0].value=ACCESS_SENTINEL"
+                + "&details[1].value=SECRET_SENTINEL&details[1].key=secretkey&sessionkey=SESSION_SENTINEL";
+        if (encodedBrackets) {
+            query = query.replace("[", "%5B").replace("]", "%5D");
+            context = context.replace("[", "%5B").replace("]", "%5D");
+        }
+        List<String> logs = captureRequestLogs("GET", query, queryParameters(query), true, false, HttpServletResponse.SC_OK);
+        assertRequestLogs(logs, context, "ACCESS_SENTINEL", "SECRET_SENTINEL", "SESSION_SENTINEL");
+
+        ArgumentCaptor<Map> captured = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(apiServer).handleRequest(captured.capture(), Mockito.eq("json"), Mockito.any(StringBuilder.class));
+        Map<String, String> unpackInput = new HashMap<>();
+        Map<String, Object[]> forwarded = captured.getValue();
+        forwarded.forEach((key, values) -> unpackInput.put(key, (String) values[0]));
+        AddImageStoreCmd command = new AddImageStoreCmd();
+        DispatchTask task = new DispatchTask(command, unpackInput);
+        new ParamUnpackWorker().handle(task);
+        command.setDetails((Map) task.getParams().get(ApiConstants.DETAILS));
+        Map<String, String> expectedDetails = new HashMap<>();
+        expectedDetails.put("accesskey", "ACCESS_SENTINEL");
+        expectedDetails.put("secretkey", "SECRET_SENTINEL");
+        expectedDetails.put("bucket", "archive");
+        Assert.assertEquals(expectedDetails, command.getDetails());
+    }
+
+    private Map<String, String[]> queryParameters(String query) {
+        Map<String, String[]> params = new HashMap<>();
+        for (String part : query.split("&")) {
+            String[] pair = part.split("=", 2);
+            if (pair.length != 2) {
+                continue;
+            }
+            String name = URLDecoder.decode(pair[0], StandardCharsets.UTF_8);
+            String value = URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
+            params.merge(name, new String[] {value}, (existing, added) -> {
+                String[] values = Arrays.copyOf(existing, existing.length + 1);
+                values[existing.length] = added[0];
+                return values;
+            });
+        }
+        return params;
+    }
+
+    private List<String> captureRequestLogs(String method, String query, Map<String, String[]> params,
+            boolean authorized, boolean enforcePost, int expectedStatus) {
+        Map<String, String[]> original = new HashMap<>();
+        params.forEach((key, values) -> original.put(key, values.clone()));
+        List<String> logs = new ArrayList<>();
+        AbstractAppender appender = new AbstractAppender("ApiServletRequestLoggingTest", null, null, true, Property.EMPTY_ARRAY) {
+            @Override
+            public void append(LogEvent event) {
+                logs.add(event.getLoggerName() + ": " + event.getMessage().getFormattedMessage());
+            }
+        };
+        org.apache.logging.log4j.core.Logger managementLogger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger(ApiServlet.class);
+        org.apache.logging.log4j.core.Logger accessLogger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger("apiserver." + ApiServlet.class.getName());
+        Level managementLevel = managementLogger.getLevel();
+        Level accessLevel = accessLogger.getLevel();
+        appender.start();
+        managementLogger.addAppender(appender);
+        accessLogger.addAppender(appender);
+        managementLogger.setLevel(Level.DEBUG);
+        accessLogger.setLevel(Level.INFO);
+        try {
+            Mockito.when(request.getMethod()).thenReturn(method);
+            Mockito.when(request.getQueryString()).thenReturn(query);
+            Mockito.when(request.getParameterMap()).thenReturn(params);
+            Mockito.when(authManager.getAPIAuthenticator(Mockito.anyString())).thenReturn(null);
+            if (authorized) {
+                Mockito.when(apiServer.verifyRequest(Mockito.anyMap(), nullable(Long.class), Mockito.any(InetAddress.class))).thenReturn(true);
+            }
+            if (enforcePost) {
+                Mockito.when(apiServer.isPostRequestsAndTimestampsEnforced()).thenReturn(true);
+            }
+            servlet.processRequestInContext(request, response);
+            Mockito.verify(response).setStatus(expectedStatus);
+            Assert.assertEquals(original.keySet(), params.keySet());
+            original.forEach((key, values) -> Assert.assertArrayEquals(values, params.get(key)));
+            return logs;
+        } finally {
+            managementLogger.removeAppender(appender);
+            accessLogger.removeAppender(appender);
+            managementLogger.setLevel(managementLevel);
+            accessLogger.setLevel(accessLevel);
+            appender.stop();
+        }
+    }
+
+    private void assertRequestLogs(List<String> logs, String expectedContext, String... secrets) {
+        int boundaries = 0;
+        for (String line : logs) {
+            if (line.contains("===START===") || line.contains("===END===") || line.startsWith("apiserver.")) {
+                boundaries++;
+                Assert.assertTrue("Missing request context: " + line, line.contains(expectedContext));
+            }
+            for (String secret : secrets) {
+                Assert.assertFalse("Sensitive data in log: " + line, line.contains(secret));
+            }
+        }
+        Assert.assertEquals("Expected START, END and access records", 3, boundaries);
     }
 }
