@@ -59,12 +59,12 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
     }
 
     @Override
-    public NodeCapacitySnapshot captureBefore(KubernetesCluster cluster, UserVm vm, NodeAccess access) throws Exception {
+    public NodeCapacitySnapshot captureBefore(KubernetesCluster cluster, UserVm vm, NodeAccess access) {
         return nodeSnapshot(cluster, vm, access, guestResources(access));
     }
 
     @Override
-    public void cordonIfNeeded(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception {
+    public void cordonIfNeeded(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) {
         if (before.isUnschedulable() && !before.isCloudStackResizeCordon()) return;
         String node = nodeName(vm);
         executeControl(access, "sudo /opt/bin/kubectl annotate node " + node + " " + RESIZE_ANNOTATION + "=" + cluster.getUuid() + " --overwrite");
@@ -77,12 +77,12 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
     }
 
     @Override
-    public void onlineGuestResources(NodeAccess access) throws Exception {
+    public void onlineGuestResources(NodeAccess access) {
         executeNode(access, ONLINE_HOTPLUGGED_RESOURCES);
     }
 
     @Override
-    public void verifyGuestResources(UserVm vm, ServiceOffering target, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception {
+    public void verifyGuestResources(UserVm vm, ServiceOffering target, NodeCapacitySnapshot before, NodeAccess access, long deadline) {
         while (System.currentTimeMillis() < deadline) {
             if (guestMatchesTarget(guestResources(access), target)) return;
             sleep();
@@ -97,7 +97,7 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
     }
 
     @Override
-    public void restartKubelet(UserVm vm, NodeAccess access, long deadline) throws Exception {
+    public void restartKubelet(UserVm vm, NodeAccess access, long deadline) {
         executeNode(access, "sudo systemctl restart kubelet");
         while (System.currentTimeMillis() < deadline) {
             if ("active".equals(executeNode(access, "sudo systemctl is-active kubelet").trim())) return;
@@ -108,7 +108,7 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
 
     @Override
     public NodeCapacitySnapshot waitForKubernetesResources(KubernetesCluster cluster, UserVm vm, ServiceOffering target,
-            NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception {
+            NodeCapacitySnapshot before, NodeAccess access, long deadline) {
         while (System.currentTimeMillis() < deadline) {
             GuestResources guest = guestResources(access);
             NodeCapacitySnapshot observed = nodeSnapshot(cluster, vm, access, guest);
@@ -119,7 +119,7 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
     }
 
     @Override
-    public void restoreSchedulability(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception {
+    public void restoreSchedulability(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) {
         if (before.isUnschedulable() && !before.isCloudStackResizeCordon()) return;
         String node = nodeName(vm);
         executeControl(access, "sudo /opt/bin/kubectl uncordon " + node);
@@ -151,7 +151,7 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
         }
     }
 
-    private NodeCapacitySnapshot nodeSnapshot(KubernetesCluster cluster, UserVm vm, NodeAccess access, GuestResources guest) throws Exception {
+    private NodeCapacitySnapshot nodeSnapshot(KubernetesCluster cluster, UserVm vm, NodeAccess access, GuestResources guest) {
         JsonObject node = new JsonParser().parse(executeControl(access, "sudo /opt/bin/kubectl get node " + nodeName(vm) + " -o json")).getAsJsonObject();
         JsonObject annotations = node.getAsJsonObject("metadata").has("annotations") ? node.getAsJsonObject("metadata").getAsJsonObject("annotations") : null;
         boolean cksCordon = annotations != null && annotations.has(RESIZE_ANNOTATION) && cluster.getUuid().equals(annotations.get(RESIZE_ANNOTATION).getAsString());
@@ -169,7 +169,7 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
         return false;
     }
 
-    private GuestResources guestResources(NodeAccess access) throws Exception {
+    private GuestResources guestResources(NodeAccess access) {
         String[] values = executeNode(access, "getconf _NPROCESSORS_ONLN; awk '/^MemTotal:/ {print $2}' /proc/meminfo").trim().split("\\s+");
         if (values.length != 2) throw new CloudRuntimeException("Unable to read guest CPU and memory");
         return new GuestResources(Long.parseLong(values[0]), Long.parseLong(values[1]));
@@ -188,15 +188,45 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
                 && (observed.getGuestMemoryKiB() <= before.getGuestMemoryKiB() || observed.getAllocatableMemoryBytes() > before.getAllocatableMemoryBytes());
     }
 
-    protected String executeControl(NodeAccess access, String command) throws Exception { return execute(access.getControlAddress(), access.getControlPort(), access, command); }
-    protected String executeNode(NodeAccess access, String command) throws Exception { return execute(access.getNodeAddress(), access.getNodePort(), access, command); }
-    private String execute(String address, int port, NodeAccess access, String command) throws Exception {
-        Pair<Boolean, String> result = SshHelper.sshExecute(address, port, access.getUser(), access.getSshKeyFile(), null, command, 10000, 10000, COMMAND_TIMEOUT_MS);
-        if (Boolean.TRUE.equals(result.first())) return StringUtils.defaultString(result.second());
-        throw new CloudRuntimeException("CKS live-resize command failed");
+    protected String executeControl(NodeAccess access, String command) {
+        return execute(access.getControlAddress(), access.getControlPort(), access, command);
+    }
+
+    protected String executeNode(NodeAccess access, String command) {
+        return execute(access.getNodeAddress(), access.getNodePort(), access, command);
+    }
+
+    private String execute(String address, int port, NodeAccess access, String command) {
+        Pair<Boolean, String> result;
+        try {
+            result = SshHelper.sshExecute(address, port, access.getUser(), access.getSshKeyFile(), null, command, 10000, 10000, COMMAND_TIMEOUT_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new NodeCapacityReconciliationException("CKS live-resize command interrupted", e);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            // SshHelper declares Exception, including authentication failures.
+            // Translate only at this legacy boundary, not around the resize workflow.
+            throw new NodeCapacityReconciliationException("CKS live-resize SSH command failed", e);
+        }
+        if (!Boolean.TRUE.equals(result.first())) {
+            throw new NodeCapacityReconciliationException("CKS live-resize command failed");
+        }
+        return StringUtils.defaultString(result.second());
     }
     private String nodeName(UserVm vm) { String name = StringUtils.lowerCase(vm.getHostName()); if (!NODE_NAME.matcher(name).matches()) throw new CloudRuntimeException("Invalid Kubernetes node name for live resize"); return name; }
-    private CloudRuntimeException failure(String phase, UserVm vm, String message) { return new CloudRuntimeException("CKS live resize " + phase + " failed for VM " + vm.getUuid() + ": " + message); }
-    private void sleep() throws InterruptedException { Thread.sleep(POLL_INTERVAL_MS); }
+    private NodeCapacityReconciliationException failure(String phase, UserVm vm, String message) {
+        return new NodeCapacityReconciliationException("CKS live resize " + phase + " failed for VM " + vm.getUuid() + ": " + message);
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(POLL_INTERVAL_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new NodeCapacityReconciliationException("CKS live-resize resource polling interrupted", e);
+        }
+    }
     private static class GuestResources { private final long cpu; private final long memoryKiB; GuestResources(long cpu, long memoryKiB) { this.cpu = cpu; this.memoryKiB = memoryKiB; } }
 }

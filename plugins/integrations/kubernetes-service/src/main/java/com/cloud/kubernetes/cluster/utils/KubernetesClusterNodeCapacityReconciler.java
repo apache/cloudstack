@@ -25,17 +25,17 @@ import com.cloud.uservm.UserVm;
 
 /** Reconciles the guest and Kubernetes resource views after a live VM resize. */
 public interface KubernetesClusterNodeCapacityReconciler {
-    NodeCapacitySnapshot captureBefore(KubernetesCluster cluster, UserVm vm, NodeAccess access) throws Exception;
+    NodeCapacitySnapshot captureBefore(KubernetesCluster cluster, UserVm vm, NodeAccess access);
     boolean requiresKubeletRefresh(ServiceOffering oldOffering, ServiceOffering newOffering,
             KubernetesClusterNodeType nodeType, KubernetesCluster.State originalState);
-    void cordonIfNeeded(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception;
-    void onlineGuestResources(NodeAccess access) throws Exception;
-    void verifyGuestResources(UserVm vm, ServiceOffering target, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception;
+    void cordonIfNeeded(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline);
+    void onlineGuestResources(NodeAccess access);
+    void verifyGuestResources(UserVm vm, ServiceOffering target, NodeCapacitySnapshot before, NodeAccess access, long deadline);
     boolean isKubernetesResourcesCurrent(NodeCapacitySnapshot snapshot, ServiceOffering target);
-    void restartKubelet(UserVm vm, NodeAccess access, long deadline) throws Exception;
+    void restartKubelet(UserVm vm, NodeAccess access, long deadline);
     NodeCapacitySnapshot waitForKubernetesResources(KubernetesCluster cluster, UserVm vm, ServiceOffering target,
-            NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception;
-    void restoreSchedulability(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline) throws Exception;
+            NodeCapacitySnapshot before, NodeAccess access, long deadline);
+    void restoreSchedulability(KubernetesCluster cluster, UserVm vm, NodeCapacitySnapshot before, NodeAccess access, long deadline);
 
     final class NodeAccess {
         private final String controlAddress; private final int controlPort; private final String nodeAddress; private final int nodePort;

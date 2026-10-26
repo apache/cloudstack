@@ -23,9 +23,12 @@ import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SshHelper;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 public class KubernetesClusterNodeCapacityReconcilerImplTest {
@@ -299,6 +302,89 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
         Assert.assertEquals(2223, access.getNodePort());
         Assert.assertEquals("cloud", access.getUser());
         Assert.assertSame(key, access.getSshKeyFile());
+    }
+
+    @Test
+    public void testSshSuccessReturnsOutput() {
+        KubernetesClusterNodeCapacityReconcilerImpl real = new KubernetesClusterNodeCapacityReconcilerImpl();
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access = access();
+        try (MockedStatic<SshHelper> ssh = Mockito.mockStatic(SshHelper.class)) {
+            ssh.when(() -> SshHelper.sshExecute("node", 22, "root", null, null, "command", 10000, 10000, 30000))
+                    .thenReturn(new Pair<>(true, "output"));
+            Assert.assertEquals("output", real.executeNode(access, "command"));
+        }
+    }
+
+    @Test
+    public void testRejectedSshCommandHasSpecificReconciliationFailure() {
+        KubernetesClusterNodeCapacityReconcilerImpl real = new KubernetesClusterNodeCapacityReconcilerImpl();
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access = access();
+        try (MockedStatic<SshHelper> ssh = Mockito.mockStatic(SshHelper.class)) {
+            ssh.when(() -> SshHelper.sshExecute("node", 22, "root", null, null, "command", 10000, 10000, 30000))
+                    .thenReturn(new Pair<>(false, "remote error"));
+            Assert.assertThrows(NodeCapacityReconciliationException.class, () -> real.executeNode(access, "command"));
+        }
+    }
+
+    @Test
+    public void testLegacySshExceptionIsTranslatedAtTransportBoundary() {
+        KubernetesClusterNodeCapacityReconcilerImpl real = new KubernetesClusterNodeCapacityReconcilerImpl();
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access = access();
+        Exception failure = new Exception("SSH authentication failed");
+        try (MockedStatic<SshHelper> ssh = Mockito.mockStatic(SshHelper.class)) {
+            ssh.when(() -> SshHelper.sshExecute("node", 22, "root", null, null, "command", 10000, 10000, 30000))
+                    .thenThrow(failure);
+            NodeCapacityReconciliationException error = Assert.assertThrows(NodeCapacityReconciliationException.class,
+                    () -> real.executeNode(access, "command"));
+            Assert.assertSame(failure, error.getCause());
+        }
+    }
+
+    @Test
+    public void testSshInterruptionPreservesInterruptFlag() {
+        KubernetesClusterNodeCapacityReconcilerImpl real = new KubernetesClusterNodeCapacityReconcilerImpl();
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access = access();
+        InterruptedException failure = new InterruptedException("cancelled");
+        try (MockedStatic<SshHelper> ssh = Mockito.mockStatic(SshHelper.class)) {
+            ssh.when(() -> SshHelper.sshExecute("node", 22, "root", null, null, "command", 10000, 10000, 30000))
+                    .thenThrow(failure);
+            NodeCapacityReconciliationException error = Assert.assertThrows(NodeCapacityReconciliationException.class,
+                    () -> real.executeNode(access, "command"));
+            Assert.assertSame(failure, error.getCause());
+            Assert.assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    public void testSshProgrammingErrorsAreNotTranslated() {
+        KubernetesClusterNodeCapacityReconcilerImpl real = new KubernetesClusterNodeCapacityReconcilerImpl();
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access = access();
+        NullPointerException failure = new NullPointerException("programming error");
+        try (MockedStatic<SshHelper> ssh = Mockito.mockStatic(SshHelper.class)) {
+            ssh.when(() -> SshHelper.sshExecute("node", 22, "root", null, null, "command", 10000, 10000, 30000))
+                    .thenThrow(failure);
+            Assert.assertSame(failure, Assert.assertThrows(NullPointerException.class, () -> real.executeNode(access, "command")));
+        }
+    }
+
+    @Test
+    public void testPollingInterruptionPreservesInterruptFlag() {
+        FakeReconciler fake = new FakeReconciler(nodeJson(false));
+        UserVm vm = vm("worker-1");
+        KubernetesClusterNodeCapacityReconciler.NodeAccess access = access();
+        long deadline = System.currentTimeMillis() + 10000L;
+        fake.nodeResources = "inactive";
+        Thread.currentThread().interrupt();
+        try {
+            NodeCapacityReconciliationException error = Assert.assertThrows(NodeCapacityReconciliationException.class,
+                    () -> fake.restartKubelet(vm, access, deadline));
+            Assert.assertTrue(error.getCause() instanceof InterruptedException);
+            Assert.assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     private KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot snapshot(int cpu, int memoryMiB, boolean ready) {

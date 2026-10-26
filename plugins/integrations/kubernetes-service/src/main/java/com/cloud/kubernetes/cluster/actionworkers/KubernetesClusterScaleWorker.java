@@ -43,6 +43,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -376,79 +377,123 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), nodeType);
         final long tobeScaledVMCount =  Math.min(vmList.size(), size);
         for (long i = 0; i < tobeScaledVMCount; i++) {
-            KubernetesClusterVmMapVO vmMapVO = vmList.get((int) i);
-            UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
-            if (userVM == null) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, unable to find cluster VM %s",
-                        kubernetesCluster.getName(), vmMapVO.getVmId()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-            }
-            ServiceOffering oldOffering = serviceOfferingDao.findById(userVM.getServiceOfferingId());
-            boolean capacityChanged = KubernetesClusterNodeCapacityReconcilerImpl.capacityChanged(oldOffering, serviceOffering);
-            if (capacityChanged && KubernetesCluster.State.Running == originalState && ETCD == nodeType
-                    && KubernetesCluster.ClusterType.CloudManaged == kubernetesCluster.getClusterType()) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s cannot live-resize dedicated etcd VM %s; " +
-                        "etcd health reconciliation is not implemented", kubernetesCluster.getName(), userVM.getDisplayName()),
-                        kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-            }
-            boolean reconcileKubernetes = shouldReconcileNodeCapacity(vmMapVO, userVM, oldOffering, serviceOffering, nodeType);
-            boolean reconciliationRetryCandidate = isReconciliationRetryCandidate(vmMapVO, userVM, serviceOffering, nodeType);
-            NodeAccess nodeAccess = null;
-            NodeCapacitySnapshot before = null;
-            boolean result = false;
-            boolean cksCordonCompleted = false;
-            boolean resizeSucceeded = Objects.equals(serviceOffering.getId(), userVM.getServiceOfferingId());
-            try {
-                if (reconcileKubernetes || reconciliationRetryCandidate) {
-                    nodeAccess = resolveNodeAccess(userVM);
-                    before = kubernetesClusterNodeCapacityReconciler.captureBefore(kubernetesCluster, userVM, nodeAccess);
-                    reconcileKubernetes = reconcileKubernetes || before.isCloudStackResizeCordon();
-                }
-                if (reconcileKubernetes) {
-                    kubernetesClusterNodeCapacityReconciler.cordonIfNeeded(kubernetesCluster, userVM, before, nodeAccess, scaleTimeoutTime);
-                    cksCordonCompleted = !before.isUnschedulable() || before.isCloudStackResizeCordon();
-                }
-                if (!Objects.equals(serviceOffering.getId(), userVM.getServiceOfferingId())) {
-                    result = userVmManager.upgradeVirtualMachine(userVM.getId(), serviceOffering.getId(), new HashMap<String, String>());
-                    if (!result) {
-                        logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, unable to scale cluster VM : %s", kubernetesCluster.getName(), userVM.getDisplayName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-                    }
-                    resizeSucceeded = true;
-                    userVM = userVmDao.findById(userVM.getId());
-                    if (userVM == null || !Objects.equals(serviceOffering.getId(), userVM.getServiceOfferingId())) {
-                        logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, VM %s did not reach target offering", kubernetesCluster.getName(), vmMapVO.getVmId()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-                    }
-                }
-                if (reconcileKubernetes) {
-                    kubernetesClusterNodeCapacityReconciler.onlineGuestResources(nodeAccess);
-                    kubernetesClusterNodeCapacityReconciler.verifyGuestResources(userVM, serviceOffering, before, nodeAccess, scaleTimeoutTime);
-                    if (!kubernetesClusterNodeCapacityReconciler.isKubernetesResourcesCurrent(before, serviceOffering)) {
-                        kubernetesClusterNodeCapacityReconciler.restartKubelet(userVM, nodeAccess, scaleTimeoutTime);
-                        kubernetesClusterNodeCapacityReconciler.waitForKubernetesResources(kubernetesCluster, userVM, serviceOffering, before, nodeAccess, scaleTimeoutTime);
-                    }
-                    kubernetesClusterNodeCapacityReconciler.restoreSchedulability(kubernetesCluster, userVM, before, nodeAccess, scaleTimeoutTime);
-                }
-            } catch (Exception e) {
-                if (reconcileKubernetes && cksCordonCompleted && !resizeSucceeded) {
-                    try {
-                        kubernetesClusterNodeCapacityReconciler.restoreSchedulability(kubernetesCluster, userVM, before, nodeAccess, scaleTimeoutTime);
-                    } catch (Exception cleanupException) {
-                        logger.warn("Unable to restore schedulability for CKS node {} after a pre-resize failure", userVM.getUuid(), cleanupException);
-                    }
-                }
-                String recovery = resizeSucceeded
-                        ? "The node remains cordoned; check kubelet on the VM and retry the CKS scale operation."
-                        : "The VM was not resized; CKS attempted to restore its temporary cordon.";
-                String message = String.format("Scaling Kubernetes cluster %s (UUID %s) failed for %s node VM %s (UUID %s), " +
-                                "offering %s to %s: %s %s", kubernetesCluster.getName(), kubernetesCluster.getUuid(), nodeType,
-                        userVM.getDisplayName(), userVM.getUuid(), oldOffering == null ? null : oldOffering.getId(),
-                        serviceOffering.getId(), e.getMessage(), recovery);
-                logTransitStateAndThrow(Level.ERROR, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
-            }
+            new NodeOfferingResize(vmList.get((int) i), nodeType, serviceOffering).execute();
             if (System.currentTimeMillis() > scaleTimeoutTime) {
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
         kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+    }
+
+    private final class NodeOfferingResize {
+        private final KubernetesClusterVmMapVO vmMap;
+        private final KubernetesClusterNodeType nodeType;
+        private final ServiceOffering targetOffering;
+        private final ServiceOffering oldOffering;
+        private UserVmVO vm;
+        private NodeAccess access;
+        private NodeCapacitySnapshot before;
+        private boolean reconcileKubernetes;
+        private boolean cksCordonCompleted;
+        private boolean resizeSucceeded;
+
+        private NodeOfferingResize(KubernetesClusterVmMapVO vmMap, KubernetesClusterNodeType nodeType, ServiceOffering targetOffering) {
+            this.vmMap = vmMap;
+            this.nodeType = nodeType;
+            this.targetOffering = targetOffering;
+            vm = userVmDao.findById(vmMap.getVmId());
+            if (vm == null) {
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, unable to find cluster VM %s",
+                        kubernetesCluster.getName(), vmMap.getVmId()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
+            oldOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
+            resizeSucceeded = Objects.equals(targetOffering.getId(), vm.getServiceOfferingId());
+        }
+
+        private void execute() {
+            validateLiveResize();
+            try {
+                prepareReconciliation();
+                resizeVm();
+                reconcileCapacity();
+            } catch (ResourceUnavailableException | ManagementServerException | VirtualMachineMigrationException | CloudRuntimeException e) {
+                restoreAfterFailedResize();
+                reportFailure(e);
+            }
+        }
+
+        private void validateLiveResize() {
+            if (KubernetesClusterNodeCapacityReconcilerImpl.capacityChanged(oldOffering, targetOffering)
+                    && KubernetesCluster.State.Running == originalState && ETCD == nodeType
+                    && KubernetesCluster.ClusterType.CloudManaged == kubernetesCluster.getClusterType()) {
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s cannot live-resize dedicated etcd VM %s; " +
+                        "etcd health reconciliation is not implemented", kubernetesCluster.getName(), vm.getDisplayName()),
+                        kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
+        }
+
+        private void prepareReconciliation() {
+            reconcileKubernetes = shouldReconcileNodeCapacity(vmMap, vm, oldOffering, targetOffering, nodeType);
+            if (reconcileKubernetes || isReconciliationRetryCandidate(vmMap, vm, targetOffering, nodeType)) {
+                access = resolveNodeAccess(vm);
+                before = kubernetesClusterNodeCapacityReconciler.captureBefore(kubernetesCluster, vm, access);
+                reconcileKubernetes = reconcileKubernetes || before.isCloudStackResizeCordon();
+            }
+            if (reconcileKubernetes) {
+                kubernetesClusterNodeCapacityReconciler.cordonIfNeeded(kubernetesCluster, vm, before, access, scaleTimeoutTime);
+                cksCordonCompleted = !before.isUnschedulable() || before.isCloudStackResizeCordon();
+            }
+        }
+
+        private void resizeVm() throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
+            if (resizeSucceeded) {
+                return;
+            }
+            if (!userVmManager.upgradeVirtualMachine(vm.getId(), targetOffering.getId(), new HashMap<>())) {
+                throw new CloudRuntimeException("Unable to scale cluster VM " + vm.getDisplayName());
+            }
+            resizeSucceeded = true;
+            UserVmVO resizedVm = userVmDao.findById(vm.getId());
+            if (resizedVm == null || !Objects.equals(targetOffering.getId(), resizedVm.getServiceOfferingId())) {
+                throw new CloudRuntimeException("VM " + vm.getUuid() + " did not reach target offering");
+            }
+            vm = resizedVm;
+        }
+
+        private void reconcileCapacity() {
+            if (!reconcileKubernetes) {
+                return;
+            }
+            kubernetesClusterNodeCapacityReconciler.onlineGuestResources(access);
+            kubernetesClusterNodeCapacityReconciler.verifyGuestResources(vm, targetOffering, before, access, scaleTimeoutTime);
+            if (!kubernetesClusterNodeCapacityReconciler.isKubernetesResourcesCurrent(before, targetOffering)) {
+                kubernetesClusterNodeCapacityReconciler.restartKubelet(vm, access, scaleTimeoutTime);
+                kubernetesClusterNodeCapacityReconciler.waitForKubernetesResources(kubernetesCluster, vm, targetOffering, before, access, scaleTimeoutTime);
+            }
+            kubernetesClusterNodeCapacityReconciler.restoreSchedulability(kubernetesCluster, vm, before, access, scaleTimeoutTime);
+        }
+
+        private void restoreAfterFailedResize() {
+            if (!reconcileKubernetes || !cksCordonCompleted || resizeSucceeded) {
+                return;
+            }
+            try {
+                kubernetesClusterNodeCapacityReconciler.restoreSchedulability(kubernetesCluster, vm, before, access, scaleTimeoutTime);
+            } catch (CloudRuntimeException cleanupException) {
+                logger.warn("Unable to restore schedulability for CKS node {} after a pre-resize failure", vm.getUuid(), cleanupException);
+            }
+        }
+
+        private void reportFailure(Exception cause) {
+            String recovery = resizeSucceeded
+                    ? "The node remains cordoned; check kubelet on the VM and retry the CKS scale operation."
+                    : "The VM was not resized; CKS attempted to restore its temporary cordon.";
+            String message = String.format("Scaling Kubernetes cluster %s (UUID %s) failed for %s node VM %s (UUID %s), " +
+                            "offering %s to %s: %s %s", kubernetesCluster.getName(), kubernetesCluster.getUuid(), nodeType,
+                    vm.getDisplayName(), vm.getUuid(), oldOffering == null ? null : oldOffering.getId(),
+                    targetOffering.getId(), cause.getMessage(), recovery);
+            logTransitStateAndThrow(Level.ERROR, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, cause);
+        }
     }
 
     private NodeAccess resolveNodeAccess(UserVm userVM) {
