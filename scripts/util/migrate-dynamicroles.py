@@ -25,10 +25,13 @@ from contextlib import closing
 from optparse import OptionParser
 
 try:
-    import mysql.connector
+    import mysql.connector as mysqldb
 except ImportError:
-    print("mysql.connector cannot be imported, please install mysql-connector-python")
-    sys.exit(1)
+    try:
+        import pymysql as mysqldb
+    except ImportError:
+        print("Neither mysql.connector nor pymysql can be imported, please install mysql-connector-python or PyMySQL")
+        sys.exit(1)
 
 dryrun = False
 
@@ -92,12 +95,12 @@ def main():
     if options.dryrun:
         dryrun = True
 
-    conn = mysql.connector.connect(
+    conn = mysqldb.connect(
             host=options.host,
             user=options.user,
-            passwd=options.password,
+            password=options.password,
             port=int(options.port),
-            db=options.db)
+            database=options.db)
 
     if options.defaultRules:
         print("Applying the default role permissions, ignoring any provided properties files(s).")
