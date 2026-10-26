@@ -103,7 +103,7 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
         return resourceType;
     }
 
-    public List<Long> getJobStatuses() {
+    public List<Integer> getJobStatuses() {
         if (jobStatuses == null) {
             return null;
         }
@@ -112,9 +112,9 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
             throw new InvalidParameterValueException("Empty job status");
         }
 
-        List<Long> statuses = new ArrayList<>(jobStatuses.size());
+        List<Integer> statuses = new ArrayList<>(jobStatuses.size());
         for (String status : jobStatuses) {
-            statuses.add((long)parseJobStatus(status).value());
+            statuses.add(parseJobStatus(status).value());
         }
         return statuses;
     }
