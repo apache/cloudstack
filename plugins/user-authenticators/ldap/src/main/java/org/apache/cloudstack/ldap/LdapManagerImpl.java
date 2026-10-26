@@ -177,8 +177,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         if (configuration == null) {
             LdapContext context = null;
             try {
-                final String protocol = LdapConfiguration.getSSLStatus(domainId) ? "ldaps://" : "ldap://";
-                final String providerUrl = protocol + hostname + ":" + port;
+                final String providerUrl = _ldapConfiguration.getProviderUrl(domainId);
                 context = _ldapContextFactory.createBindContext(providerUrl,domainId);
                 configuration = new LdapConfigurationVO(hostname, port, domainId);
                 _ldapConfigurationDao.persist(configuration);
