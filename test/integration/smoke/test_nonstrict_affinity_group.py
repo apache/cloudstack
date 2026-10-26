@@ -20,6 +20,7 @@ Tests of Non-Strict (host anti-affinity and host affinity) affinity groups
 """
 
 import logging
+import time
 
 from marvin.codes import FAILED
 from nose.plugins.attrib import attr
@@ -38,7 +39,6 @@ from marvin.lib.base import (Account,
 
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
                                get_test_template)
 
 
@@ -209,6 +209,9 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
                             vm_2_host_id,
                             msg="Both VMs of affinity group %s are on the same host" % self.affinity_group.name)
 
+
+        time.sleep(10)
+
         # 4. Migrate vm-2 to same host as vm-1
         self.virtual_machine_2.migrate(
             self.apiclient,
@@ -361,6 +364,8 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
         self.assertEqual(vm_11_host_id,
                          vm_12_host_id,
                          msg="Both VMs of affinity group %s are on the different host" % self.affinity_group.name)
+
+        time.sleep(10)
 
         # 4. Migrate vm-12 to different host as vm-11
         self.virtual_machine_12.migrate(

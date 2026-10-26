@@ -422,7 +422,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     StoragePoolType.Linstor,
                     StoragePoolType.FiberChannel,
                     StoragePoolType.CLVM,
-                    StoragePoolType.OntapiSCSI).contains(primaryPool.getType())) {
+                    StoragePoolType.NVMeTCP,
+                        StoragePoolType.OntapiSCSI).contains(primaryPool.getType())) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);
@@ -455,7 +456,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     public static String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
         String path = null;
-        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
+        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel
+                || primaryStore.getPoolType() == StoragePoolType.NVMeTCP) {
             path = destData.getPath();
         } else {
             path = details != null ? details.get("managedStoreTarget") : null;
@@ -3515,6 +3517,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 StoragePoolType.Linstor,
                 StoragePoolType.FiberChannel,
                 StoragePoolType.CLVM,
+                StoragePoolType.NVMeTCP,
                 StoragePoolType.OntapiSCSI).contains(poolType)) {
             return ImageFormat.RAW;
         } else {

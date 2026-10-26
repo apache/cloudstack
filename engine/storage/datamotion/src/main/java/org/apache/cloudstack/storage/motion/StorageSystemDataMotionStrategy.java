@@ -616,8 +616,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private void verifyFormatWithPoolType(ImageFormat imageFormat, StoragePoolType poolType) {
         if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2 &&
                 !(imageFormat == ImageFormat.RAW && (StoragePoolType.PowerFlex == poolType ||
-                StoragePoolType.FiberChannel == poolType || StoragePoolType.OntapiSCSI == poolType))) {
-            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex, FiberChannel and OntapiSCSI)",
+                StoragePoolType.FiberChannel == poolType ||
+                StoragePoolType.NVMeTCP == poolType ||
+                        StoragePoolType.OntapiSCSI == poolType))) {
+            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex, FiberChannel, NVMeTCP and OntapiSCSI)",
                 ImageFormat.VHD.toString(), ImageFormat.OVA.toString(), ImageFormat.QCOW2.toString(), ImageFormat.RAW.toString()));
         }
     }
@@ -2796,7 +2798,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             if (!ImageFormat.QCOW2.equals(volumeInfo.getFormat()) &&
                 !(ImageFormat.RAW.equals(volumeInfo.getFormat()) && (
                     StoragePoolType.PowerFlex == storagePoolVO.getPoolType() ||
-                    StoragePoolType.FiberChannel == storagePoolVO.getPoolType()))) {
+                    StoragePoolType.FiberChannel == storagePoolVO.getPoolType() ||
+                    StoragePoolType.NVMeTCP == storagePoolVO.getPoolType()))) {
                 throw new CloudRuntimeException("When using managed storage, you can only create a template from a volume on KVM currently.");
             }
 
@@ -2810,7 +2813,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             try {
                 handleQualityOfServiceForVolumeMigration(volumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.MIGRATION);
 
-                if (srcVolumeDetached || StoragePoolType.PowerFlex == storagePoolVO.getPoolType() || StoragePoolType.FiberChannel == storagePoolVO.getPoolType()) {
+                if (srcVolumeDetached || StoragePoolType.PowerFlex == storagePoolVO.getPoolType() || StoragePoolType.FiberChannel == storagePoolVO.getPoolType()
+                        || StoragePoolType.NVMeTCP == storagePoolVO.getPoolType()) {
                     _volumeService.grantAccess(volumeInfo, hostVO, srcDataStore);
                 }
 
@@ -2844,7 +2848,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException(msg + ex.getMessage(), ex);
             }
             finally {
-                if (srcVolumeDetached || StoragePoolType.PowerFlex == storagePoolVO.getPoolType() || StoragePoolType.FiberChannel == storagePoolVO.getPoolType()) {
+                if (srcVolumeDetached || StoragePoolType.PowerFlex == storagePoolVO.getPoolType() || StoragePoolType.FiberChannel == storagePoolVO.getPoolType()
+                        || StoragePoolType.NVMeTCP == storagePoolVO.getPoolType()) {
                     try {
                         _volumeService.revokeAccess(volumeInfo, hostVO, srcDataStore);
                     }
@@ -2939,7 +2944,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         long snapshotId = snapshotInfo.getId();
 
-        if (storagePoolVO.getPoolType() == StoragePoolType.PowerFlex || storagePoolVO.getPoolType() == StoragePoolType.FiberChannel) {
+        if (storagePoolVO.getPoolType() == StoragePoolType.PowerFlex || storagePoolVO.getPoolType() == StoragePoolType.FiberChannel
+                || storagePoolVO.getPoolType() == StoragePoolType.NVMeTCP) {
             snapshotDetails.put(DiskTO.IQN, snapshotInfo.getPath());
         } else {
             snapshotDetails.put(DiskTO.IQN, getSnapshotProperty(snapshotId, DiskTO.IQN));
