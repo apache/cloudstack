@@ -131,6 +131,26 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         cmd.jobid = jobid
         return self.apiclient.cancelAsyncJob(cmd)
 
+    def work_was_stopped(self, job, cancelled):
+        """An accepted cancel ends the job CANCELLED, or SUCCEEDED with the request recorded when the work finished before the cancel took effect; a refused cancel lets the job run its course"""
+        if cancelled:
+            self.assertIn(job.jobstatus, [JOB_CANCELLED, JOB_SUCCEEDED], "Accepted cancel left job %s in status %s" % (job.jobid, job.jobstatus))
+            self.assertTrue(job.cancelrequested, "Accepted cancel is not recorded on job %s" % job.jobid)
+        else:
+            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left job %s in status %s" % (job.jobid, job.jobstatus))
+        return job.jobstatus == JOB_CANCELLED
+
+    def start_instance_again(self):
+        """A start right after a volume copy can lose the race for the disk's lock on the host, so it is retried"""
+        for attempt in range(1, 4):
+            try:
+                self.virtual_machine.start(self.apiclient)
+                return
+            except Exception as e:
+                self.debug("Start of instance %s failed on attempt %d: %s" % (self.virtual_machine.id, attempt, e))
+                time.sleep(20)
+        self.virtual_machine.start(self.apiclient)
+
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_00_cancellable_is_published(self):
         """listApis and listAsyncJobs say in advance whether a command can be cancelled"""
@@ -237,7 +257,7 @@ class TestAsyncJobsManagement(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_08_cancel_running_migration(self):
-        """Cancelling a live migration either stops it or is refused; the instance ends Running either way"""
+        """Cancelling a live migration stops it, finds it finished, or is refused; the instance ends Running either way"""
         if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
             self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
 
@@ -263,20 +283,17 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             cancelled = False
 
         job = self.wait_for_job(jobid)
-        if cancelled:
-            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
-        else:
-            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+        stopped = self.work_was_stopped(job, cancelled)
 
         response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
-        if cancelled:
+        if stopped:
             vm = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0]
             self.assertEqual(vm.hostid, source_host.id, "Cancelled migration left the instance on the target host")
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_09_cancelled_storage_migration_leaves_no_volume_behind(self):
-        """Cancelling a migration with storage rolls back the volume created on the target pool"""
+        """Cancelling a migration with storage rolls back the volume created on the target pool; one that finished first, or was refused, leaves one usable root volume"""
         if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
             self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
 
@@ -304,10 +321,7 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             cancelled = False
 
         job = self.wait_for_job(jobid)
-        if cancelled:
-            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
-        else:
-            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+        stopped = self.work_was_stopped(job, cancelled)
 
         response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
@@ -323,7 +337,7 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         self.assertEqual(len(roots), 1, "A volume created for the cancelled migration was left behind: %s"
                          % [(v.id, v.state, v.storageid) for v in roots])
         self.assertNotEqual(roots[0].state, "Destroy", "The instance's root volume is left in Destroy")
-        if cancelled:
+        if stopped:
             self.assertEqual(roots[0].id, root_volume.id, "Cancelled migration replaced the root volume")
             self.assertEqual(roots[0].storageid, root_volume.storageid, "Cancelled migration moved the root volume")
 
@@ -346,19 +360,18 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             job = self.wait_for_job(jobid)
             if cancelled:
                 # the cancel landed before the stop command went out (a stop takes milliseconds on the simulator): either nothing ran, or it finished regardless
-                self.assertIn(job.jobstatus, [JOB_CANCELLED, JOB_SUCCEEDED], "Accepted cancel left the stop job in an odd state")
-                self.assertTrue(job.cancelrequested, "Accepted cancel is not recorded on the job")
+                self.work_was_stopped(job, cancelled)
             else:
                 self.assertEqual(job.jobstatus, JOB_SUCCEEDED, "Stop did not complete after its cancel was refused")
                 response = self.virtual_machine.getState(self.apiclient, VirtualMachine.STOPPED)
                 self.assertEqual(response[0], PASS, response[1])
         finally:
             if VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0].state != VirtualMachine.RUNNING:
-                self.virtual_machine.start(self.apiclient)
+                self.start_instance_again()
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_11_cancelled_offline_volume_migration_keeps_the_volume(self):
-        """Cancelling an offline volume migration leaves the volume Ready on its source pool, or the cancel is refused"""
+        """Cancelling an offline volume migration leaves the volume Ready on its source pool; one that finished first, or was refused, leaves it Ready on the target"""
         if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
             self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
 
@@ -384,18 +397,15 @@ class TestAsyncJobsManagement(cloudstackTestCase):
                 cancelled = False
 
             job = self.wait_for_job(jobid)
-            if cancelled:
-                self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
-            else:
-                self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+            stopped = self.work_was_stopped(job, cancelled)
             self.assertNotIn("NullPointerException", str(job.jobresult), "The cancel surfaced as a server error")
 
             volume = Volume.list(self.apiclient, id=root_volume.id)[0]
             self.assertEqual(volume.state, "Ready", "Volume left in state %s after the migration job ended" % volume.state)
-            if cancelled:
+            if stopped:
                 self.assertEqual(volume.storageid, root_volume.storageid, "Cancelled migration moved the volume")
         finally:
-            self.virtual_machine.start(self.apiclient)
+            self.start_instance_again()
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_12_cancelled_volume_creation_leaves_no_volume(self):
@@ -421,9 +431,9 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             cancelled = False
 
         job = self.wait_for_job(jobid)
+        stopped = self.work_was_stopped(job, cancelled)
         volumes = Volume.list(self.apiclient, id=volumeid, listall=True) or []
-        if cancelled:
-            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
+        if stopped:
             self.assertFalse(volumes, "Cancelled creation left volume %s in state %s" % (volumeid, volumes[0].state if volumes else None))
             # the usage record opened at allocation must be closed, or never opened
             usage_events = [row[0] for row in (self.dbclient.execute(
@@ -431,14 +441,13 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             self.assertIn(usage_events, [[], ["VOLUME.CREATE", "VOLUME.DELETE"]],
                           "Cancelled creation left usage events %s for volume %s" % (usage_events, volumeid))
         else:
-            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
             self.assertNotEqual([v.state for v in volumes], ["Destroy"], "Volume %s left in Destroy" % volumeid)
             if volumes and volumes[0].state == "Ready":
                 Volume(volumes[0].__dict__).delete(self.apiclient)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_13_cancelled_volume_snapshot_leaves_nothing(self):
-        """Cancelling a volume snapshot during its backup leaves no snapshot behind; a refused cancel lets it complete"""
+        """Cancelling a volume snapshot during its backup leaves no snapshot behind; one that finished first, or was refused, completes"""
         if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
             self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
 
@@ -459,12 +468,11 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             cancelled = False
 
         job = self.wait_for_job(jobid, timeout=1800)
+        stopped = self.work_was_stopped(job, cancelled)
         snapshots = Snapshot.list(self.apiclient, id=snapshotid, listall=True) or []
-        if cancelled:
-            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
+        if stopped:
             self.assertFalse(snapshots, "Cancelled snapshot %s left behind in state %s" % (snapshotid, snapshots[0].state if snapshots else None))
         else:
-            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
             self.assertNotEqual([s.state for s in snapshots], ["BackingUp"], "Snapshot %s stuck in BackingUp" % snapshotid)
             if snapshots and snapshots[0].state == "BackedUp":
                 Snapshot(snapshots[0].__dict__).delete(self.apiclient)
