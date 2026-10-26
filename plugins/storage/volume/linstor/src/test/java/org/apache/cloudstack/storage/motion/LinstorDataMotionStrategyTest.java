@@ -169,6 +169,7 @@ public class LinstorDataMotionStrategyTest {
         when(srcVolumeInfo.getPath()).thenReturn("216fb792-c5ed-4ad7-98e6-ebdd25816e55");
         when(srcVolumeInfo.getDataStore()).thenReturn(srcDataStore);
         when(srcVolumeInfo.getPassphraseId()).thenReturn(null);
+        when(srcVolumeInfo.getKmsKeyId()).thenReturn(null);
         StoragePoolVO srcPool = mock(StoragePoolVO.class);
         when(srcPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(_storagePool.findById(SRC_POOL_ID)).thenReturn(srcPool);
