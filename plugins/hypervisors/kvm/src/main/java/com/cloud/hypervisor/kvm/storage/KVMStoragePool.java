@@ -31,6 +31,8 @@ import com.cloud.agent.api.to.HostTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface KVMStoragePool {
 
@@ -172,5 +174,36 @@ public interface KVMStoragePool {
 
     default String getAuthSecretUUID() {
         return null;
+    }
+
+    /**
+     * Whether the volume {@code volumeUuid}, freshly created in this pool, already reads as zeroes,
+     * so a copy onto it may skip zero regions (qemu-img --target-is-zero). Says nothing about a
+     * volume that has been written to: that still holds its old data.
+     */
+    default boolean newVolumeReadsAsZero(String volumeUuid) {
+        return false;
+    }
+
+    /**
+     * Creates the scratch space for a pull-mode backup of the running VM {@code vmName} on this host: one
+     * block device per entry of {@code sizes}, at least that many bytes large. libvirt formats each device
+     * as the copy-before-write target of one disk, keeping the guest data the backup has not read yet.
+     *
+     * @return the name to pass to {@link #deleteBackupScratch(String)} and the device paths, in the order
+     *         of {@code sizes}
+     */
+    default Pair<String, List<String>> createBackupScratch(String vmName, List<Long> sizes) {
+        throw new CloudRuntimeException(String.format("Storage pool %s of type %s cannot provide backup scratch space",
+                getUuid(), getType()));
+    }
+
+    /**
+     * Removes scratch space created by {@link #createBackupScratch(String, List)}. Only valid once the
+     * backup job has ended and libvirt has released the devices.
+     */
+    default void deleteBackupScratch(String name) {
+        throw new CloudRuntimeException(String.format("Storage pool %s of type %s cannot provide backup scratch space",
+                getUuid(), getType()));
     }
 }
