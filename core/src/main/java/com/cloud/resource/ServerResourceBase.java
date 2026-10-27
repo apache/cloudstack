@@ -80,6 +80,11 @@ public abstract class ServerResourceBase implements ServerResource {
 
         defineResourceNetworkInterfaces(params);
 
+        if (privateNic != null && !interfaceHasIpAddress(privateNic)) {
+            logger.info("Defined private NIC (private.network.device)) -> [{}] has no IP Address. Trying another methods.", privateNic);
+            privateNic = null;
+        }
+
         if (privateNic == null) {
             checkForPrivateInterfaceDefinedByIp(params);
         }
@@ -99,6 +104,17 @@ public abstract class ServerResourceBase implements ServerResource {
         params.put("host.mac.address", infos[1]);
 
         return true;
+    }
+
+    private boolean interfaceHasIpAddress(NetworkInterface iface) {
+        if (iface != null) {
+            String infos[] = NetUtils.getNetworkParams(privateNic);
+            String addr = infos != null && infos.length >= 1
+                      ? StringUtils.trimToNull(infos[0])
+                      : null;
+            return addr != null;
+        }
+        return false;
     }
 
     protected void defineResourceNetworkInterfaces(Map<String, Object> params) {
