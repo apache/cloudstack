@@ -3555,13 +3555,25 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return orchestrateDetachVolumeFromVM(vmId, volumeId);
     }
 
+    /**
+     * A queued detach can run after the volume was already detached and attached elsewhere.
+     * In that case the detach must be skipped, so the newer attachment is left alone.
+     *
+     * @return true if the volume is no longer attached to the given VM
+     */
+    protected boolean shouldDetachBeSkipped(Volume volume, VMInstanceVO vm) {
+        if (volume.getInstanceId() == null || volume.getInstanceId() != vm.getId()) {
+            logger.warn("Volume {} is no longer attached to VM {}, skipping detach", volume, vm);
+            return true;
+        }
+        return false;
+    }
+
     private Volume orchestrateDetachVolumeFromVM(long vmId, long volumeId) {
         Volume volume = _volsDao.findById(volumeId);
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        // A queued detach can run after the volume was already detached and attached elsewhere; leave that attachment alone
-        if (volume.getInstanceId() == null || volume.getInstanceId() != vmId) {
-            logger.warn("Volume {} is no longer attached to VM {}, skipping detach", volume, vm);
+        if (shouldDetachBeSkipped(volume, vm)) {
             return volume;
         }
 
