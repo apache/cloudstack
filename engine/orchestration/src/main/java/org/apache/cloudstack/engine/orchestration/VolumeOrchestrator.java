@@ -1335,6 +1335,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    /**
+     * Returns the image format for a volume taking the underlying storage pool type into account.
+     * On KVM the default cluster format is QCOW2, but block-based pools such as RBD (Ceph) and
+     * Linstor (DRBD) store volumes as RAW images. This is relevant when importing/adopting an
+     * existing volume so the recorded format matches what is actually on the pool.
+     */
+    protected ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType, Storage.StoragePoolType poolType) {
+        if (hyperType == HypervisorType.KVM
+                && (poolType == Storage.StoragePoolType.RBD || poolType == Storage.StoragePoolType.Linstor)) {
+            return ImageFormat.RAW;
+        }
+        return getSupportedImageFormatForCluster(hyperType);
+    }
+
     private boolean isSupportedImageFormatForCluster(VolumeInfo volume, HypervisorType rootDiskHyperType) {
         ImageFormat volumeFormat = volume.getFormat();
         if (rootDiskHyperType == HypervisorType.Hyperv) {
@@ -2626,7 +2640,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                                     Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-                                    Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo) {
+                                    Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo,
+                                    ImageFormat format) {
         if (sizeInBytes == null) {
             sizeInBytes = offering.getDiskSize();
         }
@@ -2665,7 +2680,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
-        vol.setFormat(getSupportedImageFormatForCluster(hypervisorType));
+        // The format the hypervisor actually reported for the existing image wins; pools such as RBD
+        // hold raw images even though QCOW2 is the cluster default for KVM.
+        vol.setFormat(format != null ? format : getSupportedImageFormatForCluster(hypervisorType, poolType));
         vol.setPoolId(poolId);
         vol.setPoolType(poolType);
         vol.setPath(path);
@@ -2677,7 +2694,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                    Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile) {
+                                    Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile,
+                                    ImageFormat format) {
 
         VolumeVO vol = _volsDao.findById(diskProfile.getVolumeId());
         if (vm != null) {
@@ -2709,7 +2727,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
-        vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
+        // The format the hypervisor actually reported for the existing image wins; pools such as RBD
+        // hold raw images even though QCOW2 is the cluster default for KVM.
+        vol.setFormat(format != null ? format : getSupportedImageFormatForCluster(vm.getHypervisorType(), poolType));
         vol.setPoolId(poolId);
         vol.setPoolType(poolType);
         vol.setPath(path);
