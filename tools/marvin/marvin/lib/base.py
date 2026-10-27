@@ -567,8 +567,12 @@ class VirtualMachine:
         """Check if the template is a built-in template"""
         cmd = listTemplates.listTemplatesCmd()
         cmd.id = templateid
-        cmd.templatefilter = "all"
-        templates = apiclient.listTemplates(cmd)
+        cmd.templatefilter = "executable"
+        try:
+            templates = apiclient.listTemplates(cmd)
+        except Exception:
+            # not a template (an ISO), or not visible to the user
+            return False
         return bool(templates and templates[0].templatetype == "BUILTIN")
 
     @classmethod
