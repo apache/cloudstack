@@ -268,10 +268,11 @@ public class VMScheduleWorkerTest {
 
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(now.toInstant(), schedule.getTimeZoneId());
         zonedDateTime = zonedDateTime.withHour(5).withMinute(30).withSecond(0).withNano(0);
-        Date expectedScheduledTime = Date.from(zonedDateTime.toInstant());
-        if (expectedScheduledTime.before(now)) {
-            expectedScheduledTime = DateUtils.addDays(expectedScheduledTime, 1);
+        if (zonedDateTime.toInstant().isBefore(now.toInstant())) {
+            // add the day in the schedule's zone; DateUtils.addDays uses the JVM default zone and is off by an hour across its DST change
+            zonedDateTime = zonedDateTime.plusDays(1);
         }
+        Date expectedScheduledTime = Date.from(zonedDateTime.toInstant());
 
         Date actualScheduledTime = vmScheduleWorker.scheduleNextJob(schedule, new Date());
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
