@@ -1356,7 +1356,8 @@ public class ApiDBUtils {
                            StoragePoolType.PowerFlex,
                            StoragePoolType.CLVM,
                            StoragePoolType.Linstor,
-                           StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
+                           StoragePoolType.FiberChannel,
+                           StoragePoolType.NVMeTCP).contains(pool.getPoolType())) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -2353,6 +2354,10 @@ public class ApiDBUtils {
 
     public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static NicVO findNonPlaceHolderByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 
     public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {

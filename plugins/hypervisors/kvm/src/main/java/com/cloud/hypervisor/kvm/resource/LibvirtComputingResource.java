@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
+import static com.cloud.host.Host.HOST_CPU_MAX_SPEED_MHZ;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
@@ -3411,6 +3412,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (isUefiEnabled && isSecureBoot) {
             features.addFeatures(SMM);
         }
+        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(VmDetailConstants.KVM_HINT_DEDICATED)) {
+            features.setKvmHintDedicated(Boolean.parseBoolean(customParams.get(VmDetailConstants.KVM_HINT_DEDICATED)));
+        }
         return features;
     }
 
@@ -4449,6 +4453,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 new StartupRoutingCommand(info.getAllocatableCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
         cmd.setCpuSockets(info.getCpuSockets());
+        if (info.getCpuMaxSpeed() > 0) {
+            cmd.getHostDetails().put(HOST_CPU_MAX_SPEED_MHZ, String.valueOf(info.getCpuMaxSpeed()));
+        }
         fillNetworkInformation(cmd);
         privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
