@@ -33,6 +33,7 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+QUIESCE_TIMEOUT=""    # Seconds to wait for the guest agent freeze/thaw; empty => libvirt default
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
 METHOD="qcow2"        # How the backup is taken: "qcow2" (push mode, incrementals from dirty bitmaps) or
@@ -332,12 +333,18 @@ backup_rbd_vm() {
   # Freezing the guest filesystems makes the snapshot set filesystem-consistent instead of merely
   # crash-consistent. Only possible while the VM runs and its guest agent answers.
   local thaw=0
+  local freeze_ok=0
   local resume=0
   local vm_state
   vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
   if [[ ${QUIESCE} == "true" && "$vm_state" == "running" ]]; then
-    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
-      thaw=1
+    # Always thaw after a freeze attempt: a freeze that times out on the host can still
+    # complete inside the guest, and nothing else would unfreeze it.
+    thaw=1
+    if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
+      freeze_ok=1
+    else
+      log -e "Failed to freeze the filesystem for vm $VM, continuing without quiescing: $freeze_err"
     fi
   fi
 
@@ -345,7 +352,7 @@ backup_rbd_vm() {
   # the guest keeps writing, so the set would not be crash consistent. Pausing the VM for the few
   # moments the snapshots take restores that, much as a backup-begin checkpoint does. A single
   # disk needs no pause: one snapshot is already a single point in time.
-  if [[ $thaw -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
+  if [[ $freeze_ok -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
     if virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
       resume=1
     else
@@ -369,15 +376,7 @@ backup_rbd_vm() {
   done
   rbd_cleanup_keyfile
 
-  if [[ $thaw -eq 1 ]]; then
-    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
-      echo "Failed to thaw the filesystem for vm $VM: $response"
-      rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
-      cleanup
-      exit 1
-    fi
-  fi
-
+  # Resume before thawing: the guest agent does not answer while the VM is paused.
   if [[ $resume -eq 1 ]]; then
     if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
       echo "Failed to resume vm $VM after taking the disk snapshots"
@@ -385,6 +384,12 @@ backup_rbd_vm() {
       cleanup
       exit 1
     fi
+  fi
+
+  if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
+    rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
+    cleanup
+    exit 1
   fi
 
   if [[ $snap_failed -eq 1 ]]; then
@@ -872,9 +877,15 @@ print(len(files))
   fi
 
   local thaw=0
+  local freeze_ok=0
   if [[ ${QUIESCE} == "true" ]]; then
-    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
-      thaw=1
+    # Always thaw after a freeze attempt: a freeze that times out on the host can still
+    # complete inside the guest, and nothing else would unfreeze it.
+    thaw=1
+    if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
+      freeze_ok=1
+    else
+      log -e "Failed to freeze the filesystem for vm $VM, continuing without quiescing: $freeze_err"
     fi
   fi
 
@@ -891,13 +902,13 @@ print(len(files))
       backup_begin=1;
     fi
   fi
+  if [[ $backup_begin -eq 1 ]]; then
+    BACKUP_JOB_ACTIVE=1
+  fi
 
-  if [[ $thaw -eq 1 ]]; then
-    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
-      echo "Failed to thaw the filesystem for vm $VM: $response"
-      cleanup
-      exit 1
-    fi
+  if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
+    cleanup
+    exit 1
   fi
 
   if [[ $backup_begin -ne 1 ]]; then
@@ -911,12 +922,27 @@ print(len(files))
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
+  local info query_failures=0
   while true; do
-    status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
+    # A failed query says nothing about the job, so retry before giving up on it.
+    if ! info=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>&1); then
+      log -e "Backup job query $((query_failures + 1)) for vm $VM failed: $info"
+      if (( ++query_failures >= 12 )); then
+        echo "Unable to query the backup job for vm $VM"
+        cleanup
+        exit 1
+      fi
+      sleep 5
+      continue
+    fi
+    query_failures=0
+    status=$(awk '/Job type:/ {print $3}' <<< "$info")
     case "$status" in
       Completed)
+        BACKUP_JOB_ACTIVE=0
         break ;;
       Failed)
+        BACKUP_JOB_ACTIVE=0
         echo "Virsh backup job failed"
         cleanup
         exit 1 ;;
@@ -1139,6 +1165,25 @@ mount_operation() {
   fi
 }
 
+abort_backup_job() {
+  [[ $BACKUP_JOB_ACTIVE -eq 1 ]] || return 0
+
+  # The push backup job writes into $dest until it ends, so it must be gone before the
+  # destination is removed or unmounted.
+  virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>>"$logFile" || true
+  local i info
+  for ((i = 0; i < 60; i++)); do
+    # Only a successful query reporting no job proves the job has ended.
+    if info=$(virsh -c qemu:///system domjobinfo "$VM" 2>>"$logFile") \
+        && [[ "$(awk '/Job type:/ {print $3}' <<< "$info")" == "None" ]]; then
+      BACKUP_JOB_ACTIVE=0
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 cleanup() {
   local status=0
 
@@ -1155,6 +1200,12 @@ cleanup() {
       echo "Failed to resume VM $VM"
       status=1
     fi
+  fi
+
+  if ! abort_backup_job; then
+    echo "Backup job for vm $VM is still running after abort, leaving $dest mounted at $mount_point"
+    echo "Backup cleanup failed"
+    exit $EXIT_CLEANUP_FAILED
   fi
 
   rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
@@ -1238,6 +1289,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -q|--quiesce)
       QUIESCE="$2"
+      shift
+      shift
+      ;;
+    --quiesce-timeout)
+      QUIESCE_TIMEOUT="$2"
       shift
       shift
       ;;
