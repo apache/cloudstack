@@ -137,6 +137,11 @@ public abstract class ServerResourceBase implements ServerResource {
         }
     }
 
+    private String extractHostAddress(String hostSpec) {
+        final String addr = hostSpec.contains("@") ? hostSpec.split("@")[0] : hostSpec;
+        return addr.trim();
+    }
+
     private String[] collectMgmtHostIp(Map<String, Object> params) {
         final String hosts = (String) params.get("host");
         if (hosts != null && hosts.trim().length() > 0) {
@@ -144,11 +149,10 @@ public abstract class ServerResourceBase implements ServerResource {
             final Set<String> hostCollection = new LinkedHashSet<String>();
             if (hosts.contains(",")) {
                 for(final String ip : hosts.split(",")) {
-                    final String h = ip.contains("@") ? ip.split("@")[0] : ip;
-                    hostCollection.add(h.trim());
+                    hostCollection.add(extractHostAddress(ip));
                 }
             } else {
-                hostCollection.add(hosts.trim());
+                hostCollection.add(extractHostAddress(hosts));
             }
             return hostCollection.isEmpty() ? null : hostCollection.toArray(new String[0]);
         }
