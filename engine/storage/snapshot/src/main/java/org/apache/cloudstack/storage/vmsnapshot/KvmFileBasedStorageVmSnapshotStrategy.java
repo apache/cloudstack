@@ -446,7 +446,8 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         mergeDiskOnlyVMSnapshotCommand.setWait(DEFAULT_MERGE_TIMEOUT);
         Answer answer = agentMgr.easySend(hostId, mergeDiskOnlyVMSnapshotCommand);
         if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException(String.format("Failed to merge VM snapshot [%s] due to %s.", vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
+            throw new CloudRuntimeException(String.format("Failed to merge VM snapshot [%s] due to %s. Consider trying again later to make sure the VM metadata is synchronized.",
+                    vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
         }
 
         logger.debug("Updating metadata of VM snapshot [{}] and its child [{}].", vmSnapshotVO.getUuid(), childSnapshot.getUuid());

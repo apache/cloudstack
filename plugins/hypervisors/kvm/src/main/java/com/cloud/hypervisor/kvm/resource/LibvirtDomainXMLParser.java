@@ -415,7 +415,7 @@ public class LibvirtDomainXMLParser {
             if (StringUtils.isEmpty(path)) {
                 break;
             }
-            backingStoreList.add(path.substring(path.lastIndexOf(File.separator))+1);
+            backingStoreList.add(path.substring(path.lastIndexOf(File.separator)+1));
             backingStoreNodeList = backingStore.getElementsByTagName("backingStore");
         }
         def.setBackingStoreList(backingStoreList);

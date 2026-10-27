@@ -53,6 +53,10 @@ import java.util.stream.Collectors;
 @ResourceWrapper(handles = MergeDiskOnlyVmSnapshotCommand.class)
 public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper<MergeDiskOnlyVmSnapshotCommand, Answer, LibvirtComputingResource> {
 
+    // Extracted from https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainBlockJobType
+    private static final int VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT = 3;
+    private static final int VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT = 4;
+
     @Override
     public Answer execute(MergeDiskOnlyVmSnapshotCommand command, LibvirtComputingResource serverResource) {
         VirtualMachine.State vmState = command.getVmState();
@@ -151,9 +155,14 @@ public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper
             DomainBlockJobInfo jobInfo = domain.getBlockJobInfo(label, 0);
             if (jobInfo == null || jobInfo.type == 0 && jobInfo.end == 0 && jobInfo.cur == 0) {
                 logger.debug("No block job found for disk [{}] of VM [{}]. Continuing the merge process.", label, vmName);
-            } else {
-                logger.debug("Found a block job for disk [{}] of VM [{}]. We will abort it to continue with the VM snapshot merge process.", label, vmName);
+            } else if (jobInfo.type == VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT || jobInfo.type == VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT) {
+                logger.debug("Found a commit block job for disk [{}] of VM [{}]. We will abort it to continue with the VM snapshot merge process.", label, vmName);
                 domain.blockJobAbort(label, 0);
+            } else {
+                String message = String.format("There is a block job executing that is not a commit for disk [%s] of VM [%s]. We will abort the snapshot merge. Consider trying " +
+                        "again later after this is done.", label, vmName);
+                logger.debug(message);
+                return new Answer(cmd, false, message);
             }
 
             boolean volumeAlreadyMerged = isVolumeAlreadyMerged(diskDef, childTO);
@@ -187,13 +196,13 @@ public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper
         if (diskDef.getDiskPath().contains(childTO.getPath())) {
             return false;
         }
-        boolean isVolumeAlreadyMerged = true;
+
         for (String filePath : diskDef.getBackingStoreList()) {
             if (filePath.contains(childTO.getPath())) {
-                isVolumeAlreadyMerged = false;
+                return false;
             }
         }
-        return isVolumeAlreadyMerged;
+        return true;
     }
 
     protected LibvirtVMDef.DiskDef getDiskDef(List<LibvirtVMDef.DiskDef> disks, VolumeObjectTO volumeObjectTO, DataTO childTO, SnapshotObjectTO parentSnapshotTO) {
