@@ -45,7 +45,7 @@ import re
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, CephError, WatchersError, KEY_ENV, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, check_bindings, CephError, WatchersError, KEY_ENV, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
@@ -79,6 +79,12 @@ def main():
     parser.add_argument("--help", action="help")
     args = parser.parse_args()
 
+    # first of all: the Python bindings are only suggested by the agent packages
+    try:
+        check_bindings(watchers=True)
+    except BindingsError as error:
+        fail("Unable to check the VM activity, %s" % error)
+
     key = os.environ.pop(KEY_ENV, "")
     if not args.mon_hosts or not args.pool or not args.suspect_time:
         sys.exit(2)
@@ -99,10 +105,7 @@ def main():
             sys.exit(2)
 
     silence_standard_error()
-    try:
-        ceph = Ceph(args.mon_hosts, args.pool, args.user, key, watchers=True)
-    except BindingsError as error:
-        fail("Unable to check the VM activity, %s" % error)
+    ceph = Ceph(args.mon_hosts, args.pool, args.user, key, watchers=True)
     try:
         check(ceph, args.pool, args.host, volumes, suspect_time)
     finally:

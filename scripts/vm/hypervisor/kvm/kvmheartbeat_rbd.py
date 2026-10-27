@@ -35,7 +35,7 @@ import subprocess
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, ObjectNotFoundError, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, ObjectNotFoundError, check_bindings, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
@@ -56,6 +56,19 @@ def main():
     parser.add_argument("--help", action="help")
     args = parser.parse_args()
 
+    # first of all: the Python bindings are only suggested by the agent packages. The self-fencing (-c) does not
+    # need them, as it does not use Ceph
+    if not args.cleanup:
+        try:
+            check_bindings()
+        except BindingsError as error:
+            if args.check:
+                # not a proof that the host is dead, so DEAD is not reported
+                print("=====> Unable to check the heartbeat, %s <======" % error)
+                sys.exit(2)
+            print("=====> Unable to write the heartbeat, %s <======" % error)
+            sys.exit(1)
+
     key = os.environ.pop(KEY_ENV, "")
     if not args.mon_hosts or not args.pool:
         sys.exit(1)
@@ -73,14 +86,7 @@ def main():
 
     heartbeat_object = "KVMHA-hb-" + args.host
     silence_standard_error()
-    try:
-        ceph = Ceph(args.mon_hosts, args.pool, args.user, key)
-    except BindingsError as error:
-        if args.check:
-            # not a proof that the host is dead, so DEAD is not reported
-            print("=====> Unable to check the heartbeat, %s <======" % error)
-            sys.exit(2)
-        sys.exit(1)
+    ceph = Ceph(args.mon_hosts, args.pool, args.user, key)
     try:
         if args.check:
             check(ceph, heartbeat_object, args.pool, int(args.interval))

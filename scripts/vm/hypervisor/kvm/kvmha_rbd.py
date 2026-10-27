@@ -74,18 +74,27 @@ class WatchersError(Exception):
     """The watchers of a volume could not be listed: it is not known whether the host is alive."""
 
 
+def check_bindings(watchers=False):
+    """
+    Raises BindingsError if the Python bindings are not installed. The scripts call it first, as the packages
+    python3-rados and python3-rbd are only suggested by the agent packages.
+
+    :param watchers: whether the watchers of volumes are listed, which needs librbd
+    """
+    if rados is None:
+        raise BindingsError("the package python3-rados is not installed")
+    if watchers and (rbd is None or not hasattr(rbd.Image, "watchers_list")):
+        raise BindingsError("the package python3-rbd is not installed, or is too old to list the watchers of a volume")
+
+
 class Ceph:
     def __init__(self, mon_hosts, pool, user, key, watchers=False):
         """
-        Connects to the cluster. Raises BindingsError if the bindings can not be used, in which case nothing can
-        be done. If the cluster can not be connected, the operations raise CephError.
+        Connects to the cluster. Raises BindingsError if the bindings can not be used (see check_bindings). If the cluster can not be connected, the operations raise CephError.
 
         :param watchers: whether the watchers of volumes are listed, which needs librbd
         """
-        if rados is None:
-            raise BindingsError("the package python3-rados is not installed")
-        if watchers and (rbd is None or not hasattr(rbd.Image, "watchers_list")):
-            raise BindingsError("the package python3-rbd is not installed, or is too old to list the watchers of a volume")
+        check_bindings(watchers)
         self.pool = pool
         self.cluster = None
         self.ioctx = None
