@@ -176,9 +176,15 @@ class TestHAKVM(cloudstackTestCase):
             ("systemctl disable cloudstack-agent || chkconfig cloudstack-agent off")
 
     def resetHost(self):
+        # Simulate a crash: reset immediately instead of a graceful "reboot",
+        # which can block on libvirt-guests waiting for running guests to shut down
+        # (up to 5 minutes on some distros) while sshd is already stopped.
+        # The reset runs detached so that the ssh command returns before the host
+        # goes down, as an abrupt reset leaves the ssh connection half-open.
         SshClient(self.host.ipaddress, port=22, user=self.hostConfig["username"],
                   passwd=self.hostConfig["password"]).execute \
-            ("reboot")
+            ("nohup sh -c 'sleep 2; echo 1 > /proc/sys/kernel/sysrq; echo b > /proc/sysrq-trigger' "
+             "</dev/null >/dev/null 2>&1 &")
 
     def enableAgent(self):
         SshClient(self.host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
