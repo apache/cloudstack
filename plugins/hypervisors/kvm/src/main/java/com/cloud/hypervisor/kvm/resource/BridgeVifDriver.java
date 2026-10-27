@@ -208,8 +208,13 @@ public class BridgeVifDriver extends VifDriverBase {
         return vNetId != null && protocol != null && !vNetId.equalsIgnoreCase("untagged");
     }
 
+    protected boolean isUntaggedBroadcast(final NicTO nic) {
+        return nic.getBroadcastUri() != null && "untagged".equalsIgnoreCase(Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
+    }
+
     protected boolean usesSharedVlanAwareBridge(final NicTO nic) {
-        return nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && _libvirtComputingResource.hostSupportsVlanFiltering();
+        return nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && _libvirtComputingResource.hostSupportsVlanFiltering()
+                && !isUntaggedBroadcast(nic);
     }
 
     protected void plugTrunkVlanNic(LibvirtVMDef.InterfaceDef intf, NicTO nic, String trafficLabel, String guestOsType, String nicAdapter,

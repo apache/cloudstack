@@ -204,6 +204,22 @@ public class BridgeVifDriverTest {
     }
 
     @Test
+    public void ensureVlanTrunkMembershipSkipsUntaggedOrdinaryNicOnFilteringReadyHost() throws InternalErrorException {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        nic.setBroadcastUri(URI.create("vlan://untagged"));
+        nic.setTrunkVlan(false);
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.setDevName("vnet5");
+
+        Assert.assertFalse(driver.usesSharedVlanAwareBridge(nic));
+        driver.ensureVlanTrunkMembership(intf, nic);
+
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
     public void ensureVlanTrunkMembershipAppliesNativeVlanForOrdinaryNicOnFilteringReadyHost() throws InternalErrorException {
         Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(false);
         Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
