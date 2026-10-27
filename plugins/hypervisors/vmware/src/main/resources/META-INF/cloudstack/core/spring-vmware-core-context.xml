@@ -29,6 +29,8 @@
 
     <bean id="VmwareManager"
         class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl" />
+    <bean id="VmwareCbtMigrationService"
+        class="com.cloud.hypervisor.vmware.manager.VmwareCbtMigrationServiceImpl" />
     <bean id="vmwareContextFactory"
         class="com.cloud.hypervisor.vmware.resource.VmwareContextFactory" />
     <bean id="VmwareDatacenterZoneMapDaoImpl"

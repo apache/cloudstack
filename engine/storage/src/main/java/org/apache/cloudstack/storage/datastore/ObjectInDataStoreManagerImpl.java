@@ -222,7 +222,10 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     private SnapshotDataStoreVO findParent(DataStore dataStore, Long clusterId, SnapshotInfo snapshotInfo) {
         boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId);
         SnapshotDataStoreVO snapshotDataStoreVO;
-        if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && kvmIncrementalSnapshot) {
+        // content-based chains (Linstor) live purely on the image store; the cross-role checkpoint
+        // handling below (with its end-of-chain marking) must not be applied to their parents
+        if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && kvmIncrementalSnapshot
+                && !snapshotDataStoreDao.usesContentBasedChain(snapshotInfo.getVolumeId())) {
             snapshotDataStoreVO = snapshotDataStoreDao.findParent(null, null, null, snapshotInfo.getVolumeId(),
                     kvmIncrementalSnapshot, snapshotInfo.getHypervisorType());
             snapshotDataStoreVO = returnNullIfNotOnSameTypeOfStoreRole(snapshotInfo, snapshotDataStoreVO);

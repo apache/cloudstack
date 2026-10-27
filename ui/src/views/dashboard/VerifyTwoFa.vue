@@ -33,9 +33,11 @@
       @finish="handleSubmit"
       layout="vertical">
       <a-form-item name="code" ref="code" style="text-align: center;">
-        <a-input-password
+        <a-input
           style="width: 500px"
           v-model:value="form.code"
+          autocomplete="one-time-code"
+          inputmode="numeric"
           placeholder="xxxxxx" />
       </a-form-item>
       <br/>
@@ -83,7 +85,7 @@ export default {
       })
     },
     focusInput () {
-      const inputElement = this.$refs.code.$el.querySelector('input[type=password]')
+      const inputElement = this.$refs.code.$el.querySelector('input')
       if (inputElement) {
         inputElement.focus()
       }
@@ -109,12 +111,13 @@ export default {
             this.$emit('refresh-data')
           }
         }).catch(() => {
+          // Logout clears all notifications, so show the error once it is done
           this.$store.dispatch('Logout').then(() => {
-            this.$router.replace({ path: '/user/login' })
-          })
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.two.factor.authorization.failed')
+            this.$router.replace({ path: '/user/login' }).catch(() => {})
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.two.factor.authorization.failed')
+            })
           })
         })
       })

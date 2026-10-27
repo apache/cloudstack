@@ -174,7 +174,7 @@ public class Storage {
         LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
         CLVM(true, false, EncryptionSupport.Unsupported),
         CLVM_NG(true, false, EncryptionSupport.Hypervisor),
-        RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
+        RBD(true, true, EncryptionSupport.Hypervisor), // http://libvirt.org/storage.html#StorageBackendRBD ; encrypted natively by librbd (LUKS2, engine='librbd')
         SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
         VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage
         PreSetup(true, true, EncryptionSupport.Unsupported), // for XenServer, Storage Pool is set up by customers.
@@ -187,7 +187,8 @@ public class Storage {
         Linstor(true, true, EncryptionSupport.Storage),
         DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
         StorPool(true, true, EncryptionSupport.Hypervisor),
-        FiberChannel(true, true, EncryptionSupport.Unsupported); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        FiberChannel(true, true, EncryptionSupport.Unsupported), // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        NVMeTCP(true, true, EncryptionSupport.Unsupported); // NVMe over TCP (NVMe-oF/TCP) Pool for KVM hypervisors; volumes are identified by EUI-128 NGUID (/dev/disk/by-id/nvme-eui.<eui>)
 
         private final boolean shared;
         private final boolean overProvisioning;

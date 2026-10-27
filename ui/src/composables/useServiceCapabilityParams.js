@@ -41,16 +41,19 @@ export function buildServiceCapabilityParams (params, values, selectedServicePro
   }
   // SourceNat capabilities
   if (supportedServices.includes('SourceNat')) {
+    const isNetrisSourceNat = this.selectedServiceProviderMap.SourceNat === 'Netris'
     if (values.redundantroutercapability === true) {
       params[`serviceCapabilityList[${serviceCapabilityIndex}].service`] = 'SourceNat'
       params[`serviceCapabilityList[${serviceCapabilityIndex}].capabilitytype`] = 'RedundantRouter'
       params[`serviceCapabilityList[${serviceCapabilityIndex}].capabilityvalue`] = true
       serviceCapabilityIndex++
     }
-    params[`servicecapabilitylist[${serviceCapabilityIndex}].service`] = 'SourceNat'
-    params[`servicecapabilitylist[${serviceCapabilityIndex}].capabilitytype`] = 'SupportedSourceNatTypes'
-    params[`servicecapabilitylist[${serviceCapabilityIndex}].capabilityvalue`] = values.sourcenattype
-    serviceCapabilityIndex++
+    if (!isNetrisSourceNat) {
+      params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+      params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes'
+      params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.sourcenattype
+      serviceCapabilityIndex++
+    }
     delete params.redundantroutercapability
     delete params.sourcenattype
   } else if (values.redundantroutercapability === true) {
@@ -81,7 +84,7 @@ export function buildServiceCapabilityParams (params, values, selectedServicePro
     if ('vmautoscalingcapability' in values) {
       params[`servicecapabilitylist[${serviceCapabilityIndex}].service`] = 'lb'
       params[`servicecapabilitylist[${serviceCapabilityIndex}].capabilitytype`] = 'VmAutoScaling'
-      params[`servicecapabilitylist[${serviceCapabilityIndex}].capabilityvalue`] = values.vmautoscalingcapability
+      params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = this.selectedServiceProviderMap.Lb === 'Netris' ? true : values.vmautoscalingcapability
       serviceCapabilityIndex++
     }
     if (values.elasticlb === true) {
@@ -142,7 +145,11 @@ export function buildVpcServiceCapabilityParams (params, values, selectedService
     params[`serviceCapabilityList[${serviceCapabilityIndex}].capabilityvalue`] = true
     serviceCapabilityIndex++
   } else if (values.redundantrouter === true) {
-    params[`serviceCapabilityList[${serviceCapabilityIndex}].service`] = 'Gateway'
+    const forNetris = values.provider === 'Netris'
+    // For Netris NATTED (where SourceNat is auto-added server-side but not in the local map),
+    // use SourceNat. For all other cases (e.g. ROUTED VPC VR), use Gateway.
+    const redundantRouterService = (forNetris && values.networkmode !== 'ROUTED') ? 'SourceNat' : 'Gateway'
+    params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = redundantRouterService
     params[`serviceCapabilityList[${serviceCapabilityIndex}].capabilitytype`] = 'RedundantRouter'
     params[`serviceCapabilityList[${serviceCapabilityIndex}].capabilityvalue`] = true
     serviceCapabilityIndex++

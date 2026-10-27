@@ -82,6 +82,7 @@ public class ConsoleProxyGCThread extends Thread {
 
         while (true) {
             cleanupLogging();
+            ConsoleProxy.cleanupExpiredReconnectGrants();
             bReportLoad = false;
 
             if (logger.isDebugEnabled()) {

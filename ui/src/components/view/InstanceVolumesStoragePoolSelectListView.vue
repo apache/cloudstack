@@ -54,6 +54,7 @@
       <volume-storage-pool-select-form
         :resource="selectedVolumeForStoragePoolSelection"
         :clusterId="storagePoolsClusterId"
+        :hostId="hostId"
         :autoAssignAllowed="storagePoolsClusterId != null"
         :isOpen="!(!selectedVolumeForStoragePoolSelection.id)"
         @close-action="closeVolumeStoragePoolSelector()"
@@ -77,6 +78,11 @@ export default {
       required: true
     },
     clusterId: {
+      type: String,
+      required: false,
+      default: null
+    },
+    hostId: {
       type: String,
       required: false,
       default: null

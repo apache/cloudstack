@@ -27,11 +27,21 @@ public class RevertDiskOnlyVmSnapshotCommand extends Command {
 
     private List<SnapshotObjectTO> snapshotObjectTos;
     private String vmName;
+    private final String vmUuid;
+    private final boolean uefiEnabled;
+    private final String nvramSnapshotPath;
 
     public RevertDiskOnlyVmSnapshotCommand(List<SnapshotObjectTO> snapshotObjectTos, String vmName) {
+        this(snapshotObjectTos, vmName, null, false, null);
+    }
+
+    public RevertDiskOnlyVmSnapshotCommand(List<SnapshotObjectTO> snapshotObjectTos, String vmName, String vmUuid, boolean uefiEnabled, String nvramSnapshotPath) {
         super();
         this.snapshotObjectTos = snapshotObjectTos;
         this.vmName = vmName;
+        this.vmUuid = vmUuid;
+        this.uefiEnabled = uefiEnabled;
+        this.nvramSnapshotPath = nvramSnapshotPath;
     }
 
     public List<SnapshotObjectTO> getSnapshotObjectTos() {
@@ -40,6 +50,18 @@ public class RevertDiskOnlyVmSnapshotCommand extends Command {
 
     public String getVmName() {
         return vmName;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public boolean isUefiEnabled() {
+        return uefiEnabled;
+    }
+
+    public String getNvramSnapshotPath() {
+        return nvramSnapshotPath;
     }
 
     @Override
