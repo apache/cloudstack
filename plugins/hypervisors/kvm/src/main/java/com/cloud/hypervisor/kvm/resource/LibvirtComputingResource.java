@@ -6663,10 +6663,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
 
             remainingTimeout = checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath);
-            mergeResult = blockCommitListener.getResult(remainingTimeout);
         } finally {
             vm.removeBlockJobListener(blockCommitListener);
         }
+        mergeResult = blockCommitListener.getResult(remainingTimeout);
 
         if (mergeResult != null) {
             String commitError = String.format("Failed the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]. The job will be left running to avoid" +
