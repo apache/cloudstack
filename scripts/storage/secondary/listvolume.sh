@@ -53,11 +53,6 @@ for i in $(find /$rootdir -name volume.properties );
 do
   d=$(dirname $i)
   filename=$(grep "^filename" $i | awk -F"=" '{print $NF}')
-#  size=$(grep "virtualsize" $i | awk -F"=" '{print $NF}')
-#  if [ -n "$filename" ] && [ -n "$size" ]
-#  then
-#    d=$d/$filename/$size
-#  fi
   echo ${d#/}/$filename #remove leading slash
 done
 

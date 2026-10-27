@@ -49,7 +49,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.CLEANUP,
             type = CommandType.BOOLEAN,
-            description = "true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
+            description = "True if all domain resources (child domains, Accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
     @Inject
@@ -88,12 +88,12 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting domain: " + getId();
+        return "Deleting domain with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Domain Id: " + getId());
+        CallContext.current().setEventDetails("Domain ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

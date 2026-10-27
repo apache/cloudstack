@@ -33,6 +33,9 @@
     <bean id="ExternalGuestNetworkGuru" class="com.cloud.network.guru.ExternalGuestNetworkGuru">
         <property name="name" value="ExternalGuestNetworkGuru" />
     </bean>
+    <bean id="NetworkExtensionGuestNetworkGuru" class="com.cloud.network.guru.NetworkExtensionGuestNetworkGuru">
+        <property name="name" value="NetworkExtensionGuestNetworkGuru" />
+    </bean>
     <bean id="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru">
         <property name="name" value="PublicNetworkGuru" />
     </bean>

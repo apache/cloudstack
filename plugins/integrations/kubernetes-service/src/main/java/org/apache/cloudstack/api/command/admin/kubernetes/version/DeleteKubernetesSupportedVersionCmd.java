@@ -53,7 +53,7 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class,
-            description = "the ID of the Kubernetes supported version",
+            description = "The ID of the Kubernetes supported version",
             required = true)
     private Long id;
 

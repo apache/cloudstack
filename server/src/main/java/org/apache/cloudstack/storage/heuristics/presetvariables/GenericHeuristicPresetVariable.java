@@ -16,14 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-
-import java.util.HashSet;
-import java.util.Set;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GenericHeuristicPresetVariable {
-
-    protected transient Set<String> fieldNamesToIncludeInToString = new HashSet<>();
 
     private String name;
 
@@ -33,13 +29,10 @@ public class GenericHeuristicPresetVariable {
 
     public void setName(String name) {
         this.name = name;
-        fieldNamesToIncludeInToString.add("name");
     }
 
     @Override
     public String toString() {
-        return String.format("GenericHeuristicPresetVariable %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, fieldNamesToIncludeInToString.toArray(new String[0])));
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
     }
 }

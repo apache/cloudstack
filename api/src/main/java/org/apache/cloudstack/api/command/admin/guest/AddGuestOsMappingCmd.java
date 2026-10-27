@@ -133,7 +133,7 @@ public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "adding a new guest OS mapping Id: " + getEntityId();
+        return "Adding a new guest OS mapping Id: " + getEntityId();
     }
 
     @Override
@@ -148,6 +148,6 @@ public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCreateEventDescription() {
-        return "adding new guest OS mapping";
+        return "Adding new guest OS mapping";
     }
 }

@@ -189,7 +189,6 @@ public abstract class APITest {
      * @return login response string
      */
     protected void login(String username, String password) {
-        //String md5Psw = createMD5String(password);
         // send login request
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");

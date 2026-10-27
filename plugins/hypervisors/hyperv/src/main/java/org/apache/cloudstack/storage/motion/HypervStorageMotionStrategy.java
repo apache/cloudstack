@@ -155,6 +155,7 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
                     volumeVO.setPath(volumeTo.getPath());
                     volumeVO.setPodId(pool.getPodId());
                     volumeVO.setPoolId(pool.getId());
+                    volumeVO.setPoolType(pool.getPoolType());
                     volumeVO.setLastPoolId(oldPoolId);
                     // For SMB, pool credentials are also stored in the uri query string.  We trim the query string
                     // part  here to make sure the credentials do not get stored in the db unencrypted.

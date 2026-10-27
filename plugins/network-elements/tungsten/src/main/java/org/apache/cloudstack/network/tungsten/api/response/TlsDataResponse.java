@@ -29,7 +29,7 @@ public class TlsDataResponse extends BaseResponse {
     private String crt;
 
     @SerializedName("key")
-    @Param(description = "key")
+    @Param(description = "Key")
     private String key;
 
     @SerializedName("chain")

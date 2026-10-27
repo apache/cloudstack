@@ -342,7 +342,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
                     if (lbDevice.getParentHostId() == hostId) {
                         throw new CloudRuntimeException(
-                            "This load balancer device can not be deleted as there are one or more load balancers applainces provisioned by cloudstack on the device.");
+                            "This load balancer device can not be deleted as there are one or more load balancers appliances provisioned by cloudstack on the device.");
                     }
                 }
             }

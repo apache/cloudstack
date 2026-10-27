@@ -28,8 +28,8 @@ import streamer.debug.MockSource;
 import common.ScreenDescription;
 
 /**
- * @see http://msdn.microsoft.com/en-us/library/cc240669.aspx
- * @see http://msdn.microsoft.com/en-us/library/cc240484.aspx
+ * @see <a href="http://msdn.microsoft.com/en-us/library/cc240669.aspx">msdn cc240669</a>
+ * @see <a href="http://msdn.microsoft.com/en-us/library/cc240484.aspx">msdn cc240484</a>
  */
 public class ServerDemandActivePDU extends BaseElement {
 
@@ -83,7 +83,6 @@ public class ServerDemandActivePDU extends BaseElement {
 
         // (variable): A variable-length array of bytes containing a source
         // descriptor,
-        // ByteBuffer sourceDescriptor = buf.readBytes(lengthSourceDescriptor);
         buf.skipBytes(lengthSourceDescriptor);
 
         // (variable): An array of Capability Set (section 2.2.1.13.1.1.1)
@@ -216,7 +215,7 @@ public class ServerDemandActivePDU extends BaseElement {
     public static final int CAPSSETTYPE_FRAME_ACKNOWLEDGE = 0x001E;
 
     /**
-     * @see http://msdn.microsoft.com/en-us/library/cc240486.aspx
+     * @see <a href="http://msdn.microsoft.com/en-us/library/cc240486.aspx">msdn cc240486</a>
      */
     protected void handleCapabiltySets(ByteBuffer buf) {
         // (2 bytes): A 16-bit, unsigned integer. The number of capability sets
@@ -312,7 +311,7 @@ public class ServerDemandActivePDU extends BaseElement {
     }
 
     /**
-     * @see http://msdn.microsoft.com/en-us/library/cc240554.aspx
+     * @see <a href="http://msdn.microsoft.com/en-us/library/cc240554.aspx">msdn cc240554</a>
      */
     protected void handleBitmapCapabilities(ByteBuffer buf) {
 
@@ -388,9 +387,7 @@ public class ServerDemandActivePDU extends BaseElement {
      *
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
         System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         /* @formatter:off */
         byte[] packet = new byte[] {

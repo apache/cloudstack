@@ -23,35 +23,35 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 public class StoragePoolMetricsResponse extends StoragePoolResponse {
     @SerializedName("disksizeusedgb")
-    @Param(description = "disk size used in GiB")
+    @Param(description = "Disk size used in GiB")
     private String diskSizeUsedGB;
 
     @SerializedName("disksizetotalgb")
-    @Param(description = "disk size in GiB")
+    @Param(description = "Disk size in GiB")
     private String diskSizeTotalGB;
 
     @SerializedName("disksizeallocatedgb")
-    @Param(description = "disk size allocated in GiB")
+    @Param(description = "Disk size allocated in GiB")
     private String diskSizeAllocatedGB;
 
     @SerializedName("disksizeunallocatedgb")
-    @Param(description = "disk size unallocated in GiB")
+    @Param(description = "Disk size unallocated in GiB")
     private String diskSizeUnallocatedGB;
 
     @SerializedName("storageusagethreshold")
-    @Param(description = "storage usage notification threshold exceeded")
+    @Param(description = "Storage usage notification threshold exceeded")
     private Boolean storageUsedThreshold;
 
     @SerializedName("storageusagedisablethreshold")
-    @Param(description = "storage usage disable threshold exceeded")
+    @Param(description = "Storage usage disable threshold exceeded")
     private Boolean storageUsedDisableThreshold;
 
     @SerializedName("storageallocatedthreshold")
-    @Param(description = "storage allocated notification threshold exceeded")
+    @Param(description = "Storage allocated notification threshold exceeded")
     private Boolean storageAllocatedThreshold;
 
     @SerializedName("storageallocateddisablethreshold")
-    @Param(description = "storage allocated disable threshold exceeded")
+    @Param(description = "Storage allocated disable threshold exceeded")
     private Boolean storageAllocatedDisableThreshold;
 
     public void setDiskSizeUsedGB(final Long diskSizeUsed) {

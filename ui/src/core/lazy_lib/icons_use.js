@@ -19,6 +19,7 @@ import {
   AimOutlined,
   ApartmentOutlined,
   ApiOutlined,
+  AppstoreAddOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
   ArrowRightOutlined,
@@ -82,7 +83,9 @@ import {
   FieldTimeOutlined,
   FileDoneOutlined,
   FileProtectOutlined,
+  FileSyncOutlined,
   FileTextOutlined,
+  FileZipOutlined,
   FilterOutlined,
   FilterTwoTone,
   FireOutlined,
@@ -99,6 +102,7 @@ import {
   GlobalOutlined,
   GoldOutlined,
   GoogleOutlined,
+  GroupOutlined,
   HddOutlined,
   HomeOutlined,
   IdcardOutlined,
@@ -135,6 +139,7 @@ import {
   PictureOutlined,
   PieChartOutlined,
   PlayCircleOutlined,
+  PlaySquareOutlined,
   PlusCircleOutlined,
   PlusOutlined,
   PlusSquareOutlined,
@@ -177,6 +182,7 @@ import {
   UserSwitchOutlined,
   UploadOutlined,
   VerticalAlignBottomOutlined,
+  VerticalAlignMiddleOutlined,
   VerticalAlignTopOutlined,
   WarningOutlined,
   WifiOutlined,
@@ -189,6 +195,7 @@ export default {
     app.component('AimOutlined', AimOutlined)
     app.component('ApartmentOutlined', ApartmentOutlined)
     app.component('ApiOutlined', ApiOutlined)
+    app.component('AppstoreAddOutlined', AppstoreAddOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
     app.component('ArrowRightOutlined', ArrowRightOutlined)
@@ -252,7 +259,9 @@ export default {
     app.component('FieldTimeOutlined', FieldTimeOutlined)
     app.component('FileDoneOutlined', FileDoneOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
+    app.component('FileSyncOutlined', FileSyncOutlined)
     app.component('FileTextOutlined', FileTextOutlined)
+    app.component('FileZipOutlined', FileZipOutlined)
     app.component('FilterOutlined', FilterOutlined)
     app.component('FilterTwoTone', FilterTwoTone)
     app.component('FireOutlined', FireOutlined)
@@ -269,6 +278,7 @@ export default {
     app.component('GlobalOutlined', GlobalOutlined)
     app.component('GoldOutlined', GoldOutlined)
     app.component('GoogleOutlined', GoogleOutlined)
+    app.component('GroupOutlined', GroupOutlined)
     app.component('HddOutlined', HddOutlined)
     app.component('HomeOutlined', HomeOutlined)
     app.component('IdcardOutlined', IdcardOutlined)
@@ -305,6 +315,7 @@ export default {
     app.component('PictureOutlined', PictureOutlined)
     app.component('PieChartOutlined', PieChartOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
+    app.component('PlaySquareOutlined', PlaySquareOutlined)
     app.component('PlusCircleOutlined', PlusCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
     app.component('PlusSquareOutlined', PlusSquareOutlined)
@@ -347,6 +358,7 @@ export default {
     app.component('UserSwitchOutlined', UserSwitchOutlined)
     app.component('UploadOutlined', UploadOutlined)
     app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
+    app.component('VerticalAlignMiddleOutlined', VerticalAlignMiddleOutlined)
     app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)

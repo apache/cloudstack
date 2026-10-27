@@ -29,6 +29,5 @@ public class BackupOffering extends GenericPresetVariable {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
-        fieldNamesToIncludeInToString.add("externalId");
     }
 }

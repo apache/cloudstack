@@ -93,13 +93,14 @@ public class VeeamBackupProviderTest {
         backup.setExternalId("abc");
         backup.setType("Full");
         backup.setZoneId(3l);
+        backup.setBackupOfferingId(4l);
 
         Mockito.when(vmInstanceDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(vmInstanceVO);
         Mockito.doReturn(client).when(backupProvider).getClient(2l);
         Mockito.doReturn(true).when(client).deleteBackup("abc");
         List<Backup> backups = new ArrayList<>();
         backups.add(backup);
-        Mockito.when(backupDao.listByVmId(3l, 1l)).thenReturn(backups);
+        Mockito.when(backupDao.listByVmIdAndOffering(3l, 1l, 4l)).thenReturn(backups);
         Mockito.verify(backupDao, Mockito.never()).remove(Mockito.anyLong());
         boolean result = backupProvider.deleteBackup(backup, true);
         assertEquals(true, result);
@@ -115,6 +116,7 @@ public class VeeamBackupProviderTest {
         Mockito.when(backup.getVmId()).thenReturn(1l);
         Mockito.when(backup.getExternalId()).thenReturn("abc");
         Mockito.when(backup.getZoneId()).thenReturn(3l);
+        Mockito.when(backup.getBackupOfferingId()).thenReturn(4l);
 
         BackupVO backup2 = Mockito.mock(BackupVO.class);
         Mockito.when(backup2.getId()).thenReturn(2l);
@@ -122,10 +124,7 @@ public class VeeamBackupProviderTest {
         Mockito.when(vmInstanceDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(vmInstanceVO);
         Mockito.doReturn(client).when(backupProvider).getClient(2l);
         Mockito.doReturn(true).when(client).deleteBackup("abc");
-        List<Backup> backups = new ArrayList<>();
-        backups.add(backup);
-        backups.add(backup2);
-        Mockito.when(backupDao.listByVmId(3l, 1l)).thenReturn(backups);
+        Mockito.when(backupDao.listByVmIdAndOffering(3l, 1l, 4l)).thenReturn(List.of(backup, backup2));
         boolean result = backupProvider.deleteBackup(backup, true);
         Mockito.verify(backupDao, Mockito.times(1)).remove(2l);
         assertEquals(true, result);

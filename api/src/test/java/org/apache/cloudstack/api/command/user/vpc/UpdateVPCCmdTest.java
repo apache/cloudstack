@@ -93,7 +93,7 @@ public class UpdateVPCCmdTest extends TestCase {
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         cmd._responseGenerator = responseGenerator;
         Mockito.verify(_vpcService, Mockito.times(0)).updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString());
+                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyBoolean());
 
     }
 }

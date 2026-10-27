@@ -40,7 +40,7 @@
               v-if="taggedUsage[item]"
               class="list-item__collapse"
               @change="handleCollapseChange(item)">
-            <a-collapse-panel key="1" :header="collpaseActive[item] ? $t('label.tagged.limits') : $t('label.tagged.limits') + ' - ' + this.tagData[item].tagsasstring">
+            <a-collapse-panel key="1" :header="collapseActive[item] ? $t('label.tagged.limits') : $t('label.tagged.limits') + ' - ' + this.tagData[item].tagsasstring">
               <a-list
                 size="small"
                 :loading="loading"
@@ -91,12 +91,12 @@ export default {
   data () {
     return {
       usageList: [
-        'vm', 'cpu', 'memory', 'primarystorage', 'volume', 'ip', 'network',
-        'vpc', 'secondarystorage', 'snapshot', 'template', 'project'
+        'vm', 'cpu', 'memory', 'gpu', 'primarystorage', 'volume', 'ip', 'network',
+        'vpc', 'secondarystorage', 'snapshot', 'template', 'project', 'backup', 'backupstorage', 'bucket', 'objectstorage'
       ],
       taggedUsage: {},
       tagData: {},
-      collpaseActive: {}
+      collapseActive: {}
     }
   },
   created () {
@@ -115,6 +115,7 @@ export default {
         0: 'vm',
         8: 'cpu',
         9: 'memory',
+        16: 'gpu',
         2: 'volume',
         10: 'primarystorage'
       }
@@ -167,11 +168,11 @@ export default {
       }
     },
     handleCollapseChange (type) {
-      if (this.collpaseActive[type]) {
-        this.collpaseActive[type] = null
+      if (this.collapseActive[type]) {
+        this.collapseActive[type] = null
         return
       }
-      this.collpaseActive[type] = true
+      this.collapseActive[type] = true
     }
   }
 }

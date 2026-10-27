@@ -94,7 +94,7 @@ public class Upgrade41520to41600 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     private void generateUuidForExistingSshKeyPairs(Connection conn) {
-        logger.debug("Generating uuid for existing ssh key-pairs");
+        logger.debug("Generating UUID for existing SSH key-pairs");
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`ssh_keypairs` WHERE uuid is null");
             ResultSet rs = pstmt.executeQuery();
@@ -110,9 +110,9 @@ public class Upgrade41520to41600 extends DbUpgradeAbstractImpl implements DbUpgr
             if (!pstmt.isClosed())  {
                 pstmt.close();
             }
-            logger.debug("Successfully generated uuid for existing ssh key-pairs");
+            logger.debug("Successfully generated UUID for existing SSH key-pairs");
         } catch (SQLException e) {
-            String errMsg = "Exception while generating uuid for existing ssh key-pairs: " + e.getMessage();
+            String errMsg = "Exception while generating UUID for existing SSh key-pairs: " + e.getMessage();
             logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
@@ -125,7 +125,7 @@ public class Upgrade41520to41600 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     @SuppressWarnings("serial")
     public void updateSystemVmTemplates(final Connection conn) {
-        logger.debug("Updating System Vm template IDs");
+        logger.debug("Updating System VM Template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);

@@ -21,7 +21,7 @@
       <a-col :md="24" :lg="layout === 'horizontal' ? 10 : 24">
         <a-checkbox
           :checked="checked"
-          :disabled="forNsx"
+          :disabled="forExternalNetProvider"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
         </a-checkbox>
@@ -32,7 +32,7 @@
           :label="selectLabel">
           <a-select
             v-model:value="selected"
-            :disabled="forNsx"
+            :disabled="forExternalNetProvider"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -74,6 +74,10 @@ export default {
       type: Boolean,
       default: false
     },
+    defaultSelectValue: {
+      type: String,
+      default: null
+    },
     selectOptions: {
       type: Array,
       required: true
@@ -86,7 +90,7 @@ export default {
       type: Boolean,
       default: false
     },
-    forNsx: {
+    forExternalNetProvider: {
       type: Boolean,
       default: false
     }
@@ -100,6 +104,9 @@ export default {
   },
   created () {
     this.checked = this.defaultCheckBoxValue
+    if (this.defaultSelectValue) {
+      this.selectedOption = this.defaultSelectValue
+    }
   },
   watch: {
     selectOptions () {
@@ -123,7 +130,7 @@ export default {
       return this.option || this.selectedOption
     },
     option () {
-      if (this.forNsx) {
+      if (this.forExternalNetProvider) {
         return this.selectOptions[0]?.name || null
       }
       return null

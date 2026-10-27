@@ -39,11 +39,11 @@ class sysConfigAgentFactory:
             return sysConfigAgentUbuntu(glbEnv)
         elif distribution == "CentOS" or distribution == "RHEL5":
             return sysConfigEL5(glbEnv)
-        elif distribution == "Fedora" or distribution == "RHEL6":
+        elif distribution == "RHEL6":
             return sysConfigEL6(glbEnv)
         elif distribution == "RHEL7":
             return sysConfigEL7(glbEnv)
-        elif distribution in ["RHEL8", "RHEL9"]:
+        elif distribution in ["Fedora", "RHEL8", "RHEL9", "RHEL10"]:
             return sysConfigEL(glbEnv)
         elif distribution == "SUSE":
             return sysConfigSUSE(glbEnv)
@@ -183,9 +183,10 @@ class sysConfigEL5(sysConfigAgentRedhatBase):
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
+                         nfsConfig(self),
                          cloudAgentConfig(self)]
 
-#it covers RHEL6/Fedora13/Fedora14
+#it covers RHEL6
 class sysConfigEL6(sysConfigAgentRedhatBase):
     def __init__(self, glbEnv):
         super(sysConfigEL6, self).__init__(glbEnv)

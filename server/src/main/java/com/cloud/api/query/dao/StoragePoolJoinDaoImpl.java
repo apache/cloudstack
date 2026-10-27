@@ -17,10 +17,13 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -33,26 +36,29 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.commons.collections.MapUtils;
-
-import java.util.Map;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
@@ -103,6 +109,16 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
+    public StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
+        StoragePoolResponse poolResponse = new StoragePoolResponse();
+        poolResponse.setId(pool.getUuid());
+        poolResponse.setName(pool.getName());
+        poolResponse.setObjectName("storagepool");
+        return poolResponse;
+    }
+
+    @Override
     public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool, boolean customStats) {
         StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
@@ -141,6 +157,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 }
             }
         }
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setDiskSizeUsed(pool.getUsedBytes());
@@ -165,9 +182,16 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
-        poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            poolResponse.setOverProvisionFactor(String.valueOf(1));
+        } else {
+            poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        }
         poolResponse.setManaged(storagePool.isManaged());
+        Map<String, String> details = ApiDBUtils.getResourceDetails(pool.getId(), ResourceTag.ResourceObjectType.Storage);
+        poolResponse.setDetails(details);
 
         // set async job
         if (pool.getJobId() != null) {
@@ -185,10 +209,26 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if (response.getTags() != null && response.getTags().length() > 0) {
-                response.setTags(response.getTags() + "," + tag);
+            if (response.getTags() != null && !response.getTags().isEmpty()) {
+                List<String> tagsList = new ArrayList<>(Arrays.asList(response.getTags().split(",")));
+                if (!tagsList.contains(tag)) {
+                    tagsList.add(tag);
+                }
+                response.setTags(String.join(",", tagsList));
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && !response.getStorageAccessGroups().isEmpty()) {
+                List<String> groupList = new ArrayList<>(Arrays.asList(response.getStorageAccessGroups().split(",")));
+                if (!groupList.contains(storageAccessGroup)) {
+                    groupList.add(storageAccessGroup);
+                }
+                response.setStorageAccessGroups(String.join(",", groupList));
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         if (response.hasAnnotation() == null) {
@@ -224,6 +264,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
 
         long allocatedSize = pool.getUsedCapacity();
+        poolResponse.setCapacityBytes(pool.getCapacityBytes());
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
@@ -238,7 +279,11 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             }
         }
 
-        poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            poolResponse.setOverProvisionFactor(String.valueOf(1));
+        } else {
+            poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        }
 
         // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
@@ -251,6 +296,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
 
         // set async job
@@ -269,6 +315,14 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
+                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         return response;
@@ -356,7 +410,8 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         String injectableTag = injectableTagsBuilder.toString();
 
         for (StoragePoolJoinVO storagePoolJoinVO : storagePools) {
-            if (TagAsRuleHelper.interpretTagAsRule(storagePoolJoinVO.getTag(), injectableTag, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value())) {
+            if (GenericRuleHelper.interpretTagAsRule(storagePoolJoinVO.getTag(), injectableTag, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value(),
+                    VolumeApiServiceImpl.storageTagRuleExecutionTimeout.key())) {
                 StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolJoinVO.getId());
                 if (storagePoolVO != null) {
                     filteredPools.add(storagePoolVO);
@@ -368,4 +423,26 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return filteredPools;
     }
 
+    public List<StoragePoolJoinVO> listAvailableByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter) {
+        List<StoragePoolStatus> availableStatus = Arrays.asList(
+                StoragePoolStatus.Up, StoragePoolStatus.Disabled
+        );
+        SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisors", sb.entity().getHypervisor(), SearchCriteria.Op.IN);
+        sb.and("types", sb.entity().getPoolType(), SearchCriteria.Op.IN);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<StoragePoolJoinVO> sc = sb.create();
+        sc.setParameters("zoneId", zoneId);
+        List<Hypervisor.HypervisorType> hypervisors = new ArrayList<>();
+        hypervisors.add(Hypervisor.HypervisorType.Any);
+        hypervisors.add(hypervisorType);
+        sc.setParameters("hypervisors", hypervisors.toArray());
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.toArray());
+        }
+        sc.setParameters("status", availableStatus.toArray());
+        return listBy(sc, filter);
+    }
 }

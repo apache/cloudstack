@@ -60,31 +60,31 @@ public class StartRollingMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.POD_IDS, type = CommandType.LIST, collectionType = CommandType.UUID,
-            entityType = PodResponse.class, description = "the IDs of the pods to start maintenance on")
+            entityType = PodResponse.class, description = "The IDs of the pods to start maintenance on")
     private List<Long> podIds;
 
     @Parameter(name = ApiConstants.CLUSTER_IDS, type = CommandType.LIST, collectionType = CommandType.UUID,
-            entityType = ClusterResponse.class, description = "the IDs of the clusters to start maintenance on")
+            entityType = ClusterResponse.class, description = "The IDs of the clusters to start maintenance on")
     private List<Long> clusterIds;
 
     @Parameter(name = ApiConstants.ZONE_ID_LIST, type = CommandType.LIST, collectionType = CommandType.UUID,
-            entityType = ZoneResponse.class, description = "the IDs of the zones to start maintenance on")
+            entityType = ZoneResponse.class, description = "The IDs of the zones to start maintenance on")
     private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.HOST_IDS, type = CommandType.LIST, collectionType = CommandType.UUID,
-            entityType = HostResponse.class, description = "the IDs of the hosts to start maintenance on")
+            entityType = HostResponse.class, description = "The IDs of the hosts to start maintenance on")
     private List<Long> hostIds;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
-            description = "if rolling mechanism should continue in case of an error")
+            description = "If rolling mechanism should continue in case of an error")
     private Boolean forced;
 
     @Parameter(name = ApiConstants.PAYLOAD, type = CommandType.STRING,
-            description = "the command to execute while hosts are on maintenance")
+            description = "The command to execute while hosts are on maintenance")
     private String payload;
 
     @Parameter(name = ApiConstants.TIMEOUT, type = CommandType.INTEGER,
-            description = "optional operation timeout (in seconds) that overrides the global timeout setting")
+            description = "Optional operation timeout (in seconds) that overrides the global timeout setting")
     private Integer timeout;
 
     /////////////////////////////////////////////////////

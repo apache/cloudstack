@@ -39,7 +39,7 @@ import com.cloud.user.Account;
 public interface LoadBalancingRulesManager {
 
     LoadBalancer createPublicLoadBalancer(String xId, String name, String description, int srcPort, int destPort, long sourceIpId, String protocol, String algorithm,
-        boolean openFirewall, CallContext caller, String lbProtocol, Boolean forDisplay, String cidrList) throws NetworkRuleConflictException;
+        boolean openFirewall, CallContext caller, String lbProtocol, Boolean forDisplay, String cidrList, Long networkId) throws NetworkRuleConflictException;
 
     boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
 

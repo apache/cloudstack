@@ -101,7 +101,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -148,7 +148,7 @@ export default {
     fetchZones () {
       this.loading = true
       const params = { showicon: true }
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.zones = this.zones.filter(zone => zone.routedmodeenabled)
         this.form.zoneid = this.zones[0].id || ''
@@ -163,7 +163,7 @@ export default {
         zoneid: zoneId,
         listall: true
       }
-      api('listIpv4SubnetsForZone', params).then(json => {
+      getAPI('listIpv4SubnetsForZone', params).then(json => {
         this.parentSubnets = json.listipv4subnetsforzoneresponse.zoneipv4subnet || []
       }).finally(() => {
         this.loading = false
@@ -184,7 +184,7 @@ export default {
           params.cidrsize = values.cidrsize
         }
         this.loading = true
-        api('createIpv4SubnetForGuestNetwork', params).then(response => {
+        postAPI('createIpv4SubnetForGuestNetwork', params).then(response => {
           this.$pollJob({
             jobId: response.createipv4subnetforguestnetworkresponse.jobid,
             title: this.$t('message.success.add.ipv4.subnet.for.guest.network'),

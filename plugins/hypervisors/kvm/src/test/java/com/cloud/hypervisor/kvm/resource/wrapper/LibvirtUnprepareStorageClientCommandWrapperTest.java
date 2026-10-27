@@ -14,6 +14,10 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,10 +49,13 @@ public class LibvirtUnprepareStorageClientCommandWrapperTest {
         UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
         Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
         Mockito.when(cmd.getPoolUuid()).thenReturn(poolUuid);
+        Map<String, String> details = new HashMap<>();
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
+        Mockito.when(cmd.getDetails()).thenReturn(details);
 
         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
-        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid())).thenReturn(new Pair<>(true, ""));
+        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(new Pair<>(true, ""));
 
         UnprepareStorageClientAnswer result = (UnprepareStorageClientAnswer) libvirtUnprepareStorageClientCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
 
@@ -60,10 +67,13 @@ public class LibvirtUnprepareStorageClientCommandWrapperTest {
         UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
         Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
         Mockito.when(cmd.getPoolUuid()).thenReturn(poolUuid);
+        Map<String, String> details = new HashMap<>();
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
+        Mockito.when(cmd.getDetails()).thenReturn(details);
 
         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
-        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid())).thenReturn(new Pair<>(false, "Unprepare storage client failed"));
+        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(new Pair<>(false, "Unprepare storage client failed"));
 
         UnprepareStorageClientAnswer result = (UnprepareStorageClientAnswer) libvirtUnprepareStorageClientCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
 

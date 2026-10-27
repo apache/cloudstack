@@ -48,43 +48,43 @@ public class QuotaTariffResponse extends BaseResponse {
     private BigDecimal tariffValue;
 
     @SerializedName("effectiveDate")
-    @Param(description = "the start date of the quota tariff")
+    @Param(description = "The start date of the quota tariff")
     private Date effectiveOn = null;
 
     @SerializedName("usageTypeDescription")
-    @Param(description = "usage type description")
+    @Param(description = "Usage type description")
     private String usageTypeDescription;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     @SerializedName("endDate")
-    @Param(description = "the end date of the quota tariff")
+    @Param(description = "The end date of the quota tariff")
     private Date endDate;
 
     @SerializedName("activationRule")
-    @Param(description = "activation rule of the quota tariff")
+    @Param(description = "Activation rule of the quota tariff")
     private String activationRule;
 
     @SerializedName("name")
-    @Param(description = "name")
+    @Param(description = "Name")
     private String name;
 
     @SerializedName("description")
-    @Param(description = "description")
+    @Param(description = "Description")
     private String description;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the tariff")
+    @Param(description = "The ID of the tariff")
     private String id;
 
     @SerializedName("removed")
-    @Param(description = "when the quota tariff was removed")
+    @Param(description = "When the quota tariff was removed")
     private Date removed;
 
     @SerializedName("position")
-    @Param(description = "position in the execution sequence for tariffs of the same type")
+    @Param(description = "Position in the execution sequence for tariffs of the same type")
     private Integer position;
 
 

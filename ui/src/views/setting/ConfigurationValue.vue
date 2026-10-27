@@ -39,6 +39,7 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, false)"
           />
         </a-tooltip>
       </span>
@@ -52,6 +53,7 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, true)"
           />
         </a-tooltip>
       </span>
@@ -87,6 +89,7 @@
                 @keydown.esc="editableValueKey = null"
                 @pressEnter="updateConfigurationValue(configrecord)"
                 @change="value => setConfigurationEditable(configrecord, value)"
+                @keydown="e => handleInputNumberKeyDown(e, true)"
               />
             </a-tooltip>
           </a-col>
@@ -181,16 +184,52 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
-          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
+          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading || configrecord.value === configrecord.defaultvalue)" />
       </span>
     </a-list-item>
+    <a-modal
+      v-if="!suppressRelatedPrompt"
+      v-model:visible="relatedModalVisible"
+      :title="$t('label.related.settings')"
+      :footer="null"
+      :maskClosable="false"
+      :width="'60vw'"
+      @cancel="closeRelatedModal">
+      <p>{{ $t('message.related.settings.changed').replace('%x', relatedSourceConfigName) }}</p>
+      <a-alert
+        type="info"
+        showIcon
+        style="margin-bottom: 12px"
+        :message="$t('message.related.settings.may.not.be.exhaustive')" />
+      <a-table
+        size="small"
+        :showHeader="false"
+        :pagination="false"
+        :loading="relatedLoading"
+        :columns="relatedColumns"
+        :dataSource="relatedConfigs"
+        :rowKey="record => record.name">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'name'">
+            <b>{{ record.displaytext }}</b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
+          </template>
+          <template v-if="column.key === 'value'">
+            <ConfigurationValue
+              :configrecord="record"
+              :resource="resource"
+              :suppressRelatedPrompt="true"
+              @refresh="handleRelatedConfigRefresh" />
+          </template>
+        </template>
+      </a-table>
+    </a-modal>
   </a-list>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -214,20 +253,78 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    resource: {
+      type: Object,
+      required: false
+    },
+    suppressRelatedPrompt: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
       valueLoading: this.loading,
+      scopeKey: '',
       actualValue: null,
       editableValue: null,
-      editableValueKey: null
+      editableValueKey: null,
+      relatedModalVisible: false,
+      relatedLoading: false,
+      relatedConfigs: [],
+      relatedSourceConfigName: '',
+      relatedColumns: [
+        {
+          title: 'name',
+          dataIndex: 'name',
+          key: 'name'
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          key: 'value',
+          width: '35%'
+        }
+      ]
     }
   },
   created () {
+    switch (this.$route.meta.name) {
+      case 'account':
+        this.scopeKey = 'accountid'
+        break
+      case 'domain':
+        this.scopeKey = 'domainid'
+        break
+      case 'zone':
+        this.scopeKey = 'zoneid'
+        break
+      case 'cluster':
+        this.scopeKey = 'clusterid'
+        break
+      case 'storagepool':
+        this.scopeKey = 'storageid'
+        break
+      case 'imagestore':
+        this.scopeKey = 'imagestoreuuid'
+        break
+      default:
+        this.scopeKey = ''
+    }
     this.setConfigData()
   },
   watch: {
+    configrecord: {
+      handler (newRecord) {
+        this.setConfigData()
+        if (newRecord && newRecord.type === 'Boolean' && !this.suppressRelatedPrompt &&
+            this.$route.meta.name === 'globalsetting' && this.isConfigNowActive(newRecord)) {
+          this.fetchRelatedConfigurations(newRecord)
+        }
+      },
+      deep: true
+    }
   },
   methods: {
     setConfigData () {
@@ -237,6 +334,7 @@ export default {
       this.editableValueKey = null
     },
     updateConfigurationValue (configrecord) {
+      let configRecordEntry = this.configrecord
       this.valueLoading = true
       this.editableValueKey = null
       var newValue = this.editableValue
@@ -250,24 +348,25 @@ export default {
         newValue = newValue.join(' ')
       }
       const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
         value: newValue
       }
-      api('updateConfiguration', params).then(json => {
-        this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('updateConfiguration', params).then(json => {
+        // The updateConfiguration response can return a stale value for
+        // non-global scopes (server-side issue). Trust the value the user
+        // just submitted — the API returned success, so we know it was persisted.
+        const apiRecord = json.updateconfigurationresponse.configuration
+        configRecordEntry = { ...apiRecord, value: String(newValue) }
+        this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${configrecord.name}`, configrecord)
-        if (json.updateconfigurationresponse &&
-          json.updateconfigurationresponse.configuration &&
-          !json.updateconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(configRecordEntry)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)
@@ -278,16 +377,98 @@ export default {
         })
       }).finally(() => {
         this.valueLoading = false
-        this.$emit('refresh')
+        this.$emit('refresh', configrecord.name, configRecordEntry)
       })
     },
+    isConfigNowActive (configrecord) {
+      const name = configrecord.name || ''
+      if (name.endsWith('.disabled')) {
+        return configrecord.value === 'false'
+      }
+      return configrecord.value === 'true'
+    },
+    getRelatedConfigPrefix (configrecord) {
+      const name = configrecord.name || ''
+      const segments = name.split('.')
+      if (segments.length < 2) {
+        return null
+      }
+      let prefixSegments = segments.slice(0, -1)
+      if ((name.endsWith('.service.enabled') || name.endsWith('.service.disabled')) && prefixSegments.length > 1) {
+        prefixSegments = prefixSegments.slice(0, -1)
+      }
+      return prefixSegments.join('.')
+    },
+    fetchRelatedConfigurations (configrecord) {
+      const prefix = this.getRelatedConfigPrefix(configrecord)
+      const scopeParams = {
+        [this.scopeKey]: this.$route.params?.id,
+        pagesize: -1,
+        listAll: true
+      }
+      if (this.scopeKey === 'domainid' && !scopeParams[this.scopeKey]) {
+        scopeParams[this.scopeKey] = this.resource?.id
+      }
+      const requests = []
+      if (prefix) {
+        requests.push(
+          getAPI('listConfigurations', { ...scopeParams, keyword: prefix }).then(json => {
+            const list = json?.listconfigurationsresponse?.configuration || []
+            return list.filter(c => c.name.startsWith(prefix + '.'))
+          })
+        )
+      }
+      requests.push(
+        getAPI('listConfigurations', { ...scopeParams, parent: configrecord.name }).then(json => {
+          return json?.listconfigurationsresponse?.configuration || []
+        })
+      )
+      this.relatedLoading = true
+      Promise.all(requests).then(results => {
+        const merged = new Map()
+        results.flat().forEach(c => {
+          if (c.name !== configrecord.name) {
+            merged.set(c.name, c)
+          }
+        })
+        this.relatedConfigs = Array.from(merged.values())
+        if (this.relatedConfigs.length > 0) {
+          this.relatedSourceConfigName = configrecord.name
+          this.relatedModalVisible = true
+        }
+      }).catch(error => {
+        console.error(error)
+      }).finally(() => {
+        this.relatedLoading = false
+      })
+    },
+    handleRelatedConfigRefresh (name, updatedRecord) {
+      if (!name || !updatedRecord) return
+      const index = this.relatedConfigs.findIndex(item => item.name === name)
+      if (index !== -1) {
+        this.relatedConfigs.splice(index, 1, updatedRecord)
+      }
+      this.$emit('refresh', name, updatedRecord)
+    },
+    closeRelatedModal () {
+      this.relatedModalVisible = false
+      this.relatedConfigs = []
+      this.relatedSourceConfigName = ''
+    },
     resetConfigurationValue (configrecord) {
+      let configRecordEntry = this.configrecord
       this.valueLoading = true
       this.editableValueKey = null
-      api('resetConfiguration', {
+      const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
-      }).then(json => {
-        this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
+      }
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('resetConfiguration', params).then(json => {
+        configRecordEntry = json.resetconfigurationresponse.configuration
+        this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         var newValue = this.editableValue
         if (configrecord.type === 'Range') {
@@ -296,15 +477,7 @@ export default {
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`, configrecord)
-        if (json.resetconfigurationresponse &&
-          json.resetconfigurationresponse.configuration &&
-          !json.resetconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.resetconfigurationresponse?.configuration || null)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)
@@ -315,7 +488,7 @@ export default {
         })
       }).finally(() => {
         this.valueLoading = false
-        this.$emit('refresh')
+        this.$emit('refresh', configrecord.name, configRecordEntry)
       })
     },
     getEditableValue (configrecord) {
@@ -364,6 +537,26 @@ export default {
         this.editableValueKey = 'edit'
       } else {
         this.editableValueKey = null
+      }
+    },
+    handleInputNumberKeyDown (event, isDecimal) {
+      const allowedCodes = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Minus']
+
+      if (isDecimal) {
+        allowedCodes.push('Period')
+      }
+
+      if (
+        event.getModifierState('Control') ||
+        event.getModifierState('Meta') ||
+        event.getModifierState('Alt')
+      ) {
+        return
+      }
+
+      const isValid = allowedCodes.includes(event.code) || !isNaN(event.key)
+      if (!isValid) {
+        event.preventDefault()
       }
     }
   }

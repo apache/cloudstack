@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <img :src="getImg()" :height="getDimensions()" :width="getDimensions()" :style="{ marginTop: (getDimensions() === 56 || ['deployVirtualMachine'].includes($route.path.split('/')[2])) ? '' : '-5px' }"/>
+  <img :src="computedImage" :height="dimensions" :width="dimensions" :style="{ marginTop: (dimensions === 56 || ['deployVirtualMachine'].includes($route.path.split('/')[2])) ? '' : '-5px' }"/>
 </template>
 <script>
 export default {
@@ -34,15 +34,17 @@ export default {
   data () {
     return {}
   },
-  methods: {
-    getImg () {
+  computed: {
+    computedImage () {
+      if (!this.image) {
+        return null
+      }
       if (this.image.startsWith('data:image/png')) {
         return this.image
-      } else {
-        return 'data:image/png;charset=utf-8;base64, ' + this.image
       }
+      return 'data:image/png;charset=utf-8;base64, ' + this.image
     },
-    getDimensions () {
+    dimensions () {
       const num = Number(this.size)
       if (Number.isInteger(num) && num > 0) {
         return num
@@ -54,6 +56,8 @@ export default {
           return 24
         case '1x':
           return 16
+        case 'os':
+          return 28
         default:
           return 16
       }

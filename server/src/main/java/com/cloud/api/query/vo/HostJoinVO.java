@@ -173,6 +173,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name = "guest_os_category_name")
     private String osCategoryName;
 
+    @Column(name = "guest_os_rule")
+    private String guestOsRule;
+
     @Column(name = "tag")
     private String tag;
 
@@ -184,6 +187,18 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name = "is_tag_a_rule")
     private Boolean isTagARule;
+
+    @Column(name = "storage_access_groups")
+    private String storageAccessGroups;
+
+    @Column(name = "cluster_storage_access_groups")
+    private String clusterStorageAccessGroups;
+
+    @Column(name = "pod_storage_access_groups")
+    private String podStorageAccessGroups;
+
+    @Column(name = "zone_storage_access_groups")
+    private String zoneStorageAccessGroups;
 
     @Column(name = "memory_used_capacity")
     private long memUsedCapacity;
@@ -361,6 +376,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
         return osCategoryName;
     }
 
+    public String getGuestOsRule() {
+        return guestOsRule;
+    }
+
     public Long getJobId() {
         return jobId;
     }
@@ -415,6 +434,22 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public Boolean getIsTagARule() {
         return isTagARule;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public String getClusterStorageAccessGroups() {
+        return clusterStorageAccessGroups;
+    }
+
+    public String getPodStorageAccessGroups() {
+        return podStorageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
     }
 
     public String getAnnotation() {

@@ -37,6 +37,12 @@ public abstract class DownloadInactiveState extends DownloadState {
     }
 
     @Override
+    public String handleLimitReached() {
+        // ignore and stay put
+        return getName();
+    }
+
+    @Override
     public String handleDisconnect() {
         //ignore and stay put
         return getName();

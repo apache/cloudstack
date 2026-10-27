@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import store from '@/store'
 import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
@@ -84,7 +84,7 @@ export default {
       if (!['Admin'].includes(this.$store.getters.userInfo.roletype)) {
         return
       }
-      api('listZones').then(json => {
+      getAPI('listZones').then(json => {
         this.showOnboarding = json.listzonesresponse.count ? json.listzonesresponse.count === 0 : true
       })
     }

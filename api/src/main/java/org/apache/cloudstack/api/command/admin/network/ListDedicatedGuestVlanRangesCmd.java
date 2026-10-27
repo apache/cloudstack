@@ -44,33 +44,33 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "list dedicated guest vlan ranges by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "List dedicated guest VLAN ranges by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "the account with which the guest VLAN range is associated. Must be used with the domainId parameter.")
+               description = "The account with which the guest VLAN range is associated. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the guest VLAN range")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project who will own the guest VLAN range")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the domain ID with which the guest VLAN range is associated.  If used with the account parameter, returns all guest VLAN ranges for that account in the specified domain.")
+               description = "The domain ID with which the guest VLAN range is associated.  If used with the account parameter, returns all guest VLAN ranges for that account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.GUEST_VLAN_RANGE, type = CommandType.STRING, description = "the dedicated guest vlan range")
+    @Parameter(name = ApiConstants.GUEST_VLAN_RANGE, type = CommandType.STRING, description = "The dedicated guest vlan range")
     private String guestVlanRange;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "physical network id of the guest VLAN range")
+               description = "Physical network ID of the guest VLAN range")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "zone of the guest VLAN range")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "Zone of the guest VLAN range")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

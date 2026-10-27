@@ -30,6 +30,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -79,6 +80,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     PhysicalNetworkDao physicalNetworkDao;
     @Mock
     protected NsxProviderDao nsxProviderDao;
+    @Mock
+    protected NetrisProviderDao netrisProviderDao;
 
     protected RouterDeploymentDefinition deployment;
 
@@ -155,7 +158,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         // Assert
         verify(mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
         assertNotNull(LOCK_NOT_CORRECTLY_GOT, deployment.tableLockId);
-        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, NW_ID_1, deployment.tableLockId.longValue());
+        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, deployment.tableLockId);
     }
 
     @Test(expected = ConcurrentOperationException.class)

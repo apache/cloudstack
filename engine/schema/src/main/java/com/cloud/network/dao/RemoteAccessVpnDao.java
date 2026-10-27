@@ -33,4 +33,6 @@ public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> 
     List<RemoteAccessVpnVO> findByAccount(Long accountId);
 
     List<RemoteAccessVpnVO> listByNetworkId(Long networkId);
+
+    List<RemoteAccessVpnVO> listByVpcId(Long vpcId);
 }

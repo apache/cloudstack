@@ -17,9 +17,23 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.Connection;
 
 public interface DbUpgradeSystemVmTemplate {
 
-    void updateSystemVmTemplates(Connection conn);
+    default void updateSystemVmTemplates(Connection conn) {
+        Logger logger = LogManager.getLogger(getClass());
+        logger.debug("Updating System Vm template IDs");
+        try {
+            SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
+            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+        }
+    }
 }

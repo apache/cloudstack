@@ -78,9 +78,6 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "sort_key")
     int sortKey;
 
-    @Column(name = "for_nsx")
-    boolean forNsx = false;
-
     @Column(name = "network_mode")
     NetworkOffering.NetworkMode networkMode;
 
@@ -114,6 +111,9 @@ public class VpcOfferingJoinVO implements VpcOffering {
 
     @Column(name = "specify_as_number")
     private Boolean specifyAsNumber = false;
+
+    @Column(name = "conserve_mode")
+    private boolean conserveMode;
 
     public VpcOfferingJoinVO() {
     }
@@ -153,11 +153,6 @@ public class VpcOfferingJoinVO implements VpcOffering {
     }
 
     @Override
-    public boolean isForNsx() {
-        return forNsx;
-    }
-
-    @Override
     public NetworkOffering.NetworkMode getNetworkMode() {
         return networkMode;
     }
@@ -184,6 +179,11 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public Boolean isSpecifyAsNumber() {
         return specifyAsNumber;
+    }
+
+    @Override
+    public boolean isConserveMode() {
+        return conserveMode;
     }
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {

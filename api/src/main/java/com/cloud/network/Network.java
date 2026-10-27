@@ -116,6 +116,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet,
                 Capability.NoVlan, Capability.PublicAccess);
+        public static final Service CustomAction = new Service("CustomAction");
 
         private final String name;
         private final Capability[] caps;
@@ -206,6 +207,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider Tungsten = new Provider("Tungsten", false);
 
         public static final Provider Nsx = new Provider("Nsx", false);
+        public static final Provider Netris = new Provider("Netris", false);
+        public static final Provider NetworkExtension = new Provider("NetworkExtension", false, true);
 
         private final String name;
         private final boolean isExternal;
@@ -249,10 +252,46 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             return null;
         }
 
+        /** Private constructor for transient (non-registered) providers. */
+        private Provider(String name) {
+            this.name = name;
+            this.isExternal = false;
+            this.needCleanupOnShutdown = true;
+            // intentionally NOT added to supportedProviders
+        }
+
+        /**
+         * Creates a transient (non-registered) {@link Provider} with the given name.
+         *
+         * <p>The new instance is <em>not</em> added to {@code supportedProviders}, so it
+         * will never be returned by {@link #getProvider(String)} and will not pollute the
+         * global provider registry.  Use this for dynamic / extension-backed providers
+         * whose names are only known at runtime (e.g. NetworkOrchestrator extensions).</p>
+         *
+         * @param name the provider name (typically the extension name)
+         * @return a transient {@link Provider} instance with the given name
+         */
+        public static Provider createTransientProvider(String name) {
+            return new Provider(name);
+        }
+
         @Override public String toString() {
             return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                     .append("name", name)
                     .toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof Provider)) return false;
+            Provider provider = (Provider) obj;
+            return this.name.equals(provider.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
         }
     }
 
@@ -324,9 +363,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public enum State {
 
-        Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
-                "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
-                "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
+        Allocated("Indicates the Network configuration is in allocated but not setup"), Setup("Indicates the Network configuration is setup"), Implementing(
+                "Indicates the Network configuration is being implemented"), Implemented("Indicates the Network configuration is in use"), Shutdown(
+                "Indicates the Network configuration is being destroyed"), Destroy("Indicates that the Network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 
@@ -509,4 +548,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Integer getPrivateMtu();
 
     Integer getNetworkCidrSize();
+
+    boolean getKeepMacAddressOnPublicNic();
 }

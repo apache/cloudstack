@@ -178,7 +178,8 @@ public class VolumeServiceTest extends TestCase{
 
     @Test
     public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationReturnTrueOrFalse() throws ExecutionException, InterruptedException{
-        VolumeObject volumeObject = new VolumeObject();
+        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+        Mockito.doReturn(new VolumeVO() {}).when(volumeObject).getVolume();
         volumeObject.configure(null, new VolumeVO() {});
 
         Mockito.doNothing().when(snapshotManagerMock).copySnapshotPoliciesBetweenVolumes(Mockito.any(), Mockito.any());
@@ -196,8 +197,8 @@ public class VolumeServiceTest extends TestCase{
     @Test (expected = Exception.class)
     public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationThrowAnyOtherException() throws
       ExecutionException, InterruptedException{
-        VolumeObject volumeObject = new VolumeObject();
-        volumeObject.configure(null, new VolumeVO() {});
+        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+        Mockito.doReturn(new VolumeVO() {}).when(volumeObject).getVolume();
 
         volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
           volumeObject, true);
@@ -205,8 +206,8 @@ public class VolumeServiceTest extends TestCase{
 
     @Test
     public void validateDestroySourceVolumeAfterMigrationReturnTrue() throws ExecutionException, InterruptedException{
-        VolumeObject volumeObject = new VolumeObject();
-        volumeObject.configure(null, new VolumeVO() {});
+        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+        Mockito.doReturn(new VolumeVO() {}).when(volumeObject).getVolume();
 
         Mockito.doReturn(true).when(volumeDaoMock).updateUuid(Mockito.anyLong(), Mockito.anyLong());
         Mockito.doNothing().when(volumeServiceImplSpy).destroyVolume(Mockito.anyLong());
@@ -221,10 +222,11 @@ public class VolumeServiceTest extends TestCase{
     @Test
     public void validateDestroySourceVolumeAfterMigrationExpungeSourceVolumeAfterMigrationThrowExceptionReturnFalse() throws
       ExecutionException, InterruptedException{
-        VolumeObject volumeObject = new VolumeObject();
         VolumeVO vo = new VolumeVO() {};
         vo.setPoolType(Storage.StoragePoolType.Filesystem);
-        volumeObject.configure(null, vo);
+
+        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+        Mockito.doReturn(vo).when(volumeObject).getVolume();
         vo.setPoolId(1L);
 
         List<Exception> exceptions = new ArrayList<>(Arrays.asList(new InterruptedException(), new ExecutionException() {}));

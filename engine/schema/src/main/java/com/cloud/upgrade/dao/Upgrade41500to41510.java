@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +73,7 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     @SuppressWarnings("serial")
     public void updateSystemVmTemplates(final Connection conn) {
-        logger.debug("Updating System Vm template IDs");
+        logger.debug("Updating System VM Template IDs");
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
@@ -98,49 +97,41 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);
         }
 
-        final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(KVM, "systemvm-kvm-4.15.1");
-                put(VMware, "systemvm-vmware-4.15.1");
-                put(XenServer, "systemvm-xenserver-4.15.1");
-                put(Hyperv, "systemvm-hyperv-4.15.1");
-                put(LXC, "systemvm-lxc-4.15.1");
-                put(Ovm3, "systemvm-ovm3-4.15.1");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = Map.of(
+            KVM, "systemvm-kvm-4.15.1",
+            VMware, "systemvm-vmware-4.15.1",
+            XenServer, "systemvm-xenserver-4.15.1",
+            Hyperv, "systemvm-hyperv-4.15.1",
+            LXC, "systemvm-lxc-4.15.1",
+            Ovm3, "systemvm-ovm3-4.15.1"
+        );
 
-        final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(KVM, "router.template.kvm");
-                put(VMware, "router.template.vmware");
-                put(XenServer, "router.template.xenserver");
-                put(Hyperv, "router.template.hyperv");
-                put(LXC, "router.template.lxc");
-                put(Ovm3, "router.template.ovm3");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = Map.of(
+            KVM, "router.template.kvm",
+            VMware, "router.template.vmware",
+            XenServer, "router.template.xenserver",
+            Hyperv, "router.template.hyperv",
+            LXC, "router.template.lxc",
+            Ovm3, "router.template.ovm3"
+        );
 
-        final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(KVM, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
-                put(VMware, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-vmware.ova");
-                put(XenServer, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-xen.vhd.bz2");
-                put(Hyperv, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-hyperv.vhd.zip");
-                put(LXC, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
-                put(Ovm3, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-ovm.raw.bz2");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> newTemplateUrl = Map.of(
+            KVM, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2",
+            VMware, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-vmware.ova",
+            XenServer, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-xen.vhd.bz2",
+            Hyperv, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-hyperv.vhd.zip",
+            LXC, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2",
+            Ovm3, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-ovm.raw.bz2"
+        );
 
-        final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
-            {
-                put(KVM, "0e9f9a7d0957c3e0a2088e41b2da2cec");
-                put(XenServer, "86373992740b1eca8aff8b08ebf3aea5");
-                put(VMware, "4006982765846d373eb3719b2fe4d720");
-                put(Hyperv, "0b9514e4b6cba1f636fea2125f0f7a5f");
-                put(LXC, "0e9f9a7d0957c3e0a2088e41b2da2cec");
-                put(Ovm3, "ae3977e696b3e6c81bdcbb792d514d29");
-            }
-        };
+        final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = Map.of(
+            KVM, "0e9f9a7d0957c3e0a2088e41b2da2cec",
+            XenServer, "86373992740b1eca8aff8b08ebf3aea5",
+            VMware, "4006982765846d373eb3719b2fe4d720",
+            Hyperv, "0b9514e4b6cba1f636fea2125f0f7a5f",
+            LXC, "0e9f9a7d0957c3e0a2088e41b2da2cec",
+            Ovm3, "ae3977e696b3e6c81bdcbb792d514d29"
+        );
 
         for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
             logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
@@ -153,8 +144,8 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                         templateId = rs.getLong(1);
                     }
                 } catch (final SQLException e) {
-                    logger.error("updateSystemVmTemplates: Exception caught while getting ids of templates: " + e.getMessage());
-                    throw new CloudRuntimeException("updateSystemVmTemplates: Exception caught while getting ids of templates", e);
+                    logger.error("updateSystemVmTemplates: Exception caught while getting IDs of Templates: " + e.getMessage());
+                    throw new CloudRuntimeException("updateSystemVmTemplates: Exception caught while getting IDs of Templates", e);
                 }
 
                 // change template type to SYSTEM
@@ -163,8 +154,8 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                         templ_type_pstmt.setLong(1, templateId);
                         templ_type_pstmt.executeUpdate();
                     } catch (final SQLException e) {
-                        logger.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
+                        logger.error("updateSystemVmTemplates:Exception while updating Template with ID: " + templateId + " to be marked as 'system': " + e.getMessage());
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating Template with ID: " + templateId + " to be marked as 'system'", e);
                     }
                     // update template ID of system Vms
                     try (PreparedStatement update_templ_id_pstmt = conn
@@ -173,9 +164,9 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                         update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
                         update_templ_id_pstmt.executeUpdate();
                     } catch (final Exception e) {
-                        logger.error("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
+                        logger.error("updateSystemVmTemplates:Exception while setting Template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
                                 + ": " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to "
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting Template for " + hypervisorAndTemplateName.getKey().toString() + " to "
                                 + templateId, e);
                     }
 
@@ -225,8 +216,8 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
                     }
                 }
             } catch (final SQLException e) {
-                logger.error("updateSystemVmTemplates:Exception while getting ids of templates: " + e.getMessage());
-                throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of templates", e);
+                logger.error("updateSystemVmTemplates:Exception while getting IDs of Templates: " + e.getMessage());
+                throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting IDs of Templates", e);
             }
         }
         logger.debug("Updating System Vm Template IDs Complete");

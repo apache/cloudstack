@@ -95,7 +95,7 @@ public class VhdProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file);
             return size;
         } catch (Exception e) {
-            logger.info("[ignored]" + "failed to get template virtual size for VHD: " + e.getLocalizedMessage());
+            logger.info("[ignored]" + "failed to get Template virtual size for VHD: " + e.getLocalizedMessage());
         }
         return file.length();
     }

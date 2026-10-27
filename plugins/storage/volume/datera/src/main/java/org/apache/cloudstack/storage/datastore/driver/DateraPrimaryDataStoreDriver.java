@@ -563,7 +563,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private long getUsedBytes(StoragePool storagePool, long volumeIdToIgnore) {
         long usedSpaceBytes = 0;
 
-        List<VolumeVO> lstVolumes = _volumeDao.findByPoolId(storagePool.getId(), null);
+        List<VolumeVO> lstVolumes = _volumeDao.findNonDestroyedVolumesByPoolId(storagePool.getId(), null);
 
         if (lstVolumes != null) {
             for (VolumeVO volume : lstVolumes) {

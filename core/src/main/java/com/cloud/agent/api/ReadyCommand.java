@@ -26,19 +26,20 @@ import java.util.List;
 public class ReadyCommand extends Command {
     private String _details;
 
-    public ReadyCommand() {
-        super();
-    }
-
     private Long dcId;
     private Long hostId;
     private String hostUuid;
     private String hostName;
     private List<String> msHostList;
+    private List<String> avoidMsHostList;
     private String lbAlgorithm;
     private Long lbCheckInterval;
     private Boolean enableHumanReadableSizes;
     private String arch;
+
+    public ReadyCommand() {
+        super();
+    }
 
     public ReadyCommand(Long dcId) {
         super();
@@ -88,6 +89,14 @@ public class ReadyCommand extends Command {
 
     public void setMsHostList(List<String> msHostList) {
         this.msHostList = msHostList;
+    }
+
+    public List<String> getAvoidMsHostList() {
+        return avoidMsHostList;
+    }
+
+    public void setAvoidMsHostList(List<String> avoidMsHostList) {
+        this.avoidMsHostList = avoidMsHostList;
     }
 
     public String getLbAlgorithm() {

@@ -75,13 +75,17 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
             try {
                 clazz = Class.forName(name);
             } catch (ClassNotFoundException e) {
-                throw new CloudRuntimeException("can't find " + name);
+                throw new JsonParseException("can't find " + name);
             }
             T cmd = (T)_gson.fromJson(entry.getValue(), clazz);
             cmds.add(cmd);
         }
-        Class<?> type = ((Class<?>)typeOfT).getComponentType();
-        T[] ts = (T[])Array.newInstance(type, cmds.size());
-        return cmds.toArray(ts);
+        try {
+            Class<?> type =  Class.forName(typeOfT.getTypeName().replace("[]", ""));
+            T[] ts = (T[])Array.newInstance(type, cmds.size());
+            return cmds.toArray(ts);
+        } catch (ClassNotFoundException e) {
+            throw new CloudRuntimeException("can't find " + typeOfT.getTypeName());
+        }
     }
 }

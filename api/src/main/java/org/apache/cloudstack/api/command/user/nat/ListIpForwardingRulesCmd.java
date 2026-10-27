@@ -46,7 +46,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "list the rule belonging to this public IP address")
+               description = "List the rule belonging to this public IP address")
     private Long publicIpAddressId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "Lists rule with the specified ID.")
@@ -55,7 +55,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "Lists all rules applied to the specified VM.")
+               description = "Lists all rules applied to the specified Instance.")
     private Long vmId;
 
     /////////////////////////////////////////////////////

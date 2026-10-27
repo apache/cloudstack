@@ -297,8 +297,6 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         String stoppedValue = configs.get("vm.resource.release.interval");
-        // String destroyedValue =
-        // configs.get("capacity.skipcounting.destroyed.hours");
         String destroyedValue = null;
         _secondsToSkipStoppedVMs = NumbersUtil.parseInt(stoppedValue, 86400);
         _secondsToSkipDestroyedVMs = NumbersUtil.parseInt(destroyedValue, 0);

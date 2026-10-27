@@ -48,6 +48,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> NotRevokedSearch;
     protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
     protected SearchBuilder<FirewallRuleVO> VmSearch;
+    protected SearchBuilder<FirewallRuleVO> FirewallByPortsAndNetwork;
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
     protected final SearchBuilder<FirewallRuleVO> RoutingFirewallRulesSearch;
@@ -73,6 +74,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.and("domain", AllFieldsSearch.entity().getDomainId(), Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.done();
@@ -93,6 +95,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         ReleaseSearch.and("ipId", ReleaseSearch.entity().getSourceIpAddressId(), Op.EQ);
         ReleaseSearch.and("purpose", ReleaseSearch.entity().getPurpose(), Op.EQ);
         ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
+        ReleaseSearch.and("removed", ReleaseSearch.entity().getRemoved(), Op.NULL);
         ReleaseSearch.done();
 
         SystemRuleSearch = createSearchBuilder();
@@ -105,6 +108,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         RulesByIpCount.and("ipAddressId", RulesByIpCount.entity().getSourceIpAddressId(), Op.EQ);
         RulesByIpCount.and("state", RulesByIpCount.entity().getState(), Op.EQ);
         RulesByIpCount.done();
+
+        FirewallByPortsAndNetwork = createSearchBuilder();
+        FirewallByPortsAndNetwork.and("networkId", FirewallByPortsAndNetwork.entity().getNetworkId(), Op.EQ);
+        FirewallByPortsAndNetwork.and("sourcePortStart", FirewallByPortsAndNetwork.entity().getSourcePortStart(), Op.EQ);
+        FirewallByPortsAndNetwork.and("sourcePortEnd", FirewallByPortsAndNetwork.entity().getSourcePortEnd(), Op.EQ);
+        FirewallByPortsAndNetwork.done();
 
         RoutingFirewallRulesSearch = createSearchBuilder();
         RoutingFirewallRulesSearch.and("networkId", RoutingFirewallRulesSearch.entity().getNetworkId(), Op.EQ);
@@ -263,8 +272,25 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     @Override
-    public List<FirewallRuleVO> listByIpPurposeAndProtocolAndNotRevoked(long ipAddressId, Integer startPort, Integer endPort, String protocol,
-        FirewallRule.Purpose purpose) {
+    public List<FirewallRuleVO> listByIpPurposeProtocolAndNotRevoked(long ipAddressId, Purpose purpose, String protocol) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("ipId", ipAddressId);
+        sc.setParameters("state", State.Revoke);
+
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+
+        if (protocol != null) {
+            sc.setParameters("protocol", protocol);
+        }
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<FirewallRuleVO> listByIpPurposePortsProtocolAndNotRevoked(long ipAddressId, Integer startPort, Integer endPort, String protocol,
+                                                                          FirewallRule.Purpose purpose) {
         SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
         sc.setParameters("ipId", ipAddressId);
         sc.setParameters("state", State.Revoke);
@@ -332,6 +358,22 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     @Override
+    public List<FirewallRuleVO> listByVpcPurposeTrafficType(long vpcId, Purpose purpose, TrafficType trafficType) {
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+
+        if (trafficType != null) {
+            sc.setParameters("trafficType", trafficType);
+        }
+
+        return listBy(sc);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -389,6 +431,16 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     public void loadDestinationCidrs(FirewallRuleVO rule){
         List<String> destCidrs = _firewallRulesDcidrsDao.getDestCidrs(rule.getId());
         rule.setDestinationCidrsList(destCidrs);
+    }
+
+    @Override
+    public FirewallRuleVO findByNetworkIdAndPorts(long networkId, int startPort, int endPort) {
+        SearchCriteria<FirewallRuleVO> sc = FirewallByPortsAndNetwork.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("sourcePortStart", startPort);
+        sc.setParameters("sourcePortEnd", endPort);
+
+        return findOneBy(sc);
     }
 
     @Override

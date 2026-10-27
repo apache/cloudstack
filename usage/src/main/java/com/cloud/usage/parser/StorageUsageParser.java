@@ -22,13 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -36,7 +33,6 @@ import org.apache.cloudstack.usage.UsageTypes;
 import com.cloud.usage.StorageTypes;
 import com.cloud.usage.UsageStorageVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
@@ -44,27 +40,17 @@ import com.cloud.utils.Pair;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
-public class StorageUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(StorageUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageStorageDao s_usageStorageDao;
-
+public class StorageUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageStorageDao _usageStorageDao;
+    private UsageStorageDao usageStorageDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageStorageDao = _usageStorageDao;
+    @Override
+    public String getParserName() {
+        return "Storage";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all Storage usage events for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -74,10 +60,10 @@ public class StorageUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageStorageVO> usageUsageStorages = s_usageStorageDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageStorageVO> usageUsageStorages = usageStorageDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageUsageStorages.isEmpty()) {
-            LOGGER.debug("No Storage usage events for this period");
+            logger.debug("No Storage usage events for this period");
             return true;
         }
 
@@ -137,7 +123,7 @@ public class StorageUsageParser {
         return true;
     }
 
-    private static void updateStorageUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long storageId, long duration) {
+    private void updateStorageUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long storageId, long duration) {
         Pair<Long, Long> volUsageInfo = usageDataMap.get(key);
         if (volUsageInfo == null) {
             volUsageInfo = new Pair<Long, Long>(new Long(storageId), new Long(duration));
@@ -149,19 +135,17 @@ public class StorageUsageParser {
         usageDataMap.put(key, volUsageInfo);
     }
 
-    private static void createUsageRecord(long zoneId, int type, long runningTime, Date startDate, Date endDate, AccountVO account, long storageId, Long sourceId,
+    private void createUsageRecord(long zoneId, int type, long runningTime, Date startDate, Date endDate, AccountVO account, long storageId, Long sourceId,
         long size, Long virtualSize) {
         // Our smallest increment is hourly for now
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Total running time " + runningTime + "ms");
-        }
+        logger.debug("Total running time {} ms", runningTime);
 
         float usage = runningTime / 1000f / 60f / 60f;
 
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        LOGGER.debug("Creating Storage usage record for type [{}], with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+        logger.debug("Creating Storage usage record for type [{}], with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
                 type, storageId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                 DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
@@ -199,7 +183,7 @@ public class StorageUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usage_type, new Double(usage), null, null, null, tmplSourceId,
                 storageId, size, virtualSize, startDate, endDate);
-        s_usageDao.persist(usageRecord);
+        usageDao.persist(usageRecord);
     }
 
     private static class StorageInfo {

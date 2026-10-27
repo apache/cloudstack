@@ -50,52 +50,52 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if this ISO is bootable. If not passed explicitly its assumed to be true")
+    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "True if this ISO is bootable. If not passed explicitly its assumed to be true")
     private Boolean bootable;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               description = "the display text of the ISO, defaults to the 'name'",
+               description = "The display text of the ISO, defaults to the 'name'",
                length = 4096)
     private String displayText;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if you want this ISO to be featured")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True if you want this ISO to be featured")
     private Boolean featured;
 
     @Parameter(name = ApiConstants.IS_PUBLIC,
                type = CommandType.BOOLEAN,
-               description = "true if you want to register the ISO to be publicly available to all users, false otherwise.")
+               description = "True if you want to register the ISO to be publicly available to all Users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the ISO or its derivatives are extractable; default is false")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "True if the ISO or its derivatives are extractable; default is false")
     private Boolean extractable;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the ISO")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, length = 251, description = "The name of the ISO")
     private String isoName;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
-               description = "the ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
+               description = "The ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, length = 2048, description = "the URL to where the ISO is currently being hosted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, length = 2048, description = "The URL to where the ISO is currently being hosted")
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="the ID of the zone you wish to register the ISO to.")
+            required=true, description = "The ID of the zone you wish to register the ISO to.")
     protected Long zoneId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account name. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account name. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "The checksum value of this ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register ISO for the project")
@@ -106,21 +106,21 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
-               description = "true if ISO contains XS/VMWare tools inorder to support dynamic scaling of VM CPU/memory")
+               description = "True if ISO contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory")
     protected Boolean isDynamicallyScalable;
 
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
             type = CommandType.BOOLEAN,
-            description = "true if ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+            description = "True if ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
     @Parameter(name = ApiConstants.PASSWORD_ENABLED,
             type = CommandType.BOOLEAN,
-            description = "true if password reset feature is supported; default is false")
+            description = "True if password reset feature is supported; default is false")
     private Boolean passwordEnabled;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 
@@ -254,7 +254,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

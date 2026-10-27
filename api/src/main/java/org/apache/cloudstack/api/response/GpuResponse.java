@@ -32,7 +32,7 @@ public class GpuResponse extends BaseResponse {
     private String gpuGroupName;
 
     @SerializedName(ApiConstants.VGPU)
-    @Param(description = "the list of enabled vGPUs", responseObject = VgpuResponse.class)
+    @Param(description = "The list of enabled vGPUs", responseObject = VgpuResponse.class)
     private List<VgpuResponse> vgpu;
 
     public void setGpuGroupName(String gpuGroupName) {

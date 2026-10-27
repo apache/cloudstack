@@ -344,7 +344,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_all_domainuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for other users in a shared network with scope=all
+        Validate that ROOT admin is able to deploy a VM for other users in a shared network with scope=all
         """
 
         # Deploy VM for a user in a domain under ROOT as admin
@@ -372,7 +372,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_all_domainadminuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for a domain admin users in a shared network with scope=all
+        Validate that ROOT admin is able to deploy a VM for a domain admin users in a shared network with scope=all
 
         """
         # Deploy VM for an admin user in a domain under ROOT as admin
@@ -400,7 +400,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_all_subdomainuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for any user in a subdomain in a shared network with scope=all
+        Validate that ROOT admin is able to deploy a VM for any user in a subdomain in a shared network with scope=all
         """
         # Deploy VM as user in a subdomain under ROOT
 
@@ -426,7 +426,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_all_subdomainadminuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for admin user in a domain in a shared network with scope=all
+        Validate that ROOT admin is able to deploy a VM for admin user in a domain in a shared network with scope=all
 
         """
         # Deploy VM as an admin user in a subdomain under ROOT
@@ -453,7 +453,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_all_ROOTuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for user in ROOT domain in a shared network with scope=all
+        Validate that ROOT admin is able to deploy a VM for user in ROOT domain in a shared network with scope=all
 
         """
         # Deploy VM as user in ROOT domain
@@ -482,7 +482,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_domainuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for domain user in a shared network with scope=domain with no subdomain access
+        Validate that ROOT admin is able to deploy a VM for domain user in a shared network with scope=domain with no subdomain access
 
         """
         # Deploy VM as user in a domain that has shared network with no subdomain access
@@ -510,7 +510,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_domainadminuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for domain admin user in a shared network with scope=domain with no subdomain access
+        Validate that ROOT admin is able to deploy a VM for domain admin user in a shared network with scope=domain with no subdomain access
         """
 
         # Deploy VM as an admin user in a domain that has shared network with no subdomain access
@@ -538,7 +538,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_subdomainuser(self):
         """
-         Valiate that ROOT admin is NOT able to deploy a VM for sub domain user in a shared network with scope=domain with no subdomain access
+         Validate that ROOT admin is NOT able to deploy a VM for sub domain user in a shared network with scope=domain with no subdomain access
 
         """
         # Deploy VM as user in a subdomain under  a domain that has shared network with no subdomain access
@@ -569,7 +569,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_subdomainadminuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for sub domain admin user in a shared network with scope=domain with no subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for sub domain admin user in a shared network with scope=domain with no subdomain access
         """
 
         # Deploy VM as an admin user in a subdomain under  a domain that has shared network with no subdomain access
@@ -599,7 +599,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_parentdomainuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for parent domain user in a shared network with scope=domain with no subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for parent domain user in a shared network with scope=domain with no subdomain access
 
         """
         # Deploy VM as user in parentdomain of a domain that has shared network with no subdomain access
@@ -629,7 +629,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_parentdomainadminuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=domain with no subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=domain with no subdomain access
         """
 
         # Deploy VM as an admin user in parentdomain of  a domain that has shared network with no subdomain access
@@ -659,7 +659,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_nosubdomainaccess_ROOTuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=domain with no subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=domain with no subdomain access
         """
 
         # Deploy VM as user in ROOT domain
@@ -691,7 +691,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_domainuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for domain user in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is able to deploy a VM for domain user in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as user in a domain that has shared network with subdomain access
@@ -719,7 +719,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_domainadminuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for domain admin user in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is able to deploy a VM for domain admin user in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as an admin user in a domain that has shared network with subdomain access
@@ -747,7 +747,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_subdomainuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for subdomain user in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is able to deploy a VM for subdomain user in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as user in a subdomain under  a domain that has shared network with subdomain access
@@ -774,7 +774,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_subdomainadminuser(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for subdomain admin user in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is able to deploy a VM for subdomain admin user in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as an admin user in a subdomain under  a domain that has shared network with subdomain access
@@ -801,7 +801,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_parentdomainuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for parent domain user in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for parent domain user in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as user in parentdomain of a domain that has shared network with subdomain access
@@ -831,7 +831,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_parentdomainadminuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as an admin user in parentdomain of  a domain that has shared network with subdomain access
@@ -861,7 +861,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_domain_withsubdomainaccess_ROOTuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=domain with subdomain access
+        Validate that ROOT admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=domain with subdomain access
         """
 
         # Deploy VM as user in ROOT domain
@@ -893,7 +893,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_account_domainuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for user in the same domain but in a different account in a shared network with scope=account
+        Validate that ROOT admin is NOT able to deploy a VM for user in the same domain but in a different account in a shared network with scope=account
         """
 
         # Deploy VM as user in a domain under the same domain but different account from the account that has a shared network with scope=account
@@ -923,7 +923,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_account_domainadminuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for admin user in the same domain but in a different account in a shared network with scope=account
+        Validate that ROOT admin is NOT able to deploy a VM for admin user in the same domain but in a different account in a shared network with scope=account
 
         """
         # Deploy VM as admin user for a domain that has an account with shared network with scope=account
@@ -953,7 +953,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_account_user(self):
         """
-        Valiate that ROOT admin is able to deploy a VM for regular user in a shared network with scope=account
+        Validate that ROOT admin is able to deploy a VM for regular user in a shared network with scope=account
         """
 
         # Deploy VM as account with shared network with scope=account
@@ -981,7 +981,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_account_differentdomain(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for a admin user in a shared network with scope=account which the admin user does not have access to
+        Validate that ROOT admin is NOT able to deploy a VM for a admin user in a shared network with scope=account which the admin user does not have access to
         """
 
         # Deploy VM as an admin user in a subdomain under ROOT
@@ -1011,7 +1011,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_admin_scope_account_ROOTuser(self):
         """
-        Valiate that ROOT admin is NOT able to deploy a VM for a user in ROOT domain in a shared network with scope=account which the user does not have access to
+        Validate that ROOT admin is NOT able to deploy a VM for a user in ROOT domain in a shared network with scope=account which the user does not have access to
         """
 
         # Deploy VM as user in ROOT domain
@@ -1043,7 +1043,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_all_domainuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for a domain user in a shared network with scope=all
+        Validate that Domain admin is able to deploy a VM for a domain user in a shared network with scope=all
         """
 
         # Deploy VM for a user in a domain under ROOT as admin
@@ -1070,7 +1070,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_all_domainadminuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for a domain admin user in a shared network with scope=all
+        Validate that Domain admin is able to deploy a VM for a domain admin user in a shared network with scope=all
         """
 
         # Deploy VM for an admin user in a domain under ROOT as admin
@@ -1097,7 +1097,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_all_subdomainuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for a sub domain user in a shared network with scope=all
+        Validate that Domain admin is able to deploy a VM for a sub domain user in a shared network with scope=all
         """
 
         # Deploy VM as user in a subdomain under ROOT
@@ -1123,7 +1123,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_all_subdomainadminuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for a sub domain admin user in a shared network with scope=all
+        Validate that Domain admin is able to deploy a VM for a sub domain admin user in a shared network with scope=all
         """
 
         # Deploy VM as an admin user in a subdomain under ROOT
@@ -1149,7 +1149,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_all_ROOTuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=all
+        Validate that Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=all
         """
 
         # Deploy VM as user in ROOT domain
@@ -1177,7 +1177,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_all_crossdomainuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for user in other domain in a shared network with scope=all
+        Validate that Domain admin is NOT able to deploy a VM for user in other domain in a shared network with scope=all
         """
 
         # Deploy VM as user in ROOT domain
@@ -1208,7 +1208,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_domainuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for domain user in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is able to deploy a VM for domain user in a shared network with scope=Domain and no subdomain access
         """
 
         # Deploy VM as user in a domain that has shared network with no subdomain access
@@ -1235,7 +1235,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_domainadminuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for domain admin user in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is able to deploy a VM for domain admin user in a shared network with scope=Domain and no subdomain access
 
         """
         # Deploy VM as an admin user in a domain that has shared network with no subdomain access
@@ -1263,7 +1263,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_subdomainuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for sub domain user in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for sub domain user in a shared network with scope=Domain and no subdomain access
         """
 
         # Deploy VM as user in a subdomain under  a domain that has shared network with no subdomain access
@@ -1293,7 +1293,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_subdomainadminuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for sub domain admin user in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for sub domain admin user in a shared network with scope=Domain and no subdomain access
         """
 
         # Deploy VM as an admin user in a subdomain under  a domain that has shared network with no subdomain access
@@ -1323,7 +1323,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_parentdomainuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for parent domain user in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for parent domain user in a shared network with scope=Domain and no subdomain access
 
         """
         # Deploy VM as user in parentdomain of a domain that has shared network with no subdomain access
@@ -1353,7 +1353,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_parentdomainadminuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for parent domain admin user in a shared network with scope=Domain and no subdomain access
         """
 
         # Deploy VM as an admin user in parentdomain of  a domain that has shared network with no subdomain access
@@ -1383,7 +1383,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_nosubdomainaccess_ROOTuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=Domain and no subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=Domain and no subdomain access
         """
 
         # Deploy VM as user in ROOT domain
@@ -1414,7 +1414,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_domainuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for regular user in domain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is able to deploy a VM for regular user in domain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as user in a domain that has shared network with subdomain access
@@ -1441,7 +1441,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_domainadminuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for admin user in domain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is able to deploy a VM for admin user in domain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as an admin user in a domain that has shared network with subdomain access
@@ -1468,7 +1468,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_subdomainuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for regular user in subdomain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is able to deploy a VM for regular user in subdomain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as user in a subdomain under  a domain that has shared network with subdomain access
@@ -1494,7 +1494,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_subdomainadminuser(self):
         """
-        Valiate that Domain admin is able to deploy a VM for admin user in subdomain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is able to deploy a VM for admin user in subdomain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as an admin user in a subdomain under  a domain that has shared network with subdomain access
@@ -1520,7 +1520,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_parentdomainuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for regular user in parent domain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for regular user in parent domain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as user in parentdomain of a domain that has shared network with subdomain access
@@ -1549,7 +1549,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_parentdomainadminuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for admin user in parent domain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for admin user in parent domain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as an admin user in parentdomain of  a domain that has shared network with subdomain access
@@ -1579,7 +1579,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_domain_withsubdomainaccess_ROOTuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=Domain and subdomain access
+        Validate that Domain admin is NOT able to deploy a VM for user in ROOT domain in a shared network with scope=Domain and subdomain access
         """
 
         # Deploy VM as user in ROOT domain
@@ -1610,7 +1610,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_account_domainuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for user in the same domain but belonging to a different account in a shared network with scope=account
+        Validate that Domain admin is NOT able to deploy a VM for user in the same domain but belonging to a different account in a shared network with scope=account
         """
 
         # Deploy VM as user in a domain under the same domain but different account from the account that has a shared network with scope=account
@@ -1639,7 +1639,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_account_domainadminuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for an admin user in the same domain but belonging to a different account in a shared network with scope=account
+        Validate that Domain admin is NOT able to deploy a VM for an admin user in the same domain but belonging to a different account in a shared network with scope=account
         """
 
         # Deploy VM as admin user for a domain that has an account with shared network with scope=account
@@ -1668,7 +1668,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_account_user(self):
         """
-        Valiate that Domain admin is able to deploy a VM for an regular user in a shared network with scope=account
+        Validate that Domain admin is able to deploy a VM for an regular user in a shared network with scope=account
         """
 
         # Deploy VM as account with shared network with scope=account
@@ -1695,7 +1695,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_account_differentdomain(self):
         """
-        Valiate that Domain admin is able NOT able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account
+        Validate that Domain admin is able NOT able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account
         """
 
         # Deploy VM as an admin user in a subdomain under ROOT
@@ -1724,7 +1724,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_domainadmin_scope_account_ROOTuser(self):
         """
-        Valiate that Domain admin is NOT able to deploy a VM for an regular user in ROOT domain in a shared network with scope=account
+        Validate that Domain admin is NOT able to deploy a VM for an regular user in ROOT domain in a shared network with scope=account
         """
 
         # Deploy VM as user in ROOT domain
@@ -1754,7 +1754,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_regularuser_scope_all_anotherusersamedomain(self):
         """
-        Valiate that regular user is able NOT able to deploy a VM for another user in the same  domain in a shared network with scope=all
+        Validate that regular user is able NOT able to deploy a VM for another user in the same  domain in a shared network with scope=all
         """
 
         # Deploy VM for a user in a domain under ROOT as admin
@@ -1782,7 +1782,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_deployVM_in_sharedNetwork_as_regularuser_scope_all_crossdomain(self):
         """
-        Valiate that regular user is able NOT able to deploy a VM for another user in a different domain in a shared network with scope=all
+        Validate that regular user is able NOT able to deploy a VM for another user in a different domain in a shared network with scope=all
         """
 
         # Deploy VM for a user in a domain under ROOT as admin

@@ -25,63 +25,63 @@ import com.cloud.serializer.Param;
 
 public class ConfigurationResponse extends BaseResponse {
     @SerializedName(ApiConstants.CATEGORY)
-    @Param(description = "the category of the configuration")
+    @Param(description = "The category of the configuration")
     private String category;
 
     @SerializedName(ApiConstants.GROUP)
-    @Param(description = "the group of the configuration", since = "4.18.0")
+    @Param(description = "The group of the configuration", since = "4.18.0")
     private String group;
 
     @SerializedName(ApiConstants.SUBGROUP)
-    @Param(description = "the subgroup of the configuration", since = "4.18.0")
+    @Param(description = "The subgroup of the configuration", since = "4.18.0")
     private String subGroup;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the configuration")
+    @Param(description = "The name of the configuration")
     private String name;
 
     @SerializedName(ApiConstants.VALUE)
-    @Param(description = "the value of the configuration")
+    @Param(description = "The value of the configuration")
     private String value;
 
     @SerializedName(ApiConstants.DEFAULT_VALUE)
-    @Param(description = "the default value of the configuration", since = "4.18.0")
+    @Param(description = "The default value of the configuration", since = "4.18.0")
     private String defaultValue;
 
     @SerializedName(ApiConstants.SCOPE)
-    @Param(description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
+    @Param(description = "Scope (zone/cluster/pool/account) of the parameter that needs to be updated")
     private String scope;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the value of the configuration")
+    @Param(description = "The value of the configuration")
     private Long id;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the configuration")
+    @Param(description = "The description of the configuration")
     private String description;
 
     @SerializedName(ApiConstants.IS_DYNAMIC)
-    @Param(description = "true if the configuration is dynamic")
+    @Param(description = "True if the configuration is dynamic")
     private boolean isDynamic;
 
     @SerializedName(ApiConstants.COMPONENT)
-    @Param(description = "the component of the configuration", since = "4.18.0")
+    @Param(description = "The component of the configuration", since = "4.18.0")
     private String component;
 
     @SerializedName(ApiConstants.PARENT)
-    @Param(description = "the name of the parent configuration", since = "4.18.0")
+    @Param(description = "The name of the parent configuration", since = "4.18.0")
     private String parent;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "the display text of the configuration", since = "4.18.0")
+    @Param(description = "The display text of the configuration", since = "4.18.0")
     private String displayText;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the configuration value", since = "4.18.0")
+    @Param(description = "The type of the configuration value", since = "4.18.0")
     private String type;
 
     @SerializedName(ApiConstants.OPTIONS)
-    @Param(description = "the possible options of the configuration value", since = "4.18.0")
+    @Param(description = "The possible options of the configuration value", since = "4.18.0")
     private String options;
 
     public String getCategory() {

@@ -19,19 +19,26 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
 import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-
+import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
+import org.apache.cloudstack.storage.datastore.util.LinstorImportHelper;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
@@ -39,19 +46,23 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
-import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.AutoPlaceRequest;
+import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceConnectionModify;
 import com.linbit.linstor.api.model.ResourceDefinition;
+import com.linbit.linstor.api.model.ResourceDefinitionCreate;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
@@ -59,17 +70,37 @@ import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
 import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
+import com.linbit.linstor.api.model.VolumeDefinitionCreate;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class LinstorStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
+    static final String BACKUP_SCRATCH_PREFIX = "cs-bkscratch-";
+    static final String BACKUP_SCRATCH_VM_PROP = "Aux/cs-backup-vm";
+    private static final long DEVICE_WAIT_MS = 10000;
+    // Controllers this agent has already removed its leftover backup scratch from, see deleteLeftoverBackupScratch().
+    private static final Set<String> BackupScratchSweptControllers = ConcurrentHashMap.newKeySet();
     private final String localNodeName;
 
-    private DevelopersApi getLinstorAPI(KVMStoragePool pool) {
-        ApiClient client = Configuration.getDefaultApiClient();
+    DevelopersApi getLinstorAPI(KVMStoragePool pool) {
+        // Use a fresh client per pool so a self-signed/insecure pool can't weaken the TLS settings
+        // of another pool sharing this agent.
+        ApiClient client = new ApiClient();
         client.setBasePath(pool.getSourceHost());
+        // The agent has no access to the per-pool API token config; fall back to the auth.json file
+        // on the host (/var/lib/linstor.d/auth.json), or stay unauthenticated if it is absent.
+        client.setAccessTokenWithFallback(null);
+        if (pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl()) {
+            client.setInsecureSsl();
+        }
+        client.discoverHttps();
         return new DevelopersApi(client);
     }
 
@@ -157,13 +188,33 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    public List<VolumeOnStorageTO> getVolumesForImport(
+            LinstorStoragePool pool, String path) {
+        return LinstorImportHelper.getVolumesForImport(
+                getLinstorAPI(pool), pool.getResourceGroup(), path);
+    }
+
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo,
                                             Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage)
     {
         logger.debug("Linstor createStoragePool: name: '{}', host: '{}', path: {}, userinfo: {}", name, host, path, userInfo);
-        LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this);
+        // The management server ships the per-pool config in the details map; the controller TLS
+        // verification can be disabled here for self-signed certificates. The ConfigKey default is only
+        // applied on the management server (via valueIn()) and is NOT shipped in the details, so when the
+        // detail is absent we must fall back to that default here too - otherwise a pool without an
+        // explicit setting would verify the certificate on the agent while the MS thinks it is disabled.
+        final String insecureSslDetail = details != null ? details.get(LinstorConfigurationManager.InsecureSsl.key()) : null;
+        boolean insecureSsl = insecureSslDetail != null
+                ? Boolean.parseBoolean(insecureSslDetail)
+                : Boolean.parseBoolean(LinstorConfigurationManager.InsecureSsl.defaultValue());
+        LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this, insecureSsl);
 
+        // Pools are registered again whenever the agent reconnects, but only the first registration of a
+        // controller precedes every backup that could be using its scratch space.
+        if (BackupScratchSweptControllers.add(host)) {
+            deleteLeftoverBackupScratch(storagePool);
+        }
         MapStorageUuidToStoragePool.put(name, storagePool);
 
         return storagePool;
@@ -186,6 +237,206 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
         handleLinstorApiAnswers(answers,
             String.format("Linstor: Unable to make resource %s available on node: %s", rscName, localNodeName));
+        waitForLocalDevice(api, rscName);
+    }
+
+    /**
+     * Waits until the device of resource {@code rscName} exists on this node. Making a resource available
+     * returns before udev has created its /dev/drbd/by-res link, so opening the device right away can fail
+     * with "No such file or directory".
+     */
+    private void waitForLocalDevice(DevelopersApi api, String rscName) throws ApiException {
+        List<ResourceWithVolumes> resources = api.viewResources(Collections.singletonList(localNodeName),
+                Collections.singletonList(rscName), Collections.emptyList(), null, null, null);
+        if (resources.isEmpty() || resources.get(0).getVolumes().isEmpty()) {
+            throw new CloudRuntimeException(String.format("Linstor: resource %s has no volumes on %s",
+                    rscName, localNodeName));
+        }
+        waitForDevice(LinstorUtil.getDevicePathFromResource(resources.get(0)));
+    }
+
+    void waitForDevice(String device) {
+        long deadline = System.currentTimeMillis() + DEVICE_WAIT_MS;
+        while (!Files.exists(Paths.get(device))) {
+            if (System.currentTimeMillis() > deadline) {
+                throw new CloudRuntimeException(String.format("Linstor: device %s did not appear within %d ms",
+                        device, DEVICE_WAIT_MS));
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CloudRuntimeException("Linstor: interrupted while waiting for device " + device, e);
+            }
+        }
+    }
+
+    /**
+     * Creates the scratch space of a pull-mode backup as one resource with a volume per size. The resource
+     * definition is created in the pool's resource group, so the group's properties and storage pool selection
+     * apply; spawning it from the group would limit the volumes to the group's volume groups.
+     *
+     * Copy-before-write runs inline with the guest's writes, so the scratch is placed on a storage pool of this
+     * node if there is one, as a plain STORAGE resource: it only lives for one backup and needs no replication.
+     * Otherwise, e.g. on a compute node without storage, it is a single DRBD replica on another node that this
+     * node attaches diskless.
+     *
+     * The agent deletes the scratch once the backup has ended. If it never gets there, e.g. because the agent
+     * crashed or the host went down, it deletes the leftover the next time it starts, see
+     * {@link #deleteLeftoverBackupScratch(KVMStoragePool)}; the {@value #BACKUP_SCRATCH_VM_PROP} property
+     * names the VM.
+     */
+    public Pair<String, List<String>> createBackupScratch(KVMStoragePool pool, String vmName, List<Long> sizes) {
+        final LinstorStoragePool lpool = (LinstorStoragePool) pool;
+        final DevelopersApi api = getLinstorAPI(pool);
+        // LINSTOR caps resource names at 48 characters.
+        final String rscName = BACKUP_SCRATCH_PREFIX + UUID.randomUUID().toString().replace("-", "");
+        logger.info("Linstor: creating backup scratch {} for VM {} with volume sizes {}", rscName, vmName, sizes);
+        try {
+            ResourceDefinition rd = new ResourceDefinition();
+            rd.setName(rscName);
+            rd.setResourceGroupName(lpool.getResourceGroup());
+            Properties props = new Properties();
+            props.put(BACKUP_SCRATCH_VM_PROP, vmName);
+            rd.setProps(props);
+            ResourceDefinitionCreate rdCreate = new ResourceDefinitionCreate();
+            rdCreate.setResourceDefinition(rd);
+            checkLinstorAnswersThrow(api.resourceDefinitionCreate(rdCreate));
+        } catch (ApiException apiEx) {
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+
+        try {
+            for (int vlmNr = 0; vlmNr < sizes.size(); vlmNr++) {
+                VolumeDefinition vd = new VolumeDefinition();
+                vd.setVolumeNumber(vlmNr);
+                vd.setSizeKib((sizes.get(vlmNr) + 1023) / 1024);
+                VolumeDefinitionCreate vdCreate = new VolumeDefinitionCreate();
+                vdCreate.setVolumeDefinition(vd);
+                checkLinstorAnswersThrow(api.volumeDefinitionCreate(rscName, vdCreate));
+            }
+            placeBackupScratch(api, rscName);
+            return new Pair<>(rscName, getBackupScratchDevices(api, rscName));
+        } catch (ApiException | CloudRuntimeException ex) {
+            try {
+                deleteBackupScratch(pool, rscName);
+            } catch (CloudRuntimeException deleteEx) {
+                logger.warn("Linstor: unable to delete backup scratch {}, delete it manually: {}",
+                        rscName, deleteEx.getMessage());
+            }
+            if (ex instanceof ApiException) {
+                throw new CloudRuntimeException(((ApiException) ex).getBestMessage(), ex);
+            }
+            throw (CloudRuntimeException) ex;
+        }
+    }
+
+    private void placeBackupScratch(DevelopersApi api, String rscName) throws ApiException {
+        String localError;
+        try {
+            // A failed placement usually comes back as an HTTP error rather than as error answers.
+            ApiCallRcList answers = api.resourceAutoplace(rscName, backupScratchPlacement(
+                    Collections.singletonList(localNodeName), LayerType.STORAGE));
+            if (!answers.hasError()) {
+                logLinstorAnswers(answers);
+                return;
+            }
+            localError = LinstorUtil.getBestErrorMessage(answers);
+        } catch (ApiException apiEx) {
+            localError = apiEx.getBestMessage();
+        }
+        logger.info("Linstor: cannot place backup scratch {} on {} ({}), attaching a replica on another node diskless",
+                rscName, localNodeName, localError);
+        checkLinstorAnswersThrow(api.resourceAutoplace(rscName, backupScratchPlacement(
+                Collections.emptyList(), LayerType.DRBD, LayerType.STORAGE)));
+        makeResourceAvailable(api, rscName, false);
+    }
+
+    private static AutoPlaceRequest backupScratchPlacement(List<String> nodeNames, LayerType... layers) {
+        List<String> layerStack = Arrays.stream(layers).map(LayerType::toString).collect(Collectors.toList());
+        AutoSelectFilter filter = new AutoSelectFilter();
+        filter.setPlaceCount(1);
+        filter.setNodeNameList(nodeNames);
+        filter.setLayerStack(layerStack);
+        filter.setDisklessOnRemaining(false);
+        AutoPlaceRequest request = new AutoPlaceRequest();
+        request.setSelectFilter(filter);
+        request.setLayerList(Arrays.asList(layers));
+        request.setDisklessOnRemaining(false);
+        return request;
+    }
+
+    /**
+     * The device paths of the scratch volumes on this node, in volume number order, once udev has created them.
+     */
+    private List<String> getBackupScratchDevices(DevelopersApi api, String rscName) throws ApiException {
+        List<ResourceWithVolumes> resources = api.viewResources(Collections.singletonList(localNodeName),
+                Collections.singletonList(rscName), Collections.emptyList(), null, null, null);
+        if (resources.isEmpty()) {
+            throw new CloudRuntimeException(String.format("Linstor: backup scratch %s has no resource on %s",
+                    rscName, localNodeName));
+        }
+        ResourceWithVolumes rsc = resources.get(0);
+        boolean drbd = rsc.getLayerObject().getDrbd() != null;
+        List<String> devices = rsc.getVolumes().stream()
+                .sorted(Comparator.comparing(Volume::getVolumeNumber))
+                .map(vlm -> drbd ? String.format("/dev/drbd/by-res/%s/%d", rscName, vlm.getVolumeNumber())
+                        : vlm.getDevicePath())
+                .collect(Collectors.toList());
+        for (String device : devices) {
+            waitForDevice(device);
+        }
+        return devices;
+    }
+
+    /**
+     * Deletes the backup scratch resources an earlier run of this agent left on this node, e.g. because it
+     * crashed or was restarted during a backup. Called when the first pool of a controller is registered,
+     * before any backup can use it, so none of them can belong to a running backup. A scratch always has a
+     * resource on the node whose agent created it, diskless if its data lives on another node. Failures are
+     * logged only: a leftover must not keep the pool from being registered.
+     */
+    void deleteLeftoverBackupScratch(KVMStoragePool pool) {
+        final DevelopersApi api = getLinstorAPI(pool);
+        try {
+            Map<String, ResourceDefinition> scratchRds = LinstorUtil.getRDListStartingWith(api, BACKUP_SCRATCH_PREFIX)
+                    .stream().collect(Collectors.toMap(ResourceDefinition::getName, rd -> rd));
+            if (scratchRds.isEmpty()) {
+                return;
+            }
+            List<String> leftovers = api.viewResources(Collections.singletonList(localNodeName),
+                    new ArrayList<>(scratchRds.keySet()), Collections.emptyList(), null, null, null)
+                    .stream().map(Resource::getName).distinct().collect(Collectors.toList());
+            for (String rscName : leftovers) {
+                Properties props = scratchRds.get(rscName).getProps();
+                String vmName = props != null ? props.get(BACKUP_SCRATCH_VM_PROP) : null;
+                logger.warn("Linstor: deleting backup scratch {} of VM {} left behind on {}", rscName, vmName,
+                        localNodeName);
+                try {
+                    deleteBackupScratch(pool, rscName);
+                } catch (CloudRuntimeException e) {
+                    // Typically after a crash during a backup: the VM's pull-mode backup job outlived the agent
+                    // and still holds the scratch devices.
+                    logger.warn("Linstor: unable to delete leftover backup scratch {}: {}. If VM {} still has a backup "
+                            + "job, end it with 'virsh domjobabort {}', then delete the resource definition manually.",
+                            rscName, e.getMessage(), vmName, vmName);
+                }
+            }
+        } catch (ApiException apiEx) {
+            logger.warn("Linstor: unable to look for leftover backup scratch on {}: {}", localNodeName,
+                    apiEx.getBestMessage());
+        } catch (CloudRuntimeException e) {
+            logger.warn("Linstor: unable to look for leftover backup scratch on {}: {}", localNodeName, e.getMessage());
+        }
+    }
+
+    public void deleteBackupScratch(KVMStoragePool pool, String rscName) {
+        logger.info("Linstor: deleting backup scratch {}", rscName);
+        try {
+            checkLinstorAnswersThrow(getLinstorAPI(pool).resourceDefinitionDelete(rscName));
+        } catch (ApiException apiEx) {
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
     }
 
     /**
@@ -202,10 +453,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final DevelopersApi api = getLinstorAPI(pool);
 
         try {
-            List<ResourceDefinition> definitionList = api.resourceDefinitionList(
-                Collections.singletonList(rscName), null, null, null);
+            ResourceDefinition resourceDefinition = LinstorUtil.findResourceDefinition(
+                    api, rscName, lpool.getResourceGroup());
 
-            if (definitionList.isEmpty()) {
+            if (resourceDefinition == null) {
                 ResourceGroupSpawn rgSpawn = new ResourceGroupSpawn();
                 rgSpawn.setResourceDefinitionName(rscName);
                 rgSpawn.addVolumeSizesItem(size / 1024); // linstor uses KiB
@@ -215,22 +466,28 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 handleLinstorApiAnswers(answers, "Linstor: Unable to spawn resource.");
             }
 
+            String foundRscName = resourceDefinition != null ? resourceDefinition.getName() : rscName;
+
             // query linstor for the device path
             List<ResourceWithVolumes> resources = api.viewResources(
                 Collections.emptyList(),
-                Collections.singletonList(rscName),
+                Collections.singletonList(foundRscName),
                 Collections.emptyList(),
                 null,
                 null,
                 null);
 
-            makeResourceAvailable(api, rscName, false);
+            makeResourceAvailable(api, foundRscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
+                final String devPath = LinstorUtil.getDevicePathFromResource(resources.get(0));
                 logger.info("Linstor: Created drbd device: " + devPath);
                 final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+                long allocatedKib = resources.get(0).getVolumes().get(0).getAllocatedSizeKib() != null ?
+                        resources.get(0).getVolumes().get(0).getAllocatedSizeKib() : 0;
+                kvmDisk.setSize(allocatedKib >= 0 ? allocatedKib * 1024 : 0);
+                kvmDisk.setVirtualSize(size);
                 return kvmDisk;
             } else {
                 logger.error("Linstor: viewResources didn't return resources or volumes.");
@@ -312,7 +569,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
-
+            waitForLocalDevice(api, rscName);
         } catch (ApiException apiEx) {
             logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
@@ -410,7 +667,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 if (rsc.getFlags() != null &&
                         rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
                         !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
-                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName);
+                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName, true);
                     logLinstorAnswers(delAnswers);
                 }
             } catch (ApiException apiEx) {
@@ -446,8 +703,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private Optional<ResourceWithVolumes> getResourceByPathOrName(
             final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
-                .anyMatch(v -> path.equals(v.getDevicePath())))
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) ||
+                    path.equals(LinstorUtil.formatDrbdByResDevicePath(rsc.getName())) ||
+                    rsc.getVolumes().stream().anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
 
@@ -473,21 +731,77 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return false;
     }
 
+    /**
+     * Decrements the aux property key for template resource and deletes or just deletes if not template resource.
+     * @param api
+     * @param rscName
+     * @param rscGrpName
+     * @return
+     * @throws ApiException
+     */
+    private boolean deRefOrDeleteResource(DevelopersApi api, String rscName, String rscGrpName) throws ApiException {
+        boolean deleted = false;
+        List<ResourceDefinition> existingRDs = LinstorUtil.getRDListStartingWith(api, rscName);
+        for (ResourceDefinition rd : existingRDs) {
+            int expectedProps = 0; // if it is a non template resource, we don't expect any _cs-template-for- prop
+            String propKey = LinstorUtil.getTemplateForAuxPropKey(rscGrpName);
+            if (rd.getProps().containsKey(propKey)) {
+                ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+                rdm.deleteProps(Collections.singletonList(propKey));
+                api.resourceDefinitionModify(rd.getName(), rdm);
+                expectedProps = 1;
+            }
+
+            // if there is only one template-for property left for templates, the template isn't needed anymore
+            // or if it isn't a template anyway, it will not have this Aux property
+            // _cs-template-for- properties work like a ref-count.
+            long remainingTemplateRefs = rd.getProps().keySet().stream()
+                    .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
+                    .count();
+            if (remainingTemplateRefs == expectedProps) {
+                // Surface the legacy case where a resource has zero `_cs-template-for-` aux
+                // properties even though we never decremented one — that's a template predating
+                // the ref-count convention, or a stale orphan. Logging before deletion lets
+                // operators audit how many such orphans existed at upgrade time.
+                if (expectedProps == 0) {
+                    logger.info("Linstor: deleting resource {} which has no _cs-template-for- aux properties " +
+                                    "(legacy template predating the ref-count convention, or a stale orphan). " +
+                                    "Resource group context: {}", rd.getName(), rscGrpName);
+                }
+                ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
+                checkLinstorAnswersThrow(answers);
+                deleted = true;
+
+                // LINSTOR can return success here while the resource lingers in DELETING state
+                // on the controller (down peer, lost quorum, etc.). Confirm it's actually gone
+                // — if not, log a WARN so operators can clear it manually. Don't throw: the
+                // CloudStack-side accounting has already moved on.
+                if (!LinstorUtil.waitForResourceDefinitionDeleted(api, rd.getName(),
+                        LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS)) {
+                    logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                            "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list).",
+                            rd.getName(), LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+                }
+            }
+        }
+        return deleted;
+    }
+
     @Override
     public boolean deletePhysicalDisk(String name, KVMStoragePool pool, Storage.ImageFormat format)
     {
         logger.debug("Linstor: deletePhysicalDisk " + name);
         final DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = getLinstorRscName(name);
+        final LinstorStoragePool linstorPool = (LinstorStoragePool) pool;
+        String rscGrpName = linstorPool.getResourceGroup();
 
         try {
-            final String rscName = getLinstorRscName(name);
-            logger.debug("Linstor: delete resource definition " + rscName);
-            ApiCallRcList answers = api.resourceDefinitionDelete(rscName);
-            handleLinstorApiAnswers(answers, "Linstor: Unable to delete resource definition " + rscName);
+            return deRefOrDeleteResource(api, rscName, rscGrpName);
         } catch (ApiException apiEx) {
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
-        return true;
     }
 
     @Override
@@ -508,7 +822,30 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool)
     {
-        throw new UnsupportedOperationException("Listing disks is not supported for this configuration.");
+        logger.debug("Linstor: listPhysicalDisks for pool {}", storagePoolUuid);
+        final DevelopersApi api = getLinstorAPI(pool);
+        final LinstorStoragePool linstorPool = (LinstorStoragePool) pool;
+        final String rscGroup = linstorPool.getResourceGroup();
+        List<KVMPhysicalDisk> disks = new ArrayList<>();
+        try {
+            List<ResourceDefinition> rscDfns = LinstorUtil.getRDListStartingWith(api, LinstorUtil.RSC_PREFIX);
+            for (ResourceDefinition rscDfn : rscDfns) {
+                if (rscGroup != null && !rscGroup.equalsIgnoreCase(rscDfn.getResourceGroupName())) {
+                    continue;
+                }
+                String name = rscDfn.getName().substring(LinstorUtil.RSC_PREFIX.length());
+                try {
+                    disks.add(getPhysicalDisk(name, pool));
+                } catch (Exception e) {
+                    logger.warn("Linstor: skipping resource {} while listing pool {}: {}",
+                            rscDfn.getName(), storagePoolUuid, e.getMessage());
+                }
+            }
+        } catch (ApiException apiEx) {
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+        return disks;
     }
 
     @Override
@@ -528,37 +865,53 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Checks if all diskful resource are on a zeroed block device.
-     * @param destPool Linstor pool to use
-     * @param resName Linstor resource name
-     * @return true if all resources are on a provider with zeroed blocks.
+     * Checks if the given disk is the SystemVM template, by checking its properties file in the same directory.
+     * The initial systemvm template resource isn't created on the management server, but
+     * we now need to know if the systemvm template is used, while copying.
+     * @param disk
+     * @return True if it is the systemvm template disk, else false.
      */
-    private boolean resourceSupportZeroBlocks(KVMStoragePool destPool, String resName) {
-        final DevelopersApi api = getLinstorAPI(destPool);
-
-        try {
-            List<ResourceWithVolumes> resWithVols = api.viewResources(
-                    Collections.emptyList(),
-                    Collections.singletonList(resName),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    null,
-                    null);
-
-            if (resWithVols != null) {
-                return resWithVols.stream()
-                        .allMatch(res -> {
-                            Volume vol0 = res.getVolumes().get(0);
-                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
-                        } );
+    private static boolean isSystemTemplate(KVMPhysicalDisk disk) {
+        Path diskPath = Paths.get(disk.getPath());
+        Path propFile = diskPath.getParent().resolve("template.properties");
+        if (Files.exists(propFile)) {
+            java.util.Properties templateProps = new java.util.Properties();
+            try (FileInputStream in = new FileInputStream(propFile.toFile())) {
+                templateProps.load(in);
+                String desc = templateProps.getProperty("description");
+                if (desc != null && desc.startsWith("SystemVM Template")) {
+                    return true;
+                }
+            } catch (IOException e) {
+                return false;
             }
-        } catch (ApiException apiExc) {
-            logger.error(apiExc.getMessage());
         }
         return false;
+    }
+
+    /**
+     * Conditionally sets the correct aux properties for templates or basic resources.
+     * @param api
+     * @param srcDisk
+     * @param destPool
+     * @param name
+     */
+    private void setRscDfnAuxProperties(
+            DevelopersApi api, KVMPhysicalDisk srcDisk, KVMStoragePool destPool, String name) {
+        // if it is the initial systemvm disk copy, we need to apply the _cs-template-for property.
+        if (isSystemTemplate(srcDisk)) {
+            applyAuxProps(api, name, "SystemVM Template", null);
+            LinstorStoragePool linPool = (LinstorStoragePool) destPool;
+            final String rscName = getLinstorRscName(name);
+            try {
+                LinstorUtil.setAuxTemplateForProperty(api, rscName, linPool.getResourceGroup());
+            } catch (ApiException apiExc) {
+                logger.error("Error setting aux template for property for {}", rscName);
+                logLinstorAnswers(apiExc.getApiCallRcList());
+            }
+        } else {
+            applyAuxProps(api, name, srcDisk.getDispName(), srcDisk.getVmName());
+        }
     }
 
     @Override
@@ -574,15 +927,14 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
         final DevelopersApi api = getLinstorAPI(destPools);
-        applyAuxProps(api, name, disk.getDispName(), disk.getVmName());
+        setRscDfnAuxProperties(api, disk, destPools, name);
 
         logger.debug("Linstor.copyPhysicalDisk: dstPath: {}", dstDisk.getPath());
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
-        boolean zeroedDevice = resourceSupportZeroBlocks(destPools, LinstorUtil.RSC_PREFIX + name);
-
+        boolean zeroedDevice = LinstorUtil.resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
         try {
             final QemuImg qemu = new QemuImg(timeout, zeroedDevice, true);
             qemu.convert(srcFile, destFile);
@@ -635,7 +987,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     private String getFinalDirectDownloadPath(String templateFilePath, KVMStoragePool destPool) {
         String finalSourcePath = templateFilePath;
-        if (LibvirtStorageAdaptor.isTemplateExtractable(templateFilePath)) {
+        if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
             finalSourcePath = templateFilePath.substring(0, templateFilePath.lastIndexOf('.'));
             LibvirtStorageAdaptor.extractDownloadedTemplate(templateFilePath, destPool, finalSourcePath);
         }
@@ -681,7 +1033,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     public long getCapacity(LinstorStoragePool pool) {
         final String rscGroupName = pool.getResourceGroup();
-        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName);
+        // Agent side: no per-pool token config; fall back to the host's auth.json (or unauthenticated).
+        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName, null, pool.isInsecureSsl());
     }
 
     public long getAvailable(LinstorStoragePool pool) {

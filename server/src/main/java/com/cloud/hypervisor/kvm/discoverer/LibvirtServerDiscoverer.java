@@ -16,6 +16,24 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.utils.cache.LazyCache;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -32,6 +50,7 @@ import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -43,31 +62,12 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private final int _waitTime = 5; /* wait for 5 minutes */
@@ -88,6 +88,16 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private HostDao hostDao;
+
+    private LazyCache<Long, HostVO> clusterExistingHostCache;
+
+    private HostVO getExistingHostForCluster(long clusterId) {
+        HostVO existingHostInCluster = _hostDao.findAnyStateHypervisorHostInCluster(clusterId);
+        if (existingHostInCluster != null) {
+            _hostDao.loadDetails(existingHostInCluster);
+        }
+        return existingHostInCluster;
+    }
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -156,58 +166,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     private void setupAgentSecurity(final Connection sshConnection, final String agentIp, final String agentHostname) {
         if (sshConnection == null) {
-            throw new CloudRuntimeException("Cannot secure agent communication because ssh connection is invalid for host ip=" + agentIp);
+            throw new CloudRuntimeException("Cannot secure agent communication because SSH connection is invalid for host IP=" + agentIp);
         }
 
-        Integer validityPeriod = CAManager.CertValidityPeriod.value();
-        if (validityPeriod < 1) {
-            validityPeriod = 1;
-        }
-
-        String keystorePassword = PasswordGenerator.generateRandomPassword(16);
-        final SSHCmdHelper.SSHCmdResult keystoreSetupResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
-                String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
-                                "/etc/cloudstack/agent/agent.properties " +
-                                "/etc/cloudstack/agent/%s " +
-                                "%s %d " +
-                                "/etc/cloudstack/agent/%s",
-                        KeyStoreUtils.KS_SETUP_SCRIPT,
-                        KeyStoreUtils.KS_FILENAME,
-                        keystorePassword,
-                        validityPeriod,
-                        KeyStoreUtils.CSR_FILENAME));
-
-        if (!keystoreSetupResult.isSuccess()) {
-            throw new CloudRuntimeException("Failed to setup keystore on the KVM host: " + agentIp);
-        }
-
-        final Certificate certificate = caManager.issueCertificate(keystoreSetupResult.getStdOut(), Arrays.asList(agentHostname, agentIp), Collections.singletonList(agentIp), null, null);
-        if (certificate == null || certificate.getClientCertificate() == null) {
-            throw new CloudRuntimeException("Failed to issue certificates for KVM host agent: " + agentIp);
-        }
-
-        final SetupCertificateCommand certificateCommand = new SetupCertificateCommand(certificate);
-        final SSHCmdHelper.SSHCmdResult setupCertResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
-                String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
-                                "/etc/cloudstack/agent/agent.properties %s " +
-                                "/etc/cloudstack/agent/%s %s " +
-                                "/etc/cloudstack/agent/%s \"%s\" " +
-                                "/etc/cloudstack/agent/%s \"%s\" " +
-                                "/etc/cloudstack/agent/%s \"%s\"",
-                        KeyStoreUtils.KS_IMPORT_SCRIPT,
-                        keystorePassword,
-                        KeyStoreUtils.KS_FILENAME,
-                        KeyStoreUtils.SSH_MODE,
-                        KeyStoreUtils.CERT_FILENAME,
-                        certificateCommand.getEncodedCertificate(),
-                        KeyStoreUtils.CACERT_FILENAME,
-                        certificateCommand.getEncodedCaCertificates(),
-                        KeyStoreUtils.PKEY_FILENAME,
-                        certificateCommand.getEncodedPrivateKey()));
-
-        if (setupCertResult != null && !setupCertResult.isSuccess()) {
-            throw new CloudRuntimeException("Failed to setup certificate in the KVM agent's keystore file, please see logs and configure manually!");
-        }
+        caManager.provisionCertificateViaSsh(sshConnection, agentIp, agentHostname, null);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Succeeded to import certificate in the keystore for agent on the KVM host: " + agentIp + ". Agent secured and trusted.");
@@ -226,7 +188,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         // Set cluster GUID based on cluster ID if null
         if (cluster.getGuid() == null) {
-            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
             _clusterDao.update(clusterId, cluster);
         }
 
@@ -244,7 +206,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostname = uri.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             agentIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(agentIp.getBytes()).toString();
 
             List<HostVO> existingHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.Routing, dcId);
             if (existingHosts != null) {
@@ -257,17 +219,22 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 }
             }
 
-            sshConnection = new Connection(agentIp, 22);
+            int port = uri.getPort();
+            if (port <= 0) {
+                port = AgentManager.KVMHostDiscoverySshPort.valueIn(clusterId);
+            }
+
+            sshConnection = new Connection(agentIp, port);
 
             sshConnection.connect(null, 60000, 60000);
 
             final String privateKey = _configDao.getValue("ssh.privatekey");
             if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
                 if (org.apache.commons.lang3.StringUtils.isEmpty(password)) {
-                    logger.error("Failed to authenticate with ssh key");
-                    throw new DiscoveredWithErrorException("Authentication error with ssh private key");
+                    logger.error("Failed to authenticate with SSH key");
+                    throw new DiscoveredWithErrorException("Authentication error with SSH private key");
                 }
-                logger.info("Failed to authenticate with ssh key, retrying with password");
+                logger.info("Failed to authenticate with SSH key, retrying with password");
                 if (!sshConnection.authenticateWithPassword(username, password)) {
                     logger.error("Failed to authenticate with password");
                     throw new DiscoveredWithErrorException("Authentication error with host password");
@@ -365,6 +332,9 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             Map<String, String> hostDetails = connectedHost.getDetails();
             hostDetails.put("password", password);
             hostDetails.put("username", username);
+            if (uri.getPort() > 0) {
+                hostDetails.put(Host.HOST_SSH_PORT, String.valueOf(uri.getPort()));
+            }
             _hostDao.saveDetails(connectedHost);
             return resources;
         } catch (DiscoveredWithErrorException e) {
@@ -425,6 +395,9 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
+        clusterExistingHostCache = new LazyCache<>(32, 30,
+                this::getExistingHostForCluster);
+
         agentMgr.registerForHostEvents(this, true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
@@ -467,12 +440,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             throw new IllegalArgumentException("cannot add host, due to can't find cluster: " + host.getClusterId());
         }
 
-        List<HostVO> hostsInCluster = _resourceMgr.listAllHostsInCluster(clusterVO.getId());
-        if (!hostsInCluster.isEmpty()) {
-            HostVO oneHost = hostsInCluster.get(0);
-            _hostDao.loadDetails(oneHost);
-            String hostOsInCluster = oneHost.getDetail("Host.OS");
-            String hostOs = ssCmd.getHostDetails().get("Host.OS");
+        HostVO existingHostInCluster = clusterExistingHostCache.get(clusterVO.getId());
+        if (existingHostInCluster != null) {
+            String hostOsInCluster = existingHostInCluster.getDetail(HostInfo.HOST_OS);
+            String hostOs = ssCmd.getHostDetails().get(HostInfo.HOST_OS);
             if (!isHostOsCompatibleWithOtherHost(hostOsInCluster, hostOs)) {
                 String msg = String.format("host: %s with hostOS, \"%s\"into a cluster, in which there are \"%s\" hosts added", firstCmd.getPrivateIpAddress(), hostOs, hostOsInCluster);
                 if (hostOs != null && hostOs.startsWith(hostOsInCluster)) {

@@ -17,20 +17,31 @@
 
 package com.cloud.agent.api;
 
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+
+import java.util.Map;
+
 public class CheckVolumeAnswer extends Answer {
 
     private long size;
+    private Map<VolumeOnStorageTO.Detail, String> volumeDetails;
 
     CheckVolumeAnswer() {
     }
 
-    public CheckVolumeAnswer(CheckVolumeCommand cmd, String details, long size) {
-        super(cmd, true, details);
+    public CheckVolumeAnswer(CheckVolumeCommand cmd, final boolean success, String details, long size,
+                             Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
+        super(cmd, success, details);
         this.size = size;
+        this.volumeDetails = volumeDetails;
     }
 
     public long getSize() {
         return size;
+    }
+
+    public Map<VolumeOnStorageTO.Detail, String> getVolumeDetails() {
+        return volumeDetails;
     }
 
     public String getString() {

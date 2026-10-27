@@ -52,6 +52,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -60,6 +61,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForZoneCm
 import org.apache.cloudstack.api.command.admin.network.DedicateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForZoneCmd;
+import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
@@ -89,6 +91,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -340,7 +343,7 @@ public class RoutedIpv4ManagerImplTest {
 
         when(dataCenterIpv4GuestSubnetDao.findById(zoneSubnetId)).thenReturn(subnetVO);
 
-        when(accountManager.finalyzeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
+        when(accountManager.finalizeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
         when(accountManager.getAccount(accountId)).thenReturn(account);
         when(account.getDomainId()).thenReturn(domainId);
         when(dataCenterIpv4GuestSubnetDao.findById(zoneSubnetId)).thenReturn(subnetVO);
@@ -497,8 +500,45 @@ public class RoutedIpv4ManagerImplTest {
     }
 
     @Test
+    public void testCreateIpv4SubnetForGuestNetworkResponseWithoutParentOrOwner() {
+        when(ipv4GuestSubnetNetworkMap.getSubnet()).thenReturn(subnet);
+        when(ipv4GuestSubnetNetworkMap.getState()).thenReturn(ipv4GuestSubnetNetworkMapState);
+        when(ipv4GuestSubnetNetworkMap.getDataCenterId()).thenReturn(zoneId);
+        when(ipv4GuestSubnetNetworkMap.getNetworkId()).thenReturn(null);
+        when(ipv4GuestSubnetNetworkMap.getVpcId()).thenReturn(null);
+        when(ipv4GuestSubnetNetworkMap.getParentId()).thenReturn(null);
+        apiDBUtilsMocked.when(() -> ApiDBUtils.findZoneById(zoneId)).thenReturn(zone);
+        when(zone.getName()).thenReturn(zoneName);
+        when(zone.getUuid()).thenReturn(zoneUuid);
+
+        Ipv4SubnetForGuestNetworkResponse response = routedIpv4Manager.createIpv4SubnetForGuestNetworkResponse(ipv4GuestSubnetNetworkMap);
+
+        // the subnet has no parent, network or VPC, so the zone can only come from the subnet itself
+        Assert.assertEquals(zoneUuid, response.getZoneId());
+        Assert.assertEquals(zoneName, response.getZoneName());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testListIpv4GuestSubnetsForGuestNetworkByZone() {
+        ListIpv4SubnetsForGuestNetworkCmd cmd = Mockito.mock(ListIpv4SubnetsForGuestNetworkCmd.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = Mockito.mock(SearchCriteria.class);
+        when(ipv4GuestSubnetNetworkMapDao.createSearchCriteria()).thenReturn(sc);
+        when(ipv4GuestSubnetNetworkMapDao.search(sc, null)).thenReturn(Arrays.asList(ipv4GuestSubnetNetworkMap));
+
+        List<Ipv4GuestSubnetNetworkMap> result = routedIpv4Manager.listIpv4GuestSubnetsForGuestNetwork(cmd);
+
+        Assert.assertEquals(1, result.size());
+        verify(sc).addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        // the zone is taken from the subnet itself, not resolved through the zone's parent subnets,
+        // so subnets created without a zone subnet are no longer missing from the result
+        verify(dataCenterIpv4GuestSubnetDao, Mockito.never()).listByDataCenterId(Mockito.anyLong());
+    }
+
+    @Test
     public void testGetOrCreateIpv4SubnetForGuestNetworkOrVpcInternalByCidr1() {
-        when(ipv4GuestSubnetNetworkMapDao.findBySubnet(subnet)).thenReturn(ipv4GuestSubnetNetworkMap);
+        when(ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(subnet, zoneId)).thenReturn(ipv4GuestSubnetNetworkMap);
         when(ipv4GuestSubnetNetworkMap.getNetworkId()).thenReturn(null);
         when(ipv4GuestSubnetNetworkMap.getVpcId()).thenReturn(null);
         when(ipv4GuestSubnetNetworkMap.getParentId()).thenReturn(zoneSubnetId);
@@ -511,7 +551,7 @@ public class RoutedIpv4ManagerImplTest {
 
     @Test
     public void testGetOrCreateIpv4SubnetForGuestNetworkOrVpcInternalByCidr2() {
-        when(ipv4GuestSubnetNetworkMapDao.findBySubnet(subnet)).thenReturn(null);
+        when(ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(subnet, zoneId)).thenReturn(null);
 
         routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(subnet, domainId, accountId, zoneId);
 
@@ -520,7 +560,7 @@ public class RoutedIpv4ManagerImplTest {
 
     @Test
     public void testGetOrCreateIpv4SubnetForGuestNetworkOrVpcInternalByCidr3() {
-        when(ipv4GuestSubnetNetworkMapDao.findBySubnet(subnet)).thenReturn(null);
+        when(ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(subnet, zoneId)).thenReturn(null);
         when(routedIpv4Manager.getParentOfNetworkCidr(zoneId, subnet)).thenReturn(subnetVO);
         when(subnetVO.getDomainId()).thenReturn(domainId);
         when(subnetVO.getAccountId()).thenReturn(accountId);
@@ -528,6 +568,20 @@ public class RoutedIpv4ManagerImplTest {
         routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(subnet, domainId, accountId, zoneId);
 
         verify(ipv4GuestSubnetNetworkMapDao).persist(any(Ipv4GuestSubnetNetworkMapVO.class));
+    }
+
+    @Test
+    public void testGetOrCreateIpv4SubnetForGuestNetworkOrVpcInternalByCidrInAnotherZone() {
+        Long otherZoneId = zoneId + 1L;
+        // The same subnet is already allocated in another zone, which must not block this zone
+        when(ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(subnet, otherZoneId)).thenReturn(null);
+
+        routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(subnet, domainId, accountId, otherZoneId);
+
+        ArgumentCaptor<Ipv4GuestSubnetNetworkMapVO> captor = ArgumentCaptor.forClass(Ipv4GuestSubnetNetworkMapVO.class);
+        verify(ipv4GuestSubnetNetworkMapDao).persist(captor.capture());
+        Assert.assertEquals(otherZoneId, captor.getValue().getDataCenterId());
+        Assert.assertEquals(subnet, captor.getValue().getSubnet());
     }
 
     @Test
@@ -545,12 +599,12 @@ public class RoutedIpv4ManagerImplTest {
         DataCenterIpv4GuestSubnetVO subnet3 = Mockito.mock(DataCenterIpv4GuestSubnetVO.class);
         when(dataCenterIpv4GuestSubnetDao.listNonDedicatedByDataCenterId(zoneId)).thenReturn(Arrays.asList(subnet3));
 
-        doReturn(null).doReturn(null).doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
+        doReturn(null).doReturn(null).doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
 
         Ipv4GuestSubnetNetworkMap result = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, domainId, accountId, zoneId);
 
         Assert.assertEquals(ipv4GuestSubnetNetworkMap, result);
-        verify(routedIpv4Manager, times(3)).getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
+        verify(routedIpv4Manager, times(3)).getIpv4SubnetForGuestNetworkOrVpcInternal(eq(cidrSize), any());
     }
 
     @Test
@@ -629,8 +683,8 @@ public class RoutedIpv4ManagerImplTest {
         when(subnetVO.getId()).thenReturn(zoneSubnetId);
         when(dataCenterIpv4GuestSubnetDao.findById(zoneSubnetId)).thenReturn(subnetVO);
 
-        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap1 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, "172.16.1.0/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
-        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap2 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, "172.16.1.64/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
+        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap1 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, zoneId, "172.16.1.0/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
+        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap2 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, zoneId, "172.16.1.64/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
         when(ipv4GuestSubnetNetworkMapDao.listByParent(zoneSubnetId)).thenReturn(Arrays.asList(ipv4GuestSubnetNetworkMap1, ipv4GuestSubnetNetworkMap2));
         when(subnetVO.getSubnet()).thenReturn("172.16.1.0/24");
 
@@ -643,8 +697,8 @@ public class RoutedIpv4ManagerImplTest {
         networkCidr = routedIpv4Manager.createIpv4SubnetStringFromParentSubnet(subnetVO, 25);
         Assert.assertEquals("172.16.1.128/25", networkCidr);
 
-        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap3 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, "172.16.1.16/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
-        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap4 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, "172.16.1.128/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
+        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap3 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, zoneId, "172.16.1.16/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
+        Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap4 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, zoneId, "172.16.1.128/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
         when(ipv4GuestSubnetNetworkMapDao.listByParent(zoneSubnetId)).thenReturn(Arrays.asList(ipv4GuestSubnetNetworkMap1, ipv4GuestSubnetNetworkMap2,
                 ipv4GuestSubnetNetworkMap3, ipv4GuestSubnetNetworkMap4));
         networkCidr = routedIpv4Manager.createIpv4SubnetStringFromParentSubnet(subnetVO, 28);
@@ -665,7 +719,8 @@ public class RoutedIpv4ManagerImplTest {
     public void testAssignIpv4SubnetToNetwork() {
         when(network.getId()).thenReturn(networkId);
         when(network.getCidr()).thenReturn(subnet);
-        when(ipv4GuestSubnetNetworkMapDao.findBySubnet(subnet)).thenReturn(ipv4GuestSubnetNetworkMap);
+        when(network.getDataCenterId()).thenReturn(zoneId);
+        when(ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(subnet, zoneId)).thenReturn(ipv4GuestSubnetNetworkMap);
         when(ipv4GuestSubnetNetworkMap.getId()).thenReturn(ipv4GuestSubnetNetworkMapId);
 
         routedIpv4Manager.assignIpv4SubnetToNetwork(network);
@@ -677,7 +732,8 @@ public class RoutedIpv4ManagerImplTest {
     public void testAssignIpv4SubnetToVpc() {
         when(vpc.getId()).thenReturn(vpcId);
         when(vpc.getCidr()).thenReturn(subnet);
-        when(ipv4GuestSubnetNetworkMapDao.findBySubnet(subnet)).thenReturn(ipv4GuestSubnetNetworkMap);
+        when(vpc.getZoneId()).thenReturn(zoneId);
+        when(ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(subnet, zoneId)).thenReturn(ipv4GuestSubnetNetworkMap);
         when(ipv4GuestSubnetNetworkMap.getId()).thenReturn(ipv4GuestSubnetNetworkMapId);
 
         routedIpv4Manager.assignIpv4SubnetToVpc(vpc);
@@ -911,7 +967,7 @@ public class RoutedIpv4ManagerImplTest {
         ReflectionTestUtils.setField(cmd,"projectId", null);
 
         when(bgpPeerDao.findById(bgpPeerId)).thenReturn(bgpPeer);
-        when(accountManager.finalyzeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
+        when(accountManager.finalizeAccountId(accountName, domainId, null, false)).thenReturn(accountId);
         when(accountManager.getAccount(accountId)).thenReturn(account);
         when(account.getDomainId()).thenReturn(domainId);
 

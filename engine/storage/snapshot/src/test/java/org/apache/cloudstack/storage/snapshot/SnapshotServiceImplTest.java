@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.storage.snapshot;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ImageStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -30,7 +32,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,7 +67,7 @@ public class SnapshotServiceImplTest {
     HeuristicRuleHelper heuristicRuleHelperMock;
 
     @Mock
-    SnapshotInfo snapshotMock;
+    SnapshotInfo snapshotInfoMock;
 
     @Mock
     VolumeInfo volumeInfoMock;
@@ -69,12 +75,34 @@ public class SnapshotServiceImplTest {
     @Mock
     DataStoreManager dataStoreManagerMock;
 
+    @Mock
+    private SnapshotResult snapshotResultMock;
+
+    @Mock
+    private CreateObjectAnswer createObjectAnswerMock;
+
+    @Mock
+    private ImageStore imageStoreMock;
+
+    @Mock
+    private SnapshotDataStoreVO snapshotDataStoreVoMock;
+
+    @Mock
+    private SnapshotDataStoreDao snapshotDataStoreDaoMock;
+
+    @Mock
+    private DataStore dataStoreMock;
+
+    @Mock
+    private SnapshotObjectTO snapshotObjectTOMock;
+
+
     private static final long DUMMY_ID = 1L;
 
     @Test
     public void testRevertSnapshotWithNoPrimaryStorageEntry() throws Exception {
-        Mockito.when(snapshotMock.getId()).thenReturn(DUMMY_ID);
-        Mockito.when(snapshotMock.getVolumeId()).thenReturn(DUMMY_ID);
+        Mockito.when(snapshotInfoMock.getId()).thenReturn(DUMMY_ID);
+        Mockito.when(snapshotInfoMock.getVolumeId()).thenReturn(DUMMY_ID);
         Mockito.when(_snapshotFactory.getSnapshotOnPrimaryStore(1L)).thenReturn(null);
         Mockito.when(volFactory.getVolume(DUMMY_ID, DataStoreRole.Primary)).thenReturn(volumeInfoMock);
 
@@ -89,7 +117,7 @@ public class SnapshotServiceImplTest {
             Mockito.when(mock.get()).thenReturn(result);
             Mockito.when(result.isFailed()).thenReturn(false);
         })) {
-            Assert.assertTrue(snapshotService.revertSnapshot(snapshotMock));
+            Assert.assertTrue(snapshotService.revertSnapshot(snapshotInfoMock));
         }
     }
 
@@ -97,9 +125,9 @@ public class SnapshotServiceImplTest {
     public void getImageStoreForSnapshotTestShouldListFreeImageStoresWithNoHeuristicRule() {
         Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(SnapshotInfo.class))).
                 thenReturn(null);
-        Mockito.when(snapshotMock.getDataCenterId()).thenReturn(DUMMY_ID);
+        Mockito.when(snapshotInfoMock.getDataCenterId()).thenReturn(DUMMY_ID);
 
-        snapshotService.getImageStoreForSnapshot(DUMMY_ID, snapshotMock);
+        snapshotService.getImageStoreForSnapshot(DUMMY_ID, snapshotInfoMock);
 
         Mockito.verify(dataStoreManagerMock, Mockito.times(1)).getImageStoreWithFreeCapacity(Mockito.anyLong());
     }
@@ -110,8 +138,123 @@ public class SnapshotServiceImplTest {
         Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(SnapshotInfo.class))).
                 thenReturn(dataStore);
 
-        snapshotService.getImageStoreForSnapshot(DUMMY_ID, snapshotMock);
+        snapshotService.getImageStoreForSnapshot(DUMMY_ID, snapshotInfoMock);
 
         Mockito.verify(dataStoreManagerMock, Mockito.times(0)).getImageStoreWithFreeCapacity(Mockito.anyLong());
+    }
+
+    @Test
+    public void updateSnapSizeAndCheckpointPathIfPossibleTestResultIsFalse() {
+        Mockito.doReturn(createObjectAnswerMock).when(snapshotResultMock).getAnswer();
+        Mockito.doReturn(false).when(createObjectAnswerMock).getResult();
+
+        snapshotService.updateSnapSizeAndCheckpointPathIfPossible(snapshotResultMock, snapshotInfoMock);
+
+        Mockito.verify(snapshotInfoMock, Mockito.never()).getImageStore();
+    }
+
+    @Test
+    public void updateSnapSizeAndCheckpointPathIfPossibleTestResultIsTrueAnswerIsNotCreateObjectAnswer() {
+        Answer answer = new Answer(null, true, null);
+
+        Mockito.doReturn(answer).when(snapshotResultMock).getAnswer();
+
+        snapshotService.updateSnapSizeAndCheckpointPathIfPossible(snapshotResultMock, snapshotInfoMock);
+
+        Mockito.verify(snapshotInfoMock, Mockito.never()).getImageStore();
+    }
+
+    @Test
+    public void updateSnapSizeAndCheckpointPathIfPossibleTestResultIsTrueAnswerIsCreateObjectAnswerAndImageStoreIsNotNullAndPhysicalSizeIsZero() {
+        Mockito.doReturn(createObjectAnswerMock).when(snapshotResultMock).getAnswer();
+        Mockito.doReturn(true).when(createObjectAnswerMock).getResult();
+
+        Mockito.doReturn(snapshotInfoMock).when(snapshotResultMock).getSnapshot();
+
+        Mockito.doReturn(dataStoreMock).when(snapshotInfoMock).getImageStore();
+
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findBySnapshotIdAndDataStoreRoleAndState(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+        Mockito.doReturn(snapshotObjectTOMock).when(createObjectAnswerMock).getData();
+        Mockito.doReturn("checkpath").when(snapshotObjectTOMock).getCheckpointPath();
+        Mockito.doReturn(0L).when(snapshotObjectTOMock).getPhysicalSize();
+
+        snapshotService.updateSnapSizeAndCheckpointPathIfPossible(snapshotResultMock, snapshotInfoMock);
+
+        Mockito.verify(snapshotDataStoreVoMock).setKvmCheckpointPath("checkpath");
+        Mockito.verify(snapshotDataStoreVoMock, Mockito.never()).setPhysicalSize(Mockito.anyLong());
+
+        Mockito.verify(snapshotDataStoreDaoMock).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void updateSnapSizeAndCheckpointPathIfPossibleTestResultIsTrueAnswerIsCreateObjectAnswerAndImageStoreIsNotNullAndPhysicalSizeGreaterThanZero() {
+        Mockito.doReturn(createObjectAnswerMock).when(snapshotResultMock).getAnswer();
+        Mockito.doReturn(true).when(createObjectAnswerMock).getResult();
+
+        Mockito.doReturn(snapshotInfoMock).when(snapshotResultMock).getSnapshot();
+
+        Mockito.doReturn(dataStoreMock).when(snapshotInfoMock).getImageStore();
+
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findBySnapshotIdAndDataStoreRoleAndState(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+        Mockito.doReturn(snapshotObjectTOMock).when(createObjectAnswerMock).getData();
+        Mockito.doReturn("checkpath").when(snapshotObjectTOMock).getCheckpointPath();
+        Mockito.doReturn(1000L).when(snapshotObjectTOMock).getPhysicalSize();
+
+        snapshotService.updateSnapSizeAndCheckpointPathIfPossible(snapshotResultMock, snapshotInfoMock);
+
+        Mockito.verify(snapshotDataStoreVoMock).setKvmCheckpointPath("checkpath");
+        Mockito.verify(snapshotDataStoreVoMock).setPhysicalSize(1000L);
+
+        Mockito.verify(snapshotDataStoreDaoMock).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void updateSnapSizeAndCheckpointPathIfPossibleTestResultIsTrueAnswerIsCreateObjectAnswerAndImageStoreIsNullAndPhysicalSizeIsZero() {
+        Mockito.doReturn(createObjectAnswerMock).when(snapshotResultMock).getAnswer();
+        Mockito.doReturn(true).when(createObjectAnswerMock).getResult();
+
+        Mockito.doReturn(snapshotInfoMock).when(snapshotResultMock).getSnapshot();
+
+        Mockito.doReturn(null).when(snapshotInfoMock).getImageStore();
+        Mockito.doReturn(dataStoreMock).when(snapshotInfoMock).getDataStore();
+
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+
+        Mockito.doReturn(snapshotObjectTOMock).when(createObjectAnswerMock).getData();
+        Mockito.doReturn("checkpath").when(snapshotObjectTOMock).getCheckpointPath();
+        Mockito.doReturn(0L).when(snapshotObjectTOMock).getPhysicalSize();
+
+        snapshotService.updateSnapSizeAndCheckpointPathIfPossible(snapshotResultMock, snapshotInfoMock);
+
+        Mockito.verify(snapshotDataStoreVoMock).setKvmCheckpointPath("checkpath");
+        Mockito.verify(snapshotDataStoreVoMock, Mockito.never()).setPhysicalSize(Mockito.anyLong());
+
+        Mockito.verify(snapshotDataStoreDaoMock).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void updateSnapSizeAndCheckpointPathIfPossibleTestResultIsTrueAnswerIsCreateObjectAnswerAndImageStoreIsNullAndPhysicalSizeGreaterThanZero() {
+        Mockito.doReturn(createObjectAnswerMock).when(snapshotResultMock).getAnswer();
+        Mockito.doReturn(true).when(createObjectAnswerMock).getResult();
+
+        Mockito.doReturn(snapshotInfoMock).when(snapshotResultMock).getSnapshot();
+
+        Mockito.doReturn(null).when(snapshotInfoMock).getImageStore();
+        Mockito.doReturn(dataStoreMock).when(snapshotInfoMock).getDataStore();
+
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+
+        Mockito.doReturn(snapshotObjectTOMock).when(createObjectAnswerMock).getData();
+        Mockito.doReturn("checkpath").when(snapshotObjectTOMock).getCheckpointPath();
+        Mockito.doReturn(1000L).when(snapshotObjectTOMock).getPhysicalSize();
+
+        snapshotService.updateSnapSizeAndCheckpointPathIfPossible(snapshotResultMock, snapshotInfoMock);
+
+        Mockito.verify(snapshotDataStoreVoMock).setKvmCheckpointPath("checkpath");
+        Mockito.verify(snapshotDataStoreVoMock).setPhysicalSize(1000L);
+
+        Mockito.verify(snapshotDataStoreDaoMock).update(Mockito.anyLong(), Mockito.any());
     }
 }

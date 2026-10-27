@@ -18,598 +18,47 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form
-        :ref="formRef"
-        :model="form"
+      <ComputeOfferingForm
+        :initialValues="form"
         :rules="rules"
-        @finish="handleSubmit"
-        layout="vertical"
-       >
-        <a-form-item name="name" ref="name">
-          <template #label>
-            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-          </template>
-          <a-input
-            v-focus="true"
-            v-model:value="form.name"
-            :placeholder="$t('label.name')"/>
-        </a-form-item>
-        <a-form-item name="displaytext" ref="displaytext">
-          <template #label>
-            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
-          </template>
-          <a-input
-            v-model:value="form.displaytext"
-            :placeholder="$t('label.displaytext')"/>
-        </a-form-item>
-        <a-form-item name="systemvmtype" ref="systemvmtype" v-if="isSystem">
-          <template #label>
-            <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
-          </template>
-          <a-select
-            v-model:value="form.systemvmtype"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.systemvmtype.description">
-            <a-select-option key="domainrouter" :label="$t('label.domain.router')">{{ $t('label.domain.router') }}</a-select-option>
-            <a-select-option key="consoleproxy" :label="$t('label.console.proxy')">{{ $t('label.console.proxy') }}</a-select-option>
-            <a-select-option key="secondarystoragevm" :label="$t('label.secondary.storage.vm')">{{ $t('label.secondary.storage.vm') }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="offeringtype" ref="offeringtype" :label="$t('label.offeringtype')" v-show="!isSystem">
-          <a-radio-group
-            v-model:value="form.offeringtype"
-            @change="selected => { handleComputeOfferingTypeChange(selected.target.value) }"
-            buttonStyle="solid">
-            <a-radio-button value="fixed">
-              {{ $t('label.fixed') }}
-            </a-radio-button>
-            <a-radio-button value="customconstrained">
-              {{ $t('label.customconstrained') }}
-            </a-radio-button>
-            <a-radio-button value="customunconstrained">
-              {{ $t('label.customunconstrained') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-row :gutter="12">
-          <a-col :md="8" :lg="8" v-if="offeringType === 'fixed'">
-            <a-form-item name="cpunumber" ref="cpunumber">
-              <template #label>
-                <tooltip-label :title="$t('label.cpunumber')" :tooltip="apiParams.cpunumber.description"/>
-              </template>
-              <a-input
-                v-model:value="form.cpunumber"
-                :placeholder="apiParams.cpunumber.description"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :lg="8" v-if="offeringType !== 'customunconstrained'">
-            <a-form-item name="cpuspeed" ref="cpuspeed">
-              <template #label>
-                <tooltip-label :title="$t('label.cpuspeed')" :tooltip="apiParams.cpuspeed.description"/>
-              </template>
-              <a-input
-                v-model:value="form.cpuspeed"
-                :placeholder="apiParams.cpuspeed.description"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :lg="8" v-if="offeringType === 'fixed'">
-            <a-form-item name="memory" ref="memory">
-              <template #label>
-                <tooltip-label :title="$t('label.memory.mb')" :tooltip="apiParams.memory.description"/>
-              </template>
-              <a-input
-                v-model:value="form.memory"
-                :placeholder="apiParams.memory.description"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12" v-if="offeringType === 'customconstrained'">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="mincpunumber" ref="mincpunumber">
-              <template #label>
-                <tooltip-label :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
-              </template>
-              <a-input
-                v-model:value="form.mincpunumber"
-                :placeholder="apiParams.mincpunumber.description"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="12" :lg="12">
-            <a-form-item name="maxcpunumber" ref="maxcpunumber">
-              <template #label>
-                <tooltip-label :title="$t('label.maxcpunumber')" :tooltip="apiParams.maxcpunumber.description"/>
-              </template>
-              <a-input
-                v-model:value="form.maxcpunumber"
-                :placeholder="apiParams.maxcpunumber.description"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12" v-if="offeringType === 'customconstrained'">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="minmemory" ref="minmemory">
-              <template #label>
-                <tooltip-label :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
-              </template>
-              <a-input
-                v-model:value="form.minmemory"
-                :placeholder="apiParams.minmemory.description"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="12" :lg="12">
-            <a-form-item name="maxmemory" ref="maxmemory">
-              <template #label>
-                <tooltip-label :title="$t('label.maxmemory')" :tooltip="apiParams.maxmemory.description"/>
-              </template>
-              <a-input
-                v-model:value="form.maxmemory"
-                :placeholder="apiParams.maxmemory.description"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12">
-          <a-col :md="12" :lg="12">
-            <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="hosttags" ref="hosttags">
-              <template #label>
-                <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
-              </template>
-              <a-input
-                v-model:value="form.hosttags"
-                :placeholder="apiParams.hosttags.description"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="12" :lg="12">
-            <a-form-item name="networkrate" ref="networkrate">
-              <template #label>
-                <tooltip-label :title="$t('label.networkrate')" :tooltip="apiParams.networkrate.description"/>
-              </template>
-              <a-input
-                v-model:value="form.networkrate"
-                :placeholder="apiParams.networkrate.description"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="offerha" ref="offerha">
-              <template #label>
-                <tooltip-label :title="$t('label.offerha')" :tooltip="apiParams.offerha.description"/>
-              </template>
-              <a-switch v-model:checked="form.offerha" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="12" :lg="12">
-            <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
-              <template #label>
-                <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
-              </template>
-              <a-switch v-model:checked="form.dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="limitcpuuse" ref="limitcpuuse">
-              <template #label>
-                <tooltip-label :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
-              </template>
-              <a-switch v-model:checked="form.limitcpuuse" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="12" :lg="12">
-            <a-form-item v-if="!isSystem" name="isvolatile" ref="isvolatile">
-              <template #label>
-                <tooltip-label :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
-              </template>
-              <a-switch v-model:checked="form.isvolatile" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item name="deploymentplanner" ref="deploymentplanner" v-if="!isSystem && isAdmin()">
-          <template #label>
-            <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
-          </template>
-          <a-select
-            v-model:value="form.deploymentplanner"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="deploymentPlannerLoading"
-            :placeholder="apiParams.deploymentplanner.description"
-            @change="val => { handleDeploymentPlannerChange(val) }">
-            <a-select-option v-for="(opt) in deploymentPlanners" :key="opt.name" :label="opt.name || opt.description || ''">
-              {{ opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="plannermode" ref="plannermode" :label="$t('label.plannermode')" v-if="plannerModeVisible">
-          <a-radio-group
-            v-model:value="form.plannermode"
-            buttonStyle="solid">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="strict">
-              {{ $t('label.strict') }}
-            </a-radio-button>
-            <a-radio-button value="Preferred">
-              {{ $t('label.preferred') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item name="pcidevice" ref="pcidevice" :label="$t('label.gpu')" v-if="!isSystem">
-          <a-select
-            v-model:value="form.pcidevice"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="$t('label.gpu')"
-            @change="handleGpuChange">
-            <a-select-option v-for="(opt, optIndex) in gpuTypes" :key="optIndex" :value="opt.value">
-              {{ opt.title }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="vgputype" ref="vgputype" :label="$t('label.vgputype')" v-if="vGpuVisible">
-          <a-select
-            v-model:value="form.vgputype"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="$t('label.vgputype')">
-            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex" :label="opt">
-              {{ opt }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
-          <a-switch v-model:checked="form.ispublic" />
-        </a-form-item>
-        <a-form-item name="domainid" ref="domainid" v-if="!form.ispublic">
-          <template #label>
-            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
-          </template>
-          <a-select
-            mode="multiple"
-            v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
-            :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
-              <span>
-                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <block-outlined v-else style="margin-right: 5px" />
-                {{ opt.path || opt.name || opt.description }}
-              </span>
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="zoneid" ref="zoneid" v-if="!isSystem">
-          <template #label>
-            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
-          </template>
-          <a-select
-            id="zone-selection"
-            mode="multiple"
-            v-model:value="form.zoneid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            @select="val => fetchvSphereStoragePolicies(val)"
-            :loading="zoneLoading"
-            :placeholder="apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
-              <span>
-                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px"/>
-                {{ opt.name || opt.description }}
-              </span>
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item
-          name="storagepolicy"
-          ref="storagepolicy"
-          v-if="'listVsphereStoragePolicies' in $store.getters.apis && storagePolicies !== null">
-          <template #label>
-            <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
-          </template>
-          <a-select
-            v-model:value="form.storagepolicy"
-            :placeholder="apiParams.storagepolicy.description"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="policy in storagePolicies" :key="policy.id" :label="policy.name || policy.id || ''">
-              {{ policy.name || policy.id }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="purgeresources" ref="purgeresources">
-          <template #label>
-            <tooltip-label :title="$t('label.purgeresources')" :tooltip="apiParams.purgeresources.description"/>
-          </template>
-          <a-switch v-model:checked="form.purgeresources"/>
-        </a-form-item>
-        <a-form-item name="computeonly" ref="computeonly">
-          <template #label>
-            <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
-          </template>
-          <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
-        </a-form-item>
-        <a-card>
-          <span v-if="computeonly">
-            <a-form-item name="storagetype" ref="storagetype">
-              <template #label>
-                <tooltip-label :title="$t('label.storagetype')" :tooltip="apiParams.storagetype.description"/>
-              </template>
-              <a-radio-group
-                v-model:value="form.storagetype"
-                buttonStyle="solid"
-                @change="selected => { handleStorageTypeChange(selected.target.value) }">
-                <a-radio-button value="shared">
-                  {{ $t('label.shared') }}
-                </a-radio-button>
-                <a-radio-button value="local">
-                  {{ $t('label.local') }}
-                </a-radio-button>
-              </a-radio-group>
-            </a-form-item>
-            <a-form-item name="provisioningtype" ref="provisioningtype">
-              <template #label>
-                <tooltip-label :title="$t('label.provisioningtype')" :tooltip="apiParams.provisioningtype.description"/>
-              </template>
-              <a-radio-group
-                v-model:value="form.provisioningtype"
-                buttonStyle="solid"
-                @change="selected => { handleProvisioningTypeChange(selected.target.value) }">
-                <a-radio-button value="thin">
-                  {{ $t('label.provisioningtype.thin') }}
-                </a-radio-button>
-                <a-radio-button value="sparse">
-                  {{ $t('label.provisioningtype.sparse') }}
-                </a-radio-button>
-                <a-radio-button value="fat">
-                  {{ $t('label.provisioningtype.fat') }}
-                </a-radio-button>
-              </a-radio-group>
-            </a-form-item>
-            <a-form-item name="cachemode" ref="cachemode">
-              <template #label>
-                <tooltip-label :title="$t('label.cachemode')" :tooltip="apiParams.cachemode.description"/>
-              </template>
-              <a-radio-group
-                v-model:value="form.cachemode"
-                buttonStyle="solid"
-                @change="selected => { handleCacheModeChange(selected.target.value) }">
-                <a-radio-button value="none">
-                  {{ $t('label.nodiskcache') }}
-                </a-radio-button>
-                <a-radio-button value="writeback">
-                  {{ $t('label.writeback') }}
-                </a-radio-button>
-                <a-radio-button value="writethrough">
-                  {{ $t('label.writethrough') }}
-                </a-radio-button>
-              </a-radio-group>
-            </a-form-item>
-            <a-form-item :label="$t('label.qostype')" name="qostype" ref="qostype">
-              <a-radio-group
-                v-model:value="form.qostype"
-                buttonStyle="solid"
-                @change="selected => { handleQosTypeChange(selected.target.value) }">
-                <a-radio-button value="">
-                  {{ $t('label.none') }}
-                </a-radio-button>
-                <a-radio-button value="hypervisor">
-                  {{ $t('label.hypervisor') }}
-                </a-radio-button>
-                <a-radio-button value="storage">
-                  {{ $t('label.storage') }}
-                </a-radio-button>
-              </a-radio-group>
-            </a-form-item>
-            <a-row :gutter="12" v-if="qosType === 'hypervisor'">
-              <a-col :md="12" :lg="12">
-                <a-form-item name="diskbytesreadrate" ref="diskbytesreadrate">
-                  <template #label>
-                    <tooltip-label :title="$t('label.diskbytesreadrate')" :tooltip="apiParams.bytesreadrate.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.diskbytesreadrate"
-                    :placeholder="apiParams.bytesreadrate.description"/>
-                </a-form-item>
-              </a-col>
-              <a-col :md="12" :lg="12">
-                <a-form-item name="diskbyteswriterate" ref="diskbyteswriterate">
-                  <template #label>
-                    <tooltip-label :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.diskbyteswriterate"
-                    :placeholder="apiParams.byteswriterate.description"/>
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-row :gutter="12" v-if="qosType === 'hypervisor'">
-              <a-col :md="12" :lg="12">
-                <a-form-item name="diskiopsreadrate" ref="diskiopsreadrate">
-                  <template #label>
-                    <tooltip-label :title="$t('label.diskiopsreadrate')" :tooltip="apiParams.iopsreadrate.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.diskiopsreadrate"
-                    :placeholder="apiParams.iopsreadrate.description"/>
-                </a-form-item>
-              </a-col>
-              <a-col :md="12" :lg="12">
-                <a-form-item name="diskiopswriterate" ref="diskiopswriterate">
-                  <template #label>
-                    <tooltip-label :title="$t('label.diskiopswriterate')" :tooltip="apiParams.iopswriterate.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.diskiopswriterate"
-                    :placeholder="apiParams.iopswriterate.description"/>
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-form-item v-if="!isSystem && qosType === 'storage'" name="iscustomizeddiskiops" ref="iscustomizeddiskiops">
-              <template #label>
-                <tooltip-label :title="$t('label.iscustomizeddiskiops')" :tooltip="apiParams.customizediops.description"/>
-              </template>
-              <a-switch v-model:checked="form.iscustomizeddiskiops" :checked="isCustomizedDiskIops" @change="val => { isCustomizedDiskIops = val }" />
-            </a-form-item>
-            <a-row :gutter="12" v-if="qosType === 'storage' && !isCustomizedDiskIops">
-              <a-col :md="12" :lg="12">
-                <a-form-item name="diskiopsmin" ref="diskiopsmin">
-                  <template #label>
-                    <tooltip-label :title="$t('label.diskiopsmin')" :tooltip="apiParams.miniops.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.diskiopsmin"
-                    :placeholder="apiParams.miniops.description"/>
-                </a-form-item>
-              </a-col>
-              <a-col :md="12" :lg="12">
-                <a-form-item name="diskiopsmax" ref="diskiopsmax">
-                  <template #label>
-                    <tooltip-label :title="$t('label.diskiopsmax')" :tooltip="apiParams.maxiops.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.diskiopsmax"
-                    :placeholder="apiParams.maxiops.description"/>
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-form-item v-if="!isSystem && qosType === 'storage'" name="hypervisorsnapshotreserve" ref="hypervisorsnapshotreserve">
-              <template #label>
-                <tooltip-label :title="$t('label.hypervisorsnapshotreserve')" :tooltip="apiParams.hypervisorsnapshotreserve.description"/>
-              </template>
-              <a-input
-                v-model:value="form.hypervisorsnapshotreserve"
-                :placeholder="apiParams.hypervisorsnapshotreserve.description"/>
-            </a-form-item>
-            <a-row :gutter="12">
-              <a-col :md="12" :lg="12">
-                <a-form-item v-if="apiParams.rootdisksize" name="rootdisksize" ref="rootdisksize">
-                  <template #label>
-                    <tooltip-label :title="$t('label.root.disk.size')" :tooltip="apiParams.rootdisksize.description"/>
-                  </template>
-                  <a-input
-                    v-model:value="form.rootdisksize"
-                    :placeholder="apiParams.rootdisksize.description"/>
-                </a-form-item>
-              </a-col>
-              <a-col :md="12" :lg="12">
-                <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="storagetags" ref="storagetags">
-                  <template #label>
-                    <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
-                  </template>
-                  <a-select
-                    mode="tags"
-                    v-model:value="form.storagetags"
-                    showSearch
-                    optionFilterProp="value"
-                    :filterOption="(input, option) => {
-                      return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }"
-                    :loading="storageTagLoading"
-                    :placeholder="apiParams.tags.description"
-                    v-if="isAdmin() || isDomainAdminAllowedToInformTags">
-                    <a-select-option v-for="opt in storageTags" :key="opt">
-                      {{ opt }}
-                    </a-select-option>
-                  </a-select>
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-form-item name="encryptdisk" ref="encryptdisk">
-              <template #label>
-                <tooltip-label :title="$t('label.encrypt')" :tooltip="apiParams.encryptroot.description" />
-              </template>
-              <a-switch v-model:checked="form.encryptdisk" :checked="encryptdisk" @change="val => { encryptdisk = val }" />
-            </a-form-item>
-          </span>
-          <span v-if="!computeonly">
-            <a-form-item>
-              <a-button type="primary" @click="addDiskOffering()"> {{ $t('label.add.disk.offering') }} </a-button>
-              <a-modal
-                :visible="showDiskOfferingModal"
-                :title="$t('label.add.disk.offering')"
-                :footer="null"
-                centered
-                :closable="true"
-                @cancel="closeDiskOfferingModal"
-                width="auto">
-                <add-disk-offering @close-action="closeDiskOfferingModal()" @publish-disk-offering-id="($event) => updateSelectedDiskOffering($event)"/>
-              </a-modal>
-              <br /><br />
-              <a-form-item :label="$t('label.disk.offerings')" name="diskofferingid" ref="diskofferingid">
-                <a-select
-                  v-model:value="form.diskofferingid"
-                  :loading="loading"
-                  :placeholder="$t('label.diskoffering')">
-                  <a-select-option
-                    v-for="(offering, index) in diskOfferings"
-                    :value="offering.id"
-                    :key="index">
-                    {{ offering.displaytext || offering.name }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-form-item>
-          </span>
-          <a-form-item name="diskofferingstrictness" ref="diskofferingstrictness">
-            <template #label>
-              <tooltip-label :title="$t('label.diskofferingstrictness')" :tooltip="apiParams.diskofferingstrictness.description"/>
-            </template>
-            <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
-          </a-form-item>
-        </a-card>
-      </a-form>
-      <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
-      </div>
+        :apiParams="apiParams"
+        :isSystem="isSystem"
+        :isAdmin="isAdmin"
+        :ref="formRef"
+        @submit="handleSubmit">
+        <template #form-actions>
+          <br/>
+          <div :span="24" class="action-button">
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
+        </template>
+      </ComputeOfferingForm>
     </a-spin>
   </div>
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import ComputeOfferingForm from '@/components/offering/ComputeOfferingForm'
+import { ref, reactive } from 'vue'
+import { getAPI, postAPI } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 import store from '@/store'
 
 export default {
   name: 'AddServiceOffering',
   mixins: [mixinForm],
   components: {
+    ComputeOfferingForm,
     AddDiskOffering,
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   data () {
     return {
@@ -637,7 +86,7 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
-      selectedDeployementPlanner: null,
+      selectedDeploymentPlanner: null,
       storagePolicies: null,
       storageTags: [],
       storageTagLoading: false,
@@ -645,47 +94,10 @@ export default {
       deploymentPlannerLoading: false,
       plannerModeVisible: false,
       plannerMode: '',
-      selectedGpu: '',
+      selectedGpuCard: '',
       showDiskOfferingModal: false,
-      gpuTypes: [
-        {
-          value: '',
-          title: this.$t('label.none'),
-          vgpu: []
-        },
-        {
-          value: 'Group of NVIDIA Corporation GV100GL [TESLA V100] GPUs',
-          title: 'NVIDIA TESLA V100',
-          vgpu: ['', 'passthrough', 'GRID V100D-1A', 'GRID V100D-1B', 'GRID V100D-1Q', 'GRID V100D-2A', 'GRID V100D-2B', 'GRID V100D-2B4', 'GRID V100D-2Q', 'GRID V100D-4A', 'GRID V100D-4Q', 'GRID V100D-8A', 'GRID V100D-8Q', 'GRID V100D-16A', 'GRID V100D-16Q', 'GRID V100D-32A', 'GRID V100D-32Q']
-        },
-        {
-          value: 'Group of Nvidia Corporation TU104GL [Tesla T4] GPUs',
-          title: 'NVIDIA TESLA T4',
-          vgpu: ['', 'passthrough', 'GRID T4-1A', 'GRID T4-1B', 'GRID T4-1Q', 'GRID T4-2A', 'GRID T4-2B', 'GRID T4-2B4', 'GRID T4-2Q', 'GRID T4-4A', 'GRID T4-4Q', 'GRID T4-8A', 'GRID T4-8Q', 'GRID T4-16A', 'GRID T4-16Q']
-        },
-        {
-          value: 'Group of Nvidia Corporation GA102 [RTX A5500] GPUs',
-          title: 'NVIDIA RTX A5500',
-          vgpu: ['', 'passthrough', 'NVIDIA RTXA5500-1A', 'NVIDIA RTXA5500-1B', 'NVIDIA RTXA5500-1Q', 'NVIDIA RTXA5500-2A', 'NVIDIA RTXA5500-2B', 'NVIDIA RTXA5500-2Q', 'NVIDIA RTXA5500-3A', 'NVIDIA RTXA5500-3Q', 'NVIDIA RTXA5500-4A', 'NVIDIA RTXA5500-4Q', 'NVIDIA RTXA5500-6A', 'NVIDIA RTXA5500-6Q', 'NVIDIA RTXA5500-8A', 'NVIDIA RTXA5500-8Q', 'NVIDIA RTXA5500-12A', 'NVIDIA RTXA5500-12Q', 'NVIDIA RTXA5500-24A', 'NVIDIA RTXA5500-24Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GA102GL [A40] GPUs',
-          title: 'NVIDIA RTX A40',
-          vgpu: ['', 'passthrough', 'NVIDIA A40-1A', 'NVIDIA A40-1B', 'NVIDIA A40-1Q', 'NVIDIA A40-2A', 'NVIDIA A40-2B', 'NVIDIA A40-2Q', 'NVIDIA A40-3A', 'NVIDIA A40-3Q', 'NVIDIA A40-4A', 'NVIDIA A40-4Q', 'NVIDIA A40-6A', 'NVIDIA A40-6Q', 'NVIDIA A40-8A', 'NVIDIA A40-8Q', 'NVIDIA A40-12A', 'NVIDIA A40-12Q', 'NVIDIA A40-16A', 'NVIDIA A40-16Q', 'NVIDIA A40-24A', 'NVIDIA A40-24Q', 'NVIDIA A40-48A', 'NVIDIA A40-48Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GA107 [NVIDIA A16/NVIDIA A2] GPUs',
-          title: 'NVIDIA RTX A2',
-          vgpu: ['', 'passthrough', 'NVIDIA A2-1A', 'NVIDIA A2-1B', 'NVIDIA A2-1Q', 'NVIDIA A2-2A', 'NVIDIA A2-2B', 'NVIDIA A2-2Q', 'NVIDIA A2-4A', 'NVIDIA A2-4Q', 'NVIDIA A2-8A', 'NVIDIA A2-8Q', 'NVIDIA A2-16A', 'NVIDIA A2-16Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GA102GL [A10] GPUs',
-          title: 'NVIDIA RTX A10',
-          vgpu: ['', 'passthrough', 'NVIDIA A10-1A', 'NVIDIA A10-1B', 'NVIDIA A10-1Q', 'NVIDIA A10-2A', 'NVIDIA A10-2B', 'NVIDIA A10-2Q', 'NVIDIA A10-3A', 'NVIDIA A10-3Q', 'NVIDIA A10-4A', 'NVIDIA A10-4Q', 'NVIDIA A10-6A', 'NVIDIA A10-6Q', 'NVIDIA A10-8A', 'NVIDIA A10-8Q', 'NVIDIA A10-12A', 'NVIDIA A10-12Q', 'NVIDIA A10-24A', 'NVIDIA A10-24Q']
-        }
-      ],
-      vGpuVisible: false,
-      vGpuTypes: [],
+      gpuCardLoading: false,
+      gpuCards: [],
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
@@ -695,7 +107,17 @@ export default {
       diskOfferings: [],
       selectedDiskOfferingId: '',
       qosType: '',
-      isDomainAdminAllowedToInformTags: false
+      isDomainAdminAllowedToInformTags: false,
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
+      showLeaseOptions: false,
+      expiryActions: ['STOP', 'DESTROY'],
+      defaultLeaseDuration: 90,
+      defaultLeaseExpiryAction: 'STOP',
+      leaseduration: undefined,
+      leaseexpiryaction: undefined,
+      vgpuProfiles: [],
+      vgpuProfileLoading: false,
+      externalDetailsEnabled: false
     }
   },
   beforeCreate () {
@@ -725,7 +147,10 @@ export default {
         ispublic: this.isPublic,
         dynamicscalingenabled: true,
         plannermode: this.plannerMode,
-        pcidevice: this.selectedGpu,
+        gpucardid: this.selectedGpuCard,
+        vgpuprofile: '',
+        gpucount: '1',
+        gpudisplay: false,
         computeonly: this.computeonly,
         storagetype: this.storageType,
         provisioningtype: this.provisioningType,
@@ -734,7 +159,9 @@ export default {
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
         diskofferingstrictness: this.diskofferingstrictness,
-        encryptdisk: this.encryptdisk
+        encryptdisk: this.encryptdisk,
+        leaseduration: this.leaseduration,
+        leaseexpiryaction: this.leaseexpiryaction
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -777,6 +204,15 @@ export default {
         hypervisorsnapshotreserve: [this.naturalNumberRule],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        gpucount: [{
+          type: 'number',
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value < 1)) {
+              return Promise.reject(this.$t('message.error.number.minimum.one'))
+            }
+            return Promise.resolve()
+          }
+        }],
         zoneid: [{
           type: 'array',
           validator: async (rule, value) => {
@@ -785,12 +221,14 @@ export default {
             }
             return Promise.resolve()
           }
-        }]
+        }],
+        leaseduration: [this.naturalNumberRule]
       })
     },
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      this.fetchGPUCards()
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
@@ -802,12 +240,23 @@ export default {
       }
       this.fetchDiskOfferings()
     },
-    addDiskOffering () {
-      this.showDiskOfferingModal = true
+    fetchGPUCards () {
+      this.gpuCardLoading = true
+      getAPI('listGpuCards', {
+      }).then(json => {
+        this.gpuCards = json.listgpucardsresponse.gpucard || []
+        // Add a "None" option at the beginning
+        this.gpuCards.unshift({
+          id: '',
+          name: this.$t('label.none')
+        })
+      }).finally(() => {
+        this.gpuCardLoading = false
+      })
     },
     fetchDiskOfferings () {
       this.diskOfferingLoading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         listall: true
       }).then(json => {
         this.diskOfferings = json.listdiskofferingsresponse.diskoffering || []
@@ -818,15 +267,6 @@ export default {
         this.diskOfferingLoading = false
       })
     },
-    updateSelectedDiskOffering (id) {
-      if (id) {
-        this.selectedDiskOfferingId = id
-      }
-    },
-    closeDiskOfferingModal () {
-      this.fetchDiskOfferings()
-      this.showDiskOfferingModal = false
-    },
     isAdmin () {
       return isAdmin()
     },
@@ -835,12 +275,9 @@ export default {
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
-      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+      getAPI('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
         this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
       })
-    },
-    arrayHasItems (array) {
-      return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     fetchDomainData () {
       const params = {}
@@ -848,7 +285,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -859,7 +296,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -871,7 +308,7 @@ export default {
     fetchStorageTagData () {
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags').then(json => {
+      getAPI('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -884,7 +321,7 @@ export default {
     },
     fetchDeploymentPlannerData () {
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners').then(json => {
+      getAPI('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })
@@ -893,65 +330,13 @@ export default {
         this.deploymentPlannerLoading = false
       })
     },
-    fetchvSphereStoragePolicies (zoneIndex) {
-      if (zoneIndex === 0 || this.form.zoneid.length > 1) {
-        this.storagePolicies = null
-        return
-      }
-      const zoneid = this.zones[zoneIndex].id
-      if ('importVsphereStoragePolicies' in this.$store.getters.apis) {
-        this.storagePolicies = []
-        api('listVsphereStoragePolicies', {
-          zoneid: zoneid
-        }).then(response => {
-          this.storagePolicies = response.listvspherestoragepoliciesresponse.StoragePolicy || []
-        })
-      }
-    },
-    handleStorageTypeChange (val) {
-      this.storageType = val
-    },
-    handleProvisioningTypeChange (val) {
-      this.provisioningType = val
-    },
-    handleCacheModeChange (val) {
-      this.cacheMode = val
-    },
-    handleComputeOfferingTypeChange (val) {
-      this.offeringType = val
-    },
-    handleQosTypeChange (val) {
-      this.qosType = val
-    },
-    handleDeploymentPlannerChange (planner) {
-      this.selectedDeployementPlanner = planner
-      this.plannerModeVisible = false
-      if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
-        this.plannerModeVisible = isAdmin()
-      }
-    },
-    handlePlannerModeChange (val) {
-      this.plannerMode = val
-    },
-    handleGpuChange (val) {
-      this.vGpuTypes = []
-      for (var gpuType of this.gpuTypes) {
-        if (gpuType.value === val) {
-          this.vGpuTypes = gpuType.vgpu
-          break
-        }
-      }
-      this.vGpuVisible = true
-      if (!this.arrayHasItems(this.vGpuTypes)) {
-        this.vGpuVisible = false
-      }
-    },
     handleSubmit (e) {
-      e.preventDefault()
+      if (e && e.preventDefault) {
+        e.preventDefault()
+      }
       if (this.loading) return
-      this.formRef.value.validate().then(() => {
-        const formRaw = toRaw(this.form)
-        const values = this.handleRemoveFields(formRaw)
+
+      this.formRef.value.validate().then((values) => {
         var params = {
           issystem: this.isSystem,
           name: values.name,
@@ -965,23 +350,35 @@ export default {
           dynamicscalingenabled: values.dynamicscalingenabled,
           diskofferingstrictness: values.diskofferingstrictness,
           encryptroot: values.encryptdisk,
-          purgeresources: values.purgeresources
+          purgeresources: values.purgeresources,
+          leaseduration: values.leaseduration,
+          leaseexpiryaction: values.leaseexpiryaction
         }
+
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
         }
 
-        // custom fields (begin)
+        if (values.vgpuprofile) {
+          params.vgpuprofileid = values.vgpuprofile
+        }
+        if (values.gpucount && values.gpucount > 0) {
+          params.gpucount = values.gpucount
+        }
+        if (values.gpudisplay !== undefined) {
+          params.gpudisplay = values.gpudisplay
+        }
+
         if (values.offeringtype === 'fixed') {
           params.cpunumber = values.cpunumber
           params.cpuspeed = values.cpuspeed
           params.memory = values.memory
         } else {
           if (values.cpuspeed != null &&
-              values.mincpunumber != null &&
-              values.maxcpunumber != null &&
-              values.minmemory != null &&
-              values.maxmemory != null) {
+             values.mincpunumber != null &&
+             values.maxcpunumber != null &&
+             values.minmemory != null &&
+             values.maxmemory != null) {
             params.cpuspeed = values.cpuspeed
             params.mincpunumber = values.mincpunumber
             params.maxcpunumber = values.maxcpunumber
@@ -989,7 +386,6 @@ export default {
             params.maxmemory = values.maxmemory
           }
         }
-        // custom fields (end)
 
         if (values.networkrate != null && values.networkrate.length > 0) {
           params.networkrate = values.networkrate
@@ -1008,7 +404,7 @@ export default {
               params.maxiops = values.diskiopsmax
             }
             if (values.hypervisorsnapshotreserve !== undefined &&
-              values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
+             values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
               params.hypervisorsnapshotreserve = values.hypervisorsnapshotreserve
             }
           }
@@ -1034,26 +430,17 @@ export default {
           params.hosttags = values.hosttags
         }
         if ('deploymentplanner' in values &&
-          values.deploymentplanner !== undefined &&
-          values.deploymentplanner != null && values.deploymentplanner.length > 0) {
+         values.deploymentplanner !== undefined &&
+         values.deploymentplanner != null && values.deploymentplanner.length > 0) {
           params.deploymentplanner = values.deploymentplanner
         }
         if ('deploymentplanner' in values &&
-          values.deploymentplanner !== undefined &&
-          values.deploymentplanner === 'ImplicitDedicationPlanner' &&
-          values.plannermode !== undefined &&
-          values.plannermode !== '') {
+         values.deploymentplanner !== undefined &&
+         values.deploymentplanner === 'ImplicitDedicationPlanner' &&
+         values.plannermode !== undefined &&
+         values.plannermode !== '') {
           params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
           params['serviceofferingdetails[0].value'] = values.plannermode
-        }
-        if ('pcidevice' in values &&
-          values.pcidevice !== undefined && values.pcidevice !== '') {
-          params['serviceofferingdetails[1].key'] = 'pciDevice'
-          params['serviceofferingdetails[1].value'] = values.pcidevice
-        }
-        if ('vgputype' in values && this.arrayHasItems(this.vGpuTypes)) {
-          params['serviceofferingdetails[2].key'] = 'vgpuType'
-          params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
         }
         if ('isvolatile' in values && values.isvolatile !== undefined) {
           params.isvolatile = values.isvolatile === true
@@ -1061,6 +448,15 @@ export default {
         if ('systemvmtype' in values && values.systemvmtype !== undefined) {
           params.systemvmtype = values.systemvmtype
         }
+
+        if ('leaseduration' in values && values.leaseduration !== undefined) {
+          params.leaseduration = values.leaseduration
+        }
+
+        if ('leaseexpiryaction' in values && values.leaseexpiryaction !== undefined) {
+          params.leaseexpiryaction = values.leaseexpiryaction
+        }
+
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
           var domainId = null
@@ -1090,7 +486,13 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
-        api('createServiceOffering', params).then(json => {
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
+        }
+
+        postAPI('createServiceOffering', params).then(json => {
           const message = this.isSystem
             ? `${this.$t('message.create.service.offering')}: `
             : `${this.$t('message.create.compute.offering')}: `

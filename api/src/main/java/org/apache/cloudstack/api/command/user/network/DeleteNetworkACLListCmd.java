@@ -40,7 +40,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "The ID of the network ACL")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting network ACL ID=" + id);
+        return ("Deleting network ACL with ID: " + getResourceUuid(ApiConstants.ID));
     }
 
     @Override
@@ -82,7 +82,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Network ACL ID: " + id);
+        CallContext.current().setEventDetails("Network ACL ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkACLService.deleteNetworkACL(id);
 
         if (result) {

@@ -22,46 +22,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageIPAddressDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 
 @Component
-public class IPAddressUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(IPAddressUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageIPAddressDao s_usageIPAddressDao;
-
+public class IPAddressUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageIPAddressDao _usageIPAddressDao;
+    private UsageIPAddressDao usageIPAddressDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageIPAddressDao = _usageIPAddressDao;
+    @Override
+    public String getParserName() {
+        return "IP Address";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing IP Address usage for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -71,10 +57,10 @@ public class IPAddressUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageIPAddressVO> usageIPAddress = s_usageIPAddressDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
+        List<UsageIPAddressVO> usageIPAddress = usageIPAddressDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageIPAddress.isEmpty()) {
-            LOGGER.debug("No IP Address usage for this period");
+            logger.debug("No IP Address usage for this period");
             return true;
         }
 
@@ -128,7 +114,7 @@ public class IPAddressUsageParser {
         return true;
     }
 
-    private static void updateIpUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long ipId, long duration) {
+    private void updateIpUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long ipId, long duration) {
         Pair<Long, Long> ipUsageInfo = usageDataMap.get(key);
         if (ipUsageInfo == null) {
             ipUsageInfo = new Pair<Long, Long>(new Long(ipId), new Long(duration));
@@ -140,18 +126,17 @@ public class IPAddressUsageParser {
         usageDataMap.put(key, ipUsageInfo);
     }
 
-    private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long ipId, String ipAddress,
+    private void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long ipId, String ipAddress,
         boolean isSourceNat, boolean isSystem, boolean isHidden) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Total usage time " + runningTime + "ms");
-        }
+
+        logger.debug("Total usage time {} ms" , runningTime);
 
         float usage = runningTime / 1000f / 60f / 60f;
 
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        LOGGER.debug("Creating IP usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+        logger.debug("Creating IP usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
                 ipId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                 DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
@@ -162,7 +147,7 @@ public class IPAddressUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", UsageTypes.IP_ADDRESS, new Double(usage), ipId,
                 (isSystem ? 1 : 0), (isSourceNat ? "SourceNat" : ""), startDate, endDate, isHidden);
-        s_usageDao.persist(usageRecord);
+        usageDao.persist(usageRecord);
     }
 
     private static class IpInfo {

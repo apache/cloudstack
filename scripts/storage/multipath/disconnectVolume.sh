@@ -66,6 +66,9 @@ fi
 
 logger -t CS_SCSI_VOL_REMOVE "${WWID} successfully purged from multipath along with slave devices"
 
+# Added to give time for the event to be fired to the server
+sleep 10
+
 echo "$(date): ${WWID} removed"
 
 exit 0

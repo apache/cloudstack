@@ -162,6 +162,13 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         KVMPhysicalDisk disk = new KVMPhysicalDisk(address.getPath(), address.toString(), pool);
         disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
 
+        // validate we have a connection, if not we need to connect first.
+        if (!isConnected(address.getPath())) {
+            if (!connectPhysicalDisk(address, pool, null)) {
+                throw new CloudRuntimeException("Unable to connect to volume " + address.getPath());
+            }
+        }
+
         long diskSize = getPhysicalDiskSize(address.getPath());
         disk.setSize(diskSize);
         disk.setVirtualSize(diskSize);
@@ -199,6 +206,10 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         // we expect WWN values in the volumePath so need to convert it to an actual physical path
         AddressInfo address = this.parseAndValidatePath(volumePath);
 
+        return connectPhysicalDisk(address, pool, details);
+    }
+
+    private boolean connectPhysicalDisk(AddressInfo address, KVMStoragePool pool, Map<String, String> details) {
         // validate we have a connection id - we can't proceed without that
         if (address.getConnectionId() == null) {
             LOGGER.error("Unable to connect volume with address [" + address.getPath() + "] of the storage pool: " + pool.getUuid() + " - connection id is not set in provided path");
@@ -217,21 +228,21 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) START", volumePath, pool.getUuid());
         AddressInfo address = this.parseAndValidatePath(volumePath);
         if (address.getAddress() == null) {
-            if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
+            if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) returning FALSE, volume path has no address field", volumePath, pool.getUuid());
             return false;
         }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
 
         if (result.getExitCode() != 0) {
-            LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", address.getAddress().toLowerCase(), result.getExitCode()));
+            LOGGER.warn("Disconnect failed for path {} with return code {}", address.getAddress().toLowerCase(), result.getExitCode());
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("multipath flush output: " + result.getResult());
-            LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+            LOGGER.debug("multipath flush output: {}", result.getResult());
+            LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) COMPLETE [rc={}]", volumePath, pool.getUuid(), result.getResult());
         }
 
         return (result.getExitCode() == 0);
@@ -239,7 +250,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        LOGGER.debug(String.format("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
+        LOGGER.debug("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]: {}", volumeToDisconnect);
         return false;
     }
 
@@ -412,24 +423,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         throw new UnsupportedOperationException("Unimplemented method 'createPhysicalDisk'");
     }
 
-    boolean isTemplateExtractable(String templatePath) {
-        ScriptResult result = runScript("file", 5000L, templatePath, "| awk -F' ' '{print $2}'");
-        String type = result.getResult();
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
-    }
-
     boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
         LOGGER.debug("Waiting for the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid() + " to become available for " + waitTimeInSec + " secs");
 
@@ -507,6 +500,18 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         LOGGER.debug("Unable to find the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
+        return false;
+    }
+
+    boolean isConnected(String path) {
+        // run a command to test if this is a binary device at this path
+        Script blockTest = new Script("/bin/test", LOGGER);
+        blockTest.add("-b", path);
+        blockTest.execute();
+        int rc = blockTest.getExitValue();
+        if (rc == 0) {
+            return true;
+        }
         return false;
     }
 

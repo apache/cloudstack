@@ -26,7 +26,7 @@
                 <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
                   <template #icon>
                     <render-icon v-if="(typeof menuItem.icon === 'string')" :icon="menuItem.icon" />
-                    <font-awesome-icon v-else :icon="menuItem.icon" />
+                    <render-icon v-else  :style="{fill:'#ffffff'}"  :svg-icon=menuItem.icon />
                   </template>
                 </a-avatar>
               </a-col>
@@ -50,6 +50,8 @@
 
 <script>
 
+import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
+
 export default {
   name: 'CreateMenu',
   beforeCreate () {
@@ -65,7 +67,7 @@ export default {
         api: 'createKubernetesCluster',
         title: 'label.kubernetes',
         subtitle: 'label.kubernetes.cluster.create',
-        icon: ['fa-solid', 'fa-dharmachakra'],
+        icon: kubernetesIcon,
         route: { path: '/kubernetes', query: { action: 'createKubernetesCluster' } }
       },
       {

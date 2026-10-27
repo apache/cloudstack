@@ -1283,18 +1283,18 @@ class TestSecurityGroup(cloudstackTestCase):
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                               self.apiclient,
                                               projectid=self.project.id
                                               )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertNotEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             0,
                             "Check List Security groups response"
                             )

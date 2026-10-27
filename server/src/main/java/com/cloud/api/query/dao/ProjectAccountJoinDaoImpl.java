@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.utils.db.GenericDaoBase;
@@ -59,7 +60,7 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
         projectAccountResponse.setRole(proj.getAccountRole().toString());
         projectAccountResponse.setDomainId(proj.getDomainUuid());
         projectAccountResponse.setDomainName(proj.getDomainName());
-        projectAccountResponse.setDomainPath(proj.getDomainPath());
+        projectAccountResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(proj.getDomainPath()));
 
         projectAccountResponse.setObjectName("projectaccount");
 

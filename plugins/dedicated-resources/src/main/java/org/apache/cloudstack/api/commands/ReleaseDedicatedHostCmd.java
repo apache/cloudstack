@@ -43,7 +43,7 @@ public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the ID of the host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The ID of the host")
     private Long hostId;
 
     /////////////////////////////////////////////////////
@@ -81,6 +81,6 @@ public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated host";
+        return "Releasing dedicated host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 }

@@ -25,9 +25,13 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +40,22 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.MigrateBackupsBetweenSecondaryStoragesCommand;
+import com.cloud.agent.api.MigrateBetweenSecondaryStoragesCommandAnswer;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.api.response.MigrationResponse;
+import org.apache.cloudstack.backup.BackupDetailVO;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -45,12 +64,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageServic
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService.DataObjectResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
+import org.apache.cloudstack.storage.backup.BackupObject;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -71,8 +94,11 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.ThreadContext;
 
 public class StorageOrchestrator extends ManagerBase implements StorageOrchestrationService, Configurable {
+
+    private static final String LOGCONTEXTID = "logcontextid";
 
     @Inject
     SnapshotDataStoreDao snapshotDataStoreDao;
@@ -91,11 +117,28 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     @Inject
     private SecondaryStorageService secStgSrv;
     @Inject
+    TemplateService templateService;
+    @Inject
     TemplateDataStoreDao templateDataStoreDao;
     @Inject
     VolumeDataStoreDao volumeDataStoreDao;
     @Inject
     DataMigrationUtility migrationHelper;
+    @Inject
+    TemplateManager templateManager;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    TemplateDataFactory templateDataFactory;
+    @Inject
+    DataCenterDao dcDao;
+    @Inject
+    AgentManager agentManager;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    BackupDetailsDao backupDetailDao;
+
 
     ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
             "image.store.imbalance.threshold",
@@ -105,6 +148,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             true, ConfigKey.Scope.Global);
 
     Integer numConcurrentCopyTasksPerSSVM = 2;
+
+    private final Map<Long, ThreadPoolExecutor> zoneExecutorMap = new HashMap<>();
+    private final Map<Long, Integer> zonePendingWorkCountMap = new HashMap<>();
+    private final Map<Long, ExecutorService> zoneKvmIncrementalExecutorMap = new ConcurrentHashMap<>();
 
     @Override
     public String getConfigComponentName() {
@@ -148,7 +195,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         DataStore srcDatastore = dataStoreManager.getDataStore(srcDataStoreId, DataStoreRole.Image);
         Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
         Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates = new HashMap<>();
-        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates);
+        Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains = new HashMap<>();
+        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates, backupChains);
+
 
         if (files.isEmpty()) {
             return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore), migrationPolicy.toString(), true);
@@ -167,8 +216,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         double meanstddev = getStandardDeviation(storageCapacities);
         double threshold = ImageStoreImbalanceThreshold.value();
         MigrationResponse response = null;
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM , numConcurrentCopyTasksPerSSVM, 30,
-                TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
         Date start = new Date();
         if (meanstddev < threshold && migrationPolicy == MigrationPolicy.BALANCE) {
             logger.debug("mean std deviation of the image stores is below threshold, no migration required");
@@ -177,7 +224,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
 
         int skipped = 0;
-        List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
+        List<Future<DataObjectResult>> futures = new ArrayList<>();
         while (true) {
             DataObject chosenFileForMigration = null;
             if (files.size() > 0) {
@@ -206,7 +253,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, childTemplates, migrationPolicy)) {
-                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, srcDatastore, destDatastoreId, executor, futures);
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, backupChains, srcDatastore, destDatastoreId, futures);
             } else {
                 if (migrationPolicy == MigrationPolicy.BALANCE) {
                     continue;
@@ -217,7 +264,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         }
         Date end = new Date();
-        handleSnapshotMigration(srcDataStoreId, start, end, migrationPolicy, futures, storageCapacities, executor);
+        handleSnapshotMigration(srcDataStoreId, start, end, migrationPolicy, futures, storageCapacities);
         return handleResponse(futures, migrationPolicy, message, success);
     }
 
@@ -235,7 +282,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreIdAndTemplateIds(srcImgStoreId, templateIdList);
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreAndSnapshotIds(srcImgStoreId, DataStoreRole.Image, snapshotIdList);
 
-        if (!migrationHelper.filesReadyToMigrate(srcImgStoreId, templates, snapshots, Collections.emptyList())) {
+        if (!migrationHelper.filesReadyToMigrate(srcImgStoreId, templates, snapshots, Collections.emptyList(), Collections.emptyList())) {
             throw new CloudRuntimeException("Migration failed as there are data objects which are not Ready - i.e, they may be in Migrating, creating, copying, etc. states");
         }
         files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates, templates, snapshots);
@@ -250,9 +297,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         storageCapacities = getStorageCapacities(storageCapacities, srcImgStoreId);
         storageCapacities = getStorageCapacities(storageCapacities, destImgStoreId);
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM, 30,
-                TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
-        List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
+        List<Future<DataObjectResult>> futures = new ArrayList<>();
         Date start = new Date();
 
         while (true) {
@@ -272,7 +317,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (storageCapacityBelowThreshold(storageCapacities, destImgStoreId)) {
-                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, srcDatastore, destImgStoreId, executor, futures);
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, null, srcDatastore, destImgStoreId, futures);
             } else {
                 message = "Migration failed. Destination store doesn't have enough capacity for migration";
                 success = false;
@@ -289,12 +334,18 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snap.getSnapshotId(), snap.getDataStoreId(), DataStoreRole.Image);
                 SnapshotInfo parentSnapshot = snapshotInfo.getParent();
                 if (snapshotInfo.getDataStore().getId() == srcImgStoreId && parentSnapshot != null && migratedSnapshotIdList.contains(parentSnapshot.getSnapshotId())) {
-                    futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, dataStoreManager.getDataStore(destImgStoreId, DataStoreRole.Image))));
+                    futures.add(submit(srcDatastore.getScope().getScopeId(), new MigrateDataTask(snapshotInfo, srcDatastore, dataStoreManager.getDataStore(destImgStoreId, DataStoreRole.Image))));
                 }
             });
         }
 
         return handleResponse(futures, null, message, success);
+    }
+
+    @Override
+    public Future<TemplateApiResult> orchestrateTemplateCopyFromSecondaryStores(long srcTemplateId, DataStore destStore) {
+        Long dstZoneId = destStore.getScope().getScopeId();
+        return submit(dstZoneId, new CopyTemplateFromSecondaryStorageTask(srcTemplateId, destStore));
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
@@ -330,42 +381,158 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             Map<DataObject,
             Pair<List<SnapshotInfo>, Long>> snapshotChains,
             Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChains,
+            Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains,
             DataStore srcDatastore,
             Long destDatastoreId,
-            ThreadPoolExecutor executor,
-            List<Future<AsyncCallFuture<DataObjectResult>>> futures) {
+            List<Future<DataObjectResult>> futures) {
 
         Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains, templateChains);
-
         storageCapacities = assumeMigrate(storageCapacities, srcDatastore.getId(), destDatastoreId, fileSize);
-        long activeSsvms = migrationHelper.activeSSVMCount(srcDatastore);
-        long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
-        // Increase thread pool size with increase in number of SSVMs
-        if ( totalJobs > executor.getCorePoolSize()) {
-            executor.setMaximumPoolSize((int) (totalJobs));
-            executor.setCorePoolSize((int) (totalJobs));
+        DataStore destDataStore = dataStoreManager.getDataStore(destDatastoreId, DataStoreRole.Image);
+
+        boolean isKvmIncrementalBackup = backupChains != null && chosenFileForMigration instanceof BackupObject && backupChains.containsKey(chosenFileForMigration);
+
+        if (isKvmIncrementalBackup) {
+            MigrateKvmIncrementalBackupTask task = new MigrateKvmIncrementalBackupTask(chosenFileForMigration, backupChains, srcDatastore, destDataStore);
+            futures.add(submitKvmIncrementalMigration(srcDatastore.getScope().getScopeId(), task));
+            logger.debug("Incremental backup migration {} submitted to incremental pool.", chosenFileForMigration.getUuid());
+        } else {
+            createMigrateDataTask(chosenFileForMigration, snapshotChains, templateChains, srcDatastore, destDataStore, futures);
         }
 
-        MigrateDataTask task = new MigrateDataTask(chosenFileForMigration, srcDatastore, dataStoreManager.getDataStore(destDatastoreId, DataStoreRole.Image));
-        if (chosenFileForMigration instanceof SnapshotInfo ) {
+        return storageCapacities;
+    }
+
+    private void migrateKvmIncrementalBackupChain(DataObject chosenFileForMigration, Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains, DataStore srcDatastore, DataStore destDataStore) {
+        Transaction.execute((TransactionCallback<Boolean>) status -> {
+            MigrateBetweenSecondaryStoragesCommandAnswer answer = null;
+
+            try {
+                List<List<BackupObject>> backupChain = backupChains.get(chosenFileForMigration).first();
+                MigrateBackupsBetweenSecondaryStoragesCommand migrateBetweenSecondaryStoragesCmd = new MigrateBackupsBetweenSecondaryStoragesCommand(backupChain.stream().map(list -> list.stream().map(BackupObject::getTO).collect(Collectors.toList()))
+                        .collect(Collectors.toList()), srcDatastore.getTO(), destDataStore.getTO());
+
+                HostVO host = getAvailableHost(((BackupObject) chosenFileForMigration).getZoneId());
+                if (host == null) {
+                    throw new CloudRuntimeException("No hosts found to send migrate command.");
+                }
+
+                migrateBetweenSecondaryStoragesCmd.setWait(StorageManager.AgentMaxDataMigrationWaitTime.valueIn(host.getClusterId()));
+                answer = (MigrateBetweenSecondaryStoragesCommandAnswer) agentManager.send(host.getId(), migrateBetweenSecondaryStoragesCmd);
+                if (answer == null || !answer.getResult()) {
+                    logger.warn("Unable to migrate backups [{}].", backupChain);
+                    throw new CloudRuntimeException("Unable to migrate KVM incremental backups to another secondary storage");
+                }
+
+            } catch (final OperationTimedoutException | AgentUnavailableException e) {
+                throw new CloudRuntimeException("Error while migrating KVM incremental backup chain. Check the logs for more information.", e);
+            } finally {
+                if (answer != null) {
+                    updateBackupsReference(destDataStore, answer);
+                }
+            }
+            return answer.getResult();
+        });
+    }
+
+    private void updateBackupsReference(DataStore destDataStore, MigrateBetweenSecondaryStoragesCommandAnswer answer) {
+        for (Pair<Long, String> backupIdAndUpdatedCheckpointPath : answer.getMigratedResources()) {
+            Long backupId = backupIdAndUpdatedCheckpointPath.first();
+            BackupDetailVO backupDetail = backupDetailDao.findDetail(backupId, BackupDetailsDao.IMAGE_STORE_ID);
+            String destDataStoreId = String.valueOf(destDataStore.getId());
+
+            if (backupDetail == null) {
+                logger.warn("No details found for backup [{}]. Creating new entry with image store ID [{}].", backupId, destDataStoreId);
+                backupDetailDao.addDetail(backupId, BackupDetailsDao.IMAGE_STORE_ID, destDataStoreId, false);
+                continue;
+            }
+
+            backupDetail.setValue(destDataStoreId);
+            backupDetailDao.update(backupDetail.getId(), backupDetail);
+        }
+    }
+
+    private HostVO getAvailableHost(long zoneId) throws AgentUnavailableException, OperationTimedoutException {
+        List<HostVO> hosts = hostDao.listByDataCenterIdAndHypervisorType(zoneId, Hypervisor.HypervisorType.KVM);
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            return hosts.get(new Random().nextInt(hosts.size()));
+        }
+
+        return null;
+    }
+
+    private void createMigrateDataTask(DataObject chosenFileForMigration, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChains, DataStore srcDatastore, DataStore destDataStore, List<Future<DataObjectResult>> futures) {
+        MigrateDataTask task = new MigrateDataTask(chosenFileForMigration, srcDatastore, destDataStore);
+        if (chosenFileForMigration instanceof SnapshotInfo) {
             task.setSnapshotChains(snapshotChains);
         }
         if (chosenFileForMigration instanceof TemplateInfo) {
             task.setTemplateChain(templateChains);
         }
-        futures.add((executor.submit(task)));
+        futures.add(submit(srcDatastore.getScope().getScopeId(), task));
         logger.debug("Migration of {}: {} is initiated.", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid());
-        return storageCapacities;
     }
 
+    protected <T> Future<T> submit(Long zoneId, Callable<T> task) {
+        ThreadPoolExecutor executor;
+        synchronized (this) {
+            if (!zoneExecutorMap.containsKey(zoneId)) {
+                zoneExecutorMap.put(zoneId, new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM,
+                        30, TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM)));
+                zonePendingWorkCountMap.put(zoneId, 0);
+            }
+            zonePendingWorkCountMap.merge(zoneId, 1, Integer::sum);
+            scaleExecutorIfNecessary(zoneId);
+            executor = zoneExecutorMap.get(zoneId);
+        }
+        return executor.submit(task);
 
+    }
 
-    private MigrationResponse handleResponse(List<Future<AsyncCallFuture<DataObjectResult>>> futures, MigrationPolicy migrationPolicy, String message, boolean success) {
+    protected synchronized <T> Future<T> submitKvmIncrementalMigration(Long zoneId, Callable<T> task) {
+        if (!zoneKvmIncrementalExecutorMap.containsKey(zoneId)) {
+            zoneKvmIncrementalExecutorMap.put(zoneId, Executors.newSingleThreadExecutor());
+        }
+        return zoneKvmIncrementalExecutorMap.get(zoneId).submit(task);
+    }
+
+    protected void scaleExecutorIfNecessary(Long zoneId) {
+        long activeSsvms = migrationHelper.activeSSVMCount(zoneId);
+        long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
+        ThreadPoolExecutor executor = zoneExecutorMap.get(zoneId);
+        if (totalJobs > executor.getCorePoolSize()) {
+            logger.debug("Scaling up executor of zone [{}] from [{}] to [{}] threads.", zoneId, executor.getCorePoolSize(),
+                    totalJobs);
+            executor.setMaximumPoolSize((int) (totalJobs));
+            executor.setCorePoolSize((int) (totalJobs));
+        }
+    }
+
+    protected synchronized void tryCleaningUpExecutor(Long zoneId) {
+        if (!zoneExecutorMap.containsKey(zoneId)) {
+            logger.debug("No executor exists for zone [{}].", zoneId);
+            return;
+        }
+
+        zonePendingWorkCountMap.merge(zoneId, -1, Integer::sum);
+        Integer pendingWorkCount = zonePendingWorkCountMap.get(zoneId);
+        if (pendingWorkCount > 0) {
+            logger.debug("Not cleaning executor of zone [{}] yet, as there is [{}] pending work.", zoneId, pendingWorkCount);
+            return;
+        }
+
+        logger.debug("Cleaning executor of zone [{}].", zoneId);
+        ThreadPoolExecutor executor = zoneExecutorMap.get(zoneId);
+        zoneExecutorMap.remove(zoneId);
+        executor.shutdown();
+    }
+
+    private MigrationResponse handleResponse(List<Future<DataObjectResult>> futures, MigrationPolicy migrationPolicy, String message, boolean success) {
         int successCount = 0;
-        for (Future<AsyncCallFuture<DataObjectResult>> future : futures) {
+        for (Future<DataObjectResult> future : futures) {
             try {
-                AsyncCallFuture<DataObjectResult> res = future.get();
-                if (res.get().isSuccess()) {
+                DataObjectResult res = future.get();
+                if (res.isSuccess()) {
                     successCount++;
                 }
             } catch ( InterruptedException | ExecutionException e) {
@@ -379,7 +546,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     private void handleSnapshotMigration(Long srcDataStoreId, Date start, Date end, MigrationPolicy policy,
-                                          List<Future<AsyncCallFuture<DataObjectResult>>> futures, Map<Long, Pair<Long, Long>> storageCapacities, ThreadPoolExecutor executor) {
+                                          List<Future<DataObjectResult>> futures, Map<Long, Pair<Long, Long>> storageCapacities) {
         DataStore srcDatastore = dataStoreManager.getDataStore(srcDataStoreId, DataStoreRole.Image);
         List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.findSnapshots(srcDataStoreId, start, end);
         if (!snaps.isEmpty()) {
@@ -395,12 +562,12 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                         storeId = dstores.get(1);
                     }
                     DataStore datastore =  dataStoreManager.getDataStore(storeId, DataStoreRole.Image);
-                    futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, datastore)));
+                    futures.add(submit(srcDatastore.getScope().getScopeId(), new MigrateDataTask(snapshotInfo, srcDatastore, datastore)));
                 }
                 if (parentSnapshot != null) {
                     DataStore parentDS = dataStoreManager.getDataStore(parentSnapshot.getDataStore().getId(), DataStoreRole.Image);
                     if (parentDS.getId() != snapshotInfo.getDataStore().getId()) {
-                        futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, parentDS)));
+                        futures.add(submit(srcDatastore.getScope().getScopeId(), new MigrateDataTask(snapshotInfo, srcDatastore, parentDS)));
                     }
                 }
             }
@@ -527,16 +694,19 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return standardDeviation.evaluate(metricValues, mean);
     }
 
-    private class MigrateDataTask implements Callable<AsyncCallFuture<DataObjectResult>> {
+    private class MigrateDataTask implements Callable<DataObjectResult> {
         private DataObject file;
         private DataStore srcDataStore;
         private DataStore destDataStore;
         private Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain;
         private Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain;
+        private String logid;
+
         public MigrateDataTask(DataObject file, DataStore srcDataStore, DataStore destDataStore) {
             this.file = file;
             this.srcDataStore = srcDataStore;
             this.destDataStore = destDataStore;
+            this.logid = ThreadContext.get(LOGCONTEXTID);
         }
 
         public void setSnapshotChains(Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
@@ -557,8 +727,77 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
 
         @Override
-        public AsyncCallFuture<DataObjectResult> call() throws Exception {
-            return secStgSrv.migrateData(file, srcDataStore, destDataStore, snapshotChain, templateChain);
+        public DataObjectResult call() {
+            ThreadContext.put(LOGCONTEXTID, logid);
+            DataObjectResult result;
+            AsyncCallFuture<DataObjectResult> future = secStgSrv.migrateData(file, srcDataStore, destDataStore, snapshotChain, templateChain);
+            try {
+                result = future.get();
+            } catch (ExecutionException | InterruptedException e) {
+                logger.warn("Exception while migrating data to another secondary storage: {}", e.toString());
+                result = new DataObjectResult(file);
+                result.setResult(e.toString());
+            }
+            tryCleaningUpExecutor(srcDataStore.getScope().getScopeId());
+            ThreadContext.clearAll();
+            return result;
         }
     }
+
+    private class CopyTemplateFromSecondaryStorageTask implements Callable<TemplateApiResult> {
+        private final long srcTemplateId;
+        private final DataStore destStore;
+        private final String logid;
+
+        CopyTemplateFromSecondaryStorageTask(long srcTemplateId, DataStore destStore) {
+            this.srcTemplateId = srcTemplateId;
+            this.destStore = destStore;
+            this.logid = ThreadContext.get(LOGCONTEXTID);
+        }
+
+        @Override
+        public TemplateApiResult call() {
+            ThreadContext.put(LOGCONTEXTID, logid);
+            TemplateApiResult result;
+            long destZoneId = destStore.getScope().getScopeId();
+            TemplateInfo sourceTmpl = templateDataFactory.getTemplate(srcTemplateId, DataStoreRole.Image);
+            try {
+                templateService.handleTemplateCopyFromSecondaryStores(srcTemplateId, destStore);
+                result = new TemplateApiResult(sourceTmpl);
+            } finally {
+                tryCleaningUpExecutor(destZoneId);
+                ThreadContext.clearAll();
+            }
+
+            return result;
+        }
+    }
+
+    private class MigrateKvmIncrementalBackupTask implements Callable<DataObjectResult> {
+        private final DataObject chosenFile;
+        private final Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains;
+        private final DataStore srcDataStore;
+        private final DataStore destDataStore;
+
+        public MigrateKvmIncrementalBackupTask(DataObject chosenFile, Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains, DataStore srcDataStore, DataStore destDataStore) {
+            this.chosenFile = chosenFile;
+            this.backupChains = backupChains;
+            this.srcDataStore = srcDataStore;
+            this.destDataStore = destDataStore;
+        }
+
+        @Override
+        public DataObjectResult call() {
+            try {
+                migrateKvmIncrementalBackupChain(chosenFile, backupChains, srcDataStore, destDataStore);
+                return new DataObjectResult(chosenFile);
+            } catch (Exception e) {
+                logger.warn("Failed migrating incremental backup {} due to {}.", chosenFile.getUuid(), e);
+                DataObjectResult result = new DataObjectResult(chosenFile);
+                result.setResult(e.toString());
+                return result;
+            }
+        }
+    }
+
 }

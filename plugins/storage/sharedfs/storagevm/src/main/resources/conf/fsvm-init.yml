@@ -30,14 +30,9 @@ write_files:
       }
 
       get_block_device() {
-        if [ "$HYPERVISOR" == "kvm" ]; then
-          BLOCK_DEVICE="vdb"
-        elif [ "$HYPERVISOR" == "xenserver" ]; then
-          BLOCK_DEVICE="xvdb"
-        elif [ "$HYPERVISOR" == "vmware" ]; then
-          BLOCK_DEVICE="sdb"
-        else
-          log "Unknown hypervisor"
+        BLOCK_DEVICE=$(lsblk -dn -o NAME,TYPE | awk '$2=="disk"{print $1}' | tail -n 1)
+        if [ -z "$BLOCK_DEVICE" ]; then
+          log "Unknown data disk"
           exit 1
         fi
         echo "$BLOCK_DEVICE"

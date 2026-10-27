@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 
-@APICommand(name = "removeVpnUser", description = "Removes vpn user", responseObject = SuccessResponse.class, entityType = {VpnUser.class},
+@APICommand(name = "removeVpnUser", description = "Removes VPN User", responseObject = SuccessResponse.class, entityType = {VpnUser.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
@@ -41,19 +41,19 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "username for the vpn user")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username for the VPN User")
     private String userName;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the vpn user. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the VPN User. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "remove vpn user from the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Remove VPN User from the project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId for the VPN User. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -92,7 +92,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Remove Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
+        return "Remove Remote Access VPN User for Account " + getEntityOwnerId() + " username= " + getUserName();
     }
 
     @Override
@@ -106,7 +106,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         long ownerId = owner.getId();
         boolean result = _ravService.removeVpnUser(owner, userName, CallContext.current().getCallingAccount());
         if (!result) {
-            String errorMessage = String.format("Failed to remove VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
+            String errorMessage = String.format("Failed to remove VPN User=[%s]. VPN owner id=[%s].", userName, ownerId);
             logger.error(errorMessage);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
@@ -115,13 +115,13 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         try {
             appliedVpnUsers = _ravService.applyVpnUsers(ownerId, userName, true);
         } catch (ResourceUnavailableException ex) {
-            String errorMessage = String.format("Failed to refresh VPN user=[%s] due to resource unavailable. VPN owner id=[%s].", userName, ownerId);
+            String errorMessage = String.format("Failed to refresh VPN User=[%s] due to resource unavailable. VPN owner id=[%s].", userName, ownerId);
             logger.error(errorMessage, ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage, ex);
         }
 
         if (!appliedVpnUsers) {
-            String errorMessage = String.format("Failed to refresh VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
+            String errorMessage = String.format("Failed to refresh VPN User=[%s]. VPN owner id=[%s].", userName, ownerId);
             logger.debug(errorMessage);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }

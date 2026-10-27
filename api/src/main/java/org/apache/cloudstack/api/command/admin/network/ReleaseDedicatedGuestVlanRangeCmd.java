@@ -44,7 +44,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GuestVlanRangeResponse.class,
                required = true,
-               description = "the ID of the dedicated guest vlan range")
+               description = "The ID of the dedicated guest VLAN range")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Releasing a dedicated guest vlan range.";
+        return "Releasing dedicated guest VLAN range with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     // ///////////////////////////////////////////////////
@@ -81,7 +81,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
+        CallContext.current().setEventDetails("Dedicated guest VLAN range ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.releaseDedicatedGuestVlanRange(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

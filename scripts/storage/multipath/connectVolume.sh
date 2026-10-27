@@ -100,7 +100,7 @@ while true; do
 done
 
 echo "$(date): Doing a recan to make sure we have proper current size locally"
-for device in $(multipath -ll 3${WWID} | egrep '^  ' | awk '{print $2}'); do
+for device in $(multipath -ll 3${WWID} | grep -E '^  ' | awk '{print $2}'); do
     echo "1" > /sys/bus/scsi/drivers/sd/${device}/rescan;
 done
 

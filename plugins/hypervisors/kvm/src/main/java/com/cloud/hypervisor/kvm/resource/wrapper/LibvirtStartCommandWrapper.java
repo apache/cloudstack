@@ -21,9 +21,16 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.FileUtil;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
@@ -60,7 +67,9 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
         Connect conn = null;
+        List<KVMStoragePool> secondaryStorages = new ArrayList<>();
         try {
+            mountSecondaryStoragesIfNeeded(command, libvirtComputingResource, secondaryStorages);
 
             vm = libvirtComputingResource.createVMFromSpec(vmSpec);
             conn = libvirtUtilitiesHelper.getConnectionByType(vm.getHvsType());
@@ -80,14 +89,21 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             }
 
             libvirtComputingResource.createVifs(vmSpec, vm);
-
-            logger.debug("starting " + vmName + ": " + vm.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting {} : {}", vmName, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(vm.toString()));
+            }
             String vmInitialSpecification = vm.toString();
             String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
             libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
             performAgentStartHook(vmName, libvirtComputingResource);
 
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
+
+            if (vmSpec.getType() == VirtualMachine.Type.User) {
+                List<VolumeObjectTO> volumes = Arrays.stream(vmSpec.getDisks()).filter(diskTO -> diskTO.getData() instanceof VolumeObjectTO).
+                        map(diskTO -> (VolumeObjectTO) diskTO.getData()).collect(Collectors.toList());
+                libvirtComputingResource.recreateCheckpointsOnVm(volumes, vmName, conn);
+            }
 
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && (vmSpec.getBootArgs().contains(UserVmManager.CKS_NODE) || vmSpec.getBootArgs().contains(UserVmManager.SHAREDFSVM)))) {
@@ -156,6 +172,17 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         } finally {
             if (state != DomainState.VIR_DOMAIN_RUNNING) {
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
+                for (KVMStoragePool secondaryStorage : secondaryStorages) {
+                    libvirtComputingResource.getStoragePoolMgr().deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
+                }
+            }
+        }
+    }
+
+    private void mountSecondaryStoragesIfNeeded(StartCommand command, LibvirtComputingResource libvirtComputingResource, List<KVMStoragePool> secondaryStorages) {
+        if (CollectionUtils.isNotEmpty(command.getSecondaryStorages())) {
+            for (String secondaryStorageUrl : command.getSecondaryStorages()) {
+                secondaryStorages.add(libvirtComputingResource.getStoragePoolMgr().getStoragePoolByURI(secondaryStorageUrl));
             }
         }
     }

@@ -48,9 +48,9 @@ public class AccountVlanMapDaoImpl extends GenericDaoBase<AccountVlanMapVO, Long
     }
 
     @Override
-    public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId) {
+    public AccountVlanMapVO findAccountVlanMap(Long accountId, long vlanDbId) {
         SearchCriteria<AccountVlanMapVO> sc = AccountVlanSearch.create();
-        sc.setParameters("accountId", accountId);
+        sc.setParametersIfNotNull("accountId", accountId);
         sc.setParameters("vlanDbId", vlanDbId);
         return findOneIncludingRemovedBy(sc);
     }

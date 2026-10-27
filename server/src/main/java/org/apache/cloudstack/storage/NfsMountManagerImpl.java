@@ -97,7 +97,6 @@ public class NfsMountManagerImpl implements NfsMountManager {
         if (nfsVersion != null){
             command.add("-o", "vers=" + nfsVersion);
         }
-        // command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
         if ("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
             command.add("-o", "resvport");
         }

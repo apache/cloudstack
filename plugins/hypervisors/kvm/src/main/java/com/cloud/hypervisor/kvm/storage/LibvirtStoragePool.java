@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -56,8 +58,8 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected String authSecret;
     protected String sourceHost;
     protected int sourcePort;
-
     protected String sourceDir;
+    protected Map<String, String> details;
 
     public LibvirtStoragePool(String uuid, String name, StoragePoolType type, StorageAdaptor adaptor, StoragePool pool) {
         this.uuid = uuid;
@@ -172,9 +174,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
         logger.debug("find volume bypass libvirt volumeUid " + volumeUid);
         //For network file system or file system, try to use java file to find the volume, instead of through libvirt. BUG:CLOUDSTACK-4459
         String localPoolPath = this.getLocalPath();
-        File f = new File(localPoolPath + File.separator + volumeUuid);
+        File f = resolvePhysicalDiskFile(localPoolPath, volumeUid, volumeUuid);
         if (!f.exists()) {
-            logger.debug("volume: " + volumeUuid + " not exist on storage pool");
+            logger.debug("volume: " + volumeUid + " not exist on storage pool");
             throw new CloudRuntimeException("Can't find volume:" + volumeUuid);
         }
         disk = new KVMPhysicalDisk(f.getPath(), volumeUuid, this);
@@ -183,6 +185,32 @@ public class LibvirtStoragePool implements KVMStoragePool {
         disk.setVirtualSize(f.length());
         logger.debug("find volume bypass libvirt disk " + disk.toString());
         return disk;
+    }
+
+    File resolvePhysicalDiskFile(String localPoolPath, String volumeUid, String volumeUuid) {
+        File poolPath = new File(localPoolPath);
+        if (volumeUid.contains("/") && !new File(volumeUid).isAbsolute()) {
+            File nestedVolume = new File(poolPath, volumeUid);
+            if (isFileInStoragePool(poolPath, nestedVolume)) {
+                return nestedVolume;
+            }
+            logger.warn(String.format("Relative volume path [%s] resolves outside storage pool [%s]. Falling back to volume name lookup.",
+                    volumeUid, localPoolPath));
+        }
+        return new File(poolPath, volumeUuid);
+    }
+
+    private boolean isFileInStoragePool(File poolPath, File volumePath) {
+        try {
+            String canonicalPoolPath = poolPath.getCanonicalPath();
+            String canonicalVolumePath = volumePath.getCanonicalPath();
+            return canonicalVolumePath.equals(canonicalPoolPath) ||
+                    canonicalVolumePath.startsWith(canonicalPoolPath + File.separator);
+        } catch (IOException e) {
+            logger.warn(String.format("Unable to resolve storage pool path [%s] or volume path [%s].",
+                    poolPath, volumePath), e);
+            return false;
+        }
     }
 
     @Override
@@ -212,7 +240,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isExternalSnapshot() {
-        if (this.type == StoragePoolType.CLVM || type == StoragePoolType.RBD) {
+        if (this.type == StoragePoolType.CLVM || this.type == StoragePoolType.CLVM_NG || type == StoragePoolType.RBD) {
             return true;
         }
         return false;
@@ -277,6 +305,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return this.type;
     }
 
+    public void setType(StoragePoolType type) {
+        this.type = type;
+    }
+
     public StoragePool getPool() {
         return this._pool;
     }
@@ -311,34 +343,47 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public Map<String, String> getDetails() {
-        return null;
+        return this.details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 
     @Override
     public boolean isPoolSupportHA() {
-        return type == StoragePoolType.NetworkFilesystem;
+        return HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     public String getHearthBeatPath() {
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (StoragePoolType.NetworkFilesystem.equals(type)) {
             String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            return Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
+            String scriptPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
+            if (scriptPath == null) {
+                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmheartbeat.sh' in directory: " + kvmScriptsDir);
+            }
+            return scriptPath;
+        } else if (StoragePoolType.SharedMountPoint.equals(type)) {
+            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
+            String scriptPath = Script.findScript(kvmScriptsDir, "kvmsmpheartbeat.sh");
+            if (scriptPath == null) {
+                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmsmpheartbeat.sh' in directory: " + kvmScriptsDir);
+            }
+            return scriptPath;
         }
         return null;
     }
 
 
     public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
-        Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeout, logger);
+        Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
         cmd.add("-i", primaryStoragePool.getPoolIp());
         cmd.add("-p", primaryStoragePool.getPoolMountSourcePath());
         cmd.add("-m", primaryStoragePool.getMountDestPath());
 
         if (hostValidation) {
             cmd.add("-h", hostPrivateIp);
-        }
-
-        if (!hostValidation) {
+        } else {
             cmd.add("-c");
         }
 
@@ -356,53 +401,53 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
-        boolean validResult = false;
+    public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
         String hostIp = host.getPrivateNetwork().getIp();
-        Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeout, logger);
+        Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);
         cmd.add("-i", pool.getPoolIp());
         cmd.add("-p", pool.getPoolMountSourcePath());
         cmd.add("-m", pool.getMountDestPath());
         cmd.add("-h", hostIp);
         cmd.add("-r");
-        cmd.add("-t", String.valueOf(HeartBeatUpdateFreq / 1000));
+        cmd.add("-t", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         String result = cmd.execute(parser);
         String parsedLine = parser.getLine();
 
-        logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine,
-                pool.getPoolIp()));
+        logger.debug("Checking heart beat for host IP {} with KVMHAChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", hostIp, cmd.toString(), result, parsedLine, pool.getPoolIp());
 
         if (result == null && parsedLine.contains("DEAD")) {
-            logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned [%s]. [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(),
-                    result, parsedLine, hostIp));
+            logger.warn("Checking heart beat for host IP {} with KVMHAChecker command [{}] returned [{}]. It may cause a shutdown of the host.", hostIp, cmd.toString(), parsedLine);
+            return false;
         } else {
-            validResult = true;
+            logger.debug("Checking heart beat for host IP {} with KVMHAChecker command [{}] succeeded.", hostIp, cmd.toString());
+            return true;
         }
-        return validResult;
     }
 
     @Override
-    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+    public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+        String hostIp = host.getPrivateNetwork().getIp();
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
         cmd.add("-i", pool.getPoolIp());
         cmd.add("-p", pool.getPoolMountSourcePath());
         cmd.add("-m", pool.getMountDestPath());
-        cmd.add("-h", host.getPrivateNetwork().getIp());
+        cmd.add("-h", hostIp);
         cmd.add("-u", volumeUUIDListString);
-        cmd.add("-t", String.valueOf(String.valueOf(System.currentTimeMillis() / 1000)));
+        cmd.add("-t", String.valueOf(System.currentTimeMillis() / 1000));
         cmd.add("-d", String.valueOf(duration));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 
         String result = cmd.execute(parser);
         String parsedLine = parser.getLine();
 
-        logger.debug(String.format("Checking heart beat with KVMHAVMActivityChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine, pool.getPoolIp()));
+        logger.debug("Checking VM activity for host IP {} with KVMHAVMActivityChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", hostIp, cmd.toString(), result, parsedLine, pool.getPoolIp());
 
         if (result == null && parsedLine.contains("DEAD")) {
-            logger.warn(String.format("Checking heart beat with KVMHAVMActivityChecker command [%s] returned [%s]. It is [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(), result, parsedLine, host.getPrivateNetwork().getIp()));
+            logger.warn("Checking VM activity for host IP {} with KVMHAVMActivityChecker command [{}] returned [{}]. It may cause a shutdown of the host.", hostIp, cmd.toString(), parsedLine);
             return false;
         } else {
+            logger.debug("Checking VM activity for host IP {} with KVMHAVMActivityChecker command [{}] succeeded.", hostIp, cmd.toString());
             return true;
         }
     }

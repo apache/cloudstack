@@ -28,11 +28,11 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ListElastistorVolumeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the volume")
+    @Param(description = "The ID of the volume")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the volume")
+    @Param(description = "The name of the volume")
     private String name;
 
     @SerializedName("graceallowed")
@@ -40,15 +40,15 @@ public class ListElastistorVolumeResponse extends BaseResponse {
     private String graceAllowed;
 
     @SerializedName("deduplication")
-    @Param(description = "deduplication")
+    @Param(description = "Deduplication")
     private String deduplication;
 
     @SerializedName("compression")
-    @Param(description = "compression")
+    @Param(description = "Compression")
     private String compression;
 
     @SerializedName("sync")
-    @Param(description = "synchronization")
+    @Param(description = "Synchronization")
     private String sync;
 
     public String getGraceAllowed() {

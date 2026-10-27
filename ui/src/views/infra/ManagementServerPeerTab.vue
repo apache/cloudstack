@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -99,7 +99,7 @@ export default {
   methods: {
     fetchData () {
       this.managementservers = []
-      api('listManagementServers', {
+      getAPI('listManagementServers', {
         peers: true,
         id: this.resource.id
       }).then(json => {

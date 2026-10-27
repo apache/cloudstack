@@ -31,6 +31,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.nio.Link;
 
 public class ClusteredAgentAttache extends ConnectedAgentAttache implements Routable {
@@ -44,14 +45,14 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         s_clusteredAgentMgr = agentMgr;
     }
 
-    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name) {
-        super(agentMgr, id, uuid, name, null, false);
+    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Hypervisor.HypervisorType hypervisorType) {
+        super(agentMgr, id, uuid, name, hypervisorType, null, false);
         _forward = true;
         _transferRequests = new LinkedList<Request>();
     }
 
-    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Link link, final boolean maintenance) {
-        super(agentMgr, id, uuid, name, link, maintenance);
+    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Hypervisor.HypervisorType hypervisorType, final Link link, final boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, link, maintenance);
         _forward = link == null;
         _transferRequests = new LinkedList<Request>();
     }

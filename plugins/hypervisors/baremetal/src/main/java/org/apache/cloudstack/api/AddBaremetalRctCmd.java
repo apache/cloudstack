@@ -33,14 +33,14 @@ import javax.inject.Inject;
 /**
  * Created by frank on 5/8/14.
  */
-@APICommand(name = "addBaremetalRct", description = "adds baremetal rack configuration text", responseObject = BaremetalRctResponse.class,
+@APICommand(name = "addBaremetalRct", description = "Adds baremetal rack configuration text", responseObject = BaremetalRctResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class AddBaremetalRctCmd extends BaseAsyncCmd {
 
     @Inject
     private BaremetalVlanManager vlanMgr;
 
-    @Parameter(name=ApiConstants.BAREMETAL_RCT_URL, required = true, description = "http url to baremetal RCT configuration")
+    @Parameter(name=ApiConstants.BAREMETAL_RCT_URL, required = true, description = "HTTP URL to baremetal RCT configuration")
     private String rctUrl;
 
     public String getRctUrl() {

@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import DedicateDomain from './DedicateDomain'
 
 export default {
@@ -92,7 +92,7 @@ export default {
         this.domainError = true
         return
       }
-      api('dedicateZone', {
+      postAPI('dedicateZone', {
         zoneId: this.resource.id,
         domainId: this.domainId,
         account: this.dedicatedAccount
@@ -134,7 +134,7 @@ export default {
         this.domainError = true
         return
       }
-      api('dedicatePod', {
+      postAPI('dedicatePod', {
         podId: this.resource.id,
         domainId: this.domainId,
         account: this.dedicatedAccount
@@ -176,7 +176,7 @@ export default {
         this.domainError = true
         return
       }
-      api('dedicateCluster', {
+      postAPI('dedicateCluster', {
         clusterId: this.resource.id,
         domainId: this.domainId,
         account: this.dedicatedAccount
@@ -218,7 +218,7 @@ export default {
         this.domainError = true
         return
       }
-      api('dedicateHost', {
+      postAPI('dedicateHost', {
         hostId: this.resource.id,
         domainId: this.domainId,
         account: this.dedicatedAccount

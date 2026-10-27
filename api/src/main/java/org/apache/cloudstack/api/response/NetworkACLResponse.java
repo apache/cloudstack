@@ -28,11 +28,11 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = NetworkACL.class)
 public class NetworkACLResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the ACL")
+    @Param(description = "The ID of the ACL")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the Name of the ACL")
+    @Param(description = "The Name of the ACL")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
@@ -48,7 +48,7 @@ public class NetworkACLResponse extends BaseResponse {
     private String vpcName;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is ACL for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is ACL for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public void setId(String id) {

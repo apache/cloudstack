@@ -17,12 +17,40 @@
 package com.cloud.network.element;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.vpc.NetworkACLItem;
 
 public interface PortForwardingServiceProvider extends NetworkElement, IpDeployingRequester {
+
+    static String getPublicPortRange(PortForwardingRule rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
+    static String getPrivatePFPortRange(PortForwardingRule rule) {
+        return rule.getDestinationPortStart() == rule.getDestinationPortEnd() ?
+                String.valueOf(rule.getDestinationPortStart()) :
+                String.valueOf(rule.getDestinationPortStart()).concat("-").concat(String.valueOf(rule.getDestinationPortEnd()));
+    }
+
+    static String getPrivatePortRange(FirewallRule rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
+    static String getPrivatePortRangeForACLRule(NetworkACLItem rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
     /**
      * Apply rules
      * @param network

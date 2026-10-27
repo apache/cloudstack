@@ -105,6 +105,12 @@ public class VpcVO implements Vpc {
     @Column(name = "ip6Dns2")
     String ip6Dns2;
 
+    @Column(name = "use_router_ip_resolver")
+    boolean useRouterIpResolver = false;
+
+    @Column(name = "keep_mac_address_on_public_nic")
+    private boolean keepMacAddressOnPublicNic = true;
+
     @Transient
     boolean rollingRestart = false;
 
@@ -308,5 +314,23 @@ public class VpcVO implements Vpc {
     @Override
     public String getIp6Dns2() {
         return ip6Dns2;
+    }
+
+    @Override
+    public boolean useRouterIpAsResolver() {
+        return useRouterIpResolver;
+    }
+
+    public void setUseRouterIpResolver(boolean useRouterIpResolver) {
+        this.useRouterIpResolver = useRouterIpResolver;
+    }
+
+    @Override
+    public boolean getKeepMacAddressOnPublicNic() {
+        return keepMacAddressOnPublicNic;
+    }
+
+    public void setKeepMacAddressOnPublicNic(boolean keepMacAddressOnPublicNic) {
+        this.keepMacAddressOnPublicNic = keepMacAddressOnPublicNic;
     }
 }

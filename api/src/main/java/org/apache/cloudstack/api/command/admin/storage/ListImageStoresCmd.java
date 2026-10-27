@@ -33,22 +33,22 @@ public class ListImageStoresCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the image store")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the image store")
     private String storeName;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the image store protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The image store protocol")
     private String protocol;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the image store provider")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "The image store provider")
     private String provider;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the image store")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the image store")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "the ID of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "The ID of the storage pool")
     private Long id;
 
-    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, entityType = ImageStoreResponse.class, description = "read-only status of the image store", since = "4.15.0")
+    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, entityType = ImageStoreResponse.class, description = "Read-only status of the image store", since = "4.15.0")
     private Boolean readonly;
 
     /////////////////////////////////////////////////////

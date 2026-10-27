@@ -19,6 +19,7 @@ package com.cloud.network.vpc;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.ImportNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
@@ -98,4 +99,6 @@ public interface NetworkACLService {
     NetworkACLItem moveNetworkAclRuleToNewPosition(MoveNetworkAclItemCmd moveNetworkAclItemCmd);
 
     NetworkACLItem moveRuleToTheTopInACLList(NetworkACLItem ruleBeingMoved);
+
+    List<NetworkACLItem> importNetworkACLRules(ImportNetworkACLCmd cmd) throws ResourceUnavailableException;
 }

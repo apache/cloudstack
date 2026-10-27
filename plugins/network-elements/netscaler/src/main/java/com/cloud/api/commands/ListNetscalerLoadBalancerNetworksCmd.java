@@ -42,7 +42,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "listNetscalerLoadBalancerNetworks",
             responseObject = NetworkResponse.class,
-            description = "lists network that are using a netscaler load balancer device",
+            description = "Lists network that are using a netscaler load balancer device",
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
 
@@ -57,7 +57,7 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = NetscalerLoadBalancerResponse.class,
                required = true,
-               description = "netscaler load balancer device ID")
+               description = "Netscaler load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////

@@ -23,11 +23,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -44,8 +46,6 @@ import org.apache.logging.log4j.Logger;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * ConfigDepotImpl implements the ConfigDepot and ConfigDepotAdmin interface.
@@ -87,17 +87,15 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
     Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
-    Cache<String, String> configCache;
+    LazyCache<Ternary<String, ConfigKey.Scope, Long>, String> configCache;
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
     HashMap<ConfigKey.Scope, Set<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
 
     public ConfigDepotImpl() {
-        configCache = Caffeine.newBuilder()
-                .maximumSize(512)
-                .expireAfterWrite(CONFIG_CACHE_EXPIRE_SECONDS, TimeUnit.SECONDS)
-                .build();
+        configCache = new LazyCache<>(512,
+                CONFIG_CACHE_EXPIRE_SECONDS, this::getConfigStringValueInternal);
         ConfigKey.init(this);
         createEmptyScopeLevelMappings();
     }
@@ -148,9 +146,11 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
             createOrupdateConfigObject(date, configurable.getConfigComponentName(), key, null);
 
-            if ((key.scope() != null) && (key.scope() != ConfigKey.Scope.Global)) {
-                Set<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(key.scope());
-                currentConfigs.add(key);
+            if (!key.isGlobalOrEmptyScope()) {
+                for (ConfigKey.Scope scope : key.getScopes()) {
+                    Set<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(scope);
+                    currentConfigs.add(key);
+                }
             }
         }
 
@@ -174,7 +174,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             Pair<String, Long> subGroup = key.subGroup();
             ConfigurationSubGroupVO subGroupVO = _configSubGroupDao.findByNameAndGroup(subGroup.first(), groupId);
             if (subGroupVO == null) {
-                subGroupVO = new ConfigurationSubGroupVO();
+                subGroupVO = new ConfigurationSubGroupVO(subGroup.first(), null, subGroup.second());
+                subGroupVO.setGroupId(groupId);
                 subGroupVO = _configSubGroupDao.persist(subGroupVO);
             }
             subGroupId = subGroupVO.getId();
@@ -208,12 +209,12 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         } else {
             boolean configUpdated = false;
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
-                !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
+                !ObjectUtils.equals(vo.getScope(), key.getScopeBitmask()) ||
                 !ObjectUtils.equals(vo.getComponent(), componentName)) {
                 vo.setDynamic(key.isDynamic());
                 vo.setDescription(key.description());
                 vo.setDefaultValue(key.defaultValue());
-                vo.setScope(key.scope().toString());
+                vo.setScope(key.getScopeBitmask());
                 vo.setComponent(componentName);
                 vo.setUpdated(date);
                 configUpdated = true;
@@ -277,26 +278,17 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return _configDao;
     }
 
-    protected String getConfigStringValueInternal(String cacheKey) {
-        String[] parts = cacheKey.split("-");
-        String key = parts[0];
-        ConfigKey.Scope scope = ConfigKey.Scope.Global;
-        Long scopeId = null;
-        try {
-            scope = ConfigKey.Scope.valueOf(parts[1]);
-            scopeId = Long.valueOf(parts[2]);
-        } catch (IllegalArgumentException ignored) {}
+    protected String getConfigStringValueInternal(Ternary<String, ConfigKey.Scope, Long> cacheKey) {
+        final String key = cacheKey.first();
+        final ConfigKey.Scope scope = cacheKey.second();
+        final Long scopeId = cacheKey.third();
         if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
-            ScopedConfigStorage scopedConfigStorage = null;
-            for (ScopedConfigStorage storage : _scopedStorages) {
-                if (storage.getScope() == scope) {
-                    scopedConfigStorage = storage;
-                }
-            }
+            ScopedConfigStorage scopedConfigStorage = getScopedStorage(scope);
             if (scopedConfigStorage == null) {
                 throw new CloudRuntimeException("Unable to find config storage for this scope: " + scope + " for " + key);
             }
-            return scopedConfigStorage.getConfigValue(scopeId, key);
+            final ScopedConfigStorage scopedConfigStorageFinal = scopedConfigStorage;
+            return Transaction.execute((TransactionCallback<String>) status -> scopedConfigStorageFinal.getConfigValue(scopeId, key));
         }
         ConfigurationVO configurationVO = _configDao.findById(key);
         if (configurationVO != null) {
@@ -305,38 +297,18 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return null;
     }
 
-    private String getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
-        return String.format("%s-%s-%d", key, scope, (scopeId == null ? 0 : scopeId));
+    protected Ternary<String, ConfigKey.Scope, Long> getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
+        return new Ternary<>(key, scope, scopeId);
     }
 
     @Override
     public String getConfigStringValue(String key, ConfigKey.Scope scope, Long scopeId) {
-        return configCache.get(getConfigCacheKey(key, scope, scopeId), this::getConfigStringValueInternal);
+        return configCache.get(getConfigCacheKey(key, scope, scopeId));
     }
 
     @Override
     public void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId) {
         configCache.invalidate(getConfigCacheKey(key, scope, scopeId));
-    }
-
-    public ScopedConfigStorage findScopedConfigStorage(ConfigKey<?> config) {
-        for (ScopedConfigStorage storage : _scopedStorages) {
-            if (storage.getScope() == config.scope()) {
-                return storage;
-            }
-        }
-
-        throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope() + " for " + config.key());
-    }
-
-    public ScopedConfigStorage getDomainScope(ConfigKey<?> config) {
-        for (ScopedConfigStorage storage : _scopedStorages) {
-            if (storage.getScope() == ConfigKey.Scope.Domain) {
-                return storage;
-            }
-        }
-
-        throw new CloudRuntimeException("Unable to find config storage for this scope: " + ConfigKey.Scope.Domain + " for " + config.key());
     }
 
     public List<ScopedConfigStorage> getScopedStorages() {
@@ -401,5 +373,28 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Override
     public boolean isNewConfig(ConfigKey<?> configKey) {
         return newConfigs.contains(configKey.key());
+    }
+
+    protected ScopedConfigStorage getScopedStorage(ConfigKey.Scope scope) {
+        ScopedConfigStorage scopedConfigStorage = null;
+        for (ScopedConfigStorage storage : _scopedStorages) {
+            if (storage.getScope() == scope) {
+                scopedConfigStorage = storage;
+                break;
+            }
+        }
+        return scopedConfigStorage;
+    }
+
+    @Override
+    public Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id) {
+        if (scope.getParent() == null) {
+            return null;
+        }
+        ScopedConfigStorage scopedConfigStorage = getScopedStorage(scope);
+        if (scopedConfigStorage == null) {
+            return null;
+        }
+        return scopedConfigStorage.getParentScope(id);
     }
 }

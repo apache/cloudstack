@@ -52,6 +52,7 @@
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { loadLanguageAsync } from '@/locales'
+import { vueProps } from '@/vue-app'
 
 moment.locale('en')
 
@@ -63,7 +64,7 @@ export default {
     }
   },
   mounted () {
-    this.language = this.$localStorage.get('LOCALE') || 'en'
+    this.language = this.$localStorage.get('LOCALE') || vueProps.$config?.defaultLanguage || 'en'
     this.setLocale(this.language)
   },
   methods: {

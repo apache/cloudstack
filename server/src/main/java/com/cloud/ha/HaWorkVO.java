@@ -86,6 +86,10 @@ public class HaWorkVO implements InternalIdentity {
     @Column(name = "tried")
     int timesTried;
 
+    @Column(name = "reason")
+    @Enumerated(value = EnumType.STRING)
+    private HighAvailabilityManager.ReasonType reasonType;
+
     protected HaWorkVO() {
     }
 
@@ -179,7 +183,7 @@ public class HaWorkVO implements InternalIdentity {
     }
 
     public HaWorkVO(final long instanceId, final VirtualMachine.Type type, final WorkType workType, final Step step, final long hostId, final State previousState,
-            final int timesTried, final long updated) {
+            final int timesTried, final long updated, HighAvailabilityManager.ReasonType reasonType) {
         this.workType = workType;
         this.type = type;
         this.instanceId = instanceId;
@@ -191,6 +195,7 @@ public class HaWorkVO implements InternalIdentity {
         this.step = step;
         this.timeToTry = System.currentTimeMillis() >> 10;
         this.updateTime = updated;
+        this.reasonType = reasonType;
     }
 
     @Override
@@ -206,5 +211,13 @@ public class HaWorkVO implements InternalIdentity {
             .append(step)
             .append("]")
             .toString();
+    }
+
+    public HighAvailabilityManager.ReasonType getReasonType() {
+        return reasonType;
+    }
+
+    public void setReasonType(HighAvailabilityManager.ReasonType reasonType) {
+        this.reasonType = reasonType;
     }
 }

@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.HandleCksIsoCommand;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -49,6 +50,8 @@ import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
 import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
 import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceReadinessCheckAnswer;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceReadinessCheckCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -145,6 +148,10 @@ public class VirtualRoutingResource {
                 return execute((UpdateNetworkCommand) cmd);
             }
 
+            if (cmd instanceof HandleCksIsoCommand) {
+                return execute((HandleCksIsoCommand) cmd);
+            }
+
             if (cmd instanceof ManageServiceCommand) {
                 return execute((ManageServiceCommand) cmd);
             }
@@ -174,6 +181,13 @@ public class VirtualRoutingResource {
                 }
             }
         }
+    }
+
+    protected Answer execute(final HandleCksIsoCommand cmd) {
+        String routerIp = getRouterSshControlIp(cmd);
+        logger.info("Attempting to mount CKS ISO on Virtual Router");
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.CKS_ISO_MOUNT_SERVE, String.valueOf(cmd.isMountCksIso()));
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(final SetupKeyStoreCommand cmd) {
@@ -219,6 +233,8 @@ public class VirtualRoutingResource {
             return execute((GetRouterAlertsCommand)cmd);
         } else if (cmd instanceof DiagnosticsCommand) {
             return execute((DiagnosticsCommand) cmd);
+        } else if (cmd instanceof InstanceReadinessCheckCommand) {
+            return execute((InstanceReadinessCheckCommand) cmd);
         } else if (cmd instanceof PrepareFilesCommand) {
             return execute((PrepareFilesCommand) cmd);
         } else if (cmd instanceof DeleteFileInVrCommand) {
@@ -255,13 +271,13 @@ public class VirtualRoutingResource {
                     if (result.getDetails().contains(String.format("Interface with IP %s not found", ipAddressTO.getPublicIp()))) {
                         logger.warn(String.format("Skipping IP: %s as it isn't configured on router interface", ipAddressTO.getPublicIp()));
                     } else if (ipAddressTO.getDetails().get(ApiConstants.REDUNDANT_STATE).equals(VirtualRouter.RedundantState.PRIMARY.name())) {
-                        logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
+                        logger.warn(String.format("Failed to update interface MTU to %s on interface with IP: %s",
                                 ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                         finalResult = false;
                     }
                     continue;
                 }
-                logger.info(String.format("Successfully updated mtu to %s on interface with ip: %s",
+                logger.info(String.format("Successfully updated MTU to %s on interface with IP: %s",
                         ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                 finalResult &= true;
             } catch (Exception e) {
@@ -472,6 +488,15 @@ public class VirtualRoutingResource {
             return new DiagnosticsAnswer(cmd, false, result.getDetails());
         }
         return new DiagnosticsAnswer(cmd, result.isSuccess(), result.getDetails());
+    }
+
+    private Answer execute(InstanceReadinessCheckCommand cmd) {
+        _eachTimeout = Duration.standardSeconds(Math.max(cmd.getWait(), 1));
+        String args = cmd.getPort() == null ?
+                String.format("%s %s", cmd.getCheckType(), cmd.getIpAddress()) :
+                String.format("%s %s %s", cmd.getCheckType(), cmd.getIpAddress(), cmd.getPort());
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.INSTANCE_READINESS_CHECK, args, _eachTimeout);
+        return new InstanceReadinessCheckAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(PrepareFilesCommand cmd) {

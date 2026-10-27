@@ -24,15 +24,15 @@ import org.apache.cloudstack.api.BaseResponse;
 public class RollingMaintenanceHostSkippedResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the skipped host")
+    @Param(description = "The ID of the skipped host")
     private String hostId;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the name of the skipped host")
+    @Param(description = "The name of the skipped host")
     private String hostName;
 
     @SerializedName(ApiConstants.ACL_REASON)
-    @Param(description = "the reason to skip the host")
+    @Param(description = "The reason to skip the host")
     private String reason;
 
     public String getHostId() {

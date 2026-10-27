@@ -34,6 +34,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang3.StringUtils;
 
 @ResourceWrapper(handles =  ReadyCommand.class)
 public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, LibvirtComputingResource> {
@@ -42,18 +43,40 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     @Override
     public Answer execute(final ReadyCommand command, final LibvirtComputingResource libvirtComputingResource) {
         Map<String, String> hostDetails = new HashMap<String, String>();
+        hostDetails.put(Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
 
-        if (hostSupportsUefi(libvirtComputingResource.isUbuntuHost()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
+        if (hostSupportsUefi(libvirtComputingResource.isUbuntuOrDebianHost()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
             hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+        }
+
+        if (libvirtComputingResource.hostSupportsInstanceConversion()) {
+            hostDetails.put(Host.HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
+        }
+        hostDetails.put(Host.HOST_VIRTV2V_INPLACE_VERSION, libvirtComputingResource.getHostVirtV2vInPlaceVersion());
+        hostDetails.put(Host.HOST_VDDK_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddk()));
+        hostDetails.put(Host.HOST_VDDK_LIB_DIR, StringUtils.defaultString(libvirtComputingResource.getVddkLibDir()));
+        hostDetails.put(Host.HOST_VDDK_VERSION, StringUtils.defaultString(libvirtComputingResource.getVddkVersion()));
+        hostDetails.put(Host.HOST_VDDK_BLOCKCOPY_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddkBlockCopy()));
+        hostDetails.put(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddkBlockCopyInPlaceFinalization()));
+        hostDetails.put(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddkBlockCopyRbd()));
+        hostDetails.put(Host.HOST_QEMU_IMG_VERSION, StringUtils.defaultString(libvirtComputingResource.getQemuImgVersion()));
+        hostDetails.put(Host.HOST_QEMU_NBD_VERSION, StringUtils.defaultString(libvirtComputingResource.getQemuNbdVersion()));
+        hostDetails.put(Host.HOST_QEMU_IO_VERSION, StringUtils.defaultString(libvirtComputingResource.getQemuIoVersion()));
+        hostDetails.put(Host.HOST_VIRTV2V_INPLACE_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVirtV2vInPlace()));
+        hostDetails.put(Host.HOST_QEMU_RBD_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsQemuRbd()));
+        hostDetails.put(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddkRbdDirectImport()));
+
+        if (libvirtComputingResource.hostSupportsOvfExport()) {
+            hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());
         }
 
         return new ReadyAnswer(command, hostDetails);
     }
 
-    private boolean hostSupportsUefi(boolean isUbuntuHost) {
+    private boolean hostSupportsUefi(boolean isUbuntuOrDebianHost) {
         int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_SCRIPT_TIMEOUT) * 1000; // Get property value & convert to milliseconds
         int result;
-        if (isUbuntuHost) {
+        if (isUbuntuOrDebianHost) {
             logger.debug("Running command : [dpkg -l ovmf] with timeout : " + timeout + " ms");
             result = Script.executeCommandForExitValue(timeout, Script.getExecutableAbsolutePath("dpkg"), "-l", "ovmf");
         } else {

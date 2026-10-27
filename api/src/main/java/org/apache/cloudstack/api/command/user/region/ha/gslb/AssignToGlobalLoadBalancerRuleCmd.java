@@ -62,7 +62,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GlobalLoadBalancerResponse.class,
                required = true,
-               description = "the ID of the global load balancer rule")
+               description = "The ID of the global load balancer rule")
     private Long id;
 
     @Parameter(name = ApiConstants.LOAD_BALANCER_RULE_LIST,
@@ -70,7 +70,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                collectionType = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the list load balancer rules that will be assigned to global load balancer rule")
+               description = "The list load balancer rules that will be assigned to global load balancer rule")
     private List<Long> loadBalancerRulesIds;
 
     @Parameter(name = ApiConstants.GSLB_LBRULE_WEIGHT_MAP,
@@ -145,13 +145,13 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "assign load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") + " to global load balancer rule " + getGlobalLoadBalancerRuleId();
+        return "Assigning load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") + " to global load balancer rule " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
         CallContext.current().setEventDetails(
-            "Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
+            "Global Load balancer rule ID: " + getResourceUuid(ApiConstants.ID) + " Instances IDs: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

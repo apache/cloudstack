@@ -54,7 +54,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
                required = true,
-               description = "the network service provider ID of the virtual router element")
+               description = "The network service provider ID of the virtual router element")
     private Long nspId;
 
     @Parameter(name = ApiConstants.PROVIDER_TYPE,
@@ -98,7 +98,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Virtual router element Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Virtual router element ID: " + getEntityUuid());
         VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);

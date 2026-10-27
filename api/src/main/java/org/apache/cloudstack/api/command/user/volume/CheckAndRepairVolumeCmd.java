@@ -105,7 +105,7 @@ public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("check and repair operation on volume: %s", this._uuidMgr.getUuid(Volume.class, getId()));
+        return "Starting checking and repairing operation on volume: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Pair<String, String> result = _volumeService.checkAndRepairVolume(this);
         Volume volume = _responseGenerator.findVolumeById(getId());
         if (result != null) {

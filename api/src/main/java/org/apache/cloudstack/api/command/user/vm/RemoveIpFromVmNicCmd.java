@@ -48,7 +48,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             required = true,
             entityType = NicSecondaryIpResponse.class,
-            description = "the ID of the secondary ip address to nic")
+            description = "The ID of the secondary ip address to NIC")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -93,7 +93,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Disassociating ip address with id=" + id);
+        return "Disassociating IP address with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     /////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InvalidParameterValueException {
-        CallContext.current().setEventDetails("Ip Id: " + id);
+        CallContext.current().setEventDetails("IP address ID: " + getResourceUuid(ApiConstants.ID));
         NicSecondaryIp nicSecIp = getIpEntry();
 
         if (nicSecIp == null) {
@@ -159,10 +159,10 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary  ip address for the nic");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary IP address for the NIC");
             }
         } catch (InvalidParameterValueException e) {
-            throw new InvalidParameterValueException("Removing guest ip from nic failed");
+            throw new InvalidParameterValueException("Removing guest IP from NIC failed");
         }
     }
 

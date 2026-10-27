@@ -48,11 +48,123 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-if="host.instanceconversionsupported">
+      <a-list-item v-if="host.instanceconversionsupported !== undefined && host.instanceconversionsupported !== null">
         <div>
           <strong>{{ $t('label.instance.conversion.support') }}</strong>
           <div>
             {{ host.instanceconversionsupported }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.virtv2v.inplace.support')">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.inplace.support') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.inplace.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.inplace.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.inplace.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.inplace.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.vddk.version']">
+        <div>
+          <strong>{{ $t('label.host.vddk.version') }}</strong>
+          <div>
+            {{ host.details['host.vddk.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.blockcopy.support')">
+        <div>
+          <strong>{{ $t('label.host.vmware.cbt.data.copy.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.blockcopy.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.blockcopy.inplace.finalization.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.blockcopy.inplace.finalization.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.blockcopy.inplace.finalization.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.blockcopy.rbd.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.blockcopy.rbd.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.blockcopy.rbd.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.rbd.direct.import.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.rbd.direct.import.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.rbd.direct.import.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.qemu.img.version']">
+        <div>
+          <strong>{{ $t('label.host.qemu.img.version') }}</strong>
+          <div>
+            {{ host.details['host.qemu.img.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.qemu.io.version']">
+        <div>
+          <strong>{{ $t('label.host.qemu.io.version') }}</strong>
+          <div>
+            {{ host.details['host.qemu.io.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.qemu.nbd.version']">
+        <div>
+          <strong>{{ $t('label.host.qemu.nbd.version') }}</strong>
+          <div>
+            {{ host.details['host.qemu.nbd.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.qemu.rbd.support')">
+        <div>
+          <strong>{{ $t('label.host.qemu.rbd.support') }}</strong>
+          <div>
+            {{ host.details['host.qemu.rbd.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.ovftool.version']">
+        <div>
+          <strong>{{ $t('label.host.ovftool.version') }}</strong>
+          <div>
+            {{ host.details['host.ovftool.version'] }}
           </div>
         </div>
       </a-list-item>
@@ -67,6 +179,14 @@
             <span v-if="hosttag.isimplicit">
               <a-tag color="orange">{{ $t('label.hosttags.implicit.abbr') }}</a-tag>
             </span>
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.storageaccessgroups">
+        <div>
+          <strong>{{ $t('label.storageaccessgroups') }}</strong>
+          <div>
+            {{ host.storageaccessgroups }}
           </div>
         </div>
       </a-list-item>
@@ -86,14 +206,48 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-if="host.outofbandmanagement">
-        <div>
-          <strong>{{ $t('label.powerstate') }}</strong>
+      <span v-if="host?.outofbandmanagement?.enabled">
+        <a-list-item>
           <div>
-            {{ host.outofbandmanagement.powerstate }}
+            <strong>{{ $t('label.oobm.username') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.username }}
+            </div>
           </div>
-        </div>
-      </a-list-item>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.powerstate') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.powerstate }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.driver') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.driver }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.address') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.address }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
+            <strong>{{ $t('label.oobm.port') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.port }}
+            </div>
+          </div>
+        </a-list-item>
+      </span>
       <a-list-item v-if="host.hostha">
         <div>
           <strong>{{ $t('label.haenable') }}</strong>
@@ -131,7 +285,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'HostInfo',
@@ -168,9 +322,13 @@ export default {
     }
   },
   methods: {
+    hasHostDetail (key) {
+      return this.host.details && Object.prototype.hasOwnProperty.call(this.host.details, key) &&
+        this.host.details[key] !== null && this.host.details[key] !== ''
+    },
     fetchData () {
       this.fetchLoading = true
-      api('listHosts', { id: this.resource.id }).then(json => {
+      getAPI('listHosts', { id: this.resource.id }).then(json => {
         this.host = json.listhostsresponse.host[0]
         const hosttags = this.host.hosttags?.split(',') || []
         const explicithosttags = this.host.explicithosttags?.split(',') || []

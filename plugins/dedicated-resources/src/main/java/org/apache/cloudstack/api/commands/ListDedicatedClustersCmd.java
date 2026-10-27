@@ -49,22 +49,22 @@ public class ListDedicatedClustersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the ID of the cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The ID of the cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the ID of the domain associated with the cluster")
+               description = "The ID of the domain associated with the cluster")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the cluster. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account associated with the cluster. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID,
                type = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
-               description = "list dedicated clusters by affinity group")
+               description = "List dedicated clusters by affinity group")
     private Long affinityGroupId;
 
     /////////////////////////////////////////////////////

@@ -16,13 +16,29 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <span v-if="uploadPercentage > 0">
+  <div class="form-layout">
+    <span v-if="uploading">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
-    <a-spin :spinning="loading" v-else>
+    <div v-else-if="ssvmCertUntrusted" class="ssvm-cert-warning">
+      <a-alert
+        type="warning"
+        show-icon
+        :message="$t('message.ssvm.cert.untrusted')"
+        :description="$t('message.ssvm.cert.trust.instructions')" />
+      <div :span="24" class="action-button">
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
+          {{ $t('label.ssvm.open.cert.page') }}
+        </a-button>
+        <a-button type="primary" :loading="loading" @click="retryUpload">
+          {{ $t('label.retry.upload') }}
+        </a-button>
+      </div>
+    </div>
+    <a-spin :spinning="loading" v-else v-ctrl-enter="handleSubmit">
       <a-form
         :ref="formRef"
         :model="form"
@@ -57,43 +73,33 @@
           <template #label>
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.zoneId"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
-              <span>
-                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px"/>
-                {{ zone.name || zone.description }}
-              </span>
-            </a-select-option>
-          </a-select>
+            api="listZones"
+            :apiParams="zonesApiParams"
+            resourceType="zone"
+            optionValueKey="id"
+            optionLabelKey="name"
+            defaultIcon="global-outlined"
+            selectFirstOption="true"
+            @change-option-value="handleZoneChange" />
         </a-form-item>
         <a-form-item name="diskofferingid" ref="diskofferingid">
           <template #label>
             <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.diskofferingid"
-            :loading="offeringLoading"
+            api="listDiskOfferings"
+            :apiParams="diskOfferingsApiParams"
+            resourceType="diskoffering"
+            optionValueKey="id"
+            optionLabelKey="displaytext"
+            defaultIcon="hdd-outlined"
+            :defaultOption="{ id: null, displaytext: ''}"
+            allowClear="true"
             :placeholder="apiParams.diskofferingid.description"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(offering, index) in offerings"
-              :value="offering.id"
-              :key="index"
-              :label="offering.displaytext || offering.name">
-              {{ offering.displaytext || offering.name }}
-            </a-select-option>
-          </a-select>
+            @change-option="onChangeDiskOffering" />
         </a-form-item>
         <a-form-item ref="format" name="format">
           <template #label>
@@ -124,38 +130,33 @@
           <template #label>
             <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
             :placeholder="$t('label.domainid')"
-            @change="val => { handleDomainChange(domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex" :label="opt.path || opt.name || opt.description">
-              {{ opt.path || opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
+            allowClear="true"
+            @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="'listDomains' in $store.getters.apis">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            showSearch
-            optionFilterProp="value"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
+            allowClear="true"
             :placeholder="$t('label.account')"
-            @change="val => { handleAccountChange(val) }">
-            <a-select-option v-for="(acc, index) in accountList" :value="acc.name" :key="index">
-              {{ acc.name }}
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleAccountChange" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -168,42 +169,73 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
+import { probeSsvmCert } from '@/utils/ssvmProbe'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'UploadLocalVolume',
   mixins: [mixinForm],
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InfiniteScrollSelect
   },
   data () {
     return {
       fileList: [],
-      zones: [],
-      domainList: [],
-      accountList: [],
-      offerings: [],
-      offeringLoading: false,
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
       domainId: null,
       account: null,
       uploadParams: null,
-      domainLoading: false,
+      customDiskOffering: false,
+      isCustomizedDiskIOps: false,
       loading: false,
-      uploadPercentage: 0
+      uploading: false,
+      uploadPercentage: 0,
+      ssvmCertUntrusted: false,
+      ssvmOrigin: ''
     }
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('getUploadParamsForVolume')
   },
+  computed: {
+    zonesApiParams () {
+      return {
+        showicon: true
+      }
+    },
+    diskOfferingsApiParams () {
+      if (!this.form.zoneId) {
+        return null
+      }
+      return {
+        zoneid: this.form.zoneId,
+        listall: true
+      }
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      if (!this.form.domainid) {
+        return null
+      }
+      return {
+        domainid: this.form.domainid
+      }
+    }
+  },
   created () {
     this.initForm()
-    this.fetchData()
   },
   methods: {
     initForm () {
@@ -221,38 +253,18 @@ export default {
         zoneId: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
-    listZones () {
-      api('listZones', { showicon: true }).then(json => {
-        if (json && json.listzonesresponse && json.listzonesresponse.zone) {
-          this.zones = json.listzonesresponse.zone
-          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
-          if (this.zones.length > 0) {
-            this.onZoneChange(this.zones[0].id)
-          }
-        }
-      })
-    },
-    onZoneChange (zoneId) {
+    handleZoneChange (zoneId) {
       this.form.zoneId = zoneId
-      this.zoneId = zoneId
-      this.fetchDiskOfferings(zoneId)
+      // InfiniteScrollSelect will auto-reload disk offerings when apiParams changes
     },
-    fetchDiskOfferings (zoneId) {
-      this.offeringLoading = true
-      this.offerings = [{ id: -1, name: '' }]
-      this.form.diskofferingid = undefined
-      api('listDiskOfferings', {
-        zoneid: zoneId,
-        listall: true
-      }).then(json => {
-        for (var offering of json.listdiskofferingsresponse.diskoffering) {
-          if (offering.iscustomized) {
-            this.offerings.push(offering)
-          }
-        }
-      }).finally(() => {
-        this.offeringLoading = false
-      })
+    onChangeDiskOffering (offering) {
+      if (offering) {
+        this.customDiskOffering = offering.iscustomized || false
+        this.isCustomizedDiskIOps = offering.iscustomizediops || false
+      } else {
+        this.customDiskOffering = false
+        this.isCustomizedDiskIOps = false
+      }
     },
     handleRemove (file) {
       const index = this.fileList.indexOf(file)
@@ -266,52 +278,70 @@ export default {
       this.form.file = file
       return false
     },
-    handleDomainChange (domain) {
-      this.domainId = domain
-      if ('listAccounts' in this.$store.getters.apis) {
-        this.fetchAccounts()
-      }
+    handleDomainChange (domainId) {
+      this.form.domainid = domainId
+      this.domainId = domainId
+      this.form.account = null
     },
-    handleAccountChange (acc) {
-      if (acc) {
-        this.account = acc.name
-      } else {
-        this.account = acc
-      }
+    handleAccountChange (accountName) {
+      this.form.account = accountName
+      this.account = accountName
     },
-    fetchData () {
-      this.listZones()
-      if ('listDomains' in this.$store.getters.apis) {
-        this.fetchDomains()
+    async retryUpload () {
+      this.loading = true
+      const reachable = await probeSsvmCert(this.ssvmOrigin)
+      this.loading = false
+      if (!reachable) {
+        this.$message.warning(this.$t('message.ssvm.unreachable.retry'))
+        return
       }
+      this.ssvmCertUntrusted = false
+      this.handleUpload()
     },
-    fetchDomains () {
-      this.domainLoading = true
-      api('listDomains', {
-        listAll: true,
-        details: 'min'
-      }).then(response => {
-        this.domainList = response.listdomainsresponse.domain
-
-        if (this.domainList[0]) {
-          this.handleDomainChange(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.domainLoading = false
+    handleUpload () {
+      if (this.fileList.length > 1) {
+        this.$notification.error({
+          message: this.$t('message.upload.volume.failed'),
+          description: this.$t('message.upload.file.limit'),
+          duration: 0
+        })
+        return
+      }
+      const { fileList } = this
+      const formData = new FormData()
+      fileList.forEach(file => {
+        formData.append('files[]', file)
       })
-    },
-    fetchAccounts () {
-      api('listAccounts', {
-        domainid: this.domainId
-      }).then(response => {
-        this.accountList = response.listaccountsresponse.account || []
-        if (this.accountList && this.accountList.length === 0) {
-          this.handleAccountChange(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
+      this.uploading = true
+      this.uploadPercentage = 0
+      axios.post(this.uploadParams.postURL,
+        formData,
+        {
+          headers: {
+            'content-type': 'multipart/form-data',
+            'x-signature': this.uploadParams.signature,
+            'x-expires': this.uploadParams.expires,
+            'x-metadata': this.uploadParams.metadata
+          },
+          onUploadProgress: (progressEvent) => {
+            this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
+          },
+          timeout: 86400000
+        }).then((json) => {
+        this.$notification.success({
+          message: this.$t('message.success.upload'),
+          description: this.$t('message.success.upload.volume.description')
+        })
+        this.closeAction()
+      }).catch(e => {
+        this.$notification.error({
+          message: this.$t('message.upload.failed'),
+          description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
+          duration: 0
+        })
+      }).finally(() => {
+        this.uploading = false
+        this.loading = false
       })
     },
     handleSubmit (e) {
@@ -333,49 +363,15 @@ export default {
         }
         params.domainId = this.domainId
         this.loading = true
-        api('getUploadParamsForVolume', params).then(json => {
+        getAPI('getUploadParamsForVolume', params).then(async json => {
           this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
-          const { fileList } = this
-          if (this.fileList.length > 1) {
-            this.$notification.error({
-              message: this.$t('message.upload.volume.failed'),
-              description: this.$t('message.upload.file.limit'),
-              duration: 0
-            })
+          this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
+          const trusted = await probeSsvmCert(this.ssvmOrigin)
+          if (!trusted) {
+            this.ssvmCertUntrusted = true
+            return
           }
-          const formData = new FormData()
-          fileList.forEach(file => {
-            formData.append('files[]', file)
-          })
-          this.uploadPercentage = 0
-          axios.post(this.uploadParams.postURL,
-            formData,
-            {
-              headers: {
-                'content-type': 'multipart/form-data',
-                'x-signature': this.uploadParams.signature,
-                'x-expires': this.uploadParams.expires,
-                'x-metadata': this.uploadParams.metadata
-              },
-              onUploadProgress: (progressEvent) => {
-                this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
-              },
-              timeout: 86400000
-            }).then((json) => {
-            this.$notification.success({
-              message: this.$t('message.success.upload'),
-              description: this.$t('message.success.upload.volume.description')
-            })
-            this.closeAction()
-          }).catch(e => {
-            this.$notification.error({
-              message: this.$t('message.upload.failed'),
-              description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
-              duration: 0
-            })
-          }).finally(() => {
-            this.loading = false
-          })
+          this.handleUpload()
         }).catch(e => {
           this.$notification.error({
             message: this.$t('message.upload.failed'),

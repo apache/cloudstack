@@ -17,14 +17,30 @@
 package com.cloud.api;
 
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
+import com.cloud.exception.OriginDeniedException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.user.UserPasswordResetManager;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,12 +49,25 @@ import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static org.apache.cloudstack.api.ApiConstants.PASSWORD_CHANGE_REQUIRED;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+
+import javax.servlet.http.HttpSession;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServerTest {
@@ -49,6 +78,18 @@ public class ApiServerTest {
     @Mock
     UserPasswordResetManager userPasswordResetManager;
 
+    @Mock
+    DomainManager domainManager;
+
+    @Mock
+    AccountManager accountManager;
+
+    @Mock
+    HttpSession session;
+
+    private static final String DEFAULT_CIDR_CHECKS_ENABLED = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.defaultValue();
+    private static final String DEFAULT_ALLOWED_CIDRS = ApiServiceConfiguration.ApiAllowedSourceCidrList.defaultValue();
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", true);
@@ -57,6 +98,17 @@ public class ApiServerTest {
     @AfterClass
     public static void afterClass() throws Exception {
         overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", false);
+    }
+
+    @Before
+    public void setupCommandAvailableChecks() {
+        apiServer.setApiAccessCheckers(Collections.emptyList());
+    }
+
+    @After
+    public void resetCidrConfig() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", DEFAULT_CIDR_CHECKS_ENABLED);
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiAllowedSourceCidrList, "_defaultValue", DEFAULT_ALLOWED_CIDRS);
     }
 
     private static void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
@@ -96,8 +148,8 @@ public class ApiServerTest {
 
     @Test
     public void testForgotPasswordSuccess() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
+        UserAccount userAccount = mock(UserAccount.class);
+        Domain domain = mock(Domain.class);
 
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
@@ -110,8 +162,8 @@ public class ApiServerTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testForgotPasswordFailureNoEmail() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
+        UserAccount userAccount = mock(UserAccount.class);
+        Domain domain = mock(Domain.class);
 
         Mockito.when(userAccount.getEmail()).thenReturn("");
         apiServer.forgotPassword(userAccount, domain);
@@ -119,8 +171,8 @@ public class ApiServerTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testForgotPasswordFailureDisabledUser() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
+        UserAccount userAccount = mock(UserAccount.class);
+        Domain domain = mock(Domain.class);
 
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("DISABLED");
@@ -129,8 +181,8 @@ public class ApiServerTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testForgotPasswordFailureDisabledAccount() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
+        UserAccount userAccount = mock(UserAccount.class);
+        Domain domain = mock(Domain.class);
 
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
@@ -140,8 +192,8 @@ public class ApiServerTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testForgotPasswordFailureInactiveDomain() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
+        UserAccount userAccount = mock(UserAccount.class);
+        Domain domain = mock(Domain.class);
 
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
@@ -153,8 +205,8 @@ public class ApiServerTest {
     @Test
     public void testVerifyApiKeyAccessAllowed() {
         Long domainId = 1L;
-        User user = Mockito.mock(User.class);
-        Account account = Mockito.mock(Account.class);
+        User user = mock(User.class);
+        Account account = mock(Account.class);
 
         Mockito.when(user.getApiKeyAccess()).thenReturn(true);
         Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
@@ -175,5 +227,117 @@ public class ApiServerTest {
         Mockito.when(user.getApiKeyAccess()).thenReturn(null);
         Mockito.when(account.getApiKeyAccess()).thenReturn(null);
         Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
+    }
+
+    @Test
+    public void testLoginUserSuccess() throws Exception {
+        String username = "user";
+        String password = "password";
+        Long domainId = 1L;
+        String domainPath = "/";
+        InetAddress loginIp = InetAddress.getByName("127.0.0.1");
+        Map<String, Object[]> requestParams = new HashMap<>();
+
+        DomainVO domain = mock(DomainVO.class);
+        Mockito.when(domain.getId()).thenReturn(domainId);
+        Mockito.when(domain.getUuid()).thenReturn("domain-uuid");
+
+        Mockito.when(domainManager.findDomainByIdOrPath(domainId, domainPath)).thenReturn(domain);
+        Mockito.when(domainManager.getDomain(domainId)).thenReturn(domain);
+
+        UserAccount userAccount = mock(UserAccount.class);
+        Mockito.when(userAccount.getId()).thenReturn(100L);
+        Mockito.when(userAccount.getAccountId()).thenReturn(200L);
+        Mockito.when(userAccount.getUsername()).thenReturn(username);
+        Mockito.when(userAccount.getFirstname()).thenReturn("First");
+        Mockito.when(userAccount.getLastname()).thenReturn("Last");
+        Mockito.when(userAccount.getTimezone()).thenReturn("UTC");
+        Mockito.when(userAccount.getRegistrationToken()).thenReturn("token");
+        Mockito.when(userAccount.isRegistered()).thenReturn(true);
+        Mockito.when(userAccount.getDomainId()).thenReturn(domainId);
+        Map<String, String> userAccDetails = new HashMap<>();
+        userAccDetails.put(UserDetailVO.PasswordChangeRequired, "true");
+        Mockito.when(userAccount.getDetails()).thenReturn(userAccDetails);
+
+        Mockito.when(accountManager.authenticateUser(username, password, domainId, loginIp, requestParams)).thenReturn(userAccount);
+        Mockito.when(accountManager.clearUserTwoFactorAuthenticationInSetupStateOnLogin(userAccount)).thenReturn(userAccount);
+
+        Account account = mock(Account.class);
+        Mockito.when(account.getAccountName()).thenReturn("account");
+        Mockito.when(account.getDomainId()).thenReturn(domainId);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        Mockito.when(accountManager.getAccount(200L)).thenReturn(account);
+
+        UserVO userVO = mock(UserVO.class);
+        Mockito.when(userVO.getUuid()).thenReturn("user-uuid");
+        Mockito.when(accountManager.getActiveUser(100L)).thenReturn(userVO);
+
+        Mockito.when(session.getAttributeNames()).thenReturn(Collections.enumeration(List.of(PASSWORD_CHANGE_REQUIRED)));
+        Mockito.when(session.getAttribute(PASSWORD_CHANGE_REQUIRED)).thenReturn(Boolean.TRUE);
+
+        ResponseObject response = apiServer.loginUser(session, username, password, domainId, domainPath, loginIp, requestParams);
+        Assert.assertNotNull(response);
+        Assert.assertTrue(response instanceof LoginCmdResponse);
+        Mockito.verify(session).setAttribute(eq("userid"), eq(100L));
+        Mockito.verify(session).setAttribute(eq(ApiConstants.SESSIONKEY), anyString());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testLoginUserDomainNotFound() throws Exception {
+        Mockito.when(domainManager.findDomainByIdOrPath(anyLong(), anyString())).thenReturn(null);
+        apiServer.loginUser(session, "user", "pass", 1L, "/", null, null);
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testLoginUserAuthFailed() throws Exception {
+        DomainVO domain = mock(DomainVO.class);
+        Mockito.when(domain.getId()).thenReturn(1L);
+        Mockito.when(domainManager.findDomainByIdOrPath(anyLong(), anyString())).thenReturn(domain);
+        Mockito.when(accountManager.authenticateUser(anyString(), anyString(), anyLong(), any(), any())).thenReturn(null);
+        apiServer.loginUser(session, "user", "pass", 1L, "/", null, null);
+    }
+
+    @Test
+    public void testCheckCommandAvailableSkipsCidrLookupWhenDisabled() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "false");
+        User user = Mockito.mock(User.class);
+
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
+
+        Mockito.verify(accountManager, Mockito.never()).getAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCheckCommandAvailableAllowsMatchingCidr() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "true");
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiAllowedSourceCidrList, "_defaultValue", "127.0.0.1/32");
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
+
+        Mockito.verify(accountManager).getAccount(1L);
+    }
+
+    @Test(expected = OriginDeniedException.class)
+    public void testCheckCommandAvailableDeniesNonMatchingCidr() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "true");
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiAllowedSourceCidrList, "_defaultValue", "10.0.0.0/8");
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckCommandAvailableThrowsWhenUserNull() throws Exception {
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", null, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
     }
 }

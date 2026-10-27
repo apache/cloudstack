@@ -16,9 +16,35 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -29,29 +55,20 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
@@ -60,6 +77,10 @@ public class KVMGuruTest {
     HostDao hostDao;
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Mock
+    VMInstanceDao _instanceDao;
+    @Mock
+    VolumeDao _volumeDao;
 
     @Spy
     @InjectMocks
@@ -104,6 +125,9 @@ public class KVMGuruTest {
     @Mock
     GuestOSDao guestOsDaoMock;
 
+    @Mock
+    BackupProvider backupProviderMock;
+
     private static final long hostId = 1L;
     private static final Long offeringId = 1L;
 
@@ -112,9 +136,16 @@ public class KVMGuruTest {
     private static final String detail2Key = "detail2";
     private static final String detail2Value = "value2";
 
+    private ConfigKey<Integer> originalVmServiceOfferingMaxCpuCores;
+    private ConfigKey<Integer> originalVmServiceOfferingMaxRAMSize;
+
     @Before
     public void setup() throws UnsupportedEncodingException {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        // Preserve the original value for restoration in tearDown
+        originalVmServiceOfferingMaxCpuCores = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES;
+        originalVmServiceOfferingMaxRAMSize = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE;
+
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
@@ -135,16 +166,24 @@ public class KVMGuruTest {
                 Arrays.asList(detail1, detail2));
     }
 
+    @After
+    public void tearDown() {
+        // Restore the original value
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES = originalVmServiceOfferingMaxCpuCores;
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE = originalVmServiceOfferingMaxRAMSize;
+    }
+
     @Test
     public void testSetVmQuotaPercentage() {
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmTO).setCpuQuotaPercentage(Mockito.anyDouble());
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testSetVmQuotaPercentageNullHost() {
         Mockito.when(hostDao.findById(hostId)).thenReturn(null);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
+        Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());
     }
 
     @Test
@@ -156,7 +195,7 @@ public class KVMGuruTest {
 
     @Test
     public void testSetVmQuotaPercentageNotCPULimit() {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmProfile, Mockito.never()).getVirtualMachine();
         Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());
@@ -170,79 +209,45 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateGetVmMaxMemoryReturnCustomOfferingMaxMemory(){
-        int maxCustomOfferingMemory = 64;
-        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(String.valueOf(maxCustomOfferingMemory));
+    public void getVmMaxMemoryTestConsiderKvmMemoryDynamicScalingCapacitySettingWhenItIsGreaterThanZero() {
+        int maxMemoryConfigValue = 64;
 
-        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1l);
+        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+        ConfigKey.init(configDepotMock);
+        Mockito.when(configDepotMock.getConfigStringValue(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(String.valueOf(maxMemoryConfigValue));
 
-        Assert.assertEquals(ByteScaleUtils.mebibytesToBytes(maxCustomOfferingMemory), result);
+        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1L, 1L);
+        ConfigKey.init(null);
+        Assert.assertEquals(ByteScaleUtils.mebibytesToBytes(maxMemoryConfigValue), result);
     }
 
     @Test
-    public void validateGetVmMaxMemoryReturnVmServiceOfferingMaxRAMSize(){
-        int maxMemoryConfig = 64;
-        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(null);
-
-        ConfigKey<Integer> vmServiceOfferingMaxRAMSize = Mockito.mock(ConfigKey.class);
-        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE = vmServiceOfferingMaxRAMSize;
-
-        Mockito.when(vmServiceOfferingMaxRAMSize.value()).thenReturn(maxMemoryConfig);
-        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1l);
-
-        Assert.assertEquals(ByteScaleUtils.mebibytesToBytes(maxMemoryConfig), result);
-    }
-
-    @Test
-    public void validateGetVmMaxMemoryReturnMaxHostMemory(){
+    public void getVmMaxMemoryTestConsiderHostMaxMemoryWhenKvmMemoryDynamicScalingCapacitySettingIsEqualToZero() {
         long maxHostMemory = ByteScaleUtils.mebibytesToBytes(2000);
-        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(null);
-
-        ConfigKey<Integer> vmServiceOfferingMaxRAMSize = Mockito.mock(ConfigKey.class);
-        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE = vmServiceOfferingMaxRAMSize;
-
-        Mockito.when(vmServiceOfferingMaxRAMSize.value()).thenReturn(0);
-
-        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", maxHostMemory);
+        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", maxHostMemory, 1L);
 
         Assert.assertEquals(maxHostMemory, result);
     }
 
     @Test
-    public void validateGetVmMaxCpuCoresReturnCustomOfferingMaxCpuCores(){
-        int maxCustomOfferingCpuCores = 16;
-        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_CPU_NUMBER)).thenReturn(String.valueOf(maxCustomOfferingCpuCores));
-
-        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", 1);
-
-        Assert.assertEquals(maxCustomOfferingCpuCores, result);
-    }
-
-    @Test
-    public void validateGetVmMaxCpuCoresVmServiceOfferingMaxCPUCores(){
+    public void getVmMaxCpuCoresTestConsiderKvmCpuDynamicScalingCapacitySettingWhenItIsGreaterThanZero() {
         int maxCpuCoresConfig = 16;
-        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_CPU_NUMBER)).thenReturn(null);
+        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+        ConfigKey.init(configDepotMock);
+        Mockito.when(configDepotMock.getConfigStringValue(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(String.valueOf(maxCpuCoresConfig));
 
-        ConfigKey<Integer> vmServiceOfferingMaxCPUCores = Mockito.mock(ConfigKey.class);
-        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES = vmServiceOfferingMaxCPUCores;
-
-        Mockito.when(vmServiceOfferingMaxCPUCores.value()).thenReturn(maxCpuCoresConfig);
-        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", 1);
+        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", 1, 1L);
+        ConfigKey.init(null);
 
         Assert.assertEquals(maxCpuCoresConfig, result);
     }
 
     @Test
-    public void validateGetVmMaxCpuCoresReturnMaxHostMemory(){
+    public void getVmMaxCpuCoresTestConsiderHostMaxCpuWhenKvmCpuDynamicScalingCapacitySettingIsEqualToZero() {
         int maxHostCpuCores = 64;
-        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_CPU_NUMBER)).thenReturn(null);
-
-        ConfigKey<Integer> vmServiceOfferingMaxCPUCores = Mockito.mock(ConfigKey.class);
-        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES = vmServiceOfferingMaxCPUCores;
-
-        Mockito.when(vmServiceOfferingMaxCPUCores.value()).thenReturn(0);
-
-        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", maxHostCpuCores);
+        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", maxHostCpuCores, 1L);
 
         Assert.assertEquals(maxHostCpuCores, result);
     }
@@ -305,39 +310,36 @@ public class KVMGuruTest {
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
         Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(true).when(guru).isVmDynamicScalable(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(true).when(guru).isVmDynamicScalable(Mockito.any(), Mockito.any());
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 
-        Mockito.verify(guru).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
-        Mockito.verify(guru).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
+        Mockito.verify(guru).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(guru).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt(), Mockito.anyLong());
     }
 
     @Test
     public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsNotDynamicAndVmIsDynamicDoNotCallGetMethods(){
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
-        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(false).when(guru).isVmDynamicScalable(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(false).when(guru).isVmDynamicScalable(Mockito.any(), Mockito.any());
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 
-        Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
-        Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
+        Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt(), Mockito.anyLong());
     }
 
     @Test
     public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsDynamicAndVmIsNotDynamicDoNotCallGetMethods(){
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
-        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(true).when(serviceOfferingVoMock).isDynamic();
         Mockito.doReturn(false).when(vmTO).isEnableDynamicallyScaleVm();
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 
-        Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
-        Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
+        Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt(), Mockito.anyLong());
     }
 
     @Test
@@ -489,5 +491,67 @@ public class KVMGuruTest {
         Long clusterId = guru.findClusterOfVm(vm);
 
         Assert.assertNull(clusterId);
+    }
+
+    @Test
+    public void getCpuQuotaPercentageTestAssertQuotaEqualsVmSpeedDividedByHostSpeed() {
+        double hostSpeed = 3000;
+        double vmSpeed = 500;
+        double expectedQuota = new BigDecimal(vmSpeed / hostSpeed).setScale(2, RoundingMode.HALF_DOWN).doubleValue();
+        double actualQuota = guru.getCpuQuotaPercentage(vmSpeed, hostSpeed);
+        Assert.assertEquals(expectedQuota, actualQuota, 0.0001);
+    }
+
+    @Test
+    public void getCpuQuotaPercentageTestAssertQuotaEqualsOneWhenVmSpeedIsGreaterThanHostSpeed() {
+        double hostSpeed = 3000;
+        double vmSpeed = 6000;
+        double expectedQuota = 1;
+        double actualQuota = guru.getCpuQuotaPercentage(vmSpeed, hostSpeed);
+        Assert.assertEquals(expectedQuota, actualQuota, 0.0001);
+    }
+
+    @Test
+    public void getCpuQuotaPercentageTestReturnNullWhenANumberFormatExceptionIsThrown() {
+        double hostSpeed = 0;
+        double vmSpeed = 6000;
+        Double actualQuota = guru.getCpuQuotaPercentage(vmSpeed, hostSpeed);
+        Assert.assertNull(actualQuota);
+    }
+
+    /**
+     * The restore maps backup files onto volumes by their device id ordering, so re-importing the
+     * instance has to put every data disk back on the device id recorded in the backup. Handing out
+     * the next free id instead shifts the disks on every restore and misaligns that mapping.
+     */
+    @Test
+    public void testImportVirtualMachineFromBackupReinstatesRecordedDeviceIds() {
+        String vmInternalName = "i-2-42-VM";
+        VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstance.getId()).thenReturn(42L);
+        Mockito.when(vmInstance.getRemoved()).thenReturn(null);
+        Mockito.when(_instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName)).thenReturn(vmInstance);
+
+        Backup.VolumeInfo rootVolume = new Backup.VolumeInfo("root-uuid", "root-uuid", Volume.Type.ROOT, 1L, 0L, null, null, null);
+        Backup.VolumeInfo dataVolume = new Backup.VolumeInfo("data-uuid", "data-uuid", Volume.Type.DATADISK, 1L, 5L, null, null, null);
+        Mockito.when(vmInstance.getBackupVolumeList()).thenReturn(List.of(rootVolume, dataVolume));
+
+        VolumeVO rootVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(rootVolumeVO.getId()).thenReturn(10L);
+        VolumeVO dataVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(dataVolumeVO.getId()).thenReturn(11L);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("root-uuid")).thenReturn(rootVolumeVO);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("data-uuid")).thenReturn(dataVolumeVO);
+        Mockito.when(backupProviderMock.getName()).thenReturn("backupProviderMock");
+
+        Backup backup = Mockito.mock(Backup.class);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            guru.importVirtualMachineFromBackup(1L, 1L, 1L, 1L, vmInternalName, backup, backupProviderMock);
+        }
+
+        Mockito.verify(_volumeDao).attachVolume(10L, 42L, 0L);
+        Mockito.verify(_volumeDao).attachVolume(11L, 42L, 5L);
+        Mockito.verify(guru, Mockito.never()).getNextAvailableDeviceId(Mockito.anyList());
     }
 }

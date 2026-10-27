@@ -87,7 +87,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -169,7 +169,7 @@ export default {
       } else {
         params.account = this.owner.account
       }
-      api('listDiskOfferings', params).then(json => {
+      getAPI('listDiskOfferings', params).then(json => {
         this.diskofferings = json.listdiskofferingsresponse.diskoffering || []
         this.form.diskofferingid = this.diskofferings[0].id || ''
         this.customDiskOffering = this.diskofferings[0].iscustomized || false
@@ -201,7 +201,7 @@ export default {
           maxops: values.maxiops
         }
         this.loading = true
-        api('changeSharedFileSystemDiskOffering', data).then(response => {
+        postAPI('changeSharedFileSystemDiskOffering', data).then(response => {
           this.$pollJob({
             jobId: response.changesharedfilesystemdiskofferingresponse.jobid,
             title: this.$t('label.change.disk.offering'),

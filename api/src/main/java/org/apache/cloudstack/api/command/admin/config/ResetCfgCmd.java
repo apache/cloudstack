@@ -23,16 +23,16 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -45,44 +45,51 @@ public class ResetCfgCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the configuration", validations = {ApiArgValidator.NotNullOrEmpty})
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the configuration", validations = {ApiArgValidator.NotNullOrEmpty})
     private String cfgName;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "the ID of the Zone to reset the parameter value for corresponding zone")
+               description = "The ID of the Zone to reset the parameter value for corresponding zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
-               description = "the ID of the Cluster to reset the parameter value for corresponding cluster")
+               description = "The ID of the Cluster to reset the parameter value for corresponding cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
-               description = "the ID of the Storage pool to reset the parameter value for corresponding storage pool")
+               description = "The ID of the Storage pool to reset the parameter value for corresponding storage pool")
     private Long storagePoolId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the Domain to reset the parameter value for corresponding domain")
+            description = "The ID of the Domain to reset the parameter value for corresponding domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
                type = CommandType.UUID,
                entityType = AccountResponse.class,
-               description = "the ID of the Account to reset the parameter value for corresponding account")
+               description = "The ID of the Account to reset the parameter value for corresponding account")
     private Long accountId;
 
     @Parameter(name = ApiConstants.IMAGE_STORE_ID,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
-            description = "the ID of the Image Store to reset the parameter value for corresponding image store")
+            description = "The ID of the Image Store to reset the parameter value for corresponding image store")
     private Long imageStoreId;
+
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID,
+            type = CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "the ID of the Management Server to update the parameter value for corresponding management server",
+            since = "4.23.0")
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -114,6 +121,10 @@ public class ResetCfgCmd extends BaseCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////
@@ -148,6 +159,9 @@ public class ResetCfgCmd extends BaseCmd {
             }
             if (getImageStoreId() != null) {
                 response.setScope(ConfigKey.Scope.ImageStore.name());
+            }
+            if (getManagementServerId() != null) {
+                response.setScope(ConfigKey.Scope.ManagementServer.name());
             }
             response.setValue(cfg.second());
             this.setResponseObject(response);

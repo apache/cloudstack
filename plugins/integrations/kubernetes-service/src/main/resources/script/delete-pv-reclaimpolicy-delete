@@ -1,0 +1,178 @@
+#!/bin/bash -e
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+set -e
+
+timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+}
+
+echo "$(timestamp) - Starting PV deletion script with reclaimPolicy=Delete"
+
+delete_workloads_using_pvc() {
+    local namespace=$1
+    local pvc_name=$2
+
+    echo "$(timestamp) - Finding workloads using PVC $pvc_name in namespace $namespace..."
+
+    local deleted_count=0
+
+    # Find & delete any deployment using the PVC
+    # Iterate resource names and check the volumes via jsonpath to avoid grep -l on JSON (which prints "(standard input)")
+    /opt/bin/kubectl get deployments -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        dep_volumes=$(/opt/bin/kubectl get deployment "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$dep_volumes" ] && echo "$dep_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting Deployment: $name"
+            /opt/bin/kubectl delete deployment "$name" -n "$namespace" --ignore-not-found=true
+            deleted_count=$((deleted_count + 1))
+        fi
+    done
+
+    # Find and delete any StatefulSet using the PVC
+    /opt/bin/kubectl get statefulsets -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        # Check both template volumes and volumeClaimTemplates
+        sts_volumes=$(/opt/bin/kubectl get statefulset "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName} {.spec.volumeClaimTemplates[*].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$sts_volumes" ] && echo "$sts_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting StatefulSet: $name"
+            /opt/bin/kubectl delete statefulset "$name" -n "$namespace" --ignore-not-found=true
+            deleted_count=$((deleted_count + 1))
+        fi
+    done
+
+    # Check standalone ReplicaSets (not owned by Deployments)
+    /opt/bin/kubectl get replicasets -n "$namespace" --no-headers -o custom-columns=NAME:.metadata.name | \
+    while read rs_name; do
+        if [ -n "$rs_name" ]; then
+            rs_volumes=$(/opt/bin/kubectl get replicaset "$rs_name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+            if echo "$rs_volumes" | grep -q "$pvc_name"; then
+                owner_kind=$(/opt/bin/kubectl get replicaset "$rs_name" -n "$namespace" -o jsonpath='{.metadata.ownerReferences[0].kind}' 2>/dev/null || echo "")
+                if [ "$owner_kind" != "Deployment" ]; then
+                    echo "$(timestamp) -   Deleting standalone ReplicaSet: $rs_name"
+                    /opt/bin/kubectl delete replicaset "$rs_name" -n "$namespace" --ignore-not-found=true
+                    deleted_count=$((deleted_count + 1))
+                fi
+            fi
+        fi
+    done
+
+    # Find and delete any DaemonSet using the PVC
+    /opt/bin/kubectl get daemonsets -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        ds_volumes=$(/opt/bin/kubectl get daemonset "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$ds_volumes" ] && echo "$ds_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting DaemonSet: $name"
+            /opt/bin/kubectl delete daemonset "$name" -n "$namespace" --ignore-not-found=true
+            deleted_count=$((deleted_count + 1))
+        fi
+    done
+
+    # Find and delete any Job using the PVC
+    /opt/bin/kubectl get jobs -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        job_volumes=$(/opt/bin/kubectl get job "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$job_volumes" ] && echo "$job_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting Job: $name"
+            /opt/bin/kubectl delete job "$name" -n "$namespace" --ignore-not-found=true
+            deleted_count=$((deleted_count + 1))
+        fi
+    done
+
+    # Find and delete any CronJobs using the PVC
+    /opt/bin/kubectl get cronjobs -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        cron_volumes=$(/opt/bin/kubectl get cronjob "$name" -n "$namespace" -o jsonpath='{.spec.jobTemplate.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$cron_volumes" ] && echo "$cron_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting CronJob: $name"
+            /opt/bin/kubectl delete cronjob "$name" -n "$namespace" --ignore-not-found=true
+            deleted_count=$((deleted_count + 1))
+        fi
+    done
+
+    # Find and delete any standalone Pods using the PVC
+    /opt/bin/kubectl get pods -n "$namespace" --no-headers -o custom-columns=NAME:.metadata.name | \
+    while read pod_name; do
+        if [ -n "$pod_name" ]; then
+            pod_volumes=$(/opt/bin/kubectl get pod "$pod_name" -n "$namespace" -o jsonpath='{.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+            if echo "$pod_volumes" | grep -q "$pvc_name"; then
+                owner_kind=$(/opt/bin/kubectl get pod "$pod_name" -n "$namespace" -o jsonpath='{.metadata.ownerReferences[0].kind}' 2>/dev/null || echo "")
+                if [ -z "$owner_kind" ]; then
+                    echo "$(timestamp) -   Deleting standalone Pod: $pod_name"
+                    /opt/bin/kubectl delete pod "$pod_name" -n "$namespace" --ignore-not-found=true
+                    deleted_count=$((deleted_count + 1))
+                fi
+            fi
+        fi
+    done
+
+    if [ $deleted_count -eq 0 ]; then
+        echo "$(timestamp) -   No workloads found using PVC $pvc_name"
+    else
+        echo "$(timestamp) -   Deleted $deleted_count workload(s) using PVC $pvc_name"
+    fi
+
+    echo "$(timestamp) -   Waiting for pods to terminate..."
+    sleep 5
+}
+
+total_pvcs=0
+processed_pvcs=0
+
+echo "$(timestamp) - Scanning for PVCs with associated PVs having reclaimPolicy=Delete..."
+
+while read namespace pvc_name pv_name; do
+    if [ -n "$pv_name" ] && [ "$pv_name" != "<none>" ]; then
+        total_pvcs=$((total_pvcs + 1))
+        reclaim_policy=$(/opt/bin/kubectl get pv "$pv_name" --no-headers -o custom-columns=RECLAIM:.spec.persistentVolumeReclaimPolicy 2>/dev/null || echo "")
+        if [ "$reclaim_policy" = "Delete" ]; then
+            processed_pvcs=$((processed_pvcs + 1))
+            echo "$(timestamp) - Processing PVC $pvc_name in namespace $namespace (PV: $pv_name has reclaimPolicy=Delete)"
+
+            delete_workloads_using_pvc "$namespace" "$pvc_name"
+            echo "$(timestamp) - Deleting PVC $pvc_name in namespace $namespace"
+            /opt/bin/kubectl delete pvc "$pvc_name" -n "$namespace" --ignore-not-found=true
+
+            echo "$(timestamp) - Completed processing PVC $pvc_name"
+            echo "---"
+        fi
+    fi
+done < <(/opt/bin/kubectl get pvc --all-namespaces --no-headers -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,VOLUME:.spec.volumeName)
+
+echo "$(timestamp) - Script completed successfully!"
+echo "$(timestamp) - Summary: Processed $processed_pvcs PVC(s) out of $total_pvcs total PVC(s) found"

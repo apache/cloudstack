@@ -44,13 +44,13 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
-@APICommand(name = "forgotPassword",
+@APICommand(name = DefaultForgotPasswordAPIAuthenticatorCmd.APINAME,
         description = "Sends an email to the user with a token to reset the password using resetPassword command.",
         since = "4.20.0.0",
         requestHasSensitiveInfo = true,
         responseObject = SuccessResponse.class)
 public class DefaultForgotPasswordAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
-
+    public static final String APINAME = "forgotPassword";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -108,10 +108,12 @@ public class DefaultForgotPasswordAPIAuthenticatorCmd extends BaseCmd implements
                 if (userDomain != null) {
                     domainId = userDomain.getId();
                 } else {
+                    logger.debug("Unable to find the domain from the path {}", domain);
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find the domain from the path %s", domain));
                 }
                 final UserAccount userAccount = _accountService.getActiveUserAccount(username[0], domainId);
                 if (userAccount != null && List.of(User.Source.SAML2, User.Source.OAUTH2, User.Source.LDAP).contains(userAccount.getSource())) {
+                    logger.debug("Forgot Password is not allowed for the user {} from source {}", username[0], userAccount.getSource());
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Forgot Password is not allowed for this user");
                 }
                 boolean success = _apiServer.forgotPassword(userAccount, userDomain);

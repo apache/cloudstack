@@ -53,7 +53,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the netscaler load balancer appliance.")
@@ -74,19 +74,19 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GSLB_PROVIDER,
                type = CommandType.BOOLEAN,
                required = false,
-               description = "true if NetScaler device being added is for providing GSLB service")
+               description = "True if NetScaler device being added is for providing GSLB service")
     private Boolean isGslbProvider;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false, description = "public IP of the site")
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false, description = "Public IP of the site")
     private String gslbSitePublicIp;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false, description = "private IP of the site")
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false, description = "Private IP of the site")
     private String gslbSitePrivateIp;
 
     @Parameter(name = ApiConstants.EXCLUSIVE_GSLB_PROVIDER,
                type = CommandType.BOOLEAN,
                required = false,
-               description = "true if NetScaler device being added is for providing GSLB service exclusively and can not be used for LB")
+               description = "True if NetScaler device being added is for providing GSLB service exclusively and can not be used for LB")
     private Boolean isExclusiveGslbProvider;
 
     /////////////////////////////////////////////////////

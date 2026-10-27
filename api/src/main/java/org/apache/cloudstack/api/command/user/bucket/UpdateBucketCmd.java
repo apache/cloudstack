@@ -56,7 +56,7 @@ public class UpdateBucketCmd extends BaseCmd {
     @Parameter(name = ApiConstants.POLICY, type = CommandType.STRING, description = "Bucket Access Policy")
     private String policy;
 
-    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER,description = "Bucket Quota in GB")
+    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER, description = "Bucket Quota in GiB")
     private Integer quota;
 
     /////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ public class UpdateBucketCmd extends BaseCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Bucket Id: " + this._uuidMgr.getUuid(Bucket.class, getId()));
+        CallContext.current().setEventDetails("Bucket ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = false;
         try {
             result = _bucketService.updateBucket(this, CallContext.current().getCallingAccount());

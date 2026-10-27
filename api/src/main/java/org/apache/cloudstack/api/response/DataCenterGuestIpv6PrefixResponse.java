@@ -30,31 +30,31 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = DataCenterGuestIpv6Prefix.class)
 public class DataCenterGuestIpv6PrefixResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "id of the guest IPv6 prefix")
+    @Param(description = "ID of the guest IPv6 prefix")
     private String id;
 
     @SerializedName(ApiConstants.PREFIX)
-    @Param(description = "guest IPv6 prefix")
+    @Param(description = "Guest IPv6 prefix")
     private String prefix;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "id of zone to which the IPv6 prefix belongs to." )
+    @Param(description = "ID of zone to which the IPv6 prefix belongs to." )
     private String zoneId;
 
     @SerializedName(ApiConstants.USED_SUBNETS)
-    @Param(description = "count of the used IPv6 subnets for the prefix." )
+    @Param(description = "Count of the used IPv6 subnets for the prefix." )
     private Integer usedSubnets;
 
     @SerializedName(ApiConstants.AVAILABLE_SUBNETS)
-    @Param(description = "count of the available IPv6 subnets for the prefix." )
+    @Param(description = "Count of the available IPv6 subnets for the prefix." )
     private Integer availableSubnets;
 
     @SerializedName(ApiConstants.TOTAL_SUBNETS)
-    @Param(description = "count of the total IPv6 subnets for the prefix." )
+    @Param(description = "Count of the total IPv6 subnets for the prefix." )
     private Integer totalSubnets;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = " date when this IPv6 prefix was created." )
+    @Param(description = "Date when this IPv6 prefix was created." )
     private Date created;
 
     public void setId(String id) {

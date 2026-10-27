@@ -27,27 +27,27 @@ import com.cloud.serializer.Param;
 
 public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of extracted object")
+    @Param(description = "The ID of extracted object")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the extracted object")
+    @Param(description = "The name of the extracted object")
     private String name;
 
     @SerializedName("extractId")
-    @Param(description = "the upload id of extracted object")
+    @Param(description = "The upload ID of extracted object")
     private String uploadId;
 
     @SerializedName("uploadpercentage")
-    @Param(description = "the percentage of the entity uploaded to the specified location")
+    @Param(description = "The percentage of the entity uploaded to the specified location")
     private Integer uploadPercent;
 
     @SerializedName("status")
-    @Param(description = "the status of the extraction")
+    @Param(description = "The status of the extraction")
     private String status;
 
     @SerializedName("accountid")
-    @Param(description = "the account id to which the extracted object belongs")
+    @Param(description = "The Account ID to which the extracted object belongs")
     private String accountId;
 
     @SerializedName("resultstring")
@@ -55,31 +55,31 @@ public class ExtractResponse extends BaseResponse {
     private String resultString;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the time and date the object was created")
+    @Param(description = "The time and date the object was created")
     private Date createdDate;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the extracted object")
+    @Param(description = "The state of the extracted object")
     private String state;
 
     @SerializedName("storagetype")
-    @Param(description = "type of the storage")
+    @Param(description = "Type of the storage")
     private String storageType;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone ID the object was extracted from")
+    @Param(description = "Zone ID the object was extracted from")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "zone name the object was extracted from")
+    @Param(description = "Zone name the object was extracted from")
     private String zoneName;
 
     @SerializedName("extractMode")
-    @Param(description = "the mode of extraction - upload or download")
+    @Param(description = "The mode of extraction - upload or download")
     private String mode;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
+    @Param(description = "If mode = upload then URL of the uploaded entity. if mode = download the URL from which the entity can be downloaded")
     private String url;
 
     public ExtractResponse() {

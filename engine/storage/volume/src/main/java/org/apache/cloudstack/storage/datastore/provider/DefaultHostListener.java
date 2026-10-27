@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.datastore.provider;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.SetupPersistentNetworkCommand;
@@ -36,6 +37,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -43,9 +45,9 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -60,6 +62,7 @@ import javax.inject.Inject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class DefaultHostListener implements HypervisorHostListener {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -133,9 +136,23 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-        Pair<Map<String, String>, Boolean> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null);
+        Map<String, String> detailsMap = storagePoolDetailsDao.listDetailsKeyPairs(poolId);
+        Map<String, String> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null).first();
 
-        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
+        Optional.ofNullable(nfsMountOpts).ifPresent(detailsMap::putAll);
+
+        // Propagate CLVM secure zero-fill setting to the host
+        // Note: This is done during host connection (agent start, MS restart, host reconnection)
+        // so the setting is non-dynamic. Changes require host reconnection to take effect.
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            Boolean clvmSecureZeroFill = ClvmPoolManager.CLVMSecureZeroFill.valueIn(poolId);
+            if (clvmSecureZeroFill != null) {
+                detailsMap.put("clvmsecurezerofill", String.valueOf(clvmSecureZeroFill));
+                logger.debug("Added CLVM secure zero-fill setting: {} for storage pool: {}", clvmSecureZeroFill, pool);
+            }
+        }
+
+        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, detailsMap);
         cmd.setWait(modifyStoragePoolCommandWait);
         HostVO host = hostDao.findById(hostId);
         logger.debug("Sending modify storage pool command to agent: {} for storage pool: {} with timeout {} seconds", host, pool, cmd.getWait());
@@ -205,8 +222,41 @@ public class DefaultHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        // TODO Auto-generated method stub
-        return false;
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            logger.error("Failed to disconnect host by HostListener as host was not found with id : " + hostId);
+            return false;
+        }
+
+        DataStore dataStore = dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePool storagePool = (StoragePool) dataStore;
+        DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(storagePool);
+        Answer answer  = sendDeleteStoragePoolCommand(cmd, storagePool, host);
+        if (!answer.getResult()) {
+            logger.error("Failed to disconnect storage pool: " + storagePool + " and host: " + host);
+            return false;
+        }
+
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
+        if (storagePoolHost != null) {
+            storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
+        }
+        logger.info("Connection removed between storage pool: " + storagePool + " and host: " + host);
+        return true;
+    }
+
+    private Answer sendDeleteStoragePoolCommand(DeleteStoragePoolCommand cmd, StoragePool storagePool, HostVO host) {
+        Answer answer = agentMgr.easySend(host.getId(), cmd);
+        if (answer == null) {
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the delete storage pool command for storage pool %s, sent to host %s", storagePool, host));
+        }
+
+        if (!answer.getResult()) {
+            String msg = "Unable to detach storage pool " + storagePool + " from the host " + host;
+            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+        }
+
+        return answer;
     }
 
     @Override

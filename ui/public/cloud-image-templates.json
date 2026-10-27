@@ -1,0 +1,110 @@
+[
+    {
+        "id": 1,
+        "name": "Ubuntu 24.04",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/ubuntu/ubuntu-24.04-server-cloudimg-amd64.img"
+    },
+    {
+        "id": 2,
+        "name": "Ubuntu 22.04",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/ubuntu/ubuntu-22.04-server-cloudimg-amd64.img"
+    },
+    {
+        "id": 3,
+        "name": "Ubuntu 20.04",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/ubuntu/ubuntu-20.04-server-cloudimg-amd64.img"
+    },
+    {
+        "id": 4,
+        "name": "Debian GNU/Linux 12 (64-bit)",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/debian/debian-12-genericcloud-amd64.qcow2"
+    },
+    {
+        "id": 5,
+        "name": "Rocky Linux 8",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/rockylinux/Rocky-8-GenericCloud.latest.x86_64.qcow2"
+    },
+    {
+        "id": 6,
+        "name": "Rocky Linux 9",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/rockylinux/Rocky-9-GenericCloud.latest.x86_64.qcow2"
+    },
+    {
+        "id": 7,
+        "name": "OpenSUSE 15.5",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/opensuse/openSUSE-Leap-15.5-Minimal-VM.x86_64-Cloud.qcow2"
+    },
+    {
+        "id": 8,
+        "name": "Ubuntu 24.04",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/ubuntu/ubuntu-24.04-server-cloudimg-arm64.img"
+    },
+    {
+        "id": 9,
+        "name": "Ubuntu 22.04",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/ubuntu/ubuntu-22.04-server-cloudimg-arm64.img"
+    },
+    {
+        "id": 10,
+        "name": "Ubuntu 20.04",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/ubuntu/ubuntu-20.04-server-cloudimg-arm64.img"
+    },
+    {
+        "id": 11,
+        "name": "Debian GNU/Linux 12 (64-bit)",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/debian/debian-12-genericcloud-arm64.qcow2"
+    },
+    {
+        "id": 12,
+        "name": "Rocky Linux 8",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/rockylinux/Rocky-8-GenericCloud.latest.aarch64.qcow2"
+    },
+    {
+        "id": 13,
+        "name": "Rocky Linux 9",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/rockylinux/Rocky-9-GenericCloud.latest.aarch64.qcow2"
+    },
+    {
+        "id": 14,
+        "name": "OpenSUSE 15.5",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/opensuse/openSUSE-Leap-15.5-Minimal-VM.aarch64-Cloud.qcow2"
+    },
+    {
+        "id": 15,
+        "name": "Oracle Linux 8",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/oraclelinux/OL8U10_aarch64-kvm-b122.qcow2"
+    },
+    {
+        "id": 16,
+        "name": "Oracle Linux 8",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/oraclelinux/OL8U10_x86_64-kvm-b258.qcow2"
+    },
+    {
+        "id": 17,
+        "name": "Oracle Linux 9",
+        "arch": "aarch64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/oraclelinux/OL9U5_aarch64-kvm-b126.qcow2"
+    },
+    {
+        "id": 18,
+        "name": "Oracle Linux 9",
+        "arch": "x86_64",
+        "url": "https://download.cloudstack.org/templates/cloud-images/oraclelinux/OL9U5_x86_64-kvm-b259.qcow2"
+    }
+]

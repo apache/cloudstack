@@ -91,7 +91,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
-import com.cloud.vm.dao.UserVmDetailsDaoImpl;
+import com.cloud.vm.dao.VMInstanceDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 
@@ -101,7 +101,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
     ConfigurationGroupDaoImpl.class, ConfigurationSubGroupDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class,
     VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class,
     DataCenterLinkLocalIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, DiskOfferingDaoImpl.class,
-    StoragePoolHostDaoImpl.class, UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class,
+    StoragePoolHostDaoImpl.class, UserVmDaoImpl.class, VMInstanceDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class,
     VMSnapshotDaoImpl.class, OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class, ConsoleProxyDaoImpl.class,
     StoragePoolWorkDaoImpl.class, StorageCacheManagerImpl.class, UserDaoImpl.class, DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class,
     DownloadMonitorImpl.class, AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class},

@@ -78,10 +78,6 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
 
             ApiResponseHelper.populateOwner(response, resourceTag);
 
-            response.setDomainId(resourceTag.getDomainUuid());
-            response.setDomainName(resourceTag.getDomainName());
-            response.setDomainPath(resourceTag.getDomainPath());
-
             response.setCustomer(resourceTag.getCustomer());
         }
 

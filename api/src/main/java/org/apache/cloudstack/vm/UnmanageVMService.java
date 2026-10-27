@@ -17,11 +17,14 @@
 
 package org.apache.cloudstack.vm;
 
+import com.cloud.utils.Pair;
+
 public interface UnmanageVMService {
 
     /**
      * Unmanage a guest VM from CloudStack
-     * @return true if the VM is successfully unmanaged, false if not.
+     *
+     * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
      */
-    boolean unmanageVMInstance(long vmId);
+    Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId, boolean isForced);
 }

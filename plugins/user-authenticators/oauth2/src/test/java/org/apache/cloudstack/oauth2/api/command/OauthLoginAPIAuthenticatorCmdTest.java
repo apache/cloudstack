@@ -19,17 +19,24 @@ package org.apache.cloudstack.oauth2.api.command;
 
 import com.cloud.api.ApiServer;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,6 +84,29 @@ public class OauthLoginAPIAuthenticatorCmdTest {
     }
 
     @Test
+    public void testAuthenticateWithMissingParamsReturnsSerializedServerApiException() throws Exception {
+        ApiServer apiServer = mock(ApiServer.class);
+        cmd._apiServer = apiServer;
+        String serializedError = "{\"oauthloginresponse\":{\"errorcode\":531,\"errortext\":\"...\"}}";
+        when(apiServer.getSerializedApiError(anyInt(), anyString(), any(), anyString())).thenReturn(serializedError);
+
+        Map<String, Object[]> params = new HashMap<>();
+        // missing provider, email, secretCode — should trip the empty check
+        params.put(ApiConstants.PROVIDER, new String[]{""});
+        params.put(ApiConstants.EMAIL, new String[]{""});
+        params.put(ApiConstants.SECRET_CODE, new String[]{""});
+
+        try {
+            cmd.authenticate("oauthlogin", params, null, InetAddress.getLoopbackAddress(),
+                    "json", new StringBuilder(), null, null);
+            fail("Expected ServerApiException to be thrown");
+        } catch (ServerApiException ex) {
+            assertEquals(ApiErrorCode.ACCOUNT_ERROR, ex.getErrorCode());
+            assertEquals(serializedError, ex.getDescription());
+        }
+    }
+
+    @Test
     public void testGetDomainIdFromParams() {
         StringBuilder auditTrailSb = new StringBuilder();
         String responseType = "json";
@@ -85,10 +115,29 @@ public class OauthLoginAPIAuthenticatorCmdTest {
         ApiServer apiServer = mock(ApiServer.class);
         cmd._apiServer = apiServer;
         when(apiServer.fetchDomainId("1234")).thenReturn(5678L);
+        when(apiServer.getDomainId(params)).thenCallRealMethod();
 
         Long domainId = cmd.getDomainIdFromParams(params, auditTrailSb, responseType);
 
         assertEquals(Long.valueOf(5678), domainId);
         assertEquals(" domainid=5678", auditTrailSb.toString());
+    }
+
+    @Test
+    public void testGetDomainIdFromCamelCaseParam() {
+        StringBuilder auditTrailSb = new StringBuilder();
+        String responseType = "json";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, null);
+        params.put(ApiConstants.DOMAIN__ID, new String[]{"5678"});
+        ApiServer apiServer = mock(ApiServer.class);
+        cmd._apiServer = apiServer;
+        when(apiServer.fetchDomainId("5678")).thenReturn(1234L);
+        when(apiServer.getDomainId(params)).thenCallRealMethod();
+
+        Long domainId = cmd.getDomainIdFromParams(params, auditTrailSb, responseType);
+
+        assertEquals(Long.valueOf(1234), domainId);
+        assertEquals(" domainid=1234", auditTrailSb.toString());
     }
 }

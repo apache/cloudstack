@@ -51,17 +51,19 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Maps;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.extension.ExtensionHelper;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -127,7 +129,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private ServiceOfferingDao _serviceOfferingDao;
     @Mock private UserVmDao _vmDao;
     @Mock private VMInstanceDao _vmInstanceDao;
-    @Mock private UserVmDetailsDao _userVmDetailsDao;
+    @Mock private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Mock private NetworkDao _networkDao;
     @Mock private NetworkServiceMapDao _ntwkSrvcDao;
     @Mock private IPAddressDao _ipAddressDao;
@@ -151,6 +153,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private CallContext callContextMock;
     @Mock private DomainVO domainVO;
     @Mock private NetworkOrchestrationService _networkOrchestrationService;
+    @Mock private ExtensionHelper extensionHelper;
 
     @Spy @InjectMocks
     private ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
@@ -202,6 +205,8 @@ public class ConfigDriveNetworkElementTest {
         doReturn(_configDrivesNetworkElement.getProvider().getName()).when(_ntwkSrvcDao).getProviderForServiceInNetwork(NETWORK_ID, Network.Service.UserData);
 
         _networkModel.setNetworkElements(Arrays.asList(_configDrivesNetworkElement));
+        ReflectionTestUtils.setField(_networkModel, "extensionHelper", extensionHelper);
+        Mockito.lenient().when(extensionHelper.isNetworkExtensionProvider(Mockito.anyString())).thenReturn(false);
         _networkModel.start();
 
     }
@@ -269,12 +274,12 @@ public class ConfigDriveNetworkElementTest {
             Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
             final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
-            final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
+            final VMInstanceDetailVO vmInstanceDetailVO = mock(VMInstanceDetailVO.class);
             when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
             when(virtualMachine.getUuid()).thenReturn("vm-uuid");
-            when(userVmDetailVO.getValue()).thenReturn(PUBLIC_KEY);
+            when(vmInstanceDetailVO.getValue()).thenReturn(PUBLIC_KEY);
             when(nicp.getIPv4Address()).thenReturn("192.168.111.111");
-            when(_userVmDetailsDao.findDetail(Mockito.anyLong(), Mockito.anyString())).thenReturn(userVmDetailVO);
+            when(_vmInstanceDetailsDao.findDetail(Mockito.anyLong(), Mockito.anyString())).thenReturn(vmInstanceDetailVO);
             when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
             when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
             when(_hostDao.findById(virtualMachine.getHostId())).thenReturn(hostVO);

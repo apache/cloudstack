@@ -858,6 +858,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
+        time.sleep(10)
         small_virtual_machine.attach_volume(self.apiclient, vol1)
 
         self.debug("Destroy VM - ID: %s" % small_virtual_machine.id)
@@ -1710,8 +1711,8 @@ class TestKVMLiveMigration(cloudstackTestCase):
     def get_target_pool(self, volid):
         target_pools = StoragePool.listForMigration(self.apiclient, id=volid)
 
-        if len(target_pools) < 1:
-            self.skipTest("Not enough storage pools found")
+        if target_pools is None or len(target_pools) == 0:
+            self.skipTest("Not enough storage pools found for migration")
 
         return target_pools[0]
 

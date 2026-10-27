@@ -21,7 +21,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 public interface ManagementServiceConfiguration extends Configurable {
     ConfigKey<Integer> PingInterval = new ConfigKey<Integer>("Advanced", Integer.class, "ping.interval", "60",
-            "Interval to send application level pings to make sure the connection is still working", false);
+            "Interval in seconds to send application level pings to make sure the connection is still working", false);
     ConfigKey<Float> PingTimeout = new ConfigKey<Float>("Advanced", Float.class, "ping.timeout", "2.5",
             "Multiplier to ping.interval before announcing an agent has timed out", true);
     public int getPingInterval();

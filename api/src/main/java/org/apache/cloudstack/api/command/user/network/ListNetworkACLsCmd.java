@@ -44,22 +44,22 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
                description = "Lists network ACL Item with the specified ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list network ACL items by network ID")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List network ACL items by network ID")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "list network ACL items by traffic type - ingress or egress")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "List network ACL items by traffic type - ingress or egress")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "list network ACL items by ACL ID")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "List network ACL items by ACL ID")
     private Long aclId;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "list network ACL items by protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "List network ACL items by protocol")
     private String protocol;
 
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "list network ACL items by action")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "List network ACL items by action")
     private String action;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

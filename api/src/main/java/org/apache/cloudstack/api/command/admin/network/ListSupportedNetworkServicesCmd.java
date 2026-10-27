@@ -40,10 +40,10 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "network service provider name")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Network service provider name")
     private String providerName;
 
-    @Parameter(name = ApiConstants.SERVICE, type = CommandType.STRING, description = "network service name to list providers and capabilities of")
+    @Parameter(name = ApiConstants.SERVICE, type = CommandType.STRING, description = "Network service name to list providers and capabilities of")
     private String serviceName;
 
     /////////////////////////////////////////////////////

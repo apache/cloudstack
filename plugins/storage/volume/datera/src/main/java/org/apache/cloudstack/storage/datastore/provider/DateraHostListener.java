@@ -247,7 +247,7 @@ public class DateraHostListener implements HypervisorHostListener {
         List<String> storagePaths = new ArrayList<>();
 
         // If you do not pass in null for the second parameter, you only get back applicable ROOT disks.
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(storagePoolId, null);
+        List<VolumeVO> volumes = _volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {
@@ -317,7 +317,7 @@ public class DateraHostListener implements HypervisorHostListener {
         StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 
         // If you do not pass in null for the second parameter, you only get back applicable ROOT disks.
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(storagePoolId, null);
+        List<VolumeVO> volumes = _volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {

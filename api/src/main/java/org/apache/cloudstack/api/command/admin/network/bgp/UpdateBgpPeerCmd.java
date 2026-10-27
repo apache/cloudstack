@@ -120,7 +120,7 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Bgp Peer " + getId();
+        return "Updating BGP Peer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

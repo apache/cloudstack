@@ -36,7 +36,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricApplicationPolicySetCmd.APINAME, description = "create Tungsten-Fabric application policy set",
+@APICommand(name = CreateTungstenFabricApplicationPolicySetCmd.APINAME, description = "Create Tungsten-Fabric application policy set",
     responseObject = TungstenFabricApplicationPolicySetResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenFabricApplicationPolicySetCmd extends BaseAsyncCmd {
     public static final String APINAME = "createTungstenFabricApplicationPolicySet";
@@ -44,7 +44,7 @@ public class CreateTungstenFabricApplicationPolicySetCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric application policy set name")

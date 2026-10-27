@@ -17,7 +17,6 @@
 package com.cloud.usage;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +25,7 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.domain.Domain;
-import com.cloud.utils.DateUtil;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
@@ -36,12 +34,14 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -58,6 +58,8 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.SnapshotVO;
@@ -72,6 +74,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -121,6 +124,12 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     private IPAddressDao _ipDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private NetworkOfferingDao _networkOfferingDao;
+
+    private TimeZone usageExecutionTimeZone = TimeZone.getTimeZone("GMT");
+
+    private static final long REMOVE_RAW_USAGE_RECORDS_WINDOW_IN_MS = 15 * 60 * 1000;
 
     public UsageServiceImpl() {
     }
@@ -128,8 +137,15 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
+
         String timeZoneStr = ObjectUtils.defaultIfNull(_configDao.getValue(Config.UsageAggregationTimezone.toString()), "GMT");
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
+
+        String executionTimeZone = _configDao.getValue(Config.UsageExecutionTimezone.toString());
+        if (executionTimeZone != null) {
+            usageExecutionTimeZone = TimeZone.getTimeZone(executionTimeZone);
+        }
+
         return true;
     }
 
@@ -245,6 +261,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
 
             Long usageDbId = null;
+            boolean offeringExistsForNetworkOfferingType = false;
 
             switch (usageType.intValue()) {
                 case UsageTypes.NETWORK_BYTES_RECEIVED:
@@ -318,13 +335,19 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                         usageDbId = ip.getId();
                     }
                     break;
+                case UsageTypes.NETWORK_OFFERING:
+                    NetworkOfferingVO networkOffering = _networkOfferingDao.findByUuidIncludingRemoved(usageId);
+                    if (networkOffering != null) {
+                        offeringExistsForNetworkOfferingType = true;
+                        sc.addAnd("offeringId", SearchCriteria.Op.EQ, networkOffering.getId());
+                    }
                 default:
                     break;
             }
 
             if (usageDbId != null) {
                 sc.addAnd("usageId", SearchCriteria.Op.EQ, usageDbId);
-            } else {
+            } else if (!offeringExistsForNetworkOfferingType) {
                 // return an empty list if usageId was not found
                 return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
             }
@@ -453,35 +476,28 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     @Override
     public boolean removeRawUsageRecords(RemoveRawUsageRecordsCmd cmd) throws InvalidParameterValueException {
         Integer interval = cmd.getInterval();
-        if (interval != null && interval > 0 ) {
-            String jobExecTime = _configDao.getValue(Config.UsageStatsJobExecTime.toString());
-            if (jobExecTime != null ) {
-                String[] segments = jobExecTime.split(":");
-                if (segments.length == 2) {
-                    String timeZoneStr = _configDao.getValue(Config.UsageExecutionTimezone.toString());
-                    if (timeZoneStr == null) {
-                        timeZoneStr = "GMT";
-                    }
-                    TimeZone tz = TimeZone.getTimeZone(timeZoneStr);
-                    Calendar cal = Calendar.getInstance(tz);
-                    cal.setTime(new Date());
-                    long curTS = cal.getTimeInMillis();
-                    cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(segments[0]));
-                    cal.set(Calendar.MINUTE, Integer.parseInt(segments[1]));
-                    cal.set(Calendar.SECOND, 0);
-                    cal.set(Calendar.MILLISECOND, 0);
-                    long execTS = cal.getTimeInMillis();
-                    logger.debug("Trying to remove old raw cloud_usage records older than " + interval + " day(s), current time=" + curTS + " next job execution time=" + execTS);
-                    // Let's avoid cleanup when job runs and around a 15 min interval
-                    if (Math.abs(curTS - execTS) < 15 * 60 * 1000) {
-                        return false;
-                    }
-                }
-            }
-            _usageDao.removeOldUsageRecords(interval);
-        } else {
-            throw new InvalidParameterValueException("Invalid interval value. Interval to remove cloud_usage records should be greater than 0");
+        if (interval == null || interval <= 0) {
+            throw new InvalidParameterValueException("Interval should be greater than 0.");
         }
+
+        String jobExecTime = _configDao.getValue(Config.UsageStatsJobExecTime.toString());
+        Date previousJobExecTime = UsageUtils.getPreviousJobExecutionTime(usageExecutionTimeZone, jobExecTime);
+        Date nextJobExecTime = UsageUtils.getNextJobExecutionTime(usageExecutionTimeZone, jobExecTime);
+        if (ObjectUtils.allNotNull(previousJobExecTime, nextJobExecTime)) {
+            logger.debug("Next Usage job is scheduled to execute at [{}]; previous execution was at [{}].",
+                    DateUtil.displayDateInTimezone(usageExecutionTimeZone, nextJobExecTime), DateUtil.displayDateInTimezone(usageExecutionTimeZone, previousJobExecTime));
+            Date now = new Date();
+            if (nextJobExecTime.getTime() - now.getTime() < REMOVE_RAW_USAGE_RECORDS_WINDOW_IN_MS) {
+                logger.info("Not removing any cloud_usage records because the next Usage job is scheduled to execute in less than {} minute(s).", REMOVE_RAW_USAGE_RECORDS_WINDOW_IN_MS / 60000);
+                return false;
+            } else if (now.getTime() - previousJobExecTime.getTime() < REMOVE_RAW_USAGE_RECORDS_WINDOW_IN_MS) {
+                logger.info("Not removing any cloud_usage records because the last Usage job executed in less than {} minute(s) ago.", REMOVE_RAW_USAGE_RECORDS_WINDOW_IN_MS / 60000);
+                return false;
+            }
+        }
+
+        logger.info("Removing cloud_usage records older than {} day(s).", interval);
+        _usageDao.expungeAllOlderThan(interval, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
         return true;
     }
 }

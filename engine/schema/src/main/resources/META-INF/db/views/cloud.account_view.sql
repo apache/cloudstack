@@ -64,10 +64,20 @@ select
     `cpucount`.`count` AS `cpuTotal`,
     `memorylimit`.`max` AS `memoryLimit`,
     `memorycount`.`count` AS `memoryTotal`,
+    `gpulimit`.`max` AS `gpuLimit`,
+    `gpucount`.`count` AS `gpuTotal`,
     `primary_storage_limit`.`max` AS `primaryStorageLimit`,
     `primary_storage_count`.`count` AS `primaryStorageTotal`,
     `secondary_storage_limit`.`max` AS `secondaryStorageLimit`,
     `secondary_storage_count`.`count` AS `secondaryStorageTotal`,
+    `backup_limit`.`max` AS `backupLimit`,
+    `backup_count`.`count` AS `backupTotal`,
+    `backup_storage_limit`.`max` AS `backupStorageLimit`,
+    `backup_storage_count`.`count` AS `backupStorageTotal`,
+    `bucket_limit`.`max` AS `bucketLimit`,
+    `bucket_count`.`count` AS `bucketTotal`,
+    `object_storage_limit`.`max` AS `objectStorageLimit`,
+    `object_storage_count`.`count` AS `objectStorageTotal`,
     `async_job`.`id` AS `job_id`,
     `async_job`.`uuid` AS `job_uuid`,
     `async_job`.`job_status` AS `job_status`,
@@ -148,6 +158,12 @@ from
     `cloud`.`resource_count` memorycount ON account.id = memorycount.account_id
         and memorycount.type = 'memory' and memorycount.tag IS NULL
         left join
+    `cloud`.`resource_limit` gpulimit ON account.id = gpulimit.account_id
+        and gpulimit.type = 'gpu' and gpulimit.tag IS NULL
+        left join
+    `cloud`.`resource_count` gpucount ON account.id = gpucount.account_id
+        and gpucount.type = 'gpu' and gpucount.tag IS NULL
+        left join
     `cloud`.`resource_limit` primary_storage_limit ON account.id = primary_storage_limit.account_id
         and primary_storage_limit.type = 'primary_storage' and primary_storage_limit.tag IS NULL
         left join
@@ -159,6 +175,30 @@ from
         left join
     `cloud`.`resource_count` secondary_storage_count ON account.id = secondary_storage_count.account_id
         and secondary_storage_count.type = 'secondary_storage'
+        left join
+    `cloud`.`resource_limit` backup_limit ON account.id = backup_limit.account_id
+        and backup_limit.type = 'backup'
+        left join
+    `cloud`.`resource_count` backup_count ON account.id = backup_count.account_id
+        and backup_count.type = 'backup'
+        left join
+    `cloud`.`resource_limit` backup_storage_limit ON account.id = backup_storage_limit.account_id
+        and backup_storage_limit.type = 'backup_storage'
+        left join
+    `cloud`.`resource_count` backup_storage_count ON account.id = backup_storage_count.account_id
+        and backup_storage_count.type = 'backup_storage'
+        left join
+    `cloud`.`resource_limit` bucket_limit ON account.id = bucket_limit.account_id
+        and bucket_limit.type = 'bucket'
+        left join
+    `cloud`.`resource_count` bucket_count ON account.id = bucket_count.account_id
+        and bucket_count.type = 'bucket'
+        left join
+    `cloud`.`resource_limit` object_storage_limit ON account.id = object_storage_limit.account_id
+        and object_storage_limit.type = 'object_storage'
+        left join
+    `cloud`.`resource_count` object_storage_count ON account.id = object_storage_count.account_id
+        and object_storage_count.type = 'object_storage'
         left join
     `cloud`.`async_job` ON async_job.instance_id = account.id
         and async_job.instance_type = 'Account'

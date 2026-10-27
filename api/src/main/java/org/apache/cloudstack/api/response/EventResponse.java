@@ -30,43 +30,43 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class EventResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the event")
+    @Param(description = "The ID of the event")
     private String id;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the name of the user who performed the action (can be different from the account if an admin is performing an action for a user, e.g. starting/stopping a user's virtual machine)")
+    @Param(description = "The name of the User who performed the action (can be different from the Account if an admin is performing an action for a User, e.g. starting/stopping a User's Instance)")
     private String username;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the event (see event types)")
+    @Param(description = "The type of the event (see event types)")
     private String eventType;
 
     @SerializedName(ApiConstants.LEVEL)
-    @Param(description = "the event level (INFO, WARN, ERROR)")
+    @Param(description = "The event level (INFO, WARN, ERROR)")
     private String level;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "a brief description of the event")
+    @Param(description = "A brief description of the event")
     private String description;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name for the account that owns the object being acted on in the event (e.g. the owner of the virtual machine, ip address, or security group)")
+    @Param(description = "The Account name for the Account that owns the object being acted on in the event (e.g. the owner of the Instance, IP address, or security group)")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the ipaddress")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the address")
+    @Param(description = "The project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the id of the account's domain")
+    @Param(description = "The ID of the Account's domain")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the name of the account's domain")
+    @Param(description = "The name of the Account's domain")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -74,31 +74,31 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     private String domainPath;
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Param(description = "the id of the resource", since = "4.17.0")
+    @Param(description = "The ID of the resource", since = "4.17.0")
     private String resourceId;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
-    @Param(description = "the type of the resource", since = "4.17.0")
+    @Param(description = "The type of the resource", since = "4.17.0")
     private String resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_NAME)
-    @Param(description = "the name of the resource", since = "4.17.0")
+    @Param(description = "The name of the resource", since = "4.17.0")
     private String resourceName;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date the event was created")
+    @Param(description = "The date the event was created")
     private Date created;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the event")
+    @Param(description = "The state of the event")
     private Event.State state;
 
     @SerializedName(ApiConstants.PARENT_ID)
-    @Param(description = "whether the event is parented")
+    @Param(description = "Whether the event is parented")
     private String parentId;
 
     @SerializedName(ApiConstants.ARCHIVED)
-    @Param(description = "whether the event has been archived or not")
+    @Param(description = "Whether the event has been archived or not")
     private Boolean archived;
 
     public void setId(String id) {

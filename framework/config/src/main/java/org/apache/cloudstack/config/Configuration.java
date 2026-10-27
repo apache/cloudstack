@@ -17,6 +17,9 @@
 package org.apache.cloudstack.config;
 
 import java.util.Date;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * Configuration represents one global configuration parameter for CloudStack.
@@ -74,7 +77,9 @@ public interface Configuration {
      * always global.  A non-null value indicates that this parameter can be
      * set at a certain organization level.
      */
-    String getScope();
+    int getScope();
+
+    List<ConfigKey.Scope> getScopes();
 
     /**
      * @return can the configuration parameter be changed without restarting the server.

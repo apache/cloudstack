@@ -59,13 +59,18 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'EmailTemplateDetails',
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
+  },
   data () {
     return {
-      resource: {},
       formModel: {
         templatesubject: null,
         templatebody: null
@@ -74,29 +79,10 @@ export default {
     }
   },
   created () {
-    this.fetchData()
+    this.formModel.templatesubject = this.resource.templatesubject || null
+    this.formModel.templatebody = this.resource.templatebody || null
   },
   methods: {
-    fetchData () {
-      this.loading = true
-      const params = {}
-      params.templatetype = this.$route.params.id
-
-      api('quotaEmailTemplateList', params).then(json => {
-        const listTemplates = json.quotaemailtemplatelistresponse.quotaemailtemplate || []
-        this.resource = listTemplates && listTemplates.length > 0 ? listTemplates[0] : {}
-        this.preFillDataValues()
-      }).catch(e => {
-        this.$notifyError(e)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    preFillDataValues () {
-      console.log(this.resource)
-      this.formModel.templatesubject = this.resource.templatesubject || null
-      this.formModel.templatebody = this.resource.templatebody || null
-    },
     handleSubmit () {
       if (this.loading) return
       const params = {}
@@ -106,7 +92,7 @@ export default {
 
       this.loading = true
 
-      api('quotaEmailTemplateUpdate', params).then(json => {
+      postAPI('quotaEmailTemplateUpdate', params).then(json => {
         this.$message.success(this.$t('label.quota.email.edit') + ' - ' + this.resource.templatetype)
         this.$router.go(-1)
       }).catch(e => {

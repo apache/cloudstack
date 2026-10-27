@@ -18,8 +18,11 @@
 //
 package com.cloud.storage.template;
 
+
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
+
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
@@ -59,6 +62,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
         request.setFollowRedirects(followRedirects);
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         if (!toFileSet) {
             String[] parts = downloadUrl.split("/");
             String filename = parts[parts.length - 1];
@@ -108,7 +112,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
-            logger.error("Error downloading template from: " + _downloadUrl + " due to: " + e.getMessage());
+            logger.error("Error downloading Template from: " + _downloadUrl + " due to: " + e.getMessage());
             return false;
         }
         return true;
@@ -133,6 +137,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         int i = 0;
         while (!downloaded && i < metalinkUrls.size()) {
             String url = metalinkUrls.get(i);
+            try {
+                UriUtils.validateMetalinkInnerUrl(url);
+            } catch (IllegalArgumentException e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed SSRF validation: %s - %s", url, e.getMessage()));
+                i++;
+                continue;
+            }
             request = createRequest(url);
             downloaded = downloadTemplate();
             i++;

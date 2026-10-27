@@ -15,14 +15,14 @@ What this tool is capable to do is
 
 The usage is as follows
 1.	First run fresh_install_data_collection.sh file to generate data from fresh install setup .
-	This will be used for comparing between fresh install and upgrade setup. 
+	This will be used for comparing between fresh install and upgrade setup.
 	This is a onetime activity and need to be repeated only when there is some DB changes for that release .
-	Output of this script will come in a base_data folder 
+	Output of this script will come in a base_data folder
 
 2.	Just before upgrade you need to run before_upgrade_data_collection.sh  file to collect required data needed to compare before upgrade and after upgrade setup data
 	The output of this script will come in folder data_before_upgrade
 
-3.	After upgrade  run cloud_schema_comparision.sh to compare cloud database all tables schema between fresh and upgraded setup. 
+3.	After upgrade  run cloud_schema_comparision.sh to compare cloud database all tables schema between fresh and upgraded setup.
 	NOTE: this script requires step 1 output in current working directory
 
 4.	After upgrade  run usage_schema_comparision.sh to compare cloud usage all tables schema between fresh and upgraded setup
@@ -41,4 +41,4 @@ The usage is as follows
 	•	Database user
 	•	Database user password
 
-8.	Result will be shown in the form of files . 
+8.	Result will be shown in the form of files .

@@ -24,6 +24,7 @@ public class MigrationOptions implements Serializable {
 
     private String srcPoolUuid;
     private Storage.StoragePoolType srcPoolType;
+    private Long srcPoolClusterId;
     private Type type;
     private ScopeType scopeType;
     private String srcBackingFilePath;
@@ -38,21 +39,23 @@ public class MigrationOptions implements Serializable {
     public MigrationOptions() {
     }
 
-    public MigrationOptions(String srcPoolUuid, Storage.StoragePoolType srcPoolType, String srcBackingFilePath, boolean copySrcTemplate, ScopeType scopeType) {
+    public MigrationOptions(String srcPoolUuid, Storage.StoragePoolType srcPoolType, String srcBackingFilePath, boolean copySrcTemplate, ScopeType scopeType, Long srcPoolClusterId) {
         this.srcPoolUuid = srcPoolUuid;
         this.srcPoolType = srcPoolType;
         this.type = Type.LinkedClone;
         this.scopeType = scopeType;
         this.srcBackingFilePath = srcBackingFilePath;
         this.copySrcTemplate = copySrcTemplate;
+        this.srcPoolClusterId = srcPoolClusterId;
     }
 
-    public MigrationOptions(String srcPoolUuid, Storage.StoragePoolType srcPoolType, String srcVolumeUuid, ScopeType scopeType) {
+    public MigrationOptions(String srcPoolUuid, Storage.StoragePoolType srcPoolType, String srcVolumeUuid, ScopeType scopeType, Long srcPoolClusterId) {
         this.srcPoolUuid = srcPoolUuid;
         this.srcPoolType = srcPoolType;
         this.type = Type.FullClone;
         this.scopeType = scopeType;
         this.srcVolumeUuid = srcVolumeUuid;
+        this.srcPoolClusterId = srcPoolClusterId;
     }
 
     public String getSrcPoolUuid() {
@@ -61,6 +64,10 @@ public class MigrationOptions implements Serializable {
 
     public Storage.StoragePoolType getSrcPoolType() {
         return srcPoolType;
+    }
+
+    public Long getSrcPoolClusterId() {
+        return srcPoolClusterId;
     }
 
     public ScopeType getScopeType() { return scopeType; }

@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'router',
@@ -26,12 +27,12 @@ export default {
   permission: ['listRouters'],
   params: { projectid: '-1' },
   columns: () => {
-    var columns = ['name', 'state', 'publicip', { field: 'guestnetworkname', customTitle: 'network' }, 'redundantstate', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade']
+    var columns = ['name', 'state', 'publicip', { field: 'guestnetworkname', customTitle: 'network' }, 'redundantstate', 'softwareversion', 'hostname', 'arch', 'account', 'zonename', 'requiresupgrade']
     columns.splice(6, 0, { field: 'version', customTitle: 'templateversion' })
     return columns
   },
-  searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
-  details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created', 'hostcontrolstate'],
+  searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'arch'],
+  details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'arch', 'account', 'zonename', 'created', 'hostcontrolstate'],
   resourceType: 'VirtualRouter',
   filters: () => {
     const filters = ['starting', 'running', 'stopping', 'stopped', 'destroyed', 'expunging', 'migrating', 'error', 'unknown', 'shutdown']
@@ -226,7 +227,7 @@ export default {
           options: ['ping', 'ping6', 'traceroute', 'traceroute6', 'arping']
         }
       },
-      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${result.diagnostics.stdout}<br/><strong>Error</strong>: ${result.diagnostics.stderr}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
+      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${escapeHtml(result.diagnostics.stdout)}<br/><strong>Error</strong>: ${escapeHtml(result.diagnostics.stderr)}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
     },
     {
       api: 'getDiagnosticsData',

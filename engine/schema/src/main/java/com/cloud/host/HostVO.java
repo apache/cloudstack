@@ -45,7 +45,7 @@ import javax.persistence.Transient;
 import com.cloud.cpu.CPU;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -164,6 +164,9 @@ public class HostVO implements Host {
 
     @Column(name = "uuid")
     private String uuid;
+
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -357,6 +360,15 @@ public class HostVO implements Host {
         return isTagARule;
     }
 
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
         return groupDetails;
     }
@@ -403,6 +415,9 @@ public class HostVO implements Host {
 
     @Column(name = "mgmt_server_id")
     private Long managementServerId;
+
+    @Column(name = "last_mgmt_server_id")
+    private Long lastManagementServerId;
 
     @Column(name = "dom0_memory")
     private long dom0MinMemory;
@@ -570,6 +585,10 @@ public class HostVO implements Host {
         this.managementServerId = managementServerId;
     }
 
+    public void setLastManagementServerId(Long lastManagementServerId) {
+        this.lastManagementServerId = lastManagementServerId;
+    }
+
     @Override
     public long getLastPinged() {
         return lastPinged;
@@ -637,6 +656,11 @@ public class HostVO implements Host {
     @Override
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    @Override
+    public Long getLastManagementServerId() {
+        return lastManagementServerId;
     }
 
     @Override
@@ -832,7 +856,8 @@ public class HostVO implements Host {
         }
 
         if (BooleanUtils.isTrue(this.getIsTagARule())) {
-            return TagAsRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value());
+            return GenericRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                    HostTagsDao.hostTagRuleExecutionTimeout.key());
         }
 
         if (StringUtils.isEmpty(serviceOffering.getHostTag())) {

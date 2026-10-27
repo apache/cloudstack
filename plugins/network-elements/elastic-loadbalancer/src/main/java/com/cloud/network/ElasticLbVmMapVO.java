@@ -27,10 +27,15 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.net.Ip;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "elastic_lb_vm_map")
@@ -57,6 +62,10 @@ public class ElasticLbVmMapVO implements InternalIdentity {
     @Enumerated(value = EnumType.STRING)
     private Ip address = null;
 
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
+
     public ElasticLbVmMapVO() {
     }
 
@@ -78,10 +87,6 @@ public class ElasticLbVmMapVO implements InternalIdentity {
     public long getElbVmId() {
         return elbVmId;
     }
-
-//    public String getLbName() {
-//        return lbName;
-//    }
 
     public long getIpAddressId() {
         return ipAddressId;

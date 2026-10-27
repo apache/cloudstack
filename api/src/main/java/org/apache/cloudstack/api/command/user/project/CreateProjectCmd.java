@@ -44,20 +44,20 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will be Admin for the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account who will be Admin for the project")
     private String accountName;
 
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class,
-            description = "user ID of the account to be assigned as owner of the project i.e., Project Admin", since = "4.15.0")
+            description = "User ID of the Account to be assigned as owner of the project i.e., Project Admin", since = "4.15.0")
     private Long userId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a project")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the Account owning a project")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account owning a project")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the Account owning a project")
     private Long accountId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the project")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the project")
     private String name;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING,  description = "The display text of the project, defaults to the 'name´.")

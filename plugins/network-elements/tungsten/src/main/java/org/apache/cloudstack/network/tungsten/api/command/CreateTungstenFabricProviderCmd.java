@@ -41,7 +41,7 @@ public class CreateTungstenFabricProviderCmd extends BaseCmd {
     public static final String APINAME = "createTungstenFabricProvider";
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
-        , description = "the ID of zone")
+        , description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric provider name")

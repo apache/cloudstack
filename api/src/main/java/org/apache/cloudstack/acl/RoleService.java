@@ -30,6 +30,11 @@ public interface RoleService {
     ConfigKey<Boolean> EnableDynamicApiChecker = new ConfigKey<>("Advanced", Boolean.class, "dynamic.apichecker.enabled", "false",
             "If set to true, this enables the dynamic role-based api access checker and disables the default static role-based api access checker.", true);
 
+    ConfigKey<Integer> DynamicApiCheckerCachePeriod = new ConfigKey<>("Advanced", Integer.class,
+            "dynamic.apichecker.cache.period", "0",
+            "Defines the expiration time in seconds for the Dynamic API Checker cache, determining how long cached data is retained before being refreshed. If set to zero then caching will be disabled",
+            false);
+
     boolean isEnabled();
 
     /**
@@ -99,5 +104,26 @@ public interface RoleService {
 
     List<RolePermission> findAllPermissionsBy(Long roleId);
 
+    List<RolePermissionEntity> findAllRolePermissionsEntityBy(Long roleId, boolean considerImplicitRules);
+
     Permission getRolePermission(String permission);
+
+    int removeRolesIfNeeded(List<? extends Role> roles);
+
+    /**
+     * Checks if the role of the caller account has compatible permissions of the specified role permissions.
+     * For each permission of the {@param rolePermissionsToAccess}, the role of the caller needs to contain the same permission.
+     *
+     * @param rolePermissions the permissions of the caller role.
+     * @param rolePermissionsToAccess the permissions for the role that the caller role wants to access.
+     * @return True if the role can be accessed with the given permissions; false otherwise.
+     */
+    boolean roleHasPermission(Map<String, RolePermissionEntity> rolePermissions, List<RolePermissionEntity> rolePermissionsToAccess);
+
+    /**
+     * Given a list of role permissions, returns a {@link Map} containing the API name as the key and the {@link RolePermissionEntity} for the API as the value.
+     *
+     * @param rolePermissions Permissions for the role from role.
+     */
+    Map<String, RolePermissionEntity> getRoleRulesAndPermissions(List<RolePermissionEntity> rolePermissions);
 }

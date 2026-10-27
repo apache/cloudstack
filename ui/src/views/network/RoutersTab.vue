@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -130,7 +130,7 @@ export default {
         params.networkid = this.resource.id
       }
       this.fetchLoading = true
-      api('listRouters', params).then(json => {
+      getAPI('listRouters', params).then(json => {
         this.routers = json.listroutersresponse.router || []
       }).catch(error => {
         this.$notifyError(error)

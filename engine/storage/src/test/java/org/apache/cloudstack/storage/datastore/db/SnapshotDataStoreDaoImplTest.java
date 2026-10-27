@@ -88,7 +88,7 @@ public class SnapshotDataStoreDaoImplTest {
         snapshotDataStoreDaoImplSpy.snapshotVOSearch = searchBuilderMock;
         Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
         Mockito.doReturn(null).when(snapshotDaoMock).findOneBy(Mockito.any());
-        Assert.assertFalse(snapshotDataStoreDaoImplSpy.isSnapshotChainingRequired(2));
+        Assert.assertFalse(snapshotDataStoreDaoImplSpy.isSnapshotChainingRequired(2, false));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class SnapshotDataStoreDaoImplTest {
 
         for (Hypervisor.HypervisorType hypervisorType : Hypervisor.HypervisorType.values()) {
             Mockito.doReturn(hypervisorType).when(snapshotVoMock).getHypervisorType();
-            boolean result = snapshotDataStoreDaoImplSpy.isSnapshotChainingRequired(2);
+            boolean result = snapshotDataStoreDaoImplSpy.isSnapshotChainingRequired(2, false);
 
             if (SnapshotDataStoreDaoImpl.HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING.contains(hypervisorType)) {
                 Assert.assertTrue(result);

@@ -27,7 +27,10 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.storage.VolumeVO;
+import org.apache.cloudstack.backup.InternalBackupService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -88,6 +91,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     @Override
     public Map<String, String> getCapabilities() {
@@ -127,6 +137,18 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     TemplateDataFactory templateDataFactory;
     @Inject
     VolumeDataFactory volFactory;
+
+    @Inject
+    private VolumeOrchestrationService volumeOrchestrationService;
+
+    @Inject
+    private ClvmPoolManager clvmPoolManager;
+
+    @Inject
+    private AgentManager agentMgr;
+
+    @Inject
+    private InternalBackupService internalBackupService;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -235,13 +257,17 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        DeleteCommand cmd = new DeleteCommand(data.getTO());
+        DataTO dataTO = data.getTO();
+        DeleteCommand cmd = new DeleteCommand(dataTO);
         cmd.setBypassHostMaintenance(commandCanBypassHostMaintenance(data));
         CommandResult result = new CommandResult();
         try {
-            EndPoint ep = null;
+            EndPoint ep;
             if (data.getType() == DataObjectType.VOLUME) {
+                internalBackupService.configureChainInfo(dataTO, cmd);
                 ep = epSelector.select(data, StorageAction.DELETEVOLUME);
+            } else if (data.getType() == DataObjectType.SNAPSHOT) {
+                ep = epSelector.select(data, StorageAction.DELETESNAPSHOT);
             } else {
                 ep = epSelector.select(data);
             }
@@ -351,21 +377,16 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
-        logger.debug("Taking snapshot of "+ snapshot);
+        logger.debug("Taking Snapshot of "+ snapshot);
         try {
-            SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
-            Object payload = snapshot.getPayload();
-            if (payload != null && payload instanceof CreateSnapshotPayload) {
-                CreateSnapshotPayload snapshotPayload = (CreateSnapshotPayload) payload;
-                snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
-            }
+            SnapshotObjectTO snapshotTO = getAndUpdateSnapshotObjectTO(snapshot);
 
             boolean encryptionRequired = anyVolumeRequiresEncryption(snapshot);
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT, encryptionRequired);
-            Answer answer = null;
+            Answer answer;
 
-            logger.debug("Taking snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
+            logger.debug("Taking Snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
 
             if (ep == null) {
                 String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
@@ -383,12 +404,32 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            logger.debug("Failed to take snapshot: {}", snapshot, e);
+            logger.debug("Failed to take Snapshot: {}", snapshot, e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
         callback.complete(result);
     }
+
+    private SnapshotObjectTO getAndUpdateSnapshotObjectTO(SnapshotInfo snapshot) {
+        SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
+        Object payload = snapshot.getPayload();
+        if (payload instanceof CreateSnapshotPayload) {
+            CreateSnapshotPayload snapshotPayload = (CreateSnapshotPayload) payload;
+            snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
+            snapshotTO.setKvmIncrementalSnapshot(snapshotPayload.isKvmIncrementalSnapshot());
+        }
+
+        if (snapshot.getImageStore() != null) {
+            snapshotTO.setImageStore(snapshot.getImageStore().getTO());
+        }
+        if (snapshot.getParent() != null) {
+            snapshotTO.setParentStore(snapshot.getParent().getDataStore().getTO());
+        }
+
+        return snapshotTO;
+    }
+
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
@@ -396,7 +437,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (snapshotOnPrimaryStore != null) {
             dataOnPrimaryStorage = (SnapshotObjectTO)snapshotOnPrimaryStore.getTO();
         }
-        RevertSnapshotCommand cmd = new RevertSnapshotCommand((SnapshotObjectTO)snapshot.getTO(), dataOnPrimaryStorage);
+
+        SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO)snapshot.getTO();
+
+        RevertSnapshotCommand cmd = new RevertSnapshotCommand(snapshotObjectTO, dataOnPrimaryStorage);
+        internalBackupService.configureChainInfo(snapshotObjectTO.getVolume(), cmd);
 
         CommandResult result = new CommandResult();
         try {
@@ -407,6 +452,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
                 ep = epSelector.select(volumeInfo);
             }
+
             if ( ep == null ){
                 String errMsg = "No remote endpoint to send RevertSnapshotCommand, check if host or ssvm is down?";
                 logger.error(errMsg);
@@ -418,7 +464,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to revert snapshot {}", snapshot, ex);
+            logger.debug("Unable to revert Snapshot {}", snapshot, ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -432,9 +478,41 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         boolean encryptionRequired = anyVolumeRequiresEncryption(vol);
         long [] endpointsToRunResize = resizeParameter.hosts;
 
+        CreateCmdResult result = new CreateCmdResult(null, null);
+
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            VirtualMachine attachedVm = vol.getAttachedVM();
+            boolean vmIsRunning = attachedVm != null && attachedVm.getHostId() != null;
+            if (!vmIsRunning) {
+                Long lockHostId = clvmPoolManager.getClvmLockHostId(vol.getId(), vol.getUuid(),
+                        vol.getPath(), pool, true);
+                if (lockHostId != null) {
+                    HostVO lockHost = hostDao.findById(lockHostId);
+                    if (lockHost != null && lockHost.getStatus() == Status.Up) {
+                        logger.debug("CLVM resize: routing to lock-holding host {} for volume {}",
+                                lockHostId, vol.getUuid());
+                        endpointsToRunResize = new long[]{lockHostId};
+                    } else {
+                        logger.warn("CLVM resize: lock host {} for volume {} is down or missing, " +
+                                "keeping caller-provided hosts", lockHostId, vol.getUuid());
+                    }
+                } else {
+                    logger.warn("CLVM resize: no lock holder found for volume {}, " +
+                            "keeping caller-provided hosts or epSelector", vol.getUuid());
+                }
+            }
+        }
+
         // if hosts are provided, they are where the VM last ran. We can use that.
         if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
             EndPoint ep = epSelector.select(data, encryptionRequired);
+            if (ep == null) {
+                String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
+                logger.error(errMsg);
+                result.setResult(errMsg);
+                callback.complete(result);
+                return;
+            }
             endpointsToRunResize = new long[] {ep.getId()};
         }
         ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
@@ -442,9 +520,22 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (pool.getParent() != 0) {
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
-        CreateCmdResult result = new CreateCmdResult(null, null);
         try {
-            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
+            ResizeVolumeAnswer answer;
+            if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                // For CLVM, send only to the determined host, without falling through to other hosts
+                try {
+                    answer = (ResizeVolumeAnswer) agentMgr.send(endpointsToRunResize[0], resizeCmd);
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
+                    logger.error("CLVM resize failed to reach host {} for volume {}: {}",
+                            endpointsToRunResize[0], vol.getUuid(), e.getMessage());
+                    result.setResult(e.getMessage());
+                    callback.complete(result);
+                    return;
+                }
+            } else {
+                answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
+            }
             if (answer != null && answer.getResult()) {
                 long finalSize = answer.getNewSize();
                 logger.debug("Resize: volume started at size: " + toHumanReadableSize(vol.getSize()) + " and ended at size: " + toHumanReadableSize(finalSize));
@@ -459,7 +550,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 logger.debug("return a null answer, mark it as failed for unknown reason");
                 result.setResult("return a null answer, mark it as failed for unknown reason");
             }
-
         } catch (Exception e) {
             logger.debug("sending resize command failed", e);
             result.setResult(e.toString());
@@ -477,6 +567,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             StoragePoolVO storagePoolVO = primaryStoreDao.findByUuid(datastoreUUID);
             if (storagePoolVO != null) {
                 volumeVO.setPoolId(storagePoolVO.getId());
+                volumeVO.setPoolType(storagePoolVO.getPoolType());
             } else {
                 logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreUUID, vol);
             }
@@ -546,11 +637,25 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
      */
     private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
         for (DataObject o : objects) {
-            // this fails code smell for returning true twice, but it is more readable than combining all tests into one statement
-            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
-                return true;
-            } else if (o instanceof SnapshotInfo && ((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null) {
-                return true;
+            // Check for legacy passphrase-based encryption
+            if (o instanceof VolumeInfo) {
+                VolumeInfo vol = (VolumeInfo) o;
+                if (vol.getPassphraseId() != null) {
+                    return true;
+                }
+                // Check for KMS-based encryption
+                if (vol.getKmsWrappedKeyId() != null || vol.getKmsKeyId() != null) {
+                    return true;
+                }
+            } else if (o instanceof SnapshotInfo) {
+                VolumeInfo baseVol = ((SnapshotInfo) o).getBaseVolume();
+                if (baseVol.getPassphraseId() != null) {
+                    return true;
+                }
+                // Check for KMS-based encryption
+                if (baseVol.getKmsWrappedKeyId() != null || baseVol.getKmsKeyId() != null) {
+                    return true;
+                }
             }
         }
         return false;
@@ -558,7 +663,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public boolean isStorageSupportHA(StoragePoolType type) {
-        return StoragePoolType.NetworkFilesystem == type;
+        return type != null && HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     @Override

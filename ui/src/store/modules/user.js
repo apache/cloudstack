@@ -23,7 +23,7 @@ import semver from 'semver'
 import { vueProps } from '@/vue-app'
 import router from '@/router'
 import store from '@/store'
-import { oauthlogin, login, logout, api } from '@/api'
+import { oauthlogin, login, logout, getAPI } from '@/api'
 import { i18n } from '@/locales'
 import { axios } from '../../utils/request'
 import { getParsedVersion } from '@/utils/util'
@@ -41,10 +41,73 @@ import {
   DOMAIN_STORE,
   DARK_MODE,
   CUSTOM_COLUMNS,
+  MS_ID,
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
-  LATEST_CS_VERSION
+  LATEST_CS_VERSION,
+  PASSWORD_CHANGE_REQUIRED
 } from '@/store/mutation-types'
+
+import {
+  applyCustomGuiTheme
+} from '@/utils/guiTheme'
+
+function setLoginCookies (result) {
+  Cookies.set('account', result.account)
+  Cookies.set('domainid', result.domainid)
+  Cookies.set('role', result.type)
+  Cookies.set('timezone', result.timezone)
+  Cookies.set('timezoneoffset', result.timezoneoffset)
+  Cookies.set('userfullname', result.firstname + ' ' + result.lastname)
+  Cookies.set('userid', result.userid)
+  Cookies.set('username', result.username)
+}
+
+function processLoginResponse (commit, response) {
+  const result = response.loginresponse || {}
+  setLoginCookies(result)
+  vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
+  commit('SET_TOKEN', result.sessionkey)
+  commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
+
+  const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
+  commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+  const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+  commit('SET_DARK_MODE', darkMode)
+  const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
+  commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
+
+  commit('SET_APIS', {})
+  commit('SET_NAME', '')
+  commit('SET_AVATAR', '')
+  commit('SET_INFO', {})
+  commit('SET_PROJECT', {})
+  commit('SET_HEADER_NOTICES', [])
+  commit('SET_FEATURES', {})
+  commit('SET_LDAP', {})
+  commit('SET_CLOUDIAN', {})
+  commit('SET_DOMAIN_STORE', {})
+  commit('SET_LOGOUT_FLAG', false)
+  commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
+  commit('SET_2FA_PROVIDER', result.providerfor2fa)
+  commit('SET_2FA_ISSUER', result.issuerfor2fa)
+  commit('SET_LOGIN_FLAG', false)
+
+  if (result && result.managementserverid) {
+    commit('SET_MS_ID', result.managementserverid)
+  }
+  if (result.passwordchangerequired) {
+    commit('SET_PASSWORD_CHANGE_REQUIRED', true)
+    commit('SET_APIS', {})
+    vueProps.$localStorage.remove(APIS)
+  } else {
+    commit('SET_PASSWORD_CHANGE_REQUIRED', false)
+  }
+
+  const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+  commit('SET_LATEST_VERSION', latestVersion)
+  notification.destroy()
+}
 
 const user = {
   state: {
@@ -68,12 +131,15 @@ const user = {
     loginFlag: false,
     logoutFlag: false,
     customColumns: {},
+    msId: '',
+    maintenanceInitiated: false,
     shutdownTriggered: false,
     twoFaEnabled: false,
     twoFaProvider: '',
     twoFaIssuer: '',
     customHypervisorName: 'Custom',
-    readyForShutdownPollingJob: ''
+    readyForShutdownPollingJob: '',
+    passwordChangeRequired: false
   },
 
   mutations: {
@@ -147,6 +213,13 @@ const user = {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
     },
+    SET_MS_ID: (state, msId) => {
+      state.msId = msId
+      vueProps.$localStorage.set(MS_ID, msId)
+    },
+    SET_MAINTENANCE_INITIATED: (state, maintenanceInitiated) => {
+      state.maintenanceInitiated = maintenanceInitiated
+    },
     SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
       state.shutdownTriggered = shutdownTriggered
     },
@@ -182,6 +255,14 @@ const user = {
         vueProps.$localStorage.set(LATEST_CS_VERSION, version)
         state.latestVersion = version
       }
+    },
+    SET_PASSWORD_CHANGE_REQUIRED: (state, required) => {
+      state.passwordChangeRequired = required
+      if (required) {
+        vueProps.$localStorage.set(PASSWORD_CHANGE_REQUIRED, true)
+      } else {
+        vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
+      }
     }
   },
 
@@ -192,45 +273,7 @@ const user = {
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
-          const result = response.loginresponse || {}
-          Cookies.set('account', result.account, { expires: 1 })
-          Cookies.set('domainid', result.domainid, { expires: 1 })
-          Cookies.set('role', result.type, { expires: 1 })
-          Cookies.set('timezone', result.timezone, { expires: 1 })
-          Cookies.set('timezoneoffset', result.timezoneoffset, { expires: 1 })
-          Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
-          Cookies.set('userid', result.userid, { expires: 1 })
-          Cookies.set('username', result.username, { expires: 1 })
-          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
-          commit('SET_TOKEN', result.sessionkey)
-          commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
-
-          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
-          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
-          commit('SET_DARK_MODE', darkMode)
-          const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
-          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
-
-          commit('SET_APIS', {})
-          commit('SET_NAME', '')
-          commit('SET_AVATAR', '')
-          commit('SET_INFO', {})
-          commit('SET_PROJECT', {})
-          commit('SET_HEADER_NOTICES', [])
-          commit('SET_FEATURES', {})
-          commit('SET_LDAP', {})
-          commit('SET_CLOUDIAN', {})
-          commit('SET_DOMAIN_STORE', {})
-          commit('SET_LOGOUT_FLAG', false)
-          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
-          commit('SET_2FA_PROVIDER', result.providerfor2fa)
-          commit('SET_2FA_ISSUER', result.issuerfor2fa)
-          commit('SET_LOGIN_FLAG', false)
-          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
-          commit('SET_LATEST_VERSION', latestVersion)
-          notification.destroy()
-
+          processLoginResponse(commit, response)
           resolve()
         }).catch(error => {
           reject(error)
@@ -241,45 +284,7 @@ const user = {
     OauthLogin ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
         oauthlogin(userInfo).then(response => {
-          const result = response.loginresponse || {}
-          Cookies.set('account', result.account, { expires: 1 })
-          Cookies.set('domainid', result.domainid, { expires: 1 })
-          Cookies.set('role', result.type, { expires: 1 })
-          Cookies.set('timezone', result.timezone, { expires: 1 })
-          Cookies.set('timezoneoffset', result.timezoneoffset, { expires: 1 })
-          Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
-          Cookies.set('userid', result.userid, { expires: 1 })
-          Cookies.set('username', result.username, { expires: 1 })
-          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
-          commit('SET_TOKEN', result.sessionkey)
-          commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
-
-          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
-          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
-          commit('SET_DARK_MODE', darkMode)
-          const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
-          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
-
-          commit('SET_APIS', {})
-          commit('SET_NAME', '')
-          commit('SET_AVATAR', '')
-          commit('SET_INFO', {})
-          commit('SET_PROJECT', {})
-          commit('SET_HEADER_NOTICES', [])
-          commit('SET_FEATURES', {})
-          commit('SET_LDAP', {})
-          commit('SET_CLOUDIAN', {})
-          commit('SET_DOMAIN_STORE', {})
-          commit('SET_LOGOUT_FLAG', false)
-          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
-          commit('SET_2FA_PROVIDER', result.providerfor2fa)
-          commit('SET_2FA_ISSUER', result.issuerfor2fa)
-          commit('SET_LOGIN_FLAG', false)
-          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
-          commit('SET_LATEST_VERSION', latestVersion)
-          notification.destroy()
-
+          processLoginResponse(commit, response)
           resolve()
         }).catch(error => {
           reject(error)
@@ -297,13 +302,62 @@ const user = {
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const cachedShowSecurityGroups = vueProps.$localStorage.get(SHOW_SECURTIY_GROUPS, false)
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+        const msId = vueProps.$localStorage.get(MS_ID, false)
         const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
+
+        const loadFeatures = (apis) => {
+          return new Promise(resolve => {
+            getAPI('listCapabilities').then(response => {
+              const result = response.listcapabilitiesresponse.capability
+              commit('SET_FEATURES', result)
+              if (result && result.defaultuipagesize) {
+                commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
+              }
+              if (result && result.customhypervisordisplayname) {
+                commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
+              }
+              if (result && result.securitygroupsenabled) {
+                commit('SET_SHOW_SECURITY_GROUPS', result.securitygroupsenabled)
+              }
+
+              if ('listHSMProfiles' in apis) {
+                getAPI('listHSMProfiles', { listall: true }).then(response => {
+                  const hasHsmProfiles = (response.listhsmprofilesresponse.count > 0)
+                  const features = Object.assign({}, store.getters.features)
+                  features.hashsmprofiles = hasHsmProfiles
+                  commit('SET_FEATURES', features)
+                  resolve()
+                }).catch(ignored => {
+                  resolve()
+                })
+              } else {
+                resolve()
+              }
+            }).catch(() => {
+              resolve()
+            })
+          })
+        }
+
+        // This block is to enforce password change for first time login after admin resets password
+        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequired)
+        if (isPwdChangeRequired) {
+          resolve()
+          return
+        }
+
         if (hasAuth) {
+          if (!Cookies.get('userid')) {
+            reject(new Error('Identity session expired'))
+            return
+          }
+
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
           commit('SET_SHOW_SECURITY_GROUPS', cachedShowSecurityGroups)
@@ -311,26 +365,28 @@ const user = {
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
           commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
+          commit('SET_MS_ID', msId)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
-          api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
+          getAPI('listUsers', { id: Cookies.get('userid'), listall: true }).then(response => {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            store.dispatch('SetCsLatestVersion', result.rolename)
-            resolve(cachedApis)
+            loadFeatures(cachedApis).then(() => {
+              resolve(cachedApis)
+            })
           }).catch(error => {
             reject(error)
           })
         } else if (store.getters.loginFlag) {
           const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
-          api('listZones').then(json => {
+          getAPI('listZones').then(json => {
             const zones = json.listzonesresponse.zone || []
             commit('SET_ZONES', zones)
           }).catch(error => {
             reject(error)
           })
-          api('listApis').then(response => {
+          getAPI('listApis').then(response => {
             const apis = {}
             const apiList = response.listapisresponse.api
             for (var idx = 0; idx < apiList.length; idx++) {
@@ -345,19 +401,21 @@ const user = {
               }
             }
             commit('SET_APIS', apis)
-            resolve(apis)
-            store.dispatch('GenerateRoutes', { apis }).then(() => {
-              store.getters.addRouters.map(route => {
-                router.addRoute(route)
+            loadFeatures(apis).then(() => {
+              resolve(apis)
+              store.dispatch('GenerateRoutes', { apis }).then(() => {
+                store.getters.addRouters.map(route => {
+                  router.addRoute(route)
+                })
               })
+              hide()
+              message.success(i18n.global.t('message.sussess.discovering.feature'))
             })
-            hide()
-            message.success(i18n.global.t('message.sussess.discovering.feature'))
           }).catch(error => {
             reject(error)
           })
 
-          api('listNetworks', { restartrequired: true, forvpc: false }).then(response => {
+          getAPI('listNetworks', { restartrequired: true, forvpc: false }).then(response => {
             if (response.listnetworksresponse.count > 0) {
               store.dispatch('AddHeaderNotice', {
                 key: 'NETWORK_RESTART_REQUIRED',
@@ -371,7 +429,7 @@ const user = {
             }
           }).catch(ignored => {})
 
-          api('listVPCs', { restartrequired: true }).then(response => {
+          getAPI('listVPCs', { restartrequired: true }).then(response => {
             if (response.listvpcsresponse.count > 0) {
               store.dispatch('AddHeaderNotice', {
                 key: 'VPC_RESTART_REQUIRED',
@@ -386,16 +444,18 @@ const user = {
           }).catch(ignored => {})
         }
 
-        api('listUsers', { username: Cookies.get('username') }).then(response => {
+        getAPI('listUsers', { id: Cookies.get('userid'), showicon: true }).then(response => {
           const result = response.listusersresponse.user[0]
+          applyCustomGuiTheme(result.accountid, result.domainid)
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
+          commit('SET_AVATAR', result.icon?.base64image || '')
           store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
 
-        api(
+        getAPI(
           'listNetworkServiceProviders',
           { name: 'SecurityGroupProvider', state: 'Enabled' }
         ).then(response => {
@@ -404,36 +464,21 @@ const user = {
         }).catch(ignored => {
         })
 
-        api('listCapabilities').then(response => {
-          const result = response.listcapabilitiesresponse.capability
-          commit('SET_FEATURES', result)
-          if (result && result.defaultuipagesize) {
-            commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
-          }
-          if (result && result.customhypervisordisplayname) {
-            commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
-          }
-          if (result && result.securitygroupsenabled) {
-            commit('SET_SHOW_SECURITY_GROUPS', result.securitygroupsenabled)
-          }
-        }).catch(error => {
-          reject(error)
-        })
-
-        api('listLdapConfigurations').then(response => {
+        getAPI('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
         }).catch(error => {
           reject(error)
         })
 
-        api('cloudianIsEnabled').then(response => {
+        getAPI('cloudianIsEnabled').then(response => {
           const cloudian = response.cloudianisenabledresponse.cloudianisenabled || {}
           commit('SET_CLOUDIAN', cloudian)
         }).catch(ignored => {
         })
       }).catch(error => {
         console.error(error)
+        throw error
       })
     },
 
@@ -458,9 +503,12 @@ const user = {
         commit('SET_2FA_PROVIDER', '')
         commit('SET_2FA_ISSUER', '')
         commit('SET_LOGIN_FLAG', false)
+        commit('SET_MS_ID', '')
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
+
+        commit('SET_PASSWORD_CHANGE_REQUIRED', false)
 
         logout(state.token).then(() => {
           message.destroy()
@@ -472,9 +520,17 @@ const user = {
         }).catch(() => {
           resolve()
         }).finally(() => {
+          const paths = ['/', '/client']
+          const hostname = window.location.hostname
+          const domains = [undefined, hostname, `.${hostname}`]
           Object.keys(Cookies.get()).forEach(cookieName => {
-            Cookies.remove(cookieName)
-            Cookies.remove(cookieName, { path: '/client' })
+            paths.forEach(path => {
+              domains.forEach(domain => {
+                const options = { path }
+                if (domain) options.domain = domain
+                Cookies.remove(cookieName, options)
+              })
+            })
           })
         })
       })
@@ -499,7 +555,7 @@ const user = {
     },
     ProjectView ({ commit }, projectid) {
       return new Promise((resolve, reject) => {
-        api('listApis', { projectid: projectid }).then(response => {
+        getAPI('listApis', { projectid: projectid }).then(response => {
           const apis = {}
           const apiList = response.listapisresponse.api
           for (var idx = 0; idx < apiList.length; idx++) {
@@ -524,27 +580,29 @@ const user = {
     },
     RefreshFeatures ({ commit }) {
       return new Promise((resolve, reject) => {
-        api('listCapabilities').then(response => {
+        getAPI('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           resolve(result)
-          commit('SET_FEATURES', result)
+          const features = Object.assign({}, store.getters.features, result)
+          commit('SET_FEATURES', features)
         }).catch(error => {
           reject(error)
         })
-
-        api('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
-          if (json.listconfigurationsresponse.configuration !== null) {
-            const config = json.listconfigurationsresponse.configuration[0]
-            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
-          }
-        }).catch(error => {
-          reject(error)
-        })
+        if ('listConfigurations' in store.getters.apis) {
+          getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+            if (json.listconfigurationsresponse.configuration !== null) {
+              const config = json.listconfigurationsresponse.configuration[0]
+              commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+            }
+          }).catch(error => {
+            reject(error)
+          })
+        }
       })
     },
     UpdateConfiguration ({ commit }) {
       return new Promise((resolve, reject) => {
-        api('listLdapConfigurations').then(response => {
+        getAPI('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
         }).catch(error => {
@@ -556,6 +614,9 @@ const user = {
       commit('SET_DOMAIN_STORE', domainStore)
     },
     SetCsLatestVersion ({ commit }, rolename) {
+      if (!vueProps.$config.notifyLatestCSVersion) {
+        return
+      }
       const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
       if (rolename === 'Root Admin' && (+new Date() - lastFetchTs) > 24 * 60 * 60 * 1000) {
         axios.get(

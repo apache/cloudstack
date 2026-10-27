@@ -78,15 +78,15 @@
                         v-model:value="form.sourceHypervisor"
                         @change="selected => { onSelectHypervisor(selected.target.value) }"
                         buttonStyle="solid">
-                        <a-radio-button value="vmware" style="width: 50%; text-align: center">
+                        <a-radio-button value="vmware" style="width: 50%; text-align: center" :disabled="!availableSourceHypervisors.includes('vmware')">
                           VMware
                         </a-radio-button>
-                        <a-radio-button value="kvm" style="width: 50%; text-align: center">
+                        <a-radio-button value="kvm" style="width: 50%; text-align: center" :disabled="!availableSourceHypervisors.includes('kvm')">
                           KVM
                         </a-radio-button>
                       </a-radio-group>
                     </a-form-item>
-                    <a-form-item name="sourceaction" ref="sourceaction" :label="$t('label.action')" v-if="sourceActions">
+                    <a-form-item name="sourceaction" ref="sourceaction" :label="$t('label.action')" v-if="sourceActions && sourceActions.length > 0">
                       <a-select
                         v-model:value="form.sourceAction"
                         showSearch
@@ -250,7 +250,7 @@
                       @change="onSelectClusterId"
                     ></a-select>
                   </a-form-item>
-                  <a-form-item v-if="isDestinationKVM && isMigrateFromVmware && clusterId != undefined">
+                  <a-form-item v-if="isDestinationKVM && isMigrateFromVmware && clusterId != undefined && hasApi('listVmwareDcVms')">
                     <SelectVmwareVcenter
                       @onVcenterTypeChanged="updateVmwareVcenterType"
                       @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
@@ -311,6 +311,7 @@
                   <a-col v-if="showDiskPath" :md="24" :lg="8">
                     <a-button
                         type="primary"
+                        :disabled="!canImportDisk"
                         @click="onImportInstanceAction">
                       <template #icon><import-outlined /></template>
                       {{ $t('label.import.instance') }}
@@ -333,166 +334,202 @@
             </a-col>
           </a-row>
           <a-divider />
-          <a-row :gutter="12">
-            <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
-              <a-card class="instances-card">
-                <template #title>
-                  {{ (isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('label.instances') : $t('label.unmanaged.instances') }}
-                  <a-tooltip :title="(isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                  <a-button
-                    style="margin-left: 12px; margin-top: 4px"
-                    :loading="unmanagedInstancesLoading"
-                    size="small"
-                    shape="round"
-                    @click="fetchUnmanagedInstances()" >
-                    <template #icon><reload-outlined /></template>
-                  </a-button>
-                  <span style="float: right; width: 50%">
-                    <search-view
-                      :searchFilters="searchFilters.unmanaged"
-                      :searchParams="searchParams.unmanaged"
-                      :apiName="listInstancesApi.unmanaged"
-                      @search="searchUnmanagedInstances"
-                    />
-                  </span>
-                </template>
-                <a-table
-                  v-if="!isExternal"
-                  class="instances-card-table"
-                  :loading="unmanagedInstancesLoading"
-                  :rowSelection="unmanagedInstanceSelection"
-                  :rowKey="(record, index) => index"
-                  :columns="unmanagedInstancesColumns"
-                  :data-source="unmanagedInstances"
-                  :pagination="false"
-                  size="middle"
-                  :rowClassName="getRowClassName"
-                >
-                  <template #bodyCell="{ column, text }">
-                    <template v-if="column.key === 'state'">
-                      <status :text="text ? text : ''" displayText />
-                    </template>
-                  </template>
-                </a-table>
-                <a-table
-                  v-if="isExternal"
-                  class="instances-card-table"
-                  :loading="unmanagedInstancesLoading"
-                  :rowSelection="unmanagedInstanceSelection"
-                  :rowKey="(record, index) => index"
-                  :columns="externalInstancesColumns"
-                  :data-source="unmanagedInstances"
-                  :pagination="false"
-                  size="middle"
-                  :rowClassName="getRowClassName"
-                >
-                  <template #bodyCell="{ column, text }">
-                      <template v-if="column.key === 'state'">
-                          <status :text="text ? text : ''" displayText />
-                      </template>
-                  </template>
-                </a-table>
-                <div class="instances-card-footer">
-                  <a-pagination
-                    class="row-element"
-                    size="small"
-                    :current="page.unmanaged"
-                    :pageSize="pageSize.unmanaged"
-                    :total="itemCount.unmanaged"
-                    :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.unmanaged-1)*pageSize.unmanaged))}-${Math.min(page.unmanaged*pageSize.unmanaged, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-                    @change="fetchUnmanagedInstances"
-                    showQuickJumper>
-                    <template #buildOptionText="props">
-                      <span>{{ props.value }} / {{ $t('label.page') }}</span>
-                    </template>
-                  </a-pagination>
-                  <div :span="24" class="action-button-right">
-                    <a-button
-                      :loading="importUnmanagedInstanceLoading"
-                      :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
-                      type="primary"
-                      @click="onManageInstanceAction">
-                      <template #icon><import-outlined /></template>
-                      {{ $t('label.import.instance') }}
-                    </a-button>
-                  </div>
-                </div>
-              </a-card>
-            </a-col>
-            <a-col :md="24" :lg="12" v-if="!isMigrateFromVmware && showManagedInstances">
-              <a-card class="instances-card">
-                <template #title>
-                  {{ $t('label.managed.instances') }}
-                  <a-tooltip :title="$t('message.instances.managed')">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                  <a-button
-                    style="margin-left: 12px; margin-top: 4px"
-                    :loading="managedInstancesLoading"
-                    size="small"
-                    shape="round"
-                    @click="fetchManagedInstances()" >
-                    <template #icon><reload-outlined /></template>
-                  </a-button>
-                  <span style="float: right; width: 50%">
-                    <search-view
-                      :searchFilters="searchFilters.managed"
-                      :searchParams="searchParams.managed"
-                      :apiName="listInstancesApi.managed"
-                      @search="searchManagedInstances"
-                    />
-                  </span>
-                </template>
-                <a-table
-                  class="instances-card-table"
-                  :loading="managedInstancesLoading"
-                  :rowSelection="managedInstanceSelection"
-                  :rowKey="(record, index) => index"
-                  :columns="managedInstancesColumns"
-                  :data-source="managedInstances"
-                  :pagination="false"
-                  size="middle"
-                  :rowClassName="getRowClassName"
-                >
-                  <template #bodyCell="{ column, text, record }">
-                    <template v-if="column.key === 'name'">
-                      <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
-                    </template>
-                    <template v-if="column.key === 'state'">
-                      <status :text="text ? text : ''" displayText />
-                    </template>
-                  </template>
-                </a-table>
-                <div class="instances-card-footer">
-                  <a-pagination
-                    class="row-element"
-                    size="small"
-                    :current="page.managed"
-                    :pageSize="pageSize.managed"
-                    :total="itemCount.managed"
-                    :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.managed-1)*pageSize.managed))}-${Math.min(page.managed*pageSize.managed, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-                    @change="fetchManagedInstances"
-                    showQuickJumper>
-                    <template #buildOptionText="props">
-                      <span>{{ props.value }} / {{ $t('label.page') }}</span>
-                    </template>
-                  </a-pagination>
-                  <div :span="24" class="action-button-right">
-                    <a-button
 
-                      :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
-                      type="primary"
-                      @click="onUnmanageInstanceAction">
-                      <template #icon><disconnect-outlined /></template>
-                      {{ managedInstancesSelectedRowKeys.length > 1 ? $t('label.action.unmanage.instances') : $t('label.action.unmanage.instance') }}
-                    </a-button>
-                  </div>
-                </div>
-              </a-card>
-            </a-col>
-          </a-row>
+          <a-tabs v-model:activeKey="activeTabKey" @change="onTabChange">
+            <a-tab-pane :key=1 tab="Instances Listing">
+              <a-row :gutter="12">
+                <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
+                  <a-card class="instances-card">
+                    <template #title>
+                      {{ (isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('label.instances') : $t('label.unmanaged.instances') }}
+                      <a-tooltip :title="(isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
+                        <info-circle-outlined />
+                      </a-tooltip>
+                      <a-button
+                        style="margin-left: 12px; margin-top: 4px"
+                        :loading="unmanagedInstancesLoading"
+                        size="small"
+                        shape="round"
+                        @click="fetchUnmanagedInstances()" >
+                        <template #icon><reload-outlined /></template>
+                      </a-button>
+                      <span style="float: right; width: 50%">
+                        <search-view
+                          :searchFilters="searchFilters.unmanaged"
+                          :searchParams="searchParams.unmanaged"
+                          :apiName="currentUnmanagedListApi"
+                          @search="searchUnmanagedInstances"
+                        />
+                      </span>
+                    </template>
+                    <a-table
+                      v-if="!isExternal"
+                      class="instances-card-table"
+                      :loading="unmanagedInstancesLoading"
+                      :rowSelection="unmanagedInstanceSelection"
+                      :rowKey="(record, index) => index"
+                      :columns="unmanagedInstancesColumns"
+                      :data-source="unmanagedInstances"
+                      :pagination="false"
+                      size="middle"
+                      :rowClassName="getRowClassName"
+                    >
+                      <template #bodyCell="{ column, text }">
+                        <template v-if="column.key === 'state'">
+                          <status :text="text ? text : ''" displayText />
+                        </template>
+                      </template>
+                    </a-table>
+                    <a-table
+                      v-if="isExternal"
+                      class="instances-card-table"
+                      :loading="unmanagedInstancesLoading"
+                      :rowSelection="unmanagedInstanceSelection"
+                      :rowKey="(record, index) => index"
+                      :columns="externalInstancesColumns"
+                      :data-source="unmanagedInstances"
+                      :pagination="false"
+                      size="middle"
+                      :rowClassName="getRowClassName"
+                    >
+                      <template #bodyCell="{ column, text }">
+                          <template v-if="column.key === 'state'">
+                              <status :text="text ? text : ''" displayText />
+                          </template>
+                      </template>
+                    </a-table>
+                    <div class="instances-card-footer">
+                      <a-pagination
+                        class="row-element"
+                        size="small"
+                        :current="page.unmanaged"
+                        :pageSize="pageSize.unmanaged"
+                        :total="itemCount.unmanaged"
+                        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.unmanaged-1)*pageSize.unmanaged))}-${Math.min(page.unmanaged*pageSize.unmanaged, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+                        @change="fetchUnmanagedInstances"
+                        showQuickJumper>
+                        <template #buildOptionText="props">
+                          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+                        </template>
+                      </a-pagination>
+                      <div :span="24" class="action-button-right">
+                        <a-button
+                          :loading="importUnmanagedInstanceLoading"
+                          :disabled="!canOpenImportInstanceForm"
+                          type="primary"
+                          @click="onManageInstanceAction">
+                          <template #icon><import-outlined /></template>
+                          {{ $t('label.import.instance') }}
+                        </a-button>
+                      </div>
+                    </div>
+                  </a-card>
+                </a-col>
+                <a-col :md="24" :lg="12" v-if="!isMigrateFromVmware && showManagedInstances">
+                  <a-card class="instances-card">
+                    <template #title>
+                      {{ $t('label.managed.instances') }}
+                      <a-tooltip :title="$t('message.instances.managed')">
+                        <info-circle-outlined />
+                      </a-tooltip>
+                      <a-button
+                        style="margin-left: 12px; margin-top: 4px"
+                        :loading="managedInstancesLoading"
+                        size="small"
+                        shape="round"
+                        @click="fetchManagedInstances()" >
+                        <template #icon><reload-outlined /></template>
+                      </a-button>
+                      <span style="float: right; width: 50%">
+                        <search-view
+                          :searchFilters="searchFilters.managed"
+                          :searchParams="searchParams.managed"
+                          :apiName="listInstancesApi.managed"
+                          @search="searchManagedInstances"
+                        />
+                      </span>
+                    </template>
+                    <a-table
+                      class="instances-card-table"
+                      :loading="managedInstancesLoading"
+                      :rowSelection="managedInstanceSelection"
+                      :rowKey="(record, index) => index"
+                      :columns="managedInstancesColumns"
+                      :data-source="managedInstances"
+                      :pagination="false"
+                      size="middle"
+                      :rowClassName="getRowClassName"
+                    >
+                      <template #bodyCell="{ column, text, record }">
+                        <template v-if="column.key === 'name'">
+                          <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
+                        </template>
+                        <template v-if="column.key === 'state'">
+                          <status :text="text ? text : ''" displayText />
+                        </template>
+                      </template>
+                    </a-table>
+                    <div class="instances-card-footer">
+                      <a-pagination
+                        class="row-element"
+                        size="small"
+                        :current="page.managed"
+                        :pageSize="pageSize.managed"
+                        :total="itemCount.managed"
+                        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.managed-1)*pageSize.managed))}-${Math.min(page.managed*pageSize.managed, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+                        @change="fetchManagedInstances"
+                        showQuickJumper>
+                        <template #buildOptionText="props">
+                          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+                        </template>
+                      </a-pagination>
+                      <div :span="24" class="action-button-right">
+                        <a-button
+
+                          :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
+                          type="primary"
+                          @click="onUnmanageInstanceAction">
+                          <template #icon><disconnect-outlined /></template>
+                          {{ managedInstancesSelectedRowKeys.length > 1 ? $t('label.action.unmanage.instances') : $t('label.action.unmanage.instance') }}
+                        </a-button>
+                      </div>
+                    </div>
+                  </a-card>
+                </a-col>
+              </a-row>
+            </a-tab-pane>
+            <a-tab-pane :key=2 :tab="$t('label.import.vm.tasks')" v-if="isMigrateFromVmware && ('listImportVmTasks' in $store.getters.apis)">
+              <ImportVmTasks
+                :tasks="importVmTasks"
+                :loading="loadingImportVmTasks"
+                :filter="importVmTasksFilter"
+                :total="itemCount.tasks || 0"
+                :page="page.tasks"
+                :pageSize="pageSize.tasks"
+                @fetch-import-vm-tasks="fetchImportVmTasks"
+                @change-pagination="onChangeImportTasksPagination"
+                @change-filter="onChangeImportTasksFilter"
+              />
+            </a-tab-pane>
+            <a-tab-pane :key=3 :tab="$t('label.vmware.cbt.migrations')" v-if="isMigrateFromVmware && ('listVmwareCbtMigrations' in $store.getters.apis)">
+              <VmwareCbtMigrations
+                :migrations="vmwareCbtMigrations"
+                :loading="loadingVmwareCbtMigrations"
+                :filter="vmwareCbtMigrationsFilter"
+                :total="itemCount.vmwareCbtMigrations || 0"
+                :page="page.vmwareCbtMigrations"
+                :pageSize="pageSize.vmwareCbtMigrations"
+                @fetch-vmware-cbt-migrations="fetchVmwareCbtMigrations"
+                @change-pagination="onChangeVmwareCbtMigrationsPagination"
+                @change-filter="onChangeVmwareCbtMigrationsFilter"
+                @sync-vmware-cbt-migration="syncVmwareCbtMigration"
+                @cutover-vmware-cbt-migration="cutoverVmwareCbtMigration"
+                @cancel-vmware-cbt-migration="cancelVmwareCbtMigration"
+                @delete-vmware-cbt-migration="deleteVmwareCbtMigration"
+              />
+            </a-tab-pane>
+          </a-tabs>
+
         </a-card>
 
         <a-modal
@@ -522,11 +559,13 @@
             :tmppath="this.values?.tmppath || ''"
             :diskpath="this.values?.diskpath || ''"
             :isOpen="showUnmanageForm"
+            :loadingGuestOsMappings="loadingGuestOsMappings"
             :selectedVmwareVcenter="selectedVmwareVcenter"
             @refresh-data="fetchInstances"
             @close-action="closeImportUnmanagedInstanceForm"
             @loading-changed="updateManageInstanceActionLoading"
             @track-import-jobid="trackImportJobId"
+            @vmware-cbt-migration-started="onVmwareCbtMigrationStarted"
           />
         </a-modal>
       </div>
@@ -535,9 +574,8 @@
 </template>
 
 <script>
-import { message } from 'ant-design-vue'
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI, getAPI } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Status from '@/components/widgets/Status'
@@ -546,6 +584,8 @@ import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
+import ImportVmTasks from '@/views/tools/ImportVmTasks.vue'
+import VmwareCbtMigrations from '@/views/tools/VmwareCbtMigrations.vue'
 
 export default {
   components: {
@@ -555,7 +595,9 @@ export default {
     SearchView,
     ImportUnmanagedInstances,
     ResourceIcon,
-    SelectVmwareVcenter
+    SelectVmwareVcenter,
+    ImportVmTasks,
+    VmwareCbtMigrations
   },
   name: 'ManageVms',
   data () {
@@ -563,6 +605,7 @@ export default {
       {
         name: 'unmanaged',
         label: 'Manage/Unmanage existing instances',
+        anyApis: ['listUnmanagedInstances'],
         sourceDestHypervisors: {
           vmware: 'vmware',
           kvm: 'kvm'
@@ -573,6 +616,7 @@ export default {
       {
         name: 'vmware',
         label: 'Migrate existing instances to KVM',
+        anyApis: ['listVmwareDcVms', 'listImportVmTasks', 'listVmwareCbtMigrations'],
         sourceDestHypervisors: {
           vmware: 'kvm'
         },
@@ -582,6 +626,7 @@ export default {
       {
         name: 'external',
         label: 'Import Instance from remote KVM host',
+        anyApis: ['listVmsForImport'],
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -590,7 +635,8 @@ export default {
       },
       {
         name: 'local',
-        label: 'Import QCOW2 image from Local Storage',
+        label: 'Import Instance using existing ROOT disk from Local Storage',
+        anyApis: ['importVm'],
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -599,7 +645,8 @@ export default {
       },
       {
         name: 'shared',
-        label: 'Import QCOW2 image from Shared Storage',
+        label: 'Import Instance using existing ROOT disk from Shared Storage',
+        anyApis: ['importVm'],
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -689,11 +736,15 @@ export default {
       },
       page: {
         unmanaged: 1,
-        managed: 1
+        managed: 1,
+        tasks: 1,
+        vmwareCbtMigrations: 1
       },
       pageSize: {
         unmanaged: 10,
-        managed: 10
+        managed: 10,
+        tasks: 10,
+        vmwareCbtMigrations: 10
       },
       searchFilters: {
         unmanaged: [],
@@ -747,14 +798,28 @@ export default {
       selectedUnmanagedInstance: {},
       query: {},
       vmwareVcenterType: undefined,
-      selectedVmwareVcenter: undefined
+      selectedVmwareVcenter: undefined,
+      activeTabKey: 1,
+      loadingImportVmTasks: false,
+      importVmTasks: [],
+      importVmTasksFilter: 'running',
+      loadingVmwareCbtMigrations: false,
+      vmwareCbtMigrations: [],
+      vmwareCbtMigrationsFilter: 'all',
+      vmwareCbtMigrationsRefreshInterval: null,
+      activeVmwareCbtJobCount: 0,
+      loadingGuestOsMappings: false
     }
   },
   created () {
     this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
+    this.page.tasks = parseInt(this.$route.query.tasks || 1)
     this.initForm()
     this.fetchData()
+  },
+  beforeUnmount () {
+    this.stopVmwareCbtMigrationsAutoRefresh()
   },
   computed: {
     isPageAllowed () {
@@ -778,6 +843,30 @@ export default {
     },
     isDestinationKVM () {
       return this.destinationHypervisor === 'kvm'
+    },
+    availableSourceHypervisors () {
+      return this.getAvailableSourceHypervisors()
+    },
+    currentUnmanagedListApi () {
+      if (this.isMigrateFromVmware) {
+        return this.listInstancesApi.migratefromvmware
+      }
+      if (this.isExternal) {
+        return this.listInstancesApi.external
+      }
+      return this.listInstancesApi.unmanaged
+    },
+    canImportDisk () {
+      return this.hasApi('importVm')
+    },
+    canOpenImportInstanceForm () {
+      if (this.unmanagedInstancesSelectedRowKeys.length === 0) {
+        return false
+      }
+      if (this.isMigrateFromVmware) {
+        return this.hasAnyApi(['importVm', 'startVmwareCbtMigration'])
+      }
+      return this.hasApi('importUnmanagedInstance')
     },
     showPod () {
       if (this.selectedSourceAction === 'shared') {
@@ -875,7 +964,8 @@ export default {
           return true
         }
       }
-      return this.unmanagedInstancesLoading || this.managedInstancesLoading
+      return this.unmanagedInstancesLoading || this.managedInstancesLoading ||
+        this.loadingImportVmTasks || this.loadingVmwareCbtMigrations
     },
     zoneSelectOptions () {
       return this.options.zones.map((zone) => {
@@ -962,6 +1052,22 @@ export default {
     }
   },
   methods: {
+    hasApi (apiName) {
+      return apiName in this.$store.getters.apis
+    },
+    hasAnyApi (apiNames) {
+      return apiNames.some(apiName => this.hasApi(apiName))
+    },
+    isSourceActionAvailable (action) {
+      return !action.anyApis || this.hasAnyApi(action.anyApis)
+    },
+    getAvailableSourceHypervisors () {
+      const hypervisors = new Set()
+      this.AllSourceActions.filter(action => this.isSourceActionAvailable(action)).forEach(action => {
+        Object.keys(action.sourceDestHypervisors).forEach(hypervisor => hypervisors.add(hypervisor))
+      })
+      return Array.from(hypervisors)
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({
@@ -976,6 +1082,11 @@ export default {
     fetchData () {
       this.unmanagedInstances = []
       this.managedInstances = []
+      const availableSourceHypervisors = this.getAvailableSourceHypervisors()
+      if (availableSourceHypervisors.length > 0 && !availableSourceHypervisors.includes(this.sourceHypervisor)) {
+        this.sourceHypervisor = availableSourceHypervisors[0]
+        this.form.sourceHypervisor = this.sourceHypervisor
+      }
       this.onSelectHypervisor(this.sourceHypervisor)
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
@@ -1001,7 +1112,7 @@ export default {
       if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         options.listall = true
       }
-      api(param.list, options).then((response) => {
+      getAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -1084,17 +1195,35 @@ export default {
       this.page.managed = 1
       this.managedInstances = []
       this.managedInstancesSelectedRowKeys = []
+      this.page.tasks = 1
+      this.page.vmwareCbtMigrations = 1
+      this.vmwareCbtMigrations = []
+      this.stopVmwareCbtMigrationsAutoRefresh()
+      this.activeTabKey = 1
     },
     onSelectHypervisor (value) {
       this.sourceHypervisor = value
-      this.sourceActions = this.AllSourceActions.filter(x => x.sourceDestHypervisors[value])
-      this.form.sourceAction = this.sourceActions[0].name || ''
+      this.sourceActions = this.AllSourceActions.filter(x => x.sourceDestHypervisors[value] && this.isSourceActionAvailable(x))
+      if (this.sourceActions.length === 0) {
+        this.form.sourceAction = undefined
+        this.selectedSourceAction = undefined
+        this.destinationHypervisor = undefined
+        this.selectedVmwareVcenter = undefined
+        this.resetLists()
+        return
+      }
+      this.form.sourceAction = this.sourceActions[0].name
       this.selectedVmwareVcenter = undefined
       this.onSelectSourceAction(this.form.sourceAction)
     },
     onSelectSourceAction (value) {
       this.selectedSourceAction = value
       const selectedAction = _.find(this.AllSourceActions, (option) => option.name === value)
+      if (!selectedAction) {
+        this.destinationHypervisor = undefined
+        this.resetLists()
+        return
+      }
       this.destinationHypervisor = selectedAction.sourceDestHypervisors[this.sourceHypervisor]
       this.wizardTitle = selectedAction.wizardTitle
       this.wizardDescription = selectedAction.wizardDescription
@@ -1154,12 +1283,190 @@ export default {
       this.updateQuery('scope', value)
       this.fetchOptions(this.params.pools, 'pools', value)
     },
+    onTabChange (e) {
+      const tabKey = String(e)
+      if (tabKey === '2') {
+        this.stopVmwareCbtMigrationsAutoRefresh()
+        this.fetchImportVmTasks()
+      } else if (tabKey === '3') {
+        this.fetchVmwareCbtMigrations()
+      } else {
+        this.stopVmwareCbtMigrationsAutoRefresh()
+      }
+    },
+    onChangeImportTasksPagination (page, pagesize) {
+      this.page.tasks = page
+      this.pageSize.tasks = pagesize
+      this.fetchImportVmTasks()
+    },
+    onChangeImportTasksFilter (filter) {
+      this.importVmTasksFilter = filter
+      this.fetchImportVmTasks()
+    },
+    fetchImportVmTasks () {
+      if (!this.hasApi('listImportVmTasks') || !this.zoneId) {
+        return
+      }
+      this.loadingImportVmTasks = true
+      const params = {
+        zoneid: this.zoneId,
+        page: this.page.tasks,
+        pagesize: this.pageSize.tasks,
+        tasksfilter: this.importVmTasksFilter
+      }
+      getAPI('listImportVmTasks', params).then(response => {
+        this.itemCount.tasks = response.listimportvmtasksresponse.count
+        this.importVmTasks = response.listimportvmtasksresponse.importvmtask || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loadingImportVmTasks = false
+      })
+    },
+    onChangeVmwareCbtMigrationsPagination (page, pagesize) {
+      this.page.vmwareCbtMigrations = page
+      this.pageSize.vmwareCbtMigrations = pagesize
+      this.fetchVmwareCbtMigrations()
+    },
+    onChangeVmwareCbtMigrationsFilter (filter) {
+      this.vmwareCbtMigrationsFilter = filter
+      this.fetchVmwareCbtMigrations()
+    },
+    fetchVmwareCbtMigrations (silent = false) {
+      if (!this.hasApi('listVmwareCbtMigrations')) {
+        return
+      }
+      if (!silent) {
+        this.loadingVmwareCbtMigrations = true
+      }
+      const params = {
+        zoneid: this.zoneId,
+        page: this.page.vmwareCbtMigrations,
+        pagesize: this.pageSize.vmwareCbtMigrations
+      }
+      if (this.vmwareCbtMigrationsFilter && this.vmwareCbtMigrationsFilter !== 'all') {
+        params.state = this.vmwareCbtMigrationsFilter
+      }
+      getAPI('listVmwareCbtMigrations', params).then(response => {
+        this.itemCount.vmwareCbtMigrations = response.listvmwarecbtmigrationsresponse.count
+        this.vmwareCbtMigrations = response.listvmwarecbtmigrationsresponse.vmwarecbtmigration || []
+        this.updateVmwareCbtMigrationsAutoRefresh()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        if (!silent) {
+          this.loadingVmwareCbtMigrations = false
+        }
+      })
+    },
+    cancelVmwareCbtMigration (migration) {
+      postAPI('cancelVmwareCbtMigration', { id: migration.id }).then(() => {
+        this.fetchVmwareCbtMigrations()
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    deleteVmwareCbtMigration (migration) {
+      const cleanup = ['Failed', 'Cancelled'].includes(migration.state)
+      postAPI('deleteVmwareCbtMigration', { id: migration.id, cleanup }).then(() => {
+        this.fetchVmwareCbtMigrations()
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    syncVmwareCbtMigration (migration) {
+      postAPI('syncVmwareCbtMigration', this.getVmwareCbtMigrationActionParams(migration)).then(response => {
+        this.fetchVmwareCbtMigrations()
+        this.pollVmwareCbtMigrationJob(response, 'syncvmwarecbtmigrationresponse', migration, 'VMware CBT delta sync')
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    cutoverVmwareCbtMigration (migration) {
+      postAPI('cutoverVmwareCbtMigration', this.getVmwareCbtMigrationActionParams(migration)).then(response => {
+        this.fetchVmwareCbtMigrations()
+        this.pollVmwareCbtMigrationJob(response, 'cutovervmwarecbtmigrationresponse', migration, 'VMware CBT cutover')
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    pollVmwareCbtMigrationJob (response, responseKey, migration, actionLabel) {
+      const jobId = response?.[responseKey]?.jobid
+      if (!jobId) {
+        return
+      }
+      this.activeVmwareCbtJobCount++
+      this.updateVmwareCbtMigrationsAutoRefresh()
+      const refreshAfterJob = () => {
+        this.activeVmwareCbtJobCount = Math.max(0, this.activeVmwareCbtJobCount - 1)
+        this.fetchVmwareCbtMigrations()
+      }
+      this.$pollJob({
+        jobId,
+        title: this.$t('label.vmware.cbt.migrations'),
+        description: migration.displayname || migration.sourcevmname,
+        loadingMessage: `${actionLabel} ${this.$t('label.in.progress')}`,
+        catchMessage: this.$t('error.fetching.async.job.result'),
+        successMessage: `${actionLabel} completed`,
+        successMethod: refreshAfterJob,
+        errorMethod: refreshAfterJob
+      })
+    },
+    updateVmwareCbtMigrationsAutoRefresh () {
+      const isCbtTabActive = String(this.activeTabKey) === '3'
+      const hasActiveMigrations = this.vmwareCbtMigrations.some(this.isVmwareCbtMigrationActive)
+      if (isCbtTabActive && (hasActiveMigrations || this.activeVmwareCbtJobCount > 0)) {
+        this.startVmwareCbtMigrationsAutoRefresh()
+      } else {
+        this.stopVmwareCbtMigrationsAutoRefresh()
+      }
+    },
+    startVmwareCbtMigrationsAutoRefresh () {
+      if (this.vmwareCbtMigrationsRefreshInterval) {
+        return
+      }
+      this.vmwareCbtMigrationsRefreshInterval = setInterval(() => {
+        this.fetchVmwareCbtMigrations(true)
+      }, 5000)
+    },
+    stopVmwareCbtMigrationsAutoRefresh () {
+      if (!this.vmwareCbtMigrationsRefreshInterval) {
+        return
+      }
+      clearInterval(this.vmwareCbtMigrationsRefreshInterval)
+      this.vmwareCbtMigrationsRefreshInterval = null
+    },
+    isVmwareCbtMigrationActive (migration) {
+      return ['Created', 'InitialSync', 'Replicating', 'CuttingOver'].includes(migration.state)
+    },
+    getVmwareCbtMigrationActionParams (migration) {
+      const params = { id: migration.id }
+      if (!migration.existingvcenterid && this.selectedVmwareVcenter &&
+        this.selectedVmwareVcenter.vcenter === migration.vcenter &&
+        this.selectedVmwareVcenter.datacentername === migration.datacentername) {
+        params.username = this.selectedVmwareVcenter.username
+        params.password = this.selectedVmwareVcenter.password
+      }
+      return params
+    },
+    onVmwareCbtMigrationStarted (details = {}) {
+      if (this.hasApi('listVmwareCbtMigrations')) {
+        this.activeTabKey = 3
+        this.fetchVmwareCbtMigrations()
+        if (details.response && details.responseKey) {
+          this.pollVmwareCbtMigrationJob(details.response, details.responseKey,
+            details.migration || {}, details.actionLabel || 'VMware CBT migration')
+        }
+      } else {
+        this.fetchInstances()
+      }
+    },
     fetchInstances () {
       this.fetchUnmanagedInstances()
       if (this.isUnmanaged) {
         this.fetchManagedInstances()
-      } else if (this.kvmOption === 'external') {
-        this.fetchExternalInstances()
+      } else if (this.isExternal) {
+        this.fetchExtKVMInstances()
       }
     },
     fetchUnmanagedInstances (page, pageSize) {
@@ -1199,8 +1506,11 @@ export default {
           params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
         }
       }
+      if (!this.hasApi(apiName)) {
+        return
+      }
 
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const response = this.isMigrateFromVmware ? json.listvmwaredcvmsresponse : json.listunmanagedinstancesresponse
         const listUnmanagedInstances = response.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
@@ -1212,6 +1522,9 @@ export default {
       })
     },
     fetchExtKVMInstances (page, pageSize) {
+      if (!this.hasApi(this.listInstancesApi.external)) {
+        return
+      }
       const params = {
         zoneid: this.zoneid
       }
@@ -1244,7 +1557,7 @@ export default {
         }
       }
       this.searchParams.unmanaged = params
-      api(this.listInstancesApi.external, params).then(json => {
+      getAPI(this.listInstancesApi.external, params).then(json => {
         const listUnmanagedInstances = json.listvmsforimportresponse.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
@@ -1261,6 +1574,9 @@ export default {
       this.fetchUnmanagedInstances()
     },
     fetchManagedInstances (page, pageSize) {
+      if (!this.hasApi(this.listInstancesApi.managed)) {
+        return
+      }
       const params = {
         listall: true,
         clusterid: this.clusterId
@@ -1281,7 +1597,7 @@ export default {
       }
       this.managedInstancesLoading = true
       this.searchParams.managed = params
-      api(this.listInstancesApi.managed, params).then(json => {
+      getAPI(this.listInstancesApi.managed, params).then(json => {
         const listManagedInstances = json.listvirtualmachinesresponse.virtualmachine
         if (this.arrayHasItems(listManagedInstances)) {
           this.managedInstances = this.managedInstances.concat(listManagedInstances)
@@ -1316,6 +1632,148 @@ export default {
         this.fetchInstances()
       }
     },
+    async fetchGuestOsMappingsByParams (params) {
+      return await getAPI('listGuestOsMapping', params).then(json => {
+        return json.listguestosmappingresponse?.guestosmapping || []
+      }).catch(error => {
+        this.$notifyError(error)
+        return []
+      })
+    },
+    async fetchGuestOsTypesByDisplayName (osDisplayName) {
+      if (!osDisplayName) {
+        return []
+      }
+      const params = {
+        description: osDisplayName
+      }
+      return await getAPI('listOsTypes', params).then(json => {
+        const guestOsTypes = json.listostypesresponse?.ostype || []
+        return guestOsTypes.map(osType => ({
+          ostypeid: osType.id,
+          osdisplayname: osType.name || osType.description
+        })).filter(osType => this.guestOsDisplayNameMatches(osType.osdisplayname, osDisplayName))
+      }).catch(error => {
+        this.$notifyError(error)
+        return []
+      })
+    },
+    normalizeGuestOsDisplayName (name) {
+      return (name || '')
+        .toLowerCase()
+        .replace(/^microsoft\s+/, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    },
+    guestOsDisplayNameMatches (candidate, expected) {
+      const normalizedCandidate = this.normalizeGuestOsDisplayName(candidate)
+      const normalizedExpected = this.normalizeGuestOsDisplayName(expected)
+      return normalizedCandidate && normalizedExpected && normalizedCandidate === normalizedExpected
+    },
+    filterGuestOsMappings (mappings, params, osDisplayName) {
+      if (!mappings || mappings.length === 0) {
+        return []
+      }
+
+      const osNameForHypervisor = (params.osnameforhypervisor || '').toLowerCase()
+      let filteredMappings = mappings
+      if (osNameForHypervisor) {
+        filteredMappings = mappings.filter(mapping => (mapping.osnameforhypervisor || '').toLowerCase() === osNameForHypervisor)
+      }
+
+      if (osDisplayName) {
+        const displayNameMatches = filteredMappings.filter(mapping => this.guestOsDisplayNameMatches(mapping.osdisplayname, osDisplayName))
+        if (displayNameMatches.length > 0) {
+          return displayNameMatches
+        }
+        if (params.osdisplayname) {
+          return []
+        }
+      }
+
+      return filteredMappings
+    },
+    async fetchGuestOsMappings (osIdentifier, hypervisorVersion, osDisplayName) {
+      const baseParams = {
+        hypervisor: 'VMware'
+      }
+      const queryCandidates = []
+      if (osIdentifier) {
+        queryCandidates.push({
+          ...baseParams,
+          hypervisorversion: hypervisorVersion,
+          osnameforhypervisor: osIdentifier
+        })
+      }
+      if (osIdentifier) {
+        queryCandidates.push({
+          ...baseParams,
+          osnameforhypervisor: osIdentifier
+        })
+      }
+      if (osDisplayName) {
+        queryCandidates.push({
+          ...baseParams,
+          hypervisorversion: hypervisorVersion,
+          osdisplayname: osDisplayName
+        })
+      }
+      if (osDisplayName) {
+        queryCandidates.push({
+          ...baseParams,
+          osdisplayname: osDisplayName
+        })
+      }
+
+      const seenQueries = new Set()
+      for (const params of queryCandidates) {
+        if (!params.hypervisorversion) {
+          delete params.hypervisorversion
+        }
+        const queryKey = JSON.stringify(params)
+        if (seenQueries.has(queryKey)) {
+          continue
+        }
+        seenQueries.add(queryKey)
+        const mappings = await this.fetchGuestOsMappingsByParams(params)
+        const filteredMappings = this.filterGuestOsMappings(mappings, params, osDisplayName)
+        if (filteredMappings.length > 0) {
+          return filteredMappings
+        }
+      }
+
+      return await this.fetchGuestOsTypesByDisplayName(osDisplayName)
+    },
+    fetchVmwareInstanceForKVMMigration (vmname, hostname) {
+      const params = {}
+      this.loadingGuestOsMappings = true
+      if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
+        if (this.selectedVmwareVcenter.vcenter) {
+          params.datacentername = this.selectedVmwareVcenter.datacentername
+          params.vcenter = this.selectedVmwareVcenter.vcenter
+          params.username = this.selectedVmwareVcenter.username
+          params.password = this.selectedVmwareVcenter.password
+        } else {
+          params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+        }
+        params.instancename = vmname
+        params.hostname = hostname
+      }
+      getAPI('listVmwareDcVms', params).then(async json => {
+        const response = json.listvmwaredcvmsresponse
+        this.selectedUnmanagedInstance = response.unmanagedinstance[0]
+        this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
+        this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
+        this.selectedUnmanagedInstance.guestOsMappings = await this.fetchGuestOsMappings(this.selectedUnmanagedInstance.osid,
+          this.selectedUnmanagedInstance.hypervisorversion, this.selectedUnmanagedInstance.osdisplayname)
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+        this.loadingGuestOsMappings = false
+      })
+    },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
       if (this.unmanagedInstances.length > 0 &&
@@ -1324,15 +1782,9 @@ export default {
         this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
         this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
       }
-      if (this.isMigrateFromVmware && this.selectedUnmanagedInstance.state === 'PowerOn' && this.selectedUnmanagedInstance.ostypename.toLowerCase().includes('windows')) {
-        message.error({
-          content: () => 'Cannot import Running Windows VMs, please gracefully shutdown the source VM before importing',
-          style: {
-            marginTop: '20vh',
-            color: 'red'
-          }
-        })
-        this.showUnmanageForm = false
+      if (this.isMigrateFromVmware) {
+        this.fetchVmwareInstanceForKVMMigration(this.selectedUnmanagedInstance.name, this.selectedUnmanagedInstance.hostname)
+        this.showUnmanageForm = true
       } else {
         this.showUnmanageForm = true
       }
@@ -1400,7 +1852,7 @@ export default {
       for (var index of this.managedInstancesSelectedRowKeys) {
         const vm = this.managedInstances[index]
         var params = { id: vm.id }
-        api('unmanageVirtualMachine', params).then(json => {
+        postAPI('unmanageVirtualMachine', params).then(json => {
           const jobId = json.unmanagevirtualmachineresponse.jobid
           this.$pollJob({
             jobId,

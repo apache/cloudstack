@@ -21,7 +21,7 @@
 # edithosts.sh -- edit the dhcphosts file on the routing domain
 
 usage() {
-  printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID> [-N]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID> -l <lease time> [-N]\n" $(basename $0) >&2
 }
 
 mac=
@@ -33,8 +33,9 @@ dns=
 routes=
 duid=
 nondefault=
+lease_time=infinite
 
-while getopts 'm:4:h:d:n:s:6:u:N' OPTION
+while getopts 'm:4:h:d:n:s:6:u:l:N' OPTION
 do
   case $OPTION in
   m)    mac="$OPTARG"
@@ -52,6 +53,8 @@ do
   n)    dns="$OPTARG"
         ;;
   s)    routes="$OPTARG"
+        ;;
+  l)    lease_time="$OPTARG"
         ;;
   N)    nondefault=1
         ;;
@@ -124,17 +127,21 @@ fi
 sed -i  /$host,/d $DHCP_HOSTS
 
 #put in the new entry
+# If lease_time is 0, use 'infinite', otherwise use the value
+if [ "$lease_time" = "0" ]; then
+  lease_time=infinite
+fi
 if [ $ipv4 ]
 then
-  echo "$mac,$ipv4,$host,infinite" >>$DHCP_HOSTS
+  echo "$mac,$ipv4,$host,$lease_time" >>$DHCP_HOSTS
 fi
 if [ $ipv6 ]
 then
   if [ $nondefault ]
   then
-    echo "id:$duid,set:nondefault6,[$ipv6],$host,infinite" >>$DHCP_HOSTS
+    echo "id:$duid,set:nondefault6,[$ipv6],$host,$lease_time" >>$DHCP_HOSTS
   else
-    echo "id:$duid,[$ipv6],$host,infinite" >>$DHCP_HOSTS
+    echo "id:$duid,[$ipv6],$host,$lease_time" >>$DHCP_HOSTS
   fi
 fi
 

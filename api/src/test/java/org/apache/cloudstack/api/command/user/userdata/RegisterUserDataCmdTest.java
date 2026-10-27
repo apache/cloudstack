@@ -97,7 +97,7 @@ public class RegisterUserDataCmdTest {
             ReflectionTestUtils.setField(cmd, "name", "testUserdataName");
             ReflectionTestUtils.setField(cmd, "userData", "testUserdata");
 
-            when(_accountService.finalyzeAccountId(ACCOUNT_NAME, DOMAIN_ID, PROJECT_ID, true)).thenReturn(200L);
+            when(_accountService.finalizeAccountId(ACCOUNT_NAME, DOMAIN_ID, PROJECT_ID, true)).thenReturn(200L);
 
             Assert.assertEquals("testUserdataName", cmd.getName());
             Assert.assertEquals("testUserdata", cmd.getUserData());

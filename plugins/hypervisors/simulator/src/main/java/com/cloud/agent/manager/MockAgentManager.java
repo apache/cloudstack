@@ -16,10 +16,13 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.GetGPUStatsCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 
@@ -39,6 +42,7 @@ public interface MockAgentManager extends Manager {
     public static final long DEFAULT_HOST_MEM_SIZE = 8 * 1024 * 1024 * 1024L; // 8G, unit of Mbytes
     public static final int DEFAULT_HOST_CPU_CORES = 4; // 2 dual core CPUs (2 x 2)
     public static final int DEFAULT_HOST_SPEED_MHZ = 8000; // 1 GHz CPUs
+    public static final String DEFAULT_HOST_ARCH = "x86_64";
 
     @Override
     boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
@@ -53,6 +57,10 @@ public interface MockAgentManager extends Manager {
     GetHostStatsAnswer getHostStatistic(GetHostStatsCommand cmd);
 
     Answer checkHealth(CheckHealthCommand cmd);
+
+    Answer getGpuStats(GetGPUStatsCommand cmd, long hostId);
+
+    List<VgpuTypesInfo> getGPUDevices(long hostId);
 
     Answer pingTest(PingTestCommand cmd);
 

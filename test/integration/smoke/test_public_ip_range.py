@@ -145,10 +145,10 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # 7. Delete the Public IP range
 
         services = {
-            "gateway":"192.168.99.1",
+            "gateway":"10.1.99.1",
             "netmask":"255.255.255.0",
-            "startip":"192.168.99.2",
-            "endip":"192.168.99.200",
+            "startip":"10.1.99.2",
+            "endip":"10.1.99.200",
             "forvirtualnetwork":self.services["forvirtualnetwork"],
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]
@@ -286,20 +286,25 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         cmd.allocationstate = 'Disabled'
         self.apiclient.updateZone(cmd)
 
-        # Delete System VM and IP range, so System VM can get IP from original ranges
-        self.debug("Destroying System VM: %s" % systemvm_id)
-        cmd = destroySystemVm.destroySystemVmCmd()
-        cmd.id = systemvm_id
-        self.apiclient.destroySystemVm(cmd)
+        try:
+            # Delete System VM and IP range, so System VM can get IP from original ranges
+            self.debug("Destroying System VM: %s" % systemvm_id)
+            cmd = destroySystemVm.destroySystemVmCmd()
+            cmd.id = systemvm_id
+            self.apiclient.destroySystemVm(cmd)
 
-        domain_id = self.public_ip_range.vlan.domainid
-        self.public_ip_range.delete(self.apiclient)
+            domain_id = self.public_ip_range.vlan.domainid
+            self.public_ip_range.delete(self.apiclient)
 
-        # Enable Zone
-        cmd = updateZone.updateZoneCmd()
-        cmd.id = self.zone.id
-        cmd.allocationstate = 'Enabled'
-        self.apiclient.updateZone(cmd)
+        finally:
+            # Enable Zone
+            try:
+                cmd = updateZone.updateZoneCmd()
+                cmd.id = self.zone.id
+                cmd.allocationstate = 'Enabled'
+                self.apiclient.updateZone(cmd)
+            except Exception as e:
+                self.debug("Warning: Exception during zone re-enablement in base_system_vm: %s" % e)
 
         # Wait for System VM to start and check System VM public IP
         systemvm_id = self.wait_for_system_vm_start(
@@ -339,10 +344,10 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             self.skipTest("An existing IP range defined for system vms, aborting test")
 
         services = {
-            "gateway":"192.168.100.1",
+            "gateway":"10.1.100.1",
             "netmask":"255.255.255.0",
-            "startip":"192.168.100.2",
-            "endip":"192.168.100.200",
+            "startip":"10.1.100.2",
+            "endip":"10.1.100.200",
             "forvirtualnetwork":self.services["forvirtualnetwork"],
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]
@@ -367,10 +372,10 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             self.skipTest("An existing IP range defined for system vms, aborting test")
 
         services = {
-            "gateway":"192.168.200.1",
+            "gateway":"10.1.200.1",
             "netmask":"255.255.255.0",
-            "startip":"192.168.200.2",
-            "endip":"192.168.200.200",
+            "startip":"10.1.200.2",
+            "endip":"10.1.200.200",
             "forvirtualnetwork":self.services["forvirtualnetwork"],
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]
@@ -399,18 +404,23 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         cmd.allocationstate = 'Disabled'
         self.apiclient.updateZone(cmd)
 
-        # Delete System VM and IP range, so System VM can get IP from original ranges
-        if system_vms:
-            for v in system_vms:
-                self.debug("Destroying System VM: %s" % v.id)
-                cmd = destroySystemVm.destroySystemVmCmd()
-                cmd.id = v.id
-                self.apiclient.destroySystemVm(cmd)
+        try:
+            # Delete System VM and IP range, so System VM can get IP from original ranges
+            if system_vms:
+                for v in system_vms:
+                    self.debug("Destroying System VM: %s" % v.id)
+                    cmd = destroySystemVm.destroySystemVmCmd()
+                    cmd.id = v.id
+                    self.apiclient.destroySystemVm(cmd)
 
-        self.public_ip_range.delete(self.apiclient)
+            self.public_ip_range.delete(self.apiclient)
 
-        # Enable Zone
-        cmd = updateZone.updateZoneCmd()
-        cmd.id = self.zone.id
-        cmd.allocationstate = 'Enabled'
-        self.apiclient.updateZone(cmd)
+        finally:
+            # Enable Zone
+            try:
+                cmd = updateZone.updateZoneCmd()
+                cmd.id = self.zone.id
+                cmd.allocationstate = 'Enabled'
+                self.apiclient.updateZone(cmd)
+            except Exception as e:
+                self.debug("Warning: Exception during zone re-enablement in delete_range: %s" % e)

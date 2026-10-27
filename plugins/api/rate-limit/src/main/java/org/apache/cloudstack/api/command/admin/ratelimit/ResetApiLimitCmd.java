@@ -51,7 +51,7 @@ public class ResetApiLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the account whose limit to be reset")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.UUID, entityType = AccountResponse.class, description = "The ID of the Account whose limit to be reset")
     private Long accountId;
 
     /////////////////////////////////////////////////////

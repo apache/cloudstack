@@ -38,16 +38,16 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, description = "list static route by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, description = "List static route by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list static routes by vpc id")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List static routes by VPC ID")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "list static routes by gateway id")
+    @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "List static routes by gateway ID")
     private Long gatewayId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list static routes by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List static routes by state")
     private String state;
 
     public Long getId() {

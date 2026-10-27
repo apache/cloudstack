@@ -45,7 +45,41 @@
         </template>
         <a-switch v-model:checked="form.istagarule" />
       </a-form-item>
-      <a-form-item name="oscategoryid" ref="oscategoryid">
+      <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
+        <template #label>
+          <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
+        </template>
+        <a-select
+          mode="tags"
+          v-model:value="form.storageaccessgroups"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          :loading="storageAccessGroupsLoading"
+          :placeholder="apiParamsConfigureStorageAccess.storageaccessgroups.description">
+          <a-select-option v-for="(opt) in storageAccessGroups" :key="opt">
+            {{ opt }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item name="guestosasrule" ref="guestosasrule">
+        <template #label>
+          <tooltip-label :title="$t('label.guestosasrule')"/>
+        </template>
+        <a-switch v-model:checked="form.guestosasrule"/>
+      </a-form-item>
+      <a-form-item v-if="form.guestosasrule" name="guestosrule" ref="guestosrule">
+        <template #label>
+          <tooltip-label :title="$t('label.guestosrule')" :tooltip="apiParams.guestosrule.description"/>
+        </template>
+        <a-textarea
+          v-model:value="form.guestosrule"
+          :placeholder="apiParams.guestosrule.name">
+        </a-textarea>
+      </a-form-item>
+      <a-form-item v-if="!form.guestosasrule" name="oscategoryid" ref="oscategoryid">
         <template #label>
           <tooltip-label :title="$t('label.oscategoryid')" :tooltip="apiParams.oscategoryid.description"/>
         </template>
@@ -62,6 +96,14 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item name="externaldetails" ref="externaldetails" v-if="resource.hypervisor === 'External'">
+        <template #label>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.externaldetails.description"/>
+        </template>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.resource.details') }}</div>
+        <details-input
+          v-model:value="form.externaldetails" />
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -73,13 +115,16 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
-  name: 'EditVM',
+  name: 'HostUpdate',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   props: {
     action: {
@@ -94,6 +139,8 @@ export default {
   data () {
     return {
       loading: false,
+      storageAccessGroups: [],
+      storageAccessGroupsLoading: false,
       osCategories: {
         loading: false,
         opts: []
@@ -102,26 +149,55 @@ export default {
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateHost')
+    this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
     this.fetchOsCategories()
+    this.fetchStorageAccessGroupsData()
+  },
+  computed: {
+    resourceExternalDetails () {
+      return getFilteredExternalDetails(this.resource.details)
+    }
   },
   methods: {
     initForm () {
       this.formRef = ref()
+      const guestOsRule = this.resource?.guestosrule
       this.form = reactive({
         name: this.resource.name,
         hosttags: this.resource.explicithosttags,
         istagarule: this.resource.istagarule,
-        oscategoryid: this.resource.oscategoryid
+        storageaccessgroups: this.resource.storageaccessgroups
+          ? this.resource.storageaccessgroups.split(',')
+          : [],
+        oscategoryid: this.resource.oscategoryid,
+        externaldetails: this.resourceExternalDetails,
+        guestosasrule: guestOsRule !== undefined,
+        guestosrule: guestOsRule
+      })
+      this.rules = reactive({})
+    },
+    fetchStorageAccessGroupsData () {
+      const params = {}
+      this.storageAccessGroupsLoading = true
+      getAPI('listStorageAccessGroups', params).then(json => {
+        const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
+        for (const sag of sags) {
+          if (!this.storageAccessGroups.includes(sag.name)) {
+            this.storageAccessGroups.push(sag.name)
+          }
+        }
+      }).finally(() => {
+        this.storageAccessGroupsLoading = false
       })
       this.rules = reactive({})
     },
     fetchOsCategories () {
       this.osCategories.loading = true
       this.osCategories.opts = []
-      api('listOsCategories').then(json => {
+      getAPI('listOsCategories').then(json => {
         this.osCategories.opts = json.listoscategoriesresponse.oscategory || []
       }).catch(error => {
         this.$notifyError(error)
@@ -136,22 +212,60 @@ export default {
         params.id = this.resource.id
         params.name = values.name
         params.hosttags = values.hosttags
-        params.oscategoryid = values.oscategoryid
+        if (values.guestosasrule === true) {
+          params.guestosrule = values.guestosrule
+        } else {
+          params.oscategoryid = values.oscategoryid || this.osCategories.opts.filter(os => os.name === 'None')[0]?.id
+        }
         if (values.istagarule !== undefined) {
           params.istagarule = values.istagarule
         }
+        if (values.externaldetails && Object.keys(values.externaldetails).length > 0) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
+        } else {
+          params.cleanupexternaldetails = true
+        }
+
+        Object.keys(params).forEach((key) => (params[key] == null) && delete params[key])
         this.loading = true
 
-        api('updateHost', params).then(json => {
+        postAPI('updateHost', params).then(() => {
           this.$message.success({
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2
           })
+          if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
+            params.storageaccessgroups = values.storageaccessgroups.join(',')
+          } else {
+            params.storageaccessgroups = ''
+          }
+
+          if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
+            postAPI('configureStorageAccess', {
+              hostid: params.id,
+              storageaccessgroups: params.storageaccessgroups
+            }).then(response => {
+              this.$pollJob({
+                jobId: response.configurestorageaccessresponse.jobid,
+                successMethod: () => {
+                  this.$message.success({
+                    content: this.$t('label.action.configure.storage.access.group'),
+                    duration: 2
+                  })
+                },
+                errorMessage: this.$t('message.configuring.storage.access.failed')
+              })
+            })
+          }
           this.$emit('refresh-data')
           this.onCloseAction()
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(() => { this.loading = false })
+        }).finally(() => {
+          this.loading = false
+        })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
@@ -165,10 +279,9 @@ export default {
 
 <style scoped lang="less">
 .form-layout {
-  width: 80vw;
-
+  width: 60vw;
   @media (min-width: 600px) {
-    width: 450px;
+    width: 550px;
   }
 
   .action-button {

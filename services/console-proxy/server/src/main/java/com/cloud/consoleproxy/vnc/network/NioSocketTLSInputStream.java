@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.network;
 
+import com.cloud.consoleproxy.ConsoleProxy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ public class NioSocketTLSInputStream extends NioSocketInputStream {
     private final NioSocketSSLEngineManager sslEngineManager;
 
     public NioSocketTLSInputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
-        super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
+        super(ConsoleProxy.defaultBufferSize, socket);
         this.sslEngineManager = sslEngineManager;
     }
 

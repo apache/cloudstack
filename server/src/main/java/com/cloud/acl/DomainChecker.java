@@ -28,10 +28,15 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsProviderManager;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
+import org.apache.cloudstack.backup.BackupOffering;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
@@ -70,6 +75,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     DomainDao _domainDao;
     @Inject
+    BackupOfferingDetailsDao backupOfferingDetailsDao;
+    @Inject
     AccountDao _accountDao;
     @Inject
     LaunchPermissionDao _launchPermissionDao;
@@ -97,6 +104,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     private ProjectDao projectDao;
     @Inject
     private AccountService accountService;
+    @Inject
+    private DnsProviderManager dnsProviderManager;
 
     protected DomainChecker() {
         super();
@@ -195,7 +204,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
-                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public Templates");
                         }
                     }
                 } else if (caller.getType() != Account.Type.ADMIN) {
@@ -212,7 +221,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             _networkMgr.checkRouterPermissions(caller, (VirtualRouter)entity);
         } else if (entity instanceof AffinityGroup) {
             return false;
-        } else {
+        } else if (entity instanceof DnsServer) {
+            dnsProviderManager.checkDnsServerPermission(caller, (DnsServer) entity);
+        } else if (entity instanceof DnsZone) {
+            dnsProviderManager.checkDnsZonePermission(caller, (DnsZone) entity);
+        }  else {
             validateCallerHasAccessToEntityOwner(caller, entity, accessType);
         }
         return true;
@@ -229,7 +242,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return;
         }
 
-        Account owner = _accountDao.findById(entity.getAccountId());
+        Account owner = _accountDao.findByIdIncludingRemoved(entity.getAccountId());
         String entityLog = String.format("entity [owner: %s, type: %s]", owner, entity.getEntityType().getSimpleName());
         if (owner == null) {
             logger.error(String.format("Owner not found for %s", entityLog));
@@ -470,6 +483,35 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (hasAccess && vof != null && zone != null) {
             final List<Long> doZoneIds = vpcOfferingDetailsDao.findZoneIds(vof.getId());
             hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+        }
+        return hasAccess;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, BackupOffering backupOffering) throws PermissionDeniedException {
+        boolean hasAccess = false;
+        if (account == null || backupOffering == null) {
+            hasAccess = true;
+        } else {
+            if (_accountService.isRootAdmin(account.getId())) {
+                hasAccess = true;
+            }
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.Type.PROJECT) {
+                final List<Long> boDomainIds = backupOfferingDetailsDao.findDomainIds(backupOffering.getId());
+                if (boDomainIds.isEmpty()) {
+                    hasAccess = true;
+                } else {
+                    for (Long domainId : boDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            hasAccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         return hasAccess;
     }

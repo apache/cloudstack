@@ -180,14 +180,8 @@ public class TSRequest extends Sequence {
         TSRequest request = new TSRequest("TSRequest");
 
         // Read request from buffer
-        // System.out.println("Request BER tree before parsing: " + request);
         ByteBuffer toReadBuf = new ByteBuffer(packet);
         request.readTag(toReadBuf);
-        // System.out.println("Request BER tree after parsing: " + request);
-
-        // System.out.println("version value: " + request.version.value);
-        // System.out.println("negoToken value: " + ((NegoItem)
-        // request.negoTokens.tags[0]).negoToken.value);
 
         // Write request to buffer and compare with original
         ByteBuffer toWriteBuf = new ByteBuffer(packet.length + 100, true);

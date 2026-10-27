@@ -55,14 +55,11 @@ public class XmlObject {
         }
         Object old = elements.get(key);
         if (old == null) {
-            //System.out.println(String.format("no %s, add new", key));
             elements.put(key, e);
         } else {
             if (old instanceof List) {
-                //System.out.println(String.format("already list %s, add", key));
                 ((List)old).add(e);
             } else {
-                //System.out.println(String.format("not list list %s, add list", key));
                 List lst = new ArrayList();
                 lst.add(old);
                 lst.add(e);

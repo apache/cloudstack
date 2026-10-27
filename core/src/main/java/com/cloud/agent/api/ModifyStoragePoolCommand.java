@@ -21,10 +21,10 @@ package com.cloud.agent.api;
 
 import java.io.File;
 import java.util.Map;
-import java.util.UUID;
 
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.UuidUtils;
 
 public class ModifyStoragePoolCommand extends Command {
     public static final String LOCAL_PATH_PREFIX = "/mnt/";
@@ -47,11 +47,11 @@ public class ModifyStoragePoolCommand extends Command {
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, Map<String, String> details) {
-        this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()), details);
+        this(add, pool, LOCAL_PATH_PREFIX + File.separator + UuidUtils.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()), details);
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
-        this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
+        this(add, pool, LOCAL_PATH_PREFIX + File.separator + UuidUtils.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
     }
 
     public boolean getAdd() {

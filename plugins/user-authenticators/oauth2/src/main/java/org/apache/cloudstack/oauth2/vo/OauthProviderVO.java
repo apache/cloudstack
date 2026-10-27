@@ -16,9 +16,8 @@
 // under the License.
 package org.apache.cloudstack.oauth2.vo;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,8 +25,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.Date;
-import java.util.UUID;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "oauth_provider")
@@ -54,6 +56,15 @@ public class OauthProviderVO implements Identity, InternalIdentity {
 
     @Column(name = "redirect_uri")
     private String redirectUri;
+
+    @Column(name = "domain_id")
+    private Long domainId;
+
+    @Column(name = "authorize_url")
+    private String authorizeUrl;
+
+    @Column(name = "token_url")
+    private String tokenUrl;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -110,12 +121,36 @@ public class OauthProviderVO implements Identity, InternalIdentity {
         this.redirectUri = redirectUri;
     }
 
+    public String getAuthorizeUrl() {
+        return authorizeUrl;
+    }
+
+    public void setAuthorizeUrl(String authorizeUrl) {
+        this.authorizeUrl = authorizeUrl;
+    }
+
+    public String getTokenUrl() {
+        return tokenUrl;
+    }
+
+    public void setTokenUrl(String tokenUrl) {
+        this.tokenUrl = tokenUrl;
+    }
+
     public String getSecretKey() {
         return secretKey;
     }
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
     }
 
     public boolean isEnabled() {

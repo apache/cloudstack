@@ -100,6 +100,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 
 import junit.framework.Assert;
@@ -268,7 +269,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         to.setSize(1000L);
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
-        templateOnStore.processEvent(Event.OperationSuccessed, answer);
+        templateOnStore.processEvent(Event.OperationSucceeded, answer);
 
     }
 
@@ -287,7 +288,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
     public DataStore createPrimaryDataStore() {
         try {
-            String uuid = UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString();
+            String uuid = UuidUtils.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString();
             List<StoragePoolVO> pools = primaryDataStoreDao.findPoolByName(this.primaryName);
             if (pools.size() > 0) {
                 return this.dataStoreMgr.getPrimaryDataStore(pools.get(0).getId());

@@ -31,7 +31,7 @@ import java.util.Date;
 @EntityReference(value = {KubernetesSupportedVersion.class})
 public class KubernetesSupportedVersionResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the Kubernetes supported version")
+    @Param(description = "The ID of the Kubernetes supported version")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -43,47 +43,55 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     private String semanticVersion;
 
     @SerializedName(ApiConstants.ISO_ID)
-    @Param(description = "the id of the binaries ISO for Kubernetes supported version")
+    @Param(description = "The ID of the binaries ISO for Kubernetes supported version")
     private String isoId;
 
     @SerializedName(ApiConstants.ISO_NAME)
-    @Param(description = "the name of the binaries ISO for Kubernetes supported version")
+    @Param(description = "The name of the binaries ISO for Kubernetes supported version")
     private String isoName;
 
+    @SerializedName(ApiConstants.ISO_URL)
+    @Param(description = "the URL of the binaries ISO for Kubernetes supported version")
+    private String isoUrl;
+
     @SerializedName(ApiConstants.ISO_STATE)
-    @Param(description = "the state of the binaries ISO for Kubernetes supported version")
+    @Param(description = "The state of the binaries ISO for Kubernetes supported version")
     private String isoState;
 
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "the arch of the binaries ISO for Kubernetes supported version", since = "4.20.1")
+    private String isoArch;
+
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the id of the zone in which Kubernetes supported version is available")
+    @Param(description = "The ID of the zone in which Kubernetes supported version is available")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the name of the zone in which Kubernetes supported version is available")
+    @Param(description = "The name of the zone in which Kubernetes supported version is available")
     private String zoneName;
 
     @SerializedName(ApiConstants.SUPPORTS_HA)
-    @Param(description = "whether Kubernetes supported version supports HA, multi-control nodes")
+    @Param(description = "Whether Kubernetes supported version supports HA, multi-control nodes")
     private Boolean supportsHA;
 
     @SerializedName(ApiConstants.SUPPORTS_AUTOSCALING)
-    @Param(description = "whether Kubernetes supported version supports Autoscaling")
+    @Param(description = "Whether Kubernetes supported version supports Autoscaling")
     private Boolean supportsAutoscaling;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the enabled or disabled state of the Kubernetes supported version")
+    @Param(description = "The enabled or disabled state of the Kubernetes supported version")
     private String state;
 
     @SerializedName(ApiConstants.MIN_CPU_NUMBER)
-    @Param(description = "the minimum number of CPUs needed for the Kubernetes supported version")
+    @Param(description = "The minimum number of CPUs needed for the Kubernetes supported version")
     private Integer minimumCpu;
 
     @SerializedName(ApiConstants.MIN_MEMORY)
-    @Param(description = "the minimum RAM size in MB needed for the Kubernetes supported version")
+    @Param(description = "The minimum RAM size in MB needed for the Kubernetes supported version")
     private Integer minimumRamSize;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date when this Kubernetes supported version was created")
+    @Param(description = "The date when this Kubernetes supported version was created")
     private Date created;
 
     @SerializedName(ApiConstants.DIRECT_DOWNLOAD)
@@ -130,12 +138,28 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
         this.isoName = isoName;
     }
 
+    public String getIsoUrl() {
+        return isoUrl;
+    }
+
+    public void setIsoUrl(String isoUrl) {
+        this.isoUrl = isoUrl;
+    }
+
     public String getIsoState() {
         return isoState;
     }
 
     public void setIsoState(String isoState) {
         this.isoState = isoState;
+    }
+
+    public String getIsoArch() {
+        return isoArch;
+    }
+
+    public void setIsoArch(String isoArch) {
+        this.isoArch = isoArch;
     }
 
     public String getZoneId() {

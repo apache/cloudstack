@@ -16,16 +16,23 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterJoinDao extends GenericDao<DataCenterJoinVO, Long> {
 
+    ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter);
+
     ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dof, Boolean showCapacities, Boolean showResourceImage);
 
     DataCenterJoinVO newDataCenterView(DataCenter dof);
+
+    List<DataCenterJoinVO> listByIds(List<Long> ids, Filter filter);
 }

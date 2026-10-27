@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,11 +30,13 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listSystemVms", description = "List system virtual machines.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "listSystemVms", description = "List System VMs.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSystemVMsCmd extends BaseListCmd {
 
@@ -44,35 +45,40 @@ public class ListSystemVMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the host ID of the system VM")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The host ID of the system VM")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, description = "the ID of the system VM")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, description = "The ID of the system VM")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the system VM")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the system VM")
     private String systemVmName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID of the system VM")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID of the system VM")
     private Long podId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "the state of the system VM")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the system VM")
     private String state;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
                type = CommandType.STRING,
-               description = "the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
+               description = "The system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the system VM")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID of the system VM")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
-               description = "the storage ID where vm's volumes belong to",
+               description = "The storage ID where Instance's volumes belong to",
                since = "3.0.1")
     private Long storageId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the system VM",
+            since = "4.20.1")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,6 +114,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
 
     public Long getStorageId() {
         return storageId;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

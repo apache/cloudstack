@@ -28,7 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 
-@APICommand(name = "moveNetworkAclItem", description = "Move an ACL rule to a position bettwen two other ACL rules of the same ACL network list", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "moveNetworkAclItem", description = "Move an ACL rule to a position between two other ACL rules of the same ACL Network list", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MoveNetworkAclItemCmd extends BaseAsyncCustomIdCmd {
 
     private static final String s_name = "moveNetworkAclItemResponse";
@@ -42,7 +42,7 @@ public class MoveNetworkAclItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.NEXT_ACL_RULE_ID, type = CommandType.STRING, description = "The ID of the rule that is right after the new position where the rule being moved is going to be placed. This value can be 'NULL' if the rule is being moved to the last position of the network ACL list.")
     private String nextAclRuleUuid;
 
-    @Parameter(name = ApiConstants.MOVE_ACL_CONSISTENCY_HASH, type = CommandType.STRING, description = "Md5 hash used to check the consistency of the ACL rule list before applying the ACL rule move. This check is useful to manage concurrency problems that may happen when multiple users are editing the same ACL rule listing. The parameter is not required. Therefore, if the user does not send it, they assume the risk of moving ACL rules without checking the consistency of the access control list before executing the move. We use MD5 hash function on a String that is composed of all UUIDs of the ACL rules in concatenated in their respective order (order defined via 'number' field).")
+    @Parameter(name = ApiConstants.MOVE_ACL_CONSISTENCY_HASH, type = CommandType.STRING, description = "Md5 hash used to check the consistency of the ACL rule list before applying the ACL rule move. This check is useful to manage concurrency problems that may happen when multiple Users are editing the same ACL rule listing. The parameter is not required. Therefore, if the User does not send it, they assume the risk of moving ACL rules without checking the consistency of the access control list before executing the move. We use MD5 hash function on a String that is composed of all UUIDs of the ACL rules in concatenated in their respective order (order defined via 'number' field).")
     private String aclConsistencyHash;
 
     @Override

@@ -238,7 +238,7 @@ public class CreateRoutingFirewallRuleCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         FirewallRule rule = _firewallService.getFirewallRule(getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = routedIpv4Manager.applyRoutingFirewallRule(rule.getId());
 
             // State is different after the rule is applied, so get new object here
@@ -250,7 +250,7 @@ public class CreateRoutingFirewallRuleCmd extends BaseAsyncCreateCmd {
             }
             ruleResponse.setResponseName(getCommandName());
         } catch (Exception ex) {
-            logger.error("Got exception when create Routing firewall rules: " + ex);
+            logger.error("Got exception when create Routing firewall rules: ", ex);
         } finally {
             if (!success || rule == null) {
                 routedIpv4Manager.revokeRoutingFirewallRule(getEntityId());

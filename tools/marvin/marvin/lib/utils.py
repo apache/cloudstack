@@ -300,12 +300,63 @@ def get_hypervisor_version(apiclient):
     assert hosts_list_validation_result[0] == PASS, "host list validation failed"
     return hosts_list_validation_result[1].hypervisorversion
 
+def is_snapshot_on_powerflex(apiclient, dbconn, config, zoneid, snapshotid):
+    """
+    Checks whether a snapshot with id (not UUID) `snapshotid` is present on the powerflex storage
+
+    @param apiclient: api client connection
+    @param dbconn:  connection to the cloudstack db
+    @param config: marvin configuration file
+    @param zoneid: uuid of the zone on which the secondary nfs storage pool is mounted
+    @param snapshotid: uuid of the snapshot
+    @return: True if snapshot is found, False otherwise
+    """
+
+    qresultset = dbconn.execute(
+    "SELECT id FROM snapshots WHERE uuid = '%s';" \
+                        % str(snapshotid)
+    )
+    if len(qresultset) == 0:
+        raise Exception(
+            "No snapshot found in cloudstack with id %s" % snapshotid)
+
+
+    snapshotid = qresultset[0][0]
+    qresultset = dbconn.execute(
+    "SELECT install_path, store_id FROM snapshot_store_ref WHERE snapshot_id='%s' AND store_role='Primary';" % snapshotid
+    )
+
+    assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshotid
+
+    if len(qresultset) == 0:
+        #Snapshot does not exist
+        return False
+
+    from .base import StoragePool
+    #pass store_id to get the exact storage pool where snapshot is stored
+    primaryStores = StoragePool.list(apiclient, zoneid=zoneid, id=int(qresultset[0][1]))
+
+    assert isinstance(primaryStores, list), "Not a valid response for listStoragePools"
+    assert len(primaryStores) != 0, "No storage pools found in zone %s" % zoneid
+
+    primaryStore = primaryStores[0]
+
+    if str(primaryStore.provider).lower() != "powerflex":
+        raise Exception(
+            "is_snapshot_on_powerflex works only against powerflex storage pool. found %s" % str(primaryStore.provider))
+
+    snapshotPath = str(qresultset[0][0])
+    if not snapshotPath:
+        return False
+
+    return True
+
 def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     """
     Checks whether a snapshot with id (not UUID) `snapshotid` is present on the nfs storage
 
     @param apiclient: api client connection
-    @param @dbconn:  connection to the cloudstack db
+    @param dbconn:  connection to the cloudstack db
     @param config: marvin configuration file
     @param zoneid: uuid of the zone on which the secondary nfs storage pool is mounted
     @param snapshotid: uuid of the snapshot

@@ -41,6 +41,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
@@ -54,11 +55,16 @@ import com.vmware.vim25.DistributedVirtualPort;
 import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
 import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.GuestNicInfo;
+import com.vmware.vim25.GuestStackInfo;
+import com.vmware.vim25.NetIpConfigInfoIpAddress;
+import com.vmware.vim25.NetIpRouteConfigInfoIpRoute;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VirtualDeviceFileBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachineConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineToolsStatus;
@@ -750,7 +756,7 @@ public class VmwareHelper {
 
         recommendedController = guestOsDescriptor.getRecommendedDiskController();
 
-        // By-pass auto detected PVSCSI controller to use LsiLogic Parallel instead
+        // Bypass auto detected PVSCSI controller to use LsiLogic Parallel instead
         if (DiskControllerType.getType(recommendedController) == DiskControllerType.pvscsi) {
             recommendedController = DiskControllerType.lsilogic.toString();
         }
@@ -802,6 +808,8 @@ public class VmwareHelper {
             instance = new UnmanagedInstanceTO();
             instance.setName(vmMo.getVmName());
             instance.setInternalCSName(vmMo.getInternalCSName());
+            instance.setPath((vmMo.getPath()));
+            instance.setVmwareMoref(vmMo.getMor().getValue());
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
             instance.setOperatingSystemId(vmMo.getVmGuestInfo().getGuestId());
             VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
@@ -809,6 +817,17 @@ public class VmwareHelper {
                 instance.setCpuCores(configSummary.getNumCpu());
                 instance.setCpuSpeed(configSummary.getCpuReservation());
                 instance.setMemory(configSummary.getMemorySizeMB());
+            }
+            VirtualMachineConfigInfo configInfo = vmMo.getConfigInfo();
+            if (configInfo != null) {
+                String firmware = configInfo.getFirmware();
+                instance.setBootType(firmware.equalsIgnoreCase("efi") ? "UEFI" : "BIOS");
+                VirtualMachineBootOptions bootOptions = configInfo.getBootOptions();
+                String bootMode = "LEGACY";
+                if (bootOptions != null && Boolean.TRUE.equals(bootOptions.isEfiSecureBootEnabled())) {
+                    bootMode = "SECURE";
+                }
+                instance.setBootMode(bootMode);
             }
 
             try {
@@ -819,6 +838,8 @@ public class VmwareHelper {
             }
 
             instance.setHostName(hyperHost.getHyperHostName());
+            instance.setHypervisorType(Hypervisor.HypervisorType.VMware.name());
+            instance.setHostHypervisorVersion(getVmwareHostVersion(hyperHost));
 
             if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {
                 instance.setOperatingSystemId(configSummary.getGuestId());
@@ -850,6 +871,17 @@ public class VmwareHelper {
             LOGGER.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
         }
         return instance;
+    }
+
+    protected static String getVmwareHostVersion(VmwareHypervisorHost hyperHost) {
+        if (hyperHost instanceof HostMO) {
+            try {
+                return ((HostMO) hyperHost).getProductVersion();
+            } catch (Exception e) {
+                LOGGER.warn("Unable to get unmanaged instance host version, due to: " + e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     protected static List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {
@@ -934,6 +966,9 @@ public class VmwareHelper {
         List<UnmanagedInstanceTO.Nic> instanceNics = new ArrayList<>();
 
         HashMap<String, List<String>> guestNicMacIPAddressMap = new HashMap<>();
+        HashMap<String, List<String>> guestNicMacIpv4CidrMap = new HashMap<>();
+        List<String> guestDnsServers = new ArrayList<>();
+        List<String> guestDefaultGateways = new ArrayList<>();
         try {
             GuestInfo guestInfo = vmMo.getGuestInfo();
             if (guestInfo.getToolsStatus() == VirtualMachineToolsStatus.TOOLS_OK) {
@@ -946,6 +981,42 @@ public class VmwareHelper {
                             }
                         }
                         guestNicMacIPAddressMap.put(nicInfo.getMacAddress(), ipAddresses);
+                    }
+                    // The plain ipAddress list carries no prefix; ipConfig has address plus
+                    // prefix length, which static-IP preservation needs for the subnet.
+                    if (nicInfo.getIpConfig() != null && CollectionUtils.isNotEmpty(nicInfo.getIpConfig().getIpAddress())) {
+                        List<String> cidrs = new ArrayList<>();
+                        for (NetIpConfigInfoIpAddress configuredAddress : nicInfo.getIpConfig().getIpAddress()) {
+                            if (configuredAddress.getIpAddress() != null && NetUtils.isValidIp4(configuredAddress.getIpAddress())) {
+                                cidrs.add(configuredAddress.getIpAddress() + "/" + configuredAddress.getPrefixLength());
+                            }
+                        }
+                        if (!cidrs.isEmpty()) {
+                            guestNicMacIpv4CidrMap.put(nicInfo.getMacAddress(), cidrs);
+                        }
+                    }
+                }
+                // Default gateways and DNS servers are reported per IP stack rather than per
+                // NIC; each NIC gets the gateway inside one of its subnets further below.
+                if (CollectionUtils.isNotEmpty(guestInfo.getIpStack())) {
+                    for (GuestStackInfo stackInfo : guestInfo.getIpStack()) {
+                        if (stackInfo.getIpRouteConfig() != null && CollectionUtils.isNotEmpty(stackInfo.getIpRouteConfig().getIpRoute())) {
+                            for (NetIpRouteConfigInfoIpRoute route : stackInfo.getIpRouteConfig().getIpRoute()) {
+                                if ("0.0.0.0".equals(route.getNetwork()) && route.getPrefixLength() == 0
+                                        && route.getGateway() != null && route.getGateway().getIpAddress() != null
+                                        && NetUtils.isValidIp4(route.getGateway().getIpAddress())
+                                        && !guestDefaultGateways.contains(route.getGateway().getIpAddress())) {
+                                    guestDefaultGateways.add(route.getGateway().getIpAddress());
+                                }
+                            }
+                        }
+                        if (stackInfo.getDnsConfig() != null && CollectionUtils.isNotEmpty(stackInfo.getDnsConfig().getIpAddress())) {
+                            for (String dnsServer : stackInfo.getDnsConfig().getIpAddress()) {
+                                if (NetUtils.isValidIp4(dnsServer) && !guestDnsServers.contains(dnsServer)) {
+                                    guestDnsServers.add(dnsServer);
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -979,6 +1050,22 @@ public class VmwareHelper {
                     instanceNic.setMacAddress(ethCardDevice.getMacAddress());
                     if (guestNicMacIPAddressMap.containsKey(instanceNic.getMacAddress())) {
                         instanceNic.setIpAddress(guestNicMacIPAddressMap.get(instanceNic.getMacAddress()));
+                    }
+                    if (guestNicMacIpv4CidrMap.containsKey(instanceNic.getMacAddress())) {
+                        List<String> nicCidrs = guestNicMacIpv4CidrMap.get(instanceNic.getMacAddress());
+                        instanceNic.setIpv4Cidrs(nicCidrs);
+                        // Attach the default gateway that lives inside one of this NIC's subnets;
+                        // gateways of other NICs' subnets do not apply to this NIC.
+                        for (String gateway : guestDefaultGateways) {
+                            boolean matchesNicSubnet = nicCidrs.stream().anyMatch(cidr -> NetUtils.isIpWithInCidrRange(gateway, cidr));
+                            if (matchesNicSubnet) {
+                                instanceNic.setIpv4Gateway(gateway);
+                                break;
+                            }
+                        }
+                        if (!guestDnsServers.isEmpty()) {
+                            instanceNic.setDnsServers(new ArrayList<>(guestDnsServers));
+                        }
                     }
                     if (ethCardDevice.getSlotInfo() != null) {
                         instanceNic.setPciSlot(ethCardDevice.getSlotInfo().toString());

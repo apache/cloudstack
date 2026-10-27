@@ -55,4 +55,8 @@ public interface VpcProvider extends NetworkElement {
     boolean applyACLItemsToPrivateGw(PrivateGateway gateway, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException;
 
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
+
+    default boolean updateVpc(Vpc vpc, String previousVpcName) {
+        return true;
+    }
 }

@@ -34,6 +34,9 @@
     <bean id="firstFitAllocator"
         class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator" />
 
+    <bean id="randomAllocator"
+          class="com.cloud.agent.manager.allocator.impl.RandomAllocator" />
+
     <bean id="FirstFitRouting"
         class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
         <property name="name" value="FirstFitRouting" />

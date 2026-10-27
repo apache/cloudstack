@@ -20,6 +20,9 @@ import os
 from netaddr import *
 from random import randint
 import json
+import fcntl
+import shutil
+import tempfile
 from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
@@ -82,7 +85,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
-        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        self.conf.add("bind-interfaces", 0)
         idx = 0
         listen_address = ["127.0.0.1"]
         for i in self.devinfo:
@@ -110,7 +113,12 @@ class CsDhcp(CsDataBag):
             if gn.get_dns() and device:
                 sline = "dhcp-option=tag:interface-%s-%s,6" % (device, idx)
                 dns_list = [x for x in gn.get_dns() if x]
-                if self.config.is_dhcp() and not self.config.use_extdns():
+                if self.config.is_vpc() and not gn.is_vr_guest_gateway():
+                  if gateway in dns_list:
+                    dns_list.remove(gateway)
+                  if gn.data['router_guest_ip'] != ip:
+                    dns_list.insert(0, ip)
+                elif self.config.is_dhcp() and not self.config.use_extdns():
                     guest_ip = self.config.address().get_guest_ip()
                     if guest_ip and guest_ip in dns_list and ip not in dns_list:
                         # Replace the default guest IP in VR with the ip in additional IP ranges, if shared network has multiple IP ranges.
@@ -137,14 +145,14 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=tag:interface-%s-%s,1,%s" % (device, idx, netmask)
             self.conf.search(sline, line)
             # Listen Address
-            if self.cl.is_redundant():
+            if self.cl.is_redundant() and gn.router_owns_gateway():
                 listen_address.append(gateway)
             else:
                 listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
-            if self.config.is_vpc() or self.config.is_router():
+            if (self.config.is_vpc() and gn.is_vr_guest_gateway()) or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
-            elif self.config.is_dhcp():
+            elif self.config.is_dhcp() or (self.config.is_vpc() and not gn.is_vr_guest_gateway()):
                 self.add_host(ip, "%s data-server" % CsHelper.get_hostname())
             idx += 1
 
@@ -166,14 +174,75 @@ class CsDhcp(CsDataBag):
                 mac = lease[1]
                 ip = lease[2]
                 if mac not in macs_dhcphosts:
+                    logging.info("Releasing DHCP lease for IP: %s, mac: %s", ip, mac)
                     cmd = "dhcp_release $(ip route get %s | grep eth | head -1 | awk '{print $3}') %s %s" % (ip, ip, mac)
                     logging.info(cmd)
                     CsHelper.execute(cmd)
+                    if self.ensure_lease_removed(ip):
+                        logging.info("Lease for %s still existed after dhcp_release; removed manually", ip)
                     removed = removed + 1
                     self.del_host(ip)
             logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
         except Exception as e:
             logging.error("Caught error while trying to delete entries from dnsmasq.leases file: %s" % e)
+
+    def lease_exists(self, ip):
+        if not os.path.exists(LEASES):
+            return False
+
+        with open(LEASES, "r") as fp:
+            for line in fp:
+                fields = line.split()
+                if len(fields) >= 3 and fields[2] == ip:
+                    return True
+
+        return False
+
+    def remove_lease(self, ip):
+        if not os.path.exists(LEASES):
+            return False
+
+        removed = False
+
+        with open(LEASES, "r+") as fp:
+            fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+            lines = fp.readlines()
+
+            fd, tmp_path = tempfile.mkstemp(
+                prefix="dnsmasq.leases.",
+                dir=os.path.dirname(LEASES)
+            )
+
+            try:
+                with os.fdopen(fd, "w") as tmp:
+                    for line in lines:
+                        fields = line.split()
+
+                        if len(fields) >= 3 and fields[2] == ip:
+                            removed = True
+                            continue
+
+                        tmp.write(line)
+
+                if removed:
+                    shutil.move(tmp_path, LEASES)
+
+                    # reload dnsmasq
+                    try:
+                        CsHelper.service("dnsmasq", "reload")
+                    except Exception:
+                        pass
+                else:
+                    os.remove(tmp_path)
+            finally:
+                fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
+
+        return removed
+
+    def ensure_lease_removed(self, ip):
+        if self.lease_exists(ip):
+            return self.remove_lease(ip)
+        return False
 
     def preseed(self):
         self.add_host("127.0.0.1", "localhost")
@@ -195,12 +264,14 @@ class CsDhcp(CsDataBag):
 
     def add(self, entry):
         self.add_host(entry['ipv4_address'], entry['host_name'])
-        # Lease time set to "infinite" since we properly control all DHCP/DNS config via CloudStack.
+        # Lease time is configurable via CloudStack global config dhcp.lease.timeout
+        # 0 = infinite (default), otherwise the value represents seconds
         # Infinite time helps avoid some edge cases which could cause DHCPNAK being sent to VMs since
         # (RHEL) system lose routes when they receive DHCPNAK.
         # When VM is expunged, its active lease and DHCP/DNS config is properly removed from related files in VR,
         # so the infinite duration of lease does not cause any issues or garbage.
-        lease = 'infinite'
+        lease_time = entry.get('lease_time', 0)
+        lease = 'infinite' if lease_time == 0 else str(lease_time)
 
         if entry['default_entry']:
             self.dhcp_hosts.add("%s,%s,%s,%s" % (entry['mac_address'],
@@ -227,7 +298,7 @@ class CsDhcp(CsDataBag):
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
-            if i > v['network'].network and i < v['network'].broadcast:
+            if i > v['network'].network and v['network'].broadcast and i < v['network'].broadcast:
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']

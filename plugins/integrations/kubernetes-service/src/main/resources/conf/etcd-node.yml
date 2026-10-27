@@ -1,0 +1,134 @@
+#cloud-config
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+---
+users:
+  - name: cloud
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      {{ k8s.ssh.pub.key }}
+
+write_files:
+  - path: /opt/bin/setup-etcd-node
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      if [[ -f "/home/cloud/success" ]]; then
+        echo "Already provisioned!"
+        exit 0
+      fi
+
+      ISO_MOUNT_DIR=/mnt/etcddisk
+      BINARIES_DIR=${ISO_MOUNT_DIR}/
+      ATTEMPT_ONLINE_INSTALL=false
+      setup_complete=false
+
+      OFFLINE_INSTALL_ATTEMPT_SLEEP={{ k8s.install.wait.time }}
+      MAX_OFFLINE_INSTALL_ATTEMPTS={{ k8s.install.reattempts.count }}
+      if [[ -z $OFFLINE_INSTALL_ATTEMPT_SLEEP || $OFFLINE_INSTALL_ATTEMPT_SLEEP -eq 0 ]]; then
+        OFFLINE_INSTALL_ATTEMPT_SLEEP=15
+      fi
+      if [[ -z $MAX_OFFLINE_INSTALL_ATTEMPTS || $MAX_OFFLINE_INSTALL_ATTEMPTS -eq 0 ]]; then
+        MAX_OFFLINE_INSTALL_ATTEMPTS=100
+      fi
+      offline_attempts=1
+      MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
+      EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
+      crucial_cmd_attempts=1
+      iso_drive_path=""
+      while true; do
+        if (( "$offline_attempts" > "$MAX_OFFLINE_INSTALL_ATTEMPTS" )); then
+          echo "Warning: Offline install timed out!"
+          break
+        fi
+        set +e
+        output=`blkid -o device -t TYPE=iso9660`
+        set -e
+        if [ "$output" != "" ]; then
+          while read -r line; do
+            if [ ! -d "${ISO_MOUNT_DIR}" ]; then
+              mkdir "${ISO_MOUNT_DIR}"
+            fi
+            retval=0
+            set +e
+            mount -o ro "${line}" "${ISO_MOUNT_DIR}"
+            retval=$?
+            set -e
+            if [ $retval -eq 0 ]; then
+              if [ -d "$BINARIES_DIR" ]; then
+                iso_drive_path="${line}"
+                break
+              else
+                umount "${line}" && rmdir "${ISO_MOUNT_DIR}"
+              fi
+            fi
+          done <<< "$output"
+        fi
+        if [ -d "$BINARIES_DIR" ]; then
+          break
+        fi
+        echo "Waiting for Binaries directory $BINARIES_DIR to be available, sleeping for $OFFLINE_INSTALL_ATTEMPT_SLEEP seconds, attempt: $offline_attempts"
+        sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
+        offline_attempts=$[$offline_attempts + 1]
+      done
+
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
+
+      if [ -d "$BINARIES_DIR" ]; then
+        ### Binaries available offline ###
+        echo "Installing binaries from ${BINARIES_DIR}"
+        mkdir -p /opt/bin/
+        tar -zxf ${BINARIES_DIR}/etcd/etcd-linux-amd64.tar.gz -C /opt/bin/
+        mv /opt/bin/etcd*/etcd* /opt/bin/
+        sudo rm -rf /opt/bin/etcd-*
+      fi
+
+  - path: /etc/systemd/system/etcd.service
+    permissions: '0755'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=etcd
+
+      [Service]
+      Type=exec
+      ExecStart=/opt/bin/etcd \
+        --name {{ etcd.node_name }} \
+        --initial-advertise-peer-urls http://{{ etcd.node_ip }}:2380 \
+        --listen-peer-urls http://{{ etcd.node_ip }}:2380 \
+        --advertise-client-urls http://{{ etcd.node_ip }}:2379 \
+        --listen-client-urls http://{{ etcd.node_ip }}:2379,http://127.0.0.1:2379 \
+        --initial-cluster-token etcd-cluster-1 \
+        --initial-cluster {{ etcd.initial_cluster_nodes }} \
+        --initial-cluster-state new
+      Restart=on-failure
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - chown -R cloud:cloud /home/cloud/.ssh
+  - /opt/bin/setup-etcd-node
+  - systemctl daemon-reload
+  - systemctl enable --now etcd

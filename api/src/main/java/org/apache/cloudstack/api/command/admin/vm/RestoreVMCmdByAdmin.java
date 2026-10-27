@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "restoreVirtualMachine", description = "Restore an Instance to original Template/ISO or new Template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
 public class RestoreVMCmdByAdmin extends RestoreVMCmd implements AdminCmd {}

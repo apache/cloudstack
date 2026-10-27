@@ -49,7 +49,7 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails(String.format("Tariff id: %s", getId()));
+        CallContext.current().setEventDetails(String.format("Tariff ID: %s", getResourceUuid(ApiConstants.ID)));
         boolean result = responseBuilder.deleteQuotaTariff(getId());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);

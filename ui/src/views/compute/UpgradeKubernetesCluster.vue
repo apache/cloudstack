@@ -60,7 +60,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -117,7 +117,7 @@ export default {
         params.minimumkubernetesversionid = this.resource.kubernetesversionid
       }
       this.kubernetesVersionLoading = true
-      api('listKubernetesSupportedVersions', params).then(json => {
+      getAPI('listKubernetesSupportedVersions', params).then(json => {
         const versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion
         if (this.arrayHasItems(versionObjs)) {
           var clusterVersion = null
@@ -157,7 +157,7 @@ export default {
         if (this.isValidValueForKey(values, 'kubernetesversionid') && this.arrayHasItems(this.kubernetesVersions)) {
           params.kubernetesversionid = this.kubernetesVersions[values.kubernetesversionid].id
         }
-        api('upgradeKubernetesCluster', params).then(json => {
+        postAPI('upgradeKubernetesCluster', params).then(json => {
           this.$emit('refresh-data')
           const jobId = json.upgradekubernetesclusterresponse.jobid
           this.$pollJob({

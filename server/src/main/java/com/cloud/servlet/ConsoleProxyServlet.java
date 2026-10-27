@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 
+import com.cloud.hypervisor.Hypervisor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -277,15 +279,19 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         String sid = req.getParameter("sid");
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            if(sid != null) {
-                sid = sid.replaceAll(SANITIZATION_REGEX, "_");
-                LOGGER.warn(String.format("sid [%s] in url does not match stored sid.", sid));
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                LOGGER.debug("{} is on External hypervisor, skip checking sid", vm.getHypervisorType());
             } else {
-                LOGGER.warn("Null sid in URL.");
-            }
+                if (sid != null) {
+                    sid = sid.replaceAll(SANITIZATION_REGEX, "_");
+                    LOGGER.warn(String.format("sid [%s] in url does not match stored sid.", sid));
+                } else {
+                    LOGGER.warn("Null sid in URL.");
+                }
 
-            sendResponse(resp, "failed");
-            return;
+                sendResponse(resp, "failed");
+                return;
+            }
         }
 
         sendResponse(resp, "success");
@@ -538,24 +544,23 @@ public class ConsoleProxyServlet extends HttpServlet {
             txn.close();
             User user = null;
             // verify there is a user with this api key
-            Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
-            if (userAcctPair == null) {
+            Ternary<User, Account, ApiKeyPair> keyPairTernary = _accountMgr.findUserByApiKey(apiKey);
+            if (keyPairTernary == null) {
                 LOGGER.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
-            user = userAcctPair.first();
-            Account account = userAcctPair.second();
+            user = keyPairTernary.first();
+            Account account = keyPairTernary.second();
+            ApiKeyPair keyPair = keyPairTernary.third();
 
             if (!user.getState().equals(Account.State.ENABLED) || !account.getState().equals(Account.State.ENABLED)) {
                 LOGGER.debug("disabled or locked user accessing the api, user: {}; state: {}; accountState: {}", user, user.getState(), account.getState());
                 return false;
             }
 
-            // verify secret key exists
-            secretKey = user.getSecretKey();
-            if (secretKey == null) {
-                LOGGER.debug("User does not have a secret key associated with the account -- ignoring request, user: {}", user);
+            if (keyPair == null) {
+                LOGGER.debug("User does not have a keypair associated with the account -- ignoring request, username: {}", user.getUsername());
                 return false;
             }
 

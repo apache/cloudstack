@@ -25,19 +25,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class BaseRoleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the role")
+    @Param(description = "The ID of the role")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the role")
+    @Param(description = "The name of the role")
     private String roleName;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the role")
+    @Param(description = "The description of the role")
     private String roleDescription;
 
     @SerializedName(ApiConstants.IS_PUBLIC)
-    @Param(description = "Indicates whether the role will be visible to all users (public) or only to root admins (private)." +
+    @Param(description = "Indicates whether the role will be visible to all Users (public) or only to root admins (private)." +
             " If this parameter is not specified during the creation of the role its value will be defaulted to true (public).")
     private boolean publicRole = true;
 

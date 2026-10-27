@@ -47,8 +47,6 @@ import java.util.List;
         authorized = {RoleType.Admin})
 public class ListVsphereStoragePoliciesCmd extends BaseCmd {
 
-
-
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
 

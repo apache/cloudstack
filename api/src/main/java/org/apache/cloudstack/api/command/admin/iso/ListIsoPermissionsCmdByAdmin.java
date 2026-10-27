@@ -1,4 +1,4 @@
-// Licensedname = "listIsoPermissions",  to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 @APICommand(name = "listIsoPermissions",
-        description = "List iso visibility and all accounts that have permissions to view this iso.",
+        description = "List ISO visibility and all accounts that have permissions to view this ISO.",
         responseObject = TemplatePermissionsResponse.class,
         responseView = ResponseView.Full,
         requestHasSensitiveInfo = false,

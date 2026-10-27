@@ -105,7 +105,7 @@
 </template>
 <script>
 import { nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 import store from '@/store'
@@ -151,15 +151,12 @@ export default {
       return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     steps () {
-      const steps = []
+      const steps = [{
+        title: 'label.cluster',
+        fromKey: 'clusterResource',
+        description: 'message.desc.cluster'
+      }]
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
-      if (!this.isEdgeZone) {
-        steps.push({
-          title: 'label.cluster',
-          fromKey: 'clusterResource',
-          description: 'message.desc.cluster'
-        })
-      }
       if (hypervisor !== 'VMware') {
         steps.push({
           title: 'label.host',
@@ -190,7 +187,8 @@ export default {
           title: 'label.cluster.name',
           key: 'clusterName',
           placeHolder: 'message.error.cluster.name',
-          required: true
+          required: true,
+          defaultValue: this.isEdgeZone ? 'Cluster-' + (this.prefillContent?.name || 'Edge') : undefined
         },
         {
           title: 'label.arch',
@@ -398,7 +396,7 @@ export default {
           placeHolder: 'message.error.server',
           required: true,
           display: {
-            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor']
+            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor', 'datastorecluster', 'vmfs']
           }
         },
         {
@@ -469,7 +467,7 @@ export default {
           title: 'label.rados.monitor',
           key: 'primaryStorageRADOSMonitor',
           placeHolder: 'message.error.rados.monitor',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -478,6 +476,14 @@ export default {
           title: 'label.rados.pool',
           key: 'primaryStorageRADOSPool',
           placeHolder: 'message.error.rados.pool',
+          required: true,
+          display: {
+            primaryStorageProtocol: ['rbd']
+          }
+        },
+        {
+          title: 'label.data.pool',
+          key: 'primaryStorageDataPool',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -487,7 +493,7 @@ export default {
           title: 'label.rados.user',
           key: 'primaryStorageRADOSUser',
           placeHolder: 'message.error.rados.user',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -496,7 +502,7 @@ export default {
           title: 'label.rados.secret',
           key: 'primaryStorageRADOSSecret',
           placeHolder: 'message.error.rados.secret',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -556,20 +562,42 @@ export default {
           }
         },
         {
+          title: 'label.linstor.apitoken',
+          key: 'primaryStorageLinstorApiToken',
+          placeHolder: 'message.linstor.apitoken.description',
+          required: false,
+          display: {
+            primaryStorageProtocol: 'Linstor'
+          }
+        },
+        {
+          title: 'label.linstor.ssl.insecure',
+          key: 'primaryStorageLinstorInsecureSsl',
+          switch: true,
+          checked: true,
+          required: false,
+          display: {
+            primaryStorageProtocol: 'Linstor'
+          }
+        },
+        {
           title: 'label.provider',
           key: 'provider',
           placeHolder: 'message.error.select',
           value: 'DefaultPrimary',
           select: true,
           required: true,
-          options: this.primaryStorageProviders
+          options: this.primaryStorageProviders,
+          hidden: {
+            primaryStorageProtocol: 'Linstor'
+          }
         },
         {
           title: 'label.ismanaged',
           key: 'managed',
           checkbox: true,
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
           }
         },
         {
@@ -583,14 +611,14 @@ export default {
           title: 'label.capacityiops',
           key: 'capacityIops',
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
           }
         },
         {
           title: 'label.url',
           key: 'url',
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
           }
         },
         {
@@ -628,6 +656,43 @@ export default {
           placeHolder: 'message.error.input.value',
           display: {
             provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.ontap.ip',
+          key: 'ontapIP',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'NetApp ONTAP'
+          }
+        },
+        {
+          title: 'label.username',
+          key: 'ontapUsername',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'NetApp ONTAP'
+          }
+        },
+        {
+          title: 'label.password',
+          key: 'ontapPassword',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          password: true,
+          display: {
+            provider: 'NetApp ONTAP'
+          }
+        },
+        {
+          title: 'label.ontap.svm.name',
+          key: 'ontapSvmName',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'NetApp ONTAP'
           }
         },
         {
@@ -842,6 +907,13 @@ export default {
           display: {
             secondaryStorageProvider: ['Swift']
           }
+        },
+        {
+          title: 'label.copy.templates.from.other.secondary.storages.add.zone',
+          key: 'copyTemplatesFromOtherSecondaryStorages',
+          required: false,
+          switch: true,
+          checked: this.copytemplate
         }
       ]
     }
@@ -859,10 +931,14 @@ export default {
       }, {
         id: 'aarch64',
         description: 'ARM 64 bits (aarch64)'
+      }, {
+        id: 's390x',
+        description: 'IBM Z 64 bits (s390x)'
       }],
       storageProviders: [],
       currentStep: null,
-      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']
+      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider'],
+      copytemplate: true
     }
   },
   created () {
@@ -887,13 +963,14 @@ export default {
           primaryStorageScope: null
         })
       }
+      this.applyCopyTemplatesOptionFromGlobalSettingDuringSecondaryStorageAddition()
     }
   },
   watch: {
     'prefillContent.provider' (newVal, oldVal) {
-      if (['SolidFire', 'PowerFlex'].includes(newVal) && !['SolidFire', 'PowerFlex'].includes(oldVal)) {
+      if (['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(newVal) && !['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(oldVal)) {
         this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
-      } else if (!['SolidFire', 'PowerFlex'].includes(newVal) && ['SolidFire', 'PowerFlex'].includes(oldVal)) {
+      } else if (!['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(newVal) && ['SolidFire', 'PowerFlex', 'NetApp ONTAP'].includes(oldVal)) {
         this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
       }
 
@@ -978,6 +1055,17 @@ export default {
       this.primaryStorageScopes = scope
     },
     fetchProtocol () {
+      const provider = this.prefillContent?.provider || null
+      if (provider === 'NetApp ONTAP') {
+        this.primaryStorageProtocols = [
+          { id: 'NFS3', description: 'NFS3' },
+          { id: 'ISCSI', description: 'ISCSI' }
+        ]
+        if (!['NFS3', 'ISCSI'].includes(this.prefillContent?.primaryStorageProtocol)) {
+          this.$emit('fieldsChanged', { primaryStorageProtocol: 'NFS3' })
+        }
+        return
+      }
       const hypervisor = this.prefillContent?.hypervisor || null
       const protocols = []
       if (hypervisor === 'KVM') {
@@ -1078,7 +1166,7 @@ export default {
       }
     },
     fetchNexusSwitchConfig () {
-      api('listConfigurations', { name: 'vmware.use.nexus.vswitch' }).then(json => {
+      getAPI('listConfigurations', { name: 'vmware.use.nexus.vswitch' }).then(json => {
         let vSwitchEnabled = false
         if (json.listconfigurationsresponse.configuration[0].value) {
           vSwitchEnabled = true
@@ -1088,7 +1176,7 @@ export default {
     },
     fetchDvSwitchConfig () {
       let dvSwitchEnabled = false
-      api('listConfigurations', { name: 'vmware.use.dvswitch' }).then(json => {
+      getAPI('listConfigurations', { name: 'vmware.use.dvswitch' }).then(json => {
         if (json.listconfigurationsresponse.configuration[0].value) {
           dvSwitchEnabled = true
         }
@@ -1097,7 +1185,7 @@ export default {
     },
     fetchProvider () {
       const storageProviders = []
-      api('listImageStores', { provider: 'S3' }).then(json => {
+      getAPI('listImageStores', { provider: 'S3' }).then(json => {
         const s3stores = json.listimagestoresresponse.imagestore
         if (s3stores != null && s3stores.length > 0) {
           storageProviders.push({ id: 'S3', description: 'S3' })
@@ -1110,9 +1198,23 @@ export default {
         this.storageProviders = storageProviders
       })
     },
+    applyCopyTemplatesOptionFromGlobalSettingDuringSecondaryStorageAddition () {
+      getAPI('listConfigurations', {
+        name: 'copy.templates.from.other.secondary.storages'
+      }).then(json => {
+        const config = json?.listconfigurationsresponse?.configuration?.[0]
+
+        if (!config || config.value === undefined) {
+          return
+        }
+
+        const value = String(config.value).toLowerCase() === 'true'
+        this.copytemplate = value
+      })
+    },
     fetchPrimaryStorageProvider () {
       this.primaryStorageProviders = []
-      api('listStorageProviders', { type: 'primary' }).then(json => {
+      getAPI('listStorageProviders', { type: 'primary' }).then(json => {
         this.primaryStorageProviders = json.liststorageprovidersresponse.dataStoreProvider || []
         this.primaryStorageProviders.map((item, idx) => { this.primaryStorageProviders[idx].id = item.name })
       })

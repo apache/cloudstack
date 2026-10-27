@@ -49,4 +49,6 @@ public interface UploadParams {
     boolean isDirectDownload();
     boolean isDeployAsIs();
     CPU.CPUArch getArch();
+    boolean isForCks();
+    String getTemplateType();
 }

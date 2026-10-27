@@ -43,7 +43,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the disk volume")
+            required=true, description = "The ID of the disk volume")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -84,8 +84,8 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
-        Volume result = _volumeService.destroyVolume(id, CallContext.current().getCallingAccount(), true, false);
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
+        Volume result = _volumeService.destroyVolume(id, CallContext.current().getCallingAccount(), true, false, null);
         if (result != null) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

@@ -43,13 +43,13 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "list physical network by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "List physical network by id")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the physical network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the physical network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "search by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Search by name")
     private String networkName;
 
     /////////////////////////////////////////////////////

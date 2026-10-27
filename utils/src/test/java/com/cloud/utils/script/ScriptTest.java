@@ -78,4 +78,34 @@ public class ScriptTest {
         String result = Script.getExecutableAbsolutePath("ls");
         Assert.assertTrue(List.of("/usr/bin/ls", "/bin/ls").contains(result));
     }
+
+    @Test
+    public void testBuildCommandLineWithSensitiveData() {
+        Script script = new Script("test.sh");
+        script.add("normal-arg");
+        script.addSensitive("sensitive-arg");
+        String commandLine = script.toString();
+        Assert.assertEquals("test.sh normal-arg ****** ", commandLine);
+    }
+
+    @Test
+    public void testBuildCommandLineWithMultipleSensitiveData() {
+        Script script = new Script("test.sh");
+        script.add("normal-arg");
+        script.addSensitive("sensitive-arg1");
+        script.add("another-normal-arg");
+        script.addSensitive("sensitive-arg2");
+        String commandLine = script.toString();
+        Assert.assertEquals("test.sh normal-arg ****** another-normal-arg ****** ", commandLine);
+    }
+
+    @Test
+    public void testBuildCommandLineWithLegacyPasswordOption() {
+        Script script = new Script("test.sh");
+        script.add("-y");
+        script.add("legacy-password");
+        String commandLine = script.toString();
+        Assert.assertEquals("test.sh -y ****** ", commandLine);
+    }
+
 }

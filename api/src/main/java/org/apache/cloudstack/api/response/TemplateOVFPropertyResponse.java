@@ -27,43 +27,43 @@ import org.apache.cloudstack.api.BaseResponse;
 public class TemplateOVFPropertyResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.KEY)
-    @Param(description = "the ovf property key")
+    @Param(description = "The ovf property key")
     private String key;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the ovf property type")
+    @Param(description = "The ovf property type")
     private String type;
 
     @SerializedName(ApiConstants.VALUE)
-    @Param(description = "the ovf property value")
+    @Param(description = "The ovf property value")
     private String value;
 
     @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "is the ovf property a password")
+    @Param(description = "Is the ovf property a password")
     private Boolean password;
 
     @SerializedName(ApiConstants.QUALIFIERS)
-    @Param(description = "the ovf property qualifiers")
+    @Param(description = "The ovf property qualifiers")
     private String qualifiers;
 
     @SerializedName(ApiConstants.USER_CONFIGURABLE)
-    @Param(description = "is the ovf property user configurable")
+    @Param(description = "Is the ovf property user configurable")
     private Boolean userConfigurable;
 
     @SerializedName(ApiConstants.LABEL)
-    @Param(description = "the ovf property label")
+    @Param(description = "The ovf property label")
     private String label;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the ovf property label")
+    @Param(description = "The ovf property label")
     private String description;
 
     @SerializedName(ApiConstants.INDEX)
-    @Param(description = "the ovf property index")
+    @Param(description = "The ovf property index")
     private Integer index;
 
     @SerializedName(ApiConstants.CATEGORY)
-    @Param(description = "the ovf property category")
+    @Param(description = "The ovf property category")
     private String category;
 
     @Override

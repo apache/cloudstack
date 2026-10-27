@@ -41,7 +41,7 @@ import org.apache.cloudstack.ha.SimulatorHAState;
 import javax.inject.Inject;
 
 @APICommand(name = ConfigureSimulatorHAProviderState.APINAME,
-        description="configures simulator HA provider state for a host for probing and testing",
+        description = "Configures simulator HA provider state for a host for probing and testing",
         responseObject=SuccessResponse.class,
         since = "4.11", authorized = {RoleType.Admin})
 public final class ConfigureSimulatorHAProviderState extends BaseCmd {

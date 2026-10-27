@@ -49,6 +49,11 @@
             v-model:value="form.confirmpassword"
             :placeholder="$t('label.confirmpassword.description')"/>
         </a-form-item>
+        <a-form-item v-if="isAdminOrDomainAdmin() && isCallerNotSameAsUser()" name="passwordChangeRequired" ref="passwordChangeRequired">
+            <a-checkbox v-model:checked="form.passwordChangeRequired">
+              {{ $t('label.change.password.onlogin') }}
+            </a-checkbox>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -61,7 +66,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -102,6 +107,11 @@ export default {
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
+    isCallerNotSameAsUser () {
+      const userId = this.$store.getters.userInfo.id
+      const resourceId = this.resource?.id ?? null
+      return userId !== resourceId
+    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
@@ -134,7 +144,11 @@ export default {
         if (this.isValidValueForKey(values, 'currentpassword') && values.currentpassword.length > 0) {
           params.currentpassword = values.currentpassword
         }
-        api('updateUser', {}, 'POST', params).then(json => {
+
+        if (this.isAdminOrDomainAdmin() && values.passwordChangeRequired === true) {
+          params.passwordchangerequired = values.passwordChangeRequired
+        }
+        postAPI('updateUser', params).then(json => {
           this.$notification.success({
             message: this.$t('label.action.change.password'),
             description: `${this.$t('message.success.change.password')} ${this.resource.username}`

@@ -39,12 +39,12 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
     }
 
     @Override
-    public Boolean checkingHeartBeat() {
-        return this.storagePool.getPool().vmActivityCheck(storagePool, host, activityScriptTimeout, volumeUuidList, vmActivityCheckPath, suspectTimeInSeconds);
+    public Boolean hasHeartBeat() {
+        return this.storagePool.getPool().hasVmActivity(storagePool, host, activityScriptTimeout, volumeUuidList, vmActivityCheckPath, suspectTimeInSeconds);
     }
 
     @Override
     public Boolean call() throws Exception {
-        return checkingHeartBeat();
+        return hasHeartBeat();
     }
 }

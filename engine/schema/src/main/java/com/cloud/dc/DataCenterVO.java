@@ -142,6 +142,9 @@ public class DataCenterVO implements DataCenter {
     @Enumerated(value = EnumType.STRING)
     private DataCenter.Type type;
 
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
+
     @Override
     public String getDnsProvider() {
         return dnsProvider;
@@ -483,6 +486,14 @@ public class DataCenterVO implements DataCenter {
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     @Override

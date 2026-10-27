@@ -35,7 +35,7 @@
               @finish="handleSubmit"
               layout="vertical">
               <a-alert
-                v-if="selectedVmwareVcenter && isVmRunning"
+                v-if="selectedVmwareVcenter && isVmRunning && !isVmwareCbtSelected"
                 type="warning"
                 :showIcon="true"
                 :message="$t('message.import.running.instance.warning')"
@@ -152,6 +152,25 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
+              <a-form-item name="vmwaremigrationmode" ref="vmwaremigrationmode" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.vmware.migration.mode')" :tooltip="apiParams.vmwaremigrationmode ? apiParams.vmwaremigrationmode.description : ''"/>
+                </template>
+                <a-radio-group
+                  v-model:value="form.vmwaremigrationmode"
+                  button-style="solid"
+                  @change="onVmwareMigrationModeChange">
+                  <a-radio-button value="ovf" :disabled="!canUseImportVm">{{ $t('label.vmware.migration.mode.ovf') }}</a-radio-button>
+                  <a-radio-button value="vddk" :disabled="!canUseImportVm">{{ $t('label.vmware.migration.mode.vddk') }}</a-radio-button>
+                  <a-radio-button value="cbt" :disabled="!canUseVmwareCbt">{{ $t('label.vmware.migration.mode.cbt') }}</a-radio-button>
+                </a-radio-group>
+              </a-form-item>
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
+                </template>
+                <a-switch v-model:checked="form.forceconverttopool" @change="onForceConvertToPoolChange" />
+              </a-form-item>
               <a-form-item name="converthostid" ref="converthostid">
                 <check-box-select-pair
                   layout="vertical"
@@ -164,7 +183,7 @@
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
               </a-form-item>
-              <a-form-item name="importhostid" ref="importhostid">
+              <a-form-item name="importhostid" ref="importhostid" v-if="form.vmwaremigrationmode === 'ovf'">
                 <check-box-select-pair
                   layout="vertical"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
@@ -178,18 +197,23 @@
               </a-form-item>
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
+                  :key="`convertstorageoption-${form.vmwaremigrationmode}-${switches.forceConvertToPool ? 'pool' : 'tmp'}`"
                   layout="vertical"
-                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
-                  :checkBoxLabel="$t('message.select.temporary.storage.instance.conversion')"
-                  :defaultCheckBoxValue="false"
+                  :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
+                  :defaultCheckBoxValue="switches.forceConvertToPool"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
-              <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
+              <a-form-item
+                v-if="showStoragePoolsForConversion"
+                name="convertstoragepool"
+                ref="convertstoragepool"
+                :label="$t('label.storagepool')"
+              >
                 <a-select
                   v-model:value="form.convertstoragepoolid"
                   defaultActiveFirstOption
@@ -204,11 +228,46 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
+              <a-form-item name="extraparams" ref="extraparams">
+                <a-checkbox
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
+                  v-model:checked="vmwareToKvmExtraParamsSelected">
+                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
+                </a-checkbox>
+                <a-input
+                  v-if="vmwareToKvmExtraParamsSelected"
+                  v-model:value="vmwareToKvmExtraParams"
+                  :placeholder="$t('label.extra')"
+                />
+              </a-form-item>
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && form.vmwaremigrationmode === 'ovf'">
                 <template #label>
                   <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
                 <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
+              </a-form-item>
+              <a-form-item name="osid" ref="osid" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.guest.os')" :tooltip="$t('label.select.guest.os.type')"/>
+                </template>
+                <a-spin v-if="loadingGuestOsMappings" />
+                <template v-else>
+                  <a-select
+                    v-if="resource.guestOsMappings && resource.guestOsMappings.length > 0"
+                    v-model:value="form.osid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }">
+                    <a-select-option v-for="mapping in resource.guestOsMappings" :key="mapping.ostypeid" :value="mapping.ostypeid" :label="mapping.osdisplayname">
+                      <span>
+                        {{ mapping.osdisplayname }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                  <a-span v-else>{{ $t('label.no.matching.guest.os.vmware.import') }}</a-span>
+                </template>
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -227,6 +286,7 @@
                   @select-compute-item="($event) => updateComputeOffering($event)"
                   @handle-search-filter="($event) => fetchComputeOfferings($event)" />
                 <compute-selection
+                  :key="computeSelectionKey"
                   class="row-element"
                   v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
                   :isCustomized="computeOffering.iscustomized"
@@ -235,7 +295,7 @@
                   :cpuSpeedInputDecorator="cpuSpeedKey"
                   :memoryInputDecorator="memoryKey"
                   :computeOfferingId="computeOffering.id"
-                  :preFillContent="resource"
+                  :preFillContent="computeOfferingPreFillContent"
                   :isConstrained="'serviceofferingdetails' in computeOffering"
                   :minCpu="getMinCpu()"
                   :maxCpu="getMaxCpu()"
@@ -375,7 +435,9 @@
               </a-row>
               <div :span="24" class="action-button">
                 <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-                <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+                <a-button :loading="loading" type="primary" @click="handleSubmit">
+                  {{ form.vmwaremigrationmode === 'cbt' ? $t('label.start') : $t('label.ok') }}
+                </a-button>
               </div>
             </a-form>
           </a-card>
@@ -387,7 +449,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -398,6 +460,7 @@ import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import { formatKvmConversionHostName } from '@/utils/vmware'
 
 export default {
   name: 'ImportUnmanagedInstances',
@@ -466,7 +529,11 @@ export default {
       required: false
     },
     selectedVmwareVcenter: {
-      type: Array,
+      type: Object,
+      required: false
+    },
+    loadingGuestOsMappings: {
+      type: Boolean,
       required: false
     }
   },
@@ -529,19 +596,53 @@ export default {
           title: this.$t('label.rootdisk')
         }
       ],
-      selectedRootDiskSources: []
+      selectedRootDiskSources: [],
+      vmwareToKvmExtraParamsAllowed: false,
+      vmwareToKvmExtraParamsSelected: false,
+      vmwareToKvmExtraParams: '',
+      userModifiedVddkSetting: false
     }
   },
   beforeCreate () {
-    this.apiConfig = this.$store.getters.apis.importUnmanagedInstance || {}
+    this.apiConfig = this.$store.getters.apis.importUnmanagedInstance || { params: [] }
     this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
+    const importUnmanagedParams = this.apiConfig.params || []
+    importUnmanagedParams.forEach(param => {
       this.apiParams[param.name] = param
     })
-    this.apiConfig = this.$store.getters.apis.importVm || {}
-    this.apiConfig.params.forEach(param => {
+    this.apiConfig = this.$store.getters.apis.importVm || { params: [] }
+    const importVmParams = this.apiConfig.params || []
+    importVmParams.forEach(param => {
       if (!(param.name in this.apiParams)) {
         this.apiParams[param.name] = param
+      }
+    })
+    this.apiConfig = this.$store.getters.apis.startVmwareCbtMigration || { params: [] }
+    const startVmwareCbtMigrationParams = this.apiConfig.params || []
+    startVmwareCbtMigrationParams.forEach(param => {
+      if (!(param.name in this.apiParams)) {
+        this.apiParams[param.name] = param
+      }
+    })
+    const apiParamDefaults = [
+      'account',
+      'datadiskofferinglist',
+      'displayname',
+      'domainid',
+      'forceconverttopool',
+      'forced',
+      'forcemstoimportvmfiles',
+      'hostname',
+      'migrateallowed',
+      'nicnetworklist',
+      'projectid',
+      'serviceofferingid',
+      'templateid',
+      'vmwaremigrationmode'
+    ]
+    apiParamDefaults.forEach(paramName => {
+      if (!(paramName in this.apiParams)) {
+        this.apiParams[paramName] = { description: '' }
       }
     })
   },
@@ -584,6 +685,7 @@ export default {
           isLoad: true,
           options: {
             templatefilter: 'all',
+            isready: true,
             hypervisor: this.cluster.hypervisortype,
             showicon: true
           },
@@ -596,6 +698,13 @@ export default {
         return true
       }
       return false
+    },
+    isRunningWindowsVm () {
+      const osTypeName = (this.resource?.ostypename || this.resource?.osdisplayname || '').toLowerCase()
+      return this.isVmRunning && osTypeName.includes('windows')
+    },
+    isVmwareCbtSelected () {
+      return this.selectedVmwareVcenter && this.form.vmwaremigrationmode === 'cbt'
     },
     isDiskImport () {
       if (this.importsource === 'local' || this.importsource === 'shared') {
@@ -611,6 +720,12 @@ export default {
     },
     isKVMUnmanage () {
       return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
+    },
+    canUseImportVm () {
+      return 'importVm' in this.$store.getters.apis
+    },
+    canUseVmwareCbt () {
+      return 'startVmwareCbtMigration' in this.$store.getters.apis
     },
     domainSelectOptions () {
       var domains = this.options.domains.map((domain) => {
@@ -704,6 +819,23 @@ export default {
         }
       }
       return nics
+    },
+    computeOfferingPreFillContent () {
+      return {
+        ...this.resource,
+        cpunumber: this.getCustomCpuNumberDefault(),
+        cpuspeed: this.getCPUSpeed(),
+        memory: this.getCustomMemoryDefault()
+      }
+    },
+    computeSelectionKey () {
+      const preFill = this.computeOfferingPreFillContent
+      return [
+        this.computeOffering?.id || 'offering',
+        preFill.cpunumber || 'cpu',
+        preFill.cpuspeed || 'speed',
+        preFill.memory || 'memory'
+      ].join('-')
     }
   },
   watch: {
@@ -713,6 +845,11 @@ export default {
         this.$refs.displayname.focus()
         this.selectMatchingComputeOffering()
       }
+    },
+    'resource.guestOsMappings' (mappings) {
+      if (mappings && mappings.length > 0) {
+        this.form.osid = mappings[0].ostypeid
+      }
     }
   },
   methods: {
@@ -720,11 +857,15 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         rootdiskid: 0,
+        vmwaremigrationmode: this.defaultVmwareMigrationMode(),
+        usevddk: false,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
+        forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
-        account: null
+        account: null,
+        osid: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -748,6 +889,20 @@ export default {
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
+      this.fetchVmwareToKVMExtraConfigsSetting()
+    },
+    fetchVmwareToKVMExtraConfigsSetting () {
+      const params = {
+        name: 'convert.vmware.instance.to.kvm.extra.params.allowed'
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.vmwareToKvmExtraParamsAllowed = config.value === 'true'
+          }
+        }
+      })
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -782,14 +937,26 @@ export default {
       }
       return 'serviceofferingdetails' in this.computeOffering ? this.computeOffering.serviceofferingdetails.maxmemory * 1 : Number.MAX_SAFE_INTEGER
     },
+    clampCustomValue (value, min, max) {
+      if (value === undefined || value === null || isNaN(value)) {
+        return min
+      }
+      return Math.min(Math.max(value * 1, min), max)
+    },
+    getCustomCpuNumberDefault () {
+      return this.clampCustomValue(this.resource?.cpunumber, this.getMinCpu(), this.getMaxCpu())
+    },
+    getCustomMemoryDefault () {
+      return this.clampCustomValue(this.resource?.memory, this.getMinMemory(), this.getMaxMemory())
+    },
     getCPUSpeed () {
       if (!this.computeOffering) {
-        return 0
+        return 2000
       }
       if (this.computeOffering.cpuspeed) {
         return this.computeOffering.cpuspeed * 1
       }
-      return this.resource.cpuspeed * 1 || 0
+      return this.resource.cpuspeed * 1 || 2000
     },
     fetchOptions (param, name, exclude) {
       if (exclude && exclude.length > 0) {
@@ -804,7 +971,7 @@ export default {
       if (!('listall' in options)) {
         options.listall = true
       }
-      api(param.list, options).then((response) => {
+      getAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -836,7 +1003,7 @@ export default {
       this.totalComputeOfferings = 0
       this.computeOfferings = []
       this.offeringsMap = []
-      api('listServiceOfferings', {
+      getAPI('listServiceOfferings', {
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
@@ -886,6 +1053,12 @@ export default {
       }
       return 'custom'
     },
+    defaultVmwareMigrationMode () {
+      if (!this.canUseImportVm && this.canUseVmwareCbt) {
+        return 'cbt'
+      }
+      return 'ovf'
+    },
     changeTemplateType (e) {
       this.templateType = e.target.value
       if (this.templateType === 'auto') {
@@ -929,7 +1102,7 @@ export default {
       }
     },
     fetchKvmHostsForConversion () {
-      api('listHosts', {
+      getAPI('listHosts', {
         zoneid: this.zoneid,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
@@ -937,18 +1110,33 @@ export default {
       }).then(json => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
         this.kvmHostsForConversion = this.kvmHostsForConversion.filter(host => ['Enabled', 'Disabled'].includes(host.resourcestate))
-        this.kvmHostsForConversion.map(host => {
-          host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
-          if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
-            host.name = host.name + ' (' + this.$t('label.supported') + ')'
-          } else {
-            host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
+        // Check if any host has VDDK support
+        let hasVddkSupport = false
+        this.kvmHostsForConversion.forEach(host => {
+          const details = host.details || {}
+          // Check for VDDK support
+          if (details['host.vddk.support'] === 'true' || details['host.vddk.support'] === true) {
+            hasVddkSupport = true
           }
+          host.name = this.formatKvmConversionHostName(host)
         })
+
+        // Enable usevddk by default if at least one host has VDDK support
+        // Only auto-enable if user hasn't manually modified the setting
+        if (hasVddkSupport && !this.form.usevddk && !this.userModifiedVddkSetting) {
+          this.setVmwareMigrationMode('vddk', false)
+        }
       })
     },
+    formatKvmConversionHostName (host) {
+      return formatKvmConversionHostName(
+        host,
+        this.form.vmwaremigrationmode,
+        this.$t('label.yes'),
+        this.$t('label.no'))
+    },
     fetchKvmHostsForImporting () {
-      api('listHosts', {
+      getAPI('listHosts', {
         clusterid: this.cluster.id,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
@@ -970,17 +1158,26 @@ export default {
             params.scope = 'ZONE'
           }
         }
-        api('listStoragePools', params).then(json => {
+        getAPI('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+          // Keep selected pool state aligned when the value is auto-populated by v-model.
+          if (this.form.convertstoragepoolid) {
+            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
+          }
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
         const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
-        api('listStoragePools', {
+        getAPI('listStoragePools', {
           scope: 'HOST',
           ipaddress: kvmHost.ipaddress,
           status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+          if (this.form.convertstoragepoolid) {
+            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
+          }
         })
       }
     },
@@ -1020,19 +1217,57 @@ export default {
       }
     },
     resetStorageOptionsForConversion () {
-      this.storageOptionsForConversion = [
-        {
-          id: 'secondary',
-          name: 'Secondary Storage'
-        }, {
-          id: 'primary',
-          name: 'Primary Storage'
-        }
-      ]
+      this.storageOptionsForConversion = this.switches.forceConvertToPool ? [] : [{
+        id: 'secondary',
+        name: 'Secondary Storage'
+      }]
+      this.storageOptionsForConversion.push({
+        id: 'primary',
+        name: 'Primary Storage'
+      })
     },
     onSelectRootDisk (val) {
       this.selectedRootDiskIndex = val
       this.updateSelectedRootDisk()
+    },
+    onForceConvertToPoolChange (val) {
+      this.switches.forceConvertToPool = val
+      this.form.forceconverttopool = val
+      this.selectedStorageOptionForConversion = null
+      this.selectedStoragePoolForConversion = null
+      this.showStoragePoolsForConversion = false
+      this.resetStorageOptionsForConversion()
+    },
+    onVmwareMigrationModeChange (event) {
+      this.setVmwareMigrationMode(event.target.value, true)
+    },
+    setVmwareMigrationMode (mode, isUserChange = true) {
+      this.form.vmwaremigrationmode = mode
+      this.onUseVddkChange(mode === 'vddk' || mode === 'cbt', isUserChange)
+    },
+    onUseVddkChange (val, isUserChange = true) {
+      if (isUserChange) {
+        this.userModifiedVddkSetting = true
+      }
+      if (val) {
+        this.form.forceconverttopool = true
+        this.form.forcemstoimportvmfiles = false
+        this.switches.forceConvertToPool = true
+        this.switches.forceMsToImportVmFiles = false
+        // Reset import host selection when VDDK is enabled
+        this.selectedKvmHostForImporting = null
+        // Refresh host list to show VDDK support details
+        this.fetchKvmHostsForConversion()
+      } else {
+        this.form.forceconverttopool = false
+        this.switches.forceConvertToPool = false
+        this.selectedStorageOptionForConversion = null
+        this.selectedStoragePoolForConversion = null
+        this.showStoragePoolsForConversion = false
+        // Refresh host list to remove VDDK support details
+        this.fetchKvmHostsForConversion()
+      }
+      this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
@@ -1076,6 +1311,16 @@ export default {
             params.name = values.displayname
             params.networkid = values.networkid
           }
+        }
+        if (this.isVmwareCbtStart(values)) {
+          return this.startVmwareCbtMigration(values)
+        }
+        if (this.selectedVmwareVcenter && this.isRunningWindowsVm) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Cannot import Running Windows VMs, please gracefully shutdown the source VM before importing or select CBT migration mode'
+          })
+          return
         }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
@@ -1146,12 +1391,29 @@ export default {
           if (this.selectedKvmHostForImporting) {
             params.importinstancehostid = this.selectedKvmHostForImporting
           }
-          if (this.selectedStoragePoolForConversion) {
-            params.convertinstancepoolid = this.selectedStoragePoolForConversion
+          const selectedPoolForConversion = values.convertstoragepoolid || this.selectedStoragePoolForConversion
+          if (selectedPoolForConversion) {
+            params.convertinstancepoolid = selectedPoolForConversion
           }
-          params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          if (this.vmwareToKvmExtraParams) {
+            params.extraparams = this.vmwareToKvmExtraParams
+          }
+          const vmwareMigrationMode = values.vmwaremigrationmode || (values.usevddk ? 'vddk' : 'ovf')
+          params.vmwaremigrationmode = vmwareMigrationMode
+          if (vmwareMigrationMode === 'vddk') {
+            params.usevddk = true
+            params.forcemstoimportvmfiles = false
+          } else if (vmwareMigrationMode === 'ovf') {
+            params.usevddk = false
+            params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          } else {
+            params.forcemstoimportvmfiles = false
+          }
+          if (values.forceconverttopool !== undefined) {
+            params.forceconverttopool = values.forceconverttopool
+          }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'osid']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1213,7 +1475,7 @@ export default {
         this.updateLoading(true)
         const name = params.name
         return new Promise((resolve, reject) => {
-          api(importapi, params).then(response => {
+          postAPI(importapi, params).then(response => {
             var jobId
             if (this.isDiskImport || this.isExternalImport || this.selectedVmwareVcenter) {
               jobId = response.importvmresponse.jobid
@@ -1253,6 +1515,163 @@ export default {
         this.$emit('loading-changed', false)
       })
     },
+    isVmwareCbtStart (values) {
+      return this.selectedVmwareVcenter && (values.vmwaremigrationmode || 'ovf') === 'cbt'
+    },
+    startVmwareCbtMigration (values) {
+      if (!('startVmwareCbtMigration' in this.$store.getters.apis)) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.api.not.available')
+        })
+        return
+      }
+
+      const params = {
+        zoneid: this.zoneid,
+        clusterid: this.cluster.id,
+        displayname: values.displayname,
+        sourcevmname: this.resource.name,
+        hostip: this.resource.hostname,
+        clustername: this.resource.clustername
+      }
+      if (this.selectedVmwareVcenter.existingvcenterid) {
+        params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+      } else {
+        params.vcenter = this.selectedVmwareVcenter.vcenter
+        params.datacentername = this.selectedVmwareVcenter.datacentername
+        params.username = this.selectedVmwareVcenter.username
+        params.password = this.selectedVmwareVcenter.password
+      }
+      if (this.selectedKvmHostForConversion) {
+        params.convertinstancehostid = this.selectedKvmHostForConversion
+      }
+      const selectedPoolForConversion = values.convertstoragepoolid || this.selectedStoragePoolForConversion
+      if (selectedPoolForConversion) {
+        params.convertinstancepoolid = selectedPoolForConversion
+      }
+
+      if (!this.computeOffering || !this.computeOffering.id) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.step.2.continue')
+        })
+        return
+      }
+      params.serviceofferingid = values.computeofferingid
+      if (this.computeOffering.iscustomized) {
+        var details = [this.cpuNumberKey, this.cpuSpeedKey, this.memoryKey]
+        for (var detail of details) {
+          if (!(values[detail] || this.computeOffering[detail])) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + detail.toLowerCase())
+            })
+            return
+          }
+          if (values[detail]) {
+            params['details[0].' + detail] = values[detail]
+          }
+        }
+      }
+      if (this.computeOffering.iscustomizediops) {
+        var iopsDetails = [this.minIopsKey, this.maxIopsKey]
+        for (var iopsDetail of iopsDetails) {
+          if (!values[iopsDetail] || values[iopsDetail] < 0) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + iopsDetail.toLowerCase())
+            })
+            return
+          }
+          params['details[0].' + iopsDetail] = values[iopsDetail]
+        }
+        if (values[this.minIopsKey] > values[this.maxIopsKey]) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
+          })
+          return
+        }
+      }
+      var keys = ['hostname', 'domainid', 'projectid', 'account', 'forced', 'osid']
+      if (this.templateType !== 'auto') {
+        keys.push('templateid')
+      }
+      for (var key of keys) {
+        if (values[key]) {
+          params[key] = values[key]
+        }
+      }
+      var diskOfferingIndex = 0
+      for (var diskId in this.dataDisksOfferingsMapping) {
+        if (!this.dataDisksOfferingsMapping[diskId]) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.select.disk.offering') + ': ' + diskId
+          })
+          return
+        }
+        params['datadiskofferinglist[' + diskOfferingIndex + '].disk'] = diskId
+        params['datadiskofferinglist[' + diskOfferingIndex + '].diskOffering'] = this.dataDisksOfferingsMapping[diskId]
+        diskOfferingIndex++
+      }
+      var nicNetworkIndex = 0
+      var nicIpIndex = 0
+      var networkcheck = new Set()
+      for (var nicId in this.nicsNetworksMapping) {
+        if (!this.nicsNetworksMapping[nicId].network) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.select.nic.network') + ': ' + nicId
+          })
+          return
+        }
+        params['nicnetworklist[' + nicNetworkIndex + '].nic'] = nicId
+        params['nicnetworklist[' + nicNetworkIndex + '].network'] = this.nicsNetworksMapping[nicId].network
+        var netId = this.nicsNetworksMapping[nicId].network
+        if (!networkcheck.has(netId)) {
+          networkcheck.add(netId)
+        } else {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Same network cannot be assigned to multiple Nics'
+          })
+          return
+        }
+        nicNetworkIndex++
+        if ('ipAddress' in this.nicsNetworksMapping[nicId]) {
+          if (!this.nicsNetworksMapping[nicId].ipAddress) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.enter.valid.nic.ip') + ': ' + nicId
+            })
+            return
+          }
+          params['nicipaddresslist[' + nicIpIndex + '].nic'] = nicId
+          params['nicipaddresslist[' + nicIpIndex + '].ip4Address'] = this.nicsNetworksMapping[nicId].ipAddress
+          nicIpIndex++
+        }
+      }
+
+      this.updateLoading(true)
+      postAPI('startVmwareCbtMigration', params).then(response => {
+        this.$emit('vmware-cbt-migration-started', {
+          response,
+          responseKey: 'startvmwarecbtmigrationresponse',
+          migration: {
+            displayname: params.displayname,
+            sourcevmname: params.sourcevmname
+          },
+          actionLabel: 'VMware CBT initial sync'
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.closeAction()
+        this.updateLoading(false)
+      })
+    },
     updateLoading (value) {
       this.loading = value
       this.$emit('loading-changed', value)
@@ -1265,6 +1684,12 @@ export default {
       this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
+      this.form.vmwaremigrationmode = this.defaultVmwareMigrationMode()
+      this.form.usevddk = false
+      this.form.forceconverttopool = false
+      this.form.forcemstoimportvmfiles = false
+      this.userModifiedVddkSetting = false
+      this.resetStorageOptionsForConversion()
     },
     closeAction () {
       this.$emit('close-action')

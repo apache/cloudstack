@@ -60,8 +60,11 @@ public class ObjectStoreVO implements ObjectStore {
     @Column(name = "total_size")
     private Long totalSize;
 
-    @Column(name = "used_bytes")
-    private Long usedBytes;
+    @Column(name = "used_size")
+    private Long usedSize;
+
+    @Column(name = "allocated_size")
+    private Long allocatedSize;
 
     @Transient
     Map<String, String> details;
@@ -130,16 +133,24 @@ public class ObjectStoreVO implements ObjectStore {
         this.totalSize = totalSize;
     }
 
-    public Long getUsedBytes() {
-        return usedBytes;
+    public Long getUsedSize() {
+        return usedSize;
     }
 
-    public void setUsedBytes(Long usedBytes) {
-        this.usedBytes = usedBytes;
+    public void setUsedSize(Long usedSize) {
+        this.usedSize = usedSize;
     }
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public Long getAllocatedSize() {
+        return allocatedSize;
+    }
+
+    public void setAllocatedSize(Long allocatedSize) {
+        this.allocatedSize = allocatedSize;
     }
 
     @Override

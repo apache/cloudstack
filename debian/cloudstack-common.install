@@ -27,6 +27,7 @@
 /usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh
 /usr/share/cloudstack-common/scripts/vm/hypervisor/vmware/*
 /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/*
+/usr/share/cloudstack-common/scripts/vm/hypervisor/external/provisioner/*
 /usr/share/cloudstack-common/lib/*
 /usr/share/cloudstack-common/vms/*
 /usr/bin/cloudstack-set-guest-password

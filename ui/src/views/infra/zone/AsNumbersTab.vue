@@ -110,7 +110,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import { mixinDevice } from '@/utils/mixin.js'
 
@@ -163,7 +163,7 @@ export default {
     },
     fetchData () {
       this.fetchLoading = true
-      api('listASNRanges', { zoneid: this.resource.id }).then(json => {
+      getAPI('listASNRanges', { zoneid: this.resource.id }).then(json => {
         this.asnRanges = json?.listasnrangesresponse?.asnumberrange || []
       }).finally(() => { this.fetchLoading = false })
     },
@@ -179,7 +179,7 @@ export default {
         const values = toRaw(this.form)
         values.zoneid = this.resource.id
         this.loading = true
-        api('createASNRange', values).then(() => {
+        postAPI('createASNRange', values).then(() => {
           this.$notification.success({
             message: this.$t('message.success.create.asnrange')
           })
@@ -199,7 +199,7 @@ export default {
     },
     onDelete (rangeId) {
       this.loading = true
-      api('deleteASNRange', { id: rangeId }).then(() => {
+      postAPI('deleteASNRange', { id: rangeId }).then(() => {
         this.$notification.success({
           message: this.$t('message.success.delete.asnrange')
         })

@@ -23,6 +23,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
+import com.trilead.ssh2.Connection;
+
 import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -39,7 +41,10 @@ public interface CAManager extends CAService, Configurable, PluggableService {
     ConfigKey<String> CAProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "ca.framework.provider.plugin",
             "root",
-            "The CA provider plugin that is used for secure CloudStack management server-agent communication for encryption and authentication. Restart management server(s) when changed.", true);
+            "The CA provider plugin used for CloudStack internal certificate management (MS-agent encryption and authentication). " +
+            "The default 'root' provider auto-generates a CA on first startup, but also supports user-provided custom CA material " +
+            "via the ca.plugin.root.private.key, ca.plugin.root.public.key, and ca.plugin.root.ca.certificate settings. " +
+            "Restart management server(s) when changed.", false);
 
     ConfigKey<Integer> CertKeySize = new ConfigKey<>("Advanced", Integer.class,
                                     "ca.framework.cert.keysize",
@@ -84,6 +89,12 @@ public interface CAManager extends CAService, Configurable, PluggableService {
             "The custom Subject Alternative Name that will be added to the management server certificate. " +
                     "The actual implementation will depend on the configured CA provider.",
             false);
+
+    ConfigKey<Boolean> CaInjectDefaultTruststore = new ConfigKey<>("Advanced", Boolean.class,
+            "ca.framework.inject.default.truststore", "true",
+            "When true, injects the CA provider's certificate into the JVM default truststore on management server startup. " +
+            "This allows outgoing HTTPS connections from the management server to trust servers with certificates signed by the configured CA. " +
+            "Restart management server(s) when changed.", false);
 
     /**
      * Returns a list of available CA provider plugins
@@ -130,12 +141,26 @@ public interface CAManager extends CAService, Configurable, PluggableService {
     boolean revokeCertificate(final BigInteger certSerial, final String certCn, final String provider);
 
     /**
-     * Provisions certificate for given active and connected agent host
+     * Provisions certificate for given agent host.
+     * When forced=true, uses SSH to re-provision bypassing the NIO agent connection (for disconnected agents).
      * @param host
+     * @param reconnect
      * @param provider
+     * @param forced when true, provisions via SSH instead of NIO; supports KVM hosts and SystemVMs
      * @return returns success/failure as boolean
      */
-    boolean provisionCertificate(final Host host, final Boolean reconnect, final String provider);
+    boolean provisionCertificate(final Host host, final Boolean reconnect, final String provider, final boolean forced);
+
+    /**
+     * Provisions certificate for a KVM host using an existing SSH connection.
+     * Runs keystore-setup to generate a CSR, issues a certificate, then runs keystore-cert-import.
+     * Used during host discovery and for forced re-provisioning when the NIO agent is unreachable.
+     * @param sshConnection active SSH connection to the KVM host
+     * @param agentIp IP address of the KVM host agent
+     * @param agentHostname hostname of the KVM host agent
+     * @param caProvider optional CA provider plugin name (null uses default)
+     */
+    void provisionCertificateViaSsh(Connection sshConnection, String agentIp, String agentHostname, String caProvider);
 
     /**
      * Setups up a new keystore and generates CSR for a host

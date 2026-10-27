@@ -75,7 +75,7 @@ public class BasicRestClient implements RestClient {
         final URI uri = request.getURI();
         String query = uri.getQuery();
         query = query != null ? "?" + query : "";
-        logger.debug("Executig " + request.getMethod() + " request on " + clientContext.getTargetHost() + uri.getPath() + query);
+        logger.debug("Executing " + request.getMethod() + " request on " + clientContext.getTargetHost() + uri.getPath() + query);
     }
 
     @Override

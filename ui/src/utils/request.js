@@ -34,7 +34,6 @@ const err = (error) => {
   const response = error.response
   let countNotify = store.getters.countNotify
   if (response) {
-    console.log(response)
     if (response.status === 403) {
       const data = response.data
       countNotify++
@@ -51,10 +50,12 @@ const err = (error) => {
       })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
+      const requestCommand = (response.config && response.config.params && response.config.params.command) ||
+        (response.config && typeof response.config.data === 'string' && new URLSearchParams(response.config.data).get('command'))
+      if (['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(requestCommand)) {
         return
       }
-      const originalPath = router.currentRoute.value.fullPath
+      const originalPath = router.currentRoute.value.path
       for (const key in response.data) {
         if (key.includes('response')) {
           if (response.data[key].errortext.includes('not available for user')) {
@@ -75,9 +76,9 @@ const err = (error) => {
           }
         }
       }
-      countNotify++
-      store.commit('SET_COUNT_NOTIFY', countNotify)
       if (originalPath === '/verify2FA' || originalPath === '/setup2FA') {
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
           top: '65px',
           message: i18n.global.t('label.2FA'),
@@ -90,13 +91,14 @@ const err = (error) => {
             store.commit('SET_COUNT_NOTIFY', countNotify)
           }
         })
-      } else {
-        notification.error({
+      } else if (originalPath !== '/user/login') {
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
+        notification.warning({
           top: '65px',
-          message: i18n.global.t('label.unauthorized'),
-          description: i18n.global.t('message.authorization.failed'),
+          message: i18n.global.t('label.session.expired'),
+          description: i18n.global.t('message.session.expired'),
           key: 'http-401',
-          duration: 0,
           onClose: () => {
             let countNotify = store.getters.countNotify
             countNotify > 0 ? countNotify-- : countNotify = 0
@@ -149,6 +151,15 @@ const err = (error) => {
 service.interceptors.request.use(config => {
   source = sourceToken.getSource()
   config.cancelToken = source.token
+
+  handleGetRequestParams(config)
+
+  handlePostRequestParams(config)
+
+  return config
+}, err)
+
+function handleGetRequestParams (config) {
   if (config && config.params) {
     config.params.response = 'json'
     const project = vueProps.$localStorage.get(CURRENT_PROJECT)
@@ -160,11 +171,30 @@ service.interceptors.request.use(config => {
       }
     }
     if (config.params.ignoreproject !== undefined) {
-      config.params.ignoreproject = null
+      delete config.params.ignoreproject
     }
   }
-  return config
-}, err)
+}
+
+function handlePostRequestParams (config) {
+  if (config && config.data && config.data instanceof URLSearchParams) {
+    const project = vueProps.$localStorage.get(CURRENT_PROJECT)
+    const command = config.data.get('command')
+    const hasProjectId = config.data.has('projectid')
+    const ignoreProject = config.data.has('ignoreproject')
+
+    if (!hasProjectId && !ignoreProject && project && project.id) {
+      if (command === 'listTags') {
+        config.data.append('projectid', '-1')
+      } else if (command !== 'assignVirtualMachine') {
+        config.data.append('projectid', project.id)
+      }
+    }
+    if (config.data.has('ignoreproject')) {
+      config.data.delete('ignoreproject')
+    }
+  }
+}
 
 // response interceptor
 service.interceptors.response.use((response) => {

@@ -24,8 +24,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Webhook extends ControlledEntity, Identity, InternalIdentity {
-    public static final long ID_DUMMY = 0L;
-    public static final String NAME_DUMMY = "Test";
+    long ID_DUMMY = 0L;
+    String NAME_DUMMY = "Test";
     enum State {
         Enabled, Disabled;
     };

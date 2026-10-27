@@ -52,7 +52,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ListView from '@/components/view/ListView.vue'
@@ -100,7 +100,7 @@ export default {
     callListHostsWithPage (hypervisor, currentPage) {
       this.loading = true
       const pageSize = 100
-      api('listHosts', {
+      getAPI('listHosts', {
         type: 'routing',
         details: 'min',
         hypervisor: hypervisor,

@@ -17,11 +17,11 @@
 package org.apache.cloudstack.api.command.user.userdata;
 
 import com.cloud.server.ManagementService;
-import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.UserData;
+import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -45,6 +44,12 @@ public class DeleteUserDataCmdTest {
     AccountService _accountService;
     @Mock
     ManagementService _mgr;
+
+    @Mock
+    private EntityManager entityManagerMock;
+
+    @Mock
+    private UserData userDataMock;
 
     private static final long DOMAIN_ID = 5L;
     private static final long PROJECT_ID = 10L;
@@ -84,19 +89,13 @@ public class DeleteUserDataCmdTest {
     }
 
     @Test
-    public void validateArgsCmd() {
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            CallContext callContextMock = Mockito.mock(CallContext.class);
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
-            Account accountMock = Mockito.mock(Account.class);
-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
-            Mockito.when(accountMock.getId()).thenReturn(2L);
-            Mockito.doReturn(false).when(_accountService).isAdmin(2L);
+    public void getEntityOwnerIdTestReturnUserDataOwnerWhenUserDataIdIsProvided() {
+        long userDataId = 1L;
+        long userDataOwnerId = 2L;
+        ReflectionTestUtils.setField(cmd, "id", userDataId);
+        Mockito.when(entityManagerMock.findById(UserData.class, userDataId)).thenReturn(userDataMock);
+        Mockito.when(userDataMock.getAccountId()).thenReturn(userDataOwnerId);
 
-            ReflectionTestUtils.setField(cmd, "id", 1L);
-
-            Assert.assertEquals(1L, (long) cmd.getId());
-            Assert.assertEquals(2L, cmd.getEntityOwnerId());
-        }
+        Assert.assertEquals(userDataOwnerId, cmd.getEntityOwnerId());
     }
 }

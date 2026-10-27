@@ -78,7 +78,7 @@ import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.db.EntityManager;
 
-@APICommand(name = "samlSso", description = "SP initiated SAML Single Sign On", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
+@APICommand(name = "samlSso", description = "SP initiated SAML Single Sign On", responseObject = LoginCmdResponse.class)
 public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator, Configurable {
     private static final String s_name = "loginresponse";
 
@@ -97,7 +97,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Inject
     private UserAccountDao userAccountDao;
 
-    protected static ConfigKey<String> saml2FailedLoginRedirectUrl = new ConfigKey<String>("Advanced", String.class, "saml2.failed.login.redirect.url", "",
+    protected static ConfigKey<String> saml2FailedLoginRedirectUrl = new ConfigKey<>("Advanced", String.class, "saml2.failed.login.redirect.url", "",
             "The URL to redirect the SAML2 login failed message (the default vaulue is empty).", true);
 
     SAML2AuthManager samlAuthManager;
@@ -142,11 +142,60 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         return responseObject;
     }
 
+    /**
+     * handles the case where signature is absent but required.
+     * @param signature should contain a value or be configured to be optional/not be checked
+     */
     protected void checkAndFailOnMissingSAMLSignature(Signature signature) {
         if (signature == null && SAML2AuthManager.SAMLCheckSignature.value()) {
             logger.error("Failing SAML login due to missing signature in the SAML response and signature check is enforced. " +
                     "Please check and ensure the IDP configuration has signing certificate or relax the saml2.check.signature setting.");
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Signature is missing from the SAML Response. Please contact the Administrator");
+        }
+    }
+
+    /**
+     * Validates the given SAML {@link Signature} against the signing certificate registered for the IdP.
+     *
+     * note: when a signature element IS present in a SAMLResponse or Assertion we must
+     * always verify it.  Silently skipping verification when the IdP has no signing certificate
+     * registered would allow an attacker to forge an arbitrary response and bypass authentication.
+     * Therefore, if a signature is present but the IdP has no signing certificate we
+     * explicitly reject the request rather than trusting an unverifiable signature.
+     *
+     * @param sig         the {@link Signature} element extracted from the SAML message; may be {@code null}
+     *                    (no signature present — handled by {@link #checkAndFailOnMissingSAMLSignature})
+     * @param idpMetadata metadata for the IdP that issued the response
+     * @param params      original request parameters (used to build the serialised error response)
+     * @param responseType response serialisation type
+     * @throws ServerApiException if a signature is present but no signing certificate is registered,
+     *                            or if signature validation fails
+     */
+    protected void validateSAMLSignature(Signature sig, SAMLProviderMetadata idpMetadata,
+            Map<String, Object[]> params, String responseType) {
+        if (sig == null) {
+            return;
+        }
+        if (idpMetadata.getSigningCertificate() == null) {
+            logger.error("SAML Response contains a signature but the IdP has no signing certificate " +
+                    "registered; refusing to trust the signed SAMLResponse to prevent authentication bypass.");
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, apiServer.getSerializedApiError(
+                    ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
+                    "IdP has no signing certificate registered; refusing to trust signed SAMLResponse. " +
+                    "Please register the IdP signing certificate or contact your administrator.",
+                    params, responseType));
+        }
+        BasicX509Credential credential = new BasicX509Credential();
+        credential.setEntityCertificate(idpMetadata.getSigningCertificate());
+        SignatureValidator validator = new SignatureValidator(credential);
+        try {
+            validator.validate(sig);
+        } catch (ValidationException e) {
+            logger.error("SAML Response's signature failed to be validated by IDP signing key: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, apiServer.getSerializedApiError(
+                    ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
+                    "SAML Response's signature failed to be validated by IDP signing key",
+                    params, responseType));
         }
     }
 
@@ -158,11 +207,17 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 String domainPath = null;
 
                 if (params.containsKey(ApiConstants.IDP_ID)) {
-                    idpId = ((String[])params.get(ApiConstants.IDP_ID))[0];
+                    String[] idpIds = (String[])params.get(ApiConstants.IDP_ID);
+                    if (idpIds != null && idpIds.length > 0) {
+                        idpId = idpIds[0];
+                    }
                 }
 
                 if (params.containsKey(ApiConstants.DOMAIN)) {
-                    domainPath = ((String[])params.get(ApiConstants.DOMAIN))[0];
+                    String[] domainPaths = (String[])params.get(ApiConstants.DOMAIN);
+                    if (domainPaths != null && domainPaths.length > 0) {
+                        domainPath = domainPaths[0];
+                    }
                 }
 
                 if (domainPath != null && !domainPath.isEmpty()) {
@@ -190,7 +245,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 String authnId = SAMLUtils.generateSecureRandomId();
                 samlAuthManager.saveToken(authnId, domainPath, idpMetadata.getEntityId());
                 logger.debug("Sending SAMLRequest id=" + authnId);
-                String redirectUrl = SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value());
+                String redirectUrl = SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value(), SAML2AuthManager.SAMLRequirePasswordLogin.value());
                 resp.sendRedirect(redirectUrl);
                 return "";
             } if (params.containsKey("SAMLart")) {
@@ -207,7 +262,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             params, responseType));
                 }
 
-                String username = null;
+                String username;
                 Issuer issuer = processedSAMLResponse.getIssuer();
                 SAMLProviderMetadata spMetadata = samlAuthManager.getSPMetadata();
                 SAMLProviderMetadata idpMetadata = samlAuthManager.getIdPMetadata(issuer.getValue());
@@ -232,20 +287,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 session.setAttribute(SAMLPluginConstants.SAML_IDPID, issuer.getValue());
 
                 Signature sig = processedSAMLResponse.getSignature();
+                // Validate the top-level response signature.
                 checkAndFailOnMissingSAMLSignature(sig);
-                if (idpMetadata.getSigningCertificate() != null && sig != null) {
-                    BasicX509Credential credential = new BasicX509Credential();
-                    credential.setEntityCertificate(idpMetadata.getSigningCertificate());
-                    SignatureValidator validator = new SignatureValidator(credential);
-                    try {
-                        validator.validate(sig);
-                    } catch (ValidationException e) {
-                        logger.error("SAML Response's signature failed to be validated by IDP signing key:" + e.getMessage());
-                        throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
-                                "SAML Response's signature failed to be validated by IDP signing key",
-                                params, responseType));
-                    }
-                }
+                validateSAMLSignature(sig, idpMetadata, params, responseType);
 
                 username = SAMLUtils.getValueFromAssertions(processedSAMLResponse.getAssertions(), SAML2AuthManager.SAMLUserAttributeName.value());
 
@@ -273,26 +317,14 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             try {
                                 assertion = decrypter.decrypt(encryptedAssertion);
                             } catch (DecryptionException e) {
-                                logger.warn("SAML EncryptedAssertion error: " + e.toString());
+                                logger.warn("SAML EncryptedAssertion error: " + e);
                             }
                             if (assertion == null) {
                                 continue;
                             }
                             Signature encSig = assertion.getSignature();
                             checkAndFailOnMissingSAMLSignature(encSig);
-                            if (idpMetadata.getSigningCertificate() != null && encSig != null) {
-                                BasicX509Credential sigCredential = new BasicX509Credential();
-                                sigCredential.setEntityCertificate(idpMetadata.getSigningCertificate());
-                                SignatureValidator validator = new SignatureValidator(sigCredential);
-                                try {
-                                    validator.validate(encSig);
-                                } catch (ValidationException e) {
-                                    logger.error("SAML Response's signature failed to be validated by IDP signing key:" + e.getMessage());
-                                    throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
-                                            "SAML Response's signature failed to be validated by IDP signing key",
-                                            params, responseType));
-                                }
-                            }
+                            validateSAMLSignature(encSig, idpMetadata, params, responseType);
                             if (assertion.getSubject() != null && assertion.getSubject().getNameID() != null) {
                                 session.setAttribute(SAMLPluginConstants.SAML_NAMEID, assertion.getSubject().getNameID().getValue());
                             }
@@ -310,7 +342,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
                 UserAccount userAccount = null;
                 List<UserAccountVO> possibleUserAccounts = userAccountDao.getAllUsersByNameAndEntity(username, issuer.getValue());
-                if (possibleUserAccounts != null && possibleUserAccounts.size() > 0) {
+                if (possibleUserAccounts != null && !possibleUserAccounts.isEmpty()) {
                     // Log into the first enabled user account
                     // Users can switch to other allowed accounts later
                     for (UserAccountVO possibleUserAccount : possibleUserAccounts) {
@@ -370,7 +402,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Override
     public void setAuthenticators(List<PluggableAPIAuthenticator> authenticators) {
         for (PluggableAPIAuthenticator authManager: authenticators) {
-            if (authManager != null && authManager instanceof SAML2AuthManager) {
+            if (authManager instanceof SAML2AuthManager) {
                 samlAuthManager = (SAML2AuthManager) authManager;
             }
         }

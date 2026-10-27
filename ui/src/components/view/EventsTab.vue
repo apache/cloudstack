@@ -48,9 +48,11 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import ListView from '@/components/view/ListView'
+
+const EVENTS_TAB_COLUMNS_KEY = 'events_tab_columns'
 
 export default {
   name: 'EventsTab',
@@ -98,8 +100,7 @@ export default {
     }
   },
   created () {
-    this.selectedColumnKeys = this.columnKeys
-    this.updateSelectedColumns('description')
+    this.setDefaultColumns()
     this.pageSize = this.pageSizeOptions[0] * 1
     this.fetchData()
   },
@@ -111,6 +112,15 @@ export default {
     }
   },
   methods: {
+    setDefaultColumns () {
+      const savedColumns = this.$localStorage.get(EVENTS_TAB_COLUMNS_KEY)
+      if (savedColumns && Array.isArray(savedColumns) && savedColumns.length > 0) {
+        this.selectedColumnKeys = savedColumns
+      } else {
+        this.selectedColumnKeys = this.columnKeys.filter(x => x !== 'description')
+      }
+      this.updateColumns()
+    },
     fetchData () {
       this.fetchEvents()
     },
@@ -127,7 +137,7 @@ export default {
         listall: true
       }
       this.tabLoading = true
-      api('listEvents', params).then(json => {
+      getAPI('listEvents', params).then(json => {
         this.events = []
         this.totalCount = json?.listeventsresponse?.count || 0
         this.events = json?.listeventsresponse?.event || []
@@ -145,6 +155,7 @@ export default {
       } else {
         this.selectedColumnKeys.push(key)
       }
+      this.$localStorage.set(EVENTS_TAB_COLUMNS_KEY, this.selectedColumnKeys)
       this.updateColumns()
     },
     updateColumns () {

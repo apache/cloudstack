@@ -17,6 +17,7 @@
 package org.apache.cloudstack.utils.qemu;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 public class QemuImgFile {
 
@@ -66,6 +67,11 @@ public class QemuImgFile {
 
     public PhysicalDiskFormat getFormat() {
         return this.format;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this);
     }
 
 }

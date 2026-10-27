@@ -208,7 +208,7 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
             "      <alias name='watchdog0'/>\n" +
             "      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>\n" +
             "    </watchdog>\n" +
-            "    <memballoon model='virtio'>\n" +
+            "    <memballoon model='virtio' autodeflate='on' freePageReporting='on'>\n" +
             "      <alias name='balloon0'/>\n" +
             "      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>\n" +
             "    </memballoon>\n" +

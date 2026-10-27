@@ -214,9 +214,9 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
             self.logger.debug("Skip as redundant_state is %s" % redundant_state)
             return
         elif redundant_state == "PRIMARY":
-            command = 'ip link show |grep BROADCAST | egrep "%s" |grep "state DOWN" |wc -l' % publicNics
+            command = 'ip link show |grep BROADCAST | grep -E "%s" |grep "state DOWN" |wc -l' % publicNics
         elif redundant_state == "BACKUP":
-            command = 'ip link show |grep BROADCAST | egrep "%s" |grep "state UP" |wc -l' % publicNics
+            command = 'ip link show |grep BROADCAST | grep -E "%s" |grep "state UP" |wc -l' % publicNics
         result = get_process_status(
             host.ipaddress,
             host.port,

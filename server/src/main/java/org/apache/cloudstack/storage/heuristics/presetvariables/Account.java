@@ -27,7 +27,6 @@ public class Account extends GenericHeuristicPresetVariable {
 
     public void setId(String id) {
         this.id = id;
-        fieldNamesToIncludeInToString.add("id");
     }
 
     public Domain getDomain() {
@@ -36,6 +35,5 @@ public class Account extends GenericHeuristicPresetVariable {
 
     public void setDomain(Domain domain) {
         this.domain = domain;
-        fieldNamesToIncludeInToString.add("domain");
     }
 }

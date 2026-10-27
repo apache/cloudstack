@@ -39,7 +39,7 @@ import com.cloud.utils.mgmt.ManagementBean;
 public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
 
-    Map<Integer, Set<ComponentLifecycle>> sorted = new TreeMap<Integer, Set<ComponentLifecycle>>();
+    Map<Integer, Set<ComponentLifecycle>> sorted = new TreeMap<>();
 
     public CloudStackExtendedLifeCycle() {
         super();
@@ -73,20 +73,16 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 try {
                     lifecycle.start();
                 } catch (Exception e) {
-                    logger.error("Error on starting bean {} - {}", lifecycle.getName(), e.getMessage(), e);
+                    logger.error("Error on starting bean [{}] due to: {}", lifecycle.getName(), e);
+                    throw new CloudRuntimeException("Failed to start bean [" + lifecycle.getName() + "]");
                 }
 
                 if (lifecycle instanceof ManagementBean) {
                     ManagementBean mbean = (ManagementBean)lifecycle;
                     try {
                         JmxUtil.registerMBean(mbean);
-                    } catch (MalformedObjectNameException e) {
-                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
-                    } catch (InstanceAlreadyExistsException e) {
-                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
-                    } catch (MBeanRegistrationException e) {
-                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
-                    } catch (NotCompliantMBeanException e) {
+                    } catch (MalformedObjectNameException | InstanceAlreadyExistsException |
+                             MBeanRegistrationException | NotCompliantMBeanException e) {
                         logger.warn("Unable to register MBean: " + mbean.getName(), e);
                     }
                     logger.info("Registered MBean: " + mbean.getName());
@@ -129,6 +125,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                     throw new CloudRuntimeException(e);
                 } catch (Exception e) {
                     logger.error("Error on configuring bean {} - {}", lifecycle.getName(), e.getMessage(), e);
+                    throw new CloudRuntimeException(e);
                 }
             }
         });
@@ -141,7 +138,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
             Set<ComponentLifecycle> set = sorted.get(lifecycle.getRunLevel());
 
             if (set == null) {
-                set = new HashSet<ComponentLifecycle>();
+                set = new HashSet<>();
                 sorted.put(lifecycle.getRunLevel(), set);
             }
 
@@ -169,12 +166,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
         }
     }
 
-    @Override
-    public int getPhase() {
-        return 2000;
-    }
-
-    private static interface WithComponentLifeCycle {
+    private interface WithComponentLifeCycle {
         public void with(ComponentLifecycle lifecycle);
     }
 }

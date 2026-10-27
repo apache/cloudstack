@@ -41,9 +41,9 @@ public class RedfishClientTest {
     private static final String PASSWORD = "password";
     private static final String oobAddress = "oob.host.address";
     private static final String systemId = "SystemID.1";
-    private final static String COMPUTER_SYSTEM_RESET_URL_PATH = "/Actions/ComputerSystem.Reset";
+    private final static String COMPUTER_SYSTEM_RESET_URL_PATH = "Actions/ComputerSystem.Reset";
     private final static Integer REDFISHT_REQUEST_RETRIES = Integer.valueOf(2);
-    private static final String url = "https://address.system.net/redfish/v1/Systems/";
+    private static final String url = "https://address.system.net/redfish/v1/Systems";
     private static final HttpRequestBase httpReq = new HttpGet(url);
 
     @Mock
@@ -87,7 +87,7 @@ public class RedfishClientTest {
     public void buildRequestUrlTestHttpsGetSystemId() {
         RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetSystemId, systemId);
-        String expected = String.format("https://%s/redfish/v1/Systems/", oobAddress);
+        String expected = String.format("https://%s/redfish/v1/Systems", oobAddress);
         Assert.assertEquals(expected, result);
     }
 
@@ -95,7 +95,7 @@ public class RedfishClientTest {
     public void buildRequestUrlTestGetSystemId() {
         RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetSystemId, systemId);
-        String expected = String.format("http://%s/redfish/v1/Systems/", oobAddress);
+        String expected = String.format("http://%s/redfish/v1/Systems", oobAddress);
         Assert.assertEquals(expected, result);
     }
 
@@ -103,7 +103,7 @@ public class RedfishClientTest {
     public void buildRequestUrlTestHttpsComputerSystemReset() {
         RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.ComputerSystemReset, systemId);
-        String expected = String.format("https://%s/redfish/v1/Systems/%s%s", oobAddress, systemId, COMPUTER_SYSTEM_RESET_URL_PATH);
+        String expected = String.format("https://%s/redfish/v1/Systems/%s/%s", oobAddress, systemId, COMPUTER_SYSTEM_RESET_URL_PATH);
         Assert.assertEquals(expected, result);
     }
 
@@ -111,7 +111,7 @@ public class RedfishClientTest {
     public void buildRequestUrlTestComputerSystemReset() {
         RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.ComputerSystemReset, systemId);
-        String expected = String.format("http://%s/redfish/v1/Systems/%s%s", oobAddress, systemId, COMPUTER_SYSTEM_RESET_URL_PATH);
+        String expected = String.format("http://%s/redfish/v1/Systems/%s/%s", oobAddress, systemId, COMPUTER_SYSTEM_RESET_URL_PATH);
         Assert.assertEquals(expected, result);
     }
 

@@ -248,6 +248,10 @@ public class SnapshotVO implements Snapshot {
         return removed;
     }
 
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     @Override
     public State getState() {
         return state;
@@ -284,6 +288,6 @@ public class SnapshotVO implements Snapshot {
     public String toString() {
         return String.format("Snapshot %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "name", "volumeId", "version"));
+                        this, "id", "uuid", "name", "volumeId", "version", "state"));
     }
 }

@@ -586,7 +586,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         ip6s = []
 
     if secIpSet == "1":
-        logging.debug("Adding ipset for secondary ipv4 addresses")
+        logging.debug("Adding IPset for secondary IPv4 addresses")
         ip4s, ip6s = split_ips_by_family(ips)
 
         add_to_ipset(vmipsetName, ip4s, action)
@@ -635,7 +635,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     add_to_ipset(vmipsetName6, vm_ip6_addr, action)
     if secIpSet == "1":
-        logging.debug("Adding ipset for secondary ipv6 addresses")
+        logging.debug("Adding IPset for secondary IPv6 addresses")
         add_to_ipset(vmipsetName6, ip6s, action)
 
     try:
@@ -1381,15 +1381,6 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
     if not vif:
         print("Cannot find vif")
         sys.exit(1)
-
-    #vm_name = "i-2-55-VM"
-    #vm_id = 55
-    #vm_ip = "10.11.118.128"
-    #vm_ip6 = "fe80::1c00:b4ff:fe00:5"
-    #vm_mac = "1e:00:b4:00:00:05"
-    #vif = "vnet11"
-    #brname = "cloudbr0"
-    #sec_ips = "10.11.118.133;10.11.118.135;10.11.118.138;" # end with ";" and separated by ";"
 
     vm_ips = []
     if sec_ips is not None:

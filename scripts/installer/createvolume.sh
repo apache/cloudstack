@@ -88,6 +88,8 @@ uncompress() {
          ;;
   ZIP)  unzip -p $1 | cat > $tmpfile
         ;;
+  XZ)   xz -d -c $1 > $tmpfile
+        ;;
   *)	printf "$1"
         return 0
 	;;
@@ -270,10 +272,5 @@ echo "volume.size=$volsize" >> /$volfs/volume.properties
 
 zfs snapshot -r $volfs@vmops_ss
 rollback_if_needed $volfs $? "Failed to snapshot filesystem"
-
-#if [ "$cleanup" == "true" ]
-#then
-  #rm -f $volimg
-#fi
 
 exit 0

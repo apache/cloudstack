@@ -26,13 +26,13 @@
             v-ctrl-enter="handleSubmit"
             @finish="handleSubmit">
       <div v-if="template && template.userdataid">
-        <a-text type="primary">
+        <a-typography-text>
             The template "{{ $t(this.template.name) }}" is linked to Userdata "{{ $t(this.template.userdataname) }}" with override policy "{{ $t(this.template.userdatapolicy) }}"
-        </a-text><br/><br/>
+        </a-typography-text><br/><br/>
         <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
-          <a-text type="primary" v-if="this.template && this.template.userdataid && templateUserDataParams.length > 0">
+          <a-typography-text v-if="this.template && this.template.userdataid && templateUserDataParams.length > 0">
               Enter the values for the variables in userdata
-          </a-text>
+          </a-typography-text>
           <a-input-group>
             <a-table
               size="small"
@@ -52,11 +52,11 @@
       </div>
       <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
         <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-          {{ $t('label.userdata.do.override') }}
+          {{ $t('label.user.data.do.override') }}
           <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
         </span>
         <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-          {{ $t('label.userdata.do.append') }}
+          {{ $t('label.user.data.do.append') }}
           <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
         </span>
         <a-step>
@@ -124,7 +124,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 
@@ -198,11 +198,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -231,7 +231,7 @@ export default {
       this.loadingData = true
       this.items = []
       this.total = 0
-      api('listUserData', this.options).then(response => {
+      getAPI('listUserData', this.options).then(response => {
         this.total = response.listuserdataresponse.count
         if (this.total !== 0) {
           this.items = response.listuserdataresponse.userdata
@@ -245,8 +245,9 @@ export default {
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'
+      params.isready = true
       var apiName = 'listTemplates'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const templateResponses = json.listtemplatesresponse.template
         this.template = templateResponses[0]
         this.updateTemplateLinkedUserData(this.template.userdataid)
@@ -259,7 +260,7 @@ export default {
       }
       this.templateUserDataParams = []
 
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0].params
@@ -282,11 +283,11 @@ export default {
     loadUserdataTabList () {
       this.userdataTabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
     },
     onUserdataTabChange (key, type) {
@@ -303,7 +304,7 @@ export default {
       }
       this.form.userdataid = id
       this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp.length > 0) {
           var params = resp[0].params
@@ -362,13 +363,10 @@ export default {
       params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
 
       const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
-      const httpMethod = params.userdata ? 'POST' : 'GET'
-      const args = httpMethod === 'POST' ? {} : params
-      const data = httpMethod === 'POST' ? params : {}
 
-      api(resetUserDataApiName, args, httpMethod, data).then(json => {
+      postAPI(resetUserDataApiName, params).then(json => {
         this.$message.success({
-          content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
+          content: `${this.$t('label.action.user.data.reset')} - ${this.$t('label.success')}`,
           duration: 2
         })
         this.$emit('refresh-data')

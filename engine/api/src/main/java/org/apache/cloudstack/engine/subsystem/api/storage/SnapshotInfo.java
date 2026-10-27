@@ -25,12 +25,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface SnapshotInfo extends DataObject, Snapshot {
     ConfigKey<Boolean> BackupSnapshotAfterTakingSnapshot = new ConfigKey<>(Boolean.class, "snapshot.backup.to.secondary",  "Snapshots", "true", "Indicates whether to always"
-            + " backup primary storage snapshot to secondary storage. Keeping snapshots only on Primary storage is applicable for KVM + Ceph only.", false, ConfigKey.Scope.Global,
+            + " backup primary storage Snapshot to secondary storage. Keeping Snapshots only on Primary storage is applicable for KVM + Ceph only.", false, ConfigKey.Scope.Global,
             null);
 
     SnapshotInfo getParent();
 
     String getPath();
+
+    DataStore getImageStore();
+
+    void setImageStore(DataStore imageStore);
 
     SnapshotInfo getChild();
 
@@ -55,6 +59,14 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     long getPhysicalSize();
 
     void markBackedUp() throws CloudRuntimeException;
+
+    String getCheckpointPath();
+
+    void setCheckpointPath(String checkpointPath);
+
+    void setKvmIncrementalSnapshot(boolean isKvmIncrementalSnapshot);
+
+    boolean isKvmIncrementalSnapshot();
 
     Snapshot getSnapshotVO();
 

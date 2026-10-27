@@ -63,6 +63,8 @@ is_compressed() {
          ;;
   [zZ][iI][pP])  ctype="zip"
         ;;
+  XZ)   ctype="xz"
+        ;;
     *) echo "File $1 does not appear to be compressed" >&2
         return 1
 	;;
@@ -81,6 +83,8 @@ uncompress() {
   bzip2)  bunzip2 -q -c $1 > $tmpfile
          ;;
   [zZ][iI][pP])  unzip -q -p $1 | cat > $tmpfile
+        ;;
+  XZ)   xz -d -c $1 > $tmpfile
         ;;
     *) printf "$1"
        return 0
@@ -214,7 +218,7 @@ imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 if [ "$cloud" == "true" ]
 then
     create_from_file_user $tmpltfs $tmpltimg2 $tmpltname
-    tmpltfs=/tmp/cloud/templates/
+    tmpltfs=/var/tmp/cloud/templates/
 else
     create_from_file $tmpltfs $tmpltimg2 $tmpltname
 fi

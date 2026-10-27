@@ -30,39 +30,39 @@ import com.cloud.serializer.Param;
 @EntityReference(value = StickinessPolicy.class)
 public class LBStickinessResponse extends BaseResponse {
     @SerializedName("lbruleid")
-    @Param(description = "the LB rule ID")
+    @Param(description = "The LB rule ID")
     private String lbRuleId;
 
     @SerializedName("name")
-    @Param(description = "the name of the Stickiness policy")
+    @Param(description = "The name of the Stickiness policy")
     private String name;
 
     @SerializedName("description")
-    @Param(description = "the description of the Stickiness policy")
+    @Param(description = "The description of the Stickiness policy")
     private String description;;
 
     @SerializedName("account")
-    @Param(description = "the account of the Stickiness policy")
+    @Param(description = "The Account of the Stickiness policy")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the Stickiness policy")
+    @Param(description = "The domain ID of the Stickiness policy")
     private String domainId;
 
     @SerializedName("domain")
-    @Param(description = "the domain of the Stickiness policy")
+    @Param(description = "The domain of the Stickiness policy")
     private String domainName;
 
     @SerializedName("state")
-    @Param(description = "the state of the policy")
+    @Param(description = "The state of the policy")
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the id of the zone the Stickiness policy belongs to")
+    @Param(description = "The ID of the zone the Stickiness policy belongs to")
     private String zoneId;
 
     @SerializedName("stickinesspolicy")
-    @Param(description = "the list of stickinesspolicies", responseObject = LBStickinessPolicyResponse.class)
+    @Param(description = "The list of stickinesspolicies", responseObject = LBStickinessPolicyResponse.class)
     private List<LBStickinessPolicyResponse> stickinessPolicies;
 
     public void setlbRuleId(String lbRuleId) {

@@ -40,8 +40,8 @@ write_files:
       sysctl net.ipv4.conf.default.arp_ignore=0
       sysctl net.ipv4.conf.all.arp_announce=0
       sysctl net.ipv4.conf.all.arp_ignore=0
-      sysctl net.ipv4.conf.eth0.arp_announce=0
-      sysctl net.ipv4.conf.eth0.arp_ignore=0
+      sysctl net.ipv4.conf.eth0.arp_announce=0 || sysctl net.ipv4.conf.ens35.arp_announce=0 || true
+      sysctl net.ipv4.conf.eth0.arp_ignore=0 || sysctl net.ipv4.conf.ens35.arp_ignore=0 || true
       sed -i "s/net.ipv4.conf.default.arp_announce =.*$/net.ipv4.conf.default.arp_announce = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.default.arp_ignore =.*$/net.ipv4.conf.default.arp_ignore = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.all.arp_announce =.*$/net.ipv4.conf.all.arp_announce = 0/" /etc/sysctl.conf
@@ -53,8 +53,14 @@ write_files:
       ATTEMPT_ONLINE_INSTALL=false
       setup_complete=false
 
-      OFFLINE_INSTALL_ATTEMPT_SLEEP=15
-      MAX_OFFLINE_INSTALL_ATTEMPTS=100
+      OFFLINE_INSTALL_ATTEMPT_SLEEP={{ k8s.install.wait.time }}
+      MAX_OFFLINE_INSTALL_ATTEMPTS={{ k8s.install.reattempts.count }}
+      if [[ -z $OFFLINE_INSTALL_ATTEMPT_SLEEP || $OFFLINE_INSTALL_ATTEMPT_SLEEP -eq 0 ]]; then
+        OFFLINE_INSTALL_ATTEMPT_SLEEP=15
+      fi
+      if [[ -z $MAX_OFFLINE_INSTALL_ATTEMPTS || $MAX_OFFLINE_INSTALL_ATTEMPTS -eq 0 ]]; then
+        MAX_OFFLINE_INSTALL_ATTEMPTS=100
+      fi
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       EJECT_ISO_FROM_OS={{ k8s.eject.iso }}

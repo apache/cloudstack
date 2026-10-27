@@ -18,6 +18,7 @@
 package org.apache.cloudstack.storage.formatinspector;
 
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,6 +108,32 @@ public class Qcow2Inspector {
         }
 
         return result;
+    }
+
+
+    /**
+     * Validates if the file has a minimum version.
+     * @param filePath Path of the file to be validated.
+     * @param minVersion the minimum version that it should contain.
+     * @throws RuntimeException If a IOException is thrown.
+     * @return true if file version is >= minVersion, false otherwise.
+     */
+    public static boolean validateQcow2Version(String filePath, int minVersion) {
+        try (InputStream inputStream = new FileInputStream(filePath)) {
+            for (Qcow2HeaderField qcow2Header : Qcow2HeaderField.values()) {
+                if (qcow2Header != Qcow2HeaderField.VERSION) {
+                    skipHeader(inputStream, qcow2Header, filePath);
+                    continue;
+                }
+
+                byte[] headerValue = readHeader(inputStream, qcow2Header, filePath);
+                int version = new BigInteger(headerValue).intValue();
+                return version >= minVersion;
+            }
+        } catch (IOException ex) {
+            throw new CloudRuntimeException(String.format("Unable to validate file [%s] due to: ", filePath), ex);
+        }
+        return false;
     }
 
     /**

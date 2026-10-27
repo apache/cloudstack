@@ -34,27 +34,27 @@ import com.cloud.serializer.Param;
 public class AffinityGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the affinity group")
+    @Param(description = "The ID of the affinity group")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the affinity group")
+    @Param(description = "The name of the affinity group")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the affinity group")
+    @Param(description = "The description of the affinity group")
     private String description;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the affinity group")
+    @Param(description = "The account owning the affinity group")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the affinity group")
+    @Param(description = "The domain ID of the affinity group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the affinity group")
+    @Param(description = "The domain name of the affinity group")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -62,19 +62,19 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     private String domainPath;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project ID of the affinity group")
+    @Param(description = "The project ID of the affinity group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the affinity group")
+    @Param(description = "The project name of the affinity group")
     private String projectName;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the affinity group")
+    @Param(description = "The type of the affinity group")
     private String type;
 
     @SerializedName("virtualmachineIds")
-    @Param(description = "virtual machine IDs associated with this affinity group")
+    @Param(description = "Instance IDs associated with this affinity group")
     private List<String> vmIdList;
 
     @SerializedName("dedicatedresources")

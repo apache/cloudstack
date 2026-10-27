@@ -67,12 +67,14 @@ import org.w3c.dom.NodeList;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class UriUtils {
 
     protected static Logger LOGGER = LogManager.getLogger(UriUtils.class);
+    public static final String USER_AGENT = "User-Agent";
 
     public static String formNfsUri(String host, String path) {
         try {
@@ -227,6 +229,7 @@ public class UriUtils {
                 URI uri = new URI(url);
                 httpConn = (HttpURLConnection)uri.toURL().openConnection();
                 httpConn.setRequestMethod(method);
+                httpConn.setRequestProperty(USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
                 httpConn.setInstanceFollowRedirects(Boolean.TRUE.equals(followRedirect));
@@ -305,6 +308,134 @@ public class UriUtils {
     }
 
     /**
+     * Validates a URL extracted from inside a metalink file.
+     * Only {@code http} and {@code https} schemes are permitted.
+     * Loopback, link-local, any-local, multicast, and site-local (RFC-1918)
+     * addresses are all blocked.
+     *
+     * @param url the inner URL to validate
+     * @throws IllegalArgumentException if the URL is not safe to fetch
+     */
+    public static void validateMetalinkInnerUrl(String url) throws IllegalArgumentException {
+        validateMetalinkInnerUrl(url, Collections.emptyList());
+    }
+
+    /**
+     * Validates a URL extracted from inside a metalink file, with an optional
+     * admin-configured CIDR allowlist that may permit private-range addresses.
+     * Loopback, link-local, any-local, and multicast addresses are
+     * always blocked regardless of the allowlist.
+     * Site-local (RFC-1918) addresses can be selectively permitted by
+     * supplying matching CIDR strings (e.g. {@code "10.0.0.0/8"}).
+     *
+     * @param url          the inner URL to validate
+     * @param allowedCidrs CIDR strings whose addresses are allowed even when
+     *                     site-local; an empty list blocks all site-local addresses
+     * @throws IllegalArgumentException if the URL is not safe to fetch
+     */
+    public static void validateMetalinkInnerUrl(String url, List<String> allowedCidrs)
+            throws IllegalArgumentException {
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("Empty URL in metalink file");
+        }
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            if (scheme == null
+                    || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")
+                            && !scheme.equalsIgnoreCase("nfs"))) {
+                throw new IllegalArgumentException(
+                        String.format("Metalink inner URL scheme not allowed: '%s'. Only http, https and nfs are permitted.", scheme));
+            }
+            String host = uri.getHost();
+            if (host == null || host.isBlank()) {
+                throw new IllegalArgumentException(String.format("No host in metalink inner URL: %s", url));
+            }
+            try {
+                InetAddress addr = InetAddress.getByName(host);
+                checkHost(addr, false);
+                // Site-local (RFC-1918) blocked by default; overridable via allowlist.
+                if (addr.isSiteLocalAddress() && !isAddressInAllowedCidrs(host, addr, allowedCidrs)) {
+                    throw new IllegalArgumentException(
+                            String.format("Metalink inner URL resolves to a private/site-local address: %s. "
+                                    + "Configure direct.download.metalink.allowed.hosts.and.cidrs to permit specific ranges.", host));
+                }
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException(String.format("Unable to resolve metalink inner URL host: %s", host));
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(String.format("Invalid metalink inner URL: %s", url));
+        }
+    }
+
+    static boolean isAddressInAllowedCidrs(InetAddress addr, List<String> entries) {
+        return isAddressInAllowedCidrs(addr.getHostAddress(), addr, entries);
+    }
+
+    /**
+     * Returns true if the given host/address is permitted by any entry in the list.
+     * Entries may be a CIDR range 10.0.0.0/8}, an exact hostname or IP
+     * (storage.corp.com), or a wildcard domain suffix (*.mylocal.net).
+     * Wildcard matching is a hostname-suffix check against host; CIDR and
+     * exact-hostname entries resolve to an IP and compare. Malformed entries are logged and skipped.
+     */
+    static boolean isAddressInAllowedCidrs(String host, InetAddress addr, List<String> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return false;
+        }
+        byte[] addrBytes = addr.getAddress();
+        for (String entry : entries) {
+            String trimmed = entry.trim();
+            if (trimmed.startsWith("*.")) {
+                String suffix = trimmed.substring(1); // e.g. ".mylocal.net"
+                if (host != null && host.toLowerCase().endsWith(suffix.toLowerCase())) {
+                    return true;
+                }
+            } else {
+                try {
+                    if (trimmed.contains("/")) {
+                        String[] parts = trimmed.split("/");
+                        if (parts.length != 2) {
+                            LOGGER.warn("Ignoring malformed CIDR in metalink allowlist: " + trimmed);
+                            continue;
+                        }
+                        InetAddress cidrAddr = InetAddress.getByName(parts[0]);
+                        int prefixLen = Integer.parseInt(parts[1].trim());
+                        byte[] cidrBytes = cidrAddr.getAddress();
+                        if (cidrBytes.length != addrBytes.length) {
+                            continue;
+                        }
+                        if (isMatchingPrefix(addrBytes, cidrBytes, prefixLen)) {
+                            return true;
+                        }
+                    } else {
+                        if (InetAddress.getByName(trimmed).equals(addr)) {
+                            return true;
+                        }
+                    }
+                } catch (UnknownHostException | NumberFormatException e) {
+                    LOGGER.warn("Ignoring invalid entry in metalink allowlist: " + trimmed + " — " + e.getMessage());
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Returns true if {@code addr} matches {@code cidr} for the given prefix length. */
+    private static boolean isMatchingPrefix(byte[] addr, byte[] cidr, int prefixLen) {
+        int fullBytes = prefixLen / 8;
+        int remainingBits = prefixLen % 8;
+        for (int i = 0; i < fullBytes; i++) {
+            if (addr[i] != cidr[i]) return false;
+        }
+        if (remainingBits > 0 && fullBytes < addr.length) {
+            int mask = 0xFF << (8 - remainingBits);
+            return (addr[fullBytes] & mask) == (cidr[fullBytes] & mask);
+        }
+        return true;
+    }
+
+    /**
      * Verifies whether the provided host is valid. Throws an `IllegalArgumentException` if:
      * <ul>
      *     <li>The host is not resolvable;</li>
@@ -314,15 +445,18 @@ public class UriUtils {
      */
     private static void checkHost(String host, boolean skipIpv6Check) {
         try {
-            InetAddress hostAddr = InetAddress.getByName(host);
-            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-                throw new IllegalArgumentException("Illegal host specified in URL.");
-            }
-            if (!skipIpv6Check && hostAddr instanceof Inet6Address) {
-                throw new IllegalArgumentException(String.format("IPv6 addresses are not supported (%s).", hostAddr.getHostAddress()));
-            }
+            checkHost(InetAddress.getByName(host), skipIpv6Check);
         } catch (UnknownHostException uhe) {
             throw new IllegalArgumentException(String.format("Unable to resolve %s.", host));
+        }
+    }
+
+    private static void checkHost(InetAddress addr, boolean skipIpv6Check) {
+        if (addr.isAnyLocalAddress() || addr.isLinkLocalAddress() || addr.isLoopbackAddress() || addr.isMulticastAddress()) {
+            throw new IllegalArgumentException("Illegal host specified in URL.");
+        }
+        if (!skipIpv6Check && addr instanceof Inet6Address) {
+            throw new IllegalArgumentException(String.format("IPv6 addresses are not supported (%s).", addr.getHostAddress()));
         }
     }
 
@@ -431,7 +565,7 @@ public class UriUtils {
         return urls;
     }
 
-    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
+    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz", "xz");
 
     public static final Set<String> buildExtensionSet(boolean metalink, String... baseExtensions) {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -500,8 +634,12 @@ public class UriUtils {
             if ((user != null) && (password != null)) {
                 httpclient.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                LOGGER.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                httpclient.getState().setCredentials(
+                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                LOGGER.info("Added username={} along with password for host {}:{}"
+                    , user
+                    , hostAndPort.first()
+                    , hostAndPort.second());
             }
             // Execute the method.
             GetMethod method = new GetMethod(url);
@@ -634,6 +772,9 @@ public class UriUtils {
             if (url.startsWith("rbd://")) {
                 return getRbdUrlInfo(url);
             }
+            if (url.toLowerCase().startsWith("clvm://") || url.toLowerCase().startsWith("clvm_ng://")) {
+                return getClvmUrlInfo(url);
+            }
             URI uri = new URI(UriUtils.encodeURIComponent(url));
             return new UriInfo(uri.getScheme(), uri.getHost(), uri.getPath(), uri.getUserInfo(), uri.getPort());
         } catch (URISyntaxException e) {
@@ -669,6 +810,36 @@ public class UriUtils {
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(url + " is not a valid uri for RBD");
         }
+    }
+
+    private static UriInfo getClvmUrlInfo(String url) {
+        if (url == null || (!url.toLowerCase().startsWith("clvm://") && !url.toLowerCase().startsWith("clvm_ng://"))) {
+            throw new CloudRuntimeException("CLVM URL must start with \"clvm://\" or \"clvm_ng://\"");
+        }
+
+        String scheme;
+        String remainder;
+        if (url.toLowerCase().startsWith("clvm_ng://")) {
+            scheme = "clvm_ng";
+            remainder = url.substring(10);
+        } else {
+            scheme = "clvm";
+            remainder = url.substring(7);
+        }
+
+        int firstSlash = remainder.indexOf('/');
+        String host = (firstSlash == -1) ? remainder : remainder.substring(0, firstSlash);
+        String path = (firstSlash == -1) ? "/" : remainder.substring(firstSlash);
+
+        if (host.isEmpty()) {
+            host = "localhost";
+        }
+
+        while (path.startsWith("//")) {
+            path = path.substring(1);
+        }
+
+        return new UriInfo(scheme, host, path, null, -1);
     }
 
     public static boolean isUrlForCompressedFile(String url) {

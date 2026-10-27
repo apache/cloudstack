@@ -27,19 +27,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class HypervisorGuestOsNamesResponse extends BaseResponse {
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor")
+    @Param(description = "The hypervisor")
     private String hypervisor;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)
-    @Param(description = "version of the hypervisor for guest os names")
+    @Param(description = "Version of the hypervisor for guest os names")
     private String hypervisorVersion;
 
     @SerializedName(ApiConstants.GUEST_OS_LIST)
-    @Param(description = "the guest OS list of the hypervisor", responseObject = HypervisorGuestOsResponse.class)
+    @Param(description = "The guest OS list of the hypervisor", responseObject = HypervisorGuestOsResponse.class)
     private List<HypervisorGuestOsResponse> guestOSList;
 
     @SerializedName(ApiConstants.GUEST_OS_COUNT)
-    @Param(description = "the guest OS count of the hypervisor")
+    @Param(description = "The guest OS count of the hypervisor")
     private Integer guestOSCount;
 
     public String getHypervisor() {
