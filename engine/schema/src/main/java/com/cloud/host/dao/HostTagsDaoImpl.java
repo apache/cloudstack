@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -46,8 +45,10 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     private final SearchBuilder<HostTagVO> ImplicitTagsSearch;
     private final GenericSearchBuilder<HostTagVO, String> tagSearch;
 
-    @Inject
-    private ConfigurationDao _configDao;
+    // Registered/owned by ManagementServer; declared here too so this lower-layer module can read it without depending on the server module.
+    private static final ConfigKey<Integer> DetailBatchQuerySize = new ConfigKey<>("Advanced", Integer.class, "detail.batch.query.size", "2000",
+            "Default entity detail batch query size for listing", true);
+
     @Inject
     private HostDao hostDao;
 
@@ -191,9 +192,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
 
     @Override
     public List<HostTagVO> searchByIds(Long... tagIds) {
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-
-        final int detailsBatchSize = batchCfg != null ? Integer.parseInt(batchCfg) : 2000;
+        final int detailsBatchSize = DetailBatchQuerySize.value();
 
         // query details by batches
         List<HostTagVO> tagList = new ArrayList<>();

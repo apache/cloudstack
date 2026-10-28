@@ -42,6 +42,7 @@ import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.AccountManager;
@@ -256,11 +257,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
 
         List<ServiceOfferingJoinVO> uvList = new ArrayList<>();
         // query details by batches

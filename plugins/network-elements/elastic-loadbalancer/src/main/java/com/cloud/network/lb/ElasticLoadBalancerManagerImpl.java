@@ -50,7 +50,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -295,11 +294,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (_instance == null) {
             _instance = "VM";
         }
-        _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        _mgmtCidr = ManagementServer.ManagementNetwork.value();
 
-        _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
-        _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
-        _elasticLbvmNumCpu = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmNumVcpu.key()), 1);
+        _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
+        _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
+        _elasticLbvmNumCpu = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmNumVcpu.key()), 1);
         List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Elastic LB VM",
                 ServiceOffering.elbVmDefaultOffUniqueName, _elasticLbvmNumCpu, _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null,
                 Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
