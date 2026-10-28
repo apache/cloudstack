@@ -482,10 +482,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         super.configure(name, params);
         serverConfig();
 
-        String value = _params.get(Config.XapiWait.toString());
-        _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.XapiWait.getDefaultValue()));
+        String value = _params.get(AgentManager.XapiWait.toString());
+        _wait = NumbersUtil.parseInt(value, Integer.parseInt(AgentManager.XapiWait.defaultValue()));
 
-        _instance = _params.get(Config.InstanceName.key());
+        _instance = _params.get(AgentManager.InstanceName.key());
 
         value = _params.get("xenserver.check.hvm");
         _checkHvm = Boolean.parseBoolean(value);

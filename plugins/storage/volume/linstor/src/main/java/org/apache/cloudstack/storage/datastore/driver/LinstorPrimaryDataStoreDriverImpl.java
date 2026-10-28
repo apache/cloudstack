@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.cloud.agent.AgentManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -55,7 +56,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.api.storage.LinstorBackupSnapshotCommand;
 import com.cloud.api.storage.LinstorRevertBackupSnapshotCommand;
-import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -83,7 +83,6 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -989,8 +988,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         Answer answer;
         if (newCreated) {
-            int nMaxExecutionMinutes = NumbersUtil.parseInt(
-                    _configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
+            int nMaxExecutionMinutes = AgentManager.SecStorageCmdExecutionTimeMax.value();
             CopyCommand cmd = new CopyCommand(
                     srcData.getTO(),
                     dstData.getTO(),
