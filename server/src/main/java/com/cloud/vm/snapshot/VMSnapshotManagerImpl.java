@@ -41,7 +41,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -97,7 +96,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.ReflectionUse;
@@ -148,7 +146,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject GuestOSDao _guestOSDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject VirtualMachineManager _itMgr;
-    @Inject ConfigurationDao _configDao;
     @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
@@ -192,12 +189,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        if (_configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        String value = _configDao.getValue("vmsnapshot.create.wait");
-        _wait = NumbersUtil.parseInt(value, 1800);
+        _wait = VMSnapshotCreateWait.value();
 
         return true;
     }
