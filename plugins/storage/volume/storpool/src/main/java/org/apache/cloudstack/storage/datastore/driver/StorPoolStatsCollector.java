@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -39,13 +38,13 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import com.cloud.server.StatsCollector;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -60,8 +59,6 @@ public class StorPoolStatsCollector extends ManagerBase {
     private PrimaryDataStoreDao storagePoolDao;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
-    @Inject
-    private ConfigurationDao configurationDao;
     @Inject
     private SnapshotDao snapshotDao;
     @Inject
@@ -84,8 +81,8 @@ public class StorPoolStatsCollector extends ManagerBase {
         List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
         if (CollectionUtils.isNotEmpty(spPools)) {
             executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StorPoolStatsCollector"));
-            long storageStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("storage.stats.interval"), 60000L);
-            long volumeStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("volume.stats.interval"), 60000L);
+            long storageStatsInterval = StatsCollector.StorageStatsInterval.value();
+            long volumeStatsInterval = StatsCollector.VolumeStatsInterval.value();
 
             if (StorPoolConfigurationManager.VolumesStatsInterval.value() > 0 && volumeStatsInterval > 0) {
                 executor.scheduleAtFixedRate(new StorPoolVolumeStatsMonitorTask(),120, StorPoolConfigurationManager.VolumesStatsInterval.value(), TimeUnit.SECONDS);
