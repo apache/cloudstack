@@ -43,6 +43,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 // Kept outside com.cloud.utils.db because framework/db excludes that package's tests from the build.
 @RunWith(MockitoJUnitRunner.class)
@@ -143,6 +144,19 @@ public class GenericDaoBasePersistTransactionTest {
     }
 
     @Test
+    public void persistInsideCallerTransactionLeavesItIntactWhenTheSavepointCannotBeTaken() throws SQLException {
+        Mockito.when(conn.setSavepoint()).thenThrow(new SQLException("Connection lost"));
+        txn.start();
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> dao.persist(new PersistTestVO()));
+
+        Mockito.verify(conn, Mockito.never()).rollback();
+        Assert.assertTrue(txn.dbTxnStarted());
+        Assert.assertTrue(txn.commit());
+        Mockito.verify(conn).commit();
+    }
+
+    @Test
     public void failedSetSavepointLeavesTheCallerTransactionIntact() throws SQLException {
         Mockito.when(conn.setSavepoint()).thenThrow(new SQLException("Connection lost"));
         txn.start();
@@ -164,6 +178,20 @@ public class GenericDaoBasePersistTransactionTest {
         txn.rollback(sp);
 
         Mockito.verify(conn).rollback(savepoint);
+        Assert.assertTrue(txn.commit());
+        Mockito.verify(conn).commit();
+    }
+
+    @Test
+    public void namedSavepointRollsBackOnlyItsOwnLevel() throws SQLException {
+        Mockito.when(conn.setSavepoint("persist")).thenReturn(savepoint);
+        txn.start();
+        final Savepoint sp = txn.setSavepoint("persist");
+
+        txn.rollback(sp);
+
+        Mockito.verify(conn).rollback(savepoint);
+        Mockito.verify(conn, Mockito.never()).rollback();
         Assert.assertTrue(txn.commit());
         Mockito.verify(conn).commit();
     }
