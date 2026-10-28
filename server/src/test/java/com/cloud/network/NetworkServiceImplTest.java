@@ -30,6 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,6 +86,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
@@ -2501,5 +2503,20 @@ public class NetworkServiceImplTest {
 
     private URI vlanUri(int vlanId) {
         return Networks.BroadcastDomainType.Vlan.toUri(vlanId);
+    }
+
+    private void assertAsyncActionEvent(String methodName, Class<?> cmdClass, String eventType) throws NoSuchMethodException {
+        Method method = NetworkServiceImpl.class.getMethod(methodName, cmdClass);
+        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
+        assertEquals(eventType, actionEvent.eventType());
+        Assert.assertTrue(methodName + " must log Started/Completed events", actionEvent.async());
+        Assert.assertFalse(methodName + " must not log a Created event", actionEvent.create());
+    }
+
+    @Test
+    public void trunkNicCommandsLogStartedAndCompletedEvents() throws NoSuchMethodException {
+        assertAsyncActionEvent("associateNetworkToNic", AssociateNetworkToNicCmd.class, EventTypes.EVENT_NIC_NETWORK_ASSOCIATE);
+        assertAsyncActionEvent("disassociateNetworkFromNic", DisassociateNetworkFromNicCmd.class, EventTypes.EVENT_NIC_NETWORK_DISASSOCIATE);
+        assertAsyncActionEvent("changeNicPrimaryNetwork", ChangeNicPrimaryNetworkCmd.class, EventTypes.EVENT_NIC_PRIMARY_NETWORK_CHANGE);
     }
 }

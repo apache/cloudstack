@@ -922,7 +922,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_ASSOCIATE, eventDescription = "associating network to nic", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_ASSOCIATE, eventDescription = "associating network to nic", async = true)
     public Nic associateNetworkToNic(AssociateNetworkToNicCmd cmd)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException {
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
@@ -1100,7 +1100,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_DISASSOCIATE, eventDescription = "disassociating network from nic", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_DISASSOCIATE, eventDescription = "disassociating network from nic", async = true)
     public Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) throws ResourceUnavailableException {
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
@@ -1180,7 +1180,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NIC_PRIMARY_NETWORK_CHANGE, eventDescription = "changing nic's primary network", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_PRIMARY_NETWORK_CHANGE, eventDescription = "changing nic's primary network", async = true)
     public Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd) {
         NicVO nic = getTrunkEligibleNic(cmd.getNicId());
         VirtualMachine vm = getOwningVm(nic);
