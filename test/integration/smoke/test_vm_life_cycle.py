@@ -1716,8 +1716,8 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
         volume = Volume.list(self.apiclient, id=vol.id)[0]
         source_pool = list_storage_pools(self.apiclient, id=volume.storageid)[0]
-        if source_pool.type == 'RBD' and target_pools[0].type == 'RBD':
-            self.skipTest("Live VM migration between RBD pools is unsupported")
+        if source_pool.type == 'RBD':
+            self.skipTest("Live VM migration from RBD pool is unsupported")
 
         return target_pools[0]
 

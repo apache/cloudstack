@@ -194,7 +194,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
             if cls.zone.networktype == 'Basic' :
                 networks = Network.list(cls.apiclient)
                 if len(networks) == 0 :
-                    self.skipTest("Skipping test since no network found in basic zone")
+                    cls.skipTest("Skipping test since no network found in basic zone")
                 else :
                     cls.network = networks[0]
             else :
@@ -307,9 +307,10 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         for pool_type, pool_id, offering_type in storages:
             self.debug("Deploying VM from direct download template on %s storage" % pool_type)
 
-            # Create service offering for the storage using the storage pool type as storage tag
+            # Create a unique, test-scoped storage tag to avoid collisions with existing tags
+            # or parallel test runs that may also rely on temporary storage tags.
             tags = self.getCurrentStoragePoolTags(pool_id)
-            test_tag = pool_type.lower()
+            test_tag = "marvin_test_direct_download_%s_%s" % (pool_type.lower(), uuid.uuid4().hex)
             self.updateStoragePoolTags(pool_id, test_tag)
             offering = self.createServiceOffering("TestDirectDownload-%s" % test_tag, offering_type, test_tag)
             try:

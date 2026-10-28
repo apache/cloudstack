@@ -63,11 +63,9 @@ class TestListStoragePools(cloudstackTestCase):
             "Storage pool response type should be a list"
         )
         # Filter may return zone-wide pools (with clusterid=None) alongside cluster-scoped pools
-        cluster_scoped_found = False
         for storage_pool in storage_pools:
             if storage_pool.clusterid is not None:
                 # Only assert clusterid for cluster-scoped pools
-                cluster_scoped_found = True
                 self.assertEqual(
                     storage_pool.clusterid,
                     self.cluster.id,

@@ -1687,7 +1687,7 @@ class TestVolumeEncryption(cloudstackTestCase):
         vol_sz = int(vol_sz)
         if volume_pool.type.lower() == "powerflex":
             vol_sz = vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704)
-        elif volume_pool.type == "RBD" and getattr(volume, "encryptformat", None):
+        elif volume_pool.type.lower() == "rbd" and getattr(volume, "encryptformat", None):
             # RBD volumes are encrypted natively by librbd: the LUKS2 header/keyslots (16 MiB) are
             # reserved out of the volume's own size, so the guest sees size - header.
             vol_sz = vol_sz - (16 << 20)
@@ -1747,7 +1747,8 @@ class TestVolumeEncryption(cloudstackTestCase):
         # Any other pool type keeps using qemu-native LUKS1: <encryption format='luks'> (no engine).
         encryption_format_value = 'luks2' if self.storage_pool_type == "RBD" else 'luks'
         encryption_format = virshxml_root.findall(".devices/disk/encryption[@format='%s']" % encryption_format_value)
-        self.assertIsNotNone(encryption_format, "The volume encryption format is not %s" % encryption_format_value)
+        self.assertGreater(len(encryption_format), 0,
+                           "No volume is encrypted with the %s format in the domain XML of %s" % (encryption_format_value, instance_name))
         self.assertEqual(
             len(encryption_format),
             volumes_count,
@@ -1763,7 +1764,8 @@ class TestVolumeEncryption(cloudstackTestCase):
             )
 
         secret_type = virshxml_root.findall(".devices/disk/encryption/secret[@type='passphrase']")
-        self.assertIsNotNone(secret_type, "The volume encryption secret type is not passphrase")
+        self.assertGreater(len(secret_type), 0,
+                           "No encryption secret of type passphrase in the domain XML of %s" % instance_name)
         self.assertEqual(
             len(secret_type),
             volumes_count,
