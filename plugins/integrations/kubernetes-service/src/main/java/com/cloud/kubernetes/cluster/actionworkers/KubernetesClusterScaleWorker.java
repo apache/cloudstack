@@ -691,16 +691,19 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                                                                                                long originalClusterSize) {
         Map<KubernetesClusterNodeType, ServiceOffering> existingOfferings = new EnumMap<>(KubernetesClusterNodeType.class);
         for (KubernetesClusterNodeType nodeType : SCALING_ORDER) {
-            boolean workerCountChanges = WORKER == nodeType && clusterSize != null && clusterSize != originalClusterSize;
-            if (nodeType == ETCD && kubernetesCluster.getEtcdNodeCount() == 0) {
-                continue;
+            if (isNodeTypeScaled(nodeType, scaleClusterDefaultOffering, originalClusterSize)) {
+                existingOfferings.put(nodeType, getExistingServiceOfferingForNodeType(nodeType, kubernetesCluster));
             }
-            if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && !workerCountChanges) {
-                continue;
-            }
-            existingOfferings.put(nodeType, getExistingServiceOfferingForNodeType(nodeType, kubernetesCluster));
         }
         return existingOfferings;
+    }
+
+    private boolean isNodeTypeScaled(KubernetesClusterNodeType nodeType, boolean scaleClusterDefaultOffering, long originalClusterSize) {
+        if (nodeType == ETCD && kubernetesCluster.getEtcdNodeCount() == 0) {
+            return false;
+        }
+        boolean workerCountChanges = WORKER == nodeType && clusterSize != null && clusterSize != originalClusterSize;
+        return scaleClusterDefaultOffering || serviceOfferingNodeTypeMap.containsKey(nodeType.name()) || workerCountChanges;
     }
 
     private ServiceOffering getExistingServiceOfferingForNodeType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {

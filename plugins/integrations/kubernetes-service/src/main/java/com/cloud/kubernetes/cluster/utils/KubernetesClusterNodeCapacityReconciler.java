@@ -65,10 +65,13 @@ public class KubernetesClusterNodeCapacityReconciler {
     private static final int COMMAND_TIMEOUT_MS = 30000;
     private static final Pattern NODE_NAME = Pattern.compile("[a-z0-9][a-z0-9.-]{0,252}");
     private static final Pattern PATCH_VALUE = Pattern.compile("[A-Za-z0-9-]{1,64}");
-    private static final Pattern GUEST_VALUE = Pattern.compile("[1-9][0-9]{0,17}");
+    private static final Pattern GUEST_VALUE = Pattern.compile("[1-9]\\d{0,17}");
     private static final Pattern GUEST_HEX_VALUE = Pattern.compile("[0-9a-fA-F]{1,15}");
-    private static final Pattern CPU_QUANTITY = Pattern.compile("([0-9]{1,18})(m)?");
-    private static final Pattern MEMORY_QUANTITY = Pattern.compile("([0-9]{1,18})(Ki|Mi|Gi|Ti|K|M|G|T)?");
+    private static final Pattern CPU_QUANTITY = Pattern.compile("(\\d{1,18})(m)?");
+    private static final Pattern MEMORY_QUANTITY = Pattern.compile("(\\d{1,18})(Ki|Mi|Gi|Ti|K|M|G|T)?");
+    private static final String READ_GUEST = "READ_GUEST";
+    private static final String METADATA = "metadata";
+    private static final String STATUS = "status";
 
     /** Whether the target offering changes the CPU count or the memory of the current one. */
     public static boolean capacityChanged(ServiceOffering currentOffering, ServiceOffering targetOffering) {
@@ -124,11 +127,11 @@ public class KubernetesClusterNodeCapacityReconciler {
         String[] values = executeNode(access, GUEST_RESOURCES_COMMAND).trim().split("\\s+");
         if (values.length != 4 || !GUEST_VALUE.matcher(values[0]).matches() || !GUEST_VALUE.matcher(values[1]).matches()
                 || !GUEST_HEX_VALUE.matcher(values[2]).matches() || !GUEST_VALUE.matcher(values[3]).matches()) {
-            throw failure("READ_GUEST", vm, "unexpected guest CPU and memory output");
+            throw failure(READ_GUEST, vm, "unexpected guest CPU and memory output");
         }
         long memoryBlockBytes = Long.parseLong(values[2], 16);
         if (memoryBlockBytes == 0) {
-            throw failure("READ_GUEST", vm, "unexpected guest memory block size");
+            throw failure(READ_GUEST, vm, "unexpected guest memory block size");
         }
         try {
             return new GuestResources(Long.parseLong(values[0]),
@@ -136,7 +139,7 @@ public class KubernetesClusterNodeCapacityReconciler {
                     Math.multiplyExact(Long.parseLong(values[3]), memoryBlockBytes),
                     memoryBlockBytes);
         } catch (ArithmeticException e) {
-            throw failure("READ_GUEST", vm, "unexpected guest memory size", e);
+            throw failure(READ_GUEST, vm, "unexpected guest memory size", e);
         }
     }
 
@@ -234,8 +237,8 @@ public class KubernetesClusterNodeCapacityReconciler {
 
     static NodeCapacitySnapshot parseNode(String output) {
         JsonObject node = requireObject(JsonParser.parseString(output), "node");
-        JsonObject metadata = requireObject(node.get("metadata"), "metadata");
-        JsonObject status = requireObject(node.get("status"), "status");
+        JsonObject metadata = requireObject(node.get(METADATA), METADATA);
+        JsonObject status = requireObject(node.get(STATUS), STATUS);
         JsonElement spec = node.get("spec");
         boolean unschedulable = spec != null && spec.isJsonObject() && isTrue(spec.getAsJsonObject().get("unschedulable"));
         return new NodeCapacitySnapshot(requireString(metadata.get("uid"), "metadata.uid"),
@@ -335,7 +338,7 @@ public class KubernetesClusterNodeCapacityReconciler {
             }
             JsonObject item = condition.getAsJsonObject();
             if (isString(item.get("type")) && "Ready".equals(item.get("type").getAsString())
-                    && isString(item.get("status")) && "True".equals(item.get("status").getAsString())) {
+                    && isString(item.get(STATUS)) && "True".equals(item.get(STATUS).getAsString())) {
                 return true;
             }
         }
@@ -389,7 +392,7 @@ public class KubernetesClusterNodeCapacityReconciler {
         metadata.addProperty("resourceVersion", patchValue(node.getResourceVersion(), vm));
         metadata.add("annotations", annotations);
         JsonObject patch = new JsonObject();
-        patch.add("metadata", metadata);
+        patch.add(METADATA, metadata);
         if (unschedulable != null) {
             JsonObject spec = new JsonObject();
             spec.addProperty("unschedulable", unschedulable);

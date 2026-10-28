@@ -205,7 +205,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     }
 
     @Test
-    public void testVmOnTargetWithoutMarkersIsSkippedWithoutGuestAccess() throws Exception {
+    public void testVmOnTargetWithoutMarkersIsSkippedWithoutGuestAccess() {
         Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
 
         resize(WORKER);
@@ -216,7 +216,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     }
 
     @Test
-    public void testVmOnTargetWithPendingWorkIsFinishedBeforeAnythingElse() throws Exception {
+    public void testVmOnTargetWithPendingWorkIsFinishedBeforeAnythingElse() {
         Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
         Mockito.when(reconciler.readNode(resizedVm, access)).thenReturn(node(true, CLUSTER_UUID, null));
 
