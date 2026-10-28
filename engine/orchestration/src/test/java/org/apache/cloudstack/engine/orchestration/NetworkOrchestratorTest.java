@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
@@ -87,6 +89,7 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -1222,5 +1225,59 @@ public class NetworkOrchestratorTest extends TestCase {
         } finally {
             overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "false");
         }
+    }
+
+    private NetworkElement setUpRouterElementForAssociation(Network network, NetworkOfferingVO offering) throws Exception {
+        NetworkElement element = mock(NetworkElement.class);
+        when(element.getProvider()).thenReturn(Network.Provider.VirtualRouter);
+        when(element.implement(any(), any(), any(), any())).thenReturn(true);
+        testOrchestrator.setNetworkElements(Collections.singletonList(element));
+        testOrchestrator._networkOfferingDao = mock(NetworkOfferingDao.class);
+        testOrchestrator._dcDao = mock(DataCenterDao.class);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        when(testOrchestrator._dcDao.findById(anyLong())).thenReturn(zone);
+        when(testOrchestrator._networkOfferingDao.findById(anyLong())).thenReturn(offering);
+        when(offering.isPersistent()).thenReturn(false);
+        Mockito.doReturn(false).when(testOrchestrator).isSharedNetworkOfferingWithServices(anyLong());
+        when(testOrchestrator._ntwkSrvcDao.getDistinctProviders(anyLong())).thenReturn(Collections.singletonList("VirtualRouter"));
+        when(testOrchestrator._networkModel.resolveProvider("VirtualRouter")).thenReturn(Network.Provider.VirtualRouter);
+        when(testOrchestrator._networkModel.isProviderEnabledInPhysicalNetwork(anyLong(), ArgumentMatchers.anyString())).thenReturn(true);
+        when(testOrchestrator._networkModel.getPhysicalNetworkId(any())).thenReturn(1L);
+        return element;
+    }
+
+    @Test
+    public void ensureRouterForAssociationOnlyImplementsElementsForImplementedNetwork() throws Exception {
+        Network network = mock(Network.class);
+        when(network.getState()).thenReturn(Network.State.Implemented);
+        NetworkElement element = setUpRouterElementForAssociation(network, mock(NetworkOfferingVO.class));
+
+        testOrchestrator.ensureRouterForLazilyImplementedAssociation(network, mock(DeployDestination.class), mock(ReservationContext.class));
+
+        verify(element).implement(eq(network), any(), any(), any());
+        verify(testOrchestrator, never()).implementNetworkElementsAndResources(any(), any(), any(), any());
+    }
+
+    @Test
+    public void ensureRouterForAssociationImplementsElementsAndResourcesForSetupNetwork() throws Exception {
+        Network network = mock(Network.class);
+        when(network.getState()).thenReturn(Network.State.Setup);
+        setUpRouterElementForAssociation(network, mock(NetworkOfferingVO.class));
+        Mockito.doNothing().when(testOrchestrator).implementNetworkElementsAndResources(any(), any(), any(), any());
+
+        testOrchestrator.ensureRouterForLazilyImplementedAssociation(network, mock(DeployDestination.class), mock(ReservationContext.class));
+
+        verify(testOrchestrator).implementNetworkElementsAndResources(any(), any(), any(), any());
+    }
+
+    @Test
+    public void ensureRouterForAssociationDoesNothingForNetworkNotSetupOrImplemented() throws Exception {
+        Network network = mock(Network.class);
+        when(network.getState()).thenReturn(Network.State.Allocated);
+
+        testOrchestrator.ensureRouterForLazilyImplementedAssociation(network, mock(DeployDestination.class), mock(ReservationContext.class));
+
+        verify(testOrchestrator, never()).implementNetworkElementsAndResources(any(), any(), any(), any());
     }
 }

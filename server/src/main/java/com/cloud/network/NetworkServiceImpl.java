@@ -1644,17 +1644,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private void implementNetworkIfNeeded(NetworkVO network, VirtualMachine vm, Account caller)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        if (network.getState() == Network.State.Implemented) {
-            return;
-        }
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         Host host = vm.getHostId() != null ? _hostDao.findById(vm.getHostId()) : null;
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
-        Pair<? extends NetworkGuru, ? extends Network> implemented = _networkMgr.implementNetwork(network.getId(), dest, context);
-        if (implemented == null || implemented.first() == null) {
-            throw new CloudRuntimeException(String.format("Failed to implement network %s as part of associating it to a nic", network.getUuid()));
+        if (network.getState() != Network.State.Implemented) {
+            Pair<? extends NetworkGuru, ? extends Network> implemented = _networkMgr.implementNetwork(network.getId(), dest, context);
+            if (implemented == null || implemented.first() == null) {
+                throw new CloudRuntimeException(String.format("Failed to implement network %s as part of associating it to a nic", network.getUuid()));
+            }
         }
         _networkMgr.ensureRouterForLazilyImplementedAssociation(network, dest, context);
         _networkMgr.markNetworkImplemented(network.getId());

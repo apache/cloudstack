@@ -2316,7 +2316,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public void ensureRouterForLazilyImplementedAssociation(final Network network, final DeployDestination dest, final ReservationContext context)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        if (network.getState() != Network.State.Setup) {
+        final boolean lazilyImplemented = network.getState() == Network.State.Setup;
+        if (!lazilyImplemented && network.getState() != Network.State.Implemented) {
             return;
         }
         final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
@@ -2326,7 +2327,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (!treatedAsAlreadyImplemented) {
             return;
         }
-        implementNetworkElementsAndResources(dest, context, network, offering);
+        if (lazilyImplemented) {
+            implementNetworkElementsAndResources(dest, context, network, offering);
+        } else {
+            // already implemented: only (re)start a stopped router, as preparing the nic of a regular network would
+            implementNetworkElements(dest, context, network, offering, getNetworkProviders(network.getId()));
+        }
     }
 
     @Override
