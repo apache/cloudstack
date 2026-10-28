@@ -117,6 +117,10 @@ public abstract class Command {
         return traceContextMap.get(name);
     }
 
+    public void removeTraceContextParam(String name) {
+        traceContextMap.remove(name);
+    }
+
     public boolean allowCaching() {
         return true;
     }

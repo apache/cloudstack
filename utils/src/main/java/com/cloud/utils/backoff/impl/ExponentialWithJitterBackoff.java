@@ -92,25 +92,23 @@ public class ExponentialWithJitterBackoff extends AdapterBase implements Backoff
     /**
      * Calculates next attempt and direction.
      */
-    private void calculateNextAttempt() {
+    private synchronized void calculateNextAttempt() {
         if (increasing) {
             int nextAttemptNumber = attemptNumber + 1;
-            increasing = getNextDelay() <= maxDelayMs && nextAttemptNumber <= maxAttempts;
+            increasing = nextAttemptNumber <= maxAttempts;
             if (increasing) {
                 attemptNumber = nextAttemptNumber;
             }
         } else {
-            int nextAttemptNumber = Math.max(attemptNumber - 1, 0);
-            increasing = nextAttemptNumber == 0;
-            if (!increasing) {
-                attemptNumber = nextAttemptNumber;
-            }
+            attemptNumber = Math.max(attemptNumber - 1, 0);
+            increasing = attemptNumber == 0;
         }
     }
 
     @Override
-    public void reset() {
+    public synchronized void reset() {
         attemptNumber = 0;
+        increasing = true;
     }
 
     @Override
@@ -123,7 +121,7 @@ public class ExponentialWithJitterBackoff extends AdapterBase implements Backoff
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) {
+    public synchronized boolean configure(String name, Map<String, Object> params) {
         minDelayMs = NumbersUtil.parseInt((String) params.get(MIN_DELAY_MS_CONFIG_KEY), MIN_DELAY_MS_DEFAULT);
         maxDelayMs = NumbersUtil.parseInt((String) params.get(MAX_DELAY_MS_CONFIG_KEY), MAX_DELAY_MS_DEFAULT);
         maxAttempts = (int) Math.round(Math.log((double) maxDelayMs / minDelayMs) / Math.log(2));
@@ -154,15 +152,10 @@ public class ExponentialWithJitterBackoff extends AdapterBase implements Backoff
     }
 
     @Override
-    public long getTimeToWait() {
+    public synchronized long getTimeToWait() {
         long delay = Math.max(1L, getNextDelay());
         int jitterBound = (int) Math.max(1L, delay / 2);
         int jitter = random.nextInt(jitterBound);
         return delay + jitter;
-    }
-
-    @Override
-    public void setTimeToWait(long seconds) {
-        // ignore
     }
 }

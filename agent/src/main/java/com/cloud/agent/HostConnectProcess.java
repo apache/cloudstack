@@ -79,7 +79,7 @@ public class HostConnectProcess {
      * Stops the whole connect process and cancels all scheduled asynchronous tasks.
      * Returns {@link Boolean#TRUE} if {@link HostConnectProcess} was waiting for {@link StartupAnswer}.
      */
-    public boolean stop() {
+    public synchronized boolean stop() {
         logger.debug("Stopping connect process. The process is active: {}", isInProgress());
         stopHostStatusExecutor();
         logger.debug("Stopped executor");
@@ -99,14 +99,15 @@ public class HostConnectProcess {
         }
     }
 
-    public void scheduleConnectProcess(Link link, boolean connectionTransfer) {
+    public synchronized void scheduleConnectProcess(Link link, boolean connectionTransfer) {
         logger.debug("Scheduling connect process for {}", link);
         initExecutors();
 
-        var task = new HostStatusTask(link, connectionTransfer, agent, hostStatusFutureRef);
+        var task = new HostStatusTask(link, connectionTransfer, agent);
         var future = hostStatusExecutor.scheduleWithFixedDelay(ThreadContextUtil.wrapThreadContext(task),
                 HOST_STATUS_CHECK_INITIAL_DELAY_SEC,
                 hostStatusCheckDelaySec, TimeUnit.SECONDS);
+        task.setFuture(future);
         hostStatusFutureRef.set(future);
     }
 
@@ -135,20 +136,23 @@ public class HostConnectProcess {
         private final Link link;
         private final boolean forceConnect;
         private final Agent agent;
-        private final AtomicReference<? extends ScheduledFuture<?>> futureRef;
+        // each task generation cancels only its own schedule, never a newer connect process
+        private final AtomicReference<ScheduledFuture<?>> ownFutureRef = new AtomicReference<>();
 
-        public HostStatusTask(Link link, boolean forceConnect, Agent agent,
-                              AtomicReference<? extends ScheduledFuture<?>> futureRef) {
+        public HostStatusTask(Link link, boolean forceConnect, Agent agent) {
             logger.debug("{} created", this.getClass().getSimpleName());
             this.link = link;
             this.forceConnect = forceConnect;
             this.agent = agent;
-            this.futureRef = futureRef;
+        }
+
+        public void setFuture(ScheduledFuture<?> future) {
+            ownFutureRef.set(future);
         }
 
         private void cancel() {
             logger.debug("Cancelling future");
-            Optional.ofNullable(futureRef.get())
+            Optional.ofNullable(ownFutureRef.get())
                     .filter(Predicate.not(ScheduledFuture::isCancelled))
                     .ifPresent(future -> future.cancel(true));
             logger.debug("Cancelled future");

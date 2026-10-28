@@ -190,4 +190,21 @@ public class ManagementServerAddressUtilTest {
         assertEquals(List.of("ms1.example.com"),
                 ManagementServerAddressUtil.getConfiguredAddresses(List.of("ms1.example.com"), List.of("192.168.1.1")));
     }
+
+    @Test
+    public void testPreferredAddressFollowsConfiguredFormat() throws Exception {
+        setConfigValue("ms1.example.com,ms2.example.com");
+        assertEquals("ms1.example.com", ManagementServerAddressUtil.getPreferredAddress("ms1.example.com", "192.168.1.1"));
+        setConfigValue("192.168.1.1,192.168.1.2");
+        assertEquals("192.168.1.1", ManagementServerAddressUtil.getPreferredAddress("ms1.example.com", "192.168.1.1"));
+    }
+
+    @Test
+    public void testPreferredAddressFallsBackToWhateverIsSet() throws Exception {
+        setConfigValue("192.168.1.1,192.168.1.2");
+        assertEquals("ms1.example.com", ManagementServerAddressUtil.getPreferredAddress("ms1.example.com", " "));
+        setConfigValue("ms1.example.com,ms2.example.com");
+        assertEquals("192.168.1.1", ManagementServerAddressUtil.getPreferredAddress(null, "192.168.1.1"));
+        assertEquals(null, ManagementServerAddressUtil.getPreferredAddress(null, null));
+    }
 }

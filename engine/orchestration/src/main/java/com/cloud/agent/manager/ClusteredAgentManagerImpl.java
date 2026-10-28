@@ -81,6 +81,7 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusterServicePdu;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
+import com.cloud.cluster.ManagementServerAddressUtil;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.agentlb.AgentLoadBalancerPlanner;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
@@ -589,25 +590,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     /**
-     * Gets the hostname or IP address to use for connecting to a management server.
-     * Prefers hostname (for CNAME support) but falls back to IP if hostname is null.
+     * Gets the hostname or IP address to use for connecting to a management server, in the same format as the
+     * configured management server address list (hostname when that list holds hostnames, for CNAME support,
+     * otherwise service IP), falling back to whichever of the two is set.
      *
      * @param host the management server host
-     * @return hostname if available, otherwise service IP
+     * @return the address to connect to
      * @throws CloudRuntimeException if both hostname and IP are null
      */
     private String getHostIdentifier(final ManagementServerHost host) {
-        final String hostName = host.getName();
-        if (StringUtils.isNotBlank(hostName)) {
-            return hostName;
+        final String identifier = ManagementServerAddressUtil.getPreferredAddress(host.getName(), host.getServiceIP());
+        if (StringUtils.isBlank(identifier)) {
+            throw new CloudRuntimeException("Management server host has neither hostname nor IP address: " + host);
         }
-
-        final String serviceIP = host.getServiceIP();
-        if (StringUtils.isNotBlank(serviceIP)) {
-            return serviceIP;
-        }
-
-        throw new CloudRuntimeException("Management server host has neither hostname nor IP address: " + host);
+        return identifier;
     }
 
     private InetAddress resolveManagementServerAddress(final ManagementServerHost host) {

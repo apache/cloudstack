@@ -251,7 +251,7 @@ public abstract class NioConnection implements Callable<Boolean> {
         } catch (IOException ignore) {
             // ignore exception
         }
-        logger.warn("Rejecting new connection from {} as the server is blocked from accepting new connections", socketChannel.getRemoteAddress());
+        logger.warn("Rejecting new connection from {} as the server is blocked from accepting new connections", socketChannel.socket().getRemoteSocketAddress());
         socketChannel.close();
         _selector.wakeup();
         return true;
@@ -273,7 +273,7 @@ public abstract class NioConnection implements Callable<Boolean> {
         }
         // Reject new connection if the server is busy
         logger.warn("{} Rejecting new connection from {}. {} active connections currently",
-                SERVER_BUSY_MESSAGE, socketChannel.getRemoteAddress(), factoryMaxNewConnectionsCount);
+                SERVER_BUSY_MESSAGE, socketChannel.socket().getRemoteSocketAddress(), factoryMaxNewConnectionsCount);
         socketChannel.close();
         _selector.wakeup();
         return true;

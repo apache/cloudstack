@@ -120,6 +120,26 @@ public class ManagementServerAddressUtil {
     }
 
     /**
+     * Picks the address other nodes should use to reach a management server, in the same format as the
+     * 'host' configuration: the persisted hostname when that list holds hostnames, otherwise the service IP.
+     * Falls back to whichever of the two is set, so an IP-only deployment never depends on DNS for the
+     * canonical hostname that {@code ClusterManagerImpl} persists.
+     *
+     * @param hostName the hostname persisted for the management server, may be blank
+     * @param serviceIP the service IP persisted for the management server, may be blank
+     * @return the preferred address, or null when neither is set
+     */
+    public static String getPreferredAddress(String hostName, String serviceIP) {
+        final boolean preferHostName = isManagementServerAddressListUsingHostnames();
+        final String primary = preferHostName ? hostName : serviceIP;
+        final String fallback = preferHostName ? serviceIP : hostName;
+        if (StringUtils.isNotBlank(primary)) {
+            return primary;
+        }
+        return StringUtils.isNotBlank(fallback) ? fallback : null;
+    }
+
+    /**
      * Returns the entries of the 'host' configuration (ApiServiceConfiguration.ManagementServerAddresses) as a list,
      * in the configured order.
      */

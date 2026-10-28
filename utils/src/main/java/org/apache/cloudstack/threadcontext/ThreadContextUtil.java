@@ -92,12 +92,18 @@ public class ThreadContextUtil {
 
     /**
      * Extract UUID from JSON cmdInfo string and set it in MDC if UUID is not already present.
-     * This is specifically used for async job processing.
+     * This is specifically used for async job processing. Only API jobs persist cmdInfo as a JSON map;
+     * VM work jobs persist a Java-serialized {@code VmWork} (see {@code VmWorkSerializer}), which carries
+     * no UUID, so such values are skipped.
      *
      * @param cmdInfo the JSON string containing command info
      */
     public static void extractAndSetUuidFromCmdInfo(String cmdInfo) {
         if (StringUtils.isBlank((String) ThreadContext.get(MDC_UUID_KEY)) && StringUtils.isNotBlank(cmdInfo)) {
+            if (!cmdInfo.trim().startsWith("{")) {
+                logger.trace("cmdInfo is not a JSON map, skipping UUID extraction");
+                return;
+            }
             try {
                 Type mapType = new TypeToken<Map<String, String>>() {}.getType();
                 Gson gson = new Gson();

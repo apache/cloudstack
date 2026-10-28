@@ -1256,16 +1256,20 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         final String targetHostName = mshost.getName();
         final String currentHostName = NetUtils.getCanonicalHostName();
 
-        // Prefer hostname (CNAME support) but fall back to the non-null service IP when name is unset.
-        final String connectTarget = StringUtils.isNotBlank(targetHostName) ? targetHostName : targetIp;
-
-        // Check for self-detection using hostname comparison (for CNAME support)
-        if (currentHostName != null && currentHostName.equals(targetHostName)) {
-            logger.info("ping management node cluster service can not be performed on self (hostname match: {})", currentHostName);
+        if (mshost.getMsid() == _msId) {
+            logger.info("ping management node cluster service can not be performed on self (msid: {})", _msId);
             return false;
         }
         if (LOCALHOST_IP.equals(targetIp) || ANY_IP.equals(targetIp)) {
             logger.info("ping management node cluster service can not be performed on self");
+            return false;
+        }
+
+        // a peer sharing this node's hostname can only be reached by its IP because the name resolves to this node
+        final boolean sameHostName = currentHostName != null && currentHostName.equalsIgnoreCase(targetHostName);
+        final String connectTarget = sameHostName ? targetIp : ManagementServerAddressUtil.getPreferredAddress(targetHostName, targetIp);
+        if (StringUtils.isBlank(connectTarget)) {
+            logger.warn("Unable to ping management node {} (msid: {}), it has neither hostname nor service IP", mshost.getId(), mshost.getMsid());
             return false;
         }
 

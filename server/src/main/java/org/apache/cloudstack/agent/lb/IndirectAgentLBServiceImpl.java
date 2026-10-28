@@ -529,7 +529,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         if (failedHostIds.isEmpty()) {
             return;
         }
-        logger.warn(String.format("Failed to migrate %d %s host agent(s) from management server node %d (id: %s), host IDs: %s",
+        logger.warn(String.format("Migration of %d %s host agent(s) from management server node %d (id: %s) failed or was not confirmed, host IDs: %s",
                 failedHostIds.size(), hostKind, fromMsId, fromMsUuid, failedHostIds));
     }
 
@@ -631,6 +631,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 cmd.setWait(IndirectAgentLBMigrateCommandWait.value());
                 final Answer answer = agentManager.easySend(hostId, cmd); //may not receive answer when the agent disconnects immediately and try reconnecting to other ms host
                 if (answer == null) {
+                    failedHostIds.add(hostId);
                     logger.warn(String.format("Got empty answer while initiating migration of agent connection for host agent ID: %d", hostId));
                 } else if (!answer.getResult()) {
                     failedHostIds.add(hostId);

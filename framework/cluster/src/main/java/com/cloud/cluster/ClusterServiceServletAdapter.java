@@ -23,6 +23,7 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -94,10 +95,9 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     }
 
     private String composeEndpointName(ManagementServerHostVO msHost, int port) {
-        final String hostName = msHost.getName();
-        final String identifier = hostName != null ? hostName : msHost.getServiceIP();
+        final String identifier = ManagementServerAddressUtil.getPreferredAddress(msHost.getName(), msHost.getServiceIP());
 
-        if (identifier == null) {
+        if (StringUtils.isBlank(identifier)) {
             throw new CloudRuntimeException("Management server host has neither hostname nor IP address: " + msHost);
         }
 

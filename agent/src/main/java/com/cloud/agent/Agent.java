@@ -345,6 +345,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     public void stop(final String reason, final String detail) {
         logger.info("Stopping the agent: Reason = {}{}", reason, (detail != null ? ": Detail = " + detail : ""));
         reconnectAllowed = false;
+        hostConnectProcess.stop();
         if (connection != null) {
             final ShutdownCommand cmd = new ShutdownCommand(reason, detail);
             try {

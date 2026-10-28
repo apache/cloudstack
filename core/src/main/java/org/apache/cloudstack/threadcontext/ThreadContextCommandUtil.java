@@ -59,16 +59,18 @@ public class ThreadContextCommandUtil {
      * @param cmd the command to set trace context parameters on
      */
     public static void setContextInCommand(Command cmd) {
-        if (cmd != null) {
-            String logContextId = (String) ThreadContext.get(ThreadContextUtil.MDC_LOG_CONTEXT_ID_KEY);
-            if (StringUtils.isNotEmpty(logContextId)) {
-                cmd.setTraceContextParam(ThreadContextUtil.CONTEXT_LOG_ID_KEY, logContextId);
-            }
+        if (cmd == null) {
+            return;
+        }
+        setOrRemove(cmd, ThreadContextUtil.CONTEXT_LOG_ID_KEY, (String) ThreadContext.get(ThreadContextUtil.MDC_LOG_CONTEXT_ID_KEY));
+        setOrRemove(cmd, ThreadContextUtil.CONTEXT_UUID_KEY, (String) ThreadContext.get(ThreadContextUtil.MDC_UUID_KEY));
+    }
 
-            String uuid = (String) ThreadContext.get(ThreadContextUtil.MDC_UUID_KEY);
-            if (StringUtils.isNotEmpty(uuid)) {
-                cmd.setTraceContextParam(ThreadContextUtil.CONTEXT_UUID_KEY, uuid);
-            }
+    private static void setOrRemove(Command cmd, String contextKey, String value) {
+        if (StringUtils.isNotEmpty(value)) {
+            cmd.setTraceContextParam(contextKey, value);
+        } else {
+            cmd.removeTraceContextParam(contextKey);
         }
     }
 }

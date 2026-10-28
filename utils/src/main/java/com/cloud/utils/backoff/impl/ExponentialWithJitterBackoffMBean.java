@@ -23,8 +23,6 @@ import java.util.Collection;
 public interface ExponentialWithJitterBackoffMBean extends ManagementBean {
     long getTimeToWait();
 
-    void setTimeToWait(long seconds);
-
     Collection<String> getWaiters();
 
     boolean wakeup(String threadName);
