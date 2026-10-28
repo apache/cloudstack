@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -35,7 +34,6 @@ import com.cloud.api.commands.DeletePaloAltoFirewallCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallNetworksCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallsCmd;
 import com.cloud.api.response.PaloAltoFirewallResponse;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -74,7 +72,6 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -406,7 +403,7 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
         }
         response.setDeviceName(fwDeviceVO.getDeviceName());
         if (fwDeviceVO.getCapacity() == 0) {
-            long defaultFwCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalFirewallCapacity.key()), 50);
+            long defaultFwCapacity = DefaultExternalFirewallCapacity.value();
             response.setDeviceCapacity(defaultFwCapacity);
         } else {
             response.setDeviceCapacity(fwDeviceVO.getCapacity());

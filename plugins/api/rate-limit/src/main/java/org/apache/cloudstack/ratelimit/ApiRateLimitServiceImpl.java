@@ -42,9 +42,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.RequestLimitException;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -82,25 +82,12 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 
         if (_store == null) {
             // get global configured duration and max values
-            String isEnabled = _configDao.getValue(Config.ApiLimitEnabled.key());
-            if (isEnabled != null) {
-                enabled = Boolean.parseBoolean(isEnabled);
-            }
-            String duration = _configDao.getValue(Config.ApiLimitInterval.key());
-            if (duration != null) {
-                timeToLive = Integer.parseInt(duration);
-            }
-            String maxReqs = _configDao.getValue(Config.ApiLimitMax.key());
-            if (maxReqs != null) {
-                maxAllowed = Integer.parseInt(maxReqs);
-            }
+            enabled = ManagementServer.ApiLimitEnabled.value();
+            timeToLive = ManagementServer.ApiLimitInterval.value();
+            maxAllowed = ManagementServer.ApiLimitMax.value();
             // create limit store
             EhcacheLimitStore cacheStore = new EhcacheLimitStore();
-            int maxElements = 10000;
-            String cachesize = _configDao.getValue(Config.ApiLimitCacheSize.key());
-            if (cachesize != null) {
-                maxElements = Integer.parseInt(cachesize);
-            }
+            int maxElements = ApiLimitCacheSize.value();
             CacheManager cm = CacheManager.create();
             Cache cache = new Cache("api-limit-cache", maxElements, false, false, timeToLive, timeToLive);
             cm.addCache(cache);
