@@ -2604,7 +2604,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 if (storagePoolVO.isManaged() && !List.of(
                         Storage.StoragePoolType.PowerFlex,
-                        Storage.StoragePoolType.FiberChannel).contains(storagePoolVO.getPoolType())) {
+                        Storage.StoragePoolType.FiberChannel,
+                        Storage.StoragePoolType.NVMeTCP).contains(storagePoolVO.getPoolType())) {
                     Long instanceId = volume.getInstanceId();
 
                     if (instanceId != null) {
@@ -5385,14 +5386,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
+    @Override
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+        return _tmpltMgr.getCdromDeviceIds(vm);
+    }
+
+    @Override
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
+        return _tmpltMgr.getCdromDeviceIds(vm, configDriveUsed);
+    }
+
+    /**
+     * Returns the first {@code maxDataVolumes} device ids (starting from 1) which are not reserved.
+     */
+    private List<Long> getAvailableDeviceIds(int maxDataVolumes, Set<Long> reservedDeviceIds) {
+        List<Long> availableDeviceIds = new ArrayList<>();
+        for (long id = 1; availableDeviceIds.size() < maxDataVolumes; id++) {
+            if (!reservedDeviceIds.contains(id)) {
+                availableDeviceIds.add(id);
+            }
+        }
+        return availableDeviceIds;
+    }
+
     private Long getDeviceId(UserVmVO vm, Long deviceId) {
         // allocate deviceId
-        int maxDevices = getMaxDataVolumesSupported(vm) + 2; // add 2 to consider devices root volume and cdrom
-        int maxDeviceId = maxDevices - 1;
+        Set<Long> reservedDeviceIds = getReservedDeviceIds(vm);
+        List<Long> availableDeviceIds = getAvailableDeviceIds(getMaxDataVolumesSupported(vm), reservedDeviceIds);
+        long maxDeviceId = availableDeviceIds.get(availableDeviceIds.size() - 1);
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (deviceId != null) {
-            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3) {
-                throw new RuntimeException("deviceId should be 0,1,2,4-" + maxDeviceId);
+            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || reservedDeviceIds.contains(deviceId)) {
+                throw new RuntimeException(String.format("deviceId should be 0 or between 1 and %d, except the ones reserved for CD-ROM/config drive devices: %s",
+                        maxDeviceId, reservedDeviceIds));
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
@@ -5401,18 +5427,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         } else {
             // allocate deviceId here
-            List<String> devIds = new ArrayList<String>();
-            for (int i = 1; i <= maxDeviceId; i++) {
-                devIds.add(String.valueOf(i));
-            }
-            devIds.remove("3");
             for (VolumeVO vol : vols) {
-                devIds.remove(vol.getDeviceId().toString().trim());
+                availableDeviceIds.remove(vol.getDeviceId());
             }
-            if (devIds.isEmpty()) {
+            if (availableDeviceIds.isEmpty()) {
                 throw new RuntimeException(String.format("All device Ids are used by vm %s", vm));
             }
-            deviceId = Long.parseLong(devIds.iterator().next());
+            deviceId = availableDeviceIds.get(0);
         }
 
         return deviceId;

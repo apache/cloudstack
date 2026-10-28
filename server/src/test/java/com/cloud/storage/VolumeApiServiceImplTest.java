@@ -37,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -129,6 +130,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -167,6 +169,8 @@ public class VolumeApiServiceImplTest {
     private SnapshotManager snapshotManagerMock;
     @Mock
     private VolumeDataStoreDao volumeDataStoreDaoMock;
+    @Mock
+    private TemplateManager templateManagerMock;
     @Mock
     private VolumeDao volumeDaoMock;
     @Mock
@@ -2958,5 +2962,115 @@ public class VolumeApiServiceImplTest {
         volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, poolOfType(1L, Storage.StoragePoolType.RBD), poolOfType(2L, Storage.StoragePoolType.NetworkFilesystem));
         volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, poolOfType(3L, Storage.StoragePoolType.SharedMountPoint), poolOfType(1L, Storage.StoragePoolType.RBD));
         Mockito.verifyNoInteractions(storagePoolHostDaoMock);
+    }
+
+    private Long invokeGetDeviceId(UserVmVO vm, Long deviceId) throws Exception {
+        java.lang.reflect.Method method = VolumeApiServiceImpl.class.getDeclaredMethod("getDeviceId", UserVmVO.class, Long.class);
+        method.setAccessible(true);
+        try {
+            return (Long) method.invoke(volumeApiServiceImpl, vm, deviceId);
+        } catch (InvocationTargetException e) {
+            throw (Exception) e.getCause();
+        }
+    }
+
+    private void mockCdromDeviceIds(UserVmVO vm, Long... deviceIds) {
+        lenient().when(templateManagerMock.getCdromDeviceIds(vm)).thenReturn(new HashSet<>(Arrays.asList(deviceIds)));
+    }
+
+    private List<VolumeVO> mockVmVolumes(UserVmVO vm, long... deviceIds) {
+        List<VolumeVO> volumes = new ArrayList<>();
+        for (long deviceId : deviceIds) {
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            lenient().when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+        lenient().when(volumeDaoMock.findByInstance(vm.getId())).thenReturn(volumes);
+        return volumes;
+    }
+
+    @Test
+    public void getReservedDeviceIdsReturnsTheDeviceIdsOfTheCdroms() {
+        UserVmVO vm = getMockedVm();
+
+        mockCdromDeviceIds(vm, 3L);
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+
+        // e.g. the CD-ROM and the config drive ISO, which is attached as the CD-ROM following the ones of the ISOs
+        mockCdromDeviceIds(vm, 3L, 4L);
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+
+        mockCdromDeviceIds(vm, 3L, 4L, 5L);
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+    }
+
+    @Test
+    public void getDeviceIdUsesDeviceId4WhenVmHasOneCdrom() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L);
+        mockVmVolumes(vm, 0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(4L), invokeGetDeviceId(vm, null));
+        Assert.assertEquals(Long.valueOf(4L), invokeGetDeviceId(vm, 4L));
+    }
+
+    @Test
+    public void getDeviceIdSkipsDeviceIdsOfAllCdroms() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L, 4L);
+        mockVmVolumes(vm, 0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(5L), invokeGetDeviceId(vm, null));
+    }
+
+    @Test
+    public void getDeviceIdRejectsReservedDeviceIds() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L, 4L);
+        mockVmVolumes(vm, 0L);
+
+        for (long reservedDeviceId : new long[] {3L, 4L}) {
+            try {
+                invokeGetDeviceId(vm, reservedDeviceId);
+                fail("deviceId " + reservedDeviceId + " should be rejected");
+            } catch (RuntimeException e) {
+                Assert.assertTrue(e.getMessage(), e.getMessage().contains("deviceId should be 0 or between 1 and"));
+            }
+        }
+    }
+
+    @Test
+    public void getDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L, 4L);
+        List<VolumeVO> volumes = mockVmVolumes(vm, 0L);
+
+        // 6 data volumes are supported by default
+        List<Long> allocated = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            Long deviceId = invokeGetDeviceId(vm, null);
+            allocated.add(deviceId);
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            lenient().when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+
+        Assert.assertEquals(Arrays.asList(1L, 2L, 5L, 6L, 7L, 8L), allocated);
+        try {
+            invokeGetDeviceId(vm, null);
+            fail("All device ids are used, an exception is expected");
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("All device Ids are used"));
+        }
+    }
+
+    @Test
+    public void getReservedDeviceIdsWithConfigDriveReservesTheCdromOfConfigDrive() {
+        UserVmVO vm = getMockedVm();
+        when(templateManagerMock.getCdromDeviceIds(vm, false)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L)));
+        when(templateManagerMock.getCdromDeviceIds(vm, true)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L, 5L)));
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm, false));
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm, true));
     }
 }
