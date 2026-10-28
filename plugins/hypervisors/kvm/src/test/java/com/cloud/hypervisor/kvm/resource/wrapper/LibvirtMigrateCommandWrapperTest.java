@@ -1044,6 +1044,24 @@ public class LibvirtMigrateCommandWrapperTest {
     }
 
     @Test
+    public void replaceVlanTrunkInterfacesSkipsTrunkVlanBlockForUntaggedOrdinaryNicWhenDestSupportsTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        nic.setBroadcastUri(java.net.URI.create("vlan://untagged"));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertFalse(result.contains("trunk=\"yes\""));
+    }
+
+    @Test
     public void replaceVlanTrunkInterfacesStripsVlanBlockWhenDestDoesNotSupportTrunkXml()
             throws ParserConfigurationException, IOException, SAXException, TransformerException {
         NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));

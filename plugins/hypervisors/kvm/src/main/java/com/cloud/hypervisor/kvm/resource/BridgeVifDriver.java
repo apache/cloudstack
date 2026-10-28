@@ -208,7 +208,7 @@ public class BridgeVifDriver extends VifDriverBase {
         return vNetId != null && protocol != null && !vNetId.equalsIgnoreCase("untagged");
     }
 
-    protected boolean isUntaggedBroadcast(final NicTO nic) {
+    public static boolean isUntaggedBroadcast(final NicTO nic) {
         return nic.getBroadcastUri() != null && "untagged".equalsIgnoreCase(Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
     }
 

@@ -43,6 +43,7 @@ import javax.xml.transform.TransformerException;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import com.cloud.resource.CommandWrapper;
@@ -799,7 +800,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             interfaceElement.removeChild(existingVlanNode);
         }
 
-        if (destVlanTrunkXmlSupported) {
+        boolean untaggedOrdinaryNic = BridgeVifDriver.isUntaggedBroadcast(nic) && !nic.isTrunkVlan();
+        if (destVlanTrunkXmlSupported && !untaggedOrdinaryNic) {
             interfaceElement.appendChild(buildVlanTrunkElement(doc, nic));
         }
         // else: membership is applied manually on the destination tap instead (ensureVlanTrunkMembership)
