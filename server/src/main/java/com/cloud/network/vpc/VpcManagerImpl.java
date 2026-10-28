@@ -2582,7 +2582,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 try {
                     // check number of active networks in vpc
                     if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, VpcMaxNetworks.key()));
+                        logger.warn("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [{}]. Increase it by modifying global config [{}].", _maxNetworks, VpcMaxNetworks.key());
                         throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
                     }
 
