@@ -1081,6 +1081,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             List<NetworkVO> requestedNetworks = networkSets.second();
 
             validateTrunkSet(primaryNetwork, resultingSet);
+            resultingSet.forEach(this::validateNotNativeVlan);
             validateNoOverlappingCidrs(resultingSet);
             // defer implement to the Instance's next start when stopped, like its primary network; a running Instance needs it now
             boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
@@ -1541,6 +1542,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (NetworkVO network : requestedNetworks) {
             justRequestedIds.add(network.getId());
         }
+        implementedNetworks.forEach(this::validateNotNativeVlan);
         validateNoDuplicateVlan(implementedNetworks, justRequestedIds);
     }
 
@@ -1680,6 +1682,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException(String.format("Networks %s and %s share the same VLAN (%s) and cannot be associated with the same nic",
                         conflicting.getUuid(), network.getUuid(), broadcastUri));
             }
+        }
+    }
+
+    // VLAN 1 is the host uplink's PVID (egress untagged), so it is not isolated from untagged networks
+    private void validateNotNativeVlan(NetworkVO network) {
+        URI broadcastUri = network.getBroadcastUri();
+        if (broadcastUri != null && BroadcastDomainType.Vlan.equals(BroadcastDomainType.getSchemeValue(broadcastUri))
+                && "1".equals(BroadcastDomainType.getValue(broadcastUri))) {
+            throw new InvalidParameterValueException(String.format(
+                    "Network %s is on VLAN 1, the native VLAN of the host uplink, and cannot be on a trunk nic",
+                    network.getUuid()));
         }
     }
 

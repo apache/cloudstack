@@ -1527,6 +1527,23 @@ public class NetworkServiceImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
+    public void validateNotNativeVlanRejectsVlanOne() throws Exception {
+        NetworkVO network = new NetworkVO();
+        network.setBroadcastUri(new java.net.URI("vlan://1"));
+        ReflectionTestUtils.invokeMethod(service, "validateNotNativeVlan", network);
+    }
+
+    @Test
+    public void validateNotNativeVlanAcceptsOtherVlans() throws Exception {
+        for (String uri : new String[] {"vlan://2", "vlan://4094", "vlan://untagged"}) {
+            NetworkVO network = new NetworkVO();
+            network.setBroadcastUri(new java.net.URI(uri));
+            ReflectionTestUtils.invokeMethod(service, "validateNotNativeVlan", network);
+        }
+        ReflectionTestUtils.invokeMethod(service, "validateNotNativeVlan", new NetworkVO());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
     public void associateNetworkToNicFailsWhenNicNotFound() throws Exception {
         Mockito.when(nicDao.findById(11L)).thenReturn(null);
 
