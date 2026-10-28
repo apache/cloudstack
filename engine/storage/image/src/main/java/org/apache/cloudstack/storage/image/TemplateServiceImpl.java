@@ -164,8 +164,6 @@ public class TemplateServiceImpl implements TemplateService {
     TemplateDataFactory imageFactory;
     @Inject
     StorageOrchestrationService storageOrchestrator;
-    @Inject
-    ImageStoreDao imageStoreDao;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -298,44 +296,50 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
-        if (_storeMgr.isRemovedOrReadonly(store)) {
+        try {
+            if (_storeMgr.isRemovedOrReadonly(store)) {
+                return false;
+            }
+
+            Long zoneId = store.getScope().getScopeId();
+            DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
+            if (directedStore != null && store.getId() != directedStore.getId()) {
+                logger.info("Template [{}] will not be downloaded to image store [{}], as a heuristic rule is directing it to another store.",
+                        template.getUniqueName(), store.getName());
+                return false;
+            }
+
+            if (template.isPublicTemplate()) {
+                logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is public.", template.getUniqueName(),
+                        store.getName());
+                return true;
+            }
+
+            if (template.isFeatured()) {
+                logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is featured.", template.getUniqueName(),
+                        store.getName());
+                return true;
+            }
+
+            if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
+                logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is a system VM template.",
+                        template.getUniqueName(),store.getName());
+                return true;
+            }
+
+            if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
+                logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is not present on any image store of zone [{}].",
+                        template.getUniqueName(), store.getName(), zoneId);
+                return true;
+            }
+
+            logger.info("Skipping download of template [{}] to image store [{}].", template.getUniqueName(), store.getName());
+            return false;
+
+        } catch (CloudRuntimeException e) {
+            logger.info("Download of template [{}] to image store [{}] was skipped. Details: {}", template.getUniqueName(), store.getName(), e.getMessage());
             return false;
         }
-
-        Long zoneId = store.getScope().getScopeId();
-        DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
-        if (directedStore != null && store.getId() != directedStore.getId()) {
-            logger.info("Template [{}] will not be downloaded to image store [{}], as a heuristic rule is directing it to another store.",
-                    template.getUniqueName(), store.getName());
-            return false;
-        }
-
-        if (template.isPublicTemplate()) {
-            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is public.", template.getUniqueName(),
-                    store.getName());
-            return true;
-        }
-
-        if (template.isFeatured()) {
-            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is featured.", template.getUniqueName(),
-                    store.getName());
-            return true;
-        }
-
-        if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
-            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is a system VM template.",
-                    template.getUniqueName(),store.getName());
-            return true;
-        }
-
-        if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
-            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is not present on any image store of zone [{}].",
-                    template.getUniqueName(), store.getName(), zoneId);
-            return true;
-        }
-
-        logger.info("Skipping download of template [{}] to image store [{}].", template.getUniqueName(), store.getName());
-        return false;
     }
 
     @Override
