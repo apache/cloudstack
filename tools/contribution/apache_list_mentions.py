@@ -203,8 +203,8 @@ def parse_names_file(path: Path) -> Tuple[List[str], Dict[str, List[str]]]:
         if ":" in left:
             canon, aliases = left.split(":", 1)
             canon = canon.strip()
-            als = [a.strip() for a in aliases.split(",") if a.strip()]
-            variants = [canon] + [a for a in als if a.lower() != canon.lower()]
+            alias_list = [a.strip() for a in aliases.split(",") if a.strip()]
+            variants = [canon] + [a for a in alias_list if a.lower() != canon.lower()]
         else:
             canon = left
             variants = [canon]

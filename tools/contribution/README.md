@@ -24,7 +24,7 @@ input when discussing committer or PMC nominations. The numbers are only a
 rough signal; read the actual contributions before drawing conclusions.
 
 | Script | Data source | What it counts |
-|---|---|---|
+| --- | --- | --- |
 | `github_org_contributions.py` | GitHub GraphQL API | PRs opened, issues opened and PR reviews per user, in CloudStack repos (by default) of an org |
 | `apache_list_mentions.py` | lists.apache.org mbox archives | How often each name (or alias) appears in mailing list message bodies |
 
@@ -47,7 +47,7 @@ python3 github_org_contributions.py --org apache --users octocat \
 ```
 
 | Option | Description |
-|---|---|
+| --- | --- |
 | `--org` | GitHub organization login (required) |
 | `--users` | One or more GitHub usernames, space separated (required) |
 | `--repo-pattern` | Regex matched (case-insensitively) against repo names; only matching repos are counted. Default: `^cloudstack`. Use `.` for all org repos |
@@ -82,14 +82,14 @@ python3 apache_list_mentions.py --list dev --domain cloudstack.apache.org \
 ```
 
 | Option | Description |
-|---|---|
+| --- | --- |
 | `--list` | List name, e.g. `dev`, `users` (required) |
 | `--domain` | List domain, e.g. `cloudstack.apache.org` (required) |
 | `--names` | Names file, see below (required) |
 | `--months` | Number of months back, including the current one. Default: 12 |
 | `--cache-dir` | Where downloaded archives are kept. Default: `~/.cache/apache-list-mentions` |
 | `--include-quotes` | Also count lines starting with `>` (quoted replies) |
-| `--include-signature` | Also count text after a `-- ` signature separator |
+| `--include-signature` | Also count text after the signature separator (a line containing only `--`) |
 
 Names file format, one person per line, results are printed in the same order:
 
