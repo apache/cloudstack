@@ -1061,6 +1061,30 @@ public class LibvirtMigrateCommandWrapperTest {
         assertFalse(result.contains("trunk=\"yes\""));
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesRefusesVlanNicWithoutBroadcastUriOnFilteringHost()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        nic.setBroadcastUri(null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesRefusesNicWithAssociatedNetworkWithoutBroadcastUri()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        nic.getAssociatedNetworks().get(0).setBroadcastUri(null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
     @Test
     public void replaceVlanTrunkInterfacesStripsVlanBlockWhenDestDoesNotSupportTrunkXml()
             throws ParserConfigurationException, IOException, SAXException, TransformerException {

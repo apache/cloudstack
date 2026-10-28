@@ -706,8 +706,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         boolean anyNicNeedsHandling = false;
         for (NicTO nic : nics) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                failIfBroadcastUriMissing(nic);
                 anyNicNeedsHandling = true;
-                break;
             }
         }
         if (!anyNicNeedsHandling) {
@@ -744,6 +744,19 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return LibvirtXMLParser.getXml(doc);
+    }
+
+    // A VLAN nic (or associated network) without a broadcast URI would be migrated onto the destination with no VLAN membership.
+    private void failIfBroadcastUriMissing(NicTO nic) {
+        boolean missing = nic.getBroadcastUri() == null;
+        if (nic.getAssociatedNetworks() != null) {
+            for (NetworkTO associatedNetwork : nic.getAssociatedNetworks()) {
+                missing = missing || associatedNetwork.getBroadcastUri() == null;
+            }
+        }
+        if (missing) {
+            throw new CloudRuntimeException(String.format("Refusing to migrate nic %s: the broadcast URI of its primary or an associated network is not set (reboot the router or stop/start the VM to restore it)", nic.getMac()));
+        }
     }
 
     private NicTO findNicByMac(NicTO[] nics, String mac) {
