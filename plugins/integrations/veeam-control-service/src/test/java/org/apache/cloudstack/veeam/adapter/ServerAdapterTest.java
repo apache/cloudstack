@@ -21,10 +21,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -38,6 +40,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiServerService;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
+import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
+import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -49,7 +57,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
+import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
+import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.logging.log4j.Logger;
@@ -57,12 +68,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
@@ -99,6 +112,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -515,39 +529,73 @@ public class ServerAdapterTest {
 
 
     @Test
-    public void testWaitForJobCompletion_JobNotFound_Returns() {
+    public void testWaitForJobCompletion_JobNotFound_ReturnsNull() {
         when(asyncJobDao.findByIdIncludingRemoved(99L)).thenReturn(null);
-        serverAdapter.waitForJobCompletion(99L);
+        assertNull(serverAdapter.waitForJobCompletion(99L, 60000L));
         verify(asyncJobDao).findByIdIncludingRemoved(99L);
     }
 
     @Test
-    public void testWaitForJobCompletion_JobAlreadySucceeded_Returns() {
+    public void testWaitForJobCompletion_JobDone_ReturnsJob() {
+        for (AsyncJobVO.Status status : new AsyncJobVO.Status[] {AsyncJobVO.Status.SUCCEEDED,
+                AsyncJobVO.Status.FAILED, AsyncJobVO.Status.CANCELLED}) {
+            AsyncJobVO job = mock(AsyncJobVO.class);
+            when(job.getStatus()).thenReturn(status);
+            when(asyncJobDao.findByIdIncludingRemoved(1L)).thenReturn(job);
+            assertEquals(job, serverAdapter.waitForJobCompletion(1L, 60000L));
+        }
+    }
+
+    @Test
+    public void testWaitForJobCompletion_DeadlinePassed_ThrowsWithBackgroundCaveat() {
         AsyncJobVO job = mock(AsyncJobVO.class);
-        when(job.getStatus()).thenReturn(AsyncJobVO.Status.SUCCEEDED);
-        when(asyncJobDao.findByIdIncludingRemoved(1L)).thenReturn(job);
-        serverAdapter.waitForJobCompletion(1L);
+        when(job.getStatus()).thenReturn(AsyncJobVO.Status.IN_PROGRESS);
+        when(job.getUuid()).thenReturn("job-uuid");
+        when(asyncJobDao.findByIdIncludingRemoved(3L)).thenReturn(job);
+
+        AsyncJobFailedException e = assertThrows(AsyncJobFailedException.class, () -> serverAdapter.waitForJobCompletion(3L, 0L));
+        assertEquals("job-uuid", e.getJobUuid());
+        assertTrue(e.getMessage().contains("Timed out waiting for job job-uuid to complete after 0s"));
+        assertTrue(e.getMessage().contains("may still be running in the background"));
     }
 
     @Test
-    public void testWaitForJobCompletion_JobAlreadyFailed_Returns() {
+    public void testWaitForJobCompletion_Interrupted_ThrowsAndKeepsInterruptFlag() {
         AsyncJobVO job = mock(AsyncJobVO.class);
-        when(job.getStatus()).thenReturn(AsyncJobVO.Status.FAILED);
-        when(asyncJobDao.findByIdIncludingRemoved(2L)).thenReturn(job);
-        serverAdapter.waitForJobCompletion(2L);
+        when(job.getStatus()).thenReturn(AsyncJobVO.Status.IN_PROGRESS);
+        when(job.getUuid()).thenReturn("job-uuid");
+        when(asyncJobDao.findByIdIncludingRemoved(4L)).thenReturn(job);
+
+        Thread.currentThread().interrupt();
+        try {
+            AsyncJobFailedException e = assertThrows(AsyncJobFailedException.class, () -> serverAdapter.waitForJobCompletion(4L, 60000L));
+            assertTrue(e.getMessage().contains("Interrupted while waiting for job job-uuid"));
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
     }
 
-
     @Test
-    public void testWaitForJobCompletion_NullJobJoinVO_Returns() {
-        AsyncJobJoinVO job = null;
-        serverAdapter.waitForJobCompletion(job);
+    public void testGetJobWaitTimeoutMillis_PositiveValueIsUsed() {
+        assertEquals(120000L, serverAdapter.getJobWaitTimeoutMillis(120));
     }
 
     @Test
-    public void testWaitForJobCompletion_CompletedJobJoinVO_DelegatesById() {
+    public void testGetJobWaitTimeoutMillis_ZeroNegativeOrNullFallsBackToDefault() {
+        for (Integer value : new Integer[] {0, -1, null}) {
+            assertEquals("Expected default for " + value, 3600000L, serverAdapter.getJobWaitTimeoutMillis(value));
+        }
+    }
+
+    @Test
+    public void testWaitForJobSuccess_NullJobJoinVO_Returns() {
+        serverAdapter.waitForJobCompletion(null);
+    }
+
+    @Test
+    public void testWaitForJobSuccess_JobSucceeded_Returns() {
         AsyncJobJoinVO jobVO = mock(AsyncJobJoinVO.class);
-        when(jobVO.getStatus()).thenReturn(AsyncJobVO.Status.SUCCEEDED.ordinal());
         when(jobVO.getId()).thenReturn(5L);
 
         AsyncJobVO job = mock(AsyncJobVO.class);
@@ -557,6 +605,46 @@ public class ServerAdapterTest {
         serverAdapter.waitForJobCompletion(jobVO);
 
         verify(asyncJobDao).findByIdIncludingRemoved(5L);
+    }
+
+    @Test
+    public void testWaitForJobSuccess_JobFailed_ThrowsWithElapsedAndErrorText() {
+        AsyncJobJoinVO jobVO = mock(AsyncJobJoinVO.class);
+        when(jobVO.getId()).thenReturn(6L);
+        when(jobVO.getUuid()).thenReturn("job-uuid");
+
+        AsyncJobVO job = mock(AsyncJobVO.class);
+        when(job.getStatus()).thenReturn(AsyncJobVO.Status.FAILED);
+        when(job.getResult()).thenReturn("Unable to destroy VM");
+        when(asyncJobDao.findByIdIncludingRemoved(6L)).thenReturn(job);
+
+        AsyncJobFailedException e = assertThrows(AsyncJobFailedException.class, () -> serverAdapter.waitForJobCompletion(jobVO));
+        assertEquals("job-uuid", e.getJobUuid());
+        assertEquals("Job job-uuid failed after 0s: Unable to destroy VM", e.getMessage());
+    }
+
+    @Test
+    public void testWaitForJobSuccess_JobCancelled_Throws() {
+        AsyncJobJoinVO jobVO = mock(AsyncJobJoinVO.class);
+        when(jobVO.getId()).thenReturn(7L);
+        when(jobVO.getUuid()).thenReturn("job-uuid");
+
+        AsyncJobVO job = mock(AsyncJobVO.class);
+        when(job.getStatus()).thenReturn(AsyncJobVO.Status.CANCELLED);
+        when(asyncJobDao.findByIdIncludingRemoved(7L)).thenReturn(job);
+
+        AsyncJobFailedException e = assertThrows(AsyncJobFailedException.class, () -> serverAdapter.waitForJobCompletion(jobVO));
+        assertEquals("Job job-uuid cancelled after 0s: no error details available", e.getMessage());
+    }
+
+    @Test
+    public void testGetJobErrorText_ExtractsErrorTextFromSerializedExceptionResponse() {
+        ExceptionResponse response = new ExceptionResponse();
+        response.setErrorText("Host is unreachable");
+        AsyncJobVO job = mock(AsyncJobVO.class);
+        when(job.getResult()).thenReturn(ApiSerializerHelper.toSerializedString(response));
+
+        assertEquals("Host is unreachable", ServerAdapter.getJobErrorText(job));
     }
 
 
@@ -836,7 +924,7 @@ public class ServerAdapterTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testListStorageDomainsByDcId_DataCenterNotFound_Throws() {
         when(dataCenterDao.findByUuid("dc-uuid")).thenReturn(null);
-        serverAdapter.listStorageDomainsByDcId("dc-uuid", 0L, 10L);
+        serverAdapter.listStorageDomainsByDcId("dc-uuid", null, 0L, 10L);
     }
 
     @Test
@@ -845,9 +933,39 @@ public class ServerAdapterTest {
         when(dcVO.getId()).thenReturn(1L);
         when(dataCenterDao.findByUuid("dc-uuid")).thenReturn(dcVO);
         StoragePoolJoinVO poolVO = mock(StoragePoolJoinVO.class);
-        when(storagePoolJoinDao.listAvailableByZoneHypervisorAndType(eq(1L), eq(Hypervisor.HypervisorType.KVM), any(), any())).thenReturn(List.of(poolVO));
+        when(storagePoolJoinDao.listAvailableByZonesHypervisorAndType(eq(List.of(1L)), eq(Hypervisor.HypervisorType.KVM), any(), eq("data%"), any())).thenReturn(List.of(poolVO));
 
-        assertNotNull(serverAdapter.listStorageDomainsByDcId("dc-uuid", 0L, 10L));
+        assertEquals(1, serverAdapter.listStorageDomainsByDcId("dc-uuid", "data%", 0L, 10L).size());
+    }
+
+    @Test
+    public void testListAllStorageDomains_UsesCompatibleDataCenters() {
+        when(kvmBackupExportService.listCompatibleDataCenterIds()).thenReturn(List.of(1L, 2L));
+        StoragePoolJoinVO poolVO = mock(StoragePoolJoinVO.class);
+        when(poolVO.getUuid()).thenReturn("pool-uuid");
+        when(storagePoolJoinDao.listAvailableByZonesHypervisorAndType(eq(List.of(1L, 2L)), eq(Hypervisor.HypervisorType.KVM), any(), isNull(), any())).thenReturn(List.of(poolVO));
+
+        List<StorageDomain> result = serverAdapter.listAllStorageDomains(null, 0L, 10L);
+
+        assertEquals(1, result.size());
+        assertEquals("pool-uuid", result.get(0).getId());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testGetStorageDomain_NotFound_Throws() {
+        when(primaryDataStoreDao.findByUuid("pool-uuid")).thenReturn(null);
+        serverAdapter.getStorageDomain("pool-uuid");
+    }
+
+    @Test
+    public void testGetStorageDomain_Found_ReturnsDomain() {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(primaryDataStoreDao.findByUuid("pool-uuid")).thenReturn(pool);
+        StoragePoolJoinVO poolVO = mock(StoragePoolJoinVO.class);
+        when(poolVO.getUuid()).thenReturn("pool-uuid");
+        when(storagePoolJoinDao.newStoragePoolView(pool)).thenReturn(List.of(poolVO));
+
+        assertEquals("pool-uuid", serverAdapter.getStorageDomain("pool-uuid").getId());
     }
 
 
@@ -958,19 +1076,68 @@ public class ServerAdapterTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteDisk_NotFound_Throws() {
         when(volumeDao.findByUuid("vol-uuid")).thenReturn(null);
-        serverAdapter.deleteDisk("vol-uuid");
+        serverAdapter.deleteDisk("vol-uuid", false);
+    }
+
+    private ServerAdapter spyAdapterForDiskDeletion(AsyncJobJoinVO jobVo) throws Exception {
+        VolumeVO vo = mock(VolumeVO.class);
+        when(vo.getUuid()).thenReturn("vol-uuid");
+        when(volumeDao.findByUuid("vol-uuid")).thenReturn(vo);
+        when(asyncJobJoinDao.findById(7L)).thenReturn(jobVo);
+        ServerAdapter adapter = Mockito.spy(serverAdapter);
+        doReturn(new ApiServerService.AsyncCmdResult(null, null, null, 7L))
+                .when(adapter).processAsyncCmdWithContext(any(), any());
+        return adapter;
     }
 
     @Test
-    public void testDeleteDisk_Found_DeletesVolume() {
-        VolumeVO vo = mock(VolumeVO.class);
-        when(vo.getId()).thenReturn(10L);
-        when(volumeDao.findByUuid("vol-uuid")).thenReturn(vo);
-        Account account = CallContext.current().getCallingAccount();
+    @SuppressWarnings("unchecked")
+    public void testDeleteDisk_Sync_WaitsForJobAndReturnsAction() throws Exception {
+        AsyncJobJoinVO jobVo = mock(AsyncJobJoinVO.class);
+        when(jobVo.getUuid()).thenReturn("job-uuid");
+        ServerAdapter adapter = spyAdapterForDiskDeletion(jobVo);
+        doNothing().when(adapter).waitForJobCompletion(any(AsyncJobJoinVO.class));
 
-        serverAdapter.deleteDisk("vol-uuid");
+        ResourceAction action;
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            action = adapter.deleteDisk("vol-uuid", false);
+        }
 
-        verify(volumeApiService).destroyVolume(10L, account, true, false, null);
+        ArgumentCaptor<BaseAsyncCmd> cmdCaptor = ArgumentCaptor.forClass(BaseAsyncCmd.class);
+        ArgumentCaptor<Map<String, String>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(adapter).processAsyncCmdWithContext(cmdCaptor.capture(), paramsCaptor.capture());
+        assertEquals(DestroyVolumeCmd.class, cmdCaptor.getValue().getClass());
+        assertEquals("vol-uuid", paramsCaptor.getValue().get(ApiConstants.ID));
+        assertEquals("true", paramsCaptor.getValue().get(ApiConstants.EXPUNGE));
+        verify(adapter).waitForJobCompletion(jobVo);
+        assertEquals("complete", action.getStatus());
+        assertEquals("job-uuid", action.getJob().getId());
+    }
+
+    @Test
+    public void testDeleteDisk_Async_DoesNotWaitForJob() throws Exception {
+        AsyncJobJoinVO jobVo = mock(AsyncJobJoinVO.class);
+        when(jobVo.getUuid()).thenReturn("job-uuid");
+        ServerAdapter adapter = spyAdapterForDiskDeletion(jobVo);
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            assertEquals("job-uuid", adapter.deleteDisk("vol-uuid", true).getJob().getId());
+        }
+
+        verify(adapter, Mockito.never()).waitForJobCompletion(any(AsyncJobJoinVO.class));
+    }
+
+    @Test
+    public void testDeleteDisk_JobFailure_ThrowsWithJobFailureCause() throws Exception {
+        AsyncJobJoinVO jobVo = mock(AsyncJobJoinVO.class);
+        ServerAdapter adapter = spyAdapterForDiskDeletion(jobVo);
+        Mockito.doThrow(new AsyncJobFailedException("job-uuid", "volume in use"))
+                .when(adapter).waitForJobCompletion(any(AsyncJobJoinVO.class));
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> adapter.deleteDisk("vol-uuid", false));
+            assertTrue(e.getCause() instanceof AsyncJobFailedException);
+        }
     }
 
 
@@ -1136,5 +1303,91 @@ public class ServerAdapterTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testListDisksByBackupUuid_AlwaysThrows() {
         serverAdapter.listDisksByBackupUuid("backup-uuid");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testGetInstanceNic_VmNotFound_Throws() {
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(null);
+        serverAdapter.getInstanceNic("vm-uuid", "nic-uuid");
+    }
+
+    @Test
+    public void testGetInstanceNic_NicNotFoundOrOfAnotherVm_Throws() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(10L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        NicVO otherVmNic = mock(NicVO.class);
+        when(otherVmNic.getInstanceId()).thenReturn(11L);
+        when(nicDao.findByUuid("other-nic")).thenReturn(otherVmNic);
+
+        InvalidParameterValueException e = assertThrows(InvalidParameterValueException.class,
+                () -> serverAdapter.getInstanceNic("vm-uuid", "missing-nic"));
+        assertEquals("NIC with ID missing-nic not found for VM with ID vm-uuid", e.getMessage());
+        assertThrows(InvalidParameterValueException.class, () -> serverAdapter.getInstanceNic("vm-uuid", "other-nic"));
+    }
+
+    @Test
+    public void testGetInstanceNic_ReturnsNic() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(10L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        NicVO nic = mock(NicVO.class);
+        when(nic.getInstanceId()).thenReturn(10L);
+        when(nic.getUuid()).thenReturn("nic-uuid");
+        when(nicDao.findByUuid("nic-uuid")).thenReturn(nic);
+
+        Nic result = serverAdapter.getInstanceNic("vm-uuid", "nic-uuid");
+
+        assertEquals("nic-uuid", result.getId());
+        assertTrue(result.getHref().endsWith("/api/vms/vm-uuid/nics/nic-uuid"));
+    }
+
+    @Test
+    public void testDetachInstanceNic_RemovesNicFromVm() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(10L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        NicVO nic = mock(NicVO.class);
+        when(nic.getId()).thenReturn(20L);
+        when(nic.getInstanceId()).thenReturn(10L);
+        when(nicDao.findByUuid("nic-uuid")).thenReturn(nic);
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            serverAdapter.detachInstanceNic("vm-uuid", "nic-uuid");
+        }
+
+        ArgumentCaptor<RemoveNicFromVMCmd> captor = ArgumentCaptor.forClass(RemoveNicFromVMCmd.class);
+        verify(userVmManager).removeNicFromVirtualMachine(captor.capture());
+        assertEquals(Long.valueOf(10L), captor.getValue().getVmId());
+        assertEquals(Long.valueOf(20L), captor.getValue().getNicId());
+    }
+
+    @Test
+    public void testDetachInstanceNic_NicNotFound_ThrowsWithoutRemoving() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+
+        assertThrows(InvalidParameterValueException.class, () -> serverAdapter.detachInstanceNic("vm-uuid", "nic-uuid"));
+        verify(userVmManager, Mockito.never()).removeNicFromVirtualMachine(any());
+    }
+
+    @Test
+    public void testDetachInstanceNic_RemoveFailure_ThrowsCloudRuntimeException() {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(10L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        NicVO nic = mock(NicVO.class);
+        when(nic.getInstanceId()).thenReturn(10L);
+        when(nicDao.findByUuid("nic-uuid")).thenReturn(nic);
+        when(userVmManager.removeNicFromVirtualMachine(any()))
+                .thenThrow(new InvalidParameterValueException("Unable to remove nic from VM, it is the default nic"));
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            CloudRuntimeException e = assertThrows(CloudRuntimeException.class,
+                    () -> serverAdapter.detachInstanceNic("vm-uuid", "nic-uuid"));
+            assertEquals(CloudRuntimeException.class, e.getClass());
+            assertEquals("Failed to remove NIC: Unable to remove nic from VM, it is the default nic", e.getMessage());
+        }
     }
 }

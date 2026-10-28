@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.JobsRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.Fault;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
@@ -79,6 +80,21 @@ public class AsyncJobJoinVOToJobConverter {
         VmAction action = new VmAction();
         fillAction(action, vo);
         action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null, null, null, null, null, false));
+        return action;
+    }
+
+    /**
+     * Builds a failed action, similar to oVirt's response for a blocking action that did not complete,
+     * still linking the job so that it can be tracked.
+     */
+    public static ResourceAction toFailedAction(final String jobUuid, final String detail) {
+        ResourceAction action = new ResourceAction();
+        if (jobUuid != null) {
+            final String basePath = VeeamControlService.ContextPath.value();
+            action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + "/" + jobUuid, jobUuid));
+        }
+        action.setStatus("failed");
+        action.setFault(new Fault(Fault.OPERATION_FAILED, detail));
         return action;
     }
 

@@ -18,8 +18,12 @@ package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -423,18 +427,25 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return filteredPools;
     }
 
-    public List<StoragePoolJoinVO> listAvailableByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter) {
+    @Override
+    public List<StoragePoolJoinVO> listAvailableByZonesHypervisorAndType(List<Long> zoneIds, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, String nameLikePattern, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
         List<StoragePoolStatus> availableStatus = Arrays.asList(
                 StoragePoolStatus.Up, StoragePoolStatus.Disabled
         );
         SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
-        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        // The view has a row per pool tag, access group, etc., so select distinct pool ids to page over pools
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId());
+        sb.and("zoneIds", sb.entity().getZoneId(), SearchCriteria.Op.IN);
         sb.and("hypervisors", sb.entity().getHypervisor(), SearchCriteria.Op.IN);
         sb.and("types", sb.entity().getPoolType(), SearchCriteria.Op.IN);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.IN);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.done();
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
-        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("zoneIds", zoneIds.toArray());
         List<Hypervisor.HypervisorType> hypervisors = new ArrayList<>();
         hypervisors.add(Hypervisor.HypervisorType.Any);
         hypervisors.add(hypervisorType);
@@ -443,6 +454,21 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             sc.setParameters("types", types.toArray());
         }
         sc.setParameters("status", availableStatus.toArray());
-        return listBy(sc, filter);
+        if (nameLikePattern != null) {
+            sc.setParameters("name", nameLikePattern);
+        }
+        List<Long> poolIds = listBy(sc, filter).stream().map(StoragePoolJoinVO::getId).collect(Collectors.toList());
+        return listOneRowPerPool(poolIds);
+    }
+
+    protected List<StoragePoolJoinVO> listOneRowPerPool(List<Long> poolIds) {
+        if (CollectionUtils.isEmpty(poolIds)) {
+            return Collections.emptyList();
+        }
+        Map<Long, StoragePoolJoinVO> poolsById = new HashMap<>();
+        for (StoragePoolJoinVO pool : searchByIds(poolIds.toArray(new Long[0]))) {
+            poolsById.putIfAbsent(pool.getId(), pool);
+        }
+        return poolIds.stream().map(poolsById::get).filter(Objects::nonNull).collect(Collectors.toList());
     }
 }

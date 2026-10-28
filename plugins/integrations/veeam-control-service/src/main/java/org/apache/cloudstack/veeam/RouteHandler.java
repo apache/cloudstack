@@ -23,6 +23,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.logging.log4j.Logger;
 
@@ -74,8 +75,51 @@ public interface RouteHandler extends Adapter {
         }
     }
 
+    /**
+     * Interprets true/false (case-insensitive) and 1/0 as boolean.
+     * Returns defaultValue when the value is null, empty or unrecognized.
+     */
+    static boolean parseBoolean(String value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        String trimmed = value.trim();
+        if ("1".equals(trimmed) || Boolean.TRUE.toString().equalsIgnoreCase(trimmed)) {
+            return true;
+        }
+        if ("0".equals(trimmed) || Boolean.FALSE.toString().equalsIgnoreCase(trimmed)) {
+            return false;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Returns whether the request asks for async processing. Mimics oVirt: the async parameter present
+     * without a value (e.g. ?async) means true, while a missing or unrecognized value means false.
+     */
     static boolean isRequestAsync(HttpServletRequest req) {
-        String asyncStr = req.getParameter("async");
-        return Boolean.TRUE.toString().equals(asyncStr);
+        String async = req.getParameter("async");
+        if (async != null && async.isEmpty()) {
+            return true;
+        }
+        return parseBoolean(async, false);
+    }
+
+    /**
+     * Writes the response for a successful DELETE the way oVirt does: 202 Accepted without a body for
+     * async requests, otherwise 200 OK with a completed action, linking the job when there is one.
+     */
+    static void writeDeleteResponse(final HttpServletResponse resp, final boolean async, final ResourceAction action,
+                final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        if (async) {
+            io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, null, outFormat);
+            return;
+        }
+        ResourceAction response = new ResourceAction();
+        if (action != null) {
+            response.setJob(action.getJob());
+        }
+        response.setStatus("complete");
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 }

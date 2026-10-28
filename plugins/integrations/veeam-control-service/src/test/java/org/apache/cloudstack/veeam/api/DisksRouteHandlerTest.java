@@ -25,10 +25,15 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.veeam.adapter.AsyncJobFailedException;
 import org.apache.cloudstack.veeam.api.dto.Disk;
+import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DisksRouteHandlerTest extends RouteHandlerTestSupport {
 
@@ -90,9 +95,9 @@ public class DisksRouteHandlerTest extends RouteHandlerTestSupport {
 
         final ResponseCapture delete = newResponse();
         handler.handle(newRequest("DELETE"), delete.response, "/api/disks/disk-1", Negotiation.OutFormat.JSON, newServlet());
-        verify(handler.serverAdapter).deleteDisk("disk-1");
+        verify(handler.serverAdapter).deleteDisk("disk-1", false);
         verify(delete.response).setStatus(200);
-        assertContains(delete.body(), "Deleted disk ID: disk-1");
+        assertContains(delete.body(), "\"status\":\"complete\"");
 
         final ResponseCapture copy = newResponse();
         handler.handle(newRequest("POST", Map.of(), "application/json", "{}"), copy.response,
@@ -118,5 +123,50 @@ public class DisksRouteHandlerTest extends RouteHandlerTestSupport {
         verify(response.response).setHeader("Allow", "POST");
         verify(response.response).setStatus(405);
         assertContains(response.body(), "Method Not Allowed");
+    }
+
+    @Test
+    public void testHandleDelete_AsyncReturnsAcceptedWithoutBody() throws Exception {
+        final DisksRouteHandler handler = new DisksRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+
+        final ResponseCapture delete = newResponse();
+        handler.handle(newRequest("DELETE", Map.of("async", "true"), null, null), delete.response, "/api/disks/disk-1",
+                Negotiation.OutFormat.JSON, newServlet());
+
+        verify(handler.serverAdapter).deleteDisk("disk-1", true);
+        verify(delete.response).setStatus(202);
+        assertEquals("", delete.body());
+    }
+
+    @Test
+    public void testHandleDelete_SyncReturnsActionWithJob() throws Exception {
+        final DisksRouteHandler handler = new DisksRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        final ResourceAction action = new ResourceAction();
+        action.setJob(Ref.of("/ovirt-engine/api/jobs/job-1", "job-1"));
+        action.setStatus("complete");
+        when(handler.serverAdapter.deleteDisk("disk-1", false)).thenReturn(action);
+
+        final ResponseCapture delete = newResponse();
+        handler.handle(newRequest("DELETE"), delete.response, "/api/disks/disk-1", Negotiation.OutFormat.JSON, newServlet());
+
+        verify(delete.response).setStatus(200);
+        assertContains(delete.body(), "\"status\":\"complete\"");
+        assertContains(delete.body(), "\"id\":\"job-1\"");
+    }
+
+    @Test
+    public void testHandleDelete_JobFailureReturnsOperationFailedFault() throws Exception {
+        final DisksRouteHandler handler = new DisksRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.deleteDisk("disk-1", false)).thenThrow(new CloudRuntimeException("Failed to delete disk",
+                new AsyncJobFailedException("job-1", "volume in use")));
+
+        final ResponseCapture delete = newResponse();
+        handler.handle(newRequest("DELETE"), delete.response, "/api/disks/disk-1", Negotiation.OutFormat.JSON, newServlet());
+
+        verify(delete.response).setStatus(400);
+        assertContains(delete.body(), "Operation Failed");
     }
 }

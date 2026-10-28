@@ -29,6 +29,7 @@ import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
@@ -89,7 +90,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
                     return;
                 }
                 if ("DELETE".equalsIgnoreCase(method)) {
-                    handleDeleteById(id, resp, outFormat, io);
+                    handleDeleteById(id, req, resp, outFormat, io);
                     return;
                 }
                 if ("PUT".equalsIgnoreCase(method)) {
@@ -155,13 +156,14 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleDeleteById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
-                                 final VeeamControlServlet io) throws IOException {
+    protected void handleDeleteById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
+                                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        boolean async = RouteHandler.isRequestAsync(req);
         try {
-            serverAdapter.deleteDisk(id);
-            io.getWriter().write(resp, HttpServletResponse.SC_OK, "Deleted disk ID: " + id, outFormat);
+            ResourceAction action = serverAdapter.deleteDisk(id, async);
+            RouteHandler.writeDeleteResponse(resp, async, action, outFormat, io);
         } catch (CloudRuntimeException e) {
-            io.badRequest(resp, e.getMessage(), outFormat);
+            VmsRouteHandler.handleDeleteError(resp, e, outFormat, io);
         }
     }
 

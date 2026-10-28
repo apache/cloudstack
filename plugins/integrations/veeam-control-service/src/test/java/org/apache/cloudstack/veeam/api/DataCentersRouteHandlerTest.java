@@ -56,7 +56,7 @@ public class DataCentersRouteHandlerTest extends RouteHandlerTestSupport {
     public void testHandleGetStorageDomainsAndNetworksByDataCenterId() throws Exception {
         final DataCentersRouteHandler handler = new DataCentersRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
-        when(handler.serverAdapter.listStorageDomainsByDcId("dc-1", null, 15L))
+        when(handler.serverAdapter.listStorageDomainsByDcId("dc-1", null, null, 15L))
                 .thenReturn(List.of(withId(new StorageDomain(), "sd-1")));
         when(handler.serverAdapter.listNetworksByDcId("dc-1", null, 15L))
                 .thenReturn(List.of(withId(new Network(), "net-1")));
