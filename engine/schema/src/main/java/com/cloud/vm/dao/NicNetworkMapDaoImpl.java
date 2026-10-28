@@ -38,6 +38,7 @@ public class NicNetworkMapDaoImpl extends GenericDaoBase<NicNetworkMapVO, Long> 
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("nicId", AllFieldsSearch.entity().getNicId(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("ip4Address", AllFieldsSearch.entity().getIp4Address(), Op.EQ);
         AllFieldsSearch.done();
 
         NicIdsByNetworkSearch = createSearchBuilder(Long.class);
@@ -73,6 +74,14 @@ public class NicNetworkMapDaoImpl extends GenericDaoBase<NicNetworkMapVO, Long> 
         SearchCriteria<NicNetworkMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("nicId", nicId);
         sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicNetworkMapVO findByNetworkIdAndIp4Address(long networkId, String ip4Address) {
+        SearchCriteria<NicNetworkMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("ip4Address", ip4Address);
         return findOneBy(sc);
     }
 

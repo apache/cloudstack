@@ -3510,11 +3510,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (NicNetworkMapVO removedAssociation : _nicNetworkMapDao.listRemovedByNicId(nic.getId())) {
             // skip a removal whose (network, ip) is still live on this nic - e.g. changeNicPrimaryNetwork
             // removes the association row for the network being promoted to primary, same ip
-            if (networkIpsCurrentlyOnNic.contains(new Pair<>(removedAssociation.getNetworkId(), removedAssociation.getIp4Address()))) {
+            if (networkIpsCurrentlyOnNic.contains(new Pair<>(removedAssociation.getNetworkId(), removedAssociation.getIp4Address()))
+                    || isIpHeldByAnotherNic(nic, removedAssociation.getNetworkId(), removedAssociation.getIp4Address())) {
                 continue;
             }
             sendAssociationDhcpEntry(vm, nic, removedAssociation.getNetworkId(), removedAssociation.getIp4Address(), removedAssociation.getIp6Address(), true);
         }
+    }
+
+    // The router keys DHCP entries by ip, so a removal for an ip another nic now holds would delete that nic's entry.
+    private boolean isIpHeldByAnotherNic(NicVO nic, long networkId, String ip4Address) {
+        if (ip4Address == null) {
+            return false;
+        }
+        NicVO holder = _nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+        if (holder != null && holder.getId() != nic.getId()) {
+            return true;
+        }
+        NicNetworkMapVO association = _nicNetworkMapDao.findByNetworkIdAndIp4Address(networkId, ip4Address);
+        return association != null && association.getNicId() != nic.getId();
     }
 
     private void sendAssociationDhcpEntry(UserVmVO vm, NicVO nic, long networkId, String ip4Address, String ip6Address, boolean remove) {

@@ -697,6 +697,33 @@ public class UserVmManagerImplTest {
     }
 
     @Test
+    public void syncNicNetworkAssociationDhcpEntriesSkipsARemovedAssociationWhoseIpIsNowHeldByAnotherNic() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = mockNicWithId(11L);
+        NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 207L, "10.1.1.60", null);
+        Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
+        NicVO holder = mockNicWithId(22L);
+        Mockito.when(nicDao.findByIp4AddressAndNetworkId("10.1.1.60", 207L)).thenReturn(holder);
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verifyNoInteractions(commandSetupHelper);
+    }
+
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesSkipsARemovedAssociationWhoseIpIsNowAnotherNicsAssociation() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = mockNicWithId(11L);
+        NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 207L, "10.1.1.60", null);
+        Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
+        Mockito.when(nicNetworkMapDao.findByNetworkIdAndIp4Address(207L, "10.1.1.60")).thenReturn(new NicNetworkMapVO(22L, 207L, "10.1.1.60", null));
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verifyNoInteractions(commandSetupHelper);
+    }
+
+    @Test
     public void syncNicNetworkAssociationDhcpEntriesStillCleansUpAStaleIpForACurrentAssociationThatWasReassignedANewIp() throws Exception {
         // network 206 was disassociated and re-associated with a different ip while the VM was stopped - the
         // old ip's router entry is genuinely orphaned and must still be cleaned up, even though network 206

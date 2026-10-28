@@ -30,5 +30,7 @@ public interface NicNetworkMapDao extends GenericDao<NicNetworkMapVO, Long> {
 
     NicNetworkMapVO findByNicIdAndNetworkId(long nicId, long networkId);
 
+    NicNetworkMapVO findByNetworkIdAndIp4Address(long networkId, String ip4Address);
+
     List<Long> listNicIdsByNetworkId(long networkId);
 }
