@@ -5484,7 +5484,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
                 if (vm.getType() != VirtualMachine.Type.User) {
                     configureDefaultNetworkRulesForSystemVm(conn, vm.getName());
-                    break;
+                    return true;
                 }
                 if (!applyDefaultNetworkRulesOnNic(conn, vm.getName(), vm.getId(), nic, isFirstNic, checkBeforeApply)) {
                     LOGGER.error("Unable to apply default network rule for nic " + nic.getName() + " for VM " + vm.getName());
@@ -5492,6 +5492,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 isFirstNic = false;
             }
+        }
+        if (vm.getType() != VirtualMachine.Type.User) {
+            // none of the nics is security group enabled, but the system vm may still share a bridge
+            // with security grouped instances, for instance when the shared network and the public
+            // network use the same vlan. Program it into an existing bridge firewall framework,
+            // without creating one.
+            configureDefaultNetworkRulesForSystemVm(conn, vm.getName(), true);
         }
         return true;
     }
@@ -5598,6 +5605,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean configureDefaultNetworkRulesForSystemVm(final Connect conn, final String vmName) {
+        return configureDefaultNetworkRulesForSystemVm(conn, vmName, false);
+    }
+
+    public boolean configureDefaultNetworkRulesForSystemVm(final Connect conn, final String vmName, final boolean onlyExistingFramework) {
         if (!canBridgeFirewall) {
             return false;
         }
@@ -5606,6 +5617,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("default_network_rules_systemvm");
         cmd.add("--vmname", vmName);
         cmd.add("--localbrname", linkLocalBridgeName);
+        if (onlyExistingFramework) {
+            cmd.add("--onlyexistingframework");
+        }
         final String result = cmd.execute();
         if (result != null) {
             return false;
