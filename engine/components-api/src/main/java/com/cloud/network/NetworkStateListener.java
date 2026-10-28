@@ -21,10 +21,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,15 +36,16 @@ import com.cloud.utils.fsm.StateMachine2;
 
 public class NetworkStateListener implements StateListener<State, Event, Network> {
 
-    @Inject
-    private ConfigurationDao _configDao;
+    // Registered/owned by com.cloud.server.ManagementServer#PublishResourceStateEvent; declared here too so this
+    // module can read it without a reverse dependency on the server module.
+    private static final ConfigKey<Boolean> PublishResourceStateEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.resource.state.events", "true",
+            "enable or disable publishing of resource state events on the event bus", true);
 
     private EventDistributor eventDistributor;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
-    public NetworkStateListener(ConfigurationDao configDao) {
-        _configDao = configDao;
+    public NetworkStateListener() {
     }
 
     public void setEventDistributor(EventDistributor eventDistributor) {
@@ -69,9 +68,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     }
 
     private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
-        String configKey = "publish.resource.state.events";
-        String value = _configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = PublishResourceStateEvent.value();
         if(!configValue)
             return;
         if (eventDistributor == null) {
