@@ -18,6 +18,7 @@
 package com.cloud.kubernetes.cluster.actionworkers;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
+import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
@@ -118,8 +119,53 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 22, 22);
 
+        Mockito.verify(oldRule1).setReason("Kubernetes cluster cluster-a");
+        Mockito.verify(networkACLItemDaoMock).update(3L, oldRule1);
         Mockito.verify(networkACLServiceMock).revokeNetworkACLItem(3L);
         Mockito.verifyNoMoreInteractions(networkACLServiceMock);
+    }
+
+    private void rememberCleanupDetails() {
+        Mockito.doAnswer(invocation -> {
+            Mockito.when(kubernetesClusterDetailsDaoMock.findDetail(1L, invocation.getArgument(1)))
+                    .thenReturn(Mockito.mock(KubernetesClusterDetailsVO.class));
+            return null;
+        }).when(kubernetesClusterDetailsDaoMock).addDetail(Mockito.eq(1L), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void removeVpcTierAllowPortACLRuleTestRetryKeepsOtherClusterUnmarkedRule() throws Exception {
+        Mockito.when(kubernetesClusterMock.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterMock.getUuid()).thenReturn("cluster-a");
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(10L);
+        rememberCleanupDetails();
+        NetworkACLItemVO clusterARule = mockAclItem(1L, 6443, "Kubernetes cluster cluster-a");
+        NetworkACLItemVO clusterBOldRule = mockAclItem(2L, 6443, null);
+        Mockito.when(networkACLItemDaoMock.listByACL(10L)).thenReturn(List.of(clusterARule, clusterBOldRule), List.of(clusterBOldRule));
+
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 6443, 6443);
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 6443, 6443);
+
+        Mockito.verify(networkACLServiceMock).revokeNetworkACLItem(1L);
+        Mockito.verify(networkACLServiceMock, Mockito.never()).revokeNetworkACLItem(2L);
+        Mockito.verify(networkACLItemDaoMock, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void removeVpcTierAllowPortACLRuleTestRetryOfOlderClusterRemovesOnlyOneUnmarkedRule() throws Exception {
+        Mockito.when(kubernetesClusterMock.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterMock.getUuid()).thenReturn("cluster-a");
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(10L);
+        rememberCleanupDetails();
+        NetworkACLItemVO oldRule1 = mockAclItem(3L, 22, null);
+        NetworkACLItemVO oldRule2 = mockAclItem(4L, 22, null);
+        Mockito.when(networkACLItemDaoMock.listByACL(10L)).thenReturn(List.of(oldRule1, oldRule2), List.of(oldRule2));
+
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 22, 22);
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAllowPortACLRule(networkMock, 22, 22);
+
+        Mockito.verify(networkACLServiceMock).revokeNetworkACLItem(3L);
+        Mockito.verify(networkACLServiceMock, Mockito.never()).revokeNetworkACLItem(4L);
     }
 
     @Test

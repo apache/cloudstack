@@ -681,13 +681,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<NetworkACLItemVO> clusterAclItems = aclItems.stream()
                 .filter(networkACLItem -> getVpcTierAclRuleReason().equals(networkACLItem.getReason()))
                 .collect(Collectors.toList());
-        if (clusterAclItems.isEmpty()) {
-            // Rules created before they were marked with the cluster, remove only one of them
-            clusterAclItems = aclItems.stream()
+        // Record the cleanup before revoking, so a retried deletion knows this cluster's rule is already gone
+        String cleanupDetail = getVpcTierAclRuleCleanupDetail(startPort, endPort);
+        if (clusterAclItems.isEmpty() && kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), cleanupDetail) == null) {
+            // Rule created before rules were marked with the cluster, claim only one of them
+            NetworkACLItemVO legacyAclItem = aclItems.stream()
                     .filter(networkACLItem -> StringUtils.isEmpty(networkACLItem.getReason()))
-                    .limit(1)
-                    .collect(Collectors.toList());
+                    .findFirst().orElse(null);
+            if (legacyAclItem != null) {
+                legacyAclItem.setReason(getVpcTierAclRuleReason());
+                networkACLItemDao.update(legacyAclItem.getId(), legacyAclItem);
+                clusterAclItems = List.of(legacyAclItem);
+            }
         }
+        if (clusterAclItems.isEmpty()) {
+            return;
+        }
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), cleanupDetail, String.valueOf(true), false);
 
         for (NetworkACLItemVO aclItem : clusterAclItems) {
             networkACLService.revokeNetworkACLItem(aclItem.getId());
@@ -696,6 +706,10 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected String getVpcTierAclRuleReason() {
         return String.format("Kubernetes cluster %s", kubernetesCluster.getUuid());
+    }
+
+    protected String getVpcTierAclRuleCleanupDetail(int startPort, int endPort) {
+        return String.format("vpcTierAclRuleRemoved-%d-%d", startPort, endPort);
     }
 
     protected void provisionLoadBalancerRule(final IpAddress publicIp, final Network network,
