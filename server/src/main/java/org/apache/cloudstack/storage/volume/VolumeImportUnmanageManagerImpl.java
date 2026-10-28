@@ -39,6 +39,7 @@ import com.cloud.resourcelimit.ReservationHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
@@ -69,6 +70,9 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -120,6 +124,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VolumeApiService volumeApiService;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
@@ -195,7 +201,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         // 4. get volume info on storage through host and check
-        VolumeOnStorageTO volume = getVolumeOnStorageAndCheck(pool, volumePath);
+        VolumeOnStorageTO volume = getVolumeOnStorageAndCheck(pool, volumePath, false);
 
         if (checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
             logFailureAndThrowException("Volume is a reference of snapshot on primary: " + volume.getFullPath());
@@ -219,6 +225,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
             VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
 
+            // 7b. let the storage driver mark the volume as now owned by CloudStack (e.g. StorPool's cs/uuid tags)
+            notifyStorageDriverOfVolumeManagementChange(pool, volumeVO, true);
+
             // 8. Update resource count
             updateResourceLimitForVolumeImport(volumeVO);
 
@@ -232,9 +241,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
     }
 
-    protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath) {
+    protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath, boolean forUnmanage) {
         // send a command to hypervisor to check
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null, forUnmanage);
         if (CollectionUtils.isEmpty(volumes)) {
             logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
         }
@@ -250,6 +259,19 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword) {
+        if (pool.getPoolType() == Storage.StoragePoolType.Linstor && StringUtils.isNotBlank(volumePath)) {
+            ((PrimaryDataStoreDriver) dataStoreManager.getPrimaryDataStore(pool.getId()).getDriver())
+                    .validateVolumeForImport(pool, volumePath);
+        }
+        return listVolumesForImportInternal(pool, volumePath, keyword, false);
+    }
+
+    protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword, boolean forUnmanage) {
+        List<VolumeOnStorageTO> volumes = listVolumesForImportFromDriver(pool, volumePath, keyword, forUnmanage);
+        if (volumes != null) {
+            return volumes;
+        }
+
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
         HostVO host = hostAndLocalPath.first();
         checkIfHostAndPoolSupported(host, pool);
@@ -266,6 +288,23 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return  ((GetVolumesOnStorageAnswer) answer).getVolumes();
     }
 
+    private List<VolumeOnStorageTO> listVolumesForImportFromDriver(StoragePoolVO pool, String volumePath, String keyword, boolean forUnmanage) {
+        DataStore dataStore = dataStoreManager.getPrimaryDataStore(pool.getId());
+        if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return null;
+        }
+        return ((PrimaryDataStoreDriver) dataStore.getDriver()).listVolumesForImport(pool, volumePath, keyword, forUnmanage);
+    }
+
+    @Override
+    public void notifyStorageDriverOfVolumeManagementChange(StoragePool pool, Volume volume, boolean imported) {
+        DataStore dataStore = dataStoreManager.getPrimaryDataStore(pool.getId());
+        if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return;
+        }
+        ((PrimaryDataStoreDriver) dataStore.getDriver()).volumeManagementChanged(pool, volume, imported);
+    }
+
     @Override
     public boolean unmanageVolume(long volumeId) {
         // 1. check if volume can be unmanaged
@@ -275,7 +314,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         StoragePoolVO pool = checkIfPoolAvailable(volume.getPoolId());
 
         // 3. unmanage volume internally
-        getVolumeOnStorageAndCheck(pool, volume.getPath());
+        getVolumeOnStorageAndCheck(pool, volume.getPath(), true);
 
         // 3. Update resource count
         updateResourceLimitForVolumeUnmanage(volume);
@@ -285,6 +324,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         // 5. update the state/removed of record
         unmanageVolumeFromDatabase(volume);
+
+        // 6. let the storage driver clear any CloudStack ownership marker (e.g. StorPool's cs/uuid tags)
+        notifyStorageDriverOfVolumeManagementChange(pool, volume, false);
 
         return true;
     }
@@ -461,8 +503,25 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null, getImageFormat(volume.getFormat()));
         return volumeDao.findById(diskProfile.getVolumeId());
+    }
+
+    /**
+     * Maps the format the hypervisor reported for the volume on the pool onto an image format, so that
+     * the imported volume records what is actually on the pool (raw on RBD, qcow2 on file based pools)
+     * instead of the cluster default for the hypervisor. Returns null when the format is not recognised.
+     */
+    protected Storage.ImageFormat getImageFormat(String format) {
+        if (StringUtils.isBlank(format)) {
+            return null;
+        }
+        try {
+            return Storage.ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unrecognised image format {} reported for the volume being imported, falling back to the hypervisor default", format);
+            return null;
+        }
     }
 
     protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume, DiskOfferingVO diskOffering, List<Reserver> reservations) {

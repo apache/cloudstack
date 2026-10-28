@@ -35,6 +35,7 @@ public interface ProviderVolume {
     public String getExternalName();
     public String getExternalConnectionId();
     public enum AddressType {
-        FIBERWWN
+        FIBERWWN,
+        NVMETCP
     }
 }
