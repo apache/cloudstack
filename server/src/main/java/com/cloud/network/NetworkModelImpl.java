@@ -495,7 +495,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
-        if (!offering.isConserveMode() && !isForNsx) {
+        boolean isForNetris = isProviderForNetworkOffering(Provider.Netris, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx && !isForNetris) {
             for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>();
                 services.addAll(ipToServices.get(ip));
@@ -1649,7 +1650,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return false;
         }
         boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
-        if (!offering.isConserveMode() && !isForNsx) {
+        boolean isForNetris = isProviderForNetworkOffering(Provider.Netris, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx && !isForNetris) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
         return true;
@@ -2743,7 +2745,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getValidNetworkCidr(Network guestNetwork) {
         String networkCidr = guestNetwork.getNetworkCidr();
-        return networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+        String cidr = networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+        return com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(cidr);
     }
 
     @Override

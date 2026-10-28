@@ -317,6 +317,25 @@ public class QemuImgTest {
     }
 
     @Test
+    public void testCreateWithBackingFileOfOtherFormat() throws QemuImgException, LibvirtException {
+        String backingFileName = "/tmp/" + UUID.randomUUID() + ".raw";
+        String overlayFileName = "/tmp/" + UUID.randomUUID() + ".qcow2";
+
+        QemuImgFile backingFile = new QemuImgFile(backingFileName, 20480, PhysicalDiskFormat.RAW);
+        QemuImgFile overlayFile = new QemuImgFile(overlayFileName, 20480, PhysicalDiskFormat.QCOW2);
+
+        QemuImg qemu = new QemuImg(0);
+        qemu.create(backingFile);
+        qemu.create(overlayFile, backingFile);
+
+        // the created file keeps its own format, the backing file's format is only passed as -F
+        Map<String, String> info = qemu.info(overlayFile);
+        assertEquals(PhysicalDiskFormat.QCOW2.toString(), info.get(QemuImg.FILE_FORMAT));
+        assertEquals(backingFileName, info.get(QemuImg.BACKING_FILE));
+        assertEquals(PhysicalDiskFormat.RAW.toString(), info.get(QemuImg.BACKING_FILE_FORMAT));
+    }
+
+    @Test
     public void testConvertBasic() throws QemuImgException, LibvirtException {
         long srcSize = 20480;
         String srcFileName = "/tmp/" + UUID.randomUUID() + ".qcow2";
