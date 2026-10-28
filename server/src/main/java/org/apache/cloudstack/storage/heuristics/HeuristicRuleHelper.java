@@ -273,7 +273,7 @@ public class HeuristicRuleHelper {
             }
 
             if (dataStoreManager.isRemovedOrReadonly(dataStore)) {
-                throw new CloudRuntimeException(String.format("DataStore [{}] returned by heuristic rule is marked as read-only.", dataStore));
+                throw new CloudRuntimeException(String.format("DataStore [%s] returned by heuristic rule is marked as read-only.", dataStore));
             }
 
             return dataStore;
