@@ -30,7 +30,7 @@ rough signal; read the actual contributions before drawing conclusions.
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.8+
 - [`requests`](https://pypi.org/project/requests/): `pip install requests`
 
 ## github_org_contributions.py

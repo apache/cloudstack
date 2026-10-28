@@ -84,7 +84,7 @@ def shift_years(d: dt.datetime, years: int) -> dt.datetime:
 
 def year_chunks(from_dt: dt.datetime, to_dt: dt.datetime) -> Iterable[Tuple[dt.datetime, dt.datetime]]:
     """
-    Split [from_dt, to_dt] into consecutive windows of at most one year.
+    Split [from_dt, to_dt) into consecutive end-exclusive windows of at most one year.
     """
     start = from_dt
     while start < to_dt:
@@ -154,7 +154,7 @@ def count_user(token: str, login: str, org_id: str, org_login: str, repo_rx: re.
         })
         user = data.get("user")
         if not user:
-            raise RuntimeError("User not found")
+            raise RuntimeError(f"User not found: {login}")
         user_login = user["login"]
 
         cc = user["contributionsCollection"]

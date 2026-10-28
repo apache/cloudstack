@@ -47,7 +47,6 @@ import email
 import mailbox
 import re
 import sys
-from email.utils import parseaddr
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
@@ -85,15 +84,26 @@ def download_mbox(list_name: str, domain: str, ym: str, out_dir: Path) -> Path:
     out_path = out_dir / f"{list_name}@{domain}-{ym}.mbox"
 
     headers = {"User-Agent": "apache-list-mentions/1.0"}
-    r = requests.get(url, headers=headers, timeout=120)
+    with requests.get(url, headers=headers, timeout=120, stream=True) as r:
+        if r.status_code == 404:
+            raise FileNotFoundError(f"No archive found for {ym}")
+        r.raise_for_status()
 
-    if r.status_code == 404 or not r.content.strip():
+        # Stream to a temp file so an interrupted download is never reused as a cached archive
+        tmp_path = out_path.with_suffix(".mbox.part")
+        has_content = False
+        try:
+            with tmp_path.open("wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 * 1024):
+                    has_content = has_content or bool(chunk.strip())
+                    f.write(chunk)
+        except BaseException:
+            tmp_path.unlink(missing_ok=True)
+            raise
+
+    if not has_content:
+        tmp_path.unlink(missing_ok=True)
         raise FileNotFoundError(f"No archive found for {ym}")
-
-    r.raise_for_status()
-    # Write via a temp file so an interrupted download is never reused as a cached archive
-    tmp_path = out_path.with_suffix(".mbox.part")
-    tmp_path.write_bytes(r.content)
     tmp_path.replace(out_path)
     return out_path
 
