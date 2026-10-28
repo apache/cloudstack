@@ -9458,7 +9458,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected void validateErrorPolicy(String errorPolicy){
-        if(errorPolicy != null &&
+        if (errorPolicy != null &&
                 !Enums.getIfPresent(DiskOffering.DiskErrorPolicy.class,
                         errorPolicy.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid error policy (%s). Please specify one of the following " +

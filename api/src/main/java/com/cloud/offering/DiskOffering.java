@@ -54,15 +54,15 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     enum DiskErrorPolicy {
         REPORT("report"), STOP("stop"), IGNORE("ignore"), ENOSPACE("enospace");
 
-        private final String _diskErrorPolicy;
+        private final String diskErrorPolicy;
 
         DiskErrorPolicy(String errorPolicy) {
-            _diskErrorPolicy = errorPolicy;
+            diskErrorPolicy = errorPolicy;
         }
 
         @Override
         public String toString() {
-            return _diskErrorPolicy;
+            return diskErrorPolicy;
         }
     };
 

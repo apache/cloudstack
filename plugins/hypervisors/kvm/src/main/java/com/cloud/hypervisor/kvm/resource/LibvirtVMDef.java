@@ -909,34 +909,48 @@ public class LibvirtVMDef {
             }
         }
 
-        public enum DiskCacheMode {
+        public interface DiskDriverAttribute {
+            String getValue();
+        }
+
+        public enum DiskCacheMode implements DiskDriverAttribute {
             NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("default");
-            String _diskCacheMode;
+            private final String value;
 
             DiskCacheMode(String cacheMode) {
-                _diskCacheMode = cacheMode;
+                value = cacheMode;
+            }
+
+            @Override
+            public String getValue() {
+                return value;
             }
 
             @Override
             public String toString() {
-                if (_diskCacheMode == null) {
+                if (value == null) {
                     return "NONE";
                 }
-                return _diskCacheMode;
+                return value;
             }
         }
 
-        public enum DiskErrorPolicy {
+        public enum DiskErrorPolicy implements DiskDriverAttribute {
             REPORT("report"), STOP("stop"), IGNORE("ignore"), ENOSPACE("enospace");
-            String _diskErrorPolicy;
+            private final String value;
 
             DiskErrorPolicy(String errorPolicy) {
-                _diskErrorPolicy = errorPolicy;
+                value = errorPolicy;
+            }
+
+            @Override
+            public String getValue() {
+                return value;
             }
 
             @Override
             public String toString() {
-                return _diskErrorPolicy;
+                return value;
             }
         }
 

@@ -240,4 +240,4 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `error_policy` VARCHAR(16) DEFAULT 'report' COMMENT 'disk error policy (report/stop/ignore/enospace) used by KVM hypervisor';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
