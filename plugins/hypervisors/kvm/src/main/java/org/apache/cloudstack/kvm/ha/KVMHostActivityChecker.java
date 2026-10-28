@@ -22,14 +22,18 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
+import com.cloud.agent.api.to.HostTO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.DetailVO;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -44,6 +48,7 @@ import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HealthCheckerInterface;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -67,6 +72,8 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     private StorageManager storageManager;
     @Inject
     private ResourceManager resourceManager;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
 
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
@@ -126,6 +133,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         Status hostStatus;
         boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
+        addSanlockHostId(cmd.getHost(), host);
         try {
             logger.debug("Checking {} status...", host.toString());
             Answer answer = agentMgr.easySend(host.getId(), cmd);
@@ -153,6 +161,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         Status hostStatusFromNeighbour = Status.Unknown;
         boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
+        addSanlockHostId(cmd.getHost(), host);
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == host.getId()
@@ -204,6 +213,9 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     protected boolean verifyActivityOfStorageOnHost(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host host, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(host, pool, volume_list, suspectTime);
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            addSanlockHostId(cmd.getHost(), host);
+        }
 
         logger.debug("Checking VM activity for {} on storage pool [{}].", host.toString(), pool);
         try {
@@ -222,6 +234,13 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             throw new HACheckerException(message, e);
         }
         return activityStatus;
+    }
+
+    private void addSanlockHostId(HostTO hostTO, Host host) {
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), Host.HOST_SANLOCK_ID);
+        if (detail != null && NumberUtils.isDigits(detail.getValue())) {
+            hostTO.setSanlockHostId(Long.valueOf(detail.getValue()));
+        }
     }
 
     private HashMap<StoragePool, List<Volume>> getStoragePoolAndVolumeInfoOnHost(Host host) {

@@ -43,6 +43,7 @@ import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -443,9 +444,13 @@ public class KVMStoragePoolManager {
         return adaptor.disconnectPhysicalDisk(volPath, pool);
     }
 
+    private boolean isHaPoolRemovedOnDelete(StoragePoolType type) {
+        return type == StoragePoolType.NetworkFilesystem || ClvmPoolManager.isClvmPoolType(type);
+    }
+
     public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (isHaPoolRemovedOnDelete(type)) {
             _haMonitor.removeStoragePool(uuid);
         }
         boolean deleteStatus = adaptor.deleteStoragePool(uuid);;
@@ -457,7 +462,7 @@ public class KVMStoragePoolManager {
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (isHaPoolRemovedOnDelete(type)) {
             _haMonitor.removeStoragePool(uuid);
         }
         boolean deleteStatus = adaptor.deleteStoragePool(uuid, details);

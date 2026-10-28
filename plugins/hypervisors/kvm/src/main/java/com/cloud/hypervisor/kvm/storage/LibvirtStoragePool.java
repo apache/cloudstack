@@ -36,6 +36,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -375,7 +376,14 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
 
+    private Boolean hasClvmHostLease(HostTO host) {
+        return ClvmSanlockHaChecker.isHostLeaseAlive(ClvmStorageAdaptor.getVgName(getLocalPath()), host.getSanlockHostId());
+    }
+
     public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
+        if (ClvmPoolManager.isClvmPoolType(type)) {
+            return null;
+        }
         Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
         cmd.add("-i", primaryStoragePool.getPoolIp());
         cmd.add("-p", primaryStoragePool.getPoolMountSourcePath());
@@ -402,6 +410,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
+        if (ClvmPoolManager.isClvmPoolType(type)) {
+            return hasClvmHostLease(host);
+        }
         String hostIp = host.getPrivateNetwork().getIp();
         Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);
         cmd.add("-i", pool.getPoolIp());
@@ -427,6 +438,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+        if (ClvmPoolManager.isClvmPoolType(type)) {
+            return hasClvmHostLease(host);
+        }
         String hostIp = host.getPrivateNetwork().getIp();
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
         cmd.add("-i", pool.getPoolIp());
