@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.cpu.CPU;
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -909,48 +910,20 @@ public class LibvirtVMDef {
             }
         }
 
-        public interface DiskDriverAttribute {
-            String getValue();
-        }
-
-        public enum DiskCacheMode implements DiskDriverAttribute {
+        public enum DiskCacheMode {
             NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("default");
-            private final String value;
+            String _diskCacheMode;
 
             DiskCacheMode(String cacheMode) {
-                value = cacheMode;
-            }
-
-            @Override
-            public String getValue() {
-                return value;
+                _diskCacheMode = cacheMode;
             }
 
             @Override
             public String toString() {
-                if (value == null) {
+                if (_diskCacheMode == null) {
                     return "NONE";
                 }
-                return value;
-            }
-        }
-
-        public enum DiskErrorPolicy implements DiskDriverAttribute {
-            REPORT("report"), STOP("stop"), IGNORE("ignore"), ENOSPACE("enospace");
-            private final String value;
-
-            DiskErrorPolicy(String errorPolicy) {
-                value = errorPolicy;
-            }
-
-            @Override
-            public String getValue() {
-                return value;
-            }
-
-            @Override
-            public String toString() {
-                return value;
+                return _diskCacheMode;
             }
         }
 
@@ -1010,7 +983,7 @@ public class LibvirtVMDef {
         private Long _iopsWriteRateMax;
         private Long _iopsWriteRateMaxLength;
         private DiskCacheMode _diskCacheMode;
-        private DiskErrorPolicy _errorPolicy;
+        private DiskOffering.DiskErrorPolicy _errorPolicy;
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
@@ -1357,11 +1330,11 @@ public class LibvirtVMDef {
             return _diskCacheMode;
         }
 
-        public void setErrorPolicy(DiskErrorPolicy errorPolicy) {
+        public void setErrorPolicy(DiskOffering.DiskErrorPolicy errorPolicy) {
             _errorPolicy = errorPolicy;
         }
 
-        public DiskErrorPolicy getErrorPolicy() {
+        public DiskOffering.DiskErrorPolicy getErrorPolicy() {
             return _errorPolicy;
         }
 

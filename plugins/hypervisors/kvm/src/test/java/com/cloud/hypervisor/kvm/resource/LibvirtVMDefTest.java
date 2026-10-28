@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -272,7 +273,7 @@ public class LibvirtVMDefTest extends TestCase {
         DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
         DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
         DiskDef.DiskCacheMode cacheMode = DiskDef.DiskCacheMode.WRITEBACK;
-        DiskDef.DiskErrorPolicy errorPolicy = DiskDef.DiskErrorPolicy.STOP;
+        DiskOffering.DiskErrorPolicy errorPolicy = DiskOffering.DiskErrorPolicy.STOP;
 
         disk.defFileBasedDisk(filePath, diskLabel, bus, type);
         disk.setCacheMode(cacheMode);

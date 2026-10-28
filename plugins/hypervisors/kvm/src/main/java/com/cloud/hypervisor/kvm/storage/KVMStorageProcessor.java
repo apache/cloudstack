@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.offering.DiskOffering;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
 
@@ -1760,7 +1761,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
                 if (errorPolicy != null) {
-                    diskdef.setErrorPolicy(DiskDef.DiskErrorPolicy.valueOf(errorPolicy.toUpperCase()));
+                    diskdef.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(errorPolicy.toUpperCase()));
                 }
 
                 diskdef.isIothreadsEnabled(details != null && details.containsKey(VmDetailConstants.IOTHREADS));

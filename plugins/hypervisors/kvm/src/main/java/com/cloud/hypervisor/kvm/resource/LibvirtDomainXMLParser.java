@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -116,7 +117,7 @@ public class LibvirtDomainXMLParser {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                     }
                     if (StringUtils.isNotBlank(diskErrorPolicy)) {
-                        def.setErrorPolicy(DiskDef.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
+                        def.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
                     }
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
@@ -147,7 +148,7 @@ public class LibvirtDomainXMLParser {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                     }
                     if (StringUtils.isNotBlank(diskErrorPolicy)) {
-                        def.setErrorPolicy(DiskDef.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
+                        def.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
                     }
                 }
 

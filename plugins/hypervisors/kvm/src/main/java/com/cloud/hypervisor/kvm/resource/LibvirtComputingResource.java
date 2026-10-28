@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_CPU_MAX_SPEED_MHZ;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
@@ -3930,7 +3931,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
 
                 if (volumeObjectTO.getErrorPolicy() != null) {
-                    disk.setErrorPolicy(DiskDef.DiskErrorPolicy.valueOf(volumeObjectTO.getErrorPolicy().toString().toUpperCase()));
+                    disk.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(volumeObjectTO.getErrorPolicy().toString().toUpperCase()));
                 }
 
                 if (volumeObjectTO.requiresEncryption() &&
