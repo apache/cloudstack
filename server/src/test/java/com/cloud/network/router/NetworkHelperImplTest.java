@@ -28,8 +28,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.LbStickinessMethod;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
@@ -37,9 +42,12 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.Pair;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,6 +78,8 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -133,11 +143,16 @@ public class NetworkHelperImplTest {
 
     private NicProfile nicProfile = new NicProfile();
 
+    @Mock
+    private ConfigurationDao configDao;
+
     @Before
     public void setUp() {
         networkHelperSpy._networkDao = networkDao;
         networkHelperSpy._networkModel = networkModel;
 
+        networkHelperSpy._configDao = configDao;
+        lenient().when(configDao.getValue(Config.NetworkLBHaproxyStatsPort.key())).thenReturn("8081");
         when(template.getId()).thenReturn(1L);
         when(template.isDynamicallyScalable()).thenReturn(true);
         when(virtualProvider.getId()).thenReturn(1L);
@@ -311,7 +326,6 @@ public class NetworkHelperImplTest {
         assertEquals(Hypervisor.HypervisorType.KVM, result.getHypervisorType());
         assertTrue(result.isDynamicallyScalable());
     }
-
 
     private NicProfile getExpectedNicProfile(boolean vxlan, String vlanTag) {
         NicProfile nic = new NicProfile();
@@ -533,5 +547,34 @@ public class NetworkHelperImplTest {
 
         Map<Network, List<? extends NicProfile>> nic = networkHelperSpy.configurePublicNic(routerDeploymentDefinitionMock, false);
         Mockito.verify(ipv6ServiceMock).updateNicIpv6(Mockito.eq(nic.get(networkMock).get(0)), Mockito.any(), Mockito.eq(networkMock));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateHAProxyLBRuleRejectsAppCookieStickiness() {
+        LoadBalancer lb = mock(LoadBalancer.class);
+        when(lb.getSourcePortStart()).thenReturn(80);
+
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("cookie-name", "JSESSIONID"));
+        LoadBalancingRule.LbStickinessPolicy stickinessPolicy =
+                new LoadBalancingRule.LbStickinessPolicy(LbStickinessMethod.StickinessMethodType.AppCookieBased.getName(), params);
+        LoadBalancingRule rule = new LoadBalancingRule(lb, new ArrayList<>(), Collections.singletonList(stickinessPolicy), new ArrayList<>(), mock(Ip.class));
+
+        networkHelperSpy.validateHAProxyLBRule(rule);
+    }
+
+    @Test
+    public void testValidateHAProxyLBRuleAllowsSourceBasedStickiness() {
+        LoadBalancer lb = mock(LoadBalancer.class);
+        when(lb.getSourcePortStart()).thenReturn(80);
+
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("tablesize", "200k"));
+        params.add(new Pair<>("expire", "30m"));
+        LoadBalancingRule.LbStickinessPolicy stickinessPolicy =
+                new LoadBalancingRule.LbStickinessPolicy(LbStickinessMethod.StickinessMethodType.SourceBased.getName(), params);
+        LoadBalancingRule rule = new LoadBalancingRule(lb, new ArrayList<>(), Collections.singletonList(stickinessPolicy), new ArrayList<>(), mock(Ip.class));
+
+        assertTrue(networkHelperSpy.validateHAProxyLBRule(rule));
     }
 }
