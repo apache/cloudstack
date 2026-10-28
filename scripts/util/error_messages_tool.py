@@ -374,6 +374,12 @@ _PLACEHOLDER_RE     = re.compile(r'\{\{(\w+)\}\}')
 
 _EXCEPTIONS_CALL_RE = re.compile(r'\bExceptions\.(\w+)\s*\(')
 
+# CallContext.current().putErrorContextParameter(s): the side-channel that lets
+# a method set metadata that a *different* method later throws a keyed
+# exception with, bypassing the Exceptions.*(...) call's own metadata argument.
+_CALL_CONTEXT_SINGLE_RE = re.compile(r'CallContext\.current\(\)\.putErrorContextParameter\s*\(')
+_CALL_CONTEXT_MULTI_RE  = re.compile(r'CallContext\.current\(\)\.putErrorContextParameters\s*\(')
+
 # Inline metadata map constructors we know how to pull literal keys out of.
 _MAP_OF_PREFIXES = ("Map.of(", "ImmutableMap.of(", "Collections.singletonMap(")
 
@@ -420,41 +426,67 @@ def split_top_level(s: str) -> list:
     return parts
 
 
-def find_exceptions_calls(text: str) -> list:
-    """Return (method_name, args_text, line) for every Exceptions.<factory>(...) call in *text*.
+def _extract_call_args(text: str, start: int) -> str:
+    """Return the argument-list text of a call whose opening '(' ends at *start*.
 
-    The argument list is extracted by tracking paren depth from the opening
-    '(' (ignoring parens inside string literals), so multi-line calls and
-    nested calls like ``Map.of(...)`` are handled correctly.
+    Tracks paren depth from the opening '(' (ignoring parens inside string
+    literals), so multi-line calls and nested calls like ``Map.of(...)`` are
+    handled correctly.
     """
+    depth = 1
+    i = start
+    in_string = False
+    escape = False
+    while i < len(text) and depth > 0:
+        ch = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+        elif ch == '"':
+            in_string = True
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        i += 1
+    return text[start:i - 1]
+
+
+def find_exceptions_calls(text: str) -> list:
+    """Return (method_name, args_text, line) for every Exceptions.<factory>(...) call in *text*."""
     calls = []
     for m in _EXCEPTIONS_CALL_RE.finditer(text):
         method = m.group(1)
-        start  = m.end()  # just after the opening '('
-        depth  = 1
-        i      = start
-        in_string = False
-        escape    = False
-        while i < len(text) and depth > 0:
-            ch = text[i]
-            if in_string:
-                if escape:
-                    escape = False
-                elif ch == "\\":
-                    escape = True
-                elif ch == '"':
-                    in_string = False
-            elif ch == '"':
-                in_string = True
-            elif ch == "(":
-                depth += 1
-            elif ch == ")":
-                depth -= 1
-            i += 1
-        args_text = text[start:i - 1]
+        args_text = _extract_call_args(text, m.end())
         line = text.count("\n", 0, m.start()) + 1
         calls.append((method, args_text, line))
     return calls
+
+
+def find_call_context_keys(file_text: str) -> set:
+    """Best-effort: collect metadata keys a file supplies indirectly via
+    CallContext.current().putErrorContextParameter(s), the mechanism used to
+    pass metadata across method boundaries (e.g. a validation helper sets
+    "serviceOffering" before a sibling method throws the keyed exception, so
+    the key never appears in the Exceptions.*(...) call's own metadata
+    argument at all). Keys found this way are unioned in file-wide, since
+    this tool can't trace the actual call path between the two.
+    """
+    keys = set()
+    for m in _CALL_CONTEXT_SINGLE_RE.finditer(file_text):
+        args_text = _extract_call_args(file_text, m.end())
+        top = split_top_level(args_text)
+        if top and _FULL_STRING_RE.match(top[0]):
+            keys.add(_unescape_json_string(top[0]))
+    for m in _CALL_CONTEXT_MULTI_RE.finditer(file_text):
+        args_text = _extract_call_args(file_text, m.end()).strip()
+        sub_keys, _status = resolve_metadata_keys(args_text, file_text)
+        keys |= sub_keys
+    return keys
 
 
 def analyze_call(args_text: str):
@@ -668,8 +700,13 @@ def cmd_placeholder_gaps(args: Args) -> int:
     Only call sites for keys that actually have placeholders are analyzed.
     Call sites whose metadata argument can't be statically resolved (status
     'unknown' from resolve_metadata_keys) are reported separately rather than
-    treated as confirmed gaps, since the metadata may be supplied indirectly
-    (e.g. CallContext.putErrorContextParameters elsewhere in the method).
+    treated as confirmed gaps.
+
+    Keys supplied file-wide via CallContext.current().putErrorContextParameter(s)
+    (see find_call_context_keys) are unioned into every call site's resolved
+    metadata before comparing against the template's placeholders, since that
+    mechanism routinely supplies a key from a different method than the one
+    that throws.
 
     A call site is also checked against its '.admin' variant, if one exists in
     the JSON file, using the same metadata: '.admin'-suffixed keys are never
@@ -707,6 +744,7 @@ def cmd_placeholder_gaps(args: Args) -> int:
             file_text = f.read_text(errors="replace")
         except OSError:
             continue
+        context_keys = find_call_context_keys(file_text)
         for _method, call_args, line in find_exceptions_calls(file_text):
             key, metadata_arg = analyze_call(call_args)
             if key is None:
@@ -718,6 +756,7 @@ def cmd_placeholder_gaps(args: Args) -> int:
             if status == "unknown":
                 uncertain.append((key, f, line))
                 continue
+            meta_keys = meta_keys | context_keys
             for variant in variants:
                 missing = templates[variant] - meta_keys
                 if missing:
