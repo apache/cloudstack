@@ -63,7 +63,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String QEMU_IMG_HAS_BACKING_COMMAND =
             "qemu-img info --output=json %s 2>/dev/null | grep -q '\"backing-filename\"'";
 
-    private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
+    static String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
             Path path = Paths.get(volumePath);
             String rscName = path.getParent().getFileName().toString();
@@ -104,11 +104,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 newVolumeId = getVolumeUuidFromPath(volumePath, volumePool);
                 Long size = command.getRestoreVolumeSizes().get(0);
                 restoreVolume(storagePoolMgr, backupPath, volumePool, volumePath, diskType, backupFile, size,
-                        new Pair<>(vmName, command.getVmState()), mountDirectory, timeout);
+                        new Pair<>(vmName, command.getVmState()), mountDirectory, timeout, mountTimeout);
             } else if (Boolean.TRUE.equals(vmExists)) {
-                restoreVolumesOfExistingVM(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backedVolumeUUIDs, backupPath, backupFiles, mountDirectory, timeout);
+                restoreVolumesOfExistingVM(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backedVolumeUUIDs, backupPath, backupFiles, mountDirectory, timeout, mountTimeout);
             } else {
-                restoreVolumesOfDestroyedVMs(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backupPath, backupFiles, mountDirectory, timeout);
+                restoreVolumesOfDestroyedVMs(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backupPath, backupFiles, mountDirectory, timeout, mountTimeout);
             }
         } catch (CloudRuntimeException e) {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "";
@@ -129,9 +129,12 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private void restoreVolumesOfExistingVM(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> restoreVolumePools,
                                             List<String> restoreVolumePaths, List<String> backedVolumesUUIDs,
-                                            String backupPath, List<String> backupFiles, String mountDirectory, int timeout) {
+                                            String backupPath, List<String> backupFiles, String mountDirectory, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
+            // The management server sends the instance's volumes in the order of the backed up volumes,
+            // each one being the volume that backup has to be written into (it matches them by uuid, see
+            // NASBackupProvider#getVolumesToRestoreInto), so they are paired by position here.
             for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
                 PrimaryDataStoreTO restoreVolumePool = restoreVolumePools.get(idx);
                 String restoreVolumePath = restoreVolumePaths.get(idx);
@@ -146,13 +149,13 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 }
             }
         } finally {
-            unmountBackupDirectory(mountDirectory);
+            unmountBackupDirectory(mountDirectory, mountTimeout);
             deleteTemporaryDirectory(mountDirectory);
         }
     }
 
     private void restoreVolumesOfDestroyedVMs(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> volumePools,
-                                              List<String> volumePaths, String backupPath, List<String> backupFiles, String mountDirectory, int timeout) {
+                                              List<String> volumePaths, String backupPath, List<String> backupFiles, String mountDirectory, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
             for (int i = 0; i < volumePaths.size(); i++) {
@@ -168,13 +171,13 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 }
             }
         } finally {
-            unmountBackupDirectory(mountDirectory);
+            unmountBackupDirectory(mountDirectory, mountTimeout);
             deleteTemporaryDirectory(mountDirectory);
         }
     }
 
     private void restoreVolume(KVMStoragePoolManager storagePoolMgr, String backupPath, PrimaryDataStoreTO volumePool, String volumePath, String diskType, String backupFile,
-                               Long size, Pair<String, VirtualMachine.State> vmNameAndState, String mountDirectory, int timeout) {
+                               Long size, Pair<String, VirtualMachine.State> vmNameAndState, String mountDirectory, int timeout, Integer mountTimeout) {
         String bkpPath;
         String volumeUuid;
         try {
@@ -191,7 +194,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 }
             }
         } finally {
-            unmountBackupDirectory(mountDirectory);
+            unmountBackupDirectory(mountDirectory, mountTimeout);
             deleteTemporaryDirectory(mountDirectory);
         }
     }
@@ -207,6 +210,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             logger.error("Failed to create the tmp mount directory {} for restore", mountDirectory, e);
             throw new CloudRuntimeException("Failed to create the tmp mount directory for restore on the KVM host");
         }
+        int exitValue;
         try {
             String mountPath = Script.getExecutableAbsolutePath("mount");
             List<String> mountCmd = new ArrayList<>();
@@ -227,22 +231,41 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 mountCmd.add("-o");
                 mountCmd.add(mountOptions);
             }
-            Script.executeCommand(mountCmd.toArray(new String[0]));
+            exitValue = Script.executeCommandForExitValue(mountTimeout, mountCmd.toArray(new String[0]));
         } catch (Exception e) {
             logger.error("Failed to mount repository {} of type {} to the directory {}", backupRepoAddress, backupRepoType, mountDirectory, e);
+            throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
+        }
+        if (exitValue != 0) {
+            logger.error("Failed to mount repository {} of type {} to the directory {}, mount exited with {}", backupRepoAddress,
+                    backupRepoType, mountDirectory, exitValue);
+            removeTemporaryDirectoryQuietly(mountDirectory);
             throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
         }
         return mountDirectory;
     }
 
-    private void unmountBackupDirectory(String backupDirectory) {
+    private void unmountBackupDirectory(String backupDirectory, Integer mountTimeout) {
+        int exitValue;
         try {
             String umountPath = Script.getExecutableAbsolutePath("umount");
             String[] umountCmd = new String[] { "sudo", umountPath, backupDirectory };
-            Script.executeCommand(umountCmd);
+            exitValue = Script.executeCommandForExitValue(mountTimeout, umountCmd);
         } catch (Exception e) {
             logger.error("Failed to unmount backup directory {}", backupDirectory, e);
             throw new CloudRuntimeException("Failed to unmount the backup directory");
+        }
+        if (exitValue != 0) {
+            logger.error("Failed to unmount backup directory {}, umount exited with {}", backupDirectory, exitValue);
+            throw new CloudRuntimeException("Failed to unmount the backup directory");
+        }
+    }
+
+    private void removeTemporaryDirectoryQuietly(String backupDirectory) {
+        try {
+            Files.deleteIfExists(Paths.get(backupDirectory));
+        } catch (IOException e) {
+            logger.warn("Failed to remove the temporary mount directory {} after the mount failed.", backupDirectory, e);
         }
     }
 
@@ -294,7 +317,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
 
         String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
-        int exitValue = Script.executeCommandForExitValue(rsyncCmd);
+        int exitValue = Script.executeCommandForExitValue(timeout, rsyncCmd);
         return exitValue == 0;
     }
 
@@ -307,15 +330,22 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
         QemuImg qemu;
         try {
-            qemu = new QemuImg(timeout, true, false);
             String volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
             KVMPhysicalDisk disk = null;
+            boolean targetExists = true;
+            // Let qemu-img skip the backup's zero regions (--target-is-zero) only on a volume that
+            // provably reads as zeroes. An in-place restore overwrites a volume that still holds its
+            // old data, and a new LINSTOR volume reads as zeroes only on thin or ZFS backed pools.
+            boolean targetReadsAsZero = false;
             if (createTargetVolume) {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
                     if (size == null) {
                         throw new CloudRuntimeException("Restore volume size is required for Linstor pool when creating target volume");
                     }
                     disk = volumeStoragePool.createPhysicalDisk(volumeUuid, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, size, null);
+                    targetReadsAsZero = volumeStoragePool.newVolumeReadsAsZero(volumeUuid);
+                } else {
+                    targetExists = false;
                 }
             } else {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
@@ -323,8 +353,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 } else {
                     disk = volumeStoragePool.getPhysicalDisk(volumePath);
                 }
-                qemu.setSkipTargetVolumeCreation(true);
             }
+            qemu = new QemuImg(timeout, targetReadsAsZero, false);
+            qemu.setSkipTargetVolumeCreation(targetExists);
             if (disk != null) {
                 logger.debug("Restoring volume: {}", disk.toString());
             }

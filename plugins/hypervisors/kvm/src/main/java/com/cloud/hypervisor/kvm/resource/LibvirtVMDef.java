@@ -39,6 +39,7 @@ import com.cloud.agent.api.to.VirtualMachineMetadataTO;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.template.TemplateManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -57,8 +58,10 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 public class LibvirtVMDef {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
 
-    // CD-ROM slot allocation: getDevLabel() maps deviceSeq=3,4 to hdc and hdd on the IDE bus.
-    // Bumping this requires extending getDevLabel() (e.g. to spill onto SATA or a second IDE controller).
+    // Number of CD-ROMs supported by CloudStack per VM (not a limit of the guest OS or QEMU). The CD-ROMs are on the IDE bus,
+    // which has 4 slots: the first two are kept for disks, so the ISOs get hdc and hdd (getDevLabel() maps deviceSeq=3,4).
+    // Going past 2 means putting the CD-ROMs on the SATA bus (or on a second IDE controller): the CD-ROMs with a device id
+    // beyond these slots, e.g. the one following the config drive ISO (which keeps the device id 4), are on the SATA bus.
     public static final int MAX_CDROMS_PER_VM = 2;
 
     private String _hvsType;
@@ -569,12 +572,18 @@ public class LibvirtVMDef {
         private final List<String> _features = new ArrayList<String>();
 
         private HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = null;
+        private boolean kvmHintDedicated = false;
+
         public void addFeatures(String feature) {
             _features.add(feature);
         }
 
         public void addHyperVFeature(HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef) {
             this.hyperVEnlightenmentFeatureDef = hyperVEnlightenmentFeatureDef;
+        }
+
+        public void setKvmHintDedicated(boolean kvmHintDedicated) {
+            this.kvmHintDedicated = kvmHintDedicated;
         }
 
         @Override
@@ -593,6 +602,9 @@ public class LibvirtVMDef {
                 if (!hpervF.isEmpty()) {
                     feaBuilder.append(hpervF);
                 }
+            }
+            if (kvmHintDedicated) {
+                feaBuilder.append("<kvm><hint-dedicated state='on'/></kvm>\n");
             }
             feaBuilder.append("</features>\n");
             return feaBuilder.toString();
@@ -1138,7 +1150,16 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
+        private boolean isIdeCdromSlot(Integer devId) {
+            return devId == null || devId < TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + MAX_CDROMS_PER_VM;
+        }
+
         public void defISODisk(String volPath, Integer devId, boolean isSecure, DiskType diskType) {
+            // the IDE bus only has the slots of MAX_CDROMS_PER_VM CD-ROMs (hdc and hdd), the other ones (e.g. the config drive ISO)
+            // are on the SATA bus
+            if (!isSecure && !isIdeCdromSlot(devId)) {
+                isSecure = true;
+            }
             if (!isSecure) {
                 defISODisk(volPath, devId, diskType);
             } else {

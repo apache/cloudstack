@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.util;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.AutoSelectFilter;
@@ -23,7 +24,10 @@ import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
+import com.linbit.linstor.api.model.ResourceState;
+import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
+import com.linbit.linstor.api.model.Volume;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,6 +107,20 @@ public class LinstorUtilTest {
         }
 
         {
+            // dashes in the volume group name must be escaped as well (GH issue #14011)
+            StoragePool spLVMThin = new StoragePool();
+            Properties lvmThinProps = new Properties();
+            lvmThinProps.put("StorDriver/StorPoolName", "linstor_pool-lvm-thin/thin");
+            spLVMThin.setProps(lvmThinProps);
+            spLVMThin.setProviderKind(ProviderKind.LVM_THIN);
+            String snapPath = LinstorUtil.getSnapshotPath(spLVMThin,
+                "cs-12fc4055-3985-4025-8eb5-d6fd53effe37", "cs-d7aea646-5f40-46a2-b9dc-77e41ea29336");
+            Assert.assertEquals(
+                "/dev/mapper/linstor_pool--lvm--thin-cs--12fc4055--3985--4025--8eb5--d6fd53effe37_00000_cs--d7aea646--5f40--46a2--b9dc--77e41ea29336",
+                snapPath);
+        }
+
+        {
             StoragePool spZFS = new StoragePool();
             Properties zfsProps = new Properties();
             zfsProps.put("StorDriver/StorPoolName", "linstorPool");
@@ -112,6 +130,63 @@ public class LinstorUtilTest {
             String snapPath = LinstorUtil.getSnapshotPath(spZFS, "cs-cb32532a-dd8f-47e0-a81c-8a75573d3545", "snap2");
             Assert.assertEquals("zfs://linstorPool/cs-cb32532a-dd8f-47e0-a81c-8a75573d3545_00000@snap2", snapPath);
         }
+    }
+
+    private ResourceWithVolumes mockResource(String node, String pool, boolean inUse, boolean inactive) {
+        ResourceWithVolumes rwv = new ResourceWithVolumes();
+        rwv.setName("cs-test");
+        rwv.setNodeName(node);
+        Volume vol = new Volume();
+        vol.setProviderKind(ProviderKind.LVM);
+        vol.setStoragePoolName(pool);
+        rwv.setVolumes(Collections.singletonList(vol));
+        ResourceState state = new ResourceState();
+        state.setInUse(inUse);
+        rwv.setState(state);
+        if (inactive) {
+            rwv.setFlags(Collections.singletonList(ApiConsts.FLAG_RSC_INACTIVE));
+        }
+        return rwv;
+    }
+
+    @Test
+    public void testDiskfulStoragePoolsOrderedByPreference() throws ApiException {
+        // inactive copy first, in-use copy last: the result must be in-use, active, inactive
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList("cs-test"),
+                Collections.emptyList(), Collections.emptyList(), null, null))
+                .thenReturn(Arrays.asList(
+                        mockResource("nodeC", "poolC", false, true),
+                        mockResource("nodeB", "poolB", false, false),
+                        mockResource("nodeA", "poolA", true, false)));
+        // the pools are queried in preference order (in use, active, inactive)
+        when(api.viewStoragePools(Arrays.asList("nodeA", "nodeB", "nodeC"),
+                Arrays.asList("poolA", "poolB", "poolC"), Collections.emptyList(), null, null, true))
+                .thenReturn(Arrays.asList(
+                        mockStoragePool("poolB", "nodeB", ProviderKind.LVM),
+                        mockStoragePool("poolA", "nodeA", ProviderKind.LVM),
+                        mockStoragePool("poolC", "nodeC", ProviderKind.LVM)));
+
+        List<StoragePool> pools = LinstorUtil.getDiskfulStoragePoolsByPreference(api, "cs-test");
+        Assert.assertEquals(Arrays.asList("nodeA", "nodeB", "nodeC"),
+                pools.stream().map(StoragePool::getNodeName).collect(Collectors.toList()));
+        // the single-pool accessor keeps returning the best suited copy
+        Assert.assertEquals("nodeA", LinstorUtil.getDiskfulStoragePool(api, "cs-test").getNodeName());
+    }
+
+    @Test
+    public void testDiskfulStoragePoolsIgnoresDiskless() throws ApiException {
+        ResourceWithVolumes diskless = new ResourceWithVolumes();
+        diskless.setName("cs-test");
+        diskless.setNodeName("nodeD");
+        Volume dlVol = new Volume();
+        dlVol.setProviderKind(ProviderKind.DISKLESS);
+        diskless.setVolumes(Collections.singletonList(dlVol));
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList("cs-test"),
+                Collections.emptyList(), Collections.emptyList(), null, null))
+                .thenReturn(Collections.singletonList(diskless));
+
+        Assert.assertTrue(LinstorUtil.getDiskfulStoragePoolsByPreference(api, "cs-test").isEmpty());
+        Assert.assertNull(LinstorUtil.getDiskfulStoragePool(api, "cs-test"));
     }
 
     @Test
