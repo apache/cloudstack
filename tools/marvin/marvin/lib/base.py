@@ -979,13 +979,26 @@ class VirtualMachine:
         if deviceid is not None:
             cmd.deviceid = deviceid
 
-        return apiclient.attachVolume(cmd)
+        return self._retry_until_pv_drivers(apiclient.attachVolume, cmd)
+
+    @staticmethod
+    def _retry_until_pv_drivers(api, cmd, timeout=180):
+        """XenServer/XCP-ng refuses to hot-attach or hot-detach a volume until the guest tools report in,
+        which is some time after the VM is Running or restarted (about 45 seconds for a Debian 13 guest)"""
+        while True:
+            try:
+                return api(cmd)
+            except Exception as e:
+                if "PV drivers" not in str(e) or timeout <= 0:
+                    raise
+                time.sleep(10)
+                timeout -= 10
 
     def detach_volume(self, apiclient, volume):
         """Detach volume to instance"""
         cmd = detachVolume.detachVolumeCmd()
         cmd.id = volume.id
-        return apiclient.detachVolume(cmd)
+        return self._retry_until_pv_drivers(apiclient.detachVolume, cmd)
 
     def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None, dhcpoptions=None):
         """Add a NIC to a VM"""
