@@ -1127,7 +1127,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
-        if (!storageMgr.storagePoolHasEnoughSpace(volume.getSize(), storagePool)) {
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+        if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(new Pair<>(volume, diskProfile)), storagePool, storagePool.getClusterId())) {
             throw new InvalidParameterValueException(String.format("Storage pool %s does not have enough space to create volume %s.",
                     storagePool.getName(), volume.getUuid()));
         }
@@ -1189,6 +1191,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             created = false;
             VolumeInfo vol = volFactory.getVolume(volumeId);
             vol.stateTransit(Volume.Event.DestroyRequested);
+            if (e instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException) e;
+            }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
             if (!created) {
