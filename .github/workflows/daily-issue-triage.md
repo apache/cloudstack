@@ -73,16 +73,17 @@ jobs:
             [ -n "$1" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' \
               -H "Authorization: Bearer $1" https://api.github.com/user || echo 000)" = "200" ]
           }
-          for pair in "$NAME_0|$CAND_0" "$NAME_1|$CAND_1" "$NAME_2|$CAND_2"; do
-            nm="${pair%%|*}"; tok="${pair#*|}"
-            if [ -z "$tok" ]; then continue; fi
-            echo "::add-mask::$tok"
-            if live "$tok"; then
-              echo "name=$nm" >> "$GITHUB_OUTPUT"
-              echo "Selected rotated token '$nm'"
-              exit 0
-            fi
-          done
+          # name and token are passed as separate args so the name never derives from the token
+          pick() {
+            [ -n "$2" ] || return 1
+            echo "::add-mask::$2"
+            live "$2" || return 1
+            echo "name=$1" >> "$GITHUB_OUTPUT"
+            echo "Selected rotated token '$1'"
+          }
+          pick "$NAME_0" "$CAND_0" && exit 0
+          pick "$NAME_1" "$CAND_1" && exit 0
+          pick "$NAME_2" "$CAND_2" && exit 0
           # empty name makes the agent job fall back to the base COPILOT_GITHUB_TOKEN secret
           [ -n "$BASE" ] && echo "::add-mask::$BASE"
           echo "name=" >> "$GITHUB_OUTPUT"
@@ -92,7 +93,7 @@ jobs:
 safe-outputs:
   # Don't open tracking issues when the agentic run itself fails or is unhealthy
   report-failure-as-issue: false
-  missing-tool:
+  report-missing-tool:
     create-issue: false
   report-incomplete:
     create-issue: false
@@ -104,16 +105,18 @@ safe-outputs:
     max: 10
 
 tools:
-  web-fetch:
+  bash: ["cat", "ls", "find", "grep", "head", "tail", "wc", "curl"]
   github:
     toolsets: [issues, labels]
     min-integrity: none
 
-source: githubnext/agentics/workflows/daily-issue-triage.md@d7c1dc4b72b00607a67caaffdcc216cb64379cf9
 timeout-minutes: 60
+source: githubnext/agentics/workflows/daily-issue-triage.md@139fa09ef17cde4135e696ff8e7af09bc5ddfa6e
 ---
 
 # Daily Issue Triage
+
+Use GitHub read tools for repository content and proxy-aware `curl` through bash for external references. Stay within the configured network allowlist, keep TLS verification enabled, and report blocked requests rather than bypassing the firewall or guessing missing content.
 
 <!-- Note - this file can be customized to your needs. Replace this section directly, or add further instructions here. After editing run 'gh aw compile' -->
 
@@ -206,7 +209,7 @@ Assess whether the issue is suitable for automated coding agent assignment:
 ### 3g: Apply results and post comment
 
 Apply all triage results for this issue:
-- Use `update_issue` to apply the chosen labels.
+- Use the `add_labels` safe output to apply the chosen labels.
 - Add an issue comment with the triage report using the format below.
 
 Then move to the next issue.
