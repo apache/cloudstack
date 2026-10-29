@@ -32,6 +32,7 @@ export default {
       resourcename: (record) => record.resourceid ? record.resourcename : i18n.global.t('label.resource.alert.all.resources')
     }, label('metric'), label('condition'), 'threshold', label('severity'), 'state']
     if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) cols.push('account')
+    if (store.getters.listAllProjects) cols.push('project')
     return cols
   },
   details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'state', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'project', 'domain', 'created'],
