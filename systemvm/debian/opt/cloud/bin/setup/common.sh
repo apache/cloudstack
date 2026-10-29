@@ -164,7 +164,9 @@ enable_fwding() {
 
 enable_passive_ftp() {
   log_it "cloud: enabling passive FTP for guest VMs"
-  echo "$1" > /proc/sys/net/netfilter/nf_conntrack_helper
+  # Linux 6.0 removed the nf_conntrack_helper sysctl, the ftp helper is
+  # attached by raw table rules for static nat and port forwarding
+  modprobe nf_nat_ftp
 }
 
 disable_rpfilter() {

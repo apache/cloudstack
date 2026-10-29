@@ -14,12 +14,9 @@ permissions: read-all
 
 network: defaults
 
-# claude-sonnet-5: frontier agentic model at promotional $2/$10 per 1M tokens —
-# better and cheaper than the claude-sonnet-4.6 engine default this workflow
-# previously fell back to. Triage needs real judgment (duplicates, severity).
 engine:
   id: copilot
-  model: claude-sonnet-5
+  model: claude-haiku-5.5
 
 # Rotates the Copilot token across volunteer PATs, see .github/COPILOT_TOKENS.md.
 # Strict mode forbids reading secrets in the agent job, so this job picks today's
