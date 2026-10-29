@@ -343,7 +343,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void deleteVnetBr(String brName, boolean deleteBr) {
+    protected void deleteVnetBr(String brName, boolean deleteBr) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
             if (cmdout == null)
@@ -383,6 +383,11 @@ public class BridgeVifDriver extends VifDriverBase {
             String scriptPath = null;
             if (cmdout != null && cmdout.contains("vxlan")) {
                 scriptPath = _modifyVxlanPath;
+                // Read the pif from the VXLAN device.
+                String vxlanPif = getVxlanPif(vNetId);
+                if (vxlanPif != null) {
+                    pName = vxlanPif;
+                }
             } else {
                 scriptPath = _modifyVlanPath;
             }
@@ -401,6 +406,10 @@ public class BridgeVifDriver extends VifDriverBase {
                 logger.debug("Delete bridge " + brName + " failed: " + result);
             }
         }
+    }
+
+    protected String getVxlanPif(String vxlanId) {
+        return Script.runSimpleBashScript("ip -d link show vxlan" + vxlanId + " | grep -o 'dev [^ ]*' | cut -d' ' -f2");
     }
 
     private void deleteExistingLinkLocalRouteTable(String linkLocalBr) {
@@ -458,6 +467,14 @@ public class BridgeVifDriver extends VifDriverBase {
 
     @Override
     public void deleteBr(NicTO nic) {
+        if (Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()) == Networks.BroadcastDomainType.Vxlan) {
+            // VXLAN bridges are named after the VNI alone. deleteVnetBr reads the pif from the VXLAN device.
+            String vxlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+            if (vxlanId != null) {
+                deleteVnetBr(generateVxnetBrName(null, vxlanId), true);
+            }
+            return;
+        }
         String vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
         String trafficLabel = nic.getName();
         String pifName = _pifs.get(trafficLabel);
