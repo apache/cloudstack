@@ -122,7 +122,7 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
             if (getProjectRulePermissionOrder() != null) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameters permission and ruleid must be mutually exclusive with ruleorder");
             }
-            ProjectRolePermission rolePermission = getValidProjectRolePermission();
+            ProjectRolePermission rolePermission = findProjectRolePermissionInProject(getProjectRuleId());
             CallContext.current().setEventDetails("Updating project role permission for rule id: " + getProjectRuleId() + " to: " + getProjectRolePermission().toString());
             result = projRoleService.updateProjectRolePermission(projectId, projectRole, rolePermission, getProjectRolePermission());
         }
@@ -131,20 +131,24 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
         setResponseObject(response);
     }
 
-    private ProjectRolePermission getValidProjectRolePermission() {
-        ProjectRolePermission rolePermission = projRoleService.findProjectRolePermission(getProjectRuleId());
+    /**
+     * Resolves a caller supplied rule id and rejects it when it belongs to another project, so that
+     * no code path can reach permissions outside the project the command was called with.
+     */
+    private ProjectRolePermission findProjectRolePermissionInProject(Long rolePermissionId) {
+        final ProjectRolePermission rolePermission = projRoleService.findProjectRolePermission(rolePermissionId);
         if (rolePermission == null || rolePermission.getProjectId() != getProjectId()) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Role permission doesn't exist in the project, probably because of invalid rule id");
         }
         return rolePermission;
     }
 
-    private boolean updateProjectRolePermissionOrder(ProjectRole projectRole) {
+    protected boolean updateProjectRolePermissionOrder(ProjectRole projectRole) {
         final List<ProjectRolePermission> rolePermissionsOrder = new ArrayList<>();
         for (Long rolePermissionId : getProjectRulePermissionOrder()) {
-            final ProjectRolePermission rolePermission = projRoleService.findProjectRolePermission(rolePermissionId);
-            if (rolePermission == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Provided project role permission(s) do not exist");
+            final ProjectRolePermission rolePermission = findProjectRolePermissionInProject(rolePermissionId);
+            if (rolePermission.getProjectRoleId() != projectRole.getId()) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Provided project role permission(s) do not belong to the given project role");
             }
             rolePermissionsOrder.add(rolePermission);
         }
