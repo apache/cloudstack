@@ -386,6 +386,7 @@ datasource_list: [ ConfigDrive, CloudStack, None ]
 datasource:
     CloudStack: {}
     None: {}
+ssh_deletekeys: false
 EOF
   # sshd uses the first value it reads, so 40- loads before cloud-init's 50-cloud-init.conf
   printf 'PermitRootLogin yes\n' > "$tmp/40-root-login.conf"
@@ -396,6 +397,11 @@ EOF
 if [ -f "$f" ] && ! grep -qiE "^[[:space:]]*Include[[:space:]].*sshd_config\.d" "$f"; then
   { cat "$d"; cat "$f"; } > "$f.new" && cat "$f.new" > "$f" && rm -f "$f.new"
 fi'
+
+  # run set-passwords and ssh (the public keys) on every boot instead of once per instance, so that the
+  # password and the SSH key pair reset in CloudStack are applied at the next start; the host keys are
+  # kept (ssh_deletekeys: false above), as the ssh module would otherwise replace them on every boot
+  local cloud_cfg_fix='sed -i -E "s/^([[:space:]]*)- (set[-_]passwords|ssh)[[:space:]]*$/\1- [\2, always]/" /etc/cloud/cloud.cfg'
 
   # xe-guest-utilities is for x86_64 guests only, it is downloaded here as the guest may have no network
   local xe_args=()
@@ -426,11 +432,13 @@ fi'
     --mkdir /etc/ssh/sshd_config.d \
     --upload "$tmp/40-root-login.conf:/etc/ssh/sshd_config.d/40-root-login.conf" \
     --run-command "$sshd_fix" \
+    --run-command "$cloud_cfg_fix" \
     --run-command "$CLEANUP"
   rm -rf "$tmp"
 
   echo "--- verification ---"
   virt-cat -a "$WORK_IMAGE" /etc/cloud/ds-identify.cfg /etc/cloud/cloud.cfg.d/cloudstack.cfg /etc/ssh/sshd_config.d/40-root-login.conf
+  virt-cat -a "$WORK_IMAGE" /etc/cloud/cloud.cfg | grep -E 'set[-_]passwords|- (\[)?ssh\b' || true
   local d
   for d in /usr/sbin /usr/bin; do
     virt-ls -a "$WORK_IMAGE" $d | grep -E '^(qemu-ga|vmtoolsd|xenstore|xe-daemon)' | sed "s#^#$d/#" || true
