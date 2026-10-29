@@ -64,7 +64,6 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         expunge(sc);
     }
 
-
     @Override
     public List<LoadBalancerVMMapVO> listByInstanceId(long instanceId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
