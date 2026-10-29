@@ -362,7 +362,16 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         this.connectionAlive = false;
         // Clear buffer reference to allow GC when client disconnects
         this.readBuffer = null;
-        ConsoleProxy.removeViewer(this);
+
+        try {
+            if (session != null && session.isOpen()) {
+                session.disconnect();
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to disconnect WebSocket session for client [{}].", clientId, e);
+        } finally {
+            ConsoleProxy.removeViewer(this);
+        }
     }
 
     @Override

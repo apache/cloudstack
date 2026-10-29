@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import org.eclipse.jetty.websocket.api.Session;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class ConsoleProxyNoVncClientTest {
     @Test
@@ -41,5 +43,17 @@ public class ConsoleProxyNoVncClientTest {
 
         long updatedActivityTime = client.getClientLastFrontEndActivityTime();
         Assert.assertTrue(updatedActivityTime > previousActivityTime);
+    }
+
+    @Test
+    public void closeClientDisconnectsOpenWebSocketSession() throws Exception {
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.isOpen()).thenReturn(true);
+
+        ConsoleProxyNoVncClient client = new ConsoleProxyNoVncClient(session);
+
+        client.closeClient();
+
+        Mockito.verify(session).disconnect();
     }
 }
