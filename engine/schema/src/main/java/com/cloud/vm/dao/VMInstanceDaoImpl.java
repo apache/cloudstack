@@ -19,6 +19,7 @@ package com.cloud.vm.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -1037,7 +1038,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             return notUpdated;
         }
         StringBuilder sql = new StringBuilder("UPDATE `cloud`.`vm_instance` SET " +
-                "`power_host` = ?, `power_state_update_time` = now(), `power_state` = CASE ");
+                "`power_host` = ?, `power_state_update_time` = ?, `power_state` = CASE ");
         updateCounts.keySet().forEach(key -> {
             sql.append("WHEN id = ").append(key).append(" THEN '").append(instancePowerStates.get(key)).append("' ");
         });
@@ -1052,6 +1053,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
             pstmt.setLong(1, powerHostId);
+            pstmt.setTimestamp(2, new Timestamp(DateUtil.currentGMTTime().getTime()), gmtCalendar());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Unable to execute update power states SQL from VMs {} due to: {}",
