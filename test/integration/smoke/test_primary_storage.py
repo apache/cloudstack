@@ -315,9 +315,10 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     domainid=self.domain.id
                 )
 
+                # the Debian 13 built-in template does not boot with the 128 MiB of the tiny offering
                 service_offering = ServiceOffering.create(
                     self.apiclient,
-                    self.services["service_offerings"]["tiny"]
+                    dict(self.services["service_offerings"]["tiny"], memory=512)
                 )
                 self.cleanup.append(service_offering)
 
@@ -423,15 +424,16 @@ class TestStorageTags(cloudstackTestCase):
             assert storage_response.id == cls.storage_pool_1.id and storage_response.type == cls.storage_pool_1.type
 
             # Create Service Offerings with different Storage Tags
+            # (the Debian 13 built-in template does not boot with the 128 MiB of the tiny offering)
             cls.service_offering_1 = ServiceOffering.create(
                 cls.apiclient,
-                cls.services["service_offerings"]["tiny"],
+                dict(cls.services["service_offerings"]["tiny"], memory=512),
                 tags=cls.services["storage_tags"]["a"]
             )
             cls._cleanup.append(cls.service_offering_1)
             cls.service_offering_2 = ServiceOffering.create(
                 cls.apiclient,
-                cls.services["service_offerings"]["tiny"],
+                dict(cls.services["service_offerings"]["tiny"], memory=512),
                 tags=cls.services["storage_tags"]["b"]
             )
             cls._cleanup.append(cls.service_offering_2)
