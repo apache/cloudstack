@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { createAlertRuleAction } from '@/config/section/infra/resourceAlertRules'
 import { isZoneCreated } from '@/utils/zone'
 import { isAdmin } from '@/role'
 
@@ -326,7 +327,8 @@ export default {
             return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating', 'Allocated', 'Uploaded'].includes(record.state) &&
               record.type !== 'ROOT' && !record.virtualmachineid
           }
-        }
+        },
+        createAlertRuleAction('Volume')
       ]
     },
     {

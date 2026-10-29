@@ -146,6 +146,16 @@ import { METRICS_BY_TYPE, CONDITIONS, SEVERITIES, RESOURCE_TYPE_LABELS, METRIC_L
 
 export default {
   name: 'CreateResourceAlertRule',
+  props: {
+    resource: {
+      type: Object,
+      default: () => ({})
+    },
+    currentAction: {
+      type: Object,
+      default: () => ({})
+    }
+  },
   data () {
     return {
       loading: false,
@@ -213,8 +223,24 @@ export default {
   created () {
     this.fetchWebhooks()
     if (this.canPickOwner) this.fetchDomains()
+    this.presetResource()
+  },
+  watch: {
+    'resource.id' () {
+      this.presetResource()
+    }
   },
   methods: {
+    // Opened from a resource's own page: pick its type and the resource itself
+    presetResource () {
+      const type = this.currentAction?.resourceAlertType
+      if (!type || !this.resource?.id) return
+      this.form.resourcetype = type
+      this.form.metric = undefined
+      this.fetchResources().then(() => {
+        this.form.resourceid = this.resource.id
+      })
+    },
     fetchWebhooks () {
       if (!('listWebhooks' in this.$store.getters.apis)) return
       this.webhooksLoading = true
@@ -260,11 +286,11 @@ export default {
         StoragePool: ['listStoragePools', 'liststoragepoolsresponse', 'storagepool', {}]
       }
       const source = sources[this.form.resourcetype]
-      if (!source) return
+      if (!source) return Promise.resolve()
       const [api, responseKey, itemKey, params] = source
       this.resourcesLoading = true
       const hideExtensions = ['VirtualMachine', 'Host'].includes(this.form.resourcetype)
-      getAPI(api, params).then(json => {
+      return getAPI(api, params).then(json => {
         // Extensions do not report VM or host usage, so rules on them would never fire
         this.resources = (json?.[responseKey]?.[itemKey] || []).filter(r => !hideExtensions || r.hypervisor !== 'External')
       }).finally(() => {
