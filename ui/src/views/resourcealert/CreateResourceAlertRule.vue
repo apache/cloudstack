@@ -124,6 +124,8 @@
           v-model:value="form.webhookids"
           mode="multiple"
           :loading="webhooksLoading"
+          :disabled="!webhooksLoading && webhooks.length === 0 && form.webhookids.length === 0"
+          :placeholder="!webhooksLoading && webhooks.length === 0 ? $t('label.resource.alert.no.webhooks') : undefined"
           optionFilterProp="label"
           :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0">
           <a-select-option v-for="wh in webhooks" :key="wh.id" :value="wh.id" :label="wh.name">{{ wh.name }}</a-select-option>
