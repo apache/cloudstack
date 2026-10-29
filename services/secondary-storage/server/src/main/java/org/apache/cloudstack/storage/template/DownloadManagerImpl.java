@@ -316,6 +316,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 // For S3 and Swift, which are considered "remote",
                 // as in the file cannot be accessed locally,
                 // we run the postRemoteDownload() method.
+                // Set early so status polls see DOWNLOADED; overridden on error below
+                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                 td.setDownloadError("Download success, starting install ");
                 String result = postRemoteDownload(jobId);
                 if (result != null) {
@@ -324,7 +326,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setDownloadError("Failed post download install: " + result);
                     ((S3TemplateDownloader) td).cleanupAfterError();
                 } else {
-                    td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
             } else {
