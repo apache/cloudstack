@@ -2920,6 +2920,60 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testApplyDefaultNetworkRulesProgramsSystemVmWithoutSecurityGroupNic() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final NicTO nic = Mockito.mock(NicTO.class);
+
+        when(vm.getType()).thenReturn(Type.SecondaryStorageVm);
+        when(vm.getName()).thenReturn("s-1-VM");
+        when(vm.getNics()).thenReturn(new NicTO[] {nic});
+        when(nic.isSecurityGroupEnabled()).thenReturn(false);
+        when(nic.getIsolationUri()).thenReturn(null);
+        doReturn(true).when(libvirtComputingResourceSpy).configureDefaultNetworkRulesForSystemVm(conn, "s-1-VM", true);
+
+        assertTrue(libvirtComputingResourceSpy.applyDefaultNetworkRules(conn, vm, false));
+
+        verify(libvirtComputingResourceSpy, times(1)).configureDefaultNetworkRulesForSystemVm(conn, "s-1-VM", true);
+        verify(libvirtComputingResourceSpy, never()).configureDefaultNetworkRulesForSystemVm(conn, "s-1-VM", false);
+    }
+
+    @Test
+    public void testApplyDefaultNetworkRulesDoesNotProgramUserVm() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final NicTO nic = Mockito.mock(NicTO.class);
+
+        when(vm.getType()).thenReturn(Type.User);
+        when(vm.getNics()).thenReturn(new NicTO[] {nic});
+        when(nic.isSecurityGroupEnabled()).thenReturn(false);
+        when(nic.getIsolationUri()).thenReturn(null);
+
+        assertTrue(libvirtComputingResourceSpy.applyDefaultNetworkRules(conn, vm, false));
+
+        verify(libvirtComputingResourceSpy, never()).configureDefaultNetworkRulesForSystemVm(Mockito.any(Connect.class),
+                Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testApplyDefaultNetworkRulesDoesNotFallBackWhenSystemVmNicIsSecurityGroupEnabled() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final NicTO nic = Mockito.mock(NicTO.class);
+
+        when(vm.getType()).thenReturn(Type.SecondaryStorageVm);
+        when(vm.getName()).thenReturn("s-1-VM");
+        when(vm.getNics()).thenReturn(new NicTO[] {nic});
+        when(nic.isSecurityGroupEnabled()).thenReturn(true);
+        doReturn(true).when(libvirtComputingResourceSpy).configureDefaultNetworkRulesForSystemVm(conn, "s-1-VM");
+
+        assertTrue(libvirtComputingResourceSpy.applyDefaultNetworkRules(conn, vm, false));
+
+        verify(libvirtComputingResourceSpy, times(1)).configureDefaultNetworkRulesForSystemVm(conn, "s-1-VM");
+        verify(libvirtComputingResourceSpy, never()).configureDefaultNetworkRulesForSystemVm(conn, "s-1-VM", true);
+    }
+
+    @Test
     public void testCheckSshCommand() {
         final String instanceName = "Test";
         final String ip = "127.0.0.1";
