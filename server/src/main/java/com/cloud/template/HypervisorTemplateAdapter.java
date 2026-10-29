@@ -19,10 +19,10 @@ package com.cloud.template;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -264,9 +264,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             if (imageStore == null) {
                 List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
-                standardImageStoreAllocation(imageStores, template);
+                standardImageStoreAllocation(imageStores, template, zoneId);
             } else {
-                validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, null);
+                int copyLimit = getSecStorageCopyLimit(template, zoneId);
+                validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, new HashMap<>(), copyLimit);
             }
         }
     }
@@ -279,17 +280,17 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return imageStores;
     }
 
-    protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template) {
-        Set<Long> zoneSet = new HashSet<Long>();
+    protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template, long zoneId) {
+        int copyLimit = getSecStorageCopyLimit(template, zoneId);
         Collections.shuffle(imageStores);
-        validateSecondaryStorageAndCreateTemplate(imageStores, template, zoneSet);
+        validateSecondaryStorageAndCreateTemplate(imageStores, template, new HashMap<>(), copyLimit);
     }
 
-    protected void validateSecondaryStorageAndCreateTemplate(List<DataStore> imageStores, VMTemplateVO template, Set<Long> zoneSet) {
+    protected void validateSecondaryStorageAndCreateTemplate(List<DataStore> imageStores, VMTemplateVO template, Map<Long, Integer> zoneCopyCount, int copyLimit) {
         for (DataStore imageStore : imageStores) {
             Long zoneId = imageStore.getScope().getScopeId();
 
-            if (!isZoneAndImageStoreAvailable(imageStore, zoneId, zoneSet, isPrivateTemplate(template))) {
+            if (!isZoneAndImageStoreAvailable(imageStore, zoneId, zoneCopyCount, copyLimit)) {
                 continue;
             }
 

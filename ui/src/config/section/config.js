@@ -79,8 +79,8 @@ export default {
       icon: 'login-outlined',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       permission: ['listOauthProvider'],
-      columns: ['provider', 'enabled', 'description', 'clientid', 'secretkey', 'redirecturi'],
-      details: ['provider', 'description', 'enabled', 'clientid', 'secretkey', 'redirecturi'],
+      columns: ['provider', 'enabled', 'description', 'clientid', 'redirecturi', 'domainpath'],
+      details: ['provider', 'description', 'enabled', 'clientid', 'secretkey', 'redirecturi', 'authorizeurl', 'tokenurl', 'domainpath'],
       actions: [
         {
           api: 'registerOauthProvider',
@@ -89,11 +89,11 @@ export default {
           listView: true,
           dataView: false,
           args: [
-            'provider', 'description', 'clientid', 'redirecturi', 'secretkey'
+            'provider', 'description', 'clientid', 'redirecturi', 'secretkey', 'authorizeurl', 'tokenurl', 'domainid'
           ],
           mapping: {
             provider: {
-              options: ['google', 'github']
+              options: ['google', 'github', 'keycloak']
             }
           }
         },
@@ -103,7 +103,7 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['description', 'clientid', 'redirecturi', 'secretkey']
+          args: ['description', 'clientid', 'redirecturi', 'secretkey', 'authorizeurl', 'tokenurl', 'domainid']
         },
         {
           api: 'updateOauthProvider',

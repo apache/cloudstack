@@ -120,9 +120,9 @@ public interface VolumeOrchestrationService {
     void destroyVolume(Volume volume);
 
     DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
-            Account owner, Long deviceId, boolean incrementResourceCount);
+            Account owner, Long deviceId, Long kmsKeyId, boolean incrementResourceCount);
 
-    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException;
+    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool, Long clusterId, Long podId) throws NoTransitionException;
 
     void release(VirtualMachineProfile profile);
 
@@ -150,7 +150,7 @@ public interface VolumeOrchestrationService {
      * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
      */
     List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                               Account owner, Volume volume, Snapshot snapshot);
+                                               Account owner, Long kmsKeyId, Volume volume, Snapshot snapshot);
 
     String getVmNameFromVolumeId(long volumeId);
 
@@ -183,10 +183,12 @@ public interface VolumeOrchestrationService {
      */
     DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                              Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
-                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo);
+                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo,
+                             Storage.ImageFormat format);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile);
+                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile,
+                                     Storage.ImageFormat format);
 
     /**
      * Unmanage VM volumes

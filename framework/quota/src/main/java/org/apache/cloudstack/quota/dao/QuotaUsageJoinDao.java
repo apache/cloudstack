@@ -26,6 +26,6 @@ import java.util.List;
 
 public interface QuotaUsageJoinDao extends GenericDao<QuotaUsageJoinVO, Long> {
 
-    List<QuotaUsageJoinVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Long resourceId, Long networkId, Long offeringId, Date startDate, Date endDate, Long tariffId);
+    List<QuotaUsageJoinVO> findQuotaUsage(Long accountId, List<Long> domainIds, Integer usageType, Long resourceId, Long networkId, Long offeringId, Date startDate, Date endDate, Long tariffId);
 
 }

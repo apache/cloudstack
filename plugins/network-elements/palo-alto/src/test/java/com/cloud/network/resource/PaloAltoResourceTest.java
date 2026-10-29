@@ -290,7 +290,7 @@ public class PaloAltoResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, cidrList, null, null, null, FirewallRule.TrafficType.Egress);
+        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1L, 1, 1, Purpose.Firewall, cidrList, null, null, null, FirewallRule.TrafficType.Egress);
         FirewallRuleTO active = new FirewallRuleTO(activeVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);
         rules.add(active);
 
@@ -319,7 +319,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
+        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1L, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
         revokedVO.setState(State.Revoke);
         FirewallRuleTO revoked = new FirewallRuleTO(revokedVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);
         rules.add(revoked);

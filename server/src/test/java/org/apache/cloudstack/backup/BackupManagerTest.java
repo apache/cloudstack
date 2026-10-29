@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -64,6 +66,7 @@ import org.apache.cloudstack.api.command.admin.backup.CloneBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
@@ -71,8 +74,9 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
+import org.apache.cloudstack.backup.dao.BackupUsageMetricDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -83,6 +87,7 @@ import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -122,6 +127,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
@@ -156,6 +162,9 @@ public class BackupManagerTest {
 
     @Mock
     BackupDetailsDao backupDetailsDao;
+
+    @Mock
+    BackupUsageMetricDao backupUsageMetricDao;
 
     @Mock
     BackupProvider backupProvider;
@@ -268,12 +277,19 @@ public class BackupManagerTest {
     @Mock
     AsyncJobManager asyncJobManager;
 
+    @Mock
+    private AccountService accountServiceMock;
+
+    @Mock
+    private DomainVO domainVOMock;
+
     private Gson gson;
 
     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
     private String[] datastoresPossibleValues = {"e9804933-8609-4de3-bccc-6278072a496c", "datastore-name"};
     private AutoCloseable closeable;
     private ConfigDepotImpl configDepotImpl;
+    private ConfigKey backupFrameworkConfigKey = BackupManager.BackupFrameworkEnabled;
     private boolean updatedConfigKeyDepot = false;
     private MockedStatic<DbUtil> dbUtilMockedStatic;
     private final List<String> mockedGlobalLocks = new ArrayList<>();
@@ -341,7 +357,10 @@ public class BackupManagerTest {
         dbUtilMockedStatic.close();
         closeable.close();
         if (updatedConfigKeyDepot) {
-            ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "s_depot", configDepotImpl);
+            ConfigKey configKey = BackupManager.BackupFrameworkEnabled;
+            ReflectionTestUtils.setField(configKey, "s_depot", configDepotImpl);
+            ReflectionTestUtils.setField(configKey, "_value", null);
+            updatedConfigKeyDepot = false;
         }
         CallContext.unregister();
     }
@@ -350,6 +369,7 @@ public class BackupManagerTest {
         ConfigKey configKey = BackupManager.BackupFrameworkEnabled;
         this.configDepotImpl = (ConfigDepotImpl) ReflectionTestUtils.getField(configKey, "s_depot");
         ConfigDepotImpl configDepot = Mockito.mock(ConfigDepotImpl.class);
+        ReflectionTestUtils.setField(configKey, "_value", null);
         Mockito.when(configDepot.getConfigStringValue(Mockito.eq(BackupManager.BackupFrameworkEnabled.key()),
                 Mockito.eq(ConfigKey.Scope.Global), Mockito.isNull())).thenReturn("true");
         Mockito.when(configDepot.getConfigStringValue(Mockito.eq(BackupManager.BackupFrameworkEnabled.key()),
@@ -429,15 +449,16 @@ public class BackupManagerTest {
 
         doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success"))
             .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-                any(String.class), any(String.class), any(Pair.class));
+                any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
 
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm,
+                false);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success", restoreBackedUpVolume.second());
 
         verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-            any(String.class), any(String.class), any(Pair.class));
+            any(String.class), any(String.class), any(Pair.class), any(), Mockito.anyBoolean());
     }
 
     @Test
@@ -456,15 +477,16 @@ public class BackupManagerTest {
 
         doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success2"))
             .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-                any(String.class), any(String.class), any(Pair.class));
+                any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
 
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm,
+                false);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success2", restoreBackedUpVolume.second());
 
         verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-            any(String.class), any(String.class), any(Pair.class));
+            any(String.class), any(String.class), any(Pair.class), any(), Mockito.anyBoolean());
     }
 
     @Test
@@ -483,15 +505,16 @@ public class BackupManagerTest {
 
         doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"))
             .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-                any(String.class), any(String.class), any(Pair.class));
+                any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
 
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm,
+                false);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success3", restoreBackedUpVolume.second());
 
         verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-            any(String.class), any(String.class), any(Pair.class));
+            any(String.class), any(String.class), any(Pair.class), any(), Mockito.anyBoolean());
     }
 
     @Test
@@ -510,15 +533,16 @@ public class BackupManagerTest {
 
         doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success4"))
             .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-                any(String.class), any(String.class), any(Pair.class));
+                any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
 
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm,
+                false);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success4", restoreBackedUpVolume.second());
 
         verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
-            any(String.class), any(String.class), any(Pair.class));
+            any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
     }
 
     @Test
@@ -543,9 +567,9 @@ public class BackupManagerTest {
             Mockito.when(vm.getId()).thenReturn(1L);
             Mockito.when(offering.getProvider()).thenReturn("veeam");
             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
-            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(true);
+            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
 
-            backupManager.tryRestoreVM(backup, vm, offering, "Nothing to write here.");
+            backupManager.tryRestoreVM(backup, vm, offering, "Nothing to write here.", false, null);
         }
     }
 
@@ -573,9 +597,9 @@ public class BackupManagerTest {
             Mockito.when(vm.getId()).thenReturn(1L);
             Mockito.when(offering.getProvider()).thenReturn("veeam");
             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
-            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(false);
+            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(false);
             try {
-                backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.");
+                backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.", false, null);
                 fail("An exception is needed.");
             } catch (CloudRuntimeException e) {
                 assertEquals("Error restoring Instance from Backup [Checking message error.].", e.getMessage());
@@ -707,7 +731,7 @@ public class BackupManagerTest {
         when(backup.getId()).thenReturn(backupId);
         when(backup.getSize()).thenReturn(newBackupSize);
         when(backupProvider.getName()).thenReturn("testbackupprovider");
-        when(backupProvider.takeBackup(vmInstanceVOMock, null)).thenReturn(new Pair<>(true, backup));
+        when(backupProvider.takeBackup(vmInstanceVOMock, null, false)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
         ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
@@ -742,6 +766,61 @@ public class BackupManagerTest {
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);
             Mockito.verify(backupDao, times(1)).update(backupVO.getId(), backupVO);
             Mockito.verify(backupManager, times(1)).deleteOldestBackupFromScheduleIfRequired(vmId, scheduleId);
+        }
+    }
+
+    @Test
+    public void createBackupTestFailedScheduledBackupKeepsSchedule() throws ResourceAllocationException {
+        Long vmId = 1L;
+        Long zoneId = 2L;
+        Long scheduleId = 3L;
+        Long backupOfferingId = 4L;
+        Long accountId = 5L;
+        Long backupId = 6L;
+        long domainId = 101L;
+
+        when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+
+        overrideBackupFrameworkConfigValue();
+        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(backupOfferingVOMock);
+        when(backupOfferingVOMock.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(backupOfferingVOMock.getProvider()).thenReturn("testbackupprovider");
+
+        Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
+
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+        when(accountVOMock.getDomainId()).thenReturn(domainId);
+
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of());
+
+        BackupProvider backupProvider = mock(BackupProvider.class);
+        Backup backup = mock(Backup.class);
+        when(backup.getId()).thenReturn(backupId);
+        when(backupProvider.getName()).thenReturn("testbackupprovider");
+        when(backupProvider.takeBackup(vmInstanceVOMock, null, false)).thenReturn(new Pair<>(false, backup));
+        Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
+        backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
+        ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
+
+        BackupVO backupVO = mock(BackupVO.class);
+        when(backupVO.getId()).thenReturn(backupId);
+        when(backupDao.findById(backupId)).thenReturn(backupVO);
+
+        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getQuiesceVM()).thenReturn(null);
+
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            Assert.assertThrows(CloudRuntimeException.class, () -> backupManager.createBackup(cmd, asyncJobVOMock));
+
+            Mockito.verify(backupVO, times(1)).setBackupScheduleId(scheduleId);
+            Mockito.verify(backupDao, times(1)).update(backupId, backupVO);
+            Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
+            Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, 0L);
+            Mockito.verify(backupManager, Mockito.never()).deleteOldestBackupFromScheduleIfRequired(vmId, scheduleId);
         }
     }
 
@@ -907,6 +986,133 @@ public class BackupManagerTest {
                 verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup);
                 verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup2Size);
             }
+        }
+    }
+
+    private void verifyBackupUsageMetricPublished(MockedStatic<UsageEventUtils> usageEventUtilsMocked, int times, Long size, Long protectedSize) {
+        usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(Mockito.eq(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC), Mockito.anyLong(),
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.eq(size), Mockito.eq(protectedSize),
+                Mockito.any(), Mockito.any()), times(times));
+    }
+
+    private DataCenterVO mockZoneWithBackedUpVm(Long dataCenterId, Long vmId, Long offeringId, Long size, Long protectedSize) {
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getBackupOfferingId()).thenReturn(offeringId);
+        when(backupDao.listVmIdsWithBackupsInZone(dataCenterId)).thenReturn(List.of(vmId));
+        when(vmInstanceDao.listByIdsIncludingRemoved(List.of(vmId))).thenReturn(List.of(vm));
+        when(vmInstanceDao.listByZoneAndBackupOffering(dataCenterId, null)).thenReturn(List.of(vm));
+
+        BackupVO backup = new BackupVO();
+        backup.setBackupOfferingId(offeringId);
+        backup.setSize(size);
+        backup.setProtectedSize(protectedSize);
+        when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(backup));
+        return dataCenter;
+    }
+
+    @Test
+    public void updateBackupUsageRecordsPublishesAndStoresMetricWhenNoneWasPublished() {
+        DataCenterVO dataCenter = mockZoneWithBackedUpVm(1L, 2L, 3L, 100L, 1000L);
+        when(backupUsageMetricDao.findByVmAndOffering(2L, 3L)).thenReturn(null);
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            verifyBackupUsageMetricPublished(usageEventUtilsMocked, 1, 100L, 1000L);
+            ArgumentCaptor<BackupUsageMetricVO> captor = ArgumentCaptor.forClass(BackupUsageMetricVO.class);
+            verify(backupUsageMetricDao).persist(captor.capture());
+            Assert.assertEquals(2L, captor.getValue().getVmId());
+            Assert.assertEquals(3L, captor.getValue().getBackupOfferingId());
+            Assert.assertEquals(100L, captor.getValue().getSize());
+            Assert.assertEquals(1000L, captor.getValue().getProtectedSize());
+        }
+    }
+
+    @Test
+    public void updateBackupUsageRecordsSkipsUnchangedMetric() {
+        DataCenterVO dataCenter = mockZoneWithBackedUpVm(1L, 2L, 3L, 100L, 1000L);
+        when(backupUsageMetricDao.findByVmAndOffering(2L, 3L)).thenReturn(new BackupUsageMetricVO(2L, 3L, 100L, 1000L, new Date()));
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            verifyBackupUsageMetricPublished(usageEventUtilsMocked, 0, 100L, 1000L);
+            verify(backupUsageMetricDao, never()).persist(any(BackupUsageMetricVO.class));
+            verify(backupUsageMetricDao, never()).update(Mockito.anyLong(), any(BackupUsageMetricVO.class));
+        }
+    }
+
+    @Test
+    public void updateBackupUsageRecordsPublishesWhenAnotherServerPublishedADifferentValue() {
+        // Another management server published 200 and went down; the size is back to 100.
+        DataCenterVO dataCenter = mockZoneWithBackedUpVm(1L, 2L, 3L, 100L, 1000L);
+        BackupUsageMetricVO lastPublished = new BackupUsageMetricVO(2L, 3L, 200L, 1000L, new Date());
+        when(backupUsageMetricDao.findByVmAndOffering(2L, 3L)).thenReturn(lastPublished);
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            verifyBackupUsageMetricPublished(usageEventUtilsMocked, 1, 100L, 1000L);
+            verify(backupUsageMetricDao).update(lastPublished.getId(), lastPublished);
+            Assert.assertEquals(100L, lastPublished.getSize());
+        }
+    }
+
+    @Test
+    public void backupSyncTaskSkipsZoneSyncedByAnotherServer() {
+        Long dataCenterId = 1L;
+        overrideBackupFrameworkConfigValue();
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        when(dataCenterDao.listAllZones()).thenReturn(List.of(dataCenter));
+        Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider(dataCenterId);
+        mockedGlobalLocks.add("backup.sync." + dataCenterId);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).runInContext();
+
+            verify(backupProvider, never()).syncBackupStorageStats(dataCenterId);
+            verify(vmInstanceDao, never()).listByZoneAndBackupOffering(dataCenterId, null);
+            verify(backupDao, never()).listVmIdsWithBackupsInZone(dataCenterId);
+        }
+    }
+
+    @Test
+    public void updateBackupUsageRecordsReportsCurrentOfferingWithoutBackups() {
+        Long dataCenterId = 1L;
+        Long vmId = 2L;
+        Long oldOfferingId = 3L;
+        Long currentOfferingId = 4L;
+
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getBackupOfferingId()).thenReturn(currentOfferingId);
+        when(backupDao.listVmIdsWithBackupsInZone(dataCenterId)).thenReturn(List.of(vmId));
+        when(vmInstanceDao.listByIdsIncludingRemoved(List.of(vmId))).thenReturn(List.of(vm));
+        when(vmInstanceDao.listByZoneAndBackupOffering(dataCenterId, null)).thenReturn(List.of(vm));
+
+        // Backups kept from an offering the VM had before; none for its current offering.
+        BackupVO oldBackup = new BackupVO();
+        oldBackup.setBackupOfferingId(oldOfferingId);
+        oldBackup.setSize(100L);
+        oldBackup.setProtectedSize(1000L);
+        when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(oldBackup));
+
+        BackupManagerImpl.BackupSyncTask backupSyncTask = backupManager.new BackupSyncTask(backupManager);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupSyncTask.updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(Mockito.eq(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC), Mockito.anyLong(),
+                    Mockito.anyLong(), Mockito.eq(vmId), Mockito.any(), Mockito.eq(currentOfferingId), Mockito.any(), Mockito.eq(0L), Mockito.eq(0L),
+                    Mockito.any(), Mockito.any()));
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(Mockito.eq(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC), Mockito.anyLong(),
+                    Mockito.anyLong(), Mockito.eq(vmId), Mockito.any(), Mockito.eq(oldOfferingId), Mockito.any(), Mockito.eq(100L), Mockito.eq(1000L),
+                    Mockito.any(), Mockito.any()));
         }
     }
 
@@ -1293,6 +1499,7 @@ public class BackupManagerTest {
             verify(backupScheduleDao, times(1)).remove(backupScheduleId);
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     offeringId, null, null, Backup.class.getSimpleName(), vmUuid));
+            verify(backupUsageMetricDao).removeByVmAndOffering(vmId, offeringId);
         }
     }
 
@@ -1358,13 +1565,13 @@ public class BackupManagerTest {
         when(rootVolume.getPoolId()).thenReturn(poolId);
         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(new Pair<>(true, null));
+        when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(new Pair<>(true, null));
 
         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
-            boolean result = backupManager.restoreBackupToVM(backupId, vmId);
+            boolean result = backupManager.restoreBackupToVM(backupId, vmId, false);
 
             assertTrue(result);
-            verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null);
+            verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null, false);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringSuccess, hostId);
         } catch (CloudRuntimeException e) {
@@ -1414,13 +1621,13 @@ public class BackupManagerTest {
         when(rootVolume.getPoolId()).thenReturn(poolId);
         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(new Pair<>(false, null));
+        when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(new Pair<>(false, null));
 
         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
             CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
-                    () -> backupManager.restoreBackupToVM(backupId, vmId));
+                    () -> backupManager.restoreBackupToVM(backupId, vmId, false));
 
-            verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null);
+            verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null, false);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringFailed, hostId);
         }
@@ -1597,6 +1804,7 @@ public class BackupManagerTest {
             verify(backupDao).remove(backupId);
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     backupOfferingId, null, null, Backup.class.getSimpleName(), vmUuid));
+            verify(backupUsageMetricDao).removeByVmAndOffering(vmId, backupOfferingId);
         }
     }
 
@@ -2101,7 +2309,6 @@ public class BackupManagerTest {
         when(vm.getHypervisorType()).thenReturn(hypervisorType);
         when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(vm.getRemoved()).thenReturn(null);
-        when(vm.getBackupOfferingId()).thenReturn(offeringId);
 
         BackupOfferingVO offering = mock(BackupOfferingVO.class);
         when(offering.getProvider()).thenReturn("testbackupprovider");
@@ -2110,13 +2317,13 @@ public class BackupManagerTest {
         when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
 
         BackupProvider backupProvider = mock(BackupProvider.class);
-        when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(true);
+        when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
 
         when(backupDao.findById(backupId)).thenReturn(backup);
         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
         when(backupOfferingDao.findByIdIncludingRemoved(offeringId)).thenReturn(offering);
         when(backupManager.getBackupProvider("testbackupprovider")).thenReturn(backupProvider);
-        doReturn(true).when(backupManager).importRestoredVM(zoneId, domainId, accountId, userId, vmInstanceName, hypervisorType, backup);
+        doReturn(true).when(backupManager).importRestoredVM(zoneId, domainId, accountId, userId, vmInstanceName, hypervisorType, backup, offering);
         doNothing().when(backupManager).validateBackupForZone(any());
         when(virtualMachineManager.stateTransitTo(any(), any(), any())).thenReturn(true);
 
@@ -2125,14 +2332,14 @@ public class BackupManagerTest {
                     Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
                     Mockito.eq(true), Mockito.eq(0))).thenReturn(1L);
 
-            boolean result = backupManager.restoreBackup(backupId);
+            boolean result = backupManager.restoreBackup(backupId, false, null);
 
             assertTrue(result);
             verify(backupDao, times(1)).findById(backupId);
             verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);
-            verify(backupOfferingDao, times(2)).findByIdIncludingRemoved(offeringId);
-            verify(backupProvider, times(1)).restoreVMFromBackup(vm, backup);
-            verify(backupManager, times(1)).importRestoredVM(zoneId, domainId, accountId, userId, vmInstanceName, hypervisorType, backup);
+            verify(backupOfferingDao, times(1)).findByIdIncludingRemoved(offeringId);
+            verify(backupProvider, times(1)).restoreVMFromBackup(vm, backup, false, null);
+            verify(backupManager, times(1)).importRestoredVM(zoneId, domainId, accountId, userId, vmInstanceName, hypervisorType, backup, offering);
         }
     }
 
@@ -2143,7 +2350,7 @@ public class BackupManagerTest {
         when(backupDao.findById(backupId)).thenReturn(null);
 
         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
-                () -> backupManager.restoreBackup(backupId));
+                () -> backupManager.restoreBackup(backupId, false, null));
 
         assertEquals("Backup " + backupId + " does not exist", exception.getMessage());
         verify(backupDao, times(1)).findById(backupId);
@@ -2160,7 +2367,7 @@ public class BackupManagerTest {
         when(backupDao.findById(backupId)).thenReturn(backup);
 
         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
-                () -> backupManager.restoreBackup(backupId));
+                () -> backupManager.restoreBackup(backupId, false, null));
 
         assertEquals("Backup should be in BackedUp state", exception.getMessage());
         verify(backupDao, times(1)).findById(backupId);
@@ -2186,7 +2393,7 @@ public class BackupManagerTest {
         doNothing().when(backupManager).validateBackupForZone(any());
 
         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
-                () -> backupManager.restoreBackup(backupId));
+                () -> backupManager.restoreBackup(backupId, false, null));
 
         assertEquals("The Instance from which the backup was taken could not be found.", exception.getMessage());
         verify(backupDao, times(1)).findById(backupId);
@@ -2213,7 +2420,7 @@ public class BackupManagerTest {
         doNothing().when(backupManager).validateBackupForZone(any());
 
         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
-                () -> backupManager.restoreBackup(backupId));
+                () -> backupManager.restoreBackup(backupId, false, null));
 
         assertEquals("Existing Instance should be stopped before being restored from Backup", exception.getMessage());
         verify(backupDao, times(1)).findById(backupId);
@@ -2244,13 +2451,15 @@ public class BackupManagerTest {
         when(backupDao.findById(backupId)).thenReturn(backup);
         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
         doNothing().when(backupManager).validateBackupForZone(any());
+        doReturn(new BackupOfferingVO()).when(backupOfferingDao).findByIdIncludingRemoved(Mockito.anyLong());
+        doReturn(backupProvider).when(backupManager).getBackupProvider(Mockito.nullable(String.class));
 
         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
                     Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
                     Mockito.eq(true), Mockito.eq(0))).thenReturn(1L);
             CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
-                    () -> backupManager.restoreBackup(backupId));
+                    () -> backupManager.restoreBackup(backupId, false, null));
 
             assertEquals("Unable to restore Instance with the current Backup as the Backup has different number of disks to the Instance", exception.getMessage());
         }
@@ -2710,5 +2919,149 @@ public class BackupManagerTest {
         }
         assertTrue(values.contains(String.valueOf(21L)));
         assertTrue(values.contains(String.valueOf(22L)));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void createBackupOfferingTestOfferingAlreadyExists() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(backupOfferingVOMock).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void createBackupOfferingTestInvalidDomainId() {
+        long zoneId = 1L;
+        String offeringName = "name";
+        long domainId = 3L;
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(List.of(domainId)).when(cmd).getDomainIds();
+        doReturn(null).when(domainDao).findById(domainId);
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void createBackupOfferingTestInvalidBackupProvider() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn("dummy").when(backupProvider).getName();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void createBackupOfferingTestInvalidProviderOffering() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn("kboss").when(backupProvider).getName();
+        doReturn(false).when(backupProvider).isValidProviderOffering(zoneId, null);
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test
+    public void createBackupOfferingTestAddsDetails() {
+        long zoneId = 1L;
+        String offeringName = "name";
+        long domainId = 3L;
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(List.of(domainId)).when(cmd).getDomainIds();
+        doReturn(domainVOMock).when(domainDao).findById(domainId);
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn(backupOfferingVOMock).when(backupOfferingDao).persist(any());
+        doReturn("kboss").when(backupProvider).getName();
+        doReturn(true).when(backupProvider).isValidProviderOffering(zoneId, null);
+        doReturn(true).when(cmd).isCompress();
+        doReturn(true).when(cmd).isValidate();
+        doReturn(true).when(cmd).isAllowExtractFile();
+        doReturn(true).when(cmd).isAllowQuickRestore();
+        doReturn(3).when(cmd).getBackupChainSize();
+        doReturn(Backup.CompressionLibrary.zlib).when(cmd).getCompressionLibrary();
+        doReturn("execute_command").when(cmd).getValidationSteps();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+        verify(backupOfferingDao).persist(any());
+        ArrayList<String> detailsToBeSaved = new ArrayList<>(List.of(ApiConstants.DOMAIN_ID, ApiConstants.COMPRESS, ApiConstants.VALIDATE, ApiConstants.ALLOW_EXTRACT_FILE,
+                ApiConstants.ALLOW_QUICK_RESTORE, ApiConstants.BACKUP_CHAIN_SIZE, ApiConstants.COMPRESSION_LIBRARY, ApiConstants.VALIDATION_STEPS));
+        verify(backupOfferingDetailsDao).saveDetails(ArgumentMatchers.argThat( detailList -> {
+            if (CollectionUtils.isEmpty(detailList) || detailList.size() < 8) {
+                return false;
+            }
+            for (BackupOfferingDetailsVO detailsVO : detailList) {
+                detailsToBeSaved.removeIf(detailName -> detailsVO.getName().equals(detailName));
+            }
+
+            return detailsToBeSaved.isEmpty();
+        }));
+    }
+
+    @Test
+    public void createBackupOfferingTestAddsNoDetails() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn(backupOfferingVOMock).when(backupOfferingDao).persist(any());
+        doReturn("kboss").when(backupProvider).getName();
+        doReturn(true).when(backupProvider).isValidProviderOffering(zoneId, null);
+        doReturn(false).when(cmd).isCompress();
+        doReturn(false).when(cmd).isValidate();
+        doReturn(false).when(cmd).isAllowExtractFile();
+        doReturn(false).when(cmd).isAllowQuickRestore();
+        doReturn(null).when(cmd).getBackupChainSize();
+        doReturn(null).when(cmd).getCompressionLibrary();
+        doReturn(null).when(cmd).getValidationSteps();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+        verify(backupOfferingDao).persist(any());
+        verify(backupOfferingDetailsDao, never()).saveDetails(any());
     }
 }

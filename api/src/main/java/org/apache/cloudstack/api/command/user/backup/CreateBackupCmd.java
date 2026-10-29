@@ -75,11 +75,17 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.QUIESCE_VM,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS and KBOSS backup providers. " +
                     "The filesystem is frozen before the backup starts and thawed immediately after. " +
                     "Requires the instance to have the QEMU Guest Agent installed and running.",
             since = "4.21.0")
     private Boolean quiesceVM;
+
+    @Parameter(name = ApiConstants.ISOLATED,
+            type = CommandType.BOOLEAN,
+            description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS,
+            since = "4.23.0")
+    private boolean isolated;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -99,6 +105,10 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     public Boolean getQuiesceVM() {
         return quiesceVM;
+    }
+
+    public boolean isIsolated() {
+        return isolated;
     }
 
     /////////////////////////////////////////////////////

@@ -305,6 +305,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final String DEFAULT_NSX_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNSXVPCNetworkOfferingforKubernetesService";
     private static final String DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes Service";
     private static final String DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes service on VPC";
+    private static final String DEFAULT_NETRIS_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNetrisVPCNetworkOfferingforKubernetesService";
+    private static final String DEFAULT_NETRIS_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for Netris CloudStack Kubernetes Service on VPC";
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
@@ -605,6 +607,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         validateIsolatedNetworkIpRules(sourceNatIp.getId(), FirewallRule.Purpose.Firewall, network, clusterTotalNodeCount);
         validateIsolatedNetworkIpRules(sourceNatIp.getId(), FirewallRule.Purpose.PortForwarding, network, clusterTotalNodeCount);
+    }
+
+    public boolean isNetrisNetwork(Network network) {
+        return networkModel.isProviderSupportServiceInNetwork(
+                network.getId(), Service.Lb, Network.Provider.Netris);
+    }
+
+    protected void validateNetrisNetwork(Network network) {
+        if (network.getVpcId() == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Netris Kubernetes provider supports only VPC networks / tiers. " +
+                            "Network '%s' (id: %s) is not part of a VPC. " +
+                            "Please create the cluster within a VPC tier.",
+                    network.getName(), network.getUuid()));
+        }
     }
 
     protected void validateVpcTier(Network network) {
@@ -1221,6 +1238,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
+            if (isNetrisNetwork(network)) {
+                validateNetrisNetwork(network);
+            }
             if (Network.GuestType.Isolated.equals(network.getGuestType())) {
                 if (kubernetesClusterDao.listByNetworkId(network.getId()).isEmpty()) {
                     validateNetwork(network, controlNodesCount + nodesCount);
@@ -2496,17 +2516,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
+        Account caller = CallContext.current().getCallingAccount();
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         return kubernetesCluster;
     }
 
     private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> validNodeIds = new ArrayList<>(nodeIds);
         for (Long id : nodeIds) {
             VMInstanceVO node = vmInstanceDao.findById(id);
             if (Objects.isNull(node)) {
                 logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
                 validNodeIds.remove(id);
-            } else if (!removeNodes) {
+                continue;
+            }
+            accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, node);
+            if (!removeNodes) {
                 VMTemplateVO template = templateDao.findById(node.getTemplateId());
                 if (Objects.isNull(template)) {
                     logger.error((String.format("Failed to find template with ID: %s", id)));
@@ -2962,13 +2988,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Override
     public boolean start() {
         createNetworkOfferingForKubernetes(DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, false, false);
+                DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, null, false);
 
         createNetworkOfferingForKubernetes(DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, true, false);
+                DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, Network.Provider.Nsx, false);
 
         createNetworkOfferingForKubernetes(DEFAULT_NSX_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , true, true);
+                DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , Network.Provider.Nsx, true);
+
+        createNetworkOfferingForKubernetes(DEFAULT_NETRIS_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
+                DEFAULT_NETRIS_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , Network.Provider.Netris, true);
 
         getProjectKubernetesAccountRole();
 
@@ -2978,23 +3007,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    private void createNetworkOfferingForKubernetes(String offeringName, String offeringDesc, boolean forNsx, boolean forVpc) {
+    private void createNetworkOfferingForKubernetes(String offeringName, String offeringDesc, Network.Provider extNetProvider, boolean forVpc) {
         final Map<Network.Service, Network.Provider> defaultKubernetesServiceNetworkOfferingProviders = new HashMap<Service, Network.Provider>();
         Network.Provider provider = forVpc ? Network.Provider.VPCVirtualRouter : Network.Provider.VirtualRouter;
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.Dhcp, provider);
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.Dns, provider);
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.UserData, provider);
         if (forVpc) {
-            defaultKubernetesServiceNetworkOfferingProviders.put(Service.NetworkACL, forNsx ? Network.Provider.Nsx : provider);
+            defaultKubernetesServiceNetworkOfferingProviders.put(Service.NetworkACL, Objects.requireNonNullElse(extNetProvider, provider));
         } else {
-            defaultKubernetesServiceNetworkOfferingProviders.put(Service.Firewall, forNsx ? Network.Provider.Nsx : provider);
+            defaultKubernetesServiceNetworkOfferingProviders.put(Service.Firewall, Objects.requireNonNullElse(extNetProvider, provider));
         }
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Lb, forNsx ? Network.Provider.Nsx : provider);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.SourceNat, forNsx ? Network.Provider.Nsx : provider);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.StaticNat, forNsx ? Network.Provider.Nsx : provider);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.PortForwarding, forNsx ? Network.Provider.Nsx : provider);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Lb, Objects.requireNonNullElse(extNetProvider, provider));
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.SourceNat, Objects.requireNonNullElse(extNetProvider, provider));
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.StaticNat, Objects.requireNonNullElse(extNetProvider, provider));
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.PortForwarding, Objects.requireNonNullElse(extNetProvider, provider));
 
-        if (!forNsx) {
+        if (Objects.isNull(extNetProvider)) {
             defaultKubernetesServiceNetworkOfferingProviders.put(Service.Gateway, Network.Provider.VirtualRouter);
             defaultKubernetesServiceNetworkOfferingProviders.put(Service.Vpn, Network.Provider.VirtualRouter);
         }
@@ -3007,7 +3036,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         true, false, false, false, false,
                         false, false, false, true, true, false,
                         forVpc, true, false, false);
-        if (forNsx) {
+        if (Objects.nonNull(extNetProvider)) {
             defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
         }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);
@@ -3019,7 +3048,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     new NetworkOfferingServiceMapVO(defaultKubernetesServiceNetworkOffering.getId(), service,
                             defaultKubernetesServiceNetworkOfferingProviders.get(service));
             networkOfferingServiceMapDao.persist(offService);
-            logger.trace("Added service for the network offering: " + offService);
+            logger.trace("Added service for the network offering: {}", offService);
         }
     }
 

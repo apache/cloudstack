@@ -32,6 +32,7 @@ import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNod
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
@@ -44,7 +45,6 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -61,8 +61,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import org.apache.logging.log4j.Level;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
@@ -152,6 +150,25 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void scaleKubernetesClusterVpcTierRules(final List<Long> clusterVMIds) throws ManagementServerException {
+        if (manager.isNetrisNetwork(network)) {
+            // For Netris: SSH port-forwarding is on NAT IP; the LB rule on LB IP for 6443 is fixed and never re-provisioned during scale
+            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp == null) {
+                throw new ManagementServerException(String.format("No NAT IP found for Netris VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+            }
+            try {
+                removePortForwardingRules(natIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1);
+            } catch (ResourceUnavailableException e) {
+                throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
+            try {
+                Map<Long, Integer> vmIdPortMap = getVmPortMap();
+                provisionSshPortForwardingRules(natIp, network, owner, clusterVMIds, vmIdPortMap);
+            } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+                throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
+            return;
+        }
         IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
         if (publicIp == null) {
             throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
@@ -161,7 +178,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } catch (ResourceUnavailableException e) {
             throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for removed VMs for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
-        // Add port forwarding rule for SSH access on each node VM
         try {
            Map<Long, Integer> vmIdPortMap = getVmPortMap();
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
@@ -310,18 +326,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         final long originalNodeCount = kubernetesCluster.getTotalNodeCount();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        if (vmList == null || vmList.isEmpty() || vmList.size() < originalNodeCount) {
+        if (CollectionUtils.isEmpty(vmList) || vmList.size() < originalNodeCount) {
             logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, it is in unstable state as not enough existing VM instances found!", kubernetesCluster.getName()));
-        } else {
-            for (KubernetesClusterVmMapVO vmMapVO : vmList) {
-                VMInstanceVO vmInstance = vmInstanceDao.findById(vmMapVO.getVmId());
-                if (vmInstance != null && vmInstance.getState().equals(VirtualMachine.State.Running) &&
-                        vmInstance.getHypervisorType() != Hypervisor.HypervisorType.XenServer &&
-                        vmInstance.getHypervisorType() != Hypervisor.HypervisorType.VMware &&
-                        vmInstance.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
-                    logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling Kubernetes cluster with running VMs on hypervisor %s is not supported!", kubernetesCluster.getName(), vmInstance.getHypervisorType()));
-                }
-            }
         }
     }
 
@@ -503,7 +509,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             launchPermissionDao.persist(launchPermission);
         }
         try {
-            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId());
+            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), apiPublicIpAddress, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId());
             updateLoginUserDetails(clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toList()));
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             cleanupNewlyCreatedVms(originalVmIds);
@@ -545,6 +551,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
+        // For Netris VPC-tier: apiPublicIpAddress = LB IP (kubeadm join target for new nodes).
+        // For all others: same as publicIpAddress.
+        apiPublicIpAddress = resolveApiPublicIpAddress(network);
         if (StringUtils.isEmpty(publicIpAddress)) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to retrieve associated public IP", kubernetesCluster.getName()));
         }

@@ -148,4 +148,8 @@ public interface StorageAdaptor {
     default Pair<Boolean, String> unprepareStorageClient(String uuid, Map<String, String> details) {
         return new Pair<>(true, "");
     }
+
+    default void createTemplate(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
+        // no-op
+    }
 }

@@ -81,7 +81,11 @@ public class Networks {
                 return uri == null ? null : uri.getAuthority();
             }
         },
-        Vswitch("vs", String.class), LinkLocal(null, null), Vnet("vnet", Long.class), Storage("storage", Integer.class), Lswitch("lswitch", String.class) {
+        Vswitch("vs", String.class),
+        LinkLocal(null, null),
+        Vnet("vnet", Long.class),
+        Storage("storage", Integer.class),
+        Lswitch("lswitch", String.class) {
             @Override
             public <T> URI toUri(T value) {
                 try {
@@ -99,7 +103,8 @@ public class Networks {
                 return uri == null ? null : uri.getSchemeSpecificPart();
             }
         },
-        Mido("mido", String.class), Pvlan("pvlan", String.class),
+        Mido("mido", String.class),
+        Pvlan("pvlan", String.class),
         Vxlan("vxlan", Long.class) {
             @Override
             public <T> URI toUri(T value) {

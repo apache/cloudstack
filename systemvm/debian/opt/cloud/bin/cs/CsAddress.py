@@ -23,11 +23,28 @@ import time
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsApp import CsApache, CsDnsmasq, CsPasswdSvc
+from .CsGuestNetwork import CsGuestNetwork
 from .CsRoute import CsRoute
 from .CsRule import CsRule
 from .CsStaticRoutes import CsStaticRoutes
 
 VRRP_TYPES = ['guest']
+
+
+def _guest_needs_vrrp(device, config):
+    """
+    A guest interface only needs to be managed by keepalived (i.e. have the
+    network gateway floated onto it as a VRRP virtual address) when the
+    CloudStack virtual router is actually the gateway for that network.
+    When an external provider (e.g. Netris) owns the gateway/source NAT for
+    the tier, the router must not also claim the gateway IP.
+    If no guestnetwork data is found for the device, default to the
+    historical behaviour (needs vrrp) to avoid regressing existing setups.
+    """
+    gn = CsGuestNetwork(device, config)
+    if gn.is_guestnetwork():
+        return gn.is_vr_guest_gateway()
+    return True
 
 class CsAddress(CsDataBag):
 
@@ -47,13 +64,13 @@ class CsAddress(CsDataBag):
 
     def get_guest_if_by_network_id(self):
         guest_interface = None
-        lowest_network_id = 1000
+        lowest_network_id = None
         for interface in self.get_interfaces():
             if interface.is_guest() and interface.is_added():
                 if not self.config.is_vpc():
                     return interface
                 network_id = self.config.guestnetwork().get_network_id(interface.get_device())
-                if network_id and network_id < lowest_network_id:
+                if network_id and (lowest_network_id is None or network_id < lowest_network_id):
                     lowest_network_id = network_id
                     guest_interface = interface
         return guest_interface
@@ -99,7 +116,7 @@ class CsAddress(CsDataBag):
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in o and o['nw_type'] in VRRP_TYPES:
-            return True
+            return _guest_needs_vrrp(o.get('device'), self.config)
         return False
 
     def get_control_if(self):
@@ -148,6 +165,14 @@ class CsInterface:
 
     def get_ip(self):
         return self.get_attr("public_ip")
+
+    def get_passwd_server_ips(self):
+        if CsGuestNetwork(self.get_device(), self.config).router_owns_gateway():
+            return [self.get_gateway(), self.get_ip()]
+        return [self.get_ip()]
+
+    def get_passwd_server_address(self):
+        return ",".join(self.get_passwd_server_ips())
 
     def get_ip6(self):
         if not self.config.is_vpc():
@@ -229,7 +254,7 @@ class CsInterface:
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
-            return True
+            return _guest_needs_vrrp(self.get_device(), self.config)
         return False
 
     def is_control(self):
@@ -561,6 +586,10 @@ class CsIP:
                     ["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
                 self.fw.append(
                     ["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
+                # ACL rules are inserted ahead of the chain's last rule, so like ACL_INBOUND's DROP
+                # this has to stay last; RETURN is what falling off the end of the chain does anyway
+                self.fw.append(
+                    ["mangle", "", "-A ACL_OUTBOUND_%s -j RETURN" % self.dev])
             else:
                 self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACCEPT" % (guestNetworkCidr, self.dev)])
 
@@ -614,6 +643,11 @@ class CsIP:
                     self.fw.append(["filter", "front",
                                     "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
                                     (static_route['network'], self.dev)])
+                    if self.get_type() in ["guest"] and not self.config.has_public_network():
+                        # Without a public network a tier's ACL chains get no last rule of their own, and are
+                        # only jumped to from here; close them too, so the ACL rules stay in order
+                        self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j RETURN" % self.dev])
+                        self.fw.append(["mangle", "", "-A ACL_OUTBOUND_%s -j RETURN" % self.dev])
 
         if self.is_private_gateway():
             self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
@@ -621,6 +655,7 @@ class CsIP:
             self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
                             (self.address['network'], self.dev)])
             self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+            self.fw.append(["mangle", "", "-A ACL_OUTBOUND_%s -j RETURN" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                             (self.dev, self.address['network'], self.address['gateway'], self.dev)])
@@ -679,6 +714,7 @@ class CsIP:
 
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
+
 
     def fw_router_routing(self):
         if self.config.is_vpc() or not self.config.is_routed():
@@ -875,9 +911,9 @@ class CsIP:
                         CsPasswdSvc(self.address['public_ip']).stop()
                 elif cmdline.is_primary():
                     if method == "add":
-                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
+                        CsPasswdSvc(CsInterface(self.address, self.config).get_passwd_server_address()).start()
                     elif method == "delete":
-                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
+                        CsPasswdSvc(CsInterface(self.address, self.config).get_passwd_server_address()).stop()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routed():
             if self.address["source_nat"]:
@@ -909,7 +945,7 @@ class CsIP:
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
-            return True
+            return _guest_needs_vrrp(self.dev, self.config)
         return False
 
     def is_public(self):

@@ -42,7 +42,7 @@ public class RandomAllocator extends BaseAllocator {
     private ResourceManager _resourceMgr;
 
     protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
-                                         boolean considerReservedCapacity) {
+                                           boolean considerReservedCapacity) {
         if (type == Host.Type.Storage) {
             return null;
         }
@@ -115,6 +115,7 @@ public class RandomAllocator extends BaseAllocator {
         }
 
         addHostsBasedOnTagRules(offeringHostTag, availableHosts);
+        filterHostsBasedOnGuestOsRules(template, availableHosts);
 
         return availableHosts;
     }

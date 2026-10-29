@@ -463,6 +463,6 @@ public class NicProfile implements InternalIdentity, Serializable {
         return String.format("NicProfile %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "uuid", "vmId", "deviceId",
-                        "broadcastUri", "reservationId", "iPv4Address"));
+                        "broadcastType", "broadcastUri", "reservationId", "iPv4Address"));
     }
 }

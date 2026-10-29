@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -89,7 +90,11 @@ public enum ApiCommandResourceType {
     KubernetesSupportedVersion(null),
     SharedFS(org.apache.cloudstack.storage.sharedfs.SharedFS.class),
     Extension(org.apache.cloudstack.extension.Extension.class),
-    ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class);
+    ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class),
+    KmsKey(org.apache.cloudstack.kms.KMSKey.class),
+    HsmProfile(org.apache.cloudstack.kms.HSMProfile.class),
+    InstanceBootGroup(org.apache.cloudstack.vm.bootgroup.InstanceBootGroup.class),
+    InstanceBootGroupReadinessRule(InstanceBootGroupReadinessRule.class);
 
     private final Class<?> clazz;
 

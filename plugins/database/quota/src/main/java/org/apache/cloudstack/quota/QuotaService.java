@@ -28,7 +28,7 @@ import com.cloud.utils.component.PluggableService;
 
 public interface QuotaService extends PluggableService {
 
-    List<QuotaUsageJoinVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate);
+    List<QuotaUsageJoinVO> getQuotaUsage(Long accountId, String accountName, List<Long> domainIds, Integer usageType, Date startDate, Date endDate);
 
     List<QuotaBalanceVO> listQuotaBalancesForAccount(Long accountId, Date startDate, Date endDate);
 

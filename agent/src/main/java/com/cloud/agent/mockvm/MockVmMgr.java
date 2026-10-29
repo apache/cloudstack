@@ -249,7 +249,7 @@ public class MockVmMgr implements VmMgr {
     public MockVm createVmFromSpec(VirtualMachineTO vmSpec) {
         String vmName = vmSpec.getName();
         long ramSize = vmSpec.getMinRam();
-        int utilizationPercent = randSeed.nextInt() % 100;
+        int utilizationPercent = randSeed.nextInt(100);
         MockVm vm = null;
 
         synchronized (this) {

@@ -17,8 +17,12 @@
 
 name: Simulator CI
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+      - 4.22
+      - 4.20
+  pull_request:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -29,7 +33,7 @@ jobs:
     if: github.repository == 'apache/cloudstack'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -50,6 +54,8 @@ jobs:
           git status
           ipmitool -V
       - name: Build with Maven
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -T$(nproc)
       - name: Archive artifacts
@@ -251,7 +257,7 @@ jobs:
                   smoke/test_list_storage_pools
                   smoke/test_list_volumes"]
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -303,6 +309,8 @@ jobs:
           mkdir -p ~/.m2/repository
           tar -xzf /tmp/artifacts/m2-cloudstack.tar.gz -C ~/.m2/repository
       - name: Setup Simulator Prerequisites
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           sudo python3 -m pip install --upgrade netaddr mysql-connector-python
           python3 -m pip install --user --upgrade tools/marvin/dist/[mM]arvin-*.tar.gz
@@ -315,6 +323,8 @@ jobs:
           find . | grep "src/main/java" | sed 's/\/java\//\/java /g' | awk '{print "--sourcefiles", $1, "\\"}' | sort | uniq >> jacoco-report.sh
           echo "--xml jacoco-coverage.xml" >> jacoco-report.sh
       - name: Start CloudStack Management Server with Simulator
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           export MAVEN_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED"
           echo -e "\nStarting simulator"
@@ -325,6 +335,8 @@ jobs:
           echo -e "\nStarting Advanced Zone DataCenter deployment"
           python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advdualzone.cfg 2>&1 || true
       - name: Run Integration Tests with Simulator
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           mkdir -p integration-test-results/smoke/misc
           mkdir -p integration-test-results/component
@@ -348,7 +360,7 @@ jobs:
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
 
-      - uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true

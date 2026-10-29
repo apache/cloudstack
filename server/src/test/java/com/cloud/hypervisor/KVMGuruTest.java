@@ -18,12 +18,19 @@ package com.cloud.hypervisor;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -38,8 +46,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -48,15 +58,21 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
@@ -65,6 +81,10 @@ public class KVMGuruTest {
     HostDao hostDao;
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Mock
+    VMInstanceDao _instanceDao;
+    @Mock
+    VolumeDao _volumeDao;
 
     @Spy
     @InjectMocks
@@ -98,6 +118,12 @@ public class KVMGuruTest {
     DpdkHelper dpdkHelperMock;
 
     @Mock
+    HypervisorCapabilitiesDao hypervisorCapabilitiesDaoMock;
+
+    @Mock
+    VolumeApiService volumeApiServiceMock;
+
+    @Mock
     GuestOSVO guestOsVoMock;
 
     @Mock
@@ -108,6 +134,9 @@ public class KVMGuruTest {
 
     @Mock
     GuestOSDao guestOsDaoMock;
+
+    @Mock
+    BackupProvider backupProviderMock;
 
     private static final long hostId = 1L;
     private static final Long offeringId = 1L;
@@ -498,5 +527,116 @@ public class KVMGuruTest {
         double vmSpeed = 6000;
         Double actualQuota = guru.getCpuQuotaPercentage(vmSpeed, hostSpeed);
         Assert.assertNull(actualQuota);
+    }
+
+    private List<VolumeVO> mockVolumesWithDeviceIds(long... deviceIds) {
+        List<VolumeVO> volumes = new java.util.ArrayList<>();
+        for (long deviceId : deviceIds) {
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            Mockito.when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+        return volumes;
+    }
+
+    @Test
+    public void getNextAvailableDeviceIdSkipsReservedDeviceIds() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(4L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L)), volumes));
+        Assert.assertEquals(Long.valueOf(5L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L)), volumes));
+        Assert.assertEquals(Long.valueOf(6L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumes));
+    }
+
+    @Test
+    public void getNextAvailableDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        Set<Long> reserved = new HashSet<>(Arrays.asList(3L, 4L));
+        // root + 5 data volumes (1, 2, 5, 6, 7): the 6th data volume is still allowed, and gets device id 8
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L, 5L, 6L, 7L);
+
+        Assert.assertEquals(Long.valueOf(8L), guru.getNextAvailableDeviceId(reserved, volumes));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getNextAvailableDeviceIdThrowsExceptionWhenAllDeviceIdsAreUsed() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L, 5L, 6L, 7L, 8L);
+
+        guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L)), volumes);
+    }
+
+    /**
+     * The restore maps backup files onto volumes by their device id ordering, so re-importing the
+     * instance has to put every data disk back on the device id recorded in the backup. Handing out
+     * the next free id instead shifts the disks on every restore and misaligns that mapping.
+     */
+    @Test
+    public void testImportVirtualMachineFromBackupReinstatesRecordedDeviceIds() {
+        String vmInternalName = "i-2-42-VM";
+        VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstance.getId()).thenReturn(42L);
+        Mockito.when(vmInstance.getRemoved()).thenReturn(null);
+        Mockito.when(_instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName)).thenReturn(vmInstance);
+
+        Backup.VolumeInfo rootVolume = new Backup.VolumeInfo("root-uuid", "root-uuid", Volume.Type.ROOT, 1L, 0L, null, null, null);
+        Backup.VolumeInfo dataVolume = new Backup.VolumeInfo("data-uuid", "data-uuid", Volume.Type.DATADISK, 1L, 5L, null, null, null);
+        Mockito.when(vmInstance.getBackupVolumeList()).thenReturn(List.of(rootVolume, dataVolume));
+
+        VolumeVO rootVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(rootVolumeVO.getId()).thenReturn(10L);
+        VolumeVO dataVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(dataVolumeVO.getId()).thenReturn(11L);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("root-uuid")).thenReturn(rootVolumeVO);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("data-uuid")).thenReturn(dataVolumeVO);
+        Mockito.when(backupProviderMock.getName()).thenReturn("backupProviderMock");
+
+        Backup backup = Mockito.mock(Backup.class);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            guru.importVirtualMachineFromBackup(1L, 1L, 1L, 1L, vmInternalName, backup, backupProviderMock);
+        }
+
+        Mockito.verify(_volumeDao).attachVolume(10L, 42L, 0L);
+        Mockito.verify(_volumeDao).attachVolume(11L, 42L, 5L);
+        Mockito.verify(guru, Mockito.never()).getNextAvailableDeviceId(Mockito.anySet(), Mockito.anyList());
+    }
+
+    @Test
+    public void testImportVirtualMachineFromBackupDoesNotReinstateReservedDeviceIds() {
+        String vmInternalName = "i-2-42-VM";
+        VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstance.getId()).thenReturn(42L);
+        Mockito.when(vmInstance.getRemoved()).thenReturn(null);
+        Mockito.when(_instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName)).thenReturn(vmInstance);
+        // the CD-ROM and the config drive ISO
+        Mockito.when(volumeApiServiceMock.getReservedDeviceIds(vmInstance, true)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L)));
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> currentVolumes = mockVolumesWithDeviceIds(0L, 1L, 2L);
+        Mockito.when(_volumeDao.findByInstance(42L)).thenReturn(currentVolumes);
+
+        Backup.VolumeInfo rootVolume = new Backup.VolumeInfo("root-uuid", "root-uuid", Volume.Type.ROOT, 1L, 0L, null, null, null);
+        // taken when the config drive device id was not reserved yet
+        Backup.VolumeInfo dataVolume = new Backup.VolumeInfo("data-uuid", "data-uuid", Volume.Type.DATADISK, 1L, 4L, null, null, null);
+        Mockito.when(vmInstance.getBackupVolumeList()).thenReturn(List.of(rootVolume, dataVolume));
+
+        VolumeVO rootVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(rootVolumeVO.getId()).thenReturn(10L);
+        VolumeVO dataVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(dataVolumeVO.getId()).thenReturn(11L);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("root-uuid")).thenReturn(rootVolumeVO);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("data-uuid")).thenReturn(dataVolumeVO);
+        Mockito.when(backupProviderMock.getName()).thenReturn("backupProviderMock");
+
+        Backup backup = Mockito.mock(Backup.class);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            guru.importVirtualMachineFromBackup(1L, 1L, 1L, 1L, vmInternalName, backup, backupProviderMock);
+        }
+
+        Mockito.verify(_volumeDao).attachVolume(10L, 42L, 0L);
+        // device id 4 is reserved, so the volume gets the next free one
+        Mockito.verify(_volumeDao).attachVolume(11L, 42L, 5L);
     }
 }

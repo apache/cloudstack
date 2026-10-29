@@ -324,6 +324,7 @@
 
 <script>
 import { getAPI, postAPI } from '@/api'
+import { addProjectFilter } from '@/utils/util'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -425,10 +426,12 @@ export default {
   methods: {
     fetchInitData () {
       this.loading = true
-      getAPI('listAutoScaleVmGroups', {
+      const params = {
         listAll: true,
         id: this.resource.id
-      }).then(response => {
+      }
+      addProjectFilter(params, this.resource)
+      getAPI('listAutoScaleVmGroups', params).then(response => {
         const lbruleid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.lbruleid
         this.policies = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies
         if (this.selectedPolicyId) {
@@ -437,10 +440,12 @@ export default {
           this.policy = this.policies?.[0]
           this.selectedPolicyId = this.policy.id
         }
-        getAPI('listLoadBalancerRules', {
+        const lbParams = {
           listAll: true,
           id: lbruleid
-        }).then(response => {
+        }
+        addProjectFilter(lbParams, this.resource)
+        getAPI('listLoadBalancerRules', lbParams).then(response => {
           const networkid = response.listloadbalancerrulesresponse?.loadbalancerrule?.[0]?.networkid
           getAPI('listNetworks', {
             listAll: true,
@@ -464,10 +469,12 @@ export default {
     },
     fetchData () {
       this.loading = true
-      getAPI('listAutoScalePolicies', {
+      const params = {
         listAll: true,
         id: this.selectedPolicyId
-      }).then(response => {
+      }
+      addProjectFilter(params, this.resource)
+      getAPI('listAutoScalePolicies', params).then(response => {
         this.policy = response.listautoscalepoliciesresponse?.autoscalepolicy[0]
       }).finally(() => {
         this.loading = false

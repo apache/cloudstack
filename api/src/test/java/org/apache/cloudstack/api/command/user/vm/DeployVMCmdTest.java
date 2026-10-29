@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -41,6 +42,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkService;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VmDetailConstants;
@@ -479,5 +481,147 @@ public class DeployVMCmdTest {
             cmd.getDataDiskTemplateToDiskOfferingMap();
         });
         assertTrue(thrownException.getMessage().contains("Unable to translate and find entity with datadisktemplateid"));
+    }
+
+    @Test
+    public void testSetServiceOfferingId() {
+        cmd.setServiceOfferingId(101L);
+        assertEquals(Long.valueOf(101L), cmd.getServiceOfferingId());
+    }
+
+    @Test
+    public void testSetTemplateId() {
+        cmd.setTemplateId(102L);
+        assertEquals(Long.valueOf(102L), cmd.getTemplateId());
+    }
+
+    @Test
+    public void testSetVolumeId() {
+        cmd.setVolumeId(103L);
+        assertEquals(Long.valueOf(103L), cmd.getVolumeId());
+    }
+
+    @Test
+    public void testSetSnapshotId() {
+        cmd.setSnapshotId(104L);
+        assertEquals(Long.valueOf(104L), cmd.getSnapshotId());
+    }
+
+    @Test
+    public void testSetZoneId() {
+        cmd.setZoneId(105L);
+        assertEquals(Long.valueOf(105L), cmd.getZoneId());
+    }
+
+    @Test
+    public void testSetName() {
+        cmd.setName("vm-name");
+        assertEquals("vm-name", cmd.getName());
+    }
+
+    @Test
+    public void testSetDisplayName() {
+        cmd.setDisplayName("vm-display-name");
+        assertEquals("vm-display-name", cmd.getDisplayName());
+    }
+
+    @Test
+    public void testSetAccountName() {
+        cmd.setAccountName("account-name");
+        assertEquals("account-name", cmd.getAccountName());
+    }
+
+    @Test
+    public void testSetDomainId() {
+        cmd.setDomainId(106L);
+        assertEquals(Long.valueOf(106L), cmd.getDomainId());
+    }
+
+    @Test
+    public void testSetNetworkIds() {
+        List<Long> networkIds = Arrays.asList(11L, 12L);
+        cmd.setNetworkIds(networkIds);
+        assertEquals(networkIds, cmd.getNetworkIds());
+    }
+
+    @Test
+    public void testSetBootType() {
+        cmd.setBootType("UEFI");
+        assertEquals(BootType.UEFI, cmd.getBootType());
+    }
+
+    @Test
+    public void testSetBootMode() {
+        cmd.setBootType("UEFI");
+        cmd.setBootMode("SECURE");
+        assertEquals(BootMode.SECURE, cmd.getBootMode());
+    }
+
+    @Test
+    public void testSetHypervisor() {
+        cmd.setHypervisor("KVM");
+        assertEquals(HypervisorType.KVM, cmd.getHypervisor());
+    }
+
+    @Test
+    public void testSetUserData() {
+        cmd.setUserData("dXNlci1kYXRh");
+        assertEquals("dXNlci1kYXRh", cmd.getUserData());
+    }
+
+    @Test
+    public void testSetKeyboard() {
+        cmd.setKeyboard("us");
+        assertEquals("us", cmd.getKeyboard());
+    }
+
+    @Test
+    public void testSetProjectId() {
+        cmd.setProjectId(107L);
+        assertEquals(Long.valueOf(107L), ReflectionTestUtils.getField(cmd, "projectId"));
+    }
+
+    @Test
+    public void testSetDisplayVm() {
+        cmd.setDisplayVm(Boolean.FALSE);
+        assertEquals(Boolean.FALSE, cmd.isDisplayVm());
+    }
+
+    @Test
+    public void testSetUserDataId() {
+        cmd.setUserDataId(108L);
+        assertEquals(Long.valueOf(108L), cmd.getUserdataId());
+    }
+
+    @Test
+    public void testSetAffinityGroupIds() {
+        List<Long> affinityGroupIds = Arrays.asList(21L, 22L);
+        cmd.setAffinityGroupIds(affinityGroupIds);
+        assertEquals(affinityGroupIds, cmd.getAffinityGroupIdList());
+    }
+
+    @Test
+    public void testSetDetails() {
+        Map<String, String> details = new HashMap<>();
+        details.put("key", "value");
+        cmd.setDetails(details);
+        assertEquals(details, ReflectionTestUtils.getField(cmd, "details"));
+    }
+
+    @Test
+    public void testSetExtraConfig() {
+        cmd.setExtraConfig("cpu-mode=host-passthrough");
+        assertEquals("cpu-mode=host-passthrough", cmd.getExtraConfig());
+    }
+
+    @Test
+    public void testSetDynamicScalingEnabled() {
+        cmd.setDynamicScalingEnabled(Boolean.FALSE);
+        assertFalse(cmd.isDynamicScalingEnabled());
+    }
+
+    @Test
+    public void testIsBlankInstance() {
+        assertFalse(cmd.isBlankInstance());
     }
 }

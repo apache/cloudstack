@@ -16,21 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
 @APICommand(name = "deleteUserKeys", description = "Deletes a keypair from a user", responseObject = SuccessResponse.class,
         since = "4.23.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteUserKeysCmd extends BaseAsyncCmd {
+public class DeleteUserKeysCmd extends BaseCmd {
     @ACL
     @Parameter(name = ApiConstants.KEYPAIR_ID, type = CommandType.UUID, entityType = ApiKeyPairResponse.class, required = true, description = "ID of the keypair to be deleted.")
     private Long id;
@@ -59,23 +58,5 @@ public class DeleteUserKeysCmd extends BaseAsyncCmd {
 
         SuccessResponse response = new SuccessResponse(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_DELETE_SECRET_API_KEY;
-    }
-
-    @Override
-    public String getEventDescription() {
-        ApiKeyPair keyPair = apiKeyPairService.findById(id);
-        return String.format("Deleting API key pair with ID [%s]%s",
-                keyPair == null ? id : keyPair.getUuid(),
-                keyPair == null ? "." : String.format(" and name [%s].", keyPair.getName()));
-    }
-
-    @Override
-    public Long getSyncObjId() {
-        return getId();
     }
 }

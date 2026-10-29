@@ -20,11 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
 
 public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
@@ -60,4 +62,13 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
     void removeByResourceIdAndKey(long resourceId, ResourceObjectType resourceType, String key);
 
     List<? extends ResourceTag> listByResourceUuid(String resourceUuid);
+
+    List<String> listByResourceTypeKeyPrefixAndOwners(ResourceObjectType resourceType, String key,
+                                                      List<Long> accountIds, List<Long> domainIds,
+                                                      Filter filter);
+
+    ResourceTagVO findByResourceTypeKeyPrefixAndValue(ResourceObjectType resourceType, String key, String value);
+
+    List<ResourceTagVO> listByResourceTypeIdAndKeyPrefix(ResourceObjectType resourceType, long resourceId, String key);
+
 }

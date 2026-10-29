@@ -35,11 +35,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.SnapshotVO;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotService;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -70,15 +65,17 @@ import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -112,10 +109,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.apache.logging.log4j.ThreadContext;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotService;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
+
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
@@ -125,6 +125,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             Integer.class, "vm.job.lock.timeout", "1800",
             "Time in seconds to wait in acquiring lock to submit a vm worker job", false);
     private static final ConfigKey<Boolean> HidePassword = new ConfigKey<Boolean>("Advanced", Boolean.class, "log.hide.password", "true", "If set to true, the password is hidden", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> ApiJobPoolSize = new ConfigKey<>("Advanced", Integer.class, "api.job.pool.size", "50",
+        "Minimum size of the API job executor thread pool. Actual size is the max of this value and db.cloud.maxActive / 2.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> WorkJobPoolSize = new ConfigKey<>("Advanced", Integer.class, "work.job.pool.size", "50",
+        "Minimum size of the Worker job executor thread pool. Actual size is the max of this value and db.cloud.maxActive * 2 / 3.", false, ConfigKey.Scope.Global);
 
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;     // 3 seconds
@@ -184,6 +188,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private volatile long _executionRunNumber = 1;
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
+    private final ExecutorService _eventBusPublisher = Executors.newSingleThreadExecutor(new NamedThreadFactory("AsyncJobMgr-EventBus"));
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
 
@@ -197,7 +202,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, ApiJobPoolSize, WorkJobPoolSize};
     }
 
     @Override
@@ -363,7 +368,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         if (resultObject != null) {
-            job.setResult(resultObject);
+            job.updateResultWithEncryptionIfNeeded(resultObject);
         }
 
         if (logger.isDebugEnabled()) {
@@ -384,9 +389,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 job.setResultCode(resultCode);
 
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 } else {
-                    job.setResult(null);
+                    job.updateResultWithEncryptionIfNeeded(null);
                 }
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
@@ -455,7 +460,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 job.setProcessStatus(processStatus);
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 }
                 job.setLastUpdated(DateUtil.currentGMTTime());
                 _jobDao.update(jobId, job);
@@ -553,23 +558,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    public String obfuscatePassword(String result, boolean hidePassword) {
-        if (hidePassword) {
-            String pattern = "\"password\":";
-            if (result != null) {
-                if (result.contains(pattern)) {
-                    String[] resp = result.split(pattern);
-                    String psswd = resp[1].toString().split(",")[0];
-                    if (psswd.endsWith("}")) {
-                        psswd = psswd.substring(0, psswd.length() - 1);
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "}," + resp[1].split(",", 2)[1];
-                    } else {
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
-                    }
-                }
-            }
+    public String  obfuscatePassword(String result, boolean hidePassword) {
+        if (!hidePassword) {
+            return result;
         }
-        return result;
+        return StringUtils.obfuscatePasswordInJsonLikeString(result);
     }
 
     private void scheduleExecution(final AsyncJobVO job) {
@@ -1006,11 +999,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
 
                     logger.trace("End cleanup expired async-jobs");
+
+                    cleanupNetworksStuckInImplementing();
+
                 } catch (Throwable e) {
                     logger.error("Unexpected exception when trying to execute queue item, ", e);
                 }
             }
         };
+    }
+
+    private void cleanupNetworksStuckInImplementing() {
+        // Cleanup orphaned networks stuck in Implementing state without async jobs
+        try {
+            cleanupOrphanedNetworks();
+        } catch (Throwable e) {
+            logger.error("Unexpected exception when trying to cleanup orphaned networks", e);
+        }
     }
 
     @DB
@@ -1099,13 +1104,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final Properties dbProps = DbProperties.getDbProperties();
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
 
-            int apiPoolSize = cloudMaxActive / 2;
-            int workPoolSize = (cloudMaxActive * 2) / 3;
+            int defaultApiPoolSize = cloudMaxActive / 2;
+            int defaultWorkPoolSize = (cloudMaxActive * 2) / 3;
 
-            logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize);
+            int apiPoolSize = Math.max(ApiJobPoolSize.value(), defaultApiPoolSize);
+            int workPoolSize = Math.max(WorkJobPoolSize.value(), defaultWorkPoolSize);
+
+            logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize +
+                " (configured=" + ApiJobPoolSize.value() + ", db.derived=" + defaultApiPoolSize + ", db.cloud.maxActive=" + cloudMaxActive + ")");
             _apiJobExecutor = Executors.newFixedThreadPool(apiPoolSize, new NamedThreadFactory(AsyncJobManager.API_JOB_POOL_THREAD_PREFIX));
 
-            logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize);
+            logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize +
+                " (configured=" + WorkJobPoolSize.value() + ", db.derived=" + defaultWorkPoolSize + ", db.cloud.maxActive=" + cloudMaxActive + ")");
             _workerJobExecutor = Executors.newFixedThreadPool(workPoolSize, new NamedThreadFactory(AsyncJobManager.WORK_JOB_POOL_THREAD_PREFIX));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
@@ -1158,7 +1168,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-                        job.setResult("job cancelled because of management server restart or shutdown");
+                        job.updateResultWithEncryptionIfNeeded("job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
                         final Date currentGMTTime = DateUtil.currentGMTTime();
                         job.setLastUpdated(currentGMTTime);
@@ -1350,6 +1360,74 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
     }
 
+    /**
+     * Cleanup networks that are stuck in Implementing state without associated async jobs.
+     * This only processes networks that have been stuck for longer than the job expiration threshold.
+     */
+    private void cleanupOrphanedNetworks() {
+        try {
+            SearchCriteria<NetworkVO> sc = networkDao.createSearchCriteria();
+            sc.addAnd("state", SearchCriteria.Op.EQ, Network.State.Implementing);
+            sc.addAnd("removed", SearchCriteria.Op.NULL);
+            List<NetworkVO> implementingNetworks = networkDao.search(sc, null);
+
+            if (implementingNetworks == null || implementingNetworks.isEmpty()) {
+                return;
+            }
+
+            logger.debug("Found {} networks in Implementing state, checking for orphaned networks", implementingNetworks.size());
+
+            final long expireMinutes = JobExpireMinutes.value();
+            final Date cutoffTime = new Date(System.currentTimeMillis() - (expireMinutes * 60 * 1000));
+
+            for (NetworkVO network : implementingNetworks) {
+                if (network.getCreated().after(cutoffTime)) {
+                    logger.trace("Network {} in Implementing state is only {} minutes old (threshold: {} minutes), skipping cleanup",
+                               network.getId(),
+                               (System.currentTimeMillis() - network.getCreated().getTime()) / 60000,
+                               expireMinutes);
+                    continue;
+                }
+
+                List<AsyncJobVO> jobs = _jobDao.findInstancePendingAsyncJobs("Network", network.getAccountId());
+                boolean hasActiveJob = false;
+                for (AsyncJobVO job : jobs) {
+                    if (job.getInstanceId() != null && job.getInstanceId().equals(network.getId())) {
+                        hasActiveJob = true;
+                        break;
+                    }
+                }
+
+                if (hasActiveJob) {
+                    logger.debug("Network {} in Implementing state has active async job, skipping cleanup", network.getId());
+                    continue;
+                }
+
+                logger.warn("Found orphaned network {} in Implementing state without async job. " +
+                           "Network created: {}, age: {} minutes, expiration threshold: {} minutes. Transitioning to Shutdown state.",
+                           network.getId(), network.getCreated(),
+                           (System.currentTimeMillis() - network.getCreated().getTime()) / 60000,
+                           expireMinutes);
+                updateNetworkState(network);
+
+            }
+        } catch (Exception e) {
+            logger.error("Error while cleaning up orphaned networks", e);
+        }
+    }
+
+    private void updateNetworkState(NetworkVO network) {
+        try {
+            networkOrchestrationService.stateTransitTo(network, Network.Event.OperationFailed);
+            logger.info("Successfully transitioned orphaned network {} to Shutdown state using state machine", network.getId());
+        } catch (final NoTransitionException e) {
+            logger.debug("State transition failed for orphaned network {}, forcing state update", network.getId());
+            network.setState(Network.State.Shutdown);
+            networkDao.update(network.getId(), network);
+            logger.info("Successfully forced orphaned network {} to Shutdown state", network.getId());
+        }
+    }
+
     @Override
     public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
     }
@@ -1378,6 +1456,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean stop() {
         _heartbeatScheduler.shutdown();
+        _eventBusPublisher.shutdown();
         _apiJobExecutor.shutdown();
         _workerJobExecutor.shutdown();
         return true;
@@ -1397,8 +1476,26 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private void publishOnEventBus(AsyncJob job, String jobEvent) {
-        _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
-            new Pair<AsyncJob, String>(job, jobEvent));
+        try {
+            _eventBusPublisher.submit(new ManagedContextRunnable() {
+                @Override
+                protected void runInContext() {
+                    publishJobEvent(job, jobEvent);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            logger.warn("Failed to publish async job event, event bus publisher is shut down", e);
+        }
+    }
+
+    private void publishJobEvent(AsyncJob job, String jobEvent) {
+        try {
+            _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
+                    new Pair<>(job, jobEvent));
+        } catch (Throwable t) {
+            logger.warn("Failed to publish async job event on message bus. jobId={}, jobEvent={}",
+                    job != null ? job.getId() : null, jobEvent, t);
+        }
     }
 
     @Override

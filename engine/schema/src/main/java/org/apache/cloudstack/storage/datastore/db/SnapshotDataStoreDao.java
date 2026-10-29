@@ -49,6 +49,13 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long zoneId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType);
 
+    /**
+     * Whether snapshots of this volume are chained on secondary storage through a content diff against
+     * the parent snapshot file (Linstor) instead of qemu checkpoints. Such chains live purely on the
+     * image store, so checkpoint-oriented parent handling must not be applied to them.
+     */
+    boolean usesContentBasedChain(long volumeId);
+
     SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State state);
 
     List<SnapshotDataStoreVO> listBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State... state);
@@ -98,6 +105,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     void updateVolumeIds(long oldVolId, long newVolId);
 
     List<SnapshotDataStoreVO> findByVolume(long snapshotId, long volumeId, DataStoreRole role);
+
+    void expungeBySnapshotIdAndStoreRole(long snapshotId, DataStoreRole role);
 
     /**
      * List all snapshots in 'snapshot_store_ref' by volume and data store role. Therefore, it is possible to list all snapshots that are in the primary storage or in the secondary storage.

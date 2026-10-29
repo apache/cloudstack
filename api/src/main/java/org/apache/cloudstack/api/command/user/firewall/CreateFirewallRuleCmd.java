@@ -223,19 +223,21 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     }
 
     @Override
-    public long getNetworkId() {
-        IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
-        Long ntwkId = null;
-
-        if (ip.getAssociatedWithNetworkId() != null) {
-            ntwkId = ip.getAssociatedWithNetworkId();
-        }
+    public Long getNetworkId() {
+        IpAddress ip = getIp();
+        Long ntwkId = isVpcIp(ip) ? getVpcNetworkIdForFirewallRule(ip) : getIsolatedNetworkIdForFirewallRule(ip);
 
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create firewall rule for the IP address ID=" + ipAddressId +
                     " as IP is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
+    }
+
+    @Override
+    public Long getVpcId() {
+        IpAddress ip = getIp();
+        return isVpcIp(ip) ? ip.getVpcId() : null;
     }
 
     @Override
@@ -300,7 +302,21 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public Long getSyncObjId() {
-        return getIp().getAssociatedWithNetworkId();
+        Long syncObjId = getIp().getAssociatedWithNetworkId();
+        return syncObjId != null ? syncObjId : getNetworkId();
+    }
+
+    private boolean isVpcIp(IpAddress ip) {
+        return ip.getVpcId() != null;
+    }
+
+    private Long getIsolatedNetworkIdForFirewallRule(IpAddress ip) {
+        return ip.getAssociatedWithNetworkId();
+    }
+
+    private Long getVpcNetworkIdForFirewallRule(IpAddress ip) {
+        // VPC flow is independent from tier association; manager resolves execution network.
+        return ip.getNetworkId();
     }
 
     private IpAddress getIp() {
@@ -310,6 +326,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         }
         return ip;
     }
+
 
     @Override
     public Integer getIcmpCode() {

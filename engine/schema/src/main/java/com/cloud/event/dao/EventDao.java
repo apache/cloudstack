@@ -19,6 +19,7 @@ package com.cloud.event.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.event.Event;
 import com.cloud.event.EventVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
@@ -30,6 +31,18 @@ public interface EventDao extends GenericDao<EventVO, Long> {
     public List<EventVO> listOlderEvents(Date oldTime);
 
     EventVO findCompletedEvent(long startId);
+
+    /**
+     * Finds the last non-archived start event matching the specified criteria.
+     * Events are ordered by ID in descending order, returning the most recent one.
+     *
+     * @param type         the event type to search for
+     * @param state        the event state to search for (e.g., {@link Event.State#Scheduled})
+     * @param resourceId   the resource ID associated with the event
+     * @param resourceType the resource type associated with the event
+     * @return the most recent EventVO matching the criteria, or null if not found
+     */
+    EventVO findLastEvent(String type, Event.State state, Long resourceId, String resourceType);
 
     public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date startDate, Date endDate, List<Long> accountIds);
 

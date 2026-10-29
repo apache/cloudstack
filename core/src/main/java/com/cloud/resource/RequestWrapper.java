@@ -86,7 +86,7 @@ public abstract class RequestWrapper {
 
                 keepCommandClass = commandClass2;
             } catch (final ClassCastException e) {
-                throw new CommandNotSupported("No key found for '" + keepCommandClass.getClass() + "' in the Map!");
+                throw new CommandNotSupported("No key found for '" + keepCommandClass + "' in the Map!");
             } catch (final NullPointerException e) {
                 // Will now traverse all the resource hierarchy. Returning null
                 // is not a problem.

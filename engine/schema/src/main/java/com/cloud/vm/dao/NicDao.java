@@ -26,6 +26,8 @@ import com.cloud.vm.VirtualMachine;
 public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listByVmId(long instanceId);
 
+    int countByVmId(long instanceId);
+
     List<NicVO> listByVmIdOrderByDeviceId(long instanceId);
 
     List<String> listIpAddressInNetwork(long networkConfigId);
@@ -97,12 +99,14 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findByMacAddress(String macAddress, long networkId);
 
+    List<NicVO> listByMacAddresses(List<String> macAddresses);
+
     NicVO findByNetworkIdAndMacAddressIncludingRemoved(long networkId, String mac);
 
     List<NicVO> findNicsByIpv6GatewayIpv6CidrAndReserver(String ipv6Gateway, String ipv6Cidr, String reserverName);
 
     NicVO findByIpAddressAndVmType(String ip, VirtualMachine.Type vmType);
 
-    List<NicVO> listByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
+    List<NicVO> listNonPlaceholderNicsByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
     List<NicVO> searchRemovedByVms(List<Long> vmIds, Long batchSize);
 }

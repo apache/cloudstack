@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
+import java.util.Collections;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.api.storage.LinstorRevertBackupSnapshotCommand;
@@ -31,9 +32,12 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.joda.time.Duration;
 import org.libvirt.LibvirtException;
 
@@ -43,8 +47,9 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
 {
 
     private void convertQCow2ToRAW(
-            KVMStoragePool pool, final String srcPath, final String dstUuid, int waitMilliSeconds)
-        throws LibvirtException, QemuImgException
+            KVMStoragePool pool, final String srcPath, final String dstUuid, final byte[] passphrase,
+            int waitMilliSeconds)
+        throws LibvirtException, QemuImgException, java.io.IOException
     {
         final String dstPath = pool.getPhysicalDisk(dstUuid).getPath();
         final QemuImgFile srcQemuFile = new QemuImgFile(
@@ -60,7 +65,20 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
         }
         final QemuImg qemu = new QemuImg(waitMilliSeconds, zeroedDevice, true);
         final QemuImgFile dstFile = new QemuImgFile(dstPath, QemuImg.PhysicalDiskFormat.RAW);
-        qemu.convert(srcQemuFile, dstFile);
+        if (passphrase != null && passphrase.length > 0) {
+            // The backed-up qcow2 is LUKS-encrypted with the volume's passphrase. Decrypt it while
+            // writing plaintext to the (decrypted) DRBD device; the Linstor LUKS layer re-encrypts it,
+            // so no qemu encryption must be applied to the destination.
+            try (KeyFile keyFile = new KeyFile(passphrase)) {
+                final QemuObject srcSecret = QemuObject.prepareSecretForQemuImg(
+                    QemuImg.PhysicalDiskFormat.QCOW2, QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", null);
+                final QemuImageOptions srcImageOpts = new QemuImageOptions(
+                    QemuImg.PhysicalDiskFormat.QCOW2, srcPath, "sec0");
+                qemu.convert(srcQemuFile, dstFile, null, Collections.singletonList(srcSecret), srcImageOpts, null, false);
+            }
+        } else {
+            qemu.convert(srcQemuFile, dstFile);
+        }
     }
 
     @Override
@@ -84,10 +102,13 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
             secondaryPool = storagePoolMgr.getStoragePoolByURI(
                 srcDataStore.getUrl() + File.separator + srcFile.getParent());
 
+            // The destination volume is the (same) original volume, whose passphrase the backed-up
+            // qcow2 was encrypted with; use it to decrypt while restoring.
             convertQCow2ToRAW(
                 linstorPool,
                 secondaryPool.getLocalPath() + File.separator + srcFile.getName(),
                 dst.getPath(),
+                dst.getPassphrase(),
                 cmd.getWaitInMillSeconds());
 
             final VolumeObjectTO dstVolume = new VolumeObjectTO();
@@ -99,6 +120,7 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
             logger.error(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
+            dst.clearPassphrase();
             LinstorBackupSnapshotCommandWrapper.cleanupSecondaryPool(secondaryPool);
         }
     }

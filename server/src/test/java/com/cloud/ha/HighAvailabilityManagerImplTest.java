@@ -78,6 +78,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HighAvailabilityManagerImplTest {
@@ -309,7 +310,12 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(vm.getHostId()).thenReturn(1L);
-        Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+
+        Mockito.when(_haDao.persist((HaWorkVO) Mockito.any())).thenAnswer(invocation -> {
+            HaWorkVO haWork = invocation.getArgument(0);
+            ReflectionTestUtils.setField(haWork, "id", 1L);
+            return haWork;
+        });
 
         ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;

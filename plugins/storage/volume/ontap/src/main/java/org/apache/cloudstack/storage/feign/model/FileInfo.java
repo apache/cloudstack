@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.time.OffsetDateTime;
 import java.util.Objects;
 
 /**
@@ -36,8 +35,6 @@ import java.util.Objects;
 public class FileInfo {
   @JsonProperty("bytes_used")
   private Long bytesUsed = null;
-  @JsonProperty("creation_time")
-  private OffsetDateTime creationTime = null;
   @JsonProperty("fill_enabled")
   private Boolean fillEnabled = null;
   @JsonProperty("is_empty")
@@ -46,8 +43,6 @@ public class FileInfo {
   private Boolean isSnapshot = null;
   @JsonProperty("is_vm_aligned")
   private Boolean isVmAligned = null;
-  @JsonProperty("modified_time")
-  private OffsetDateTime modifiedTime = null;
   @JsonProperty("name")
   private String name = null;
   @JsonProperty("overwrite_enabled")
@@ -110,10 +105,6 @@ public class FileInfo {
     return bytesUsed;
   }
 
-  public OffsetDateTime getCreationTime() {
-    return creationTime;
-  }
-
   public FileInfo fillEnabled(Boolean fillEnabled) {
     this.fillEnabled = fillEnabled;
     return this;
@@ -147,11 +138,6 @@ public class FileInfo {
 
   public Boolean isIsVmAligned() {
     return isVmAligned;
-  }
-
-
-  public OffsetDateTime getModifiedTime() {
-    return modifiedTime;
   }
 
   public FileInfo name(String name) {
@@ -266,12 +252,10 @@ public class FileInfo {
     StringBuilder sb = new StringBuilder();
     sb.append("class FileInfo {\n");
     sb.append("    bytesUsed: ").append(toIndentedString(bytesUsed)).append("\n");
-    sb.append("    creationTime: ").append(toIndentedString(creationTime)).append("\n");
     sb.append("    fillEnabled: ").append(toIndentedString(fillEnabled)).append("\n");
     sb.append("    isEmpty: ").append(toIndentedString(isEmpty)).append("\n");
     sb.append("    isSnapshot: ").append(toIndentedString(isSnapshot)).append("\n");
     sb.append("    isVmAligned: ").append(toIndentedString(isVmAligned)).append("\n");
-    sb.append("    modifiedTime: ").append(toIndentedString(modifiedTime)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    overwriteEnabled: ").append(toIndentedString(overwriteEnabled)).append("\n");
     sb.append("    path: ").append(toIndentedString(path)).append("\n");

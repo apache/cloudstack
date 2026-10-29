@@ -925,6 +925,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 logger.info(context);
                 if (currState == RedundantState.PRIMARY) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
+                    if (router.getVpcId() != null && vpcManager.isProviderSupportServiceInVpc(router.getVpcId(), Service.SourceNat, Provider.Netris)) {
+                        // re-push VPC VR static NAT/VPN routes so Netris picks up the new PRIMARY
+                        vpcManager.reconfigStaticNatForVpcVr(router.getVpcId());
+                        try {
+                            vpcManager.applyStaticRouteForVpcVpnIfNeeded(router.getVpcId(), true);
+                        } catch (final ResourceUnavailableException e) {
+                            logger.error("Unable to apply static routes for vpc " + router.getVpcId() + " due to " + e.getMessage(), e);
+                        }
+                    }
                 }
             }
         }
@@ -2018,6 +2027,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             } else {
                 buf.append(" has_public_network=false");
             }
+            boolean isVpcFirewallEnabled = vpcManager.isProviderSupportServiceInVpc(vpc.getId(), Service.Firewall, Provider.VPCVirtualRouter);
+            buf.append(" vpc_firewall_enabled=").append(isVpcFirewallEnabled);
         } else if (!publicNetwork) {
             type = "dhcpsrvr";
         } else {
@@ -2497,7 +2508,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Re-apply firewall Egress rules
         logger.debug("Found " + firewallRulesEgress.size() + " firewall Egress rule(s) to apply as a part of domR " + router + " start.");
         if (!firewallRulesEgress.isEmpty()) {
-            _commandSetupHelper.createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId);
+            _commandSetupHelper.createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId, router.getVpcId());
         }
 
         logger.debug(String.format("Found %d Ipv6 firewall rule(s) to apply as a part of domR %s start.", ipv6firewallRules.size(), router));
@@ -2572,7 +2583,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             // Re-apply firewall Ingress rules
             logger.debug("Found " + firewallRulesIngress.size() + " firewall Ingress rule(s) to apply as a part of domR " + router + " start.");
             if (!firewallRulesIngress.isEmpty()) {
-                _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, router, cmds, guestNetworkId);
+                _commandSetupHelper.createFirewallRulesCommands(firewallRulesIngress, router, cmds, guestNetworkId, router.getVpcId());
             }
 
             // Re-apply port forwarding rules

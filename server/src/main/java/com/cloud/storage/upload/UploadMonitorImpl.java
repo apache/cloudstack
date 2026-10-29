@@ -231,8 +231,8 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             UploadVO upload = extractURLList.get(0);
             String uploadUrl = extractURLList.get(0).getUploadUrl();
             String[] token = uploadUrl.split("/");
-            // example: uploadUrl = https://10-11-101-112.realhostip.com/userdata/2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
-            // then token[2] = 10-11-101-112.realhostip.com, token[4] = 2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
+            // example: uploadUrl = https://10-11-101-112.example.com/userdata/2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
+            // then token[2] = 10-11-101-112.example.com, token[4] = 2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
             String hostname = ep.getPublicAddr().replace(".", "-") + ".";
             if ((token != null) && (token.length == 5) && (token[2].equals(hostname + _ssvmUrlDomain))) // ssvm publicip and domain suffix not changed
                 return extractURLList.get(0);
@@ -365,7 +365,9 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             if (_ssvmUrlDomain != null && _ssvmUrlDomain.length() > 0) {
                 hostname = hostname + "." + _ssvmUrlDomain;
             } else {
-                hostname = hostname + ".realhostip.com";
+                logger.warn("SSL copy is enabled but secstorage.ssl.cert.domain is not configured; "
+                    + "using IP address directly. Configure a wildcard SSL certificate domain for proper HTTPS support.");
+                hostname = ipAddress;
             }
         }
         return scheme + "://" + hostname + "/userdata/" + uuid;
@@ -375,11 +377,6 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
-
-        String cert = configs.get("secstorage.secure.copy.cert");
-        if ("realhostip.com".equalsIgnoreCase(cert)) {
-            logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
-        }
 
         _ssvmUrlDomain = configs.get("secstorage.ssl.cert.domain");
 

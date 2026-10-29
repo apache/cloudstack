@@ -146,4 +146,8 @@ public interface NetworkElement extends Adapter {
      * @return true/false
      */
     boolean verifyServicesCombination(Set<Service> services);
+
+    default boolean rollingRestartSupported() {
+        return true;
+    }
 }

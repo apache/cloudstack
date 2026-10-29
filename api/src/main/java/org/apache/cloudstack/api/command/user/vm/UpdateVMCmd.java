@@ -65,7 +65,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "User generated name")
     private String displayName;
 
-    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Group of the Instance")
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Group of the Instance. To remove an Instance from its current Group, please pass an empty string as parameter")
     private String group;
 
     @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "True if high-availability is enabled for the Instance, false otherwise")
@@ -93,6 +93,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                since = "4.16.0")
     private String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the userdata", since = "4.18")
     private Long userdataId;
 
@@ -286,6 +287,14 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     public boolean isCleanupExtraConfig() {
         return Boolean.TRUE.equals(cleanupExtraConfig);
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setSecurityGroupIdList(List<Long> securityGroupIdList) {
+        this.securityGroupIdList = securityGroupIdList;
     }
 
     /////////////////////////////////////////////////////

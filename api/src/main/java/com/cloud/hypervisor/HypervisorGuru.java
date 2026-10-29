@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
@@ -94,10 +95,10 @@ public interface HypervisorGuru extends Adapter {
     Map<String, String> getClusterSettings(long vmId);
 
     VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
-                                                  String vmInternalName, Backup backup) throws Exception;
+                                                  String vmInternalName, Backup backup, BackupProvider backupProvider) throws Exception;
 
     boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
-                                                 VirtualMachine vm, long poolId, Backup backup) throws Exception;
+                                                 VirtualMachine vm, long poolId, Backup backup, BackupProvider backupProvider) throws Exception;
     /**
      * Will generate commands to migrate a vm to a pool. For now this will only work for stopped VMs on Vmware.
      *

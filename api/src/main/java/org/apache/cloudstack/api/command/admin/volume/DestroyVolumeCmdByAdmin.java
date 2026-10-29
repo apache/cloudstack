@@ -40,7 +40,7 @@ public class DestroyVolumeCmdByAdmin extends DestroyVolumeCmd implements AdminCm
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getId());
-        Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false);
+        Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false, null);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());

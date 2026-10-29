@@ -235,7 +235,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         UserVO userVO = getCallingUserFromContext();
         String userUuid = userVO.getUuid();
         checkAnnotationPermissions(type, userVO);
-        isEntityOwnedByTheUser(type.name(), uuid, userVO);
+        if (!isEntityOwnedByTheUser(type.name(), uuid, userVO)) {
+            throw new PermissionDeniedException("User " + userUuid + " does not have permission to add an annotation on the entity with uuid " + uuid);
+        }
         updateResourceDetailsInContext(uuid, type);
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
@@ -453,7 +455,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private List<AnnotationVO> getAnnotationsByEntityIdAndType(String entityType, String entityUuid, String userUuid,
                                                                boolean isCallerAdmin, String annotationFilter,
                                                                String callingUserUuid, String keyword, UserVO callingUser) {
-        isEntityOwnedByTheUser(entityType, entityUuid, callingUser);
+        if (!isEntityOwnedByTheUser(entityType, entityUuid, callingUser)) {
+            throw new PermissionDeniedException("User " + callingUser.getUuid() + " does not have permission to list annotations on " +
+                    "the entity with uuid " + entityUuid + " of type " + entityType);
+        }
         if (logger.isDebugEnabled()) {
             logger.debug("getting annotations for entity: " + entityUuid);
         }

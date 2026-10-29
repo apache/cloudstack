@@ -40,7 +40,7 @@ public class ExtensionDetailsVO implements ResourceDetail {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "value", nullable = false, length = 255)
+    @Column(name = "value", nullable = false, length = 4096)
     private String value;
 
     @Column(name = "display")

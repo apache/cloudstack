@@ -1601,7 +1601,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
      */
     protected boolean anyVolumeRequiresEncryption(DataObject ... objects) {
         for (DataObject o : objects) {
-            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
+            if (o instanceof VolumeInfo && (((VolumeInfo) o).getPassphraseId() != null || ((VolumeInfo) o).getKmsKeyId() != null)) {
                 return true;
             }
         }

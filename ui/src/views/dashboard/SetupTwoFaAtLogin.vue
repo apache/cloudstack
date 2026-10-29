@@ -109,8 +109,10 @@
           <a-row :gutter="24">
             <a-col :md="24" :lg="22">
               <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
-                <a-input-password
+                <a-input
                   v-model:value="form.code"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
                   placeholder="xxxxxx" />
               </a-form-item>
             </a-col>
@@ -290,12 +292,13 @@ export default {
           this.twoFAverified = true
           this.$emit('refresh-data')
         }).catch(() => {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.error.setup.2fa')
-          })
+          // Logout clears all notifications, so show the error once it is done
           this.$store.dispatch('Logout').then(() => {
-            this.$router.replace({ path: '/user/login' })
+            this.$router.replace({ path: '/user/login' }).catch(() => {})
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.setup.2fa')
+            })
           })
         })
       })

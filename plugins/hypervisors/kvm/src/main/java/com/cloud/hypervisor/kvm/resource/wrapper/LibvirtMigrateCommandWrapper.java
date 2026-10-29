@@ -1,5 +1,3 @@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -42,9 +40,16 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -69,7 +74,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -82,11 +86,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -117,7 +116,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Command.State commandState = null;
 
         List<InterfaceDef> ifaces = null;
-        List<DiskDef> disks;
+        List<DiskDef> disks = new ArrayList<>();
+        VirtualMachineTO to = null;
 
         Domain dm = null;
         Connect dconn = null;
@@ -136,7 +136,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
             }
-            VirtualMachineTO to = command.getVirtualMachine();
+            to = command.getVirtualMachine();
 
             dm = conn.domainLookupByName(vmName);
             /*
@@ -338,6 +338,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
                 }
                 resumeDomainIfPaused(destDomain, vmName);
+
+                // For cross-pool CLVM migration, skip deactivation so the source LV stays
+                // active (in shared mode) and deletion can route directly to the source host
+                // without fanning out across the cluster to find an inactive LV.
+                if (to != null && !command.isClvmCrossPoolMigration()) {
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
+                }
+
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
                 libvirtComputingResource.cleanOldSecretsByDiskDef(conn, disks);
             }
@@ -383,6 +391,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
                 if (destDomain != null) {
                     destDomain.free();
+                }
+                // Revert CLVM volumes to exclusive mode on failure
+                if (to != null && result != null) {
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
                 }
             } catch (final LibvirtException e) {
                 logger.trace("Ignoring libvirt error.", e);
@@ -683,7 +695,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     protected void deleteOrDisconnectDisksOnSourcePool(final LibvirtComputingResource libvirtComputingResource, final List<MigrateDiskInfo> migrateDiskInfoList,
             List<DiskDef> disks) {
         for (DiskDef disk : disks) {
-            MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
+            MigrateCommand.MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
             if (migrateDiskInfo != null && migrateDiskInfo.isSourceDiskOnStorageFileSystem()) {
                 deleteLocalVolume(disk.getDiskPath());
             } else {
@@ -800,7 +812,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                 Node diskChildNode = diskChildNodes.item(z);
 
-                                if (migrateStorageManaged && "driver".equals(diskChildNode.getNodeName())) {
+                                boolean shouldUpdateDriverType = shouldUpdateDriverTypeForMigration(
+                                    migrateStorageManaged, migrateDiskInfo);
+
+                                if (shouldUpdateDriverType && "driver".equals(diskChildNode.getNodeName())) {
                                     Node driverNode = diskChildNode;
 
                                     NamedNodeMap driverNodeAttributes = driverNode.getAttributes();
@@ -1065,5 +1080,65 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         if (xmlDesc == null) return null;
         return xmlDesc.replaceAll("(graphics\\s+[^>]*type=['\"]vnc['\"][^>]*passwd=['\"])([^'\"]*)(['\"])",
                 "$1*****$3");
+    }
+
+    /**
+     * Checks if any of the destination disks in the migration target a CLVM or CLVM_NG storage pool.
+     * This is used to determine if incremental migration should be disabled to avoid libvirt
+     * precreate errors with QCOW2-on-LVM setups.
+     *
+     * @param mapMigrateStorage the map containing migration disk information with destination pool types
+     * @return true if any destination disk targets CLVM or CLVM_NG, false otherwise
+     */
+    protected boolean hasClvmDestinationDisks(Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
+        if (MapUtils.isEmpty(mapMigrateStorage)) {
+            return false;
+        }
+
+        try {
+            for (Map.Entry<String, MigrateCommand.MigrateDiskInfo> entry : mapMigrateStorage.entrySet()) {
+                MigrateCommand.MigrateDiskInfo diskInfo = entry.getValue();
+               if (isClvmBlockDevice(diskInfo)) {
+                    logger.debug("Found disk targeting CLVM/CLVM_NG destination pool");
+                    return true;
+               }
+            }
+        } catch (final Exception e) {
+            logger.debug("Failed to check for CLVM destination disks: {}. Assuming no CLVM disks.", e.getMessage());
+        }
+
+        return false;
+    }
+
+    private boolean isClvmBlockDevice(MigrateCommand.MigrateDiskInfo diskInfo) {
+        if (diskInfo == null ||diskInfo.getDestPoolType() == null) {
+            return false;
+        }
+        return (Storage.StoragePoolType.CLVM.equals(diskInfo.getDestPoolType()) || Storage.StoragePoolType.CLVM_NG.equals(diskInfo.getDestPoolType()));
+    }
+
+    /**
+     * Determines if the driver type should be updated during migration based on CLVM involvement.
+     * The driver type needs to be updated when:
+     * - Managed storage is being migrated, OR
+     * - Source pool is CLVM or CLVM_NG, OR
+     * - Destination pool is CLVM or CLVM_NG
+     *
+     * This ensures the libvirt XML driver type matches the destination format (raw/qcow2/etc).
+     *
+     * @param migrateStorageManaged true if migrating managed storage
+     * @param migrateDiskInfo the migration disk information containing source and destination pool types
+     * @return true if driver type should be updated, false otherwise
+     */
+    private boolean shouldUpdateDriverTypeForMigration(boolean migrateStorageManaged,
+                                                        MigrateCommand.MigrateDiskInfo migrateDiskInfo) {
+        boolean sourceIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getSourcePoolType() ||
+                Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getSourcePoolType();
+
+        boolean destIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getDestPoolType() ||
+                Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getDestPoolType();
+
+        boolean isClvmRelatedMigration = sourceIsClvm || destIsClvm;
+        return migrateStorageManaged || isClvmRelatedMigration;
     }
 }

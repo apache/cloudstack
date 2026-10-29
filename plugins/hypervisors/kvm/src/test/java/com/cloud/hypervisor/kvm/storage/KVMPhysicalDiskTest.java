@@ -44,7 +44,7 @@ public class KVMPhysicalDiskTest {
         Mockito.doReturn(authUserName).when(kvmStoragePoolMock).getAuthUserName();
         Mockito.doReturn(authSecret).when(kvmStoragePoolMock).getAuthSecret();
 
-        String expected = "rbd:volume1:mon_host=ceph-monitor\\:8000:auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+        String expected = "rbd:volume1:mon_host=ceph-monitor\\:8000:auth_client_required=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
         String result = KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1");
 
         Assert.assertEquals(expected, result);
@@ -62,7 +62,7 @@ public class KVMPhysicalDiskTest {
 
         String expected = "rbd:volume1:" +
                 "mon_host=ceph-monitor1\\:3300\\;ceph-monitor2\\:3300\\;ceph-monitor3\\:3300:" +
-                "auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+                "auth_client_required=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
         String actualResult = KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1");
 
         Assert.assertEquals(expected, actualResult);
@@ -80,7 +80,7 @@ public class KVMPhysicalDiskTest {
 
         String expected = "rbd:volume1:" +
                 "mon_host=[fc00\\:1234\\:\\:1]\\:3300\\;[fc00\\:1234\\:\\:2]\\:3300\\;[fc00\\:1234\\:\\:3]\\:3300:" +
-                "auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+                "auth_client_required=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
         String actualResult = KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1");
 
         Assert.assertEquals(expected, actualResult);

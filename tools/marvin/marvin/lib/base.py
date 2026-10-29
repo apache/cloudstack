@@ -567,7 +567,8 @@ class VirtualMachine:
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
                userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None,
-               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None):
+               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None,
+               rootdiskkmskeyid=None):
 
         """Create the instance"""
 
@@ -743,6 +744,9 @@ class VirtualMachine:
 
         if snapshotid:
             cmd.snapshotid = snapshotid
+
+        if rootdiskkmskeyid:
+            cmd.rootdiskkmskeyid = rootdiskkmskeyid
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -1151,7 +1155,8 @@ class Volume:
 
     @classmethod
     def create(cls, apiclient, services, zoneid=None, account=None,
-               domainid=None, diskofferingid=None, projectid=None, size=None, snapshotid=None):
+               domainid=None, diskofferingid=None, projectid=None, size=None, snapshotid=None,
+               storageid=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1184,6 +1189,11 @@ class Volume:
 
         if snapshotid:
             cmd.snapshotid = snapshotid
+
+        if storageid:
+            cmd.storageid = storageid
+        elif "storageid" in services:
+            cmd.storageid = services["storageid"]
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
@@ -5697,6 +5707,170 @@ class InstanceGroup:
         apiclient.recoverVirtualMachine(cmd)
 
 
+class InstanceBootGroup:
+    """Manage Instance Boot Group lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, description=None, account=None,
+               domainid=None, projectid=None, readinessattempttimeoutseconds=None,
+               readinessmaxretryattempts=None, readinessrebootonretry=None,
+               readinessinitialdelayseconds=None):
+        """Creates an instance boot group"""
+
+        cmd = createInstanceBootGroup.createInstanceBootGroupCmd()
+        cmd.name = name
+        if description is not None:
+            cmd.description = description
+        if account is not None:
+            cmd.account = account
+        if domainid is not None:
+            cmd.domainid = domainid
+        if projectid is not None:
+            cmd.projectid = projectid
+        if readinessattempttimeoutseconds is not None:
+            cmd.readinessattempttimeoutseconds = readinessattempttimeoutseconds
+        if readinessmaxretryattempts is not None:
+            cmd.readinessmaxretryattempts = readinessmaxretryattempts
+        if readinessrebootonretry is not None:
+            cmd.readinessrebootonretry = readinessrebootonretry
+        if readinessinitialdelayseconds is not None:
+            cmd.readinessinitialdelayseconds = readinessinitialdelayseconds
+        return InstanceBootGroup(apiclient.createInstanceBootGroup(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the instance boot group"""
+        cmd = updateInstanceBootGroup.updateInstanceBootGroupCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateInstanceBootGroup(cmd)
+
+    def delete(self, apiclient):
+        """Delete the instance boot group"""
+        cmd = deleteInstanceBootGroup.deleteInstanceBootGroupCmd()
+        cmd.id = self.id
+        return apiclient.deleteInstanceBootGroup(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all instance boot groups"""
+        cmd = listInstanceBootGroups.listInstanceBootGroupsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listInstanceBootGroups(cmd)
+
+    def start(self, apiclient):
+        """Starts all members of the instance boot group in boot order"""
+        cmd = startInstanceBootGroup.startInstanceBootGroupCmd()
+        cmd.id = self.id
+        return apiclient.startInstanceBootGroup(cmd)
+
+    def stop(self, apiclient, forced=None):
+        """Stops all members of the instance boot group in reverse boot order"""
+        cmd = stopInstanceBootGroup.stopInstanceBootGroupCmd()
+        cmd.id = self.id
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.stopInstanceBootGroup(cmd)
+
+    def reboot(self, apiclient, forced=None):
+        """Reboots the instance boot group (stop then start, with readiness gating)"""
+        cmd = rebootInstanceBootGroup.rebootInstanceBootGroupCmd()
+        cmd.id = self.id
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.rebootInstanceBootGroup(cmd)
+
+    def addMember(self, apiclient, order, virtualmachineid=None, instancegroupid=None):
+        """Adds a VM or instance group member to the instance boot group"""
+        cmd = addMemberToInstanceBootGroup.addMemberToInstanceBootGroupCmd()
+        cmd.id = self.id
+        cmd.order = order
+        if virtualmachineid is not None:
+            cmd.virtualmachineid = virtualmachineid
+        if instancegroupid is not None:
+            cmd.instancegroupid = instancegroupid
+        return InstanceBootGroupMember(apiclient.addMemberToInstanceBootGroup(cmd).__dict__)
+
+    @classmethod
+    def listMembers(cls, apiclient, bootgroupid, **kwargs):
+        """List members of an instance boot group"""
+        cmd = listInstanceBootGroupMembers.listInstanceBootGroupMembersCmd()
+        cmd.bootgroupid = bootgroupid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listInstanceBootGroupMembers(cmd)
+
+
+class InstanceBootGroupMember:
+    """Manage an individual instance boot group member entry"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    def update(self, apiclient, order):
+        """Updates the boot order of this member"""
+        cmd = updateInstanceBootGroupMember.updateInstanceBootGroupMemberCmd()
+        cmd.id = self.id
+        cmd.order = order
+        return apiclient.updateInstanceBootGroupMember(cmd)
+
+    def delete(self, apiclient):
+        """Removes this member from its instance boot group"""
+        cmd = removeInstanceBootGroupMember.removeInstanceBootGroupMemberCmd()
+        cmd.id = self.id
+        return apiclient.removeInstanceBootGroupMember(cmd)
+
+
+class InstanceBootGroupReadinessRule:
+    """Manage Instance Boot Group readiness rules"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, bootgroupid, ruletype, virtualmachineid=None,
+               instancegroupid=None, name=None, enabled=None, details=None):
+        """Creates a readiness rule for a boot group member"""
+        cmd = createInstanceBootGroupReadinessRule.createInstanceBootGroupReadinessRuleCmd()
+        cmd.bootgroupid = bootgroupid
+        cmd.ruletype = ruletype
+        if virtualmachineid is not None:
+            cmd.virtualmachineid = virtualmachineid
+        if instancegroupid is not None:
+            cmd.instancegroupid = instancegroupid
+        if name is not None:
+            cmd.name = name
+        if enabled is not None:
+            cmd.enabled = enabled
+        if details is not None:
+            cmd.details = details
+        return InstanceBootGroupReadinessRule(apiclient.createInstanceBootGroupReadinessRule(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the readiness rule"""
+        cmd = updateInstanceBootGroupReadinessRule.updateInstanceBootGroupReadinessRuleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateInstanceBootGroupReadinessRule(cmd)
+
+    def delete(self, apiclient):
+        """Deletes the readiness rule"""
+        cmd = deleteInstanceBootGroupReadinessRule.deleteInstanceBootGroupReadinessRuleCmd()
+        cmd.id = self.id
+        return apiclient.deleteInstanceBootGroupReadinessRule(cmd)
+
+    @classmethod
+    def list(cls, apiclient, bootgroupid, **kwargs):
+        """List readiness rules for an instance boot group"""
+        cmd = listInstanceBootGroupReadinessRules.listInstanceBootGroupReadinessRulesCmd()
+        cmd.bootgroupid = bootgroupid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listInstanceBootGroupReadinessRules(cmd)
+
+
 class ASA1000V:
     """Manage ASA 1000v lifecycle"""
 
@@ -6215,6 +6389,29 @@ class BackupOffering:
         cmd.forced = forced
         return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
 
+    @classmethod
+    def createOffering(cls, api_client, description, name, zoneid, allowquickrestore=False, compress=False, validate=False, validationsteps=None, allowuserdrivenbackups=True,
+                       compressionlibrary='zlib'):
+        """Create a backup offering"""
+
+        cmd = createBackupOffering.createBackupOfferingCmd()
+        cmd.description = description
+        cmd.name = name
+        cmd.zoneid = zoneid
+        cmd.allowuserdrivenbackups = allowuserdrivenbackups
+
+        if allowquickrestore:
+            cmd.allowquickrestore = allowquickrestore
+        if compress:
+            cmd.compress = compress
+            cmd.compressionlibrary = compressionlibrary
+        if validate:
+            cmd.validate = validate
+        if validationsteps:
+            cmd.validationsteps = validationsteps
+
+        return BackupOffering(api_client.createBackupOffering(cmd).__dict__)
+
 
 class Backup:
 
@@ -6288,6 +6485,14 @@ class Backup:
         virtual_machine = VirtualMachine(response.__dict__, [])
         VirtualMachine.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine)
         return virtual_machine
+
+    @classmethod
+    def downloadValidationScreenshot(self, apiclient, backupid):
+        """Download Validation Screenshot"""
+
+        cmd = downloadValidationScreenshot.downloadValidationScreenshotCmd()
+        cmd.backupid = backupid
+        return (apiclient.downloadValidationScreenshot(cmd))
 
 class BackupSchedule:
 
@@ -7051,6 +7256,51 @@ class VMSchedule:
         cmd.id = self.id
         cmd.virtualmachineid = self.virtualmachineid
         return (apiclient.deleteVMSchedule(cmd))
+
+
+class ResourceSchedule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, resourcetype, resourceid, action, schedule, timezone, startdate, enddate=None, enabled=False, description=None, details=None):
+        cmd = createResourceSchedule.createResourceScheduleCmd()
+        cmd.resourcetype = resourcetype
+        cmd.resourceid = resourceid
+        cmd.description = description
+        cmd.action = action
+        cmd.schedule = schedule
+        cmd.timezone = timezone
+        cmd.startdate = startdate
+        cmd.enddate = enddate
+        cmd.enabled = enabled
+        cmd.details = details
+        return ResourceSchedule(apiclient.createResourceSchedule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, resourcetype, resourceid, id=None, enabled=None, action=None):
+        cmd = listResourceSchedule.listResourceScheduleCmd()
+        cmd.resourcetype = resourcetype
+        cmd.resourceid = resourceid
+        cmd.id = id
+        cmd.enabled = enabled
+        cmd.action = action
+        return apiclient.listResourceSchedule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        cmd = updateResourceSchedule.updateResourceScheduleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateResourceSchedule(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteResourceSchedule.deleteResourceScheduleCmd()
+        cmd.id = self.id
+        cmd.resourcetype = self.resourcetype
+        cmd.resourceid = self.resourceid
+        return apiclient.deleteResourceSchedule(cmd)
+
 
 class VnfTemplate:
     """Manage VNF template life cycle"""
@@ -8109,3 +8359,86 @@ class SslCertificate:
         cmd = deleteSslCert.deleteSslCertCmd()
         cmd.id = self.id
         apiclient.deleteSslCert(cmd)
+
+
+class HSMProfile:
+    """Manage HSM Profile life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, **kwargs):
+        """Add HSM Profile"""
+        cmd = createHSMProfile.createHSMProfileCmd()
+        cmd.name = name
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return HSMProfile(apiclient.createHSMProfile(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List HSM Profiles"""
+        cmd = listHSMProfiles.listHSMProfilesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listHSMProfiles(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update HSM Profile"""
+        cmd = updateHSMProfile.updateHSMProfileCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateHSMProfile(cmd)
+
+    def delete(self, apiclient):
+        """Delete HSM Profile"""
+        cmd = deleteHSMProfile.deleteHSMProfileCmd()
+        cmd.id = self.id
+        apiclient.deleteHSMProfile(cmd)
+
+
+class KMSKey:
+    """Manage KMS Key life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, zoneid, hsmprofileid, **kwargs):
+        """Create KMS Key"""
+        cmd = createKMSKey.createKMSKeyCmd()
+        cmd.name = name
+        cmd.zoneid = zoneid
+        cmd.hsmprofileid = hsmprofileid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return KMSKey(apiclient.createKMSKey(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List KMS Keys"""
+        cmd = listKMSKeys.listKMSKeysCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listKMSKeys(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update KMS Key"""
+        cmd = updateKMSKey.updateKMSKeyCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateKMSKey(cmd)
+
+    def delete(self, apiclient):
+        """Delete KMS Key"""
+        cmd = deleteKMSKey.deleteKMSKeyCmd()
+        cmd.id = self.id
+        apiclient.deleteKMSKey(cmd)
+
+    def rotate(self, apiclient, **kwargs):
+        """Rotate KMS Key (creates a new KEK version)"""
+        cmd = rotateKMSKey.rotateKMSKeyCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.rotateKMSKey(cmd)

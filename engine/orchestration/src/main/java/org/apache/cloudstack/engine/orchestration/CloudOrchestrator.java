@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.orchestration;
 
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import java.net.URL;
@@ -164,7 +165,7 @@ public class CloudOrchestrator implements OrchestrationService {
     public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu,
                                                      int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
                                                      Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Long dataDiskOfferingId, Long rootDiskOfferingId,
-                                                     List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
+                                                     Long rootDiskKmsKeyId, List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
         // vmEntityManager);
@@ -198,6 +199,7 @@ public class CloudOrchestrator implements OrchestrationService {
         }
         rootDiskOfferingInfo.setDiskOffering(rootDiskOffering);
         rootDiskOfferingInfo.setSize(rootDiskSize);
+        rootDiskOfferingInfo.setKmsKeyId(rootDiskKmsKeyId);
 
         if (rootDiskOffering.isCustomizedIops() != null && rootDiskOffering.isCustomizedIops()) {
             Map<String, String> userVmDetails = _vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
@@ -280,7 +282,7 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os,
         int cpu, int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
-        Map<String, Map<Integer, String>> extraDhcpOptionMap, Long diskOfferingId, List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot)
+        Map<String, Map<Integer, String>> extraDhcpOptionMap, Long diskOfferingId, Long rootDiskKmsKeyId, List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot)
         throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
@@ -292,9 +294,11 @@ public class CloudOrchestrator implements OrchestrationService {
 
         ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
+        VMTemplateVO iso = _templateDao.findByIdIncludingRemoved(Long.valueOf(isoId));
+
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo();
 
-        if (diskOfferingId == null) {
+        if (diskOfferingId == null && !_itMgr.isBlankInstance(iso)) {
             throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
         }
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
@@ -314,6 +318,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         rootDiskOfferingInfo.setDiskOffering(diskOffering);
         rootDiskOfferingInfo.setSize(size);
+        rootDiskOfferingInfo.setKmsKeyId(rootDiskKmsKeyId);
 
         if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
             Map<String, String> userVmDetails = _vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
@@ -345,7 +350,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findByIdIncludingRemoved(new Long(isoId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferings, dataDiskDeviceIds,
+        _itMgr.allocate(vm.getInstanceName(), iso, computeOffering, rootDiskOfferingInfo, dataDiskOfferings, dataDiskDeviceIds,
                 networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null, volume, snapshot);
 
         return vmEntity;

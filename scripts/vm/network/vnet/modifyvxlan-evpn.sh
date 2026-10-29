@@ -20,11 +20,12 @@
 # Use BGP+EVPN for VXLAN with CloudStack instead of Multicast
 #
 # The default 'modifyvxlan.sh' script from CloudStack uses Multicast instead of EVPN for VXLAN
-# In order to use this script and thus utilize BGP+EVPN, symlink this file:
+# In order to use this script and thus utilize BGP+EVPN, set in agent.properties:
 #
-# cd /usr/share
-# ln -s cloudstack-common/scripts/vm/network/vnet/modifyvxlan-evpn.sh modifyvxlan.sh
+# network.vxlan.mode=evpn
 #
+# This will result in the Agent executing 'modifyvxlan-evpn.sh', which is suited for EVPN configured VXLAN
+# environments.
 #
 # CloudStack will not handle the BGP configuration nor communication, the operator of the hypervisor will
 # need to configure the properly.
@@ -81,6 +82,8 @@ addVxlan() {
     bridge link show|grep ${VXLAN_BR}|awk '{print $2}'|grep "^${VXLAN_DEV}\$" > /dev/null
     if [[ $? -gt 0 ]]; then
         ip link set ${VXLAN_DEV} master ${VXLAN_BR}
+        bridge link set dev ${VXLAN_DEV} neigh_suppress on
+        bridge link set dev ${VXLAN_DEV} learning off
     fi
 }
 
