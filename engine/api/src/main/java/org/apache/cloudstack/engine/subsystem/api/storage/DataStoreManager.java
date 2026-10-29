@@ -60,4 +60,6 @@ public interface DataStoreManager {
     DataStore getImageStoreByUuid(String uuid);
 
     Long getStoreZoneId(long storeId, DataStoreRole role);
+
+    boolean isRemovedOrReadonly(DataStore store);
 }
