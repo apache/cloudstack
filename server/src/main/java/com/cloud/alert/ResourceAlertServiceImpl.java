@@ -161,9 +161,16 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ListResponse<ResourceAlertRuleResponse> listResourceAlertRules(ListResourceAlertRulesCmd cmd) {
-        Long resourceId = resolveResourceIdFilter(cmd.getResourceType(), cmd.getResourceId());
         ResourceAlertRule.ResourceType resourceType = StringUtils.isNotBlank(cmd.getResourceType()) ?
                 parseResourceType(cmd.getResourceType()) : null;
+        Long resourceId = null;
+        if (StringUtils.isNotBlank(cmd.getResourceId())) {
+            Pair<ResourceAlertRule.ResourceType, Long> resource = findRuleResourceOrFail(resourceType, cmd.getResourceId());
+            resourceType = resource.first();
+            resourceId = resource.second();
+        }
+        String metric = StringUtils.isNotBlank(cmd.getMetric()) ? parseMetricName(cmd.getMetric()) : null;
+        AlertSeverity severity = StringUtils.isNotBlank(cmd.getSeverity()) ? parseSeverity(cmd.getSeverity()) : null;
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<>();
@@ -177,12 +184,16 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
         sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("metric", sb.entity().getMetric(), SearchCriteria.Op.EQ);
+        sb.and("severity", sb.entity().getSeverity(), SearchCriteria.Op.EQ);
         SearchCriteria<ResourceAlertRuleJoinVO> sc = createAclSearchCriteria(sb, domainIdRecursiveListProject, permittedAccounts);
         if (cmd.getId() != null) sc.setParameters("id", cmd.getId());
         if (StringUtils.isNotBlank(cmd.getRuleName())) sc.setParameters("name", cmd.getRuleName());
         if (StringUtils.isNotBlank(cmd.getKeyword())) sc.setParameters("keyword", "%" + cmd.getKeyword() + "%");
         if (resourceType != null) sc.setParameters("resourceType", resourceType);
         if (resourceId != null) sc.setParameters("resourceId", resourceId);
+        if (metric != null) sc.setParameters("metric", metric);
+        if (severity != null) sc.setParameters("severity", severity);
 
         Filter filter = new Filter(ResourceAlertRuleJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Pair<List<ResourceAlertRuleJoinVO>, Integer> rules = ruleJoinDao.searchAndCount(sc, filter);
@@ -402,6 +413,20 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         return findResourceOrFail(parseResourceType(resourceType), uuid).getId();
     }
 
+    // The type is optional here, so the list can be filtered by a resource picked from any type.
+    private Pair<ResourceAlertRule.ResourceType, Long> findRuleResourceOrFail(ResourceAlertRule.ResourceType type, String uuid) {
+        if (type != null) {
+            return new Pair<>(type, findResourceOrFail(type, uuid).getId());
+        }
+        for (ResourceAlertRule.ResourceType candidate : ResourceAlertRule.ResourceType.values()) {
+            InternalIdentity resource = findResource(candidate, uuid);
+            if (resource != null) {
+                return new Pair<>(candidate, resource.getId());
+            }
+        }
+        throw new InvalidParameterValueException("Unable to find a resource with ID " + uuid);
+    }
+
     // Returns the resource's uuid and display name, or null when the type or id is not set.
     private Pair<String, String> describeResource(ResourceAlertRule.ResourceType type, Long id) {
         if (type == null || id == null) {
@@ -592,6 +617,14 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             throw new InvalidParameterValueException("Invalid severity: " + value + ". Valid values: CRITICAL, HIGH, MEDIUM, LOW");
         }
         return sev;
+    }
+
+    private String parseMetricName(String value) {
+        ResourceAlertMetric metric = EnumUtils.getEnum(ResourceAlertMetric.class, value.toUpperCase());
+        if (metric == null) {
+            throw new InvalidParameterValueException("Invalid metric: " + value);
+        }
+        return metric.name();
     }
 
     private ResourceAlertMetric parseMetric(String value, ResourceAlertRule.ResourceType resourceType) {

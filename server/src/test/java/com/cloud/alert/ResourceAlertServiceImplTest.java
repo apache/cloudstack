@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.api.command.user.resourcealert.CreateResourceAlertRuleCmd;
 import org.apache.cloudstack.api.command.user.resourcealert.DeleteResourceAlertRuleCmd;
+import org.apache.cloudstack.api.command.user.resourcealert.ListResourceAlertRulesCmd;
 import org.apache.cloudstack.api.command.user.resourcealert.ListResourceAlertsCmd;
 import org.apache.cloudstack.api.command.user.resourcealert.UpdateResourceAlertRuleCmd;
 import com.cloud.alert.dao.ResourceAlertDao;
@@ -371,6 +372,30 @@ public class ResourceAlertServiceImplTest {
 
         verify(alertDao).removeByAlertRuleId(1L);
         verify(ruleDao).remove(1L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListRulesFailsWithInvalidMetric() {
+        ListResourceAlertRulesCmd cmd = mock(ListResourceAlertRulesCmd.class);
+        when(cmd.getMetric()).thenReturn("NOT_A_METRIC");
+
+        service.listResourceAlertRules(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListRulesFailsWithInvalidSeverity() {
+        ListResourceAlertRulesCmd cmd = mock(ListResourceAlertRulesCmd.class);
+        when(cmd.getSeverity()).thenReturn("URGENT");
+
+        service.listResourceAlertRules(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListRulesFailsWithUnknownResourceWithoutType() {
+        ListResourceAlertRulesCmd cmd = mock(ListResourceAlertRulesCmd.class);
+        when(cmd.getResourceId()).thenReturn("no-such-uuid");
+
+        service.listResourceAlertRules(cmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)

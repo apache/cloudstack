@@ -35,7 +35,7 @@ export default {
     return cols
   },
   details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'state', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'project', 'domain', 'created'],
-  searchFilters: ['name', 'resourcetype'],
+  searchFilters: ['name', 'resourcetype', 'resourceid', 'metric', 'severity', 'domainid', 'account'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))

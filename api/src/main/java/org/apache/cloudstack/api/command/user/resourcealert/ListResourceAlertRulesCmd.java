@@ -51,17 +51,27 @@ public class ListResourceAlertRulesCmd extends BaseListProjectAndAccountResource
     private String resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,
-            description = "filter by UUID of a specific resource; requires resourcetype")
+            description = "filter by UUID of a specific resource")
     private String resourceId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
             description = "filter by rule name")
     private String name;
 
+    @Parameter(name = ApiConstants.METRIC, type = CommandType.STRING,
+            description = "filter by metric, for example CpuUtilization")
+    private String metric;
+
+    @Parameter(name = ApiConstants.SEVERITY, type = CommandType.STRING,
+            description = "filter by severity: Low, Medium, High, Critical")
+    private String severity;
+
     public Long getId() { return id; }
     public String getResourceType() { return resourceType; }
     public String getResourceId() { return resourceId; }
     public String getRuleName() { return name; }
+    public String getMetric() { return metric; }
+    public String getSeverity() { return severity; }
 
     @Override
     public void execute() throws ServerApiException {

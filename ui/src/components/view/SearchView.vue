@@ -172,7 +172,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import Status from '@/components/widgets/Status'
 import { i18n } from '@/locales'
-import { RESOURCE_TYPE_LABELS } from '@/views/resourcealert/resourceAlertOptions'
+import { RESOURCE_TYPE_LABELS, METRIC_LABELS, SEVERITY_LABELS } from '@/views/resourcealert/resourceAlertOptions'
 
 export default {
   name: 'SearchView',
@@ -273,6 +273,9 @@ export default {
       this.initFormFieldData()
     },
     retrieveFieldLabel (fieldName) {
+      if (fieldName === 'resourceid' && this.isResourceAlertsView()) {
+        fieldName = 'resource'
+      }
       if (fieldName === 'groupid') {
         fieldName = 'group'
       }
@@ -343,7 +346,7 @@ export default {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
-        } else if (item === 'resourcetype' && this.isResourceAlertsView()) {
+        } else if (['resourcetype', 'resourceid', 'metric', 'severity'].includes(item) && this.isResourceAlertsView()) {
           type = 'list'
         } else if (['resourcetype', 'apikeyaccess'].includes(item)) {
           type = 'autocomplete'
@@ -476,6 +479,10 @@ export default {
           this.fields[resourceTypeIndex].opts = Object.entries(RESOURCE_TYPE_LABELS).map(([id, name]) => ({ id, name }))
         }
         this.fields[resourceTypeIndex].loading = false
+      }
+
+      if (this.isResourceAlertsView()) {
+        this.fetchResourceAlertFieldData(arrayField)
       }
 
       if (arrayField.includes('apikeyaccess')) {
@@ -933,6 +940,37 @@ export default {
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
         }
+      })
+    },
+    fetchResourceAlertFieldData (arrayField) {
+      const setOpts = (name, opts) => {
+        const index = this.fields.findIndex(item => item.name === name)
+        if (index > -1) {
+          this.fields[index].opts = opts
+          this.fields[index].loading = false
+        }
+      }
+      const toOpts = (labels) => Object.entries(labels).map(([id, name]) => ({ id, name }))
+      if (arrayField.includes('metric')) setOpts('metric', toOpts(METRIC_LABELS))
+      if (arrayField.includes('severity')) setOpts('severity', toOpts(SEVERITY_LABELS))
+      if (!arrayField.includes('resourceid')) return
+      const resourceIndex = this.fields.findIndex(item => item.name === 'resourceid')
+      this.fields[resourceIndex].loading = true
+      const sources = [
+        ['VirtualMachine', 'listVirtualMachines', 'listvirtualmachinesresponse', 'virtualmachine', { listall: true, details: 'min' }],
+        ['Volume', 'listVolumes', 'listvolumesresponse', 'volume', { listall: true }]
+      ]
+      if (this.$store.getters.userInfo.roletype === 'Admin') {
+        sources.push(['Host', 'listHosts', 'listhostsresponse', 'host', { type: 'Routing' }])
+        sources.push(['StoragePool', 'listStoragePools', 'liststoragepoolsresponse', 'storagepool', {}])
+      }
+      Promise.all(sources.filter(([, api]) => api in this.$store.getters.apis).map(([type, api, responseKey, itemKey, params]) =>
+        getAPI(api, params).then(json => (json?.[responseKey]?.[itemKey] || []).map(r => ({
+          id: r.id,
+          name: `${r.displayname || r.name} (${RESOURCE_TYPE_LABELS[type]})`
+        }))).catch(() => [])
+      )).then(lists => {
+        setOpts('resourceid', this.sortArray(lists.flat()))
       })
     },
     isResourceAlertsView () {
