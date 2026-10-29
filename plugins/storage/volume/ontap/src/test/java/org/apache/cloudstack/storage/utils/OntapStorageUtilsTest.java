@@ -18,9 +18,11 @@
  */
 package org.apache.cloudstack.storage.utils;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OntapStorageUtilsTest {
@@ -102,5 +104,16 @@ public class OntapStorageUtilsTest {
                 () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("/vol/vol1/lun", "", "snap"));
         org.junit.jupiter.api.Assertions.assertThrows(com.cloud.exception.InvalidParameterValueException.class,
                 () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("", "vol1", "snap"));
+
+    @Test
+    public void isOntapSnapshotNotFoundError_matchesEntryDoesNotExist() {
+        CloudRuntimeException ex = new CloudRuntimeException("Job failed with error: entry doesn't exist");
+        assertTrue(OntapStorageUtils.isOntapObjectNotFoundError(ex));
+    }
+
+    @Test
+    public void isOntapSnapshotNotFoundError_rejectsUnrelatedErrors() {
+        assertFalse(OntapStorageUtils.isOntapObjectNotFoundError(
+                new CloudRuntimeException("Job failed with error: permission denied")));
     }
 }

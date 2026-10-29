@@ -520,6 +520,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         return tempZonePair;
     }
 
+    public void setTempZonePair(String tempZonePair) {
+        this.tempZonePair = tempZonePair;
+    }
+
     public State getTemplateState() {
         return templateState;
     }

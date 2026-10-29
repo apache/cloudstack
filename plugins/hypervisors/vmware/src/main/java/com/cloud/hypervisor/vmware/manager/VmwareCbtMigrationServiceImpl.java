@@ -188,8 +188,12 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
             if (CollectionUtils.isEmpty(disks)) {
                 return changedDisks;
             }
+            List<VirtualDevice> snapshotDevices = context.getVimClient().getDynamicProperty(snapshot,
+                    "config.hardware.device");
             for (VmwareCbtDiskInfo disk : disks) {
-                changedDisks.add(queryChangedDiskAreas(context, lookup.vmMO, snapshot, disk));
+                // DiskChangeInfo has no change ID; the next checkpoint is on this snapshot's disk backing.
+                String nextChangeId = getSnapshotDiskChangeId(snapshotDevices, disk);
+                changedDisks.add(queryChangedDiskAreas(context, lookup.vmMO, snapshot, disk, nextChangeId));
             }
             return changedDisks;
         } catch (Exception e) {
@@ -410,7 +414,8 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
     }
 
     private VmwareCbtChangedDiskInfo queryChangedDiskAreas(VmwareContext context, VirtualMachineMO vmMO,
-                                                           ManagedObjectReference snapshot, VmwareCbtDiskInfo disk)
+                                                           ManagedObjectReference snapshot, VmwareCbtDiskInfo disk,
+                                                           String nextChangeId)
             throws ReflectiveOperationException {
         if (disk.getSourceDiskDeviceKey() == null) {
             throw new CloudRuntimeException(String.format("VMware disk device key is missing for source disk %s",
@@ -424,12 +429,8 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
         List<VmwareCbtChangedBlockInfo> changedBlocks = new ArrayList<>();
         long startOffset = 0L;
         long capacityBytes = disk.getCapacityBytes() == null ? 0L : disk.getCapacityBytes();
-        String nextChangeId = null;
-
         do {
             Object diskChangeInfo = invokeQueryChangedDiskAreas(context, vmMO, snapshot, disk, startOffset);
-            nextChangeId = StringUtils.defaultIfBlank(getObjectStringValue(diskChangeInfo, "getChangeId"),
-                    nextChangeId);
             for (Object changedArea : getObjectListValue(diskChangeInfo, "getChangedArea")) {
                 Long areaStart = getObjectLongValue(changedArea, "getStart");
                 Long areaLength = getObjectLongValue(changedArea, "getLength");
@@ -447,6 +448,25 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
         } while (capacityBytes > 0L && startOffset < capacityBytes);
 
         return new VmwareCbtChangedDiskInfo(disk.getSourceDiskId(), nextChangeId, changedBlocks);
+    }
+
+    String getSnapshotDiskChangeId(List<? extends VirtualDevice> snapshotDevices, VmwareCbtDiskInfo disk) {
+        if (disk.getSourceDiskDeviceKey() == null || snapshotDevices == null) {
+            throw new CloudRuntimeException(String.format("Unable to find VMware CBT snapshot disk %s",
+                    disk.getSourceDiskId()));
+        }
+        for (VirtualDevice device : snapshotDevices) {
+            if (device instanceof VirtualDisk && disk.getSourceDiskDeviceKey().equals(device.getKey())) {
+                String changeId = getBackingStringValue(((VirtualDisk) device).getBacking(), "getChangeId");
+                if (StringUtils.isBlank(changeId)) {
+                    throw new CloudRuntimeException(String.format("VMware CBT snapshot change ID is missing for source disk %s",
+                            disk.getSourceDiskId()));
+                }
+                return changeId;
+            }
+        }
+        throw new CloudRuntimeException(String.format("Unable to find VMware CBT snapshot disk %s",
+                disk.getSourceDiskId()));
     }
 
     private Object invokeQueryChangedDiskAreas(VmwareContext context, VirtualMachineMO vmMO,
@@ -518,11 +538,6 @@ public class VmwareCbtMigrationServiceImpl implements VmwareCbtMigrationService 
         } catch (ReflectiveOperationException e) {
             return null;
         }
-    }
-
-    private String getObjectStringValue(Object object, String methodName) {
-        Object value = invokeGetter(object, methodName);
-        return value != null ? value.toString() : null;
     }
 
     private Long getObjectLongValue(Object object, String methodName) {

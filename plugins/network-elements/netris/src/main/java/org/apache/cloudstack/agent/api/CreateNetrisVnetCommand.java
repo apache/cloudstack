@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.net.NetUtils;
+
 public class CreateNetrisVnetCommand extends NetrisCommand {
     private String vpcName;
     private Long vpcId;
@@ -24,7 +27,8 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
     private String gateway;
     private String netrisTag;
     private String ipv6Cidr;
-    private Boolean globalRouting;
+    private NetworkOffering.NetworkMode networkMode;
+    private NetUtils.InternetProtocol internetProtocol;
 
     public CreateNetrisVnetCommand(Long zoneId, Long accountId, Long domainId, String vpcName, Long vpcId, String vNetName, Long networkId, String cidr, String gateway, boolean isVpc) {
         super(zoneId, accountId, domainId, vNetName, networkId, isVpc);
@@ -74,11 +78,19 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
         this.ipv6Cidr = ipv6Cidr;
     }
 
-    public Boolean isGlobalRouting() {
-        return globalRouting;
+    public NetworkOffering.NetworkMode getNetworkMode() {
+        return networkMode;
     }
 
-    public void setGlobalRouting(Boolean globalRouting) {
-        this.globalRouting = globalRouting;
+    public void setNetworkMode(NetworkOffering.NetworkMode networkMode) {
+        this.networkMode = networkMode;
+    }
+
+    public NetUtils.InternetProtocol getInternetProtocol() {
+        return internetProtocol;
+    }
+
+    public void setInternetProtocol(NetUtils.InternetProtocol internetProtocol) {
+        this.internetProtocol = internetProtocol;
     }
 }
