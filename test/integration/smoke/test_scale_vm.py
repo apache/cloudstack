@@ -102,15 +102,20 @@ class TestScaleVm(cloudstackTestCase):
         )
         cls._cleanup.append(cls.account)
 
+        # the Debian 13 built-in template needs more memory than the 256 MiB of the default small offering
+        # (with dynamic scaling, the memory hot-add leaves too little for the guest)
+        small_offering_data = dict(cls.services["service_offerings"]["small"], memory=512)
+        big_offering_data = dict(cls.services["service_offerings"]["big"], memory=1024)
+
         cls.small_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"]
+            small_offering_data
         )
         cls._cleanup.append(cls.small_offering)
 
         cls.big_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["big"]
+            big_offering_data
         )
         cls._cleanup.append(cls.big_offering)
 
@@ -122,13 +127,13 @@ class TestScaleVm(cloudstackTestCase):
 
         cls.small_offering_dynamic_scaling_disabled = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"],
+            small_offering_data,
             dynamicscalingenabled=False
         )
 
         cls.big_offering_dynamic_scaling_disabled = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"],
+            small_offering_data,
             dynamicscalingenabled=False
         )
 
@@ -219,7 +224,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -353,7 +358,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_with_service_offering_dynamic_scaling_disabled.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -462,7 +467,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_not_dynamically_scalable.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -553,7 +558,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_in_user_account.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -737,7 +742,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_test.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
