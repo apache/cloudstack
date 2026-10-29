@@ -104,11 +104,7 @@ public class LibvirtCheckVolumeCommandWrapperTest {
         Mockito.when(storageFilerTO.getType()).thenReturn(Storage.StoragePoolType.Linstor);
         Mockito.when(storageFilerTO.getUuid()).thenReturn(poolUuid);
         Mockito.when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, poolUuid)).thenReturn(storagePool);
-        Mockito.when(storagePool.getType()).thenReturn(Storage.StoragePoolType.Linstor);
-        Mockito.when(storagePool.getPhysicalDisk(srcFile)).thenReturn(disk);
-        // Linstor resolves the resource to a local /dev/drbd block device path.
-        Mockito.when(disk.getPath()).thenReturn("/dev/drbd/by-res/" + srcFile + "/0");
-        Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.RAW);
+
     }
 
     private CheckVolumeCommand buildCommand() {
@@ -154,45 +150,45 @@ public class LibvirtCheckVolumeCommandWrapperTest {
     }
 
     @Test
-    public void testLinstorVolumeReturnsSuccessInspectedViaDevicePath() throws Exception {
+    public void testLinstorVolumeUsesControllerMetadataWithoutConnecting() throws Exception {
         mockLinstorPool();
-        Mockito.when(disk.getVirtualSize()).thenReturn(virtualSize);
-        qemuImg = Mockito.mockConstruction(QemuImg.class, (mock, context) ->
-                Mockito.when(mock.info(Mockito.any(QemuImgFile.class), Mockito.anyBoolean())).thenReturn(qemuInfo));
+        VolumeOnStorageTO volume = new VolumeOnStorageTO(null, srcFile, srcFile, "/dev/drbd/by-res/cs-x/0", "RAW", virtualSize, virtualSize);
+        volume.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "false");
+        Mockito.when(storagePool.getVolumesForImport(srcFile)).thenReturn(java.util.Collections.singletonList(volume));
+        qemuImg = Mockito.mockConstruction(QemuImg.class);
 
         Answer answer = wrapper.execute(buildCommand(), libvirtComputingResource);
 
-        Assert.assertTrue(answer instanceof CheckVolumeAnswer);
-        Assert.assertTrue("Linstor raw volume should validate (not rejected as non-qcow2)", answer.getResult());
+        Assert.assertTrue(answer.getResult());
         Assert.assertEquals(virtualSize, ((CheckVolumeAnswer) answer).getSize());
-        // A Linstor volume is a local block device: qemu-img must inspect the
-        // /dev/drbd device path directly, never build an rbd: URI.
-        ArgumentCaptor<QemuImgFile> fileCaptor = ArgumentCaptor.forClass(QemuImgFile.class);
-        Mockito.verify(qemuImg.constructed().get(0), Mockito.atLeastOnce())
-                .info(fileCaptor.capture(), Mockito.anyBoolean());
-        String fileName = fileCaptor.getValue().getFileName();
-        Assert.assertTrue("qemu-img should point at the /dev/drbd device path, got " + fileName,
-                fileName.startsWith("/dev/drbd/"));
-        Assert.assertFalse("Linstor must not build an rbd: URI", fileName.startsWith("rbd:"));
+        Assert.assertTrue(qemuImg.constructed().isEmpty());
+        Mockito.verify(storagePoolMgr, Mockito.never()).connectPhysicalDisk(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(storagePoolMgr, Mockito.never()).disconnectPhysicalDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(storagePool, Mockito.never()).getPhysicalDisk(Mockito.any());
     }
 
     @Test
-    public void testLinstorVolumeInUseOnAnotherNodeIsReportedLocked() throws Exception {
+    public void testLinstorVolumeInUseOnAnotherNodeIsReportedLocked() {
         mockLinstorPool();
-        Mockito.when(disk.getVirtualSize()).thenReturn(virtualSize);
-        Mockito.when(disk.getName()).thenReturn(srcFile);
-        // qemu-img info succeeds, so the host-local file lock is clear ...
-        qemuImg = Mockito.mockConstruction(QemuImg.class, (mock, context) ->
-                Mockito.when(mock.info(Mockito.any(QemuImgFile.class), Mockito.anyBoolean())).thenReturn(qemuInfo));
-        // ... but Linstor reports the DRBD resource in use on another node.
-        Mockito.when(storagePool.getVolumeInUseNode(srcFile)).thenReturn("node-2");
+        VolumeOnStorageTO volume = new VolumeOnStorageTO(null, srcFile, srcFile, "", "RAW", virtualSize, virtualSize);
+        volume.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "true");
+        Mockito.when(storagePool.getVolumesForImport(srcFile)).thenReturn(java.util.Collections.singletonList(volume));
 
+        CheckVolumeAnswer answer = (CheckVolumeAnswer) wrapper.execute(buildCommand(), libvirtComputingResource);
+
+        Assert.assertEquals("true", answer.getVolumeDetails().get(VolumeOnStorageTO.Detail.IS_LOCKED));
+        Mockito.verify(storagePoolMgr, Mockito.never()).disconnectPhysicalDisk(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testLinstorInvalidGroupReturnsActionableFailure() {
+        mockLinstorPool();
+        Mockito.when(storagePool.getVolumesForImport(srcFile)).thenThrow(
+                new com.cloud.utils.exception.CloudRuntimeException("Resource group mismatch: rg-ssd vs rg-hdd"));
         Answer answer = wrapper.execute(buildCommand(), libvirtComputingResource);
-
-        Assert.assertTrue(answer instanceof CheckVolumeAnswer);
-        Map<VolumeOnStorageTO.Detail, String> details = ((CheckVolumeAnswer) answer).getVolumeDetails();
-        Assert.assertEquals("cluster-wide in-use must mark the volume locked so adoption refuses it",
-                "true", details.get(VolumeOnStorageTO.Detail.IS_LOCKED));
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("rg-ssd"));
+        Mockito.verify(storagePoolMgr, Mockito.never()).connectPhysicalDisk(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test

@@ -64,25 +64,22 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true, true);
 
-        if (StringUtils.isNotBlank(volumePath)) {
-            // A Linstor volume is a DRBD device that only appears on this host once its resource
-            // is made available here (a diskless assignment); connect it before qemu-img inspects
-            // the device and release the diskless assignment afterwards (the replicated data on
-            // the storage nodes is untouched). RBD needs no such step.
-            boolean linstorConnected = false;
-            if (StoragePoolType.Linstor.equals(pool.getType())) {
-                linstorConnected = storagePoolMgr.connectPhysicalDisk(pool.getType(), pool.getUuid(), volumePath, null);
-            }
+        if (StoragePoolType.Linstor.equals(pool.getType())) {
             try {
-                return addVolumeByVolumePath(command, storagePool, volumePath);
-            } finally {
-                if (linstorConnected) {
-                    storagePoolMgr.disconnectPhysicalDisk(pool.getType(), pool.getUuid(), volumePath);
+                List<VolumeOnStorageTO> volumes = storagePool.getVolumesForImport(
+                        StringUtils.isBlank(volumePath) ? null : volumePath);
+                if (StringUtils.isNotBlank(keyword)) {
+                    volumes = volumes.stream().filter(volume -> volume.getName().contains(keyword)).collect(Collectors.toList());
                 }
+                return new GetVolumesOnStorageAnswer(command, volumes);
+            } catch (RuntimeException e) {
+                return new GetVolumesOnStorageAnswer(command, false, e.getMessage());
             }
-        } else {
-            return addAllVolumes(command, storagePool, keyword);
         }
+        if (StringUtils.isNotBlank(volumePath)) {
+            return addVolumeByVolumePath(command, storagePool, volumePath);
+        }
+        return addAllVolumes(command, storagePool, keyword);
     }
 
     private GetVolumesOnStorageAnswer addVolumeByVolumePath(final GetVolumesOnStorageCommand command, final KVMStoragePool storagePool, String volumePath) {

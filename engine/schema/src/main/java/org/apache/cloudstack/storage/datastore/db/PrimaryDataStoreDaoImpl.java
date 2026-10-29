@@ -54,6 +54,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.ArrayUtils;
 
 @DB()
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long> implements PrimaryDataStoreDao {
@@ -85,6 +86,37 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final String ZoneWideStorageAccessGroupsForHostConnectionSqlSuffix = ") GROUP BY storage_pool_and_access_group_map.pool_id";
     private final String ZoneWideStorageAccessGroupsWithHypervisorTypeSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_and_access_group_map ON storage_pool.id = storage_pool_and_access_group_map.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.hypervisor = ? and storage_pool.data_center_id = ? and storage_pool.scope = ? and (";
     private final String ZoneWideStorageAccessGroupsWithHypervisorTypeSqlSuffix = ") GROUP BY storage_pool_and_access_group_map.pool_id";
+
+    /**
+     * SQL query prefix to find zone-wide disabled storage pools that are associated with specific storage access groups.
+     */
+    private final String ZoneWideDisabledStorageAccessGroupsSqlPrefix =
+            "SELECT storage_pool.* FROM storage_pool " +
+                    "LEFT JOIN storage_pool_and_access_group_map ON storage_pool.id = storage_pool_and_access_group_map.pool_id " +
+                    "WHERE storage_pool.removed IS NULL " +
+                    "  AND storage_pool.status = 'Disabled' " +
+                    "  AND storage_pool.data_center_id = ? " +
+                    "  AND storage_pool.scope = ? " +
+                    "  AND (";
+
+    /**
+     * SQL query prefix to find disabled storage pools with specific storage access groups. The query is used at the HOST scope.
+     */
+    private final String DisabledStorageAccessGroupsForHostConnectionSqlPrefix =
+            "SELECT storage_pool.* FROM storage_pool " +
+                    "LEFT JOIN storage_pool_and_access_group_map ON storage_pool.id = storage_pool_and_access_group_map.pool_id " +
+                    "WHERE storage_pool.removed IS NULL " +
+                    "  AND storage_pool.status = 'Disabled' " +
+                    "  AND storage_pool.data_center_id = ? " +
+                    "  AND (storage_pool.pod_id = ? OR storage_pool.pod_id IS NULL) " +
+                    "  AND storage_pool.scope = ? " +
+                    "  AND (";
+
+    /**
+     * SQL query suffix for disabled storage access groups queries. This suffix completes the query by grouping
+     * results by pool_id.
+     */
+    private final String DisabledStorageAccessGroupsSqlSuffix = ") GROUP BY storage_pool_and_access_group_map.pool_id";
 
     // Storage tags are now separate from storage_pool_details, leaving only details on that table
     protected final String TagsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_tags ON storage_pool.id = storage_pool_tags.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' AND storage_pool_tags.is_tag_a_rule = 0 and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
@@ -569,6 +601,26 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
+    public List<StoragePoolVO> findDisabledPoolsByScopeAndAccessGroups(long dcId, Long podId, Long clusterId, ScopeType scope, String[] storageAccessGroups) {
+        if (ArrayUtils.isEmpty(storageAccessGroups)) {
+            return List.of();
+        }
+
+        List<StoragePoolVO> storagePools = null;
+        String sqlValues = getSqlValuesFromStorageAccessGroups(storageAccessGroups);
+
+        if (scope == ScopeType.ZONE) {
+            String sql = getSqlPreparedStatement(ZoneWideDisabledStorageAccessGroupsSqlPrefix, DisabledStorageAccessGroupsSqlSuffix, sqlValues, null);
+            storagePools = searchStoragePoolsPreparedStatement(sql, dcId, null, null, scope, null);
+        } else if ((scope == ScopeType.CLUSTER || scope == ScopeType.HOST) && podId != null && clusterId != null) {
+            String sql = getSqlPreparedStatement(DisabledStorageAccessGroupsForHostConnectionSqlPrefix, DisabledStorageAccessGroupsSqlSuffix, sqlValues, clusterId);
+            storagePools = searchStoragePoolsPreparedStatement(sql, dcId, podId, clusterId, scope, null);
+        }
+
+        return storagePools;
+    }
+
+    @Override
     public List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule) {
         return findLocalStoragePoolsByTags(dcId, podId, clusterId, tags, validateTagRule, null);
     }
@@ -691,7 +743,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> findStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId, ScopeType scope, HypervisorType hypervisorType) {
+    public List<StoragePoolVO> findStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId, ScopeType scope, HypervisorType hypervisorType, StoragePoolStatus status) {
         SearchBuilder<StoragePoolVO> poolSearch = createSearchBuilder();
         SearchBuilder<StoragePoolAndAccessGroupMapVO> storageAccessGroupsPoolSearch = _storagePoolAccessGroupMapDao.createSearchBuilder();
         // Set criteria for pools
@@ -709,7 +761,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
         SearchCriteria<StoragePoolVO> sc = poolSearch.create();
         sc.setParameters("scope", scope.toString());
-        sc.setParameters("status", Status.Up.toString());
 
         if (dcId != null) {
             sc.setParameters("datacenterid", dcId);
@@ -725,6 +776,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
         if (hypervisorType != null) {
             sc.setParameters("hypervisortype", hypervisorType);
+        }
+
+        if (status != null) {
+            sc.setParameters("status", status.toString());
         }
 
         return listBy(sc);
