@@ -2871,7 +2871,7 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
-        when(libvirtComputingResourceMock.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName())).thenReturn(true);
+        when(libvirtComputingResourceMock.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName(), true)).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2885,7 +2885,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
-        verify(libvirtComputingResourceMock, times(1)).configureDefaultNetworkRulesForSystemVm(conn, command.getVmName());
+        verify(libvirtComputingResourceMock, times(1)).configureDefaultNetworkRulesForSystemVm(conn, command.getVmName(), true);
     }
 
     @SuppressWarnings("unchecked")
