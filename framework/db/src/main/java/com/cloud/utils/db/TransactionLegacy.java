@@ -898,31 +898,27 @@ public class TransactionLegacy implements Closeable {
 
     public Savepoint setSavepoint() throws SQLException {
         _txn = true;
-        StackElement st = new StackElement(START_TXN, null);
-        _stack.push(st);
         final Connection conn = getConnection();
         final Savepoint sp = conn.setSavepoint();
-        st.ref = sp;
+        _stack.push(new StackElement(START_TXN, sp));
 
         return sp;
     }
 
     public Savepoint setSavepoint(final String name) throws SQLException {
         _txn = true;
-        StackElement st = new StackElement(START_TXN, null);
-        _stack.push(st);
         final Connection conn = getConnection();
         final Savepoint sp = conn.setSavepoint(name);
-        st.ref = sp;
+        _stack.push(new StackElement(START_TXN, sp));
 
         return sp;
     }
 
     public void releaseSavepoint(final Savepoint sp) throws SQLException {
-        removeTxn(sp);
         if (_conn != null) {
             _conn.releaseSavepoint(sp);
         }
+        removeTxn(sp);
 
         if (!hasTxnInStack()) {
             _txn = false;
