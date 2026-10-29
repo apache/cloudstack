@@ -21,7 +21,8 @@
 # Usage: build-acs-image.sh [-a ACTIONS] [-f FORMATS] [-o OUTDIR] [-g GUESTOS] [-u] [-z]
 #                           [-d debian|rhel|suse] [-p ROOT_PASSWORD] <image.qcow2>
 #   -a  actions, a list separated by commas or spaces, done in this order (default: all)
-#         patch    install the guest tools, set the root password, cloud-init and sshd config
+#         patch    install the guest tools (including xe-guest-utilities for XenServer on Debian/Ubuntu
+#                  and EL), set the root password, cloud-init and sshd config
 #                  (OS detected from the image: Debian/Ubuntu, EL, SUSE and variants)
 #         shrink   virt-sparsify and qemu-img convert -c
 #         convert  convert to the formats of -f
@@ -147,6 +148,7 @@ check_dependencies() {
     for cmd in virt-customize virt-cat virt-ls virt-inspector; do
       command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd not found ($(pkg_hint libguestfs))")
     done
+    command -v curl >/dev/null 2>&1 || missing+=("curl not found, needed to download xe-guest-utilities ($(pkg_hint curl))")
   fi
   if [ -n "$DO_SHRINK" ]; then
     command -v virt-sparsify >/dev/null 2>&1 || missing+=("virt-sparsify not found ($(pkg_hint libguestfs))")
@@ -347,15 +349,25 @@ detect_os() {
   fi
   echo "Detected OS: ${OS_NAME:-$OS_ID} (family: $OS_FAMILY)"
 
+  XE_GUEST_UTILITIES_VERSION="10.0.0-1"   # xe-guest-utilities (the XenServer/XCP-ng guest agent)
+  XE_PACKAGES=() XE_INSTALL=""
+
   local base_cleanup='journalctl --vacuum-time=1s; rm -rf /var/log/*; rm -f /root/.bash_history'
   case "$OS_FAMILY" in
     debian)
-      # nfs-common is the NFS client, the cloud images do not have it and the tests mount NFS in the guest
-      PACKAGES="qemu-guest-agent,open-vm-tools,xenstore-utils,libxenstore4,nfs-common"
+      # nfs-common is the NFS client, the cloud images do not have it and the tests mount NFS in the guest;
+      # the xenstore tools come with xe-guest-utilities (xenstore-utils would conflict with its files)
+      PACKAGES="qemu-guest-agent,open-vm-tools,nfs-common"
+      XE_PACKAGES=("xe-guest-utilities_${XE_GUEST_UTILITIES_VERSION}_amd64.deb")
+      # no service is started in the image build, and the init script is enabled by the package
+      XE_INSTALL='printf "#!/bin/sh\nexit 101\n" > /usr/sbin/policy-rc.d; chmod +x /usr/sbin/policy-rc.d; dpkg -i /tmp/xe-pkgs/*.deb; rc=$?; rm -rf /usr/sbin/policy-rc.d /tmp/xe-pkgs; exit $rc'
       CLEANUP="apt clean; apt autoclean; apt autoremove --purge -y; $base_cleanup" ;;
     rhel)
-      # there is no xenstore package in the EL repositories
+      # there is no xenstore package in the EL repositories, xe-guest-utilities has the xenstore tools
       PACKAGES="qemu-guest-agent,open-vm-tools"
+      # the xenstore tools are a separate package here, as in the deb
+      XE_PACKAGES=("xe-guest-utilities-${XE_GUEST_UTILITIES_VERSION}.x86_64.rpm" "xe-guest-utilities-xenstore-${XE_GUEST_UTILITIES_VERSION}.x86_64.rpm")
+      XE_INSTALL='rpm -Uvh /tmp/xe-pkgs/*.rpm; rc=$?; rm -rf /tmp/xe-pkgs; exit $rc'
       CLEANUP="(dnf clean all || yum clean all); rm -rf /var/cache/dnf /var/cache/yum; $base_cleanup" ;;
     suse)
       PACKAGES="qemu-guest-agent,open-vm-tools,xen-tools-domU"
@@ -385,9 +397,29 @@ if [ -f "$f" ] && ! grep -qiE "^[[:space:]]*Include[[:space:]].*sshd_config\.d" 
   { cat "$d"; cat "$f"; } > "$f.new" && cat "$f.new" > "$f" && rm -f "$f.new"
 fi'
 
+  # xe-guest-utilities is for x86_64 guests only, it is downloaded here as the guest may have no network
+  local xe_args=()
+  if [ ${#XE_PACKAGES[@]} -gt 0 ]; then
+    local guest_arch
+    guest_arch=$(virt-inspector -a "$IMAGE" 2>/dev/null | sed -n 's#.*<arch>\(.*\)</arch>.*#\1#p' | head -1)
+    if [ "$guest_arch" = "x86_64" ]; then
+      xe_args=(--mkdir /tmp/xe-pkgs)
+      local pkg
+      for pkg in "${XE_PACKAGES[@]}"; do
+        echo "Downloading $pkg"
+        curl -fsSL -o "$tmp/$pkg" "https://github.com/xenserver/xe-guest-utilities/releases/download/v10.0.0/$pkg"
+        xe_args+=(--upload "$tmp/$pkg:/tmp/xe-pkgs/$pkg")
+      done
+      xe_args+=(--run-command "$XE_INSTALL")
+    else
+      echo "WARN: the image is '$guest_arch', xe-guest-utilities is not installed" >&2
+    fi
+  fi
+
   virt-customize -a "$WORK_IMAGE" \
     $UPDATE \
     --install "$PACKAGES" \
+    "${xe_args[@]}" \
     --root-password "password:$ROOT_PASSWORD" \
     --upload "$tmp/ds-identify.cfg:/etc/cloud/ds-identify.cfg" \
     --upload "$tmp/cloudstack.cfg:/etc/cloud/cloud.cfg.d/cloudstack.cfg" \
@@ -401,7 +433,7 @@ fi'
   virt-cat -a "$WORK_IMAGE" /etc/cloud/ds-identify.cfg /etc/cloud/cloud.cfg.d/cloudstack.cfg /etc/ssh/sshd_config.d/40-root-login.conf
   local d
   for d in /usr/sbin /usr/bin; do
-    virt-ls -a "$WORK_IMAGE" $d | grep -E '^(qemu-ga|vmtoolsd|xenstore)' | sed "s#^#$d/#" || true
+    virt-ls -a "$WORK_IMAGE" $d | grep -E '^(qemu-ga|vmtoolsd|xenstore|xe-daemon)' | sed "s#^#$d/#" || true
   done
 }
 
