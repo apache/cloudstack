@@ -19,11 +19,14 @@
 package com.cloud.template;
 
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
@@ -66,6 +69,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -176,6 +180,12 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     AccountManager _accountMgr;
+
+    @Mock
+    ProjectManager _projectMgr;
+
+    @Mock
+    DomainDao _domainDao;
 
     @Mock
     VnfTemplateManager vnfTemplateManager;
@@ -761,6 +771,40 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
+    }
+
+    @Test
+    public void testUpdateTemplatePermissionsAllowsProjectAdminToActAsOwner() {
+        UpdateTemplatePermissionsCmd cmd = mock(UpdateTemplatePermissionsCmd.class);
+        when(cmd.getId()).thenReturn(10L);
+        when(cmd.getAccountNames()).thenReturn(null);
+        when(cmd.getProjectIds()).thenReturn(null);
+        when(cmd.isFeatured()).thenReturn(null);
+        when(cmd.isPublic()).thenReturn(null);
+        when(cmd.isExtractable()).thenReturn(false);
+        when(cmd.getOperation()).thenReturn(null);
+
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getId()).thenReturn(10L);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(template.getRemoved()).thenReturn(null);
+        when(template.getAccountId()).thenReturn(5L);
+        when(vmTemplateDao.findById(10L)).thenReturn(template);
+        when(vmTemplateDao.createForUpdate()).thenReturn(mock(VMTemplateVO.class));
+
+        Account projectOwnerAccount = mock(Account.class);
+        when(projectOwnerAccount.getType()).thenReturn(Account.Type.PROJECT);
+        when(projectOwnerAccount.getDomainId()).thenReturn(1L);
+        when(_accountMgr.getAccount(5L)).thenReturn(projectOwnerAccount);
+        when(_domainDao.findById(1L)).thenReturn(mock(DomainVO.class));
+
+        // caller is a project member who is not the template's owner account (the project) and not a
+        // CloudStack admin, but is the Project Admin of the project that owns the template
+        when(_projectMgr.canModifyProjectAccount(any(Account.class), eq(5L))).thenReturn(true);
+
+        boolean result = templateManager.updateTemplateOrIsoPermissions(cmd);
+
+        Assert.assertTrue("Project admin should be allowed to update permissions on a project-owned template", result);
     }
 
     @Test
