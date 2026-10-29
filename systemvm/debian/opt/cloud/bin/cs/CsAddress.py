@@ -660,6 +660,12 @@ class CsIP:
                                      'rule': "iifname %s ct state related,established counter accept" % self.dev})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': "iifname %s udp dport 67 counter accept" % self.dev})
+            # VRRP (keepalived) and conntrackd sync between redundant routers; the iptables
+            # path allows these via "-A INPUT -d 224.0.0.18/32" and "-d 225.0.0.50/32".
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip daddr 224.0.0.18 counter accept" % self.dev})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip daddr 225.0.0.50 counter accept" % self.dev})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
@@ -687,6 +693,12 @@ class CsIP:
                                       'rule': "iifname %s ct state related,established counter accept" % self.dev})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
                                       'rule': "iifname %s udp dport 67 counter accept" % self.dev})
+            # VRRP (keepalived) and conntrackd sync between redundant routers; the iptables
+            # path allows these via "-A INPUT -d 224.0.0.18/32" and "-d 225.0.0.50/32".
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip daddr 224.0.0.18 counter accept" % self.dev})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip daddr 225.0.0.50 counter accept" % self.dev})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
                                       'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
