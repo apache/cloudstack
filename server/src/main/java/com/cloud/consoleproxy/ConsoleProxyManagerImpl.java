@@ -1259,6 +1259,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
+        buf.append(" consoleproxy.session.timeout=").append(proxySessionTimeoutValue);
         if (disableRpFilter) {
             buf.append(" disable_rp_filter=true");
         }

@@ -203,6 +203,21 @@ export default class Websock {
         this.flush();
     }
 
+    sendActivity() {
+        if (this._websocket === null || this.readyState !== 'open') {
+            return;
+        }
+
+        const now = Date.now();
+        if (this._lastActivitySignal &&
+            now - this._lastActivitySignal < 500) {
+            return;
+        }
+
+        this._lastActivitySignal = now;
+        this._websocket.send("CLOUDSTACK_ACTIVITY");
+    }
+
     sendString(str) {
         this.send(str.split('').map(chr => chr.charCodeAt(0)));
     }
