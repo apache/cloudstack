@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
+import java.util.List;
+
 public class Template extends GenericHeuristicPresetVariable {
 
     private String hypervisorType;
@@ -23,6 +25,10 @@ public class Template extends GenericHeuristicPresetVariable {
     private String format;
 
     private String templateType;
+
+    private boolean isPublic;
+
+    private List<DownloadDetails> downloadDetails;
 
     public String getHypervisorType() {
         return hypervisorType;
@@ -47,4 +53,21 @@ public class Template extends GenericHeuristicPresetVariable {
     public void setTemplateType(String templateType) {
         this.templateType = templateType;
     }
+
+    public boolean isPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public List<DownloadDetails> getDownloadDetails() {
+        return downloadDetails;
+    }
+
+    public void setDownloadDetails(List<DownloadDetails> downloadDetails) {
+        this.downloadDetails = downloadDetails;
+    }
+
 }
