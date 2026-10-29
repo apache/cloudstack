@@ -111,12 +111,13 @@ export default {
             this.$emit('refresh-data')
           }
         }).catch(() => {
+          // Logout clears all notifications, so show the error once it is done
           this.$store.dispatch('Logout').then(() => {
-            this.$router.replace({ path: '/user/login' })
-          })
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.two.factor.authorization.failed')
+            this.$router.replace({ path: '/user/login' }).catch(() => {})
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.two.factor.authorization.failed')
+            })
           })
         })
       })

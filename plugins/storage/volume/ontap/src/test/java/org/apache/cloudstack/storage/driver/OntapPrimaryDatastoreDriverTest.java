@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Lun;
+import org.apache.cloudstack.storage.service.UnifiedNASStrategy;
 import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -118,6 +119,9 @@ class OntapPrimaryDatastoreDriverTest {
     private UnifiedSANStrategy sanStrategy;
 
     @Mock
+    private UnifiedNASStrategy nasStrategy;
+
+    @Mock
     private AsyncCompletionCallback<CreateCmdResult> createCallback;
 
     @Mock
@@ -144,6 +148,7 @@ class OntapPrimaryDatastoreDriverTest {
         // so StorageSystemSnapshotStrategy handles snapshot backup to secondary storage
         assertEquals(Boolean.TRUE.toString(), capabilities.get("STORAGE_SYSTEM_SNAPSHOT"));
         assertEquals(Boolean.TRUE.toString(), capabilities.get("CAN_CREATE_VOLUME_FROM_SNAPSHOT"));
+        assertEquals(Boolean.TRUE.toString(), capabilities.get("CAN_REVERT_VOLUME_TO_SNAPSHOT"));
     }
 
     @Test
@@ -212,6 +217,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             verify(volumeDetailsDao).addDetail(eq(100L), eq(OntapStorageConstants.LUN_DOT_UUID), eq("lun-uuid-123"), eq(false));
             verify(volumeDetailsDao).addDetail(eq(100L), eq(OntapStorageConstants.LUN_DOT_NAME), eq("/vol/vol1/lun1"), eq(false));
+            verify(volumeVO).setFormat(Storage.ImageFormat.RAW);
             verify(volumeDao).update(eq(100L), any(VolumeVO.class));
         }
     }
@@ -239,11 +245,11 @@ class OntapPrimaryDatastoreDriverTest {
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
-                    .thenReturn(sanStrategy);
+                    .thenReturn(nasStrategy);
             utilityMock.when(() -> OntapStorageUtils.createCloudStackVolumeRequestByProtocol(
                     any(), any(), any())).thenReturn(mockCloudStackVolume);
 
-            when(sanStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
+            when(nasStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
 
             // Execute
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -255,6 +261,7 @@ class OntapPrimaryDatastoreDriverTest {
             CreateCmdResult result = resultCaptor.getValue();
             assertNotNull(result);
             assertTrue(result.isSuccess());
+            verify(volumeVO).setFormat(Storage.ImageFormat.QCOW2);
             verify(volumeDao).update(eq(100L), any(VolumeVO.class));
         }
     }
