@@ -6309,7 +6309,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = findVmById(work.getVmId());
         final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
         if (nic == null) {
-            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.not.found");
+            throw Exceptions.cloudRuntimeException("vm.updatenic.nic.not.found", Map.of("instance", vm));
         }
         final NicVO defaultNic = _entityMgr.findById(NicVO.class, work.getDefaultNicId());
         if (defaultNic == null) {

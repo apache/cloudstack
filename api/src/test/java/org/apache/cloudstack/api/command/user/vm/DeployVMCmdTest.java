@@ -89,7 +89,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getBootType();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid bootType INVALID"));
+        assertEquals("vm.deploy.boot.type.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -129,7 +129,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getBootMode();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid bootmode: INVALID specified for VM: null. Valid values are: [LEGACY, SECURE]"));
+        assertEquals("vm.deploy.boot.mode.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getBootMode();
         });
-        assertTrue(thrownException.getMessage().contains("bootmode must be specified for the VM with boot type: UEFI. Valid values are: [LEGACY, SECURE]"));
+        assertEquals("vm.deploy.boot.mode.required.for.uefi", thrownException.getMessageKey());
     }
 
     @Test
@@ -187,7 +187,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getLeaseExpiryAction();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid value configured for leaseexpiryaction"));
+        assertEquals("vm.deploy.lease.expiry.action.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -215,7 +215,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIoDriverPolicy();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid io policy INVALID"));
+        assertEquals("vm.deploy.io.driver.policy.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -255,7 +255,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getNetworkIds();
         });
-        assertTrue(thrownException.getMessage().contains("nicnetworklist can't be specified along with networkids"));
+        assertEquals("vm.deploy.nic.network.list.mutually.exclusive", thrownException.getMessageKey());
     }
 
     @Test
@@ -268,7 +268,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getNetworkIds();
         });
-        assertTrue(thrownException.getMessage().contains("ipToNetworkMap can't be specified along with networkIds or ipAddress"));
+        assertEquals("vm.deploy.ip.to.network.map.mutually.exclusive", thrownException.getMessageKey());
     }
 
     @Test
@@ -279,7 +279,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIpToNetworkMap();
         });
-        assertTrue(thrownException.getMessage().contains("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter"));
+        assertEquals("vm.deploy.network.ids.ip.address.with.ip.to.network.map", thrownException.getMessageKey());
     }
 
     @Test
@@ -290,7 +290,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIpToNetworkMap();
         });
-        assertTrue(thrownException.getMessage().contains("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter"));
+        assertEquals("vm.deploy.network.ids.ip.address.with.ip.to.network.map", thrownException.getMessageKey());
     }
 
     @Test
@@ -389,7 +389,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIpToNetworkMap();
         });
-        assertTrue(thrownException.getMessage().contains("Mac address is not valid"));
+        assertEquals("vm.deploy.mac.address.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -463,7 +463,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getDataDiskTemplateToDiskOfferingMap();
         });
-        assertTrue(thrownException.getMessage().contains("diskofferingid parameter can't be specified along with datadisktemplatetodiskofferinglist parameter"));
+        assertEquals("vm.deploy.diskofferingid.with.datadisktemplatetodiskofferinglist", thrownException.getMessageKey());
     }
 
     @Test
@@ -486,7 +486,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getDataDiskTemplateToDiskOfferingMap();
         });
-        assertTrue(thrownException.getMessage().contains("Unable to translate and find entity with datadisktemplateid"));
+        assertEquals("vm.deploy.datadisktemplateid.not.found", thrownException.getMessageKey());
     }
 
     @After

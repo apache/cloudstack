@@ -3184,6 +3184,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance == null) {
             throw Exceptions.invalidParameterValueException("vm.update.vm.not.found");
         }
+        CallContext.current().putErrorContextParameter("instance", vmInstance);
         validateGuestOsIdForUpdateVirtualMachineCommand(cmd);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -7124,7 +7125,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             verifyMinAndMaxIops(minIops, maxIops);
 
             if (details.containsKey("extraconfig")) {
-                throw Exceptions.invalidParameterValueException("vm.update.extraconfig.in.details");
+                throw Exceptions.invalidParameterValueException("vm.extraconfig.in.details");
             }
 
             for (String detailName : details.keySet()) {
