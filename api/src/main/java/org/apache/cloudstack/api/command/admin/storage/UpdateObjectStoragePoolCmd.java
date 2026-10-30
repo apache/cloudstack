@@ -18,6 +18,10 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.cloudstack.storage.object.ObjectStore;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,8 +45,16 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name for the object store")
     private String name;
 
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the object store provider name")
+    private String providerName;
+
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the url for the object store")
     private String url;
+
+    @Parameter(name = ApiConstants.DETAILS,
+               type = CommandType.MAP,
+               description = "the details for the object store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
+    private Map details;
 
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the total size of the object store in GiB. Used for tracking capacity and sending alerts. Set to 0 to stop tracking.", since = "4.21")
     private Long size;
@@ -63,6 +75,23 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
         return url;
     }
 
+    public String getProviderName() {
+        return providerName;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> detailsMap = null;
+        if (details != null && !details.isEmpty()) {
+            detailsMap = new HashMap<>();
+            for (Object prop : details.values()) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
+                String key = detail.get(ApiConstants.KEY);
+                String value = detail.get(ApiConstants.VALUE);
+                detailsMap.put(key, value);
+            }
+        }
+        return detailsMap;
+    }
     public Long getSize() {
         return size;
     }
@@ -75,7 +104,7 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
     public void execute() {
         ObjectStore result = _storageService.updateObjectStore(getId(), this);
 
-        ObjectStoreResponse storeResponse = null;
+        ObjectStoreResponse storeResponse;
         if (result != null) {
             storeResponse = _responseGenerator.createObjectStoreResponse(result);
             storeResponse.setResponseName(getCommandName());

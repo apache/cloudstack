@@ -72,6 +72,10 @@ public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
+    public void verifyServiceConnectivity(long storeId) {
+    }
+
+    @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
         return true;
     }
