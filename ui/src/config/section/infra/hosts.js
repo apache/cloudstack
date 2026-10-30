@@ -17,7 +17,6 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
-import { createAlertRuleAction } from '@/config/section/infra/resourceAlertRules'
 
 export default {
   name: 'host',
@@ -352,7 +351,6 @@ export default {
       dataView: true,
       args: ['forced'],
       show: (record) => { return ['Maintenance', 'Disabled', 'Down', 'Alert', 'Disconnected'].includes(record.resourcestate) }
-    },
-    createAlertRuleAction('Host')
+    }
   ]
 }

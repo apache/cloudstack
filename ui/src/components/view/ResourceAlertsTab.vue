@@ -17,13 +17,19 @@
 
 <template>
   <div>
-    <a-select
-      v-model:value="severity"
-      style="width: 200px; margin-bottom: 12px"
-      @change="onFilterChange">
-      <a-select-option value="">{{ $t('label.severity') }}: {{ $t('label.all') }}</a-select-option>
-      <a-select-option v-for="s in severities" :key="s" :value="s">{{ s }}</a-select-option>
-    </a-select>
+    <div class="toolbar">
+      <a-select
+        v-model:value="severity"
+        style="width: 200px"
+        @change="onFilterChange">
+        <a-select-option value="">{{ $t('label.severity') }}: {{ $t('label.all') }}</a-select-option>
+        <a-select-option v-for="s in severities" :key="s" :value="s">{{ s }}</a-select-option>
+      </a-select>
+      <a-button v-if="canCreateRule" type="primary" @click="showCreateRule = true">
+        <template #icon><plus-outlined /></template>
+        {{ $t('label.create.resource.alert.rule') }}
+      </a-button>
+    </div>
     <a-table
       size="small"
       :columns="columns"
@@ -47,16 +53,33 @@
         </template>
       </template>
     </a-table>
+    <a-modal
+      v-if="showCreateRule"
+      :visible="showCreateRule"
+      :title="$t('label.create.resource.alert.rule')"
+      :footer="null"
+      :maskClosable="false"
+      centered
+      @cancel="showCreateRule = false">
+      <create-resource-alert-rule
+        :resource="resource"
+        :presetResourceType="resourceType"
+        @close-action="showCreateRule = false" />
+    </a-modal>
   </div>
 </template>
 
 <script>
 import { getAPI } from '@/api'
 import { resourceAlertLabel } from '@/views/resourcealert/resourceAlertOptions'
+import CreateResourceAlertRule from '@/views/resourcealert/CreateResourceAlertRule.vue'
 
 // Shows the alerts of one resource, or of one rule when no resourceType is given.
 export default {
   name: 'ResourceAlertsTab',
+  components: {
+    CreateResourceAlertRule
+  },
   props: {
     resource: {
       type: Object,
@@ -78,6 +101,7 @@ export default {
     return {
       alerts: [],
       tabLoading: false,
+      showCreateRule: false,
       severity: '',
       severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
       page: 1,
@@ -94,6 +118,10 @@ export default {
     }
   },
   computed: {
+    // Extensions do not report VM or host usage, so rules on them would never fire
+    canCreateRule () {
+      return !!this.resourceType && 'createResourceAlertRule' in this.$store.getters.apis && this.resource?.hypervisor !== 'External'
+    },
     pagination () {
       return {
         current: this.page,
@@ -157,3 +185,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+</style>

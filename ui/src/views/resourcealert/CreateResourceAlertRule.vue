@@ -151,9 +151,9 @@ export default {
       type: Object,
       default: () => ({})
     },
-    currentAction: {
-      type: Object,
-      default: () => ({})
+    presetResourceType: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -233,9 +233,8 @@ export default {
   methods: {
     // Opened from a resource's own page: pick its type and the resource itself
     presetResource () {
-      const type = this.currentAction?.resourceAlertType
-      if (!type || !this.resource?.id) return
-      this.form.resourcetype = type
+      if (!this.presetResourceType || !this.resource?.id) return
+      this.form.resourcetype = this.presetResourceType
       this.form.metric = undefined
       this.fetchResources().then(() => {
         this.form.resourceid = this.resource.id

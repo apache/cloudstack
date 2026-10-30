@@ -22,19 +22,6 @@ import { resourceAlertLabel } from '@/views/resourcealert/resourceAlertOptions'
 
 const label = (field) => ({ [field]: (record) => resourceAlertLabel(field, record[field]) })
 
-// Create an alert rule from a resource's own page, with the resource already picked
-export const createAlertRuleAction = (resourceAlertType) => ({
-  api: 'createResourceAlertRule',
-  icon: 'bell-outlined',
-  label: 'label.create.resource.alert.rule',
-  dataView: true,
-  popup: true,
-  resourceAlertType,
-  // Extensions do not report VM or host usage, so rules on them would never fire
-  show: (record) => { return record.hypervisor !== 'External' },
-  component: shallowRef(defineAsyncComponent(() => import('@/views/resourcealert/CreateResourceAlertRule.vue')))
-})
-
 export default {
   name: 'resourcealerts',
   title: 'label.resource.alert.rules',

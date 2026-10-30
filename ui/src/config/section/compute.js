@@ -17,7 +17,6 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
-import { createAlertRuleAction } from '@/config/section/infra/resourceAlertRules'
 import { isZoneCreated } from '@/utils/zone'
 import { getAPI, postAPI, getBaseUrl } from '@/api'
 import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
@@ -482,8 +481,7 @@ export default {
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
           show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DestroyVM.vue')))
-        },
-        createAlertRuleAction('VirtualMachine')
+        }
       ]
     },
     {

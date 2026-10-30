@@ -17,7 +17,6 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
-import { createAlertRuleAction } from '@/config/section/infra/resourceAlertRules'
 
 export default {
   name: 'storagepool',
@@ -169,7 +168,6 @@ export default {
       args: ['forced'],
       show: (record) => { return (record.state === 'Down' || record.state === 'Maintenance' || record.state === 'Disconnected') },
       displayName: (record) => { return record.name || record.displayName || record.id }
-    },
-    createAlertRuleAction('StoragePool')
+    }
   ]
 }
