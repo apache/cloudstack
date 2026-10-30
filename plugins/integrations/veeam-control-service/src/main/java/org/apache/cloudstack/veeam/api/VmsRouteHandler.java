@@ -545,7 +545,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
               final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         try {
             List<Checkpoint> checkpoints = serverAdapter.listCheckpointsByInstanceUuid(id);
-            NamedList<Checkpoint> response = NamedList.of("checkpoints", checkpoints);
+            NamedList<Checkpoint> response = NamedList.of("checkpoint", checkpoints);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);

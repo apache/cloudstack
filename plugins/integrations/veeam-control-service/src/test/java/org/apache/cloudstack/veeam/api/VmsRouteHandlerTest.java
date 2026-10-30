@@ -287,7 +287,7 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
         final ResponseCapture list = newResponse();
         handler.handle(newRequest("GET"), list.response, "/api/vms/vm-1/checkpoints", Negotiation.OutFormat.JSON, newServlet());
         verify(list.response).setStatus(200);
-        assertContains(list.body(), "\"checkpoints\":[");
+        assertContains(list.body(), "\"checkpoint\":[");
 
         final ResponseCapture delete = newResponse();
         handler.handle(newRequest("DELETE"), delete.response, "/api/vms/vm-1/checkpoints/chk-1", Negotiation.OutFormat.JSON, newServlet());
