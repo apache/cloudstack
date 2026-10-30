@@ -339,6 +339,20 @@ public class VirtualNetworkApplianceManagerImplTest {
     }
 
     @Test
+    public void testCheckRouterTaskChecksVpnOnVpcRouterWithoutTiers() {
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+        when(vpc.getId()).thenReturn(10L);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        when(_vpcDao.listAll()).thenReturn(List.of(vpc));
+        when(_routerDao.listByVpcId(10L)).thenReturn(List.of(router));
+
+        virtualNetworkApplianceManagerImpl.new CheckRouterTask().runInContext();
+
+        Mockito.verify(_s2sVpnMgr).getConnectionsForRouter(router);
+        Mockito.verify(_routerDao, Mockito.never()).listIsolatedByHostId(null);
+    }
+
+    @Test
     public void checkLogrotateTimerPatternTestDoNotMatchWithRegex(){
         String foo = "non-sense";
         boolean result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
