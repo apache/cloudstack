@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteUefiNvramCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -44,6 +47,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManagerImpl;
 import org.apache.cloudstack.backup.BackupProvider;
@@ -77,7 +82,12 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Inject
     private VolumeApiService volumeApiService;
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
+    protected static final int UEFI_NVRAM_CLEANUP_TIMEOUT_SECONDS = 60;
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -347,6 +357,41 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Override
     public boolean trackVmHostChange() {
         return false;
+    }
+
+    @Override
+    public List<Command> finalizeExpunge(VirtualMachine vm) {
+        deleteUefiNvramIfNeeded(vm);
+        return super.finalizeExpunge(vm);
+    }
+
+    /**
+     * Best-effort removal of the per-VM UEFI NVRAM file from the host the VM last ran on.
+     * It never fails the expunge: if the host is unreachable or the deletion fails, the file is left behind as before.
+     */
+    protected void deleteUefiNvramIfNeeded(VirtualMachine vm) {
+        try {
+            if (vm.getType() != VirtualMachine.Type.User
+                    || vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString()) == null) {
+                return;
+            }
+            Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+            if (hostId == null) {
+                logger.debug("No host recorded for UEFI VM [{}]; skipping UEFI NVRAM cleanup.", vm);
+                return;
+            }
+            DeleteUefiNvramCommand command = new DeleteUefiNvramCommand(vm.getInstanceName(), vm.getUuid());
+            command.setWait(UEFI_NVRAM_CLEANUP_TIMEOUT_SECONDS);
+            Answer answer = agentMgr.easySend(hostId, command);
+            if (answer == null || !answer.getResult()) {
+                logger.warn("Unable to delete the UEFI NVRAM file of expunged VM [{}] on host [{}]; it has to be removed manually. Details: {}",
+                        vm, hostId, answer == null ? "host unavailable" : answer.getDetails());
+                return;
+            }
+            logger.debug("UEFI NVRAM cleanup for expunged VM [{}] on host [{}]: {}", vm, hostId, answer.getDetails());
+        } catch (RuntimeException e) {
+            logger.warn("Unexpected error while cleaning up the UEFI NVRAM file of expunged VM [{}]; it has to be removed manually.", vm, e);
+        }
     }
 
     @Override
