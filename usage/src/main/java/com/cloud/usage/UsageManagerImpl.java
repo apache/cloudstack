@@ -969,6 +969,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 createPortForwardingHelperEvent(event);
             } else if (isNetworkOfferingEvent(eventType)) {
                 createNetworkOfferingEvent(event);
+            } else if (isNicTrunkConversionEvent(eventType)) {
+                backfillNicNetworkIdOnTrunkConversion(event);
             } else if (isVPNUserEvent(eventType)) {
                 handleVpnUserEvent(event);
             } else if (isSecurityGroupEvent(eventType)) {
@@ -1046,6 +1048,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             return false;
         return (eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_CREATE) || eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_DELETE) ||
                 eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN) || eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_REMOVE));
+    }
+
+    private boolean isNicTrunkConversionEvent(String eventType) {
+        return EventTypes.EVENT_NIC_NETWORK_ID_BACKFILL.equals(eventType);
     }
 
     private boolean isVPNUserEvent(String eventType) {
@@ -1736,18 +1742,16 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
-    private void createNetworkOfferingEvent(UsageEventVO event) {
+    protected void createNetworkOfferingEvent(UsageEventVO event) {
 
         long zoneId = -1L;
 
         long vmId = event.getResourceId();
         long networkOfferingId = event.getOfferingId();
-        long nicId = 0;
-        try {
-            nicId = Long.parseLong(event.getResourceName());
-        } catch (Exception e) {
-            logger.warn("Failed to get NIC id from resource name, resource name is: " + event.getResourceName());
-        }
+        Long parsedNicId = parseLongOrWarn("NIC id from resource name", event.getResourceName());
+        long nicId = parsedNicId != null ? parsedNicId : 0;
+
+        Long networkId = findNetworkIdEventDetail(event);
 
         if (EventTypes.EVENT_NETWORK_OFFERING_CREATE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_ASSIGN.equals(event.getType())) {
             if (logger.isDebugEnabled()) {
@@ -1757,7 +1761,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             boolean isDefault = (event.getSize() == 1) ? true : false;
             UsageNetworkOfferingVO networkOffering =
-                    new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, nicId, isDefault, event.getCreateDate(), null);
+                    new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, nicId, networkId, isDefault, event.getCreateDate(),
+                            null);
             _usageNetworkOfferingDao.persist(networkOffering);
         } else if (EventTypes.EVENT_NETWORK_OFFERING_DELETE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_REMOVE.equals(event.getType())) {
             SearchCriteria<UsageNetworkOfferingVO> sc = _usageNetworkOfferingDao.createSearchCriteria();
@@ -1767,6 +1772,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             sc.addAnd("networkOfferingId", SearchCriteria.Op.EQ, networkOfferingId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageNetworkOfferingVO> noVOs = _usageNetworkOfferingDao.search(sc, null);
+            // A multi-VLAN trunk nic can have more than one association sharing the same offering; the plain
+            // (account, vm, nic, offering) key alone can't tell those rows apart. Narrow using the network id
+            // carried on this event, when there is one to narrow with. An ordinary nic only ever produces one
+            // candidate row here, and a historic (network_id = NULL) row never collides with anything, so this
+            // is a no-op for every legacy nic.
+            if (noVOs.size() > 1 && networkId != null) {
+                List<UsageNetworkOfferingVO> networkMatches = new ArrayList<>();
+                for (UsageNetworkOfferingVO candidate : noVOs) {
+                    if (networkId.equals(candidate.getNetworkId())) {
+                        networkMatches.add(candidate);
+                    }
+                }
+                if (networkMatches.size() == 1) {
+                    noVOs = networkMatches;
+                }
+            }
             if (noVOs.size() > 1) {
                 logger.warn("More that one usage entry for networking offering: " + networkOfferingId + " for Vm: " + vmId + " assigned to account: " +
                         event.getAccountId() + "; marking them all as deleted...");
@@ -1778,6 +1799,48 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 noVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageNetworkOfferingDao.update(noVO);
             }
+        }
+    }
+
+    /**
+     * Backfills network_id on a nic's own still-open usage row(s) the moment that nic is first converted to a
+     * multi-VLAN trunk nic - only ever needed for a row that predates the network_id column existing at all.
+     * Runs here, on the usage job's own thread, rather than synchronously where the conversion happens
+     * (NetworkServiceImpl.persistAssociations): that request thread already has an ambient `cloud` DB
+     * transaction open, and this table lives in the separate cloud_usage database.
+     */
+    protected void backfillNicNetworkIdOnTrunkConversion(UsageEventVO event) {
+        Long nicId = parseLongOrWarn("NIC id from resource name", event.getResourceName());
+        if (nicId == null) {
+            return;
+        }
+        Long networkId = findNetworkIdEventDetail(event);
+        if (networkId == null) {
+            logger.warn("Trunk-conversion backfill event for nic {} is missing its network id detail, skipping", nicId);
+            return;
+        }
+        _usageNetworkOfferingDao.backfillNetworkIdForNic(nicId, networkId);
+    }
+
+    /**
+     * Looks up and parses this event's networkId detail, shared by every usage event that carries one
+     * (network-offering ASSIGN/REMOVE, and the trunk-conversion backfill signal). Returns null if the detail
+     * is absent or unparseable - the caller decides what "absent" means for its own event type.
+     */
+    private Long findNetworkIdEventDetail(UsageEventVO event) {
+        UsageEventDetailsVO networkIdDetail = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.networkId.name());
+        return networkIdDetail == null ? null : parseLongOrWarn("network id usage event detail", networkIdDetail.getValue());
+    }
+
+    private Long parseLongOrWarn(String description, String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            logger.warn("Failed to parse {}, value is: {}", description, value);
+            return null;
         }
     }
 

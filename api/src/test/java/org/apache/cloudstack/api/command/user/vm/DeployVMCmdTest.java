@@ -34,16 +34,21 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.BootMode;
 import org.apache.cloudstack.api.ApiConstants.BootType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkService;
+import com.cloud.user.Account;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.network.Network;
@@ -263,6 +268,156 @@ public class DeployVMCmdTest {
             cmd.getNetworkIds();
         });
         assertTrue(thrownException.getMessage().contains("ipToNetworkMap can't be specified along with networkIds or ipAddress"));
+    }
+
+    @Test
+    public void testGetNetworkIdsNicNetworksList() {
+        // the request-binding framework hands back these keys as Integer, not String
+        Map<Object, Object> nicNetworksList = new HashMap<>();
+        Map<String, String> entry0 = new HashMap<>();
+        entry0.put("networkids", "1,2,3");
+        Map<String, String> entry1 = new HashMap<>();
+        entry1.put("networkids", "4");
+        nicNetworksList.put(1, entry1);
+        nicNetworksList.put(0, entry0);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+        ReflectionTestUtils.setField(cmd, "networkIds", null);
+        ReflectionTestUtils.setField(cmd, "ipToNetworkList", null);
+        ReflectionTestUtils.setField(cmd, "vAppNetworks", null);
+        ReflectionTestUtils.setField(cmd, "ipAddress", null);
+        ReflectionTestUtils.setField(cmd, "ip6Address", null);
+        ReflectionTestUtils.setField(cmd, "_networkService", mock(NetworkService.class));
+
+        List<Long> result = cmd.getNetworkIds();
+
+        // primaries only, in ascending index order (0 then 1) despite being inserted out of order
+        assertEquals(Arrays.asList(1L, 4L), result);
+    }
+
+    @Test
+    public void testGetNicNetworksListResolvesPrimaryAndAssociatedNetworkIds() {
+        Map<Object, Object> nicNetworksList = new HashMap<>();
+        Map<String, String> entry0 = new HashMap<>();
+        entry0.put("networkids", "1,2,3");
+        nicNetworksList.put(0, entry0);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+        ReflectionTestUtils.setField(cmd, "_networkService", mock(NetworkService.class));
+
+        List<BaseDeployVMCmd.NicNetworkGrouping> result = cmd.getNicNetworksList();
+
+        assertEquals(1, result.size());
+        assertEquals(Long.valueOf(1L), result.get(0).getPrimaryNetworkId());
+        assertEquals(Arrays.asList(2L, 3L), result.get(0).getAssociatedNetworkIds());
+    }
+
+    @Test
+    public void testGetNicNetworksListParsesAssociatedNetworkIps() {
+        // ip4addresses/ip6addresses are positionally aligned to networkids after its first (primary) entry -
+        // here network 2 gets an explicit ip4/ip6, network 3 is left blank (auto-allocates)
+        Map<Object, Object> nicNetworksList = new HashMap<>();
+        Map<String, String> entry0 = new HashMap<>();
+        entry0.put("networkids", "1,2,3");
+        entry0.put("ip4addresses", "10.1.1.5,");
+        entry0.put("ip6addresses", "fd00::5,");
+        nicNetworksList.put(0, entry0);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+        ReflectionTestUtils.setField(cmd, "_networkService", mock(NetworkService.class));
+
+        List<BaseDeployVMCmd.NicNetworkGrouping> result = cmd.getNicNetworksList();
+
+        Map<Long, IpAddresses> associatedNetworkIps = result.get(0).getAssociatedNetworkIps();
+        assertEquals(1, associatedNetworkIps.size());
+        assertEquals("10.1.1.5", associatedNetworkIps.get(2L).getIp4Address());
+        assertEquals("fd00::5", associatedNetworkIps.get(2L).getIp6Address());
+        assertFalse(associatedNetworkIps.containsKey(3L));
+    }
+
+    @Test
+    public void testGetNicNetworksListRejectsTooManyAssociatedNetworkIps() {
+        Map<Object, Object> nicNetworksList = new HashMap<>();
+        Map<String, String> entry0 = new HashMap<>();
+        entry0.put("networkids", "1,2");
+        entry0.put("ip4addresses", "10.1.1.5,10.1.1.6,10.1.1.7");
+        nicNetworksList.put(0, entry0);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+        ReflectionTestUtils.setField(cmd, "_networkService", mock(NetworkService.class));
+
+        InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
+            cmd.getNicNetworksList();
+        });
+        assertTrue(thrownException.getMessage().contains("ip4addresses"));
+    }
+
+    @Test
+    public void testGetNetworkIdsNicNetworksListAndNetworkIds() {
+        Map<Object, Object> nicNetworksList = new HashMap<>();
+        Map<String, String> entry0 = new HashMap<>();
+        entry0.put("networkids", "1,2");
+        nicNetworksList.put(0, entry0);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+        ReflectionTestUtils.setField(cmd, "networkIds", Arrays.asList(1L, 2L));
+
+        InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
+            cmd.getNetworkIds();
+        });
+        assertTrue(thrownException.getMessage().contains("nicnetworkslist"));
+    }
+
+    @Test
+    public void testGetNetworkIdsRejectsNicNetworksListForNonAdminCaller() {
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", null);
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("nicnetworkslist[0].networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+
+        Account caller = mock(Account.class);
+        when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(caller);
+
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+
+            PermissionDeniedException thrown = assertThrows(PermissionDeniedException.class, cmd::getNetworkIds);
+            assertTrue(thrown.getMessage().contains(ApiConstants.NIC_NETWORKS_LIST));
+        }
+    }
+
+    @Test
+    public void testGetNetworkIdsAllowsNicNetworksListForRootAdminCaller() {
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", null);
+        ReflectionTestUtils.setField(cmd, "networkIds", null);
+        ReflectionTestUtils.setField(cmd, "vAppNetworks", null);
+        ReflectionTestUtils.setField(cmd, "ipToNetworkList", null);
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("nicnetworkslist[0].networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+
+        Account caller = mock(Account.class);
+        when(caller.getType()).thenReturn(Account.Type.ADMIN);
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(caller);
+
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+
+            assertNull(cmd.getNetworkIds());
+        }
+    }
+
+    @Test
+    public void testGetNetworkIdsDoesNotRejectWhenNicNetworksListKeyAbsentFromRawParams() {
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", null);
+        ReflectionTestUtils.setField(cmd, "networkIds", Arrays.asList(1L, 2L));
+        ReflectionTestUtils.setField(cmd, "vAppNetworks", null);
+        ReflectionTestUtils.setField(cmd, "ipToNetworkList", null);
+        Map<String, String> rawParams = new HashMap<>();
+        rawParams.put("networkids", "1,2");
+        cmd.setFullUrlParams(rawParams);
+
+        List<Long> result = cmd.getNetworkIds();
+
+        assertEquals(Arrays.asList(1L, 2L), result);
     }
 
     @Test

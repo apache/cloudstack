@@ -476,4 +476,41 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(LibvirtVMDef.GuestDef.BootType.BIOS, parser.getBootType());
         assertEquals(LibvirtVMDef.GuestDef.BootMode.LEGACY, parser.getBootMode());
     }
+
+    private InterfaceDef parseNicWithVlan(String vlanXml) {
+        String xml = "<domain type='kvm'><devices><interface type='bridge'>" +
+                     "<mac address='02:00:00:00:00:01'/><source bridge='cloudbr1'/>" +
+                     "<target dev='vnet1'/><model type='virtio'/>" + vlanXml +
+                     "</interface></devices></domain>";
+        LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+        Assert.assertTrue(parser.parseDomainXML(xml));
+        return parser.getInterfaces().get(0);
+    }
+
+    @Test
+    public void parseInterfaceKeepsTrunkVlanTags() {
+        InterfaceDef nic = parseNicWithVlan("<vlan trunk='yes'><tag id='100' nativeMode='untagged'/><tag id='200'/></vlan>");
+
+        Assert.assertTrue(nic.isVlanTrunk());
+        Assert.assertEquals(List.of(100, 200), nic.getTrunkVlanTags());
+        Assert.assertEquals(Integer.valueOf(100), nic.getNativeVlanTag());
+        Assert.assertTrue(nic.toString().contains("<vlan trunk='yes'>"));
+    }
+
+    @Test
+    public void parseInterfaceKeepsSingleVlanTag() {
+        InterfaceDef nic = parseNicWithVlan("<vlan trunk='no'><tag id='300'/></vlan>");
+
+        Assert.assertFalse(nic.isVlanTrunk());
+        Assert.assertEquals(300, nic.getVlanTag());
+        Assert.assertTrue(nic.toString().contains("<tag id='300'/>"));
+    }
+
+    @Test
+    public void parseInterfaceWithoutVlanLeavesDefaults() {
+        InterfaceDef nic = parseNicWithVlan("");
+
+        Assert.assertFalse(nic.isVlanTrunk());
+        Assert.assertEquals(-1, nic.getVlanTag());
+    }
 }

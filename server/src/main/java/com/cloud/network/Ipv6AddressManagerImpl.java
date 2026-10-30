@@ -46,6 +46,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.googlecode.ipv6.IPv6Address;
@@ -69,6 +71,8 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     IpAddressManager ipAddressManager;
     @Inject
     NicSecondaryIpDao nicSecondaryIpDao;
+    @Inject
+    NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     IPAddressDao ipAddressDao;
     @Inject
@@ -183,7 +187,17 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     protected boolean isIp6Taken(Network network, String requestedIpv6) {
         UserIpv6AddressVO ip6Vo = _ipv6Dao.findByNetworkIdAndIp(network.getId(), requestedIpv6);
         NicSecondaryIpVO nicSecondaryIpVO = nicSecondaryIpDao.findByIp6AddressAndNetworkId(requestedIpv6, network.getId());
-        return ip6Vo != null || nicSecondaryIpVO != null;
+        if (ip6Vo != null || nicSecondaryIpVO != null) {
+            return true;
+        }
+        // also check ips held by nics that are associated with this network as a secondary (trunk) network,
+        // not their primary - mirrors the equivalent ipv4 check in NetworkModelImpl.getUsedIpsInNetwork
+        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNetworkId(network.getId())) {
+            if (requestedIpv6.equals(association.getIp6Address())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

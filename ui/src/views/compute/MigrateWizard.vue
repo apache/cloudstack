@@ -45,10 +45,19 @@
           </a-tooltip>
         </template>
         <template v-if="column.key === 'suitability'">
-          <check-circle-two-tone
-            class="host-item__suitability-icon"
-            twoToneColor="#52c41a"
-            v-if="record.suitableformigration" />
+          <template v-if="record.suitableformigration">
+            <check-circle-two-tone
+              class="host-item__suitability-icon"
+              twoToneColor="#52c41a" />
+            <a-tooltip v-if="record.migrationcaution" :title="record.migrationcaution" placement="top">
+              <warning-outlined class="host-item__suitability-icon" style="color: #faad14;" />
+            </a-tooltip>
+          </template>
+          <a-tooltip v-else-if="record.unsuitablereason" :title="record.unsuitablereason" placement="top">
+            <close-circle-two-tone
+              class="host-item__suitability-icon"
+              twoToneColor="#f5222d" />
+          </a-tooltip>
           <close-circle-two-tone
             class="host-item__suitability-icon"
             twoToneColor="#f5222d"

@@ -29,10 +29,14 @@ import org.libvirt.LibvirtException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PostMigrationAnswer;
 import com.cloud.agent.api.PostMigrationCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.network.Networks;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
@@ -68,6 +72,8 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
                 LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE
             );
 
+            applyManualVlanTrunkMembership(conn, vmName, vm.getNics(), libvirtComputingResource);
+
             logger.debug("Successfully completed post-migration tasks for VM {}", vmName);
             return new PostMigrationAnswer(command);
 
@@ -77,6 +83,20 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
         } catch (final Exception e) {
             logger.error("Error during post-migration for VM {}: {}", vmName, e.getMessage(), e);
             return new PostMigrationAnswer(command, e);
+        }
+    }
+
+    private void applyManualVlanTrunkMembership(Connect conn, String vmName, NicTO[] nics, LibvirtComputingResource libvirtComputingResource)
+            throws InternalErrorException {
+        if (nics == null) {
+            return;
+        }
+        for (NicTO nic : nics) {
+            if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan) {
+                continue;
+            }
+            LibvirtVMDef.InterfaceDef liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+            libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
         }
     }
 }

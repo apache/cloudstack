@@ -35,6 +35,9 @@ import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCm
 import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -59,6 +62,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
@@ -249,6 +253,32 @@ public interface NetworkService {
 
     List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd);
 
+    /**
+     * Associates one or more additional networks with an existing nic, delivering them as a multi-VLAN trunk
+     */
+    Nic associateNetworkToNic(AssociateNetworkToNicCmd cmd)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException;
+
+    /**
+     * Disassociates a network from an existing nic, shrinking its multi-VLAN trunk. The primary network cannot be disassociated.
+     */
+    Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) throws ResourceUnavailableException;
+
+    /**
+     * Changes a multi-VLAN trunk nic's primary network to one of its already-associated networks. Only allowed while
+     * the owning Instance is stopped, since the nic is rebuilt fresh on its next start.
+     */
+    Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd);
+
+    /**
+     * Associates additional networks with a nic that was just created (e.g. during VM deploy), before the owning
+     * Instance has ever started. No live agent update is issued - the nic's first plug already reads these
+     * associations fresh. requestedIps (nullable) optionally requests a specific ip4/ip6 address per associated
+     * network id - a network with no entry (or a null map) auto-allocates, same as today.
+     */
+    void associateNetworksToNic(Nic nic, List<Long> networkIds, Map<Long, IpAddresses> requestedIps)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException;
+
     AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException;
 
     boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException;
@@ -281,4 +311,10 @@ public interface NetworkService {
     String getNicVlanValueForExternalVm(NicTO nic);
 
     Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
+
+    // Re-applies each nic's VLAN membership on the host of a Running Instance, e.g. after a memory revert recreates its taps.
+    void reapplyLiveVlanMembership(VirtualMachine vm) throws ResourceUnavailableException;
+
+    // Pushes a migrated network's new VLAN and DHCP entries to the Running Instances that carry it as a trunk nic association.
+    void refreshTrunkNicsAssociatedToNetwork(Network network);
 }
