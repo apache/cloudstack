@@ -76,6 +76,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
@@ -362,7 +363,6 @@ public class VpcManagerImplTest {
     @Test
     public void testCreateVpcNetwork() throws InsufficientCapacityException, ResourceAllocationException {
         final long VPC_ID = 201L;
-        manager._maxNetworks = 3;
         VpcVO vpcMockVO = Mockito.mock(VpcVO.class);
         Vpc vpcMock = Mockito.mock(Vpc.class);
         Account accountMock = Mockito.mock(Account.class);
@@ -398,6 +398,27 @@ public class VpcManagerImplTest {
                 physicalNetwork, zoneId, null, null, 1L, null, null,
                 true, null, null, null, null,
                 null, null, null, null, null, new Pair<>(1000, 1000), null);
+    }
+
+    @Test
+    public void validateNewVpcGuestNetworkTestLimitReadFromDynamicSetting() {
+        final long vpcId = 301L;
+        Vpc vpcMock = Mockito.mock(Vpc.class);
+        Mockito.when(vpcMock.getId()).thenReturn(vpcId);
+        Mockito.when(vpcDao.acquireInLockTable(vpcId)).thenReturn(Mockito.mock(VpcVO.class));
+        Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(2L);
+        ConfigDepotImpl configDepot = Mockito.mock(ConfigDepotImpl.class);
+        Mockito.when(configDepot.getConfigStringValue(VpcManager.VpcMaxNetworks.key(), ConfigKey.Scope.Global, null)).thenReturn("2");
+
+        Object originalDepot = ReflectionTestUtils.getField(VpcManager.VpcMaxNetworks, "s_depot");
+        ReflectionTestUtils.setField(VpcManager.VpcMaxNetworks, "s_depot", configDepot);
+        try {
+            InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> manager.validateNewVpcGuestNetwork("10.10.10.0/24", "10.10.10.1", Mockito.mock(Account.class), vpcMock, "cs1cloud.internal"));
+            assertTrue(e.getMessage().contains("maximum of 2 networks"));
+        } finally {
+            ReflectionTestUtils.setField(VpcManager.VpcMaxNetworks, "s_depot", originalDepot);
+        }
     }
 
     @Test
