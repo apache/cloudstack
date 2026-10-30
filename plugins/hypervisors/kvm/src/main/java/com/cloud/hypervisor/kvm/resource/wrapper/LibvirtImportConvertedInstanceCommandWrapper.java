@@ -18,6 +18,9 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -89,6 +92,10 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
                     disks, xmlParser);
+            if (forceConvertToPool) {
+                // The converted disks are adopted where they are; only the domain XML written by virt-v2v is left over
+                cleanupConvertedDomainXml(convertedBasePath);
+            }
             return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",
@@ -100,6 +107,17 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
                 logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
+        }
+    }
+
+    protected void cleanupConvertedDomainXml(String convertedBasePath) {
+        Path xmlPath = Path.of(String.format("%s.xml", convertedBasePath));
+        try {
+            if (Files.deleteIfExists(xmlPath)) {
+                logger.info("Removed the converted domain XML {} after importing the converted disks in place", xmlPath);
+            }
+        } catch (IOException e) {
+            logger.warn("Unable to remove the converted domain XML {}: {}", xmlPath, e.getMessage());
         }
     }
 
