@@ -563,8 +563,8 @@ class VirtualMachine:
                     "The following exception appeared while programming ssh access - %s" % e)
 
     @classmethod
-    def is_builtin_template(cls, apiclient, templateid):
-        """Check if the template is a built-in template"""
+    def needs_default_userdata(cls, apiclient, templateid):
+        """Check if the template is a built-in template of a hypervisor, other than the simulator"""
         cmd = listTemplates.listTemplatesCmd()
         cmd.id = templateid
         cmd.templatefilter = "executable"
@@ -573,7 +573,10 @@ class VirtualMachine:
         except Exception:
             # not a template (an ISO), or not visible to the user
             return False
-        return bool(templates and templates[0].templatetype == "BUILTIN")
+        if not templates or templates[0].templatetype != "BUILTIN":
+            return False
+        # there is no guest to apply the userdata on the simulator
+        return str(getattr(templates[0], "hypervisor", "")).lower() != "simulator"
 
     @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
@@ -684,7 +687,7 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
-        elif userdataid is None and getattr(cmd, "templateid", None) and cls.is_builtin_template(apiclient, cmd.templateid):
+        elif userdataid is None and getattr(cmd, "templateid", None) and cls.needs_default_userdata(apiclient, cmd.templateid):
             # the built-in templates do not allow ssh login with password by default
             cmd.userdata = base64.urlsafe_b64encode(BUILTIN_TEMPLATE_USERDATA.encode()).decode()
 
