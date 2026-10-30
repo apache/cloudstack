@@ -194,6 +194,9 @@
   "jest": {
     "testEnvironment": "node"
   },
+  "overrides": {
+    "node-gyp": "^9.4.1"
+  },
   "browserslist": [
     "> 1%",
     "last 2 versions",
