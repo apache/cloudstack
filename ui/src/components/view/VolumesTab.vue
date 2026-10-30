@@ -132,7 +132,8 @@ export default {
       }
     },
     getVolumes () {
-      getAPI('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id }).then(json => {
+      // Only a project instance sends its project; projectid=-1 would hide other accounts' volumes from a domain admin
+      getAPI('listVolumes', { listall: true, listsystemvms: true, projectid: this.vm.projectid, virtualmachineid: this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
