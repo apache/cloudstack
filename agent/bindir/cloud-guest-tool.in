@@ -18,7 +18,8 @@
 
 #
 # Talk to a KVM guest through Libvirt and the Qemu Guest Agent
-# to retrieve information from the guest
+# to retrieve information from the guest or manage it, such as
+# setting a user's password
 #
 # System VMs have the Qemu Guest Agent installed by default
 # and should properly respond to such commands
@@ -28,12 +29,14 @@
 #
 
 import argparse
+import base64
+import getpass
 import json
 import sys
 import libvirt
 import libvirt_qemu
 
-COMMANDS = ["info", "ping", "fstrim"]
+COMMANDS = ["info", "ping", "fstrim", "set-password"]
 
 
 class Libvirt:
@@ -46,8 +49,11 @@ class Libvirt:
     def get_domain(self, name):
         return self.conn.lookupByName(name)
 
-    def agent_command(self, dom, cmd, flags=0, raw=False):
-        ret = libvirt_qemu.qemuAgentCommand(dom, json.dumps({'execute': cmd}),
+    def agent_command(self, dom, cmd, arguments=None, flags=0, raw=False):
+        request = {'execute': cmd}
+        if arguments is not None:
+            request['arguments'] = arguments
+        ret = libvirt_qemu.qemuAgentCommand(dom, json.dumps(request),
                                             self.timeout, flags)
         if raw:
             return ret
@@ -94,6 +100,25 @@ class GuestCommand:
 
         return {'result': result}, code
 
+    def set_password(self, username, password, crypted=False):
+        # guest-set-user-password expects the password base64-encoded and
+        # returns an empty dict on success
+        arguments = {
+            'username': username,
+            'password': base64.b64encode(password.encode('utf-8')).decode('ascii'),
+            'crypted': crypted,
+        }
+        result = self.virt.agent_command(self.dom, 'guest-set-user-password',
+                                         arguments=arguments)
+
+        res = False
+        code = 1
+        if len(result) == 0:
+            res = True
+            code = 0
+
+        return {'result': res}, code
+
 
 def main(args):
     command = args.command
@@ -109,6 +134,18 @@ def main(args):
             result, code = guestcmd.ping()
         elif command == 'fstrim':
             result, code = guestcmd.fstrim()
+        elif command == 'set-password':
+            password = args.password
+            if password is None:
+                if sys.stdin.isatty():
+                    password = getpass.getpass('New password for %s: ' % args.username)
+                else:
+                    password = sys.stdin.readline().rstrip('\n')
+            if not password:
+                print(json.dumps({'error': 'No password given via --password or stdin'}))
+                sys.exit(2)
+            result, code = guestcmd.set_password(args.username, password,
+                                                 args.crypted)
 
         print(json.dumps(result))
         sys.exit(code)
@@ -125,5 +162,12 @@ if __name__ == '__main__':
                         choices=COMMANDS)
     parser.add_argument('--timeout', type=int, required=False,
                         help='timeout in seconds', default=5)
+    parser.add_argument('--username', type=str, required=False, default='root',
+                        help='user whose password to set with the set-password command')
+    parser.add_argument('--password', type=str, required=False,
+                        help='new password for the set-password command; omit to read it '
+                             'from stdin, which keeps it out of the process list')
+    parser.add_argument('--crypted', action='store_true',
+                        help='the given password is already hashed in crypt(3) format')
     args = parser.parse_args()
     main(args)
