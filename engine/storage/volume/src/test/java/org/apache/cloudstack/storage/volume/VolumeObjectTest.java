@@ -24,14 +24,19 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -43,6 +48,9 @@ import junit.framework.TestCase;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.kms.KMSManager;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -87,6 +95,15 @@ public class VolumeObjectTest extends TestCase{
 
     @Mock
     VolumeOrchestrationService orchestrationServiceMock;
+
+    @Mock
+    SnapshotDao snapshotDaoMock;
+
+    @Mock
+    PassphraseDao passphraseDaoMock;
+
+    @Mock
+    KMSManager kmsManagerMock;
 
     Set<Function<DiskOfferingVO, Long>> diskOfferingVoMethodsWithLongReturn = new HashSet<>();
 
@@ -583,5 +600,97 @@ public class VolumeObjectTest extends TestCase{
         volumeObjectSpy.handleProcessEventAnswer(copyCmdAnswer);
 
         Mockito.verify(volumeObjectSpy, Mockito.times(1)).handleProcessEventAnswer(copyCmdAnswer, true, true);
+    }
+
+    @Test
+    public void deletePassphraseKeepsPassphraseWhileSnapshotsOfTheVolumeExist() {
+        mockVolumeWithPassphrase();
+        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.doReturn(Snapshot.State.BackedUp).when(snapshot).getState();
+        Mockito.doReturn(List.of(snapshot)).when(snapshotDaoMock).listByVolumeId(1L);
+
+        volumeObjectSpy.deletePassphrase();
+
+        // Restoring or deleting the snapshot needs the passphrase of its volume
+        Mockito.verify(volumeVoMock, Mockito.never()).setPassphraseId(Mockito.any());
+        Mockito.verify(passphraseDaoMock, Mockito.never()).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void deletePassphraseRemovesPassphraseNoVolumeRefersTo() {
+        mockVolumeWithPassphrase();
+        Mockito.doReturn(List.of()).when(snapshotDaoMock).listByVolumeId(1L);
+        Mockito.doReturn(List.of()).when(volumeDaoMock).listIncludingRemovedByPassphraseId(7L);
+
+        volumeObjectSpy.deletePassphrase();
+
+        Mockito.verify(volumeVoMock).setPassphraseId(null);
+        Mockito.verify(passphraseDaoMock).remove(7L);
+    }
+
+    @Test
+    public void deletePassphraseKeepsPassphraseARemovedVolumeStillRefersTo() {
+        mockVolumeWithPassphrase();
+        Mockito.doReturn(List.of()).when(snapshotDaoMock).listByVolumeId(1L);
+        // e.g. the removed source of a migration, kept for its snapshots
+        Mockito.doReturn(List.of(Mockito.mock(VolumeVO.class))).when(volumeDaoMock).listIncludingRemovedByPassphraseId(7L);
+
+        volumeObjectSpy.deletePassphrase();
+
+        Mockito.verify(volumeVoMock).setPassphraseId(null);
+        Mockito.verify(passphraseDaoMock, Mockito.never()).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void getPassphraseReturnsBase64OfKmsKey() {
+        volumeObjectSpy.kmsManager = kmsManagerMock;
+        Mockito.doReturn(50L).when(volumeVoMock).getKmsWrappedKeyId();
+        byte[] key = new byte[32];
+        Arrays.fill(key, (byte) 5);
+        Mockito.doReturn(key.clone()).when(kmsManagerMock).unwrapKey(50L);
+
+        Assert.assertArrayEquals(Base64.getEncoder().encode(key), volumeObjectSpy.getPassphrase());
+    }
+
+    @Test
+    public void getPassphraseReturnsEmptyForRemovedVolumeWhoseKmsKeyIsGone() {
+        volumeObjectSpy.kmsManager = kmsManagerMock;
+        Mockito.doReturn(50L).when(volumeVoMock).getKmsWrappedKeyId();
+        Mockito.doReturn(new Date()).when(volumeVoMock).getRemoved();
+        Mockito.doThrow(KMSException.kekNotFound("Wrapped key not found: 50")).when(kmsManagerMock).unwrapKey(50L);
+
+        // e.g. deleting a snapshot of the volume doesn't need the key
+        Assert.assertEquals(0, volumeObjectSpy.getPassphrase().length);
+    }
+
+    @Test(expected = KMSException.class)
+    public void getPassphraseThrowsForRemovedVolumeWhenHsmIsUnreachable() {
+        volumeObjectSpy.kmsManager = kmsManagerMock;
+        Mockito.doReturn(50L).when(volumeVoMock).getKmsWrappedKeyId();
+        Mockito.doReturn(new Date()).when(volumeVoMock).getRemoved();
+        Mockito.doThrow(new KMSException(KMSException.ErrorType.CONNECTION_FAILED, "HSM unreachable"))
+                .when(kmsManagerMock).unwrapKey(50L);
+
+        // An empty passphrase would make the volume look unencrypted
+        volumeObjectSpy.getPassphrase();
+    }
+
+    @Test(expected = KMSException.class)
+    public void getPassphraseThrowsForVolumeWhoseKmsKeyIsGone() {
+        volumeObjectSpy.kmsManager = kmsManagerMock;
+        Mockito.doReturn(50L).when(volumeVoMock).getKmsWrappedKeyId();
+        Mockito.doThrow(KMSException.kekNotFound("Wrapped key not found: 50")).when(kmsManagerMock).unwrapKey(50L);
+
+        volumeObjectSpy.getPassphrase();
+    }
+
+    /**
+     * Volume 1 using passphrase 7.
+     */
+    private void mockVolumeWithPassphrase() {
+        volumeObjectSpy.snapshotDao = snapshotDaoMock;
+        volumeObjectSpy.passphraseDao = passphraseDaoMock;
+        Mockito.doReturn(1L).when(volumeVoMock).getId();
+        Mockito.doReturn(7L).when(volumeVoMock).getPassphraseId();
     }
 }

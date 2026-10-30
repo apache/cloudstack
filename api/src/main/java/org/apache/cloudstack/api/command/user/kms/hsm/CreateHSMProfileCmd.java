@@ -87,7 +87,10 @@ public class CreateHSMProfileCmd extends BaseCmd {
     private String vendorName;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
-               description = "HSM configuration details (protocol specific)")
+               description = "HSM configuration details (protocol specific). For pkcs11, the wrap_algorithm detail "
+                       + "selects how volume encryption keys get wrapped. Allowed values are AES/GCM/NoPadding "
+                       + "(default), AES/KWP/NoPadding (needs Java 18 or later) and AES/CBC/PKCS5Padding. "
+                       + "It can't be changed later.")
     private Map<String, String> details;
 
     public String getName() {
