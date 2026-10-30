@@ -65,7 +65,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI, postAPI } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -83,8 +83,6 @@ export default {
   },
   data () {
     return {
-      offerings: [],
-      customDiskOffering: false,
       loading: false,
       customDiskOfferingIops: false
     }
@@ -104,18 +102,14 @@ export default {
       })
     },
     fetchData () {
-      this.loading = true
-      getAPI('listDiskOfferings', {
-        zoneid: this.resource.zoneid,
-        listall: true
-      }).then(json => {
-        this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.form.diskofferingid = this.offerings[0].id || ''
-        this.customDiskOffering = this.offerings[0].iscustomized || false
-        this.customDiskOfferingIops = this.offerings[0].iscustomizediops || false
-      }).finally(() => {
-        this.loading = false
-      })
+      if (this.resource.size != null) {
+        this.form.size = this.resource.size / (1024 * 1024 * 1024)
+      }
+      this.customDiskOfferingIops = this.resource.iscustomizediops
+      if (this.customDiskOfferingIops) {
+        this.form.miniops = this.resource.miniops
+        this.form.maxiops = this.resource.maxiops
+      }
     },
     handleSubmit (e) {
       if (this.loading) return
