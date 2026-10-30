@@ -19,6 +19,7 @@ package com.cloud.network.ovs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -92,6 +93,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
+
+    private static final long MIN_GRE_KEY = 0L;
+    private static final long MAX_GRE_KEY = 4294967295L;
+    private static final Set<Network.State> VPC_TOPOLOGY_NETWORK_STATES = Set.of(
+            Network.State.Setup, Network.State.Implementing, Network.State.Implemented);
 
     // boolean _isEnabled;
     ScheduledExecutorService _executorPool;
@@ -396,6 +402,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         return vpc.usesDistributedRouter();
     }
 
+    boolean isOvsDistributedRouterVpc(long vpcId) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        return vpc != null && vpc.usesDistributedRouter()
+                && _vpcMgr.isProviderSupportServiceInVpc(vpcId, Network.Service.Connectivity, Network.Provider.Ovs);
+    }
+
     @Override
     public void checkAndPrepareHostForTunnelNetwork(Network nw, Host host) {
         if (nw.getVpcId() != null && isVpcEnabledForDistributedRouter(nw.getVpcId())) {
@@ -684,25 +696,28 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         }
 
         for (Long vpcId: vpcIds) {
-            VpcVO vpc = _vpcDao.findById(vpcId);
-            // nothing to do if the VPC is not setup for distributed routing
-            if (vpc == null || !vpc.usesDistributedRouter()) {
-                return;
-            }
-
-            // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC topology change update)
-            List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
-            String bridgeName=generateBridgeNameForVpc(vpcId);
-
-            OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
-            topologyConfigCommand.setSequenceNumber(getNextTopologyUpdateSequenceNumber(vpcId));
-
-            // send topology change update to VPC spanned hosts
-            for (Long id: vpcSpannedHostIds) {
-                if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
-                    logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on " +
-                            "with rest of the host update.");
+            try {
+                if (!isOvsDistributedRouterVpc(vpcId)) {
+                    continue;
                 }
+
+                // get the list of hosts on which VPC spans (i.e hosts that need to be aware of VPC topology change update)
+                List<Long> vpcSpannedHostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
+                String bridgeName=generateBridgeNameForVpc(vpcId);
+
+                OvsVpcPhysicalTopologyConfigCommand topologyConfigCommand = prepareVpcTopologyUpdate(vpcId);
+                topologyConfigCommand.setSequenceNumber(getNextTopologyUpdateSequenceNumber(vpcId));
+
+                // send topology change update to VPC spanned hosts
+                for (Long id: vpcSpannedHostIds) {
+                    if (!sendVpcTopologyChangeUpdate(topologyConfigCommand, id, bridgeName)) {
+                        logger.debug("Failed to send VPC topology change update to host : " + id + ". Moving on " +
+                                "with rest of the host update.");
+                    }
+                }
+            } catch (RuntimeException e) {
+                logger.error("Failed to update OVS distributed-router topology for VPC {} after VM {} changed state",
+                        vpcId, vm.getId(), e);
             }
         }
     }
@@ -731,6 +746,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         assert (vpc != null): "invalid vpc id";
 
         List<? extends Network> vpcNetworks =  _vpcMgr.getVpcNetworks(vpcId);
+        List<Network> topologyNetworks = new ArrayList<>();
+        for (Network network : vpcNetworks) {
+            if (VPC_TOPOLOGY_NETWORK_STATES.contains(network.getState())) {
+                topologyNetworks.add(network);
+            }
+        }
         List<Long> hostIds = _ovsNetworkToplogyGuru.getVpcSpannedHosts(vpcId);
         List<Long> vmIds = _ovsNetworkToplogyGuru.getAllActiveVmsInVpc(vpcId);
 
@@ -741,7 +762,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         for (Long hostId : hostIds) {
             HostVO hostDetails = _hostDao.findById(hostId);
             String remoteIp = null;
-            for (Network network: vpcNetworks) {
+            for (Network network: topologyNetworks) {
                 try {
                     remoteIp = getGreEndpointIP(hostDetails, network);
                 } catch (Exception e) {
@@ -753,21 +774,39 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             hosts.add(host);
         }
 
-        for (Network network: vpcNetworks) {
+        for (Network network: topologyNetworks) {
+            if (network.getBroadcastDomainType() != BroadcastDomainType.Vswitch || network.getBroadcastUri() == null) {
+                throw new CloudRuntimeException(String.format(
+                        "OVS distributed-router VPC %s contains network %s without a Vswitch broadcast URI",
+                        vpc.getUuid(), network.getUuid()));
+            }
             String key = network.getBroadcastUri().getAuthority();
-            long gre_key;
-            if (key.contains(".")) {
-                String[] parts = key.split("\\.");
-                gre_key = Long.parseLong(parts[1]);
-            } else {
-                try {
-                    gre_key = Long.parseLong(BroadcastDomainType.getValue(key));
-                } catch (Exception e) {
-                    return null;
-                }
+            String expectedPrefix = vpcId + ".";
+            if (key == null || !key.startsWith(expectedPrefix) || key.indexOf('.', expectedPrefix.length()) >= 0) {
+                throw new CloudRuntimeException(String.format(
+                        "OVS distributed-router network %s has invalid broadcast key %s for VPC %s",
+                        network.getUuid(), key, vpc.getUuid()));
+            }
+            String greKeyValue = key.substring(expectedPrefix.length());
+            long greKey;
+            try {
+                greKey = Long.parseLong(greKeyValue);
+            } catch (NumberFormatException e) {
+                throw new CloudRuntimeException(String.format(
+                        "OVS distributed-router network %s has non-numeric GRE key %s",
+                        network.getUuid(), greKeyValue), e);
+            }
+            if (greKey < MIN_GRE_KEY || greKey > MAX_GRE_KEY) {
+                throw new CloudRuntimeException(String.format(
+                        "OVS distributed-router network %s has GRE key %s outside the supported range %s-%s",
+                        network.getUuid(), greKeyValue, MIN_GRE_KEY, MAX_GRE_KEY));
             }
             NicVO nic = _nicDao.findByIp4AddressAndNetworkId(network.getGateway(), network.getId());
-            OvsVpcPhysicalTopologyConfigCommand.Tier tier = new OvsVpcPhysicalTopologyConfigCommand.Tier(gre_key,
+            if (nic == null) {
+                throw new CloudRuntimeException(String.format(
+                        "Unable to find the gateway NIC for OVS distributed-router network %s", network.getUuid()));
+            }
+            OvsVpcPhysicalTopologyConfigCommand.Tier tier = new OvsVpcPhysicalTopologyConfigCommand.Tier(greKey,
                     network.getUuid(), network.getGateway(), nic.getMacAddress(), network.getCidr());
             tiers.add(tier);
         }
@@ -802,9 +841,9 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         public void onPublishMessage(String senderAddress, String subject, Object args) {
             try {
                 NetworkVO network = (NetworkVO) args;
-                String bridgeName=generateBridgeNameForVpc(network.getVpcId());
-                if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
-                    long vpcId = network.getVpcId();
+                Long vpcId = network.getVpcId();
+                if (vpcId != null && isOvsDistributedRouterVpc(vpcId)) {
+                    String bridgeName = generateBridgeNameForVpc(vpcId);
                     OvsVpcRoutingPolicyConfigCommand cmd = prepareVpcRoutingPolicyUpdate(vpcId);
                     cmd.setSequenceNumber(getNextRoutingPolicyUpdateSequenceNumber(vpcId));
 
