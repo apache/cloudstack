@@ -132,4 +132,15 @@ public class OntapStorageConstants {
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
+
+    /** Name prefix of the LUN that caches a template on the FlexVol, suffixed with the template id. */
+    public static final String TEMPLATE_LUN_PREFIX = "cs_tmpl_";
+
+    /**
+     * Key of the {@code volume_details} row that {@code StorageSystemDataMotionStrategy} writes
+     * immediately before {@code createAsync} when a volume is to be cloned from a template already
+     * cached on this pool. The value is the CloudStack template id. The literal must stay in sync
+     * with the string used by the orchestrator.
+     */
+    public static final String CLONE_OF_TEMPLATE = "cloneOfTemplate";
 }
