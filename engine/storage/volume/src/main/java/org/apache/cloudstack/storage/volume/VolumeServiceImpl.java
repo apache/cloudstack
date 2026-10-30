@@ -2060,6 +2060,10 @@ public class VolumeServiceImpl implements VolumeService {
     private AsyncCallFuture<VolumeApiResult> copyManagedVolume(VolumeInfo srcVolume, DataStore destStore) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
         VolumeApiResult res = new VolumeApiResult(srcVolume);
+        Host hostWithPoolsAccess = null;
+        VolumeInfo destVolume = null;
+        boolean srcVolumeAccessGranted = false;
+        boolean destVolumeAccessGranted = false;
         try {
             if (!snapshotMgr.canOperateOnVolume(srcVolume)) {
                 logger.debug("There are snapshots creating for this volume, can not move this volume");
@@ -2079,7 +2083,7 @@ public class VolumeServiceImpl implements VolumeService {
             poolIds.add(srcVolume.getPoolId());
             poolIds.add(destStore.getId());
 
-            Host hostWithPoolsAccess = _storageMgr.findUpAndEnabledHostWithAccessToStoragePools(poolIds);
+            hostWithPoolsAccess = _storageMgr.findUpAndEnabledHostWithAccessToStoragePools(poolIds);
             if (hostWithPoolsAccess == null) {
                 logger.debug("No host(s) available with pool access, can not move this volume");
                 res.setResult("No host(s) available with pool access, can not move this volume");
@@ -2088,7 +2092,7 @@ public class VolumeServiceImpl implements VolumeService {
             }
 
             VolumeVO destVol = duplicateVolumeOnAnotherStorage(srcVolume, (StoragePool)destStore);
-            VolumeInfo destVolume = volFactory.getVolume(destVol.getId(), destStore);
+            destVolume = volFactory.getVolume(destVol.getId(), destStore);
 
             // Create a volume on managed storage.
             AsyncCallFuture<VolumeApiResult> createVolumeFuture = createVolumeAsync(destVolume, destStore);
@@ -2117,6 +2121,7 @@ public class VolumeServiceImpl implements VolumeService {
                 srcPrimaryDataStoreDetails.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(srcPrimaryDataStore.getId())));
                 srcPrimaryDataStore.setDetails(srcPrimaryDataStoreDetails);
                 grantAccess(srcVolume, hostWithPoolsAccess, srcVolume.getDataStore());
+                srcVolumeAccessGranted = true;
             }
 
             PrimaryDataStore destPrimaryDataStore = (PrimaryDataStore) destStore;
@@ -2131,6 +2136,7 @@ public class VolumeServiceImpl implements VolumeService {
             destPrimaryDataStore.setDetails(destPrimaryDataStoreDetails);
 
             grantAccess(destVolume, hostWithPoolsAccess, destStore);
+            destVolumeAccessGranted = true;
 
             destVolume.processEvent(Event.CreateRequested);
             srcVolume.processEvent(Event.MigrationRequested);
@@ -2141,15 +2147,38 @@ public class VolumeServiceImpl implements VolumeService {
 
             motionSrv.copyAsync(srcVolume, destVolume, hostWithPoolsAccess, caller);
         } catch (Exception e) {
-            logger.error("Copy to managed volume failed due to: " + e);
-            if(logger.isDebugEnabled()) {
+            logger.error("Copy to managed volume failed due to: {}", String.valueOf(e));
+            if (logger.isDebugEnabled()) {
                 logger.debug("Copy to managed volume failed.", e);
             }
+            revokeAccessOnFailedManagedVolumeCopy(srcVolume, destVolume, hostWithPoolsAccess, srcVolumeAccessGranted, destVolumeAccessGranted);
             res.setResult(e.toString());
             future.complete(res);
         }
 
         return future;
+    }
+
+    private void revokeAccessOnFailedManagedVolumeCopy(VolumeInfo srcVolume, VolumeInfo destVolume, Host host, boolean srcVolumeAccessGranted, boolean destVolumeAccessGranted) {
+        if (host == null) {
+            return;
+        }
+
+        if (srcVolumeAccessGranted) {
+            try {
+                revokeAccess(srcVolume, host, srcVolume.getDataStore());
+            }  catch (Exception e) {
+                logger.warn("Failed to revoke access to volume {} on host {} after a failed managed volume copy", srcVolume, host, e);
+            }
+        }
+
+        if (destVolumeAccessGranted) {
+            try {
+                revokeAccess(destVolume, host, destVolume.getDataStore());
+            } catch (Exception e) {
+                logger.warn("Failed to revoke access to volume {} on host {} after a failed managed volume copy", destVolume, host, e);
+            }
+        }
     }
 
     protected Void copyManagedVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyManagedVolumeContext<VolumeApiResult> context) {
