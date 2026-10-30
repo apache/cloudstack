@@ -18,10 +18,12 @@ package com.cloud.api.query.dao;
 
 import com.cloud.api.query.vo.VolumeJoinVO;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -41,6 +43,23 @@ public class VolumeJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     @Test
     public void testUpdateVolumeTagInfo(){
         testUpdateTagInformation(_volumeJoinDaoImpl, volume, volumeResponse);
+    }
+
+    @Test
+    public void testSetThrottleRatesMapsReadAndWriteDistinctly() {
+        VolumeJoinVO vol = Mockito.mock(VolumeJoinVO.class);
+        Mockito.when(vol.getBytesReadRate()).thenReturn(100L);
+        Mockito.when(vol.getBytesWriteRate()).thenReturn(200L);
+        Mockito.when(vol.getIopsReadRate()).thenReturn(300L);
+        Mockito.when(vol.getIopsWriteRate()).thenReturn(400L);
+
+        VolumeResponse response = new VolumeResponse();
+        _volumeJoinDaoImpl.setThrottleRates(response, vol);
+
+        Assert.assertEquals(Long.valueOf(100L), response.getBytesReadRate());
+        Assert.assertEquals(Long.valueOf(200L), response.getBytesWriteRate());
+        Assert.assertEquals(Long.valueOf(300L), response.getIopsReadRate());
+        Assert.assertEquals(Long.valueOf(400L), response.getIopsWriteRate());
     }
 
 }
