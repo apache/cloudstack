@@ -1545,6 +1545,39 @@ public class NetworkServiceImplTest {
         ReflectionTestUtils.invokeMethod(service, "validateNotNativeVlan", new NetworkVO());
     }
 
+    private NicVO mockNicOnNetwork(long nicId, long networkId, String vlanUri, Networks.TrafficType trafficType) throws Exception {
+        NicVO nic = mockNic(nicId, 5L, networkId, false);
+        NetworkVO network = new NetworkVO();
+        network.setBroadcastUri(new java.net.URI(vlanUri));
+        network.setTrafficType(trafficType);
+        Mockito.when(networkDao.findById(networkId)).thenReturn(network);
+        return nic;
+    }
+
+    @Test
+    public void validateNoNativeVlanOnOtherNicsRejectsAnotherGuestVlanOneNic() throws Exception {
+        NicVO trunkNic = mockNic(11L, 5L, 205L, false);
+        NicVO vlanOneNic = mockNicOnNetwork(12L, 300L, "vlan://1", Networks.TrafficType.Guest);
+        Mockito.when(nicDao.listByVmId(5L)).thenReturn(Arrays.asList(trunkNic, vlanOneNic));
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(vm.getId()).thenReturn(5L);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> ReflectionTestUtils.invokeMethod(service, "validateNoNativeVlanOnOtherNics", vm, trunkNic));
+    }
+
+    @Test
+    public void validateNoNativeVlanOnOtherNicsAllowsVlanOnePublicNicAndOtherVlans() throws Exception {
+        NicVO trunkNic = mockNic(11L, 5L, 205L, false);
+        NicVO publicNic = mockNicOnNetwork(12L, 300L, "vlan://1", Networks.TrafficType.Public);
+        NicVO otherVlanNic = mockNicOnNetwork(13L, 301L, "vlan://100", Networks.TrafficType.Guest);
+        Mockito.when(nicDao.listByVmId(5L)).thenReturn(Arrays.asList(trunkNic, publicNic, otherVlanNic));
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(vm.getId()).thenReturn(5L);
+
+        ReflectionTestUtils.invokeMethod(service, "validateNoNativeVlanOnOtherNics", vm, trunkNic);
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void associateNetworkToNicFailsWhenNicNotFound() throws Exception {
         Mockito.when(nicDao.findById(11L)).thenReturn(null);

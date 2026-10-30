@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -283,10 +284,20 @@ public class VlanTrunkMigrationHelperTest {
     // -- getVlanFilteringUnsuitableReason --
 
     private NicVO nicOnVlan(int vlan, boolean multiNetwork) {
+        return nicOnVlan(vlan, multiNetwork, Networks.TrafficType.Guest);
+    }
+
+    private NicVO nicOnVlan(int vlan, boolean multiNetwork, Networks.TrafficType trafficType) {
         URI broadcastUri = Networks.BroadcastDomainType.Vlan.toUri(vlan);
         NicVO nic = mock(NicVO.class);
         when(nic.getBroadcastUri()).thenReturn(broadcastUri);
         when(nic.getMultiNetwork()).thenReturn(multiNetwork);
+        if (!multiNetwork) {
+            lenient().when(nic.getNetworkId()).thenReturn(5L);
+            NetworkVO network = mock(NetworkVO.class);
+            lenient().when(network.getTrafficType()).thenReturn(trafficType);
+            lenient().when(networkDao.findById(5L)).thenReturn(network);
+        }
         return nic;
     }
 
@@ -340,6 +351,7 @@ public class VlanTrunkMigrationHelperTest {
         NetworkVO network = mock(NetworkVO.class);
         URI vlanOne = Networks.BroadcastDomainType.Vlan.toUri(1);
         when(network.getBroadcastUri()).thenReturn(vlanOne);
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(networkDao.findById(5L)).thenReturn(network);
         givenHostVlanFiltering(true);
 
@@ -351,10 +363,62 @@ public class VlanTrunkMigrationHelperTest {
         Network network = mock(Network.class);
         URI vlanOne = Networks.BroadcastDomainType.Vlan.toUri(1);
         when(network.getBroadcastUri()).thenReturn(vlanOne);
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         givenHostVlanFiltering(true);
         assertTrue(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao).contains("VLAN 1"));
 
         givenHostVlanFiltering(false);
         assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonIgnoresVlanOnePublicNic() {
+        List<NicVO> nics = Collections.singletonList(nicOnVlan(1, false, Networks.TrafficType.Public));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+    }
+
+    @Test
+    public void getNativeVlanUnsuitableReasonIgnoresVlanOneNonGuestNetwork() {
+        Network network = mock(Network.class);
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+
+        assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao));
+    }
+
+    @Test
+    public void hasNativeVlanGuestNicIsTrueOnlyForGuestVlanOne() {
+        assertTrue(VlanTrunkMigrationHelper.hasNativeVlanGuestNic(Collections.singletonList(nicOnVlan(1, false)), networkDao));
+        assertFalse(VlanTrunkMigrationHelper.hasNativeVlanGuestNic(Collections.singletonList(nicOnVlan(100, false)), networkDao));
+    }
+
+    @Test
+    public void isNativeVlanGuestNetworkIsTrueOnlyForGuestVlanOne() {
+        Network guestVlanOne = mock(Network.class);
+        when(guestVlanOne.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(guestVlanOne.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(1));
+        Network guestOtherVlan = mock(Network.class);
+        when(guestOtherVlan.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(guestOtherVlan.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(100));
+
+        assertTrue(VlanTrunkMigrationHelper.isNativeVlanGuestNetwork(guestVlanOne));
+        assertFalse(VlanTrunkMigrationHelper.isNativeVlanGuestNetwork(guestOtherVlan));
+    }
+
+    @Test
+    public void hasTrunkNicDetectsMultiNetworkNic() {
+        assertTrue(VlanTrunkMigrationHelper.hasTrunkNic(Collections.singletonList(nicOnVlan(100, true))));
+        assertFalse(VlanTrunkMigrationHelper.hasTrunkNic(Collections.singletonList(nicOnVlan(100, false))));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonDoesNotLookUpNetworksOrHostForNicsOnOtherVlans() {
+        List<NicVO> nics = Collections.singletonList(nicOnVlan(100, false));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+        verify(networkDao, never()).findById(any(Long.class));
+        verify(hostDetailsDao, never()).findDetail(any(Long.class), any(String.class));
     }
 }

@@ -1576,6 +1576,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         failIfNativeVlanOnVlanFilteringHost(vmInstance, network);
+        failIfNativeVlanOnVmWithTrunkNic(vmInstance, network);
 
         setNicAsDefaultIfNeeded(vmInstance, profile);
 
@@ -6811,6 +6812,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
         verifyTemplate(cmd, template, serviceOfferingId);
+        validateNoNativeVlanNicWithTrunkNic(cmd);
 
         Long diskOfferingId = cmd.getDiskOfferingId();
         DiskOffering diskOffering = null;
@@ -7860,6 +7862,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String reason = VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, vm.getHostId(), _hostDetailsDao);
         if (reason != null) {
             throw new InvalidParameterValueException(String.format("Cannot add network %s to Instance %s: %s", network.getUuid(), vm.getUuid(), reason));
+        }
+    }
+
+    // A trunk nic needs a VLAN-filtering host and a Guest VLAN 1 nic a legacy one, so the Instance could start nowhere.
+    private void failIfNativeVlanOnVmWithTrunkNic(UserVmVO vm, Network network) {
+        if (VlanTrunkMigrationHelper.isNativeVlanGuestNetwork(network) && VlanTrunkMigrationHelper.hasTrunkNic(_nicDao.listByVmId(vm.getId()))) {
+            throw new InvalidParameterValueException(String.format("Cannot add network %s to Instance %s: it is on VLAN 1, the native VLAN of the host uplink, "
+                    + "and the Instance has a trunk nic", network.getUuid(), vm.getUuid()));
+        }
+    }
+
+    private void validateNoNativeVlanNicWithTrunkNic(BaseDeployVMCmd cmd) {
+        List<BaseDeployVMCmd.NicNetworkGrouping> groupings = cmd.getNicNetworksList();
+        if (groupings.stream().allMatch(grouping -> grouping.getAssociatedNetworkIds().isEmpty())) {
+            return;
+        }
+        for (BaseDeployVMCmd.NicNetworkGrouping grouping : groupings) {
+            Network primaryNetwork = _networkDao.findById(grouping.getPrimaryNetworkId());
+            if (primaryNetwork != null && VlanTrunkMigrationHelper.isNativeVlanGuestNetwork(primaryNetwork)) {
+                throw new InvalidParameterValueException(String.format("Network %s is on VLAN 1, the native VLAN of the host uplink, "
+                        + "and cannot be on an Instance that has a trunk nic", primaryNetwork.getUuid()));
+            }
         }
     }
 
@@ -10290,6 +10314,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         verifyTemplate(cmd, template, serviceOffering.getId());
+        validateNoNativeVlanNicWithTrunkNic(cmd);
 
         Long size = cmd.getSize();
 

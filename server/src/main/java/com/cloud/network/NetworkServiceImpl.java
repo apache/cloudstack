@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1082,6 +1083,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             validateTrunkSet(primaryNetwork, resultingSet);
             resultingSet.forEach(this::validateNotNativeVlan);
+            validateNoNativeVlanOnOtherNics(vm, nic);
             validateNoOverlappingCidrs(resultingSet);
             // defer implement to the Instance's next start when stopped, like its primary network; a running Instance needs it now
             boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
@@ -1682,6 +1684,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException(String.format("Networks %s and %s share the same VLAN (%s) and cannot be associated with the same nic",
                         conflicting.getUuid(), network.getUuid(), broadcastUri));
             }
+        }
+    }
+
+    // A trunk nic needs a VLAN-filtering host and a Guest VLAN 1 nic a legacy one, so the Instance could start nowhere.
+    private void validateNoNativeVlanOnOtherNics(VirtualMachine vm, NicVO nic) {
+        List<NicVO> otherNics = _nicDao.listByVmId(vm.getId()).stream().filter(other -> other.getId() != nic.getId()).collect(Collectors.toList());
+        if (VlanTrunkMigrationHelper.hasNativeVlanGuestNic(otherNics, _networksDao)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Instance %s has a nic on a VLAN 1 network, which cannot be combined with a trunk nic", vm.getUuid()));
         }
     }
 

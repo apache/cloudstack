@@ -80,6 +80,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -233,6 +236,9 @@ public class DeploymentPlanningManagerImplTest {
 
     @Mock
     NicDao nicDao;
+
+    @Mock
+    NetworkDao networkDao;
 
     @Inject
     HostPodDao _podDao;
@@ -528,6 +534,54 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertTrue(avoids.getHostsToAvoid().contains(notReadyHostId));
         Assert.assertTrue(avoids.getHostsToAvoid().contains(noDetailHostId));
         Assert.assertFalse(avoids.getHostsToAvoid().contains(readyHostId));
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsExcludesFilteringHostsForGuestVlanOneNic() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(dataCenterId);
+        ExcludeList avoids = new ExcludeList();
+
+        NicVO vlanOneNic = Mockito.mock(NicVO.class);
+        Mockito.when(vlanOneNic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(vlanOneNic.getNetworkId()).thenReturn(5L);
+        Mockito.when(vlanOneNic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(1));
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(vlanOneNic));
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(networkDao.findById(5L)).thenReturn(network);
+
+        long filteringHostId = 10L;
+        long legacyHostId = 11L;
+        Mockito.when(hostDao.listEnabledIdsByDataCenterId(dataCenterId)).thenReturn(Arrays.asList(filteringHostId, legacyHostId));
+        Mockito.when(hostDetailsDao.findHostIdsWithVlanFilteringEnabled()).thenReturn(Collections.singleton(filteringHostId));
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        Assert.assertEquals(1, avoids.getHostsToAvoid().size());
+        Assert.assertTrue(avoids.getHostsToAvoid().contains(filteringHostId));
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsDoesNoLookupsForNicsOnOtherVlans() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        ExcludeList avoids = new ExcludeList();
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(nic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(100));
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(nic));
+        Mockito.clearInvocations(hostDao, hostDetailsDao);
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        assertAvoidIsEmpty(avoids, true, true, true, true);
+        Mockito.verify(networkDao, Mockito.never()).findById(Mockito.anyLong());
+        Mockito.verify(hostDetailsDao, Mockito.never()).findHostIdsWithVlanFilteringEnabled();
+        Mockito.verify(hostDao, Mockito.never()).listEnabledIdsByDataCenterId(Mockito.anyLong());
     }
 
     @Test
@@ -1095,6 +1149,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public NicDao nicDao() {
             return Mockito.mock(NicDao.class);
+        }
+
+        @Bean
+        public NetworkDao networkDao() {
+            return Mockito.mock(NetworkDao.class);
         }
 
 

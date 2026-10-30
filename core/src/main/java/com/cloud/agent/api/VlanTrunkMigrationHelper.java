@@ -17,6 +17,7 @@
 package com.cloud.agent.api;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -73,11 +74,11 @@ public class VlanTrunkMigrationHelper {
         return nicDao.listByVmId(vmId).stream().anyMatch(nic -> nicNeedsManualVlanMembership(nic, destVlanFilteringEnabled));
     }
 
-    // A multi-VLAN trunk nic needs a VLAN-filtering host; a VLAN 1 nic needs a legacy host, as the shared bridge's PVID is VLAN 1. Null when the host fits.
+    // A multi-VLAN trunk nic needs a VLAN-filtering host; a Guest VLAN 1 nic needs a legacy host, as the shared bridge's PVID is VLAN 1. Null when the host fits.
     public static String getVlanFilteringUnsuitableReason(long vmId, long hostId, NicDao nicDao, NetworkDao networkDao, HostDetailsDao hostDetailsDao) {
         List<NicVO> nics = nicDao.listByVmId(vmId);
-        boolean hasTrunkNic = nics.stream().anyMatch(NicVO::getMultiNetwork);
-        boolean hasNativeVlanNic = nics.stream().anyMatch(nic -> !nic.getMultiNetwork() && isNativeVlan(getEffectiveBroadcastUri(nic, networkDao)));
+        boolean hasTrunkNic = hasTrunkNic(nics);
+        boolean hasNativeVlanNic = hasNativeVlanGuestNic(nics, networkDao);
         if (!hasTrunkNic && !hasNativeVlanNic) {
             return null;
         }
@@ -93,7 +94,20 @@ public class VlanTrunkMigrationHelper {
 
     // For a network about to be plugged into a running Instance on this host.
     public static String getNativeVlanUnsuitableReason(Network network, long hostId, HostDetailsDao hostDetailsDao) {
-        return isNativeVlan(network.getBroadcastUri()) && isVlanFilteringEnabled(hostId, hostDetailsDao) ? NATIVE_VLAN_ON_FILTERING_HOST_REASON : null;
+        return isNativeVlanGuestNetwork(network) && isVlanFilteringEnabled(hostId, hostDetailsDao) ? NATIVE_VLAN_ON_FILTERING_HOST_REASON : null;
+    }
+
+    public static boolean hasTrunkNic(Collection<NicVO> nics) {
+        return nics.stream().anyMatch(NicVO::getMultiNetwork);
+    }
+
+    // Only Guest nics ride the shared bridge; Public, Management and Storage nics use their own bridges.
+    public static boolean hasNativeVlanGuestNic(Collection<NicVO> nics, NetworkDao networkDao) {
+        return nics.stream().anyMatch(nic -> isNativeVlanGuestNic(nic, networkDao));
+    }
+
+    public static boolean isNativeVlanGuestNetwork(Network network) {
+        return network.getTrafficType() == Networks.TrafficType.Guest && isNativeVlan(network.getBroadcastUri());
     }
 
     private static boolean isVlanFilteringEnabled(long hostId, HostDetailsDao hostDetailsDao) {
@@ -102,12 +116,19 @@ public class VlanTrunkMigrationHelper {
     }
 
     // a stopped Instance's nics carry no broadcast URI (released on stop), so fall back to the network's
-    private static URI getEffectiveBroadcastUri(NicVO nic, NetworkDao networkDao) {
-        if (nic.getBroadcastUri() != null) {
-            return nic.getBroadcastUri();
+    private static boolean isNativeVlanGuestNic(NicVO nic, NetworkDao networkDao) {
+        if (nic.getMultiNetwork()) {
+            return false;
+        }
+        URI nicBroadcastUri = nic.getBroadcastUri();
+        if (nicBroadcastUri != null && !isNativeVlan(nicBroadcastUri)) {
+            return false;
         }
         NetworkVO network = networkDao.findById(nic.getNetworkId());
-        return network == null ? null : network.getBroadcastUri();
+        if (network == null || network.getTrafficType() != Networks.TrafficType.Guest) {
+            return false;
+        }
+        return isNativeVlan(nicBroadcastUri != null ? nicBroadcastUri : network.getBroadcastUri());
     }
 
     private static boolean isNativeVlan(URI broadcastUri) {

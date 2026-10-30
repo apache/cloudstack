@@ -151,6 +151,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.as.AutoScaleManager;
@@ -784,6 +785,65 @@ public class UserVmManagerImplTest {
 
         Mockito.verify(networkService).associateNetworksToNic(Mockito.eq(nic), Mockito.eq(Collections.singletonList(207L)), Mockito.any());
         Mockito.verify(userVmManagerImpl, Mockito.never()).expunge(Mockito.any());
+    }
+
+    private Network mockNetworkOnVlan(int vlan, Networks.TrafficType trafficType) {
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getTrafficType()).thenReturn(trafficType);
+        Mockito.when(network.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(vlan));
+        return network;
+    }
+
+    @Test
+    public void failIfNativeVlanOnVmWithTrunkNicRejectsGuestVlanOneNetworkWhenVmHasTrunkNic() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(99L);
+        NicVO trunkNic = Mockito.mock(NicVO.class);
+        Mockito.when(trunkNic.getMultiNetwork()).thenReturn(true);
+        Mockito.when(nicDao.listByVmId(99L)).thenReturn(Collections.singletonList(trunkNic));
+        Network vlanOne = mockNetworkOnVlan(1, Networks.TrafficType.Guest);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> ReflectionTestUtils.invokeMethod(userVmManagerImpl, "failIfNativeVlanOnVmWithTrunkNic", vm, vlanOne));
+    }
+
+    @Test
+    public void failIfNativeVlanOnVmWithTrunkNicAllowsGuestVlanOneNetworkWithoutTrunkNic() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(99L);
+        NicVO plainNic = Mockito.mock(NicVO.class);
+        Mockito.when(plainNic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(nicDao.listByVmId(99L)).thenReturn(Collections.singletonList(plainNic));
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "failIfNativeVlanOnVmWithTrunkNic", vm, mockNetworkOnVlan(1, Networks.TrafficType.Guest));
+    }
+
+    @Test
+    public void validateNoNativeVlanNicWithTrunkNicRejectsVlanOnePrimaryAlongsideATrunkNic() {
+        BaseDeployVMCmd cmd = Mockito.mock(BaseDeployVMCmd.class);
+        BaseDeployVMCmd.NicNetworkGrouping trunkGrouping = new BaseDeployVMCmd.NicNetworkGrouping(
+                Arrays.asList(206L, 207L), null, null, null, Collections.emptyMap());
+        BaseDeployVMCmd.NicNetworkGrouping vlanOneGrouping = new BaseDeployVMCmd.NicNetworkGrouping(
+                Collections.singletonList(208L), null, null, null, Collections.emptyMap());
+        Mockito.when(cmd.getNicNetworksList()).thenReturn(Arrays.asList(trunkGrouping, vlanOneGrouping));
+        NetworkVO vlanOne = Mockito.mock(NetworkVO.class);
+        Mockito.when(vlanOne.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(vlanOne.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(1));
+        Mockito.when(_networkDao.findById(206L)).thenReturn(Mockito.mock(NetworkVO.class));
+        Mockito.when(_networkDao.findById(208L)).thenReturn(vlanOne);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> ReflectionTestUtils.invokeMethod(userVmManagerImpl, "validateNoNativeVlanNicWithTrunkNic", cmd));
+    }
+
+    @Test
+    public void validateNoNativeVlanNicWithTrunkNicAllowsVlanOneNicWhenNoTrunkNicIsRequested() {
+        BaseDeployVMCmd cmd = Mockito.mock(BaseDeployVMCmd.class);
+        BaseDeployVMCmd.NicNetworkGrouping plainGrouping = new BaseDeployVMCmd.NicNetworkGrouping(
+                Collections.singletonList(208L), null, null, null, Collections.emptyMap());
+        Mockito.when(cmd.getNicNetworksList()).thenReturn(Collections.singletonList(plainGrouping));
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "validateNoNativeVlanNicWithTrunkNic", cmd);
     }
 
     private VMInstanceVO mockVmWithId(long id) {

@@ -73,6 +73,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
@@ -151,6 +152,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -192,6 +194,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private VMTemplateDao templateDao;
     @Inject
     protected NicDao _nicDao;
+    @Inject
+    protected NetworkDao _networkDao;
 
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
@@ -484,22 +488,27 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      */
     @Override
     public void avoidHostsNotReadyForMultiNetworkNics(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
-        boolean hasMultiNetworkNic = _nicDao.listByVmId(vmProfile.getId()).stream().anyMatch(NicVO::getMultiNetwork);
-        if (!hasMultiNetworkNic) {
+        List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
+        boolean needsFilteringHost = VlanTrunkMigrationHelper.hasTrunkNic(nics);
+        boolean needsLegacyHost = !needsFilteringHost && VlanTrunkMigrationHelper.hasNativeVlanGuestNic(nics, _networkDao);
+        if (!needsFilteringHost && !needsLegacyHost) {
+            return;
+        }
+        Set<Long> filteringHostIds = _hostDetailsDao.findHostIdsWithVlanFilteringEnabled();
+        // without VLAN-filtering hosts a VLAN 1 nic is placeable anywhere
+        if (needsLegacyHost && filteringHostIds.isEmpty()) {
             return;
         }
         List<Long> candidateHostIds = _hostDao.listEnabledIdsByDataCenterId(dc.getId());
         if (CollectionUtils.isEmpty(candidateHostIds)) {
             return;
         }
-        Set<Long> readyHostIds = _hostDetailsDao.findHostIdsWithVlanFilteringEnabled();
-        List<Long> notReadyHostIds = candidateHostIds.stream()
-                .filter(hostId -> !readyHostIds.contains(hostId))
+        List<Long> unsuitableHostIds = candidateHostIds.stream()
+                .filter(hostId -> filteringHostIds.contains(hostId) ? needsLegacyHost : needsFilteringHost)
                 .collect(Collectors.toList());
-        if (!notReadyHostIds.isEmpty()) {
-            logger.debug("Excluding {} host(s) without VLAN filtering enabled, since VM [{}] has a multi-VLAN trunk nic",
-                    notReadyHostIds.size(), vmProfile);
-            avoids.addHostList(notReadyHostIds);
+        if (!unsuitableHostIds.isEmpty()) {
+            logger.debug("Excluding {} host(s) unsuitable for the multi-VLAN trunk or VLAN 1 nics of VM [{}]", unsuitableHostIds.size(), vmProfile);
+            avoids.addHostList(unsuitableHostIds);
         }
     }
 
