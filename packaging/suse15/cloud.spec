@@ -460,9 +460,9 @@ fi
 # Install mysql-connector-python wheel
 # Detect Python version to install compatible wheel
 if python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)'; then
-    pip3 install %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.4.0-py2.py3-none-any.whl
+    python3 -m pip install --no-index --no-deps --upgrade --force-reinstall %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.4.0-py2.py3-none-any.whl
 else
-    pip3 install %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.31-py2.py3-none-any.whl
+    python3 -m pip install --no-index --no-deps --upgrade --force-reinstall %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.31-py2.py3-none-any.whl
 fi
 
 /usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
