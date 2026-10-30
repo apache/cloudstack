@@ -34,7 +34,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 @APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {
-        Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "migratevolumeresponse";
 

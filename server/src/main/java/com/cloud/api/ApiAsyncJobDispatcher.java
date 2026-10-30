@@ -31,6 +31,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -117,10 +118,17 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 CallContext.unregister();
             }
         } catch (Throwable e) {
+            // a job cancelled mid-execution is already terminal; do not overwrite CANCELLED with the failure it caused
+            AsyncJobVO jobFromDb = _asyncJobMgr.getAsyncJob(job.getId());
+            if (jobFromDb != null && jobFromDb.getStatus().done()) {
+                logger.debug("Not recording failure for job-{}, it is already in {}", job.getId(), jobFromDb.getStatus());
+                return;
+            }
+
             String errorMsg = null;
             int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
             if (!(e instanceof ServerApiException)) {
-                logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                logger.error("Unexpected exception while executing {}", job.getCmd(), e);
                 errorMsg = e.getMessage();
             } else {
                 ServerApiException sApiEx = (ServerApiException)e;

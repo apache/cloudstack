@@ -807,9 +807,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         }
                         commandsInProgress.incrementAndGet();
                         try {
-                            if (cmd.isReconcile()) {
-                                cmd.setRequestSequence(request.getSequence());
-                            }
+                            cmd.setRequestSequence(request.getSequence());
                             answer = serverResource.executeRequest(cmd);
                         } finally {
                             commandsInProgress.decrementAndGet();
@@ -1103,9 +1101,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             Answer answer = null;
             commandsInProgress.incrementAndGet();
             try {
-                if (command.isReconcile()) {
-                    command.setRequestSequence(req.getSequence());
-                }
+                command.setRequestSequence(req.getSequence());
                 answer = serverResource.executeRequest(command);
             } finally {
                 commandsInProgress.decrementAndGet();

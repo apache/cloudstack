@@ -18,11 +18,13 @@ package com.cloud.agent.manager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -31,13 +33,18 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class AgentManagerImplTest {
@@ -171,5 +178,133 @@ public class AgentManagerImplTest {
         Mockito.when(host.getDetail(Host.HOST_SSH_PORT)).thenReturn(String.valueOf(3922));
         int hostSshPort = mgr.getHostSshPort(host);
         Assert.assertEquals(3922, hostSshPort);
+    }
+
+    private AsyncJobManager cancelledJobOnThisServer(final long jobId) {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        final AsyncJobVO job = new AsyncJobVO();
+        job.setId(jobId);
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.singletonList(job));
+        return asyncJobManager;
+    }
+
+    @Test
+    public void testCancelledJobWithoutInFlightCommandsIsFinalisedAtOnce() {
+        final AsyncJobManager asyncJobManager = cancelledJobOnThisServer(42L);
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+    }
+
+    @Test
+    public void testCancelledJobStaysAssignedUntilItsCommandCanBeStopped() throws Exception {
+        final AsyncJobManager asyncJobManager = cancelledJobOnThisServer(42L);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable");
+        mgr.new CancelledJobsCheckTask().runInContext();
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
+
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr.new CancelledJobsCheckTask().runInContext();
+        Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
+    }
+
+    @Test
+    public void testCommandsInFlightHereForAJobCancelledElsewhereAreStopped() throws Exception {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.emptyList());
+        final AsyncJobVO cancelled = new AsyncJobVO();
+        cancelled.setId(42L);
+        cancelled.setStatus(JobInfo.Status.IN_PROGRESS);
+        cancelled.setCancelRequested(true);
+        Mockito.when(asyncJobManager.getAsyncJob(42L)).thenReturn(cancelled);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+    }
+
+    @Test
+    public void testEasySendHandsTheCancellationToTheCallerInsteadOfANullAnswer() throws Exception {
+        final HostVO up = Mockito.mock(HostVO.class);
+        Mockito.when(up.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(1L)).thenReturn(up);
+        final Command cmd = new ReadyCommand();
+        final OperationCancelledException cancelled = new OperationCancelledException(new Command[] {cmd}, 1L, 11L, 5L, true, "Cancelled by admin via mgmt1");
+        Mockito.doThrow(cancelled).when(mgr).send(1L, cmd);
+
+        try {
+            mgr.easySend(1L, cmd);
+            Assert.fail("The cancellation was swallowed");
+        } catch (final OperationCancelledException e) {
+            Assert.assertSame(cancelled, e);
+        }
+    }
+
+    @Test
+    public void testRefusalCarriesWhatTheHypervisorReportedAndTheHost() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.getName()).thenReturn("esxi-1");
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("no vCenter task is running for StopCommand");
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertEquals("no vCenter task is running for StopCommand (host esxi-1)", mgr.checkJobCannotBeCancelled(42L));
+        Assert.assertNull(mgr.checkJobCannotBeCancelled(7L));
+    }
+
+    @Test
+    public void testCancelWithNothingInFlightRefusesTheNextCommandOnly() {
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        // the worker is now unwinding: its rollback commands go through
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(7L));
+        Assert.assertFalse(mgr.refusesCommandsOf(null));
+    }
+
+    @Test
+    public void testStoppedCommandHandsTheCancelToTheWorkerSoItsRollbackPasses() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+    }
+
+    @Test
+    public void testCommandThatCannotBeStoppedLeavesTheRefusalForTheNextOne() throws Exception {
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable");
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        Assert.assertFalse(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
+        Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
     }
 }

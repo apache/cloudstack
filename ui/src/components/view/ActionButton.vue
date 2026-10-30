@@ -66,7 +66,7 @@
         <a-button
           :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
           :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
-          :danger="dangerIconList.includes(action.icon)"
+          :danger="dangerIconList.includes(action.icon) || action.danger === true"
           style="margin-left: 5px"
           :size="size"
           @click="execAction(action)">
@@ -85,7 +85,7 @@
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
         :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
-        :danger="dangerIconList.includes(action.icon)"
+        :danger="dangerIconList.includes(action.icon) || action.danger === true"
         :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"

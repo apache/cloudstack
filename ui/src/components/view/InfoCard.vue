@@ -933,11 +933,11 @@
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.managementserverid">
-              <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
+              <div class="resource-detail-item__label">{{ $t('label.management.server') }}</div>
               <div class="resource-detail-item__details">
                 <rocket-outlined />
-                <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).matched[0].redirect !== '/exception/404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
-                <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
+                <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).matched[0].redirect !== '/exception/404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementservername || resource.managementserver || resource.managementserverid }}</router-link>
+                <span v-else>{{ resource.managementservername || resource.managementserver || resource.managementserverid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.created && !['template', 'iso'].includes($route.path.split('/')[1])">
@@ -1143,7 +1143,8 @@ export default {
     },
     name () {
       return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.osname || this.resource.osdisplayname || this.resource.templatetype
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.osname || this.resource.osdisplayname || this.resource.templatetype ||
+        (this.resource.cmd && this.resource.cmd.split('.').pop())
     },
     keypairs () {
       if (!this.resource.keypairs) {

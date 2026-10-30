@@ -43,6 +43,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareTaskRegistry;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
@@ -62,6 +63,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     private final StorageSubsystemCommandHandler storageSubsystemHandler;
 
     private static ThreadLocal<VmwareContext> currentContext = new ThreadLocal<VmwareContext>();
+    private final VmwareTaskRegistry taskRegistry = new VmwareTaskRegistry();
 
     /*
      * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
@@ -92,7 +94,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
     @Override
     public Answer executeRequest(Command cmd) {
-
+        final Long requestSequence = cmd.getRequestSequence() > 0 ? cmd.getRequestSequence() : null;
+        taskRegistry.beginRequest(requestSequence, cmd.getClass().getSimpleName());
         try {
             Answer answer;
             ThreadContext.push(getCommandLogTitle(cmd));
@@ -131,16 +134,31 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
             }
 
-            if (logger.isDebugEnabled())
-                logger.debug("Command execution answer: " + _gson.toJson(answer));
+            if (logger.isDebugEnabled()) {
+                logger.debug("Command execution answer: {}", _gson.toJson(answer));
+            }
 
+            if (answer != null && !answer.getResult() && taskRegistry.wasCancelRequested(requestSequence)) {
+                answer.setCancelled(true);
+            }
             return answer;
         } finally {
+            taskRegistry.endRequest(requestSequence);
             if (logger.isDebugEnabled())
-                logger.debug("Done executing " + _gson.toJson(cmd));
+                logger.debug("Done executing {}", _gson.toJson(cmd));
             recycleServiceContext();
             ThreadContext.pop();
         }
+    }
+
+    @Override
+    public String checkRequestSequenceIsNotCancellable(long sequence) {
+        return taskRegistry.checkTaskNotCancellable(sequence);
+    }
+
+    @Override
+    public boolean cancelRequestSequence(long sequence) {
+        return taskRegistry.cancel(sequence);
     }
 
     private void logCommand(Command cmd) {
