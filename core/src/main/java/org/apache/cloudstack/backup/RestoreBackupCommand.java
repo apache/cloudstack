@@ -143,6 +143,9 @@ public class RestoreBackupCommand extends Command  {
 
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+    /** LUKS passphrase for backups taken with nas.backup.encryption.enabled; null for plain backups. Never logged. */
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private String encryptionPassphrase;
     @Override
 
     public boolean executeInSequence() {
@@ -151,6 +154,14 @@ public class RestoreBackupCommand extends Command  {
 
     public List<String> getBackupVolumesUUIDs() {
         return backupVolumesUUIDs;
+    }
+
+    public String getEncryptionPassphrase() {
+        return encryptionPassphrase;
+    }
+
+    public void setEncryptionPassphrase(String encryptionPassphrase) {
+        this.encryptionPassphrase = encryptionPassphrase;
     }
 
     public void setBackupVolumesUUIDs(List<String> backupVolumesUUIDs) {
