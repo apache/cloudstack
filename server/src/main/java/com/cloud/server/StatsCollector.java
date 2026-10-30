@@ -1497,7 +1497,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
 
                                     if (CollectionUtils.isEmpty(volumes))
-                                        break;
+                                        continue;
 
                                     VolumeVO volume = volumes.get(0);
                                     VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
@@ -1682,7 +1682,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         if (!List.of(ImageFormat.QCOW2, ImageFormat.VHD, ImageFormat.OVA, ImageFormat.RAW).contains(volume.getFormat()) &&
                             !List.of(Storage.StoragePoolType.PowerFlex, Storage.StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
                             logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
-                            break;
+                            continue;
                         }
                     }
                     try {
