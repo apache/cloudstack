@@ -472,6 +472,61 @@
             :placeholder="$t('label.sourcecidrlist')"
           />
         </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.keepalive') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.keepalive.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-select
+            v-model:value="editRuleDetails.keepalive"
+            :placeholder="$t('label.inherit.default')">
+            <a-select-option :value="undefined" :label="$t('label.inherit.default')">{{ $t('label.inherit.default') }}</a-select-option>
+            <a-select-option :value="true" :label="$t('label.yes')">{{ $t('label.yes') }}</a-select-option>
+            <a-select-option :value="false" :label="$t('label.no')">{{ $t('label.no') }}</a-select-option>
+          </a-select>
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.idletimeout') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.idletimeout.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.idletimeout"
+            type="number"
+            min="0"
+            :placeholder="$t('label.inherit.default')"
+          />
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.keepalivetimeout') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.keepalivetimeout.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.keepalivetimeout"
+            type="number"
+            min="0"
+            :placeholder="$t('label.inherit.default')"
+          />
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
@@ -859,7 +914,10 @@ export default {
         name: '',
         algorithm: '',
         protocol: '',
-        cidrlist: ''
+        cidrlist: '',
+        keepalive: undefined,
+        idletimeout: undefined,
+        keepalivetimeout: undefined
       },
       newRule: {
         algorithm: 'roundrobin',
@@ -1662,6 +1720,9 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
+      this.editRuleDetails.keepalive = this.selectedRule.keepalive
+      this.editRuleDetails.idletimeout = this.selectedRule.idletimeout
+      this.editRuleDetails.keepalivetimeout = this.selectedRule.keepalivetimeout
       // Normalize cidrlist: replace spaces with commas and clean up
       this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
         .split(/[\s,]+/) // Split on spaces or commas
@@ -1680,11 +1741,19 @@ export default {
           cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
         })
       }
-      postAPI('updateLoadBalancerRule', {
-        ...this.editRuleDetails,
-        id: this.selectedRule.id,
-        ...payload
-      }).then(response => {
+      // A blank field sends nothing, which the API reads as keep the current value. When a
+      // field the rule had set is now blank, ask the API to drop the rule's own settings;
+      // the ones still filled in are sent alongside and set again.
+      const isBlank = (value) => value === '' || value === null || value === undefined
+      for (const key of ['keepalive', 'idletimeout', 'keepalivetimeout']) {
+        if (isBlank(payload[key])) {
+          delete payload[key]
+          if (!isBlank(this.selectedRule[key])) {
+            payload.cleanupconnectionsettings = true
+          }
+        }
+      }
+      postAPI('updateLoadBalancerRule', payload).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.edit.rule'),
