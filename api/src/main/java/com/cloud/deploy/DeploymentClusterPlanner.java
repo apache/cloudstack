@@ -68,6 +68,18 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             ConfigKey.Kind.Select,
             "random,firstfit,userdispersing,firstfitleastconsumed");
 
+    ConfigKey<Boolean> ApplyAllocationAlgorithmToPods = new ConfigKey<>("Advanced", Boolean.class, "apply.allocation.algorithm.to.pods", "false",
+            "If true, deployment planner applies the allocation heuristics at pods first in the given datacenter during VM resource allocation", true);
+
+    ConfigKey<String> HostCapacityTypeToOrderClusters = new ConfigKey<>("Advanced", String.class, "host.capacityType.to.order.clusters", "CPU",
+            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation", true);
+
+    ConfigKey<Float> VmUserDispersionWeight = new ConfigKey<>("Advanced", Float.class, "vm.user.dispersion.weight", "1",
+            "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)", true);
+
+    ConfigKey<String> ImplicitHostTags = new ConfigKey<>("Advanced", String.class, "implicit.host.tags", "GPU",
+            "Tag hosts at the time of host discovery based on the host properties/capabilities", true);
+
     /**
      * This is called to determine list of possible clusters where a virtual
      * machine can be deployed.
