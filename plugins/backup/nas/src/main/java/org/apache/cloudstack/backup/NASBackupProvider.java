@@ -701,7 +701,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
-        command.setMountOptions(backupRepository.getMountOptions());
+        command.setMountOptions(getMountOptions(backupRepository));
         command.setQuiesce(quiesceVM);
         command.setQuiesceTimeout(NASBackupQuiesceAgentTimeout.valueIn(vm.getDataCenterId()));
         command.setMode(decision.mode);
@@ -862,7 +862,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
-        restoreCommand.setMountOptions(backupRepository.getMountOptions());
+        restoreCommand.setMountOptions(getMountOptions(backupRepository));
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setBackupVolumesUUIDs(backedVolumesUUIDs);
         Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(restoreVolumes);
@@ -1028,7 +1028,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         DataStore dataStore = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         restoreCommand.setRestoreVolumePools(Collections.singletonList(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null));
         restoreCommand.setDiskType(backupVolumeInfo.getType().name().toLowerCase(Locale.ROOT));
-        restoreCommand.setMountOptions(backupRepository.getMountOptions());
+        restoreCommand.setMountOptions(getMountOptions(backupRepository));
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
@@ -1169,7 +1169,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      */
     private boolean deleteBackupFileAndRow(Backup backup, BackupRepository repo, Host host) {
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), repo.getType(),
-                repo.getAddress(), repo.getMountOptions());
+                repo.getAddress(), getMountOptions(repo));
         BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
@@ -1403,7 +1403,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return;
         }
         for (final BackupRepository repository : repositories) {
-            GetBackupStorageStatsCommand command = new GetBackupStorageStatsCommand(repository.getType(), repository.getAddress(), repository.getMountOptions());
+            GetBackupStorageStatsCommand command = new GetBackupStorageStatsCommand(repository.getType(), repository.getAddress(), getMountOptions(repository));
             BackupStorageStatsAnswer answer;
             try {
                 answer = (BackupStorageStatsAnswer) agentManager.send(host.getId(), command);
@@ -1414,6 +1414,26 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 logger.warn("Operation to get backup stats timed out for the repository: " + repository.getName());
             }
         }
+    }
+
+    /**
+     * Returns the repository's mount options without the blanks around each option, so that a value
+     * saved with stray whitespace, such as "vers=4.1 ", reaches mount the same way for every command.
+     * Options that are only whitespace are dropped. An empty option is kept, because cifs reads a
+     * double comma as a comma inside a value such as a password.
+     */
+    protected static String getMountOptions(BackupRepository repository) {
+        String mountOptions = repository.getMountOptions();
+        if (mountOptions == null) {
+            return null;
+        }
+        List<String> options = new ArrayList<>();
+        for (String option : mountOptions.split(",", -1)) {
+            if (option.isEmpty() || StringUtils.isNotBlank(option)) {
+                options.add(option.trim());
+            }
+        }
+        return String.join(",", options);
     }
 
     @Override
