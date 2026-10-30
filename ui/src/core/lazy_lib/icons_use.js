@@ -81,6 +81,7 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   FieldTimeOutlined,
+  FileOutlined,
   FileDoneOutlined,
   FileProtectOutlined,
   FileSyncOutlined,
@@ -257,6 +258,7 @@ export default {
     app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EyeOutlined', EyeOutlined)
     app.component('FieldTimeOutlined', FieldTimeOutlined)
+    app.component('FileOutlined', FileOutlined)
     app.component('FileDoneOutlined', FileDoneOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FileSyncOutlined', FileSyncOutlined)
