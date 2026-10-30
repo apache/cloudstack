@@ -104,14 +104,20 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                 for (final PIF pif : hostPifs) {
                     final PIF.Record rec = pif.getRecord(conn);
                     if (rec.management) {
-                        if (rec.VLAN != null && rec.VLAN != -1) {
+                        Integer apiVersionMajor = host.getAPIVersionMajor(conn);
+                        if (apiVersionMajor == null) {
+                            final String msg = "Unable to determine API version for host: " + citrixResourceBase.getHost().getUuid();
+                            logger.warn(msg);
+                            return new SetupAnswer(command, msg);
+                        }
+                        if (apiVersionMajor < 8 && rec.VLAN != null && rec.VLAN != -1) {
                             final String msg =
                                     new StringBuilder("Unsupported configuration.  Management network is on a VLAN.  host=").append(citrixResourceBase.getHost().getUuid())
-                                    .append("; pif=")
-                                    .append(rec.uuid)
-                                    .append("; vlan=")
-                                    .append(rec.VLAN)
-                                    .toString();
+                                            .append("; pif=")
+                                            .append(rec.uuid)
+                                            .append("; vlan=")
+                                            .append(rec.VLAN)
+                                            .toString();
                             logger.warn(msg);
                             return new SetupAnswer(command, msg);
                         }
