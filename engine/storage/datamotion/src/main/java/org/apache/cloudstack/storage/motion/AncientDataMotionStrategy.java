@@ -95,6 +95,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private static final List<StoragePoolType> SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE = Arrays.asList(
             StoragePoolType.NetworkFilesystem,
             StoragePoolType.Filesystem,
+            StoragePoolType.SharedMountPoint,
             StoragePoolType.RBD
     );
 
@@ -642,6 +643,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
 
+        command.setSrcData(srcData.getTO());
+        command.setDestData(destData.getTO());
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);
@@ -675,6 +678,21 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             volumeVo.setLastPoolId(oldPoolId);
             if (destPool.getPoolType() == StoragePoolType.CLVM) {
                 volumeVo.setFormat(ImageFormat.RAW);
+            } else if (destPool.getPoolType() == StoragePoolType.RBD) {
+                // RBD only ever stores raw images; keep the volume's format metadata consistent
+                // regardless of what format it had on the source pool (e.g. QCOW2 on NFS).
+                volumeVo.setFormat(ImageFormat.RAW);
+            } else if (srcPool.getPoolType() == StoragePoolType.RBD && volumeVo.getFormat() == ImageFormat.RAW
+                    && Storage.KVM_FILE_BASED_POOL_TYPES.contains(destPool.getPoolType())) {
+                // The KVM agent (LibvirtMigrateVolumeCommandWrapper) writes a real QCOW2 file when the
+                // destination is file-based; without updating this, the volume keeps looking RAW to
+                // LibvirtComputingResource, which then (mis)treats a plain qcow2 file on NFS as a raw
+                // block device the next time the Instance is started.
+                volumeVo.setFormat(ImageFormat.QCOW2);
+            }
+            if (volumeVo.getEncryptFormat() != null && (srcPool.getPoolType() == StoragePoolType.RBD) != (destPool.getPoolType() == StoragePoolType.RBD)) {
+                // The KVM agent encrypts an RBD volume natively with librbd (LUKS2), and a volume on any other pool with qemu (LUKS)
+                volumeVo.setEncryptFormat(destPool.getPoolType() == StoragePoolType.RBD ? "luks2" : "luks");
             }
             if (ClvmPoolManager.isClvmPoolType(destPool.getPoolType())) {
                 clvmPoolManager.setClvmLockHostId(volume.getId(), ep.getId());

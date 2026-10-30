@@ -186,6 +186,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -304,6 +305,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private StoragePoolHostDao _storagePoolHostDao;
     @Inject
     private ImageStoreDao imageStoreDao;
     @Inject
@@ -3796,11 +3799,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
-                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)) {
+                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)
+                            && !Storage.isCopiedInPlaceOnKvm(srcStoragePoolVO.getPoolType(), destinationStoragePoolVo.getPoolType())) {
                         throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
                     }
+                    checkLocalPoolsOnHostOfRunningVm(vm, srcStoragePoolVO, destinationStoragePoolVo);
                     srcAndDestOnStorPool = isSourceAndDestOnStorPool(srcStoragePoolVO, destinationStoragePoolVo);
                 }
             }
@@ -3815,7 +3820,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        // An encrypted (KVM) volume can be migrated between two RBD pools and between an RBD pool and a file based one,
+        // whether it is in use by a running Instance or not
+        StoragePoolVO destinationStoragePoolVO = _storagePoolDao.findById(storagePoolId);
+        boolean copiedInPlaceOnKvm = destinationStoragePoolVO != null && Storage.isCopiedInPlaceOnKvm(srcStoragePoolVO.getPoolType(), destinationStoragePoolVO.getPoolType());
+
+        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool
+                && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)
+                && !copiedInPlaceOnKvm) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
@@ -3994,6 +4006,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private boolean isSourceAndDestOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
         return storagePoolVO.getPoolType() == Storage.StoragePoolType.StorPool
                 && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.StorPool;
+    }
+
+    /**
+     * A volume of a running Instance is live migrated in place on the host the Instance runs on, so a local (host scoped)
+     * pool involved in the migration must be the local pool of that very host.
+     */
+    protected void checkLocalPoolsOnHostOfRunningVm(VMInstanceVO vm, StoragePoolVO srcPool, StoragePoolVO destPool) {
+        for (StoragePoolVO pool : new StoragePoolVO[] {srcPool, destPool}) {
+            if (pool == null || !Storage.StoragePoolType.Filesystem.equals(pool.getPoolType())) {
+                continue;
+            }
+            if (vm.getHostId() == null || _storagePoolHostDao.findByPoolHost(pool.getId(), vm.getHostId()) == null) {
+                throw new InvalidParameterValueException(String.format("The volume of a running Instance can only be migrated to or from the local storage pool %s " +
+                        "of the host the Instance is running on", pool.getName()));
+            }
+        }
     }
 
     /**

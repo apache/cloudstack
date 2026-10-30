@@ -29,6 +29,11 @@ import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.storage.Storage;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.mockito.ArgumentCaptor;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -764,5 +769,62 @@ public class KVMStorageProcessorTest {
         // The libvirt hot-plug apply-order bug is RBD-specific; other pool types are not gated, and the libvirt
         // version is not even consulted for them.
         storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.NetworkFilesystem);
+    }
+
+    private String copyVolumeFromPrimaryToPrimaryTo(StoragePoolType destType, PhysicalDiskFormat destFormat, ArgumentCaptor<String> destNameCaptor) {
+        CopyCommand command = Mockito.mock(CopyCommand.class);
+        VolumeObjectTO srcVolume = Mockito.mock(VolumeObjectTO.class);
+        VolumeObjectTO destVolume = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(srcVolume).when(command).getSrcTO();
+        Mockito.doReturn(destVolume).when(command).getDestTO();
+        Mockito.doReturn(Storage.ImageFormat.RAW).when(srcVolume).getFormat();
+        Mockito.doReturn("src-volume").when(srcVolume).getPath();
+        Mockito.doReturn(Storage.ImageFormat.QCOW2).when(destVolume).getFormat();
+        Mockito.doReturn(null).when(destVolume).getPath();
+
+        PrimaryDataStoreTO srcStore = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO destStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(srcStore).when(srcVolume).getDataStore();
+        Mockito.doReturn(destStore).when(destVolume).getDataStore();
+        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(srcStore).getPoolType();
+        Mockito.doReturn("src-pool").when(srcStore).getUuid();
+        Mockito.doReturn(destType).when(destStore).getPoolType();
+        Mockito.doReturn("dest-pool").when(destStore).getUuid();
+
+        KVMPhysicalDisk srcDisk = Mockito.mock(KVMPhysicalDisk.class);
+        KVMStoragePool destPool = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk newDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.doReturn(destFormat).when(newDisk).getFormat();
+        Mockito.doReturn(destFormat).when(destPool).getDefaultFormat();
+        Mockito.doReturn(srcDisk).when(storagePoolManager).getPhysicalDisk(StoragePoolType.NetworkFilesystem, "src-pool", "src-volume");
+        Mockito.doReturn(destPool).when(storagePoolManager).getStoragePool(destType, "dest-pool");
+        Mockito.doReturn(newDisk).when(storagePoolManager).copyPhysicalDisk(Mockito.eq(srcDisk), destNameCaptor.capture(), Mockito.eq(destPool), Mockito.anyInt());
+
+        CopyCmdAnswer answer = (CopyCmdAnswer) storageProcessor.copyVolumeFromPrimaryToPrimary(command);
+
+        Assert.assertTrue(answer.getResult());
+        return ((VolumeObjectTO) answer.getNewData()).getPath();
+    }
+
+    @Test
+    public void testCopyVolumeFromPrimaryToPrimaryNamesAnRbdVolumeAfterItsUuidOnly() {
+        ArgumentCaptor<String> destName = ArgumentCaptor.forClass(String.class);
+
+        String path = copyVolumeFromPrimaryToPrimaryTo(StoragePoolType.RBD, PhysicalDiskFormat.RAW, destName);
+
+        Assert.assertEquals(path, destName.getValue());
+        Assert.assertTrue("a plain UUID, without the extension of a format: " + path, path.matches("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}"));
+    }
+
+    @Test
+    public void testCopyVolumeFromPrimaryToPrimaryNamesAVolumeOfAFileBasedPoolAfterItsFormat() {
+        for (StoragePoolType fileBased : new StoragePoolType[] {StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint, StoragePoolType.Filesystem}) {
+            ArgumentCaptor<String> destName = ArgumentCaptor.forClass(String.class);
+
+            String path = copyVolumeFromPrimaryToPrimaryTo(fileBased, PhysicalDiskFormat.QCOW2, destName);
+
+            Assert.assertEquals(path, destName.getValue());
+            Assert.assertTrue(fileBased + ": a UUID with the extension of the qcow2 format: " + path, path.matches("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\\.qcow2"));
+        }
     }
 }

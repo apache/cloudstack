@@ -3447,7 +3447,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
                 destFormat = getFormat(destPoolDefaultFormat);
                 final String volumeName = UUID.randomUUID().toString();
-                destVolumeName = volumeName + "." + destFormat.getFileExtension();
+                // The name of an RBD image survives an online migration to a file based pool, where the block copy
+                // writes a qcow2 file, so a ".raw" extension would outlive the format it names.
+                destVolumeName = StoragePoolType.RBD.equals(destPrimaryStore.getPoolType()) ? volumeName : volumeName + "." + destFormat.getFileExtension();
 
                 // Update path in the command for reconciliation
                 if (StringUtils.isBlank(destVolumePath)) {
@@ -3490,7 +3492,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setPath(path);
             ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
             newVol.setFormat(newVolumeFormat);
-            newVol.setEncryptFormat(destVol.getEncryptFormat());
+            // an encrypted volume copied to another kind of pool is encrypted differently (librbd LUKS2 on RBD, qemu LUKS otherwise)
+            newVol.setEncryptFormat(newVolume.getQemuEncryptFormat() != null ? newVolume.getQemuEncryptFormat().toString() : destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);
