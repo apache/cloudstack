@@ -218,4 +218,10 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         SearchCriteria<ConfigurationVO> sc = PartialSearch.create();
         return searchIncludingRemoved(sc, null, null, false);
     }
+
+    @Override
+    public String getValueByKey(String key) {
+        ConfigurationVO configVO = findByName(key);
+        return (configVO == null ? null : configVO.getValue());
+    }
 }
