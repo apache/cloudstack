@@ -131,7 +131,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
     @Override
     public String getConfigComponentName() {
-        return StorageOrchestrationService.class.getName();
+        return StorageOrchestrationService.class.getSimpleName();
     }
 
     @Override
