@@ -396,23 +396,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 .findFirst();
     }
 
-    private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
-        String accountStoragePoolUuid = null;
-        if (vm != null) {
-            accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+    protected Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm, Long clusterId) {
+        Long accountId = vm != null ? vm.getAccountId() : null;
+        Pair<ConfigKey.Scope, String> preferredStoragePool = StorageManager.getPreferredStoragePoolUuid(accountId, clusterId);
+        if (preferredStoragePool == null) {
+            return Optional.empty();
         }
-        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
-
-        if (storagePool.isPresent()) {
-            String storagePoolToString = getReflectOnlySelectedFields(storagePool.get());
-            logger.debug("The storage pool [{}] was specified for this account [{}] and will be used for allocation.", storagePoolToString, vm.getAccountId());
-
-        } else {
-            String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
-            storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
-            storagePool.ifPresent(pool -> logger.debug("The storage pool [{}] was specified in the Global Settings and will be used for allocation.",
-                    getReflectOnlySelectedFields(pool)));
-        }
+        Optional<StoragePool> storagePool = getMatchingStoragePool(preferredStoragePool.second(), poolList);
+        storagePool.ifPresent(pool -> logger.debug("The storage pool [{}] was specified at the [{}] level (account [{}], cluster [{}]) and will be used for allocation.",
+                getReflectOnlySelectedFields(pool), preferredStoragePool.first(), accountId, clusterId));
         return storagePool;
     }
 
@@ -433,7 +425,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (poolList != null && !poolList.isEmpty()) {
                 StorageUtil.traceLogStoragePools(poolList, logger, "pools to choose from: ");
                 // Check if the preferred storage pool can be used. If yes, use it.
-                Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
+                Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm, clusterId);
                 logger.trace("we have a preferred pool: {}", storagePool.isPresent());
 
                 StoragePool storage;

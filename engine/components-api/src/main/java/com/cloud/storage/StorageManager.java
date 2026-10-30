@@ -25,6 +25,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -177,7 +178,10 @@ public interface StorageManager extends StorageService {
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",
             true, ConfigKey.Scope.Zone);
     ConfigKey<String> PreferredStoragePool = new ConfigKey<>(String.class, "preferred.storage.pool", "Advanced", "",
-            "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
+            "The UUID of preferred storage pool for allocation. It can be set at Account or Cluster level: " +
+                    "the Account value takes precedence over the Cluster value, which takes precedence over the Global value. " +
+                    "The preferred storage pool is only used if it is suitable for the allocation, otherwise it is ignored.",
+            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Cluster), null);
 
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",
@@ -446,5 +450,26 @@ public interface StorageManager extends StorageService {
 
     static ConfigKey<Boolean> getMountDisabledStoragePool() {
         return MountDisabledStoragePool;
+    }
+
+    /**
+     * Resolves the preferred storage pool UUID, checking the Account scope first, then the Cluster scope and finally the Global value.
+     * @return a pair of the scope where the value was found and the storage pool UUID, or null if it is not set at any level
+     */
+    static Pair<ConfigKey.Scope, String> getPreferredStoragePoolUuid(Long accountId, Long clusterId) {
+        if (accountId != null) {
+            String uuid = PreferredStoragePool.valueInScope(ConfigKey.Scope.Account, accountId, true);
+            if (StringUtils.isNotBlank(uuid)) {
+                return new Pair<>(ConfigKey.Scope.Account, uuid);
+            }
+        }
+        if (clusterId != null) {
+            String uuid = PreferredStoragePool.valueInScope(ConfigKey.Scope.Cluster, clusterId, true);
+            if (StringUtils.isNotBlank(uuid)) {
+                return new Pair<>(ConfigKey.Scope.Cluster, uuid);
+            }
+        }
+        String uuid = PreferredStoragePool.value();
+        return StringUtils.isNotBlank(uuid) ? new Pair<>(ConfigKey.Scope.Global, uuid) : null;
     }
 }

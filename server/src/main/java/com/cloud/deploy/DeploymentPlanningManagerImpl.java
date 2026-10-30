@@ -1924,7 +1924,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             if (suitablePools != null && !suitablePools.isEmpty()) {
                 logger.debug("StoragePoolAllocator [{}] found {} suitable pools to allocate volume [{}] necessary to deploy VM [{}].",
                         allocator.getClass().getSimpleName(), suitablePools.size(), toBeCreated, vmProfile);
-                checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), suitableVolumeStoragePools, toBeCreated);
+                checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), plan.getClusterId(), suitableVolumeStoragePools, toBeCreated);
                 return true;
             }
         }
@@ -1986,10 +1986,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private void checkForPreferredStoragePool(List<StoragePool> suitablePools,
                                               VirtualMachine vm,
+                                              Long clusterId,
                                               Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
                                               VolumeVO toBeCreated) {
         List<StoragePool> pools = new ArrayList<>();
-        Optional<StoragePool> storagePool = getPreferredStoragePool(suitablePools, vm);
+        Optional<StoragePool> storagePool = getPreferredStoragePool(suitablePools, vm, clusterId);
         storagePool.ifPresent(pools::add);
 
         pools.addAll(suitablePools);
@@ -2005,17 +2006,14 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 .findFirst();
     }
 
-    private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
-        String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
-        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
-
-        if (storagePool.isPresent()) {
-            logger.debug("A storage pool is specified for this account, so we will use this storage pool for allocation: {}", storagePool.get());
-        } else {
-            String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
-            storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
-            storagePool.ifPresent(pool -> logger.debug("A storage pool is specified in global setting, so we will use this storage pool for allocation: {}", pool));
+    protected Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm, Long clusterId) {
+        Pair<ConfigKey.Scope, String> preferredStoragePool = StorageManager.getPreferredStoragePoolUuid(vm.getAccountId(), clusterId);
+        if (preferredStoragePool == null) {
+            return Optional.empty();
         }
+        Optional<StoragePool> storagePool = getMatchingStoragePool(preferredStoragePool.second(), poolList);
+        storagePool.ifPresent(pool -> logger.debug("A storage pool is specified at the [{}] level (account [{}], cluster [{}]), so we will use this storage pool for allocation: {}",
+                preferredStoragePool.first(), vm.getAccountId(), clusterId, pool));
         return storagePool;
     }
 
