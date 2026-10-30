@@ -19,7 +19,9 @@ package com.cloud.hypervisor.kvm.resource;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
@@ -38,9 +40,15 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
 
     private final String hostPrivateIp;
+    private final String hostGuid;
 
-    public KVMHAMonitor(String host) {
+    /**
+     * @param host     the private IP address of the host, which names its heartbeat on NFS and SharedMountPoint pools
+     * @param hostGuid the GUID of the host as the management server knows it, which names its heartbeat on RBD pools
+     */
+    public KVMHAMonitor(String host, String hostGuid) {
         hostPrivateIp = host;
+        this.hostGuid = hostGuid;
         rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
     }
 
@@ -60,7 +68,11 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         synchronized (haStoragePools) {
             HAStoragePool pool = haStoragePools.get(uuid);
             if (pool != null) {
-                Script.runSimpleBashScript("umount " + pool.getMountDestPath());
+                if (StringUtils.isNotEmpty(pool.getMountDestPath())) {
+                    Script umount = new Script("umount", logger);
+                    umount.add(pool.getMountDestPath());
+                    umount.execute();
+                }
                 haStoragePools.remove(uuid);
             }
         }
@@ -107,7 +119,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private String executePoolHeartBeatCommand(String uuid, HAStoragePool primaryStoragePool, String result) {
         for (int attempt = 1; attempt <= _heartBeatUpdateMaxTries; attempt++) {
-            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
+            String heartBeatHostId = StoragePoolType.RBD.equals(primaryStoragePool.getPool().getType()) ? hostGuid : hostPrivateIp;
+            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, heartBeatHostId, true);
             if (result == null) {
                 break;
             }
@@ -136,7 +149,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                 removedPools.add(uuid);
             }
 
-            logger.debug("Found NFS storage pool [{}] in libvirt, continuing.", uuid);
+            logger.debug("Found storage pool [{}] in libvirt, continuing.", uuid);
 
         } catch (LibvirtException e) {
             logger.debug("Failed to lookup libvirt storage pool [{}].", uuid, e);

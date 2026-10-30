@@ -1491,7 +1491,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(info[0]);
+        // the GUID of the host as the management server knows it, as in Agent.getResourceGuid()
+        final String hostGuid = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUID) + "-" + name;
+        kvmhaMonitor = new KVMHAMonitor(info[0], hostGuid);
         final Thread haMonitorThread = new Thread(kvmhaMonitor);
         haMonitorThread.start();
 
