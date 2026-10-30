@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -989,6 +990,24 @@ public class NetUtils {
         }
 
         return MAX_CIDR - count;
+    }
+
+    /**
+     * Whether the protocol is one of the comma-separated protocols, as a whole entry and in any case.
+     * The lists come from provider capabilities, some of which have spaces after their commas; the
+     * protocol itself is taken as given.
+     */
+    public static boolean isProtocolInList(final String protocols, final String protocol) {
+        if (protocols == null || protocol == null) {
+            return false;
+        }
+        final String p = protocol.toLowerCase(Locale.ROOT);
+        for (final String entry : protocols.split(",")) {
+            if (entry.trim().toLowerCase(Locale.ROOT).equals(p)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isValidPort(final int p) {
