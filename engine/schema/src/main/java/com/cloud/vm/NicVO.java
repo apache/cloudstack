@@ -131,6 +131,9 @@ public class NicVO implements Nic {
     @Column(name = "mtu")
     Integer mtu;
 
+    @Column(name = "network_rate")
+    Integer networkRate;
+
     @Column(name = "enabled")
     boolean enabled;
 
@@ -425,5 +428,13 @@ public class NicVO implements Nic {
 
     public void setMtu(Integer mtu) {
         this.mtu = mtu;
+    }
+
+    public Integer getNetworkRate() {
+        return networkRate;
+    }
+
+    public void setNetworkRate(Integer networkRate) {
+        this.networkRate = networkRate;
     }
 }
