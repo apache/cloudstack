@@ -217,6 +217,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
         boolean suitable_host_found = false;
         HostVO suitableHost = null;
+        ClusterVO suitableCluster = null;
         for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
@@ -244,6 +245,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     hostEntry.setValue(new Pair<HostVO, Integer>(h, reserved));
                     suitable_host_found = true;
                     suitableHost = h;
+                    suitableCluster = cluster;
                     break;
                 }
             }
@@ -259,10 +261,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (logger.isInfoEnabled()) {
                 logger.info("Suitable hosts found in datacenter: {}, creating deployment destination", zone);
             }
+            // Include the cluster so that the network's virtual router is deployed on the same
+            // hypervisor type as the Kubernetes nodes in zones with mixed hypervisor clusters
             if (useDedicatedHosts) {
-                return new DeployDestination(zone, null, null, suitableHost);
+                return new DeployDestination(zone, null, suitableCluster, suitableHost);
             }
-            return new DeployDestination(zone, null, null, null);
+            return new DeployDestination(zone, null, suitableCluster, null);
         }
         String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s hypervisor: %s and arch: %s",
                 cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering.getName(), clusterTemplate.getHypervisorType().toString(), arch.getType());
