@@ -47,7 +47,7 @@ public class TransactionLegacyTest {
 
         Pair<String, String> result = TransactionLegacy.getConnectionUriAndDriver(properties, null, false, "cloud");
 
-        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams", result.first());
+        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams&scrollTolerantForwardOnly=true", result.first());
         Assert.assertEquals("driver", result.second());
     }
 
@@ -65,53 +65,52 @@ public class TransactionLegacyTest {
     public void getPropertiesAndBuildConnectionUriTestDbHaDisabled() {
         String result = TransactionLegacy.getPropertiesAndBuildConnectionUri(properties, "strat", "driver", true, "cloud");
 
-        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams&useSSL=true", result);
+        Assert.assertEquals("driver://host:5555/name?autoReconnect=false&someParams&useSSL=true&scrollTolerantForwardOnly=true", result);
     }
 
     @Test
     public void getPropertiesAndBuildConnectionUriTestDbHaEnabled() {
         TransactionLegacy.s_dbHAEnabled = true;
-        properties.setProperty("db.cloud.failOverReadOnly", "true");
         properties.setProperty("db.cloud.reconnectAtTxEnd", "false");
         properties.setProperty("db.cloud.autoReconnectForPools", "true");
-        properties.setProperty("db.cloud.secondsBeforeRetrySource", "25");
-        properties.setProperty("db.cloud.queriesBeforeRetrySource", "105");
-        properties.setProperty("db.cloud.initialTimeout", "1000");
+        properties.setProperty("db.cloud.connectTimeout", "3000");
+        properties.setProperty("db.cloud.socketTimeout", "15000");
+        properties.setProperty("db.cloud.loadBalanceBlocklistTimeout", "30000");
         properties.setProperty("db.cloud.replicas", "second_host");
 
         String result = TransactionLegacy.getPropertiesAndBuildConnectionUri(properties, "strat", "driver", true, "cloud");
 
-        Assert.assertEquals("driver://host,second_host:5555/name?autoReconnect=false&someParams&useSSL=true&failOverReadOnly=true&reconnectAtTxEnd=false&autoReconnectFor"
-                + "Pools=true&secondsBeforeRetrySource=25&queriesBeforeRetrySource=105&initialTimeout=1000&loadBalanceStrategy=strat", result);
+        Assert.assertEquals("driver:loadbalance://host,second_host:5555/name?autoReconnect=false&someParams&useSSL=true&ha.loadBalanceStrategy=strat&reconnectAtTxEnd=false&autoReconnectFor"
+                + "Pools=true&connectTimeout=3000&socketTimeout=15000&loadBalanceBlocklistTimeout=30000&scrollTolerantForwardOnly=true", result);
     }
 
     @Test
     public void buildConnectionUriTestDbHaDisabled() {
-        String result = TransactionLegacy.buildConnectionUri(null, "driver", false, "host", null, 5555, "cloud", false, null, null);
+        String result = TransactionLegacy.buildConnectionUri("driver", false, "host", null, 5555, "cloud", false, null, null);
 
-        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false", result);
+        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&scrollTolerantForwardOnly=true", result);
     }
 
     @Test
     public void buildConnectionUriTestDbHaEnabled() {
         TransactionLegacy.s_dbHAEnabled = true;
 
-        String result = TransactionLegacy.buildConnectionUri("strat", "driver", false, "host", "second_host", 5555, "cloud", false, null, "dbHaParams");
+        String result = TransactionLegacy.buildConnectionUri("driver", false, "host", "second_host", 5555, "cloud", false, null, "dbHaParams");
 
-        Assert.assertEquals("driver://host,second_host:5555/cloud?autoReconnect=false&dbHaParams&loadBalanceStrategy=strat", result);
+        Assert.assertEquals("driver:loadbalance://host,second_host:5555/cloud?autoReconnect=false&dbHaParams&scrollTolerantForwardOnly=true", result);
     }
 
     @Test
     public void buildConnectionUriTestUrlParamsNotNull() {
-        String result = TransactionLegacy.buildConnectionUri(null, "driver", false, "host", null, 5555, "cloud", false, "urlParams", null);
+        String result = TransactionLegacy.buildConnectionUri("driver", false, "host", null, 5555, "cloud", false, "urlParams", null);
 
-        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&urlParams", result);
+        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&urlParams&scrollTolerantForwardOnly=true", result);
     }
 
     @Test
     public void buildConnectionUriTestUseSslTrue() {
-        String result = TransactionLegacy.buildConnectionUri(null, "driver", true, "host", null, 5555, "cloud", false, null, null);
+        String result = TransactionLegacy.buildConnectionUri("driver", true, "host", null, 5555, "cloud", false, null, null);
 
-        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&useSSL=true", result);
+        Assert.assertEquals("driver://host:5555/cloud?autoReconnect=false&useSSL=true&scrollTolerantForwardOnly=true", result);
     }
 }
