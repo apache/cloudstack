@@ -146,6 +146,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -621,6 +622,50 @@ public class VolumeApiServiceImplTest {
         dedicateIdField.setAccessible(true);
         dedicateIdField.set(detachCmd, 2L);
         volumeApiServiceImpl.detachVolumeFromVM(detachCmd);
+    }
+
+    @Test
+    public void testDetachVolumeSkippedWhenAttachedToAnotherVm() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(200L);
+        Mockito.when(volumeDaoMock.findById(100L)).thenReturn(volume);
+
+        Volume result = volumeApiServiceImpl.detachVolumeViaDestroyVM(300L, 100L);
+
+        Assert.assertEquals(volume, result);
+        Mockito.verify(volumeDaoMock, Mockito.never()).detachVolume(Mockito.anyLong());
+    }
+
+    @Test
+    public void testDetachVolumeSkippedWhenAlreadyDetached() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(null);
+        Mockito.when(volumeDaoMock.findById(100L)).thenReturn(volume);
+
+        Volume result = volumeApiServiceImpl.detachVolumeViaDestroyVM(300L, 100L);
+
+        Assert.assertEquals(volume, result);
+        Mockito.verify(volumeDaoMock, Mockito.never()).detachVolume(Mockito.anyLong());
+    }
+
+    @Test
+    public void testShouldDetachBeSkippedFalseWhenAttachedToSameVm() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(300L);
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(300L);
+
+        Assert.assertFalse(volumeApiServiceImpl.shouldDetachBeSkipped(volume, vm));
+    }
+
+    @Test
+    public void testShouldDetachBeSkippedTrueWhenAttachedToAnotherVm() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(200L);
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(300L);
+
+        Assert.assertTrue(volumeApiServiceImpl.shouldDetachBeSkipped(volume, vm));
     }
 
     /**
