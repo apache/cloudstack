@@ -25,7 +25,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AffinityProcessorBase extends AdapterBase implements AffinityGroupProcessor {
 
@@ -42,6 +44,23 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
     @Override
     public void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException {
 
+    }
+
+
+    /**
+     * Indexes placements supplied by the caller. Callers such as DRS build a plan of several moves
+     * in memory and persist it only at the end, so during planning the database still shows the old
+     * host for every VM the plan has already moved.
+     */
+    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
+        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
+        if (vmList == null) {
+            return vmIdVmMap;
+        }
+        for (VirtualMachine vm : vmList) {
+            vmIdVmMap.put(vm.getId(), vm);
+        }
+        return vmIdVmMap;
     }
 
     @Override
