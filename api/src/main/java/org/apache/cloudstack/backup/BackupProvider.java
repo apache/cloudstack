@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.backup;
 
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.utils.Pair;
@@ -143,6 +144,10 @@ public interface BackupProvider {
 
     default boolean supportsMemoryVmSnapshot() {
         return true;
+    }
+
+    default List<Object> getBackupReport(Date startDate, Date endDate, long zoneId, Long domainId, Long accountId) {
+        return List.of();
     }
 
     /**

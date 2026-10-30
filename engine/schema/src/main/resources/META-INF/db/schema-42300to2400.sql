@@ -19,6 +19,26 @@
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
 
+-- Backup report
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'failure_reason', 'varchar(255)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'logid', 'varchar(14)');
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_report` (
+   `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+   `created` DATETIME NOT NULL,
+   `removed` DATETIME,
+   `task_enabled` tinyint(1) DEFAULT 0,
+    PRIMARY KEY (`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`email_template` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `name` VARCHAR(55) NOT NULL,
+    `template` TEXT,
+    PRIMARY KEY (`id`)
+    );
+
 -- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the cumulative and
 -- per-VM volume usage records introduced in 4.22.1 can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');

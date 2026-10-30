@@ -51,6 +51,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.xml.utils.URI;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
 
@@ -546,6 +547,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
             backup.setDetails(details);
+            backup.setLogid(ThreadContext.get("logcontextid"));
             backupDao.persist(backup);
             return new Pair<>(true, backup);
         } else {
