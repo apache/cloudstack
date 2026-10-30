@@ -369,6 +369,13 @@ class User:
         return apiclient.login(cmd)
 
 
+# cloud-init userdata to allow ssh login with password (root/password) on the built-in templates
+BUILTIN_TEMPLATE_USERDATA = """#cloud-config
+ssh_pwauth: true
+disable_root: false
+"""
+
+
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
 
@@ -556,6 +563,22 @@ class VirtualMachine:
                     "The following exception appeared while programming ssh access - %s" % e)
 
     @classmethod
+    def needs_default_userdata(cls, apiclient, templateid):
+        """Check if the template is a built-in template of a hypervisor, other than the simulator"""
+        cmd = listTemplates.listTemplatesCmd()
+        cmd.id = templateid
+        cmd.templatefilter = "executable"
+        try:
+            templates = apiclient.listTemplates(cmd)
+        except Exception:
+            # not a template (an ISO), or not visible to the user
+            return False
+        if not templates or templates[0].templatetype != "BUILTIN":
+            return False
+        # there is no guest to apply the userdata on the simulator
+        return str(getattr(templates[0], "hypervisor", "")).lower() != "simulator"
+
+    @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                domainid=None, zoneid=None, networkids=None,
                serviceofferingid=None, securitygroupids=None,
@@ -664,6 +687,9 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
+        elif userdataid is None and getattr(cmd, "templateid", None) and cls.needs_default_userdata(apiclient, cmd.templateid):
+            # the built-in templates do not allow ssh login with password by default
+            cmd.userdata = base64.urlsafe_b64encode(BUILTIN_TEMPLATE_USERDATA.encode()).decode()
 
         if userdataid is not None:
             cmd.userdataid = userdataid
@@ -956,13 +982,26 @@ class VirtualMachine:
         if deviceid is not None:
             cmd.deviceid = deviceid
 
-        return apiclient.attachVolume(cmd)
+        return self._retry_until_pv_drivers(apiclient.attachVolume, cmd)
+
+    @staticmethod
+    def _retry_until_pv_drivers(api, cmd, timeout=180):
+        """XenServer/XCP-ng refuses to hot-attach or hot-detach a volume until the guest tools report in,
+        which is some time after the VM is Running or restarted (about 45 seconds for a Debian 13 guest)"""
+        while True:
+            try:
+                return api(cmd)
+            except Exception as e:
+                if "PV drivers" not in str(e) or timeout <= 0:
+                    raise
+                time.sleep(10)
+                timeout -= 10
 
     def detach_volume(self, apiclient, volume):
         """Detach volume to instance"""
         cmd = detachVolume.detachVolumeCmd()
         cmd.id = volume.id
-        return apiclient.detachVolume(cmd)
+        return self._retry_until_pv_drivers(apiclient.detachVolume, cmd)
 
     def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None, dhcpoptions=None):
         """Add a NIC to a VM"""
