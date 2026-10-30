@@ -369,6 +369,7 @@
                   :zoneId="cluster.zoneid"
                   :domainid="form.domainid"
                   :account="form.account"
+                  :projectid="form.projectid"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
