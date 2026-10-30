@@ -46,6 +46,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainInfo;
 import org.libvirt.StorageVol;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -1262,4 +1264,126 @@ public class LibvirtMigrateCommandWrapperTest {
 
         return devices;
     }
+
+    @Test
+    public void extractCpuElementReturnsPairedCpuAndExcludesCputune() {
+        // the CPU precheck must pull the VM's <cpu> element (not <cputune>) out of the domain XML.
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        final String xml = "<domain><cputune><shares>1024</shares></cputune><cpu mode='custom'><model>Haswell</model></cpu></domain>";
+        final String cpu = wrapper.extractCpuElement(xml);
+        Assert.assertNotNull(cpu);
+        Assert.assertTrue("must extract the <cpu> element, got: " + cpu,
+                cpu.startsWith("<cpu") && cpu.contains("Haswell") && cpu.endsWith("</cpu>"));
+        Assert.assertFalse("must not capture <cputune>", cpu.contains("cputune"));
+    }
+
+    @Test
+    public void extractCpuElementHandlesSelfClosingAndAbsent() {
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        Assert.assertEquals("<cpu mode='host-passthrough'/>",
+                wrapper.extractCpuElement("<domain><cpu mode='host-passthrough'/></domain>"));
+        Assert.assertNull("no <cpu> -> null (any host can run it)",
+                wrapper.extractCpuElement("<domain><os>hvm</os></domain>"));
+    }
+
+    @Test
+    public void cpuCompareOutputVerdictAndFailOpen() {
+        // interpret virsh cpu-compare output; fail-open on blank/unknown.
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        Assert.assertFalse(wrapper.isCpuCompareOutputCompatible("Host CPU is not a superset of CPU described in cpu.xml"));
+        Assert.assertFalse(wrapper.isCpuCompareOutputCompatible("CPU described in cpu.xml is incompatible with host CPU"));
+        Assert.assertTrue(wrapper.isCpuCompareOutputCompatible("Host CPU is a superset of CPU described in cpu.xml"));
+        Assert.assertTrue(wrapper.isCpuCompareOutputCompatible("CPUs are identical"));
+        Assert.assertTrue("fail-open on blank output", wrapper.isCpuCompareOutputCompatible(""));
+        Assert.assertTrue("fail-open on null output", wrapper.isCpuCompareOutputCompatible(null));
+    }
+
+    @Test
+    public void encryptionPolicyPrecedence() {
+        // an MS policy of "Required" wins; a blank or "Disabled" MS policy defers to the per-host property.
+        // The MS ConfigKey default is "Disabled" (not blank), so "Disabled" must defer, or the per-host
+        // migrate.encryption.policy would never be consulted.
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        Assert.assertTrue("MS Required wins", wrapper.resolveEncryptMigration("Required", "Disabled"));
+        Assert.assertTrue("MS Disabled must defer to host Required", wrapper.resolveEncryptMigration("Disabled", "Required"));
+        Assert.assertTrue("blank MS defers to host Required", wrapper.resolveEncryptMigration(null, "Required"));
+        Assert.assertFalse("both Disabled -> no encryption", wrapper.resolveEncryptMigration("Disabled", "Disabled"));
+        Assert.assertFalse("MS Disabled + host null -> no encryption", wrapper.resolveEncryptMigration("Disabled", null));
+        // only the exact "Required" value enables TLS; a typo or an unrecognised value stays plaintext (safe default)
+        Assert.assertFalse("unrecognised value stays plaintext", wrapper.resolveEncryptMigration("Enabled", "Disabled"));
+        Assert.assertFalse("typo stays plaintext", wrapper.resolveEncryptMigration("Requied", "Disabled"));
+    }
+
+    @Test
+    public void migrationProgressPercentComputation() {
+        // percent of memory transferred from libvirt job stats; -1 when total unknown.
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        Assert.assertEquals(-1, wrapper.computeMigrationProgressPercent(0, 0));
+        Assert.assertEquals(0, wrapper.computeMigrationProgressPercent(0, 100));
+        Assert.assertEquals(50, wrapper.computeMigrationProgressPercent(50, 50));
+        Assert.assertEquals(90, wrapper.computeMigrationProgressPercent(900, 100));
+        Assert.assertEquals(100, wrapper.computeMigrationProgressPercent(100, 0));
+    }
+
+    @Test
+    public void resumeDomainIfPausedReturnsReasonWhenGuestStaysPaused() throws Exception {
+        // a destination domain that cannot be brought to RUNNING returns a non-null reason; the caller
+        // surfaces it as a warning but still reports the migration successful (the guest already lives on the
+        // destination, so reporting failure would risk split brain).
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        final Domain destDomain = Mockito.mock(Domain.class);
+        final DomainInfo paused = new DomainInfo();
+        paused.state = DomainInfo.DomainState.VIR_DOMAIN_PAUSED;
+        Mockito.when(destDomain.getInfo()).thenReturn(paused);
+        Mockito.doThrow(new RuntimeException("resume failed")).when(destDomain).resume();
+
+        final String result = wrapper.resumeDomainIfPaused(destDomain, "vm-paused");
+
+        Assert.assertNotNull("a domain left paused on the destination must return a non-null reason", result);
+        Assert.assertTrue("reason must state the guest is not running, got: " + result, result.contains("not running"));
+    }
+
+    @Test
+    public void resumeDomainIfPausedReturnsNullWhenGuestBecomesRunning() throws Exception {
+        // the happy path is unchanged, a domain that resumes to RUNNING is not a failure.
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        final Domain destDomain = Mockito.mock(Domain.class);
+        final DomainInfo paused = new DomainInfo();
+        paused.state = DomainInfo.DomainState.VIR_DOMAIN_PAUSED;
+        final DomainInfo running = new DomainInfo();
+        running.state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        Mockito.when(destDomain.getInfo()).thenReturn(paused, running);
+
+        final String result = wrapper.resumeDomainIfPaused(destDomain, "vm-ok");
+
+        Assert.assertNull("a successfully-resumed domain must not be reported as a failure", result);
+        Mockito.verify(destDomain).resume();
+    }
+
+    @Test(expected = IOException.class)
+    public void runDestinationCpuCompareRejectsUnsafeUri() throws IOException {
+        // a URI with shell metacharacters must be refused before it reaches the shell.
+        new LibvirtMigrateCommandWrapper().runDestinationCpuCompare("<cpu mode='custom'/>", "qemu+tcp://1.2.3.4/system; rm -rf /");
+    }
+
+    @Test(expected = IOException.class)
+    public void runDestinationCpuCompareRejectsNonMigrationUri() throws IOException {
+        new LibvirtMigrateCommandWrapper().runDestinationCpuCompare("<cpu mode='custom'/>", "http://evil/");
+    }
+
+    @Test
+    public void cleanupSourceNetworkingSwallowsExceptionsToKeepMigrationSuccessful() {
+        // a failure tearing down source-side networking must not propagate (it would flip a successful
+        // migration to failed, with the guest already live on the destination).
+        final LibvirtMigrateCommandWrapper wrapper = new LibvirtMigrateCommandWrapper();
+        final LibvirtComputingResource res = Mockito.mock(LibvirtComputingResource.class);
+        Mockito.doThrow(new RuntimeException("source teardown failed"))
+                .when(res).destroyNetworkRulesForVM(Mockito.any(), Mockito.anyString());
+
+        wrapper.cleanupSourceNetworkingAfterMigration(Mockito.mock(Connect.class), "vm-x",
+                java.util.Collections.emptyList(), new HashMap<>(), res);
+
+        Mockito.verify(res).destroyNetworkRulesForVM(Mockito.any(), Mockito.anyString());
+    }
+
 }
