@@ -57,6 +57,13 @@ public interface ResourceLimitService {
             "The default maximum number of GPU devices that can be used for a domain", false);
     static final ConfigKey<Long> DefaultMaxProjectGpus = new ConfigKey<>("Project Defaults",Long.class,"max.project.gpus","20",
             "The default maximum number of GPU devices that can be used for a project", false);
+    static final ConfigKey<Long> MaxDomainInstanceSnapshot = new ConfigKey<>("Domain Defaults", Long.class, "max.domain.instance.snapshots", "40",
+            "The default maximum VM snapshots that can be used for a domain", false);
+    static final ConfigKey<Long> MaxAccountInstanceSnapshot = new ConfigKey<>("Account Defaults", Long.class, "max.account.instance.snapshots", "20",
+            "The default maximum VM snapshots that can be used for a account", false);
+    static final ConfigKey<Long> MaxProjectInstanceSnapshot = new ConfigKey<>("Project Defaults", Long.class, "max.project.instance.snapshots", "20",
+            "The default maximum VM snapshots that can be used for a project", false);
+
 
     static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory, ResourceType.gpu);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);

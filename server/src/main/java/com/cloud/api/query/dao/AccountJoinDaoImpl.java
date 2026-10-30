@@ -171,6 +171,14 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setSnapshotTotal(snapshotTotal);
         response.setSnapshotAvailable(snapshotAvail);
 
+        Long instanceSnapshotLimit = ApiDBUtils.findCorrectResourceLimit(account.getInstanceSnapshotLimit(), account.getId(), ResourceType.instance_snapshot);
+        String instanceSnapshotLimitDisplay = (fullView || instanceSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(instanceSnapshotLimit);
+        Long instanceSnapshotTotal = (account.getInstanceSnapshotTotal() == null) ? 0 : account.getInstanceSnapshotTotal();
+        String instanceSnapshotAvailable = (fullView || instanceSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(instanceSnapshotLimit - instanceSnapshotTotal);
+        response.setInstanceSnapshotLimit(instanceSnapshotLimitDisplay);
+        response.setInstanceSnapshotTotal(instanceSnapshotTotal);
+        response.setInstanceSnapshotAvailable(instanceSnapshotAvailable);
+
         Long templateLimit = ApiDBUtils.findCorrectResourceLimit(account.getTemplateLimit(), account.getId(), ResourceType.template);
         String templateLimitDisplay = (fullView || templateLimit == -1) ? Resource.UNLIMITED : String.valueOf(templateLimit);
         Long templateTotal = (account.getTemplateTotal() == null) ? 0 : account.getTemplateTotal();
