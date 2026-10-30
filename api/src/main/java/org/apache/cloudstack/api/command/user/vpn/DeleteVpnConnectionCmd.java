@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteVpnConnection", description = "Delete site to site VPN connection", responseObject = SuccessResponse.class, entityType = {Site2SiteVpnConnection.class},
@@ -71,6 +72,21 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_S2S_VPN_CONNECTION_DELETE;
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        Site2SiteVpnConnection connection = _entityMgr.findById(Site2SiteVpnConnection.class, id);
+        if (connection == null) {
+            return null;
+        }
+        Site2SiteVpnGateway gateway = _s2sVpnService.getVpnGateway(connection.getVpnGatewayId());
+        return gateway == null ? null : gateway.getVpcId();
     }
 
     @Override

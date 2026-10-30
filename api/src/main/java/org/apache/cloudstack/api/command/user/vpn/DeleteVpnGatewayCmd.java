@@ -73,6 +73,17 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        Site2SiteVpnGateway gateway = _entityMgr.findById(Site2SiteVpnGateway.class, id);
+        return gateway == null ? null : gateway.getVpcId();
+    }
+
+    @Override
     public void execute() {
         boolean result = false;
         result = _s2sVpnService.deleteVpnGateway(this);
