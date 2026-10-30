@@ -67,6 +67,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.offering.DiskOffering.DiskErrorPolicy;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
@@ -348,6 +349,12 @@ public class VolumeObject implements VolumeInfo {
     public DiskCacheMode getCacheMode() {
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
         return diskOfferingVO == null ? null : diskOfferingVO.getCacheMode();
+    }
+
+    @Override
+    public DiskErrorPolicy getErrorPolicy() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        return diskOfferingVO == null ? null : diskOfferingVO.getErrorPolicy();
     }
 
     @Override

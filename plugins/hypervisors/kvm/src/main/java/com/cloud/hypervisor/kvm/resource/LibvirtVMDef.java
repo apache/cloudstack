@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.cpu.CPU;
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -985,6 +986,7 @@ public class LibvirtVMDef {
         private Long _iopsWriteRateMax;
         private Long _iopsWriteRateMaxLength;
         private DiskCacheMode _diskCacheMode;
+        private DiskOffering.DiskErrorPolicy _errorPolicy;
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
@@ -1340,6 +1342,14 @@ public class LibvirtVMDef {
             return _diskCacheMode;
         }
 
+        public void setErrorPolicy(DiskOffering.DiskErrorPolicy errorPolicy) {
+            _errorPolicy = errorPolicy;
+        }
+
+        public DiskOffering.DiskErrorPolicy getErrorPolicy() {
+            return _errorPolicy;
+        }
+
         public void setQemuDriver(boolean qemuDriver){
             this.qemuDriver = qemuDriver;
         }
@@ -1401,6 +1411,10 @@ public class LibvirtVMDef {
 
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
+                }
+
+                if (_errorPolicy != null) {
+                    diskBuilder.append("error_policy='" + _errorPolicy + "' ");
                 }
 
                 if(ioDriver != null) {

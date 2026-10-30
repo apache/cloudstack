@@ -154,6 +154,12 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             since = "4.14")
     private String cacheMode;
 
+    @Parameter(name = ApiConstants.ERROR_POLICY,
+            type = CommandType.STRING,
+            description = "The disk error policy to use for this disk offering. report, stop, ignore or enospace. Only applicable to KVM",
+            since = "24.0.0")
+    private String errorPolicy;
+
     @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
     private Long storagePolicy;
 
@@ -295,6 +301,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
     }
 
     public Map<String, String> getDetails() {

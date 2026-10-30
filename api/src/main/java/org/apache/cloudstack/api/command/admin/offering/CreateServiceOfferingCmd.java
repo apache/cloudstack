@@ -193,6 +193,12 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.14")
     private String cacheMode;
 
+    @Parameter(name = ApiConstants.ERROR_POLICY,
+            type = CommandType.STRING,
+            description = "The disk error policy to use for the root disk of this compute offering. report, stop, ignore or enospace. Only applicable to KVM",
+            since = "24.0.0")
+    private String errorPolicy;
+
     // Introduce 4 new optional parameters to work custom compute offerings
     @Parameter(name = ApiConstants.CUSTOMIZED,
             type = CommandType.BOOLEAN,
@@ -473,6 +479,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
     }
 
     /**

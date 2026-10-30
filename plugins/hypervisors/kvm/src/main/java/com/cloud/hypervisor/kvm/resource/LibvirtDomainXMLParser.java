@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -90,6 +91,7 @@ public class LibvirtDomainXMLParser {
                 if (type.equalsIgnoreCase("network")) {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
+                    String diskErrorPolicy = getAttrValue("driver", "error_policy", disk);
                     String diskPath = getAttrValue("source", "name", disk);
                     String protocol = getAttrValue("source", "protocol", disk);
                     String authUserName = getAttrValue("auth", "username", disk);
@@ -114,9 +116,13 @@ public class LibvirtDomainXMLParser {
                     if (StringUtils.isNotBlank(diskCacheMode)) {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                     }
+                    if (StringUtils.isNotBlank(diskErrorPolicy)) {
+                        def.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
+                    }
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
+                    String diskErrorPolicy = getAttrValue("driver", "error_policy", disk);
                     String diskFile = getAttrValue("source", "file", disk);
                     String diskDev = getAttrValue("source", "dev", disk);
 
@@ -140,6 +146,9 @@ public class LibvirtDomainXMLParser {
                     }
                     if (StringUtils.isNotBlank(diskCacheMode)) {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    }
+                    if (StringUtils.isNotBlank(diskErrorPolicy)) {
+                        def.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
                     }
                 }
 
