@@ -32,7 +32,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -604,23 +603,14 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
     }
 
     @Test
-    public void testCanHandleChecksCreationEligibilityForErrorSnapshotWithoutVolumeSnapshotDetails() {
+    public void testCanHandleReturnsCantHandleForErrorSnapshotWithoutVolumeSnapshotDetailsOrStrategyMarker() {
         VMSnapshotVO vmSnapshot = mockVmSnapshotForCanHandle(VMSnapshot.State.Error);
         when(vmSnapshotDetailsDao.findDetails(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
-        doReturn(StrategyPriority.HIGHEST).when(strategy).canHandle(10L, null, false);
-
-        assertEquals(StrategyPriority.HIGHEST, strategy.canHandle(vmSnapshot));
-
-        verify(strategy).canHandle(10L, null, false);
-    }
-
-    @Test
-    public void testCanHandleReturnsCantHandleForErrorSnapshotWhenVmIsNotEligible() {
-        VMSnapshotVO vmSnapshot = mockVmSnapshotForCanHandle(VMSnapshot.State.Error);
-        when(vmSnapshotDetailsDao.findDetails(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
-        doReturn(StrategyPriority.CANT_HANDLE).when(strategy).canHandle(10L, null, false);
+        when(vmSnapshotDetailsDao.findDetail(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY)).thenReturn(null);
 
         assertEquals(StrategyPriority.CANT_HANDLE, strategy.canHandle(vmSnapshot));
+
+        verify(strategy, never()).canHandle(anyLong(), any(), anyBoolean());
     }
 
     @Test

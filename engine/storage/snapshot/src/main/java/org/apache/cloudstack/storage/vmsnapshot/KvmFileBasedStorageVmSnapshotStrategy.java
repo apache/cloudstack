@@ -355,19 +355,13 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
     @Override
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
-        VMSnapshot.State state = vmSnapshot.getState();
-        if (!VMSnapshot.State.Allocated.equals(state)) {
+        if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
             if (hasKVMFileBasedStorageSnapshotDetailInVmSnapshotDetails(vmSnapshot) || isCreatedByThisStrategy(vmSnapshot)) {
                 return StrategyPriority.HIGHEST;
             }
-            if (!VMSnapshot.State.Error.equals(state)) {
-                logger.debug("KVM file based storage VM snapshot strategy cannot handle [{}] as it is not a KVM file based storage VM snapshot.",
-                        vmSnapshot.getUuid());
-                return StrategyPriority.CANT_HANDLE;
-            }
-            // Error rows created before the strategy marker existed carry no detail at all; fall back to the creation eligibility check.
-            logger.debug("VM snapshot [{}] is in Error state without any KVM file based storage details; checking whether this strategy would have created it.",
+            logger.debug("KVM file based storage VM snapshot strategy cannot handle [{}] as it is not a KVM file based storage VM snapshot.",
                     vmSnapshot.getUuid());
+            return StrategyPriority.CANT_HANDLE;
         }
 
         long vmId = vmSnapshot.getVmId();
