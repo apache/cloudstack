@@ -20,6 +20,8 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -105,5 +107,30 @@ public class LogUtils {
             LOGGER.trace(errorMsg, e);
             return errorMsg;
         }
+    }
+
+    /**
+     * Generates address entry for log in format of {@code IP_ADDRESS/HOST_NAME:PORT}, where {@code HOST_NAME} is
+     * optional if it cannot be resolved.
+     *
+     * @param address IP address or Host name
+     * @param port    port
+     */
+    public static String getHostLog(String address, Integer port) {
+        try {
+            InetAddress inetAddress = InetAddress.getByName(address);
+            String hostName = inetAddress.getHostName();
+            String ipAddress = inetAddress.getHostAddress();
+            if (port == null) {
+                return String.format("%s/%s", ipAddress, hostName);
+            }
+            return String.format("%s/%s:%s", ipAddress, hostName, port);
+        } catch (UnknownHostException e) {
+            LOGGER.warn("Failed to resolve name for address {}", address, e);
+        }
+        if (port == null) {
+            return address;
+        }
+        return String.format("%s:%s", address, port);
     }
 }

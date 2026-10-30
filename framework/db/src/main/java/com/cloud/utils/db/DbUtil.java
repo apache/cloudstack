@@ -51,11 +51,16 @@ public class DbUtil {
 
     private static Map<String, Connection> s_connectionForGlobalLocks = new HashMap<String, Connection>();
 
+    /**
+     * @param name    lock name
+     * @param forLock true to add lock and false to remove
+     * @return {@link Connection}
+     */
     public static Connection getConnectionForGlobalLocks(String name, boolean forLock) {
         synchronized (s_connectionForGlobalLocks) {
             if (forLock) {
                 if (s_connectionForGlobalLocks.get(name) != null) {
-                    LOGGER.error("Sanity check failed, global lock name " + name + " is already in use");
+                    LOGGER.error("Sanity check failed, global lock name {} is already in use", name);
                     assert (false);
                 }
 
@@ -64,15 +69,18 @@ public class DbUtil {
                     try {
                         connection.setAutoCommit(true);
                     } catch (SQLException e) {
-                        closeAutoCloseable(connection, "error closing connection for global locks");
+                        closeAutoCloseable(connection, String.format("error closing connection for global lock %s", name));
                         return null;
                     }
+                    LOGGER.debug("Storing connection for global lock {}", name);
                     s_connectionForGlobalLocks.put(name, connection);
                     return connection;
                 }
                 return null;
             } else {
+                // remove connection from references map, expecting it will be disposed later (and lock removed)
                 Connection connection = s_connectionForGlobalLocks.get(name);
+                LOGGER.debug("Removing DB connection for global lock {}", name);
                 s_connectionForGlobalLocks.remove(name);
                 return connection;
             }
@@ -80,9 +88,7 @@ public class DbUtil {
     }
 
     public static void removeConnectionForGlobalLocks(String name) {
-        synchronized (s_connectionForGlobalLocks) {
-            s_connectionForGlobalLocks.remove(name);
-        }
+        getConnectionForGlobalLocks(name, false);
     }
 
     public static String getColumnName(Field field, AttributeOverride[] overrides) {
@@ -199,7 +205,7 @@ public class DbUtil {
     public static boolean getGlobalLock(String name, int timeoutSeconds) {
         Connection conn = getConnectionForGlobalLocks(name, true);
         if (conn == null) {
-            LOGGER.error("Unable to acquire DB connection for global lock system");
+            LOGGER.error("Unable to acquire DB connection for global lock {}", name);
             return false;
         }
 
@@ -210,22 +216,52 @@ public class DbUtil {
             try (ResultSet rs = pstmt.executeQuery();) {
                 if (rs != null && rs.first()) {
                     if (rs.getInt(1) > 0) {
+                        LOGGER.debug("GET_LOCK() for global lock {} succeeded", name);
                         return true;
                     } else {
-                        if (LOGGER.isDebugEnabled())
-                            LOGGER.debug("GET_LOCK() timed out on lock : " + name);
+                        LOGGER.debug("GET_LOCK() for global lock {} is timed out", name);
                     }
                 }
             }
-        } catch (SQLException e) {
-            LOGGER.error("GET_LOCK() throws exception ", e);
         } catch (Throwable e) {
-            LOGGER.error("GET_LOCK() throws exception ", e);
+            LOGGER.error("GET_LOCK() for global lock {} throws exception", name, e);
         }
 
         removeConnectionForGlobalLocks(name);
-        closeAutoCloseable(conn, "connection for global lock");
+        closeAutoCloseable(conn, String.format("connection for global lock %s", name));
         return false;
+    }
+
+    public static boolean isFreeLock(String name) {
+        boolean result = false;
+        Connection conn = TransactionLegacy.getStandaloneConnection();
+        if (conn == null) {
+            LOGGER.error("Unable to acquire DB connection for IS_FREE_LOCK('{}'), returning default " +
+                    "value {}", name, result);
+            return result;
+        }
+        try {
+            conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            closeAutoCloseable(conn, String.format("error closing connection for IS_FREE_LOCK('%s'), returning " +
+                    "default value %s", name, result));
+            return result;
+        }
+
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT COALESCE(IS_FREE_LOCK(?),0)");) {
+            pstmt.setString(1, name);
+            try (ResultSet rs = pstmt.executeQuery();) {
+                if (rs.next()) {
+                    result = rs.getInt(1) > 0;
+                }
+            }
+            LOGGER.debug("IS_FREE_LOCK('{}') returned: {}", name, result);
+        } catch (Throwable e) {
+            LOGGER.error("IS_FREE_LOCK('{}') threw exception {}", name, e.getClass(), e);
+        } finally {
+            closeAutoCloseable(conn, String.format("connection for IS_FREE_LOCK('%s')", name));
+        }
+        return result;
     }
 
     public static Class<?> getEntityBeanType(GenericDao<?, Long> dao) {
@@ -235,7 +271,7 @@ public class DbUtil {
     public static boolean releaseGlobalLock(String name) {
         try (Connection conn = getConnectionForGlobalLocks(name, false);) {
             if (conn == null) {
-                LOGGER.error("Unable to acquire DB connection for global lock system");
+                LOGGER.error("Unable to obtain DB connection to release global lock {}", name);
                 assert (false);
                 return false;
             }
@@ -244,15 +280,14 @@ public class DbUtil {
                 pstmt.setString(1, name);
                 try (ResultSet rs = pstmt.executeQuery();) {
                     if (rs != null && rs.first()) {
+                        LOGGER.debug("RELEASE_LOCK() for global lock {} succeeded", name);
                         return rs.getInt(1) > 0;
                     }
-                    LOGGER.error("releaseGlobalLock:RELEASE_LOCK() returns unexpected result");
+                    LOGGER.error("RELEASE_LOCK() for global lock {} returns unexpected result", name);
                 }
             }
-        } catch (SQLException e) {
-            LOGGER.error("RELEASE_LOCK() throws exception ", e);
         } catch (Throwable e) {
-            LOGGER.error("RELEASE_LOCK() throws exception ", e);
+            LOGGER.error("RELEASE_LOCK() for global lock {} throws exception", name, e);
         }
         return false;
     }
