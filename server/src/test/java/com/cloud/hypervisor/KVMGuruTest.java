@@ -18,9 +18,11 @@ package com.cloud.hypervisor;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
@@ -44,6 +46,7 @@ import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -53,6 +56,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -74,6 +78,8 @@ public class KVMGuruTest {
     VMInstanceDao _instanceDao;
     @Mock
     VolumeDao _volumeDao;
+    @Mock
+    VolumeApiService volumeApiService;
 
     @Spy
     @InjectMocks
@@ -105,6 +111,9 @@ public class KVMGuruTest {
 
     @Mock
     DpdkHelper dpdkHelperMock;
+
+    @Mock
+    HypervisorCapabilitiesDao hypervisorCapabilitiesDaoMock;
 
     @Mock
     GuestOSVO guestOsVoMock;
@@ -520,6 +529,44 @@ public class KVMGuruTest {
         Assert.assertNull(clusterId);
     }
 
+    private List<VolumeVO> mockVolumesWithDeviceIds(long... deviceIds) {
+        List<VolumeVO> volumes = new java.util.ArrayList<>();
+        for (long deviceId : deviceIds) {
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            Mockito.when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+        return volumes;
+    }
+
+    @Test
+    public void getNextAvailableDeviceIdSkipsReservedDeviceIds() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(4L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L)), volumes));
+        Assert.assertEquals(Long.valueOf(5L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L)), volumes));
+        Assert.assertEquals(Long.valueOf(6L), guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumes));
+    }
+
+    @Test
+    public void getNextAvailableDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        Set<Long> reserved = new HashSet<>(Arrays.asList(3L, 4L));
+        // root + 5 data volumes (1, 2, 5, 6, 7): the 6th data volume is still allowed, and gets device id 8
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L, 5L, 6L, 7L);
+
+        Assert.assertEquals(Long.valueOf(8L), guru.getNextAvailableDeviceId(reserved, volumes));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getNextAvailableDeviceIdThrowsExceptionWhenAllDeviceIdsAreUsed() {
+        Mockito.when(hypervisorCapabilitiesDaoMock.getMaxDataVolumesLimit(Hypervisor.HypervisorType.KVM, "default")).thenReturn(6);
+        List<VolumeVO> volumes = mockVolumesWithDeviceIds(0L, 1L, 2L, 5L, 6L, 7L, 8L);
+
+        guru.getNextAvailableDeviceId(new HashSet<>(Arrays.asList(3L, 4L)), volumes);
+    }
+
     /**
      * The restore maps backup files onto volumes by their device id ordering, so re-importing the
      * instance has to put every data disk back on the device id recorded in the backup. Handing out
@@ -552,6 +599,6 @@ public class KVMGuruTest {
 
         Mockito.verify(_volumeDao).attachVolume(10L, 42L, 0L);
         Mockito.verify(_volumeDao).attachVolume(11L, 42L, 5L);
-        Mockito.verify(guru, Mockito.never()).getNextAvailableDeviceId(Mockito.anyList());
+        Mockito.verify(guru, Mockito.never()).getNextAvailableDeviceId(Mockito.anySet(), Mockito.anyList());
     }
 }
