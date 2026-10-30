@@ -86,6 +86,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
     private static final List<Storage.StoragePoolType> supportedStoragePoolTypes = List.of(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint);
     private static final String KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM = "kvmFileBasedStorageSnapshotNvram";
+    private static final int DEFAULT_MERGE_TIMEOUT = 10800;
 
     @Inject
     protected SnapshotDataStoreDao snapshotDataStoreDao;
@@ -442,9 +443,11 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         }
 
         MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVMSnapshotCommand = new MergeDiskOnlyVmSnapshotCommand(snapshotMergeTreeToList, userVm.getState(), userVm.getName());
+        mergeDiskOnlyVMSnapshotCommand.setWait(DEFAULT_MERGE_TIMEOUT);
         Answer answer = agentMgr.easySend(hostId, mergeDiskOnlyVMSnapshotCommand);
         if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException(String.format("Failed to merge VM snapshot [%s] due to %s.", vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
+            throw new CloudRuntimeException(String.format("Failed to merge VM snapshot [%s] due to %s. Consider trying again later to make sure the VM metadata is synchronized.",
+                    vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
         }
 
         logger.debug("Updating metadata of VM snapshot [{}] and its child [{}].", vmSnapshotVO.getUuid(), childSnapshot.getUuid());
@@ -481,6 +484,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         }
 
         MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVMSnapshotCommand = new MergeDiskOnlyVmSnapshotCommand(snapshotMergeTreeTOList, userVmVO.getState(), userVmVO.getName());
+        mergeDiskOnlyVMSnapshotCommand.setWait(DEFAULT_MERGE_TIMEOUT);
 
         Answer answer = agentMgr.easySend(hostId, mergeDiskOnlyVMSnapshotCommand);
         if (answer == null || !answer.getResult()) {
