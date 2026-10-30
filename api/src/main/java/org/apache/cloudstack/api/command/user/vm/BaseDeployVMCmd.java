@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -55,16 +56,15 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmDiskInfo;
-import com.cloud.utils.net.Dhcp;
 
 public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
 
@@ -322,10 +322,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 String type = bootType.trim().toUpperCase();
                 return ApiConstants.BootType.valueOf(type);
             } catch (IllegalArgumentException e) {
-                String errMesg = "Invalid bootType " + bootType + "Specified for vm " + getName()
-                        + " Valid values are: " + Arrays.toString(ApiConstants.BootType.values());
-                logger.warn(errMesg);
-                throw new InvalidParameterValueException(errMesg);
+                logger.warn("Invalid bootType {} specified for vm {}", bootType, getName());
+                throw Exceptions.invalidParameterValueException("vm.deploy.boot.type.invalid", Map.of(
+                        "bootType", bootType,
+                        "validValues", Arrays.toString(ApiConstants.BootType.values())));
             }
         }
         return null;
@@ -375,17 +375,17 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
-                        ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
-                logger.error(msg);
-                throw new InvalidParameterValueException(msg);
+                logger.error("Invalid {}: {} specified for VM: {}", ApiConstants.BOOT_MODE, bootMode, getName());
+                throw Exceptions.invalidParameterValueException("vm.deploy.boot.mode.invalid", Map.of(
+                        "bootMode", bootMode,
+                        "validValues", Arrays.toString(ApiConstants.BootMode.values())));
             }
         }
         if (ApiConstants.BootType.UEFI.equals(getBootType())) {
-            String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
-                    ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
-            logger.error(msg);
-            throw new InvalidParameterValueException(msg);
+            logger.error("{} must be specified for the VM with boot type: {}", ApiConstants.BOOT_MODE, getBootType());
+            throw Exceptions.invalidParameterValueException("vm.deploy.boot.mode.required.for.uefi", Map.of(
+                    "bootType", getBootType(),
+                    "validValues", Arrays.toString(ApiConstants.BootMode.values())));
         }
         return null;
     }
@@ -421,7 +421,9 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                     logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
                 if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
-                    throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
+                    throw Exceptions.invalidParameterValueException("vm.deploy.vapp.nic.network.invalid", Map.of(
+                            "networkId", String.valueOf(networkUuid),
+                            "nicId", String.valueOf(nic)));
                 }
                 map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
             }
@@ -491,8 +493,9 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
         VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
         if (action == null) {
-            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
-                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+            throw Exceptions.invalidParameterValueException("vm.deploy.lease.expiry.action.invalid", Map.of(
+                    "value", leaseExpiryAction,
+                    "validValues", com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values())));
         }
         return action;
     }
@@ -500,14 +503,18 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     public List<Long> getNetworkIds() {
         if (MapUtils.isNotEmpty(vAppNetworks)) {
             if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null || MapUtils.isNotEmpty(ipToNetworkList)) {
-                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s", ApiConstants.NIC_NETWORK_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST));
+                throw Exceptions.invalidParameterValueException("vm.deploy.nic.network.list.mutually.exclusive", Map.of(
+                        "nicNetworkList", ApiConstants.NIC_NETWORK_LIST,
+                        "networkIds", ApiConstants.NETWORK_IDS,
+                        "ipAddress", ApiConstants.IP_ADDRESS,
+                        "ipNetworkList", ApiConstants.IP_NETWORK_LIST));
             } else {
                 return new ArrayList<>();
             }
         }
        if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
            if ((networkIds != null && !networkIds.isEmpty()) || ipAddress != null || getIp6Address() != null) {
-               throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
+               throw Exceptions.invalidParameterValueException("vm.deploy.ip.to.network.map.mutually.exclusive");
            } else {
                List<Long> networks = new ArrayList<Long>();
                networks.addAll(getIpToNetworkMap().keySet());
@@ -540,7 +547,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             return null;
         }
         if (dataDiskTemplateToDiskOfferingList != null) {
-            throw new InvalidParameterValueException("datadisktemplatetodiskofferinglist parameter can't be specified along with datadisksdetails parameter");
+            throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.with.datadisktemplatetodiskofferinglist");
         }
         List<VmDiskInfo> vmDiskInfoList = new ArrayList<>();
         Collection dataDisksCollection = dataDisksDetails.values();
@@ -549,26 +556,26 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             HashMap<String, String> dataDisk = (HashMap<String, String>)iter.next();
             String diskOfferingUuid = dataDisk.get(ApiConstants.DISK_OFFERING_ID);
             if (diskOfferingUuid == null) {
-                throw new InvalidParameterValueException("diskofferingid parameter is required for datadiskdetails");
+                throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.diskofferingid.required");
             }
             DiskOffering diskOffering = _entityMgr.findByUuid(DiskOffering.class, diskOfferingUuid);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingUuid);
+                throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.diskoffering.not.found", Map.of("diskOfferingId", diskOfferingUuid));
             }
             if (diskOffering.isComputeOnly()) {
-                throw new InvalidParameterValueException(String.format("The disk offering id %d provided is directly mapped to a service offering, please provide an individual disk offering", diskOffering.getUuid()));
+                throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.diskoffering.compute.only", Map.of("diskOffering", diskOffering));
             }
 
             Long size = null;
             Long minIops = null;
             Long maxIops = null;
             if (dataDisk.get(ApiConstants.DEVICE_ID) == null) {
-                throw new InvalidParameterValueException("deviceid parameter is required for datadiskdetails");
+                throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.deviceid.required");
             }
             Long deviceId = Long.parseLong(dataDisk.get(ApiConstants.DEVICE_ID));
             if (diskOffering.isCustomized()) {
                 if (dataDisk.get(ApiConstants.SIZE) == null) {
-                    throw new InvalidParameterValueException("Size is required for custom disk offering");
+                    throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.size.required", Map.of("diskOffering", diskOffering));
                 }
                 size = Long.parseLong(dataDisk.get(ApiConstants.SIZE));
             } else {
@@ -576,10 +583,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             }
             if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
                 if (dataDisk.get(ApiConstants.MIN_IOPS) == null) {
-                    throw new InvalidParameterValueException("Min IOPS is required for custom disk offering");
+                    throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.miniops.required", Map.of("diskOffering", diskOffering));
                 }
                 if (dataDisk.get(ApiConstants.MAX_IOPS) == null) {
-                    throw new InvalidParameterValueException("Max IOPS is required for custom disk offering");
+                    throw Exceptions.invalidParameterValueException("vm.deploy.datadiskdetails.maxiops.required", Map.of("diskOffering", diskOffering));
                 }
                 minIops = Long.parseLong(dataDisk.get(ApiConstants.MIN_IOPS));
                 maxIops = Long.parseLong(dataDisk.get(ApiConstants.MAX_IOPS));
@@ -601,7 +608,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     public Map<Long, IpAddresses> getIpToNetworkMap() {
         if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
-            throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
+            throw Exceptions.invalidParameterValueException("vm.deploy.network.ids.ip.address.with.ip.to.network.map");
         }
         LinkedHashMap<Long, IpAddresses> ipToNetworkMap = null;
         if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
@@ -629,9 +636,9 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
         if (requestedMac != null) {
             if(!NetUtils.isValidMac(requestedMac)) {
-                throw new InvalidParameterValueException("Mac address is not valid: " + requestedMac);
+                throw Exceptions.invalidParameterValueException("vm.deploy.mac.address.invalid", Map.of("macAddress", requestedMac));
             } else if(!NetUtils.isUnicastMac(requestedMac)) {
-                throw new InvalidParameterValueException("Mac address is not unicast: " + requestedMac);
+                throw Exceptions.invalidParameterValueException("vm.deploy.mac.address.not.unicast", Map.of("macAddress", requestedMac));
             }
             requestedMac = NetUtils.standardizeMacAddress(requestedMac);
         }
@@ -649,7 +656,8 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             try {
                 networkId = Long.parseLong(networkid);
             } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkid);
+                throw Exceptions.invalidParameterValueException("vm.deploy.network.not.found.ip.map",
+                        Map.of("networkId", networkid));
             }
         }
         return networkId;
@@ -672,16 +680,16 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             return null;
         }
         if(!NetUtils.isValidMac(macAddress)) {
-            throw new InvalidParameterValueException("Mac address is not valid: " + macAddress);
+            throw Exceptions.invalidParameterValueException("vm.deploy.mac.address.invalid", Map.of("macAddress", macAddress));
         } else if(!NetUtils.isUnicastMac(macAddress)) {
-            throw new InvalidParameterValueException("Mac address is not unicast: " + macAddress);
+            throw Exceptions.invalidParameterValueException("vm.deploy.mac.address.not.unicast", Map.of("macAddress", macAddress));
         }
         return NetUtils.standardizeMacAddress(macAddress);
     }
 
     public List<Long> getAffinityGroupIdList() {
         if (affinityGroupNameList != null && affinityGroupIdList != null) {
-            throw new InvalidParameterValueException("affinitygroupids parameter is mutually exclusive with affinitygroupnames parameter");
+            throw Exceptions.invalidParameterValueException("vm.deploy.affinity.group.ids.names.mutually.exclusive");
         }
 
         // transform group names to ids here
@@ -690,7 +698,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             for (String groupName : affinityGroupNameList) {
                 Long groupId = _responseGenerator.getAffinityGroupId(groupName, getEntityOwnerId());
                 if (groupId == null) {
-                    throw new InvalidParameterValueException("Unable to find affinity group by name " + groupName);
+                    throw Exceptions.invalidParameterValueException("vm.deploy.affinity.group.not.found.by.name", Map.of("groupName", groupName));
                 } else {
                     affinityGroupIds.add(groupId);
                 }
@@ -739,7 +747,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
         if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
-            throw new InvalidParameterValueException("diskofferingid parameter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+            throw Exceptions.invalidParameterValueException("vm.deploy.diskofferingid.with.datadisktemplatetodiskofferinglist");
         }
         if (MapUtils.isEmpty(dataDiskTemplateToDiskOfferingList)) {
             return new HashMap<Long, DiskOffering>();
@@ -754,14 +762,16 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             if (dataDiskTemplate == null) {
                 dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
                 if (dataDiskTemplate == null)
-                    throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
+                    throw Exceptions.invalidParameterValueException("vm.deploy.datadisktemplateid.not.found",
+                            Map.of("templateId", String.valueOf(dataDiskTemplates.get("datadisktemplateid"))));
             }
             dataDiskTemplateId = dataDiskTemplate.getId();
             dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
             if (dataDiskOffering == null) {
                 dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
                 if (dataDiskOffering == null)
-                    throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
+                    throw Exceptions.invalidParameterValueException("vm.deploy.datadisktemplate.diskofferingid.not.found",
+                            Map.of("diskOfferingId", String.valueOf(dataDiskTemplates.get("diskofferingid"))));
             }
             dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
         }
@@ -794,9 +804,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 String policyType = ioDriverPolicy.trim().toUpperCase();
                 return IoDriverPolicy.valueOf(policyType);
             } catch (IllegalArgumentException e) {
-                String errMesg = String.format("Invalid io policy %s specified for vm %s. Valid values are: %s", ioDriverPolicy, getName(), Arrays.toString(IoDriverPolicy.values()));
-                logger.warn(errMesg);
-                throw new InvalidParameterValueException(errMesg);
+                logger.warn("Invalid io policy {} specified for vm {}", ioDriverPolicy, getName());
+                throw Exceptions.invalidParameterValueException("vm.deploy.io.driver.policy.invalid", Map.of(
+                        "ioDriverPolicy", ioDriverPolicy,
+                        "validValues", Arrays.toString(IoDriverPolicy.values())));
             }
         }
         return null;
