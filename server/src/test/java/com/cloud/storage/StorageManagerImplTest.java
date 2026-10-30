@@ -31,6 +31,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -38,7 +39,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -1726,5 +1729,74 @@ public class StorageManagerImplTest {
         Boolean result = ReflectionTestUtils.invokeMethod(storageManagerImpl, "checkUsagedSpace", pool);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void recordStatusBeforeMaintenanceStoresDisabledStatus() {
+        Mockito.when(storagePoolVOMock.getId()).thenReturn(1L);
+        Mockito.when(storagePoolVOMock.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+
+        storageManagerImpl.recordStatusBeforeMaintenance(storagePoolVOMock);
+
+        Mockito.verify(storagePoolDetailsDao).addDetail(1L, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE, StoragePoolStatus.Disabled.name(), false);
+    }
+
+    @Test
+    public void recordStatusBeforeMaintenanceClearsStaleStatusForUpPool() {
+        Mockito.when(storagePoolVOMock.getId()).thenReturn(1L);
+        Mockito.when(storagePoolVOMock.getStatus()).thenReturn(StoragePoolStatus.Up);
+
+        storageManagerImpl.recordStatusBeforeMaintenance(storagePoolVOMock);
+
+        Mockito.verify(storagePoolDetailsDao).removeDetail(1L, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE);
+        Mockito.verify(storagePoolDetailsDao, Mockito.never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void recordStatusBeforeMaintenanceKeepsRecordedStatusOnRetry() {
+        Mockito.when(storagePoolVOMock.getStatus()).thenReturn(StoragePoolStatus.ErrorInMaintenance);
+
+        storageManagerImpl.recordStatusBeforeMaintenance(storagePoolVOMock);
+
+        Mockito.verifyNoInteractions(storagePoolDetailsDao);
+    }
+
+    @Test
+    public void preparePrimaryStorageForMaintenanceAllowsDisabledPool() throws Exception {
+        DataStoreProvider provider = Mockito.mock(DataStoreProvider.class);
+        DataStoreLifeCycle lifeCycle = Mockito.mock(DataStoreLifeCycle.class);
+        PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(storagePoolVOMock);
+        Mockito.when(storagePoolVOMock.getId()).thenReturn(1L);
+        Mockito.when(storagePoolVOMock.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+        Mockito.when(storagePoolVOMock.getStorageProviderName()).thenReturn("DefaultPrimary");
+        Mockito.when(dataStoreProviderMgr.getDataStoreProvider("DefaultPrimary")).thenReturn(provider);
+        Mockito.when(provider.getDataStoreLifeCycle()).thenReturn(lifeCycle);
+        Mockito.when(dataStoreMgr.getDataStore(1L, DataStoreRole.Primary)).thenReturn(store);
+
+        storageManagerImpl.preparePrimaryStorageForMaintenance(1L);
+
+        Mockito.verify(storagePoolDetailsDao).addDetail(1L, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE, StoragePoolStatus.Disabled.name(), false);
+        Mockito.verify(lifeCycle).maintain(store);
+    }
+
+    @Test
+    public void preparePrimaryStorageForMaintenanceRejectsPoolAlreadyInMaintenance() {
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(storagePoolVOMock);
+        Mockito.when(storagePoolVOMock.getStatus()).thenReturn(StoragePoolStatus.Maintenance);
+
+        assertThrows(InvalidParameterValueException.class, () -> storageManagerImpl.preparePrimaryStorageForMaintenance(1L));
+        Mockito.verifyNoInteractions(storagePoolDetailsDao);
+    }
+
+    @Test
+    public void cancelPrimaryStorageForMaintenanceRejectsDisabledPool() {
+        CancelPrimaryStorageMaintenanceCmd cmd = Mockito.mock(CancelPrimaryStorageMaintenanceCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(1L);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(storagePoolVOMock);
+        Mockito.when(storagePoolVOMock.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+
+        assertThrows(StorageUnavailableException.class, () -> storageManagerImpl.cancelPrimaryStorageForMaintenance(cmd));
+        Mockito.verifyNoInteractions(dataStoreProviderMgr);
     }
 }
