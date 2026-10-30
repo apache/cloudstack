@@ -3014,17 +3014,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
             try {
-                long deviceId = 1L;
                 Storage.ImageFormat diskFormat = getImageFormatFromVolumeDetails(volumeDetails);
                 if (storagePool.getPoolType() == Storage.StoragePoolType.StorPool) {
                     diskFormat = Storage.ImageFormat.QCOW2;
                 }
                 if(ImportSource.SHARED == importSource) {
                     diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
-                            template, deviceId, poolId, diskPath, diskProfile, diskFormat));
+                            template, null, poolId, diskPath, diskProfile, diskFormat));
                 } else if(ImportSource.LOCAL == importSource) {
                     diskProfileStoragePoolList.add(importKVMLocalDisk(userVm, diskOffering, Volume.Type.ROOT,
-                            template, deviceId, hostId, diskPath, diskProfile, diskFormat));
+                            template, null, hostId, diskPath, diskProfile, diskFormat));
                 }
             } catch (Exception e) {
                 logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
