@@ -560,7 +560,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return null;
     }
 
-    public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException, ConfigurationException {
+    public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException {
 
         if (logger.isDebugEnabled()) {
             logger.debug("Assign console proxy from a newly started Instance for request from data center : " + dataCenterId);
@@ -692,7 +692,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return proxy;
     }
 
-    protected Map<String, Object> createProxyInstance(long dataCenterId, List<VMTemplateVO> templates) throws ConcurrentOperationException, ConfigurationException {
+    protected Map<String, Object> createProxyInstance(long dataCenterId, List<VMTemplateVO> templates) throws ConcurrentOperationException {
 
         long id = consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, instance);
@@ -844,7 +844,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if (allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
                     try {
                         proxy = startNew(dataCenterId);
-                    } catch (ConcurrentOperationException | ConfigurationException e) {
+                    } catch (ConcurrentOperationException e) {
                         logger.warn("Unable to start new console proxy on zone [{}] due to [{}].", zone, e.getMessage(), e);
                     } finally {
                         allocProxyLock.unlock();
@@ -1641,7 +1641,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return Integer.parseInt(ConsoleProxyCapacityStandby.valueIn(datacenterId));
     }
 
-    private ServiceOfferingVO getConsoleProxyServiceOffering(Long datacenterId) throws ConfigurationException {
+    private ServiceOfferingVO getConsoleProxyServiceOffering(Long datacenterId) {
         String configKey = ConsoleProxyServiceOffering.key();
         String cpvmSrvcOffIdStr = ConsoleProxyServiceOffering.valueIn(datacenterId);
         String warningMessage = String.format("Unable to find a service offering by the UUID or ID for console proxy VM with the value [%s] set in the configuration [%s]", cpvmSrvcOffIdStr, configKey);
@@ -1650,7 +1650,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             serviceOfferingVO = getServiceOfferingByUuidOrId(cpvmSrvcOffIdStr, warningMessage, configKey);
         }
 
-        if (serviceOfferingVO == null || !serviceOfferingVO.isSystemUse()) {
+        if (serviceOfferingVO != null && !serviceOfferingVO.isSystemUse()) {
+            logger.warn("The service offering [{}] set in the configuration [{}] for console proxy VM is not a system offering. The default system offering will be used instead.", cpvmSrvcOffIdStr, configKey);
+            serviceOfferingVO = null;
+        }
+
+        if (serviceOfferingVO == null) {
             logger.debug("Service offering for console proxy VM is not set or not a system service offering. Creating a default service offering.");
             createServiceOfferingForConsoleProxy();
         }
@@ -1674,7 +1679,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return serviceOfferingVO;
     }
 
-    private void createServiceOfferingForConsoleProxy() throws ConfigurationException {
+    private void createServiceOfferingForConsoleProxy() {
         int ramSize = NumbersUtil.parseInt(configurationDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
         int cpuFreq = NumbersUtil.parseInt(configurationDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
         List<ServiceOfferingVO> offerings = serviceOfferingDao.createSystemServiceOfferings("System Offering For Console Proxy",
@@ -1682,9 +1687,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
 
         if (offerings == null || offerings.size() < 2) {
-            String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
+            String msg = "Unable to set a service offering for console proxy VM. Verify if it was removed.";
             logger.error(msg);
-            throw new ConfigurationException(msg);
+            throw new CloudRuntimeException(msg);
         }
     }
 }
