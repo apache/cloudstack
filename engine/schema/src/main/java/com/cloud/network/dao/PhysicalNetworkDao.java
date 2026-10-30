@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.GenericDao;
@@ -27,4 +28,9 @@ public interface PhysicalNetworkDao extends GenericDao<PhysicalNetworkVO, Long> 
     List<PhysicalNetworkVO> listByZoneIncludingRemoved(long zoneId);
 
     List<PhysicalNetworkVO> listByZoneAndTrafficType(long dataCenterId, TrafficType trafficType);
+
+    /**
+     * Returns the KVM network labels (bridges) of all the physical networks of the given zone.
+     */
+    Set<String> getKvmNetworkLabelsInZone(long zoneId);
 }
