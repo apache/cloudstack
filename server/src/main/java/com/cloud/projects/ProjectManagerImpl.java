@@ -53,7 +53,6 @@ import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.cloudstack.webhook.WebhookHelper;
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
@@ -61,7 +60,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.domain.DomainVO;
@@ -187,12 +185,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
         Map<String, String> configs = _configDao.getConfiguration(params);
-        _invitationRequired = BooleanUtils.toBoolean(configs.get(Config.ProjectInviteRequired.key()));
-
-        String value = configs.get(Config.ProjectInvitationExpirationTime.key());
-        _invitationTimeOut = Long.parseLong(value != null ? value : "86400") * 1000;
-        _allowUserToCreateProject = BooleanUtils.toBoolean(configs.get(Config.AllowUserToCreateProject.key()));
-        senderAddress = configs.get("project.email.sender");
+        _invitationRequired = ProjectInviteRequired.value();
+        _invitationTimeOut = ProjectInvitationExpirationTime.value() * 1000;
+        _allowUserToCreateProject = AllowUserToCreateProject.value();
+        senderAddress = ProjectEmailSender.value();
 
         String namespace = "project.smtp";
 
@@ -1497,7 +1493,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS, ProjectSmtpUseAuth};
+        return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS, ProjectSmtpUseAuth,
+                ProjectInviteRequired, ProjectInvitationExpirationTime, AllowUserToCreateProject, ProjectEmailSender,
+                ProjectSMTPHost, ProjectSMTPPort, ProjectSMTPUsername, ProjectSMTPPassword};
     }
 
     protected void updateProjectNameAndDisplayText(final ProjectVO project, String name, String displayText) {

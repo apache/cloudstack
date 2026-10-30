@@ -21,11 +21,21 @@ import java.util.List;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 
 public interface NetworkUsageService extends Manager {
+
+    ConfigKey<Integer> DirectNetworkStatsInterval = new ConfigKey<>("Usage", Integer.class, "direct.network.stats.interval", "86400",
+            "Interval (in seconds) to collect stats from Traffic Monitor", true);
+
+    ConfigKey<String> TrafficSentinelIncludeZones = new ConfigKey<>("Usage", String.class, "traffic.sentinel.include.zones", "EXTERNAL",
+            "Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty", true);
+
+    ConfigKey<String> TrafficSentinelExcludeZones = new ConfigKey<>("Usage", String.class, "traffic.sentinel.exclude.zones", "",
+            "Traffic going into specified list of zones is not metered.", true);
 
     Host addTrafficMonitor(AddTrafficMonitorCmd cmd);
 

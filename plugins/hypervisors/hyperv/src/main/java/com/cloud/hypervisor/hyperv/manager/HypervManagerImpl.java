@@ -36,9 +36,11 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import com.cloud.configuration.Config;
+import com.cloud.agent.AgentManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
@@ -78,7 +80,7 @@ public class HypervManagerImpl implements HypervManager {
             _storage = new JavaStorageLayer();
             _storage.configure("StorageLayer", params);
         }
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = VirtualNetworkApplianceManager.RouterExtraPublicNics.value();
         return true;
     }
 
@@ -313,12 +315,12 @@ public class HypervManagerImpl implements HypervManager {
     }
 
     private String getMountParent() {
-        String mountParent = _configDao.getValue(Config.MountParent.key());
+        String mountParent = SecondaryStorageVmManager.MountParent.value();
         if (mountParent == null) {
             mountParent = File.separator + "mnt";
         }
 
-        String instance = _configDao.getValue(Config.InstanceName.key());
+        String instance = AgentManager.InstanceName.value();
         if (instance == null) {
             instance = "DEFAULT";
         }

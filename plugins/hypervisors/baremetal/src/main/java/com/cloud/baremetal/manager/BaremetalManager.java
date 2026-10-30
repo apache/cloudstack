@@ -21,11 +21,30 @@ package com.cloud.baremetal.manager;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.BaremetalProvisionDoneNotificationCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface BaremetalManager extends Manager, PluggableService {
     public static final String EchoSecurityGroupAgent = "EchoSecurityGroupAgent";
     public static final String ExternalBaremetalSystemUrl = "ExternalBaremetalSystemUrl";
     public static final String DO_PXE = "doPxe";
+
+    ConfigKey<String> BaremetalInternalStorageServer = new ConfigKey<>("Advanced", String.class, "baremetal.internal.storage.server.ip", null,
+            "the ip address of server that stores kickstart file, kernel, initrd, ISO for advanced networking baremetal provisioning", true);
+
+    ConfigKey<Integer> BaremetalProvisionDoneNotificationTimeout = new ConfigKey<>("Advanced", Integer.class, "baremetal.provision.done.notification.timeout", "1800",
+            "the max time to wait before treating a baremetal provision as failure if no provision done notification is not received, in secs", true);
+
+    ConfigKey<String> ExternalBaremetalResourceClassName = new ConfigKey<>("Advanced", String.class, "external.baremetal.resource.classname", null,
+            "class name for handling external baremetal resource", true);
+
+    ConfigKey<Boolean> EnableBaremetalSecurityGroupAgentEcho = new ConfigKey<>("Advanced", Boolean.class, "enable.baremetal.securitygroup.agent.echo", "false",
+            "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully", true);
+
+    ConfigKey<String> BaremetalIpmiLanInterface = new ConfigKey<>("Advanced", String.class, "baremetal.ipmi.lan.interface", "default",
+            "option specified in -I option of ipmitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool", true);
+
+    ConfigKey<Integer> BaremetalIpmiRetryTimes = new ConfigKey<>("Advanced", Integer.class, "baremetal.ipmi.fail.retry", "5",
+            "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure", true);
 
     void notifyProvisionDone(BaremetalProvisionDoneNotificationCmd cmd);
 }

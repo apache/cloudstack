@@ -56,6 +56,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceState;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageStats;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.Filter;
@@ -393,11 +394,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     @Override
     public List<HostJoinVO> searchByIds(Long... hostIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         List<HostJoinVO> uvList = new ArrayList<HostJoinVO>();
         // query details by batches

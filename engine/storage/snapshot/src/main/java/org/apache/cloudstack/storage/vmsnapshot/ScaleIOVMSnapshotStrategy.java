@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.api.SnapshotGroup;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
@@ -47,7 +46,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
-import com.cloud.server.ManagementServerImpl;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -55,7 +54,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -66,6 +64,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -82,8 +81,6 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     protected VMSnapshotDetailsDao vmSnapshotDetailsDao;
     int _wait;
     @Inject
-    ConfigurationDao configurationDao;
-    @Inject
     VolumeDao volumeDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
@@ -96,8 +93,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        String value = configurationDao.getValue("vmsnapshot.create.wait");
-        _wait = NumbersUtil.parseInt(value, 1800);
+        _wait = VMSnapshotManager.VMSnapshotCreateWait.value();
         return true;
     }
 
@@ -170,7 +166,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             long virtual_size=0;
             for (VolumeObjectTO volume : volumeTOs) {
                 String volumeSnapshotName = String.format("%s-%s-%s-%s-%s", ScaleIOUtil.VMSNAPSHOT_PREFIX, vmSnapshotVO.getId(), volume.getId(),
-                        storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                        storagePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
                 srcVolumeDestSnapshotMap.put(ScaleIOUtil.getVolumePath(volume.getPath()), volumeSnapshotName);
 
                 virtual_size += volume.getSize();

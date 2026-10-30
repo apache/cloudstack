@@ -40,7 +40,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -67,7 +66,6 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -79,11 +77,11 @@ import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
 import com.cloud.vm.VirtualMachineManager;
@@ -106,8 +104,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
     EndPointSelector _epSelector;
-    @Inject
-    ConfigurationDao configDao;
     @Inject
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
@@ -163,7 +159,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     protected Long getMaxTemplateSizeInBytes() {
         try {
-            return Long.parseLong(configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
+            return SecondaryStorageVmManager.MaxTemplateAndIsoSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             return null;
         }
@@ -398,7 +394,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 (srcdata.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) ||
                 (srcdata.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME)) {
 
-            int nMaxExecutionMinutes = NumbersUtil.parseInt(configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
+            int nMaxExecutionMinutes = AgentManager.SecStorageCmdExecutionTimeMax.value();
             CopyCommand cmd = new CopyCommand(srcdata.getTO(), destData.getTO(), nMaxExecutionMinutes * 60 * 1000, VirtualMachineManager.ExecuteInSequence.value());
             Answer answer = null;
 

@@ -69,7 +69,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -97,7 +96,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
-import com.cloud.configuration.Config;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -152,6 +151,7 @@ import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -164,7 +164,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.Ternary;
@@ -232,8 +231,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     DomainManager _domainMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
-    @Inject
-    ConfigurationDao _configDao;
     @Inject
     VMSnapshotDao _vmSnapshotDao;
     @Inject
@@ -311,7 +308,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled,
+                BackupSnapshotWait, TotalRetries, SnapshotPollInterval};
     }
 
     @Override
@@ -547,7 +545,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long zoneId = cmd.getZoneId();
 
         if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
-            logger.error("Extraction is disabled through [{}].", Config.DisableExtraction);
+            logger.error("Extraction is disabled through [{}].", SecondaryStorageVmManager.DisableExtraction);
             throw new PermissionDeniedException("Extraction could not be completed.");
         }
 
@@ -1934,14 +1932,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
-
         Type.HOURLY.setMax(SnapshotHourlyMax.value());
         Type.DAILY.setMax(SnapshotDailyMax.value());
         Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
         Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
-        _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
-        _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
+        _totalRetries = TotalRetries.value();
+        _pauseInterval = 2 * ManagementServiceConfiguration.PingInterval.value();
 
         snapshotBackupRetries = BackupRetryAttempts.value();
         snapshotBackupRetryInterval = BackupRetryInterval.value();
