@@ -89,12 +89,18 @@
             @finish="handleNetworkAclFormSubmit"
             v-ctrl-enter="handleNetworkAclFormSubmit"
            >
-            <a-form-item :label="$t('label.add.acl.name')" ref="name" name="name">
+            <a-form-item ref="name" name="name">
+              <template #label>
+                <tooltip-label :title="$t('label.add.acl.name')" :tooltip="aclParams.name?.description"/>
+              </template>
               <a-input
                 v-model:value="form.name"
                 v-focus="true"></a-input>
             </a-form-item>
-            <a-form-item :label="$t('label.description')"  ref="description" name="description">
+            <a-form-item ref="description" name="description">
+              <template #label>
+                <tooltip-label :title="$t('label.description')" :tooltip="aclParams.description?.description"/>
+              </template>
               <a-input v-model:value="form.description" />
             </a-form-item>
 
@@ -163,7 +169,10 @@
               :model="form"
               :rules="rules"
              >
-              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork" v-if="this.isAdmin()">
+              <a-form-item ref="physicalnetwork" name="physicalnetwork" v-if="this.isAdmin()">
+                <template #label>
+                  <tooltip-label :title="$t('label.physicalnetworkid')" :tooltip="gatewayParams.physicalnetworkid?.description"/>
+                </template>
                 <a-select
                   v-model:value="form.physicalnetwork"
                   v-focus="true"
@@ -177,7 +186,10 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.vlan')" ref="vlan" name="vlan" v-if="this.isAdmin()">
+              <a-form-item ref="vlan" name="vlan" v-if="this.isAdmin()">
+                <template #label>
+                  <tooltip-label :title="$t('label.vlan')" :tooltip="gatewayParams.vlan?.description"/>
+                </template>
                 <a-input
                   :placeholder="placeholders.vlan"
                   v-model:value="form.vlan"
@@ -186,13 +198,18 @@
               <a-form-item
                 ref="bypassvlanoverlapcheck"
                 name="bypassvlanoverlapcheck"
-                :label="$t('label.bypassvlanoverlapcheck')"
                 v-if="this.isAdmin()">
+                <template #label>
+                  <tooltip-label :title="$t('label.bypassvlanoverlapcheck')" :tooltip="gatewayParams.bypassvlanoverlapcheck?.description"/>
+                </template>
                 <a-checkbox
                   v-model:checked="form.bypassvlanoverlapcheck"
                 ></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.associatednetwork')" ref="associatednetworkid" name="associatednetworkid">
+              <a-form-item ref="associatednetworkid" name="associatednetworkid">
+                <template #label>
+                  <tooltip-label :title="$t('label.associatednetwork')" :tooltip="gatewayParams.associatednetworkid?.description"/>
+                </template>
                 <a-select
                   v-model:value="form.associatednetworkid"
                   showSearch
@@ -209,28 +226,43 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.publicip')" ref="ipaddress" name="ipaddress">
+              <a-form-item ref="ipaddress" name="ipaddress">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicip')" :tooltip="gatewayParams.ipaddress?.description"/>
+                </template>
                 <a-input
                   :placeholder="placeholders.ipaddress"
                   v-model:value="form.ipaddress"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.gateway')" ref="gateway" name="gateway">
+              <a-form-item ref="gateway" name="gateway">
+                <template #label>
+                  <tooltip-label :title="$t('label.gateway')" :tooltip="gatewayParams.gateway?.description"/>
+                </template>
                 <a-input
                   :placeholder="placeholders.gateway"
                   v-model:value="form.gateway"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.netmask')" ref="netmask" name="netmask">
+              <a-form-item ref="netmask" name="netmask">
+                <template #label>
+                  <tooltip-label :title="$t('label.netmask')" :tooltip="gatewayParams.netmask?.description"/>
+                </template>
                 <a-input
                   :placeholder="placeholders.netmask"
                   v-model:value="form.netmask"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.sourcenat')" ref="nat" name="nat">
+              <a-form-item ref="nat" name="nat">
+                <template #label>
+                  <tooltip-label :title="$t('label.sourcenat')" :tooltip="gatewayParams.sourcenatsupported?.description"/>
+                </template>
                 <a-checkbox v-model:checked="form.nat"></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.aclid')" ref="acl" name="acl">
+              <a-form-item ref="acl" name="acl">
+                <template #label>
+                  <tooltip-label :title="$t('label.aclid')" :tooltip="gatewayParams.aclid?.description"/>
+                </template>
                 <a-select
                   v-model:value="form.acl"
                   showSearch
@@ -291,7 +323,10 @@
               :model="form"
               :rules="rules"
             >
-              <a-form-item :label="$t('label.ip')" ref="ipaddress" name="ipaddress">
+              <a-form-item ref="ipaddress" name="ipaddress">
+                <template #label>
+                  <tooltip-label :title="$t('label.ip')" :tooltip="vpnGatewayParams.ipaddressid?.description"/>
+                </template>
                 <a-select
                   v-focus="true"
                   v-model:value="form.ipaddress"
@@ -370,7 +405,10 @@
               :model="form"
               :rules="rules"
              >
-              <a-form-item :label="$t('label.vpncustomergatewayid')" ref="vpncustomergateway" name="vpncustomergateway">
+              <a-form-item ref="vpncustomergateway" name="vpncustomergateway">
+                <template #label>
+                  <tooltip-label :title="$t('label.vpncustomergatewayid')" :tooltip="vpnConnectionParams.s2scustomergatewayid?.description"/>
+                </template>
                 <a-select
                   v-model:value="form.vpncustomergateway"
                   v-focus="true"
@@ -384,7 +422,10 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.passive')" ref="passive" name="passive">
+              <a-form-item ref="passive" name="passive">
+                <template #label>
+                  <tooltip-label :title="$t('label.passive')" :tooltip="vpnConnectionParams.passive?.description"/>
+                </template>
                 <a-checkbox v-model:checked="form.passive"></a-checkbox>
               </a-form-item>
 
@@ -434,6 +475,7 @@ import VnfAppliancesTab from './VnfAppliancesTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
 import StaticRoutesTab from './StaticRoutesTab'
 import RunCustomAction from '@/views/extension/RunCustomAction'
@@ -452,7 +494,8 @@ export default {
     RunCustomAction,
     EventsTab,
     AnnotationsTab,
-    ResourceIcon
+    ResourceIcon,
+    TooltipLabel
   },
   mixins: [mixinDevice],
   props: {
@@ -566,6 +609,12 @@ export default {
     '$route.fullPath': function () {
       this.setCurrentTab()
     }
+  },
+  beforeCreate () {
+    this.aclParams = this.$getApiParams('createNetworkACLList')
+    this.gatewayParams = this.$getApiParams('createPrivateGateway')
+    this.vpnGatewayParams = this.$getApiParams('createVpnGateway')
+    this.vpnConnectionParams = this.$getApiParams('createVpnConnection')
   },
   created () {
     this.initForm()
@@ -851,13 +900,11 @@ export default {
             },
             errorMessage: this.$t('message.add.private.gateway.failed'),
             errorMethod: () => {
-              this.modals.gateway = false
               this.handleFetchData()
             },
             loadingMessage: this.$t('message.add.private.gateway.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
-              this.modals.gateway = false
               this.handleFetchData()
             }
           })
@@ -865,7 +912,6 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.modals.gatewayLoading = false
-          this.modals.gateway = false
           this.handleFetchData()
         })
       }).catch(error => {

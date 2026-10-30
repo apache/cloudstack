@@ -26,3 +26,9 @@
 .ant-select-open .ant-select-arrow .ant-select-suffix:not(.anticon-search) svg {
   transform: rotateZ(-180deg);
 }
+
+// Wrap long option labels instead of truncating them with an ellipsis
+.ant-select-dropdown.select-wrap-options .ant-select-item-option-content {
+  white-space: normal;
+  word-break: break-word;
+}
