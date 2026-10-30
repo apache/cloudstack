@@ -44,6 +44,7 @@ import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.Volume;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
@@ -57,6 +58,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import feign.FeignException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 /**
  * Storage Strategy represents the communication path for all the ONTAP storage options
  *
@@ -613,6 +615,28 @@ public abstract class StorageStrategy {
     abstract public CloudStackVolume createCloudStackVolume(CloudStackVolume cloudstackVolume);
 
     /**
+     * Creates the protocol-specific backend object that caches a template on this pool.
+     *
+     * <p>iSCSI creates an empty LUN ({@code /vol/&lt;flexVol&gt;/cs_tmpl_&lt;id&gt;}) sized to
+     * {@code sizeInBytes}. NFS is a no-op on the array: the KVM agent later writes the qcow2
+     * into the mounted FlexVolume.</p>
+     *
+     * <p>Returns a {@link CloudStackVolume} so the driver can map it to {@code CreateCmdResult}
+     * and update {@code template_spool_ref}. SAN populates {@code lun}. NAS does not pre-create
+     * an object on the array and returns {@code null}; the driver treats that as no LUN and
+     * records the template uuid as the create path.</p>
+     *
+     * @param storagePool   CloudStack primary storage pool (one FlexVolume)
+     * @param templateInfo  template being cached
+     * @param details       pool details (SVM, protocol, etc.)
+     * @param sizeInBytes   virtual size for the cache object (required for SAN; ignored for NAS)
+     * @return SAN cache identity with {@code lun} set, or {@code null} when nothing is
+     *         pre-created on the array (NAS)
+     */
+    abstract public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+            Map<String, String> details, long sizeInBytes);
+
+    /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
      * it is going to mimic
      * updateLun       for iSCSI, FC protocols
@@ -636,14 +660,47 @@ public abstract class StorageStrategy {
     abstract public void deleteCloudStackVolume(CloudStackVolume cloudstackVolume);
 
     /**
-     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * Creates a space-efficient clone of an existing object inside the same FlexVolume.
      * it is going to mimic
      *     cloneLun       for iSCSI, FC protocols
      *     cloneFile      for NFS3.0 and NFS4.1 protocols
      *     cloneNameSpace for Nvme/TCP and Nvme/FC protocol
-     * @param cloudstackVolume the CloudStack volume to copy
+     *
+     * <p>ONTAP requires the source and the destination to live in the same FlexVolume, which
+     * holds because a CloudStack primary storage pool maps one-to-one onto a FlexVolume.</p>
+     *
+     * <p>The source may be an active object or one inside a FlexVolume snapshot:</p>
+     * <ul>
+     *   <li><b>SAN</b> — {@code lun.clone.source.name} set to
+     *       {@code /vol/&lt;fv&gt;/.snapshot/&lt;snap&gt;/&lt;lun&gt;}</li>
+     *   <li><b>NAS</b> — {@link CloudStackVolume#getSnapshotName()} set; it is sent as
+     *       {@code snapshot.name} on {@code POST /api/storage/file/clone}</li>
+     * </ul>
+     *
+     * @param cloudstackVolume describes the clone to create; the source is carried in the
+     *                         protocol-specific clone reference (for SAN, {@code lun.clone.source})
+     * @return the created CloudStackVolume, populated with the backend identity of the clone
      */
-    abstract public void copyCloudStackVolume(CloudStackVolume cloudstackVolume);
+    abstract public CloudStackVolume cloneCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Grows an existing backend object to {@code sizeInBytes}.
+     *
+     * <p>Needed after cloning a cached template, because a clone inherits the size of its source
+     * while the service offering may ask for a larger disk.</p>
+     */
+    abstract public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes);
+
+    /**
+     * Deletes a file from a FlexVolume by path.
+     *
+     * <p>NFS strategies override this. Other strategies fail with the strategy type in the error
+     * so callers can invoke it without casting to a concrete NAS implementation.</p>
+     */
+    public void deleteFileByPath(String flexVolUuid, String filePath) {
+        throw new CloudRuntimeException("Deleting a file by path is not supported by storage strategy "
+                + getClass().getSimpleName());
+    }
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
@@ -924,6 +981,27 @@ public abstract class StorageStrategy {
             }
             throw new CloudRuntimeException("Failed to delete ONTAP FlexVol snapshot [" + snapshotName + "]: "
                     + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Polls an ONTAP async job when the API response includes a job reference.
+     *
+     * <p>When no job is returned (synchronous completion), the operation is treated as
+     * successful after HTTP 2xx.</p>
+     *
+     * @param response       ONTAP job response (may be null or without a job)
+     * @param operationName  label for logging and error messages
+     */
+    public void pollJobIfPresent(JobResponse response, String operationName) {
+        if (response == null || response.getJob() == null || response.getJob().getUuid() == null) {
+            logger.debug("pollJobIfPresent: No async job returned for operation [{}], continuing without polling",
+                    operationName);
+            return;
+        }
+        String jobUuid = response.getJob().getUuid();
+        if (!Boolean.TRUE.equals(jobPollForSuccess(jobUuid, 60, 2000))) {
+            throw new CloudRuntimeException("ONTAP job [" + jobUuid + "] failed for operation [" + operationName + "]");
         }
     }
 }
