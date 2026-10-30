@@ -20,8 +20,10 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
@@ -174,12 +176,13 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
             storagePoolSet = resource.connectToAllVolumeSnapshotSecondaryStorages(volumeObjectTo);
         }
 
-        logger.debug(String.format("Reverting volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
+        logger.debug("Reverting volume [{}] to snapshot [{}].", volumeObjectTo, snapshotToPrint);
 
         try {
-            replaceVolumeWithSnapshot(volumePath, snapshotPath);
-            logger.debug(String.format("Successfully reverted volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
-        } catch (LibvirtException | QemuImgException ex) {
+            boolean isVolumeEncrypted = volumeObjectTo.getPassphrase() != null || volumeObjectTo.getEncryptFormat() != null;
+            replaceVolumeWithSnapshot(volumePath, snapshotPath, isVolumeEncrypted);
+            logger.debug("Successfully reverted volume [{}] to snapshot [{}].", volumeObjectTo, snapshotToPrint);
+        } catch (LibvirtException | QemuImgException | IOException ex) {
             throw new CloudRuntimeException(String.format("Unable to revert volume [%s] to snapshot [%s] due to [%s].", volumeObjectTo, snapshotToPrint, ex.getMessage()), ex);
         } finally {
             if (storagePoolSet != null) {
@@ -228,8 +231,14 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
      * @throws LibvirtException If can't replace the current volume with the snapshot.
      * @throws QemuImgException If can't replace the current volume with the snapshot.
      */
-    protected void replaceVolumeWithSnapshot(String volumePath, String snapshotPath) throws LibvirtException, QemuImgException {
-        logger.debug(String.format("Replacing volume at [%s] with snapshot that is at [%s].", volumePath, snapshotPath));
+    protected void replaceVolumeWithSnapshot(String volumePath, String snapshotPath, boolean isVolumeEncrypted) throws LibvirtException, QemuImgException, IOException {
+        if (isVolumeEncrypted) {
+            logger.debug("Replacing encrypted volume at [{}] with snapshot that is at [{}] using file copy.", volumePath, snapshotPath);
+            Files.copy(Paths.get(snapshotPath), Paths.get(volumePath), StandardCopyOption.REPLACE_EXISTING);
+            return;
+        }
+
+        logger.debug("Replacing volume at [{}] with snapshot that is at [{}] using qemu-img.", volumePath, snapshotPath);
         QemuImg qemuImg = new QemuImg(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REVERT_SNAPSHOT_TIMEOUT) * 1000);
         QemuImgFile volumeImg = new QemuImgFile(volumePath, QemuImg.PhysicalDiskFormat.QCOW2);
         QemuImgFile snapshotImg = new QemuImgFile(snapshotPath, QemuImg.PhysicalDiskFormat.QCOW2);
