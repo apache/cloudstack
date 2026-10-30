@@ -23,6 +23,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
 import java.util.ArrayList;
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -52,7 +53,11 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE,
+            type = CommandType.STRING,
+            required = true,
+            description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY",
+            allowedValueType = DateUtil.IntervalType.class)
     private String intervalType;
 
     @Parameter(name = ApiConstants.MAX_SNAPS, type = CommandType.INTEGER, required = true, description = "Maximum number of Snapshots to retain")

@@ -160,7 +160,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
             description = "Number of days to lease the instance from now onward. Use -1 to remove the existing lease")
     private Integer leaseDuration;
 
-    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION,
+            type = CommandType.STRING,
+            since = "4.21.0",
+            allowedValues = {"STOP", "DESTROY"},
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 

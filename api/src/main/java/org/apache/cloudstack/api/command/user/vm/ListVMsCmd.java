@@ -85,7 +85,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the Instance (a substring match is made against the parameter value, data for all matching Instances will be returned)")
     private String name;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the Instance. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
+    @Parameter(name = ApiConstants.STATE,
+            type = CommandType.STRING,
+            allowedValues = {"Running", "Stopped", "Present", "Destroyed", "Expunged"},
+            description = "State of the Instance. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
     private String state;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The availability zone ID")
