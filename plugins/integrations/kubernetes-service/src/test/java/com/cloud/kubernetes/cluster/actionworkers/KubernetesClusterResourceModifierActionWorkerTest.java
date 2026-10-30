@@ -23,6 +23,7 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.network.Network;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -134,5 +135,15 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
         Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
+    }
+
+    @Test
+    public void removeVpcTierAclRulesNullAclIdIsNoOp() throws Exception {
+        // Deleting a cluster from a VPC tier that still has no ACL attached must be a no-op,
+        // not an unboxing NullPointerException. See GH-13761.
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getNetworkACLId()).thenReturn(null);
+        kubernetesClusterResourceModifierActionWorker.removeVpcTierAclRules(network);
+        // Reaching here without an exception is the regression assertion.
     }
 }

@@ -146,6 +146,16 @@ public class KubernetesClusterManagerImplTest {
     }
 
     @Test
+    public void testValidateVpcTierNullAclId() {
+        // A VPC tier with no attached ACL is a valid state (aclid is optional on createNetwork).
+        // Validation must not NPE by unboxing the nullable Long against the primitive long DEFAULT_DENY. See GH-13761.
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getState()).thenReturn(Network.State.Implemented);
+        Mockito.when(network.getNetworkACLId()).thenReturn(null);
+        kubernetesClusterManager.validateVpcTier(network);
+    }
+
+    @Test
     public void validateIsolatedNetworkIpRulesNoRules() {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
