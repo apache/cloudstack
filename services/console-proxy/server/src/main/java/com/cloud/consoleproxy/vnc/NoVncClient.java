@@ -30,6 +30,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.cloud.consoleproxy.util.RawHTTP;
 import com.cloud.consoleproxy.vnc.network.NioSocket;
@@ -58,6 +59,8 @@ import javax.crypto.spec.DESKeySpec;
 
 public class NoVncClient {
     protected Logger logger = LogManager.getLogger(getClass());
+
+    protected static final long NOVNC_REPLY_TIMEOUT_MS = 30000L;
 
     private Socket socket;
     private DataInputStream is;
@@ -130,6 +133,10 @@ public class NoVncClient {
     }
 
     public void close() {
+        synchronized (lock) {
+            closed = true;
+            lock.notifyAll();
+        }
         if (nioSocketConnection != null) {
             nioSocketConnection.close();
         }
@@ -413,13 +420,32 @@ public class NoVncClient {
         return verStr;
     }
 
+    /**
+     * Blocks until the noVNC client replies (see {@link #setWaitForNoVnc(boolean)}). Gives up with a
+     * {@link CloudRuntimeException} if the client is closed or no reply arrives within {@link #NOVNC_REPLY_TIMEOUT_MS}.
+     */
     public void waitForNoVNCReply() {
-        int cycles = 0;
-        while (isWaitForNoVnc()) {
-            cycles++;
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Waited %d cycles for NoVnc", cycles));
+        waitForNoVNCReply(NOVNC_REPLY_TIMEOUT_MS);
+    }
+
+    protected void waitForNoVNCReply(long timeoutMs) {
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+        synchronized (lock) {
+            while (waitForNoVnc) {
+                if (closed) {
+                    throw new CloudRuntimeException("Connection closed while waiting for the noVNC reply");
+                }
+                long remainingMs = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+                if (remainingMs <= 0) {
+                    throw new CloudRuntimeException(String.format("Timed out after %d ms waiting for the noVNC reply", timeoutMs));
+                }
+                try {
+                    lock.wait(remainingMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new CloudRuntimeException("Interrupted while waiting for the noVNC reply", e);
+                }
+            }
         }
     }
 
@@ -468,6 +494,7 @@ public class NoVncClient {
     public void setWaitForNoVnc(boolean val) {
         synchronized (lock) {
             this.waitForNoVnc = val;
+            lock.notifyAll();
         }
     }
 
@@ -478,6 +505,7 @@ public class NoVncClient {
     }
 
     private boolean waitForNoVnc = false;
+    private boolean closed = false;
 
     private Pair<Boolean, String> processSecurityResultType(int authResult) {
         boolean result = false;
