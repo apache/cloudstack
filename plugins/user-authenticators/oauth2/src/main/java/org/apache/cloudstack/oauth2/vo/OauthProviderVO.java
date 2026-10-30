@@ -60,11 +60,17 @@ public class OauthProviderVO implements Identity, InternalIdentity {
     @Column(name = "domain_id")
     private Long domainId;
 
+    @Column(name = "type")
+    private String type;
+
     @Column(name = "authorize_url")
     private String authorizeUrl;
 
     @Column(name = "token_url")
     private String tokenUrl;
+
+    @Column(name = "issuer_url")
+    private String issuerUrl;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -119,6 +125,22 @@ public class OauthProviderVO implements Identity, InternalIdentity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getIssuerUrl() {
+        return issuerUrl;
+    }
+
+    public void setIssuerUrl(String issuerUrl) {
+        this.issuerUrl = issuerUrl;
     }
 
     public String getAuthorizeUrl() {
