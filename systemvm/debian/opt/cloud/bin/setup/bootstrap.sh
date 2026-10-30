@@ -104,12 +104,29 @@ config_sysctl() {
   sysctl -p
 }
 
+# Debian 13 and later does not install /etc/iproute2/rt_tables, which the scripts of all the
+# systemvm types use to add the route tables
+config_rt_tables() {
+  if [ ! -f /etc/iproute2/rt_tables ]; then
+    log_it "Creating /etc/iproute2/rt_tables"
+    mkdir -p /etc/iproute2
+    if [ -f /etc/iptables/rt_tables_init ]; then
+      cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
+    elif [ -f /usr/share/iproute2/rt_tables ]; then
+      cp -f /usr/share/iproute2/rt_tables /etc/iproute2/rt_tables
+    else
+      touch /etc/iproute2/rt_tables
+    fi
+  fi
+}
+
 bootstrap() {
   log_it "Bootstrapping systemvm appliance"
 
   export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
   patch
   config_sysctl
+  config_rt_tables
 
   log_it "Configuring systemvm type=$TYPE"
   if [ -f "/opt/cloud/bin/setup/$TYPE.sh" ]; then

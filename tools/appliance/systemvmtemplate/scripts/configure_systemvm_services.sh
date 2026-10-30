@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.22.0
+CLOUDSTACK_RELEASE=24.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 12 \n \l
+ (___(_)   Debian GNU/Linux 13 \n \l
 
 EOF
 }
@@ -134,16 +134,28 @@ function configure_services() {
 
   # Disable cloud init by default
   cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
-datasource_list: ['CloudStack']
+datasource_list: ['ConfigDrive', 'CloudStack']
 datasource:
   CloudStack:
     max_wait: 120
     timeout: 50
+# cloud-init of Debian 13 asks dhcpcd for the DHCP lease by default, which is not running in the
+# system VMs. Prefer dhclient, installed in the template, otherwise no datasource is found
+system_info:
+  network:
+    dhcp_client_priority: [dhclient, dhcpcd, udhcpc]
 EOF
 
+  # Enable cloud-init without any aid from ds-identify, when it is started by the setup scripts
+  echo "policy: enabled" > /etc/cloud/ds-identify.cfg
+
   touch /etc/cloud/cloud-init.disabled
-  systemctl stop cloud-init
-  systemctl disable cloud-init
+  # cloud-init.service was split into several units in newer cloud-init versions
+  for svc in cloud-init cloud-init-local cloud-init-main cloud-init-network cloud-config cloud-final; do
+    if systemctl cat ${svc}.service > /dev/null 2>&1; then
+      systemctl disable ${svc}.service
+    fi
+  done
 
   configure_apache2
   configure_strongswan

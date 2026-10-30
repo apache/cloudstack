@@ -57,12 +57,9 @@ setup_sharedfsvm() {
 
     log_it "Starting cloud-init services"
     if [ -f /home/cloud/success ]; then
-      systemctl stop cloud-init cloud-config cloud-final
-      systemctl disable cloud-init cloud-config cloud-final
+      stop_cloud_init
     else
-      systemctl start --no-block cloud-init
-      systemctl start --no-block cloud-config
-      systemctl start --no-block cloud-final
+      start_cloud_init
     fi
 }
 
