@@ -27,11 +27,13 @@
       :defaultOption="defaultOption"
       defaultIcon="project-outlined"
       :pageSize="100"
-      @change-option="changeProject" />
+      :selectFirstOption="shouldHideDefaultView"
+      @change-option="changeProject"/>
   </span>
 </template>
 
 <script>
+import { getAPI } from '@/api'
 import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
 import eventBus from '@/config/eventBus'
 
@@ -43,19 +45,29 @@ export default {
   data () {
     return {
       selectedProjectId: null,
-      loading: false,
+      availableProjects: [],
       timestamp: new Date().getTime()
     }
   },
   created () {
-    this.selectedProjectId = this.$store.getters?.project?.id || this.defaultOption.id
+    this.listUserAvailableProjects()
+    this.selectedProjectId = this.$store.getters?.project?.id || this.defaultOption?.id
     this.$store.dispatch('ToggleTheme', this.selectedProjectId ? 'dark' : 'light')
   },
   computed: {
+    shouldHideDefaultView () {
+      return this.$store.getters.features.disabledefaultview && this.availableProjects.length > 0
+    },
     isDisabled () {
       return !('listProjects' in this.$store.getters.apis)
     },
     defaultOption () {
+      const isDefaultViewDisabled = this.shouldHideDefaultView
+
+      if (isDefaultViewDisabled) {
+        return null
+      }
+
       return { id: 0, name: this.$t('label.default.view') }
     },
     projectsApiParams () {
@@ -73,8 +85,9 @@ export default {
         this.selectedProjectId = newId
       }
     )
-    eventBus.on('projects-updated', (args) => {
+    eventBus.on('projects-updated', () => {
       this.timestamp = new Date().getTime()
+      this.listUserAvailableProjects()
     })
   },
   beforeUnmount () {
@@ -91,6 +104,18 @@ export default {
       if (this.$route.name !== 'dashboard') {
         this.$router.push({ name: 'dashboard' })
       }
+    },
+    listUserAvailableProjects () {
+      getAPI('listProjects', { details: 'min', listall: true })
+        .then((response) => {
+          this.availableProjects = response.listprojectsresponse?.project || []
+          if (this.shouldHideDefaultView && !this.$store.getters.project?.id) {
+            this.selectedProjectId = null
+          }
+        })
+        .catch((error) => {
+          this.$notifyError(error)
+        })
     }
   }
 }
