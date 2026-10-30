@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent.api;
 
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections.MapUtils;
@@ -27,11 +29,17 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.Network;
 import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.NicDao;
 
 public class VlanTrunkMigrationHelper {
+
+    private static final String NATIVE_VLAN_ON_FILTERING_HOST_REASON =
+            "Instance has a NIC on VLAN 1, the native VLAN of the guest bridge, but this host has VLAN filtering enabled";
 
     // matches AgentManager.send's signature so callers can pass agentManager::send without core depending on AgentManager
     @FunctionalInterface
@@ -63,6 +71,48 @@ public class VlanTrunkMigrationHelper {
         DetailVO vlanFilteringDetail = hostDetailsDao.findDetail(dstHostId, Host.HOST_VLAN_FILTERING_ENABLED);
         boolean destVlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
         return nicDao.listByVmId(vmId).stream().anyMatch(nic -> nicNeedsManualVlanMembership(nic, destVlanFilteringEnabled));
+    }
+
+    // A multi-VLAN trunk nic needs a VLAN-filtering host; a VLAN 1 nic needs a legacy host, as the shared bridge's PVID is VLAN 1. Null when the host fits.
+    public static String getVlanFilteringUnsuitableReason(long vmId, long hostId, NicDao nicDao, NetworkDao networkDao, HostDetailsDao hostDetailsDao) {
+        List<NicVO> nics = nicDao.listByVmId(vmId);
+        boolean hasTrunkNic = nics.stream().anyMatch(NicVO::getMultiNetwork);
+        boolean hasNativeVlanNic = nics.stream().anyMatch(nic -> !nic.getMultiNetwork() && isNativeVlan(getEffectiveBroadcastUri(nic, networkDao)));
+        if (!hasTrunkNic && !hasNativeVlanNic) {
+            return null;
+        }
+        boolean vlanFilteringEnabled = isVlanFilteringEnabled(hostId, hostDetailsDao);
+        if (hasTrunkNic && !vlanFilteringEnabled) {
+            return "Instance has a multi-VLAN trunk NIC, but this host does not have VLAN filtering enabled";
+        }
+        if (hasNativeVlanNic && vlanFilteringEnabled) {
+            return NATIVE_VLAN_ON_FILTERING_HOST_REASON;
+        }
+        return null;
+    }
+
+    // For a network about to be plugged into a running Instance on this host.
+    public static String getNativeVlanUnsuitableReason(Network network, long hostId, HostDetailsDao hostDetailsDao) {
+        return isNativeVlan(network.getBroadcastUri()) && isVlanFilteringEnabled(hostId, hostDetailsDao) ? NATIVE_VLAN_ON_FILTERING_HOST_REASON : null;
+    }
+
+    private static boolean isVlanFilteringEnabled(long hostId, HostDetailsDao hostDetailsDao) {
+        DetailVO vlanFilteringDetail = hostDetailsDao.findDetail(hostId, Host.HOST_VLAN_FILTERING_ENABLED);
+        return vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
+    }
+
+    // a stopped Instance's nics carry no broadcast URI (released on stop), so fall back to the network's
+    private static URI getEffectiveBroadcastUri(NicVO nic, NetworkDao networkDao) {
+        if (nic.getBroadcastUri() != null) {
+            return nic.getBroadcastUri();
+        }
+        NetworkVO network = networkDao.findById(nic.getNetworkId());
+        return network == null ? null : network.getBroadcastUri();
+    }
+
+    private static boolean isNativeVlan(URI broadcastUri) {
+        return broadcastUri != null && Networks.BroadcastDomainType.getSchemeValue(broadcastUri) == Networks.BroadcastDomainType.Vlan
+                && "1".equals(Networks.BroadcastDomainType.getValue(broadcastUri));
     }
 
     public static boolean nicNeedsManualVlanMembership(NicVO nic, boolean vlanFilteringEnabled) {

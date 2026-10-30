@@ -218,7 +218,6 @@ import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1496,10 +1495,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                if (!isHostReadyForMultiNetworkNics(vm, dest.getHost())) {
-                    logger.warn("Host {} does not have VLAN filtering enabled on its guest bridge, but {} has a multi-VLAN trunk nic; excluding this host and retrying", dest.getHost(), vm);
-                    lastKnownError = new CloudRuntimeException(String.format(
-                            "Host %s does not have VLAN filtering enabled on its guest bridge, so a multi-VLAN trunk nic cannot be plugged there", dest.getHost().getUuid()));
+                String vlanFilteringUnsuitableReason = getVlanFilteringUnsuitableReason(vm, dest.getHost());
+                if (vlanFilteringUnsuitableReason != null) {
+                    logger.warn("Excluding host {} for {} and retrying: {}", dest.getHost(), vm, vlanFilteringUnsuitableReason);
+                    lastKnownError = new CloudRuntimeException(String.format("Host %s is unsuitable: %s", dest.getHost().getUuid(), vlanFilteringUnsuitableReason));
                     avoids.addHost(dest.getHost().getId());
                     continue;
                 }
@@ -1530,6 +1529,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     processPrepareExternalProvisioning(firstStart, dest.getHost(), vmProfile, dest.getDataCenter());
 
                     _networkMgr.prepare(vmProfile, dest, ctx);
+                    failIfHostUnsuitableForPreparedNics(vm, dest.getHost());
                     if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
                         checkAndAttemptMigrateVmAcrossCluster(vm, clusterId, dest.getStorageForDisks());
                         volumeMgr.prepare(vmProfile, dest);
@@ -1768,13 +1768,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return (account != null && account.getType() == Account.Type.ADMIN) || Boolean.TRUE.equals(EXPOSE_ERRORS_TO_USER.value());
     }
 
-    private boolean isHostReadyForMultiNetworkNics(VMInstanceVO vm, Host host) {
-        boolean hasMultiNetworkNic = _nicsDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
-        if (!hasMultiNetworkNic) {
-            return true;
+    // prepare is what implements a network and so assigns its VLAN, which the pre-deployment host check could not see yet
+    private void failIfHostUnsuitableForPreparedNics(VMInstanceVO vm, Host host) throws ResourceUnavailableException {
+        String reason = getVlanFilteringUnsuitableReason(vm, host);
+        if (reason != null) {
+            throw new ResourceUnavailableException(String.format("Host %s is unsuitable: %s", host.getUuid(), reason), Host.class, host.getId());
         }
-        DetailVO detail = hostDetailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
-        return detail != null && Boolean.parseBoolean(detail.getValue());
+    }
+
+    private String getVlanFilteringUnsuitableReason(VMInstanceVO vm, Host host) {
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicsDao, _networkDao, hostDetailsDao);
     }
 
     protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
@@ -4077,6 +4080,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.debug("Found destination {} for migrating to.", dest);
 
             excludes.addHost(dest.getHost().getId());
+            String vlanFilteringUnsuitableReason = getVlanFilteringUnsuitableReason(vm, dest.getHost());
+            if (vlanFilteringUnsuitableReason != null) {
+                logger.warn("Skipping destination {} for migrating {}: {}", dest.getHost(), vm, vlanFilteringUnsuitableReason);
+                continue;
+            }
             try {
                 migrate(vm, srcHostId, dest);
                 return;

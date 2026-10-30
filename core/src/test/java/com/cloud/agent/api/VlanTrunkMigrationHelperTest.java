@@ -44,7 +44,10 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.Network;
 import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.NicDao;
 
@@ -56,6 +59,7 @@ public class VlanTrunkMigrationHelperTest {
 
     private HostDetailsDao hostDetailsDao;
     private NicDao nicDao;
+    private NetworkDao networkDao;
     private VlanTrunkMigrationHelper.CommandSender commandSender;
     private Logger logger;
     private VirtualMachineTO vmTO;
@@ -64,6 +68,7 @@ public class VlanTrunkMigrationHelperTest {
     public void setUp() {
         hostDetailsDao = mock(HostDetailsDao.class);
         nicDao = mock(NicDao.class);
+        networkDao = mock(NetworkDao.class);
         commandSender = mock(VlanTrunkMigrationHelper.CommandSender.class);
         logger = mock(Logger.class);
         vmTO = mock(VirtualMachineTO.class);
@@ -273,5 +278,83 @@ public class VlanTrunkMigrationHelperTest {
         VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger);
 
         verify(logger, times(1)).warn(any(String.class), eq(vmTO), eq(DEST_HOST_ID), any(String.class), any(AgentUnavailableException.class));
+    }
+
+    // -- getVlanFilteringUnsuitableReason --
+
+    private NicVO nicOnVlan(int vlan, boolean multiNetwork) {
+        URI broadcastUri = Networks.BroadcastDomainType.Vlan.toUri(vlan);
+        NicVO nic = mock(NicVO.class);
+        when(nic.getBroadcastUri()).thenReturn(broadcastUri);
+        when(nic.getMultiNetwork()).thenReturn(multiNetwork);
+        return nic;
+    }
+
+    private void givenHostVlanFiltering(boolean enabled) {
+        when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED))
+                .thenReturn(new DetailVO(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED, Boolean.toString(enabled)));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonRejectsVlanOneNicOnFilteringHost() {
+        List<NicVO> nics = Collections.singletonList(nicOnVlan(1, false));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+        givenHostVlanFiltering(true);
+
+        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao).contains("VLAN 1"));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonAcceptsVlanOneNicOnLegacyHost() {
+        List<NicVO> nics = Collections.singletonList(nicOnVlan(1, false));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+        givenHostVlanFiltering(false);
+
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonAcceptsOtherVlanNicOnFilteringHost() {
+        List<NicVO> nics = Collections.singletonList(nicOnVlan(100, false));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonRejectsTrunkNicOnLegacyHost() {
+        List<NicVO> nics = Collections.singletonList(nicOnVlan(100, true));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+        givenHostVlanFiltering(false);
+
+        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao).contains("trunk"));
+    }
+
+    @Test
+    public void getVlanFilteringUnsuitableReasonUsesNetworkVlanForStoppedNicWithoutBroadcastUri() {
+        NicVO nic = mock(NicVO.class);
+        when(nic.getNetworkId()).thenReturn(5L);
+        when(nic.getBroadcastUri()).thenReturn(null);
+        List<NicVO> nics = Collections.singletonList(nic);
+        when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
+        NetworkVO network = mock(NetworkVO.class);
+        URI vlanOne = Networks.BroadcastDomainType.Vlan.toUri(1);
+        when(network.getBroadcastUri()).thenReturn(vlanOne);
+        when(networkDao.findById(5L)).thenReturn(network);
+        givenHostVlanFiltering(true);
+
+        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao).contains("VLAN 1"));
+    }
+
+    @Test
+    public void getNativeVlanUnsuitableReasonRejectsVlanOneNetworkOnFilteringHostOnly() {
+        Network network = mock(Network.class);
+        URI vlanOne = Networks.BroadcastDomainType.Vlan.toUri(1);
+        when(network.getBroadcastUri()).thenReturn(vlanOne);
+        givenHostVlanFiltering(true);
+        assertTrue(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao).contains("VLAN 1"));
+
+        givenHostVlanFiltering(false);
+        assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao));
     }
 }

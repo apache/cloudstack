@@ -688,6 +688,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.manager.Commands;
@@ -1768,16 +1769,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
     @Override
     public String getMultiNetworkNicUnsuitableReason(final VirtualMachine vm, final Host host) {
-        boolean vmHasMultiNetworkNic = nicDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
-        if (!vmHasMultiNetworkNic) {
-            return null;
-        }
-        final DetailVO detail = _detailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
-        final boolean vlanFilteringEnabled = detail != null && Boolean.parseBoolean(detail.getValue());
-        if (!vlanFilteringEnabled) {
-            return "Instance has a multi-VLAN trunk NIC, but this host does not have VLAN filtering enabled";
-        }
-        return null;
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), nicDao, networkDao, _detailsDao);
     }
 
     @Override

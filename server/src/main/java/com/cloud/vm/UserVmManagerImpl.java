@@ -201,6 +201,7 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RestoreVMSnapshotAnswer;
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -272,7 +273,6 @@ import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1574,6 +1574,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Network " + network.getName() + " already has an Instance with host name: " + vmInstance.getHostName());
             }
         }
+
+        failIfNativeVlanOnVlanFilteringHost(vmInstance, network);
 
         setNicAsDefaultIfNeeded(vmInstance, profile);
 
@@ -7810,9 +7812,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 
-        if (!isHostReadyForMultiNetworkNics(vm, destinationHost)) {
-            throw new InvalidParameterValueException(String.format(
-                    "Cannot migrate VM, VM has a multi-VLAN trunk nic but destination host: %s does not have VLAN filtering enabled", destinationHost));
+        String vlanFilteringUnsuitableReason = getVlanFilteringUnsuitableReason(vm, destinationHost);
+        if (vlanFilteringUnsuitableReason != null) {
+            throw new InvalidParameterValueException(String.format("Cannot migrate VM to destination host: %s. %s", destinationHost, vlanFilteringUnsuitableReason));
         }
 
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
@@ -7846,14 +7848,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return dest;
     }
 
-    // A multi-VLAN trunk nic can only be plugged on a host with VLAN filtering enabled - true (ready) for a VM with no such nic.
+    // A multi-VLAN trunk nic needs a VLAN-filtering host and a VLAN 1 nic a legacy one; a VM with neither is ready anywhere.
     boolean isHostReadyForMultiNetworkNics(VMInstanceVO vm, Host host) {
-        boolean hasMultiNetworkNic = _nicDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
-        if (!hasMultiNetworkNic) {
-            return true;
+        return getVlanFilteringUnsuitableReason(vm, host) == null;
+    }
+
+    private void failIfNativeVlanOnVlanFilteringHost(UserVmVO vm, Network network) {
+        if (vm.getState() != State.Running || vm.getHostId() == null) {
+            return;
         }
-        DetailVO detail = _hostDetailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
-        return detail != null && Boolean.parseBoolean(detail.getValue());
+        String reason = VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, vm.getHostId(), _hostDetailsDao);
+        if (reason != null) {
+            throw new InvalidParameterValueException(String.format("Cannot add network %s to Instance %s: %s", network.getUuid(), vm.getUuid(), reason));
+        }
+    }
+
+    private String getVlanFilteringUnsuitableReason(VMInstanceVO vm, Host host) {
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicDao, _networkDao, _hostDetailsDao);
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {
@@ -8189,9 +8200,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getName(), destinationHost.getUuid()));
         }
 
-        if (!isHostReadyForMultiNetworkNics(vm, destinationHost)) {
-            throw new InvalidParameterValueException(String.format(
-                    "Cannot migrate VM, VM has a multi-VLAN trunk nic but destination host: %s does not have VLAN filtering enabled", destinationHost));
+        String vlanFilteringUnsuitableReason = getVlanFilteringUnsuitableReason(vm, destinationHost);
+        if (vlanFilteringUnsuitableReason != null) {
+            throw new InvalidParameterValueException(String.format("Cannot migrate VM to destination host: %s. %s", destinationHost, vlanFilteringUnsuitableReason));
         }
 
         validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
