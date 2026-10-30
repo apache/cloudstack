@@ -46,7 +46,7 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         long clusterId = cluster.getId();
         double threshold = getThreshold(clusterId);
         Float skipThreshold = ClusterDrsImbalanceSkipThreshold.valueIn(clusterId);
-        Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, skipThreshold);
+        Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, skipThreshold, this::combineBothMetrics);
         String drsMetric = ClusterDrsAlgorithm.getClusterDrsMetric(clusterId);
         String metricType = ClusterDrsAlgorithm.getDrsMetricType(clusterId);
         Boolean useRatio = ClusterDrsAlgorithm.getDrsMetricUseRatio(clusterId);
@@ -67,6 +67,13 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
+    public double combineBothMetrics(double cpuImbalance, double memoryImbalance) {
+        // Condensed reads a higher imbalance as more packed, so the cluster should only count as
+        // packed once both resources are packed. Take the lower of the two, not the higher.
+        return Math.min(cpuImbalance, memoryImbalance);
+    }
+
+    @Override
     public String getName() {
         return "condensed";
     }
@@ -80,12 +87,12 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         // Use provided pre-imbalance if available, otherwise calculate it
         if (preImbalance == null) {
             preImbalance = ClusterDrsAlgorithm.getClusterImbalance(cluster.getId(), new ArrayList<>(hostCpuMap.values()),
-                    new ArrayList<>(hostMemoryMap.values()), null);
+                    new ArrayList<>(hostMemoryMap.values()), null, this::combineBothMetrics);
         }
 
         // Use optimized post-imbalance calculation that adjusts only affected hosts
         Double postImbalance = getImbalancePostMigration(vm, destHost,
-                cluster.getId(), ClusterDrsAlgorithm.getVmMetric(serviceOffering, cluster.getId()),
+                cluster.getId(), serviceOffering,
                 baseMetricsArray, hostIdToIndexMap, hostCpuMap, hostMemoryMap);
 
         logger.trace("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost ID: {} destHost: {}",
