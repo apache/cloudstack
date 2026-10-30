@@ -2565,15 +2565,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         String volumeToString = getReflectOnlySelectedFields(volume);
 
         try {
-            // Mark volume as removed if volume has not been created on primary
-            if (volume.getState() == Volume.State.Allocated) {
-                _volsDao.remove(volume.getId());
-                stateTransitTo(volume, Volume.Event.DestroyRequested);
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()),
-                        null);
-            } else {
-                destroyVolumeInContext(volume);
-            }
+            destroyVolumeInContext(volume);
             // FIXME - All this is boiler plate code and should be done as part of state transition. This shouldn't be part of orchestrator.
             // publish usage event for the volume
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(),
