@@ -43,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CreateBackupScheduleCmd extends BaseCmd {
 
     @Inject
-    private BackupManager backupManager;
+    protected BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -92,7 +92,7 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             type = CommandType.BOOLEAN,
             description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS,
             since = "4.23.0")
-    private boolean isolated;
+    private Boolean isolated;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -118,11 +118,11 @@ public class CreateBackupScheduleCmd extends BaseCmd {
         return maxBackups;
     }
 
-    public Boolean getQuiesceVM() {
+    public Boolean isQuiesceVM() {
         return quiesceVM;
     }
 
-    public boolean isIsolated() {
+    public Boolean isIsolated() {
         return isolated;
     }
 
@@ -159,5 +159,18 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.VirtualMachine;
+    }
+
+    public CreateBackupScheduleCmd() {
+    }
+
+    public CreateBackupScheduleCmd(UpdateBackupScheduleCmd that) {
+        this.maxBackups = that.getMaxBackups();
+        this.schedule = that.getSchedule();
+        this.intervalType = that.intervalType;
+        this.quiesceVM = that.isQuiesceVm();
+        this.isolated = that.isIsolated();
+        this.vmId = that.getVmId();
+        this.timezone = that.getTimezone();
     }
 }
