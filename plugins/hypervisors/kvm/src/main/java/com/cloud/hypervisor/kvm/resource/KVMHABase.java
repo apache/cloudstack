@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.io.File;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -64,32 +63,16 @@ public class KVMHABase {
             return poolUuid;
         }
 
-        public void setPoolUUID(String poolUuid) {
-            this.poolUuid = poolUuid;
-        }
-
         public String getPoolIp() {
             return poolIp;
-        }
-
-        public void setPoolIp(String poolIp) {
-            this.poolIp = poolIp;
         }
 
         public String getPoolMountSourcePath() {
             return poolMountSourcePath;
         }
 
-        public void setPoolMountSourcePath(String poolMountSourcePath) {
-            this.poolMountSourcePath = poolMountSourcePath;
-        }
-
         public String getMountDestPath() {
             return mountDestPath;
-        }
-
-        public void setMountDestPath(String mountDestPath) {
-            this.mountDestPath = mountDestPath;
         }
 
         public PoolType getType() {
@@ -200,35 +183,6 @@ public class KVMHABase {
         for (String pid : pids) {
             Script.runSimpleBashScript("kill -9 " + pid);
         }
-    }
-
-    protected String getHBFile(String mountPoint, String hostIP) {
-        return mountPoint + File.separator + "KVMHA" + File.separator + "hb-" + hostIP;
-    }
-
-    protected String getHBFolder(String mountPoint) {
-        return mountPoint + File.separator + "KVMHA" + File.separator;
-    }
-
-    protected String runScriptRetry(String cmdString, OutputInterpreter interpreter) {
-        String result = null;
-        for (int i = 0; i < 3; i++) {
-            Script cmd = new Script("/bin/bash", _timeout);
-            cmd.add("-c");
-            cmd.add(cmdString);
-            if (interpreter != null)
-                result = cmd.execute(interpreter);
-            else {
-                result = cmd.execute();
-            }
-            if (result == Script.ERR_TIMEOUT) {
-                continue;
-            } else if (result == null) {
-                break;
-            }
-        }
-
-        return result;
     }
 
     public Boolean hasHeartBeat() {

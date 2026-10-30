@@ -281,10 +281,6 @@ public class LibvirtVMDef {
         private BootMode _bootmode;
         private String _arch;
         private String _loader;
-        private String _kernel;
-        private String _initrd;
-        private String _root;
-        private String _cmdline;
         private String _uuid;
         private final List<BootOrder> _bootdevs = new ArrayList<BootOrder>();
         private String _machine;
@@ -342,13 +338,6 @@ public class LibvirtVMDef {
 
         public void setLoader(String loader) {
             _loader = loader;
-        }
-
-        public void setBootKernel(String kernel, String initrd, String rootdev, String cmdline) {
-            _kernel = kernel;
-            _initrd = initrd;
-            _root = rootdev;
-            _cmdline = cmdline;
         }
 
         public void setBootOrder(BootOrder order) {
@@ -471,10 +460,6 @@ public class LibvirtVMDef {
 
         public void setMaxVcpuNum(int maxVcpu) {
             this.maxVcpu = maxVcpu;
-        }
-
-        public int getVcpu() {
-            return vcpu;
         }
 
         public int getMaxVcpu() {
@@ -814,7 +799,6 @@ public class LibvirtVMDef {
 
             public String getPassphraseUuid() { return this.passphraseUuid; }
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
-            public String getEngine() { return this.engine; }
         }
 
         public static class DiskGeometry {
@@ -970,8 +954,6 @@ public class LibvirtVMDef {
         private DiskBus _bus;
         private DiskFmtType _diskFmtType; /* qcow2, raw etc. */
         private boolean _readonly = false;
-        private boolean _shareable = false;
-        private boolean _deferAttach = false;
         private Long _bytesReadRate;
         private Long _bytesReadRateMax;
         private Long _bytesReadRateMaxLength;
@@ -1228,18 +1210,6 @@ public class LibvirtVMDef {
 
         public void setReadonly() {
             _readonly = true;
-        }
-
-        public void setSharable() {
-            _shareable = true;
-        }
-
-        public void setAttachDeferred(boolean deferAttach) {
-            _deferAttach = deferAttach;
-        }
-
-        public boolean isAttachDeferred() {
-            return _deferAttach;
         }
 
         public String getDiskPath() {
@@ -1612,22 +1582,16 @@ public class LibvirtVMDef {
             }
         }
 
-        enum HostNicType {
-            DIRECT_ATTACHED_WITHOUT_DHCP, DIRECT_ATTACHED_WITH_DHCP, VNET, VLAN;
-        }
-
         public static final int MULTI_QUEUE_NUMBER_MEANS_CPU_CORES = -1;
 
         private GuestNetType _netType; /*
          * bridge, ethernet, network, user,
          * internal, vhostuser
          */
-        private HostNicType _hostNetType; /* Only used by agent java code */
         private String _netSourceMode;
         private String _sourceName;
         private String _networkName;
         private String _macAddr;
-        private String _ipAddr;
         private String _scriptPath;
         private NicModel _model;
         private int _networkRateKBps;
@@ -1730,14 +1694,6 @@ public class LibvirtVMDef {
             defEthernet(targetName, macAddr, model, null);
         }
 
-        public void setHostNetType(HostNicType hostNetType) {
-            _hostNetType = hostNetType;
-        }
-
-        public HostNicType getHostNetType() {
-            return _hostNetType;
-        }
-
         public void setPxeDisable(boolean pxeDisable) {
             _pxeDisable = pxeDisable;
         }
@@ -1748,10 +1704,6 @@ public class LibvirtVMDef {
 
         public GuestNetType getNetType() {
             return _netType;
-        }
-
-        public String getNetSourceMode() {
-            return _netSourceMode;
         }
 
         public String getDevName() {
@@ -1774,16 +1726,8 @@ public class LibvirtVMDef {
             _virtualPortType = virtualPortType;
         }
 
-        public String getVirtualPortType() {
-            return _virtualPortType;
-        }
-
         public void setVirtualPortInterfaceId(String virtualPortInterfaceId) {
             _virtualPortInterfaceId = virtualPortInterfaceId;
-        }
-
-        public String getVirtualPortInterfaceId() {
-            return _virtualPortInterfaceId;
         }
 
         public void setVlanTag(int vlanTag) {
@@ -1804,10 +1748,6 @@ public class LibvirtVMDef {
 
         public void setLinkStateUp(boolean linkStateUp) {
             _linkStateUp = linkStateUp;
-        }
-
-        public boolean isLinkStateUp() {
-            return _linkStateUp;
         }
 
         public String getDpdkSourcePort() {

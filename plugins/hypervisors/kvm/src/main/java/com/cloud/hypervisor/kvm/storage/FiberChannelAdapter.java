@@ -69,13 +69,6 @@ public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
         return "FiberChannelAdapter";
     }
 
-    public boolean isStoragePoolTypeSupported(Storage.StoragePoolType type) {
-        if (Storage.StoragePoolType.FiberChannel.equals(type)) {
-            return true;
-        }
-        return false;
-    }
-
     @Override
     public AddressInfo parseAndValidatePath(String inPath) {
             // type=FIBERWWN; address=<address>; connid=<connid>
