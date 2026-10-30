@@ -443,6 +443,13 @@ public class KVMStoragePoolManager {
         return adaptor.disconnectPhysicalDisk(volPath, pool);
     }
 
+    public boolean cleanupCreatedPhysicalDisk(StoragePoolType type, String poolUuid, String volPath) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        KVMStoragePool pool = adaptor.getStoragePool(poolUuid);
+
+        return adaptor.cleanupCreatedPhysicalDisk(volPath, pool);
+    }
+
     public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         if (type == StoragePoolType.NetworkFilesystem) {
