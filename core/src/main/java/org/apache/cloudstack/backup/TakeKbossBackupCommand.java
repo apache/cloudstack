@@ -42,7 +42,16 @@ public class TakeKbossBackupCommand extends Command {
 
     private boolean isolated;
 
-    public TakeKbossBackupCommand(boolean quiesceVm, boolean runningVM, boolean endChain, String vmName, String imageStoreUrl, List<String> backupChainImageStoreUrls, List<KbossTO> kbossTOS, boolean isolated) {
+    private boolean compress;
+
+    private Backup.CompressionLibrary compressionLib;
+
+    private Integer coroutines;
+
+    private Integer rateLimit;
+
+    public TakeKbossBackupCommand(boolean quiesceVm, boolean runningVM, boolean endChain, String vmName, String imageStoreUrl, List<String> backupChainImageStoreUrls,
+            List<KbossTO> kbossTOS, boolean isolated) {
         this.quiesceVm = quiesceVm;
         this.runningVM = runningVM;
         this.endChain = endChain;
@@ -83,6 +92,38 @@ public class TakeKbossBackupCommand extends Command {
 
     public boolean isIsolated() {
         return isolated;
+    }
+
+    public void setRateLimit(Integer rateLimit) {
+        this.rateLimit = rateLimit;
+    }
+
+    public void setCoroutines(Integer coroutines) {
+        this.coroutines = coroutines;
+    }
+
+    public void setCompressionLib(Backup.CompressionLibrary compressionLib) {
+        this.compressionLib = compressionLib;
+    }
+
+    public void setCompress(boolean compress) {
+        this.compress = compress;
+    }
+
+    public boolean isCompress() {
+        return compress;
+    }
+
+    public Backup.CompressionLibrary getCompressionLib() {
+        return compressionLib;
+    }
+
+    public Integer getCoroutines() {
+        return coroutines;
+    }
+
+    public Integer getRateLimit() {
+        return rateLimit;
     }
 
     @Override
