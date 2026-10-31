@@ -182,6 +182,10 @@ public interface UserVmManager extends UserVmService {
         ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
 
+    /** A non-null preparation requires a live resize. Run it once after placement and before the first CPU/RAM change. */
+    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters, Runnable beforeLiveResize)
+            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha,

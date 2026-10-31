@@ -18,6 +18,7 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,6 +71,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     private final GuestResources resizedGuest = guest(4, 4026532L, 4096);
     private boolean clusterRunning = true;
     private int accessResolutions;
+    private int liveResizeAttempts;
 
     @Before
     public void setUp() throws Exception {
@@ -83,6 +85,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
             Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
             return true;
         });
+        acceptLiveResize();
         Mockito.when(reconciler.readNode(any(), eq(access))).thenReturn(node(false, null, null));
         Mockito.when(reconciler.readGuest(vm, access)).thenReturn(guest(2, 2029380L, 2048));
         Mockito.when(reconciler.startResize(cluster, vm, access, "uid-1")).thenReturn(node(true, CLUSTER_UUID, CLUSTER_UUID));
@@ -98,8 +101,9 @@ public class KubernetesClusterNodeOfferingResizerTest {
         InOrder order = Mockito.inOrder(reconciler, vmManager);
         order.verify(reconciler).readNode(vm, access);
         order.verify(reconciler).readGuest(vm, access);
+        order.verify(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any(), any(Runnable.class));
         order.verify(reconciler).startResize(cluster, vm, access, "uid-1");
-        order.verify(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        Assert.assertEquals(1, liveResizeAttempts);
         order.verify(reconciler).onlineGuestResources(access);
         order.verify(reconciler).waitForGuestResources(resizedVm, target, access, DEADLINE);
         order.verify(reconciler).restartKubelet(resizedVm, access, DEADLINE);
@@ -313,8 +317,8 @@ public class KubernetesClusterNodeOfferingResizerTest {
         CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
         Assert.assertSame(failure, error.getCause());
-        Assert.assertTrue(error.getMessage(), error.getMessage().contains("may already be marked"));
-        Mockito.verifyNoInteractions(vmManager);
+        Assert.assertTrue(error.getMessage(), error.getMessage().contains("resize did not start"));
+        Assert.assertEquals(0, liveResizeAttempts);
         Mockito.verify(reconciler, Mockito.never()).releaseCordon(any(), any(), any(), any());
     }
 
@@ -339,8 +343,60 @@ public class KubernetesClusterNodeOfferingResizerTest {
     }
 
     @Test
-    public void testRejectedVmResizeReleasesTheCksCordon() throws Exception {
-        Mockito.doReturn(false).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+    public void testCapacityRejectionBeforePlacementLeavesTheOperatorCordonAndNoPendingMarker() throws Exception {
+        Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(true, null, null));
+        Mockito.doReturn(false).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any(), any(Runnable.class));
+
+        CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
+        Assert.assertTrue(error.getMessage(), error.getMessage().contains("resize did not start"));
+        resizer().reconcilePending(vmMap, WORKER, current, DEADLINE);
+
+        Mockito.verify(reconciler, Mockito.times(2)).readNode(vm, access);
+        Mockito.verify(reconciler).readGuest(vm, access);
+        Mockito.verifyNoMoreInteractions(reconciler);
+        Assert.assertEquals(0, liveResizeAttempts);
+    }
+
+    @Test
+    public void testPlacementRejectionPreservesPendingWorkFromAnEarlierAttempt() throws Exception {
+        Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(true, CLUSTER_UUID, CLUSTER_UUID));
+        Mockito.doReturn(false).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any(), any(Runnable.class));
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
+
+        Mockito.verify(reconciler).readNode(vm, access);
+        Mockito.verify(reconciler).readGuest(vm, access);
+        Mockito.verifyNoMoreInteractions(reconciler);
+    }
+
+    @Test
+    public void testRetryOfCommittedOfferingFinishesLegacyPendingOnOperatorCordonedNode() {
+        Mockito.when(reconciler.readNode(resizedVm, access)).thenReturn(node(true, CLUSTER_UUID, null));
+        Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
+
+        resizer().reconcilePending(vmMap, WORKER, target, DEADLINE);
+
+        Mockito.verify(reconciler).waitForGuestResources(resizedVm, target, access, DEADLINE);
+        Mockito.verify(reconciler).finishResize(cluster, resizedVm, access, "uid-1");
+        Mockito.verify(reconciler, Mockito.never()).releaseCordon(any(), any(), any(), any());
+        Mockito.verifyNoInteractions(vmManager);
+    }
+
+    @Test
+    public void testRetryDoesNotResizeAMixedOfferingVmOrClearItsUnverifiedMarker() {
+        resizer().reconcilePending(vmMap, WORKER, target, DEADLINE);
+        Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(true, CLUSTER_UUID, null));
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> resizer().reconcilePending(vmMap, WORKER, target, DEADLINE));
+
+        Mockito.verify(reconciler, Mockito.times(2)).readNode(vm, access);
+        Mockito.verifyNoMoreInteractions(reconciler);
+        Mockito.verifyNoInteractions(vmManager);
+    }
+
+    @Test
+    public void testUncertainVmResizeReleasesTheCksCordon() throws Exception {
+        afterPlacement(() -> false);
 
         CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -351,10 +407,10 @@ public class KubernetesClusterNodeOfferingResizerTest {
     @Test
     public void testFailureAfterTheVmReachedTheTargetKeepsPendingWorkAndCordon() throws Exception {
         ManagementServerException failure = new ManagementServerException("agent answer lost");
-        Mockito.doAnswer(invocation -> {
+        afterPlacement(() -> {
             Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
             throw failure;
-        }).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        });
 
         CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -381,7 +437,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     public void testOperatorCordonIsNeverReleased() throws Exception {
         Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(true, null, null));
         Mockito.when(reconciler.startResize(cluster, vm, access, "uid-1")).thenReturn(node(true, CLUSTER_UUID, null));
-        Mockito.doReturn(false).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        afterPlacement(() -> false);
 
         Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -391,7 +447,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     @Test
     public void testCordonOfAnEarlierAttemptIsKeptAfterAFailedRetry() throws Exception {
         Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(true, CLUSTER_UUID, CLUSTER_UUID));
-        Mockito.doReturn(false).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        afterPlacement(() -> false);
 
         Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -401,7 +457,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     @Test
     public void testLeftoverOwnershipMarkerDoesNotKeepThisAttemptsCordon() throws Exception {
         Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(false, null, CLUSTER_UUID));
-        Mockito.doReturn(false).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        afterPlacement(() -> false);
 
         Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -413,7 +469,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
         ManagementServerException failure = new ManagementServerException("upgrade failed");
         CloudRuntimeException databaseFailure = new CloudRuntimeException("database unavailable");
         Mockito.when(vmDao.findById(1L)).thenReturn(vm).thenThrow(databaseFailure);
-        Mockito.doThrow(failure).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        failAfterPlacement(failure);
 
         CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -427,7 +483,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     public void testFailedCordonReleaseKeepsTheOriginalFailure() throws Exception {
         ManagementServerException failure = new ManagementServerException("upgrade failed");
         NodeCapacityReconciliationException releaseFailure = new NodeCapacityReconciliationException("control plane unreachable");
-        Mockito.doThrow(failure).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        failAfterPlacement(failure);
         Mockito.when(reconciler.releaseCordon(cluster, vm, access, "uid-1")).thenThrow(releaseFailure);
 
         CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
@@ -439,10 +495,10 @@ public class KubernetesClusterNodeOfferingResizerTest {
 
     @Test
     public void testInterruptedResizeLeavesTheNodeAsItIs() throws Exception {
-        Mockito.doAnswer(invocation -> {
+        afterPlacement(() -> {
             Thread.currentThread().interrupt();
             throw new ManagementServerException("interrupted");
-        }).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        });
         try {
             CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 
@@ -455,17 +511,15 @@ public class KubernetesClusterNodeOfferingResizerTest {
 
     @Test
     public void testRetryOfTheSameScaleConvergesAndReconciles() throws Exception {
-        Mockito.doThrow(new ManagementServerException("agent timeout")).doAnswer(invocation -> {
-            Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
-            return true;
-        }).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        failAfterPlacement(new ManagementServerException("agent timeout"));
         Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
         Mockito.verify(reconciler).releaseCordon(cluster, vm, access, "uid-1");
         Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(false, CLUSTER_UUID, null));
+        acceptLiveResize();
 
         resize(WORKER);
 
-        Mockito.verify(vmManager, Mockito.times(2)).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        Mockito.verify(vmManager, Mockito.times(2)).upgradeVirtualMachine(eq(1L), eq(20L), any(), any(Runnable.class));
         Mockito.verify(reconciler).finishResize(cluster, resizedVm, access, "uid-1");
     }
 
@@ -488,8 +542,33 @@ public class KubernetesClusterNodeOfferingResizerTest {
         Mockito.verifyNoInteractions(reconciler, vmManager);
     }
 
+    private void acceptLiveResize() throws Exception {
+        afterPlacement(() -> {
+            Mockito.when(vmDao.findById(1L)).thenReturn(resizedVm);
+            return true;
+        });
+    }
+
+    private void failAfterPlacement(Exception failure) throws Exception {
+        afterPlacement(() -> {
+            throw failure;
+        });
+    }
+
+    private void afterPlacement(Callable<Boolean> resize) throws Exception {
+        Mockito.doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(3).run();
+            liveResizeAttempts++;
+            return resize.call();
+        }).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any(), any(Runnable.class));
+    }
+
     private void resize(KubernetesClusterNodeType nodeType) {
-        new KubernetesClusterNodeOfferingResizer(cluster,
+        resizer().resize(vmMap, nodeType, target, DEADLINE);
+    }
+
+    private KubernetesClusterNodeOfferingResizer resizer() {
+        return new KubernetesClusterNodeOfferingResizer(cluster,
                 clusterRunning,
                 vmDao,
                 offeringDao,
@@ -498,7 +577,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
                 userVm -> {
                     accessResolutions++;
                     return access;
-                }).resize(vmMap, nodeType, target, DEADLINE);
+                });
     }
 
     private void assertPlainResize(KubernetesClusterNodeType nodeType) throws Exception {
@@ -510,7 +589,7 @@ public class KubernetesClusterNodeOfferingResizerTest {
     }
 
     private void assertCordonReleasedAfter(Exception failure) throws Exception {
-        Mockito.doThrow(failure).when(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any());
+        failAfterPlacement(failure);
 
         CloudRuntimeException error = Assert.assertThrows(CloudRuntimeException.class, () -> resize(WORKER));
 

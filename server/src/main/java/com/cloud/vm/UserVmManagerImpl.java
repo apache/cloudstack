@@ -2145,7 +2145,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        return upgradeVirtualMachine(vmId, newServiceOfferingId, customParameters, null);
+    }
 
+    @Override
+    public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters, Runnable beforeLiveResize)
+            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
         Account caller = CallContext.current().getCallingAccount();
@@ -2156,6 +2161,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (State.Stopped.equals(vmInstance.getState())) {
+            if (beforeLiveResize != null) {
+                return false;
+            }
             upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
             return true;
         }
@@ -2174,11 +2182,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return false;
             }
         }
-        return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
+        return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters, beforeLiveResize);
     }
 
-    private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
-    ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+    private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters, Runnable beforeLiveResize)
+            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
 
         Account caller = CallContext.current().getCallingAccount();
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
@@ -2328,6 +2336,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // #4 scale the vm now
                     vmInstance = _vmInstanceDao.findById(vmId);
+                    if (beforeLiveResize != null) {
+                        beforeLiveResize.run();
+                        beforeLiveResize = null;
+                    }
                     _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
                     success = true;
                     return success;

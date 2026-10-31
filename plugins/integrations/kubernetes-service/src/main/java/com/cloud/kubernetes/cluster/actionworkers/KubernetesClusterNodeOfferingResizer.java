@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -84,6 +85,16 @@ public class KubernetesClusterNodeOfferingResizer {
      * original failure as its cause and says what state the VM and its Kubernetes node were left in.
      */
     public void resize(KubernetesClusterVmMapVO vmMap, KubernetesClusterNodeType nodeType, ServiceOffering targetOffering, long deadline) {
+        processOffering(vmMap, nodeType, targetOffering, deadline, false);
+    }
+
+    /** Check a retry against the committed role offering without changing any individual VM's offering. */
+    public void reconcilePending(KubernetesClusterVmMapVO vmMap, KubernetesClusterNodeType nodeType, ServiceOffering targetOffering, long deadline) {
+        processOffering(vmMap, nodeType, targetOffering, deadline, true);
+    }
+
+    private void processOffering(KubernetesClusterVmMapVO vmMap, KubernetesClusterNodeType nodeType, ServiceOffering targetOffering,
+                                 long deadline, boolean pendingOnly) {
         UserVmVO vm = userVmDao.findById(vmMap.getVmId());
         if (vm == null) {
             throw new CloudRuntimeException(String.format("unable to find the VM with ID %d", vmMap.getVmId()));
@@ -94,13 +105,13 @@ public class KubernetesClusterNodeOfferingResizer {
         String skipReason = getReconciliationSkipReason(vmMap, vm, nodeType);
         if (skipReason != null) {
             logSkip(vm, skipReason);
-            if (!onTarget) {
+            if (!pendingOnly && !onTarget) {
                 resizeWithoutReconciliation(vm, targetOffering, context);
             }
             return;
         }
-        if (onTarget) {
-            finishPendingReconciliation(vm, targetOffering, deadline, context, "it is already on the target offering");
+        if (onTarget || pendingOnly) {
+            finishPendingReconciliation(vm, targetOffering, deadline, context, onTarget);
             return;
         }
         ServiceOffering currentOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
@@ -109,7 +120,7 @@ public class KubernetesClusterNodeOfferingResizer {
         }
         if (!KubernetesClusterNodeCapacityReconciler.capacityChanged(currentOffering, targetOffering)) {
             resizeWithoutReconciliation(vm, targetOffering, context);
-            finishPendingReconciliation(vm, targetOffering, deadline, context, "the offering does not change its CPU or RAM");
+            finishPendingReconciliation(vm, targetOffering, deadline, context, true);
             return;
         }
         resizeAndReconcile(vm, targetOffering, deadline, context);
@@ -155,10 +166,9 @@ public class KubernetesClusterNodeOfferingResizer {
     }
 
     /**
-     * The VM is on the target offering and its CPU and RAM need no change; finish its node only if an earlier
-     * resize left it unverified. Only the Node is read when there is nothing to finish.
+     * Only an owned marker justifies touching the guest on an otherwise unchanged offering request.
      */
-    private void finishPendingReconciliation(UserVm vm, ServiceOffering targetOffering, long deadline, String context, String skipReason) {
+    private void finishPendingReconciliation(UserVm vm, ServiceOffering targetOffering, long deadline, String context, boolean onTarget) {
         try {
             NodeAccess access = nodeAccessResolver.apply(vm);
             NodeCapacitySnapshot node = reconciler.readNode(vm, access);
@@ -167,14 +177,17 @@ public class KubernetesClusterNodeOfferingResizer {
                 throw new NodeCapacityReconciliationException("the Kubernetes node carries live resize markers of another cluster");
             }
             if (!node.isPendingFor(clusterUuid) && !node.hasOwnershipMarker(clusterUuid)) {
-                logSkip(vm, skipReason);
+                logSkip(vm, "there is no pending capacity change");
                 return;
+            }
+            if (!onTarget) {
+                throw new NodeCapacityReconciliationException("the VM is on a different offering; retry the interrupted resize with its intended offering");
             }
             logger.info("Finishing the unverified Kubernetes capacity reconciliation of VM {} in Kubernetes cluster {}", vm, kubernetesCluster);
             reconcile(vm, targetOffering, access, node.getUid(), deadline);
         } catch (RuntimeException e) {
-            throw new CloudRuntimeException(String.format("%s: %s. The VM is already on the target offering; retry the same scale operation " +
-                    "to finish reconciling its Kubernetes node.", context, describe(e)), e);
+            String retry = onTarget ? ". The VM is already on the target offering; retry the same scale operation to finish reconciling its Kubernetes node." : "";
+            throw new CloudRuntimeException(String.format("%s: %s%s", context, describe(e), retry), e);
         }
     }
 
@@ -197,25 +210,21 @@ public class KubernetesClusterNodeOfferingResizer {
             throw new CloudRuntimeException(String.format("%s: %s. The VM was not resized and its Kubernetes node was not changed.",
                     context, describe(e)), e);
         }
-        NodeCapacitySnapshot started;
+        MutableObject<NodeCapacitySnapshot> started = new MutableObject<>();
         try {
-            started = reconciler.startResize(kubernetesCluster, vm, access, initial.getUid());
-        } catch (RuntimeException e) {
-            throw new CloudRuntimeException(String.format("%s: %s. The VM was not resized; its Kubernetes node may already be marked for " +
-                    "the resize and cordoned. Retry the same scale operation.", context, describe(e)), e);
-        }
-        try {
-            UserVmVO resizedVm = upgrade(vm, targetOffering);
+            UserVmVO resizedVm = upgrade(vm, targetOffering,
+                    () -> started.setValue(reconciler.startResize(kubernetesCluster, vm, access, initial.getUid())));
             reconcile(resizedVm, targetOffering, access, initial.getUid(), deadline);
         } catch (ResourceUnavailableException | ManagementServerException | VirtualMachineMigrationException | RuntimeException e) {
-            String recovery = recoverAfterFailure(vm, targetOffering, access, initial, started, e);
+            String recovery = started.getValue() == null ? "Live CPU/RAM resize did not start. If node preparation failed, retry the scale operation." :
+                    recoverAfterFailure(vm, targetOffering, access, initial, started.getValue(), e);
             throw new CloudRuntimeException(String.format("%s: %s. %s", context, describe(e), recovery), e);
         }
     }
 
-    private UserVmVO upgrade(UserVm vm, ServiceOffering targetOffering)
+    private UserVmVO upgrade(UserVm vm, ServiceOffering targetOffering, Runnable beforeLiveResize)
             throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
-        if (!userVmManager.upgradeVirtualMachine(vm.getId(), targetOffering.getId(), new HashMap<>())) {
+        if (!userVmManager.upgradeVirtualMachine(vm.getId(), targetOffering.getId(), new HashMap<>(), beforeLiveResize)) {
             throw new CloudRuntimeException("the VM could not be scaled");
         }
         UserVmVO resizedVm = userVmDao.findById(vm.getId());

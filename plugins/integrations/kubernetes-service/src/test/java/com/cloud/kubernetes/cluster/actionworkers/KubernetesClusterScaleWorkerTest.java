@@ -211,6 +211,36 @@ public class KubernetesClusterScaleWorkerTest {
     }
 
     @Test
+    public void testSameCommittedOfferingRetryChecksBothWorkersWithoutChangingTheirOfferings() {
+        Mockito.when(kubernetesCluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.CloudManaged);
+        Mockito.when(kubernetesCluster.getNodeCount()).thenReturn(2L);
+        Mockito.when(kubernetesCluster.getWorkerNodeServiceOfferingId()).thenReturn(11L);
+        ServiceOfferingVO committed = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(committed.getId()).thenReturn(11L);
+        Mockito.when(serviceOfferingDao.findById(11L)).thenReturn(committed);
+        KubernetesClusterVmMapVO first = Mockito.mock(KubernetesClusterVmMapVO.class);
+        KubernetesClusterVmMapVO second = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId())).thenReturn(List.of(first, second));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), WORKER)).thenReturn(List.of(first, second));
+        KubernetesClusterScaleWorker scaleWorker = Mockito.spy(new KubernetesClusterScaleWorker(kubernetesCluster,
+                java.util.Map.of(WORKER.name(), committed), null, null, null, null, null, clusterManager));
+        scaleWorker.serviceOfferingDao = serviceOfferingDao;
+        scaleWorker.kubernetesClusterVmMapDao = kubernetesClusterVmMapDao;
+        KubernetesClusterNodeOfferingResizer resizer = Mockito.mock(KubernetesClusterNodeOfferingResizer.class);
+        Mockito.doReturn(resizer).when(scaleWorker).createNodeOfferingResizer();
+        Mockito.doNothing().when(scaleWorker).init();
+        Mockito.doReturn(true).when(scaleWorker).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        Assert.assertTrue(scaleWorker.scaleCluster());
+
+        Mockito.verify(resizer).reconcilePending(Mockito.eq(first), Mockito.eq(WORKER), Mockito.eq(committed), Mockito.anyLong());
+        Mockito.verify(resizer).reconcilePending(Mockito.eq(second), Mockito.eq(WORKER), Mockito.eq(committed), Mockito.anyLong());
+        Mockito.verifyNoMoreInteractions(resizer);
+        Mockito.verify(scaleWorker, Mockito.never()).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @Test
     public void testRetryUsesUncommittedWorkerOfferingToEnterResizeLoop() {
         Mockito.when(kubernetesCluster.getState()).thenReturn(KubernetesCluster.State.Running);
         Mockito.when(kubernetesCluster.getWorkerNodeServiceOfferingId()).thenReturn(11L);

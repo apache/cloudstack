@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
@@ -373,24 +374,28 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
             return;
         }
+        KubernetesClusterNodeOfferingResizer nodeResizer = createNodeOfferingResizer();
+        forEachScalingNode(nodeType, vm -> nodeResizer.resize(vm, nodeType, serviceOffering, scaleTimeoutTime));
+        kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+    }
+
+    private void forEachScalingNode(KubernetesClusterNodeType nodeType, Consumer<KubernetesClusterVmMapVO> operation) {
         final long size = getNodeCountForType(nodeType, kubernetesCluster);
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), nodeType);
         final int tobeScaledVMCount = (int) Math.min(vmList.size(), size);
-        KubernetesClusterNodeOfferingResizer nodeResizer = createNodeOfferingResizer();
         for (int i = 0; i < tobeScaledVMCount; i++) {
             if (System.currentTimeMillis() > scaleTimeoutTime) {
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling action timed out after %d of %d %s VMs were scaled",
                         kubernetesCluster.getName(), i, tobeScaledVMCount, nodeType), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             try {
-                nodeResizer.resize(vmList.get(i), nodeType, serviceOffering, scaleTimeoutTime);
+                operation.accept(vmList.get(i));
             } catch (RuntimeException e) {
                 String reason = StringUtils.defaultIfEmpty(e.getMessage(), e.getClass().getName());
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, %s", kubernetesCluster.getName(), reason),
                         kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
             }
         }
-        kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
     }
 
     protected KubernetesClusterNodeOfferingResizer createNodeOfferingResizer() {
@@ -642,6 +647,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final boolean autoscalingChanged = isAutoscalingChanged();
         ServiceOffering defaultServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(DEFAULT.name(), null);
         Map<KubernetesClusterNodeType, ServiceOffering> existingOfferings = getExistingOfferingsOfScaledNodeTypes(scaleClusterDefaultOffering, originalClusterSize);
+        if (isCommittedOfferingRetry(existingOfferings, defaultServiceOffering, originalClusterSize)) {
+            return reconcilePendingOfferings(existingOfferings);
+        }
 
         for (KubernetesClusterNodeType nodeType : SCALING_ORDER) {
             ServiceOffering existingServiceOffering = existingOfferings.get(nodeType);
@@ -681,6 +689,33 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
+    }
+
+    private boolean isCommittedOfferingRetry(Map<KubernetesClusterNodeType, ServiceOffering> existing, ServiceOffering defaultOffering, long originalSize) {
+        if (originalState != KubernetesCluster.State.Running || kubernetesCluster.getClusterType() != KubernetesCluster.ClusterType.CloudManaged
+                || (clusterSize != null && clusterSize != originalSize) || isAutoscalingEnabled != null || minSize != null || maxSize != null
+                || (!existing.containsKey(WORKER) && !existing.containsKey(CONTROL))) {
+            return false;
+        }
+        return existing.entrySet().stream().allMatch(entry -> {
+            ServiceOffering requested = serviceOfferingNodeTypeMap.getOrDefault(entry.getKey().name(), defaultOffering);
+            return requested != null && requested.getId() == entry.getValue().getId();
+        });
+    }
+
+    private boolean reconcilePendingOfferings(Map<KubernetesClusterNodeType, ServiceOffering> existing) {
+        if (!stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested)) {
+            throw new CloudRuntimeException("The cluster is no longer available for scaling");
+        }
+        validateKubernetesClusterScaleOfferingParameters();
+        KubernetesClusterNodeOfferingResizer resizer = createNodeOfferingResizer();
+        for (KubernetesClusterNodeType type : List.of(CONTROL, WORKER)) {
+            ServiceOffering offering = existing.get(type);
+            if (offering != null) {
+                forEachScalingNode(type, vm -> resizer.reconcilePending(vm, type, offering, scaleTimeoutTime));
+            }
+        }
+        return stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
     }
 
     /**
