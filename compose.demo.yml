@@ -1,0 +1,9 @@
+services:
+  skymoon-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.demo
+    container_name: skymoon-ui-demo
+    restart: unless-stopped
+    ports:
+      - "5080:80"
