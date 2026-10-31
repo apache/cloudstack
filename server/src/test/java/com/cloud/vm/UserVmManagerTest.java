@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import com.cloud.capacity.CapacityManager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -25,8 +26,12 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
@@ -46,6 +51,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -75,7 +81,9 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -85,10 +93,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -137,6 +148,10 @@ public class UserVmManagerTest {
     private ConfigurationManager _configMgr;
     @Mock
     private CapacityManager _capacityMgr;
+    @Mock
+    private HostDao hostDao;
+    @Mock
+    private DiskOfferingDao diskOfferingDao;
     @Mock
     private AccountDao _accountDao;
     @Mock
@@ -438,6 +453,66 @@ public class UserVmManagerTest {
             CallContext.unregister();
         }
 
+    }
+
+    @Test
+    public void testLiveResizePreparesOnceAndOnlyAfterPlacementSucceeds() throws Exception {
+        ServiceOfferingVO current = getSvcoffering(2048);
+        ServiceOfferingVO target = getSvcoffering(3072);
+        current.setDetails(Map.of());
+        target.setDetails(Map.of());
+        when(_offeringDao.findByIdIncludingRemoved(1L, 2L)).thenReturn(current);
+        when(_offeringDao.findById(3L)).thenReturn(target);
+        Mockito.doNothing().when(_userVmMgr).validateDiskOfferingChecks(current, target);
+        when(_vmInstanceDao.findById(1L)).thenReturn(_vmInstance);
+        when(_vmInstance.getState()).thenReturn(State.Running);
+        when(_vmInstance.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(_vmInstance.isDynamicallyScalable()).thenReturn(true);
+        when(_vmInstance.getHostId()).thenReturn(7L);
+        when(_vmInstance.getUuid()).thenReturn("vm");
+        HostVO host = mock(HostVO.class);
+        when(hostDao.findById(7L)).thenReturn(host);
+        when(host.getId()).thenReturn(7L);
+        when(host.checkHostServiceOfferingAndTemplateTags(eq(target), any(), any())).thenReturn(true);
+        ReflectionTestUtils.setField(_userVmMgr, "_scaleRetry", 2);
+        ConfigDepotImpl config = mock(ConfigDepotImpl.class);
+        when(config.getConfigStringValue(eq(UserVmManager.EnableDynamicallyScaleVm.key()), eq(ConfigKey.Scope.Zone), anyLong())).thenReturn("true");
+        InsufficientServerCapacityException noHost = new InsufficientServerCapacityException("no destination host", 1L);
+        doThrow(noHost).doThrow(noHost).doNothing().when(_itMgr).findHostAndMigrate(eq("vm"), eq(3L), any(), any());
+        when(_itMgr.reConfigureVm(eq("vm"), eq(current), eq(target), any(), eq(false)))
+                .thenThrow(new ResourceUnavailableException("first host failed", HostVO.class, 7L)).thenReturn(_vmInstance);
+        Runnable prepare = mock(Runnable.class);
+        try (MockedStatic<ApiDBUtils> db = Mockito.mockStatic(ApiDBUtils.class)) {
+            db.when(() -> ApiDBUtils.findHostById(7L)).thenReturn(host);
+            ConfigKey.init(config);
+            CallContext.register(_userMock, _accountMock);
+            assertFalse(_userVmMgr.upgradeVirtualMachine(1L, 3L, Map.of(), prepare));
+            Mockito.verifyNoInteractions(prepare);
+            verify(_itMgr, Mockito.never()).reConfigureVm(any(), any(), any(), any(), anyBoolean());
+
+            assertTrue(_userVmMgr.upgradeVirtualMachine(1L, 3L, Map.of(), prepare));
+            InOrder order = Mockito.inOrder(prepare, _itMgr);
+            order.verify(prepare).run();
+            order.verify(_itMgr, times(2)).reConfigureVm(eq("vm"), eq(current), eq(target), any(), eq(false));
+            verify(prepare, times(1)).run();
+        } finally {
+            ConfigKey.init(null);
+            CallContext.unregister();
+        }
+    }
+
+    @Test
+    public void testLiveResizeRejectsVmThatStoppedBeforePreparation() throws Exception {
+        when(_vmInstanceDao.findById(1L)).thenReturn(_vmInstance);
+        when(_vmInstance.getState()).thenReturn(State.Stopped);
+        Runnable prepare = mock(Runnable.class);
+        CallContext.register(_userMock, _accountMock);
+        try {
+            assertFalse(_userVmMgr.upgradeVirtualMachine(1L, 3L, Map.of(), prepare));
+            Mockito.verifyNoInteractions(prepare, _itMgr);
+        } finally {
+            CallContext.unregister();
+        }
     }
 
     private ServiceOfferingVO getSvcoffering(int ramSize) {

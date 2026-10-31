@@ -976,6 +976,14 @@ public class KubernetesClusterActionWorker {
 
     protected ServiceOffering getServiceOfferingForNodeTypeOnCluster(KubernetesClusterNodeType nodeType,
                                                                      KubernetesCluster cluster) {
+        return serviceOfferingDao.findById(getServiceOfferingIdForNodeTypeOnCluster(nodeType, cluster));
+    }
+
+    /**
+     * The offering ID set for a node type on the cluster, falling back to the cluster offering.
+     */
+    protected Long getServiceOfferingIdForNodeTypeOnCluster(KubernetesClusterNodeType nodeType,
+                                                            KubernetesCluster cluster) {
         Long offeringId = null;
         Long defaultOfferingId = cluster.getServiceOfferingId();
         Long controlOfferingId = cluster.getControlNodeServiceOfferingId();
@@ -994,7 +1002,7 @@ public class KubernetesClusterActionWorker {
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        return serviceOfferingDao.findById(offeringId);
+        return offeringId;
     }
 
     protected boolean isDefaultTemplateUsed() {
