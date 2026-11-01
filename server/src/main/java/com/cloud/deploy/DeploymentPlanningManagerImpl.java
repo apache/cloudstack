@@ -39,6 +39,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.resource.ResourceState;
+import com.cloud.storage.StorageManagerImpl;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -2007,7 +2008,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     protected Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm, Long clusterId) {
-        Pair<ConfigKey.Scope, String> preferredStoragePool = StorageManager.getPreferredStoragePoolUuid(vm.getAccountId(), clusterId);
+        Long accountId = vm != null ? vm.getAccountId() : null;
+        Long domainId = vm != null ? vm.getDomainId() : null;
+        Pair<ConfigKey.Scope, String> preferredStoragePool = StorageManagerImpl.getPreferredStoragePoolUuid(accountId, domainId, clusterId);
         if (preferredStoragePool == null) {
             return Optional.empty();
         }

@@ -41,6 +41,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.AgentManager;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.resourcelimit.ReservationHelper;
 import com.cloud.storage.DiskOfferingVO;
@@ -398,7 +399,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     protected Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm, Long clusterId) {
         Long accountId = vm != null ? vm.getAccountId() : null;
-        Pair<ConfigKey.Scope, String> preferredStoragePool = StorageManager.getPreferredStoragePoolUuid(accountId, clusterId);
+        Long domainId = vm != null ? vm.getDomainId() : null;
+        Pair<ConfigKey.Scope, String> preferredStoragePool = StorageManagerImpl.getPreferredStoragePoolUuid(accountId, domainId, clusterId);
         if (preferredStoragePool == null) {
             return Optional.empty();
         }

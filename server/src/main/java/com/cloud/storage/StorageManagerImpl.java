@@ -449,6 +449,27 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private static final String NFS_MOUNT_OPTIONS_INCORRECT = "An incorrect mount option was specified";
 
+    /**
+     * Resolves the preferred storage pool UUID, checking the Account scope first, then the Domain scope,
+     * then the Cluster scope and finally the Global value.
+     * @return a pair of the scope where the value was found and the storage pool UUID, or null if it is not set at any level
+     */
+    public static Pair<ConfigKey.Scope, String> getPreferredStoragePoolUuid(Long accountId, Long domainId, Long clusterId) {
+        Long[] resourcesIds = new Long[] {accountId, domainId, clusterId};
+        ConfigKey.Scope[] scopes = new ConfigKey.Scope[] {ConfigKey.Scope.Account, ConfigKey.Scope.Domain, ConfigKey.Scope.Cluster};
+        for (int i = 0; i < scopes.length; i++) {
+            if (resourcesIds[i] == null) {
+                continue;
+            }
+            String scopedPoolUuid = PreferredStoragePool.valueInScope(scopes[i], resourcesIds[i], true);
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(scopedPoolUuid)) {
+                return new Pair<>(scopes[i], scopedPoolUuid);
+            }
+        }
+        String uuid = PreferredStoragePool.value();
+        return org.apache.commons.lang3.StringUtils.isNotBlank(uuid) ? new Pair<>(ConfigKey.Scope.Global, uuid) : null;
+    }
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject

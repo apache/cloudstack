@@ -178,10 +178,11 @@ public interface StorageManager extends StorageService {
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",
             true, ConfigKey.Scope.Zone);
     ConfigKey<String> PreferredStoragePool = new ConfigKey<>(String.class, "preferred.storage.pool", "Advanced", "",
-            "The UUID of preferred storage pool for allocation. It can be set at Account or Cluster level: " +
-                    "the Account value takes precedence over the Cluster value, which takes precedence over the Global value. " +
+            "The UUID of preferred storage pool for allocation. It can be set at Account, Domain or Cluster level: " +
+                    "the Account value takes precedence over the Domain value, " +
+                    "the Domain value takes precedence over the Cluster value; which takes precedence over the Global value. " +
                     "The preferred storage pool is only used if it is suitable for the allocation, otherwise it is ignored.",
-            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Cluster), null);
+            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain, ConfigKey.Scope.Cluster), null);
 
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",
