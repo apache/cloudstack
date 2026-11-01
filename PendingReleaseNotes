@@ -41,10 +41,11 @@ example.ver.1 > example.ver.2:
     size while a stripped down Linux should fit on a 2.88MB floppy.
 
 4.22.1.0 > 4.22.2.0:
-  * Management servers now save their ID locally and reuse it after restarts,
-    preventing network interface reordering from changing the ID. Keep the ID
-    file when upgrading or restoring a server. See INSTALL.md for the file
-    location and JVM options to override the ID or its storage location.
+  * Management servers now reuse a saved ID after restarts, so network interface
+    reordering does not change their identity. Keep the ID file during upgrades
+    and restores. See INSTALL.md for the file location and ID settings.
+  * Old non-Up management server records no longer cause agents to avoid an IP
+    that also has an Up record.
 
 4.22.0.0 > 4.22.0.1:
   * Disk-only instance snapshots for KVM UEFI VMs now include a sidecar copy of

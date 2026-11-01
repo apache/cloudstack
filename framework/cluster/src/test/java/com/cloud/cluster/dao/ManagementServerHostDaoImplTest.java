@@ -30,9 +30,11 @@ import org.junit.Test;
 
 import com.cloud.cluster.ManagementServerHostVO;
 
+// Checks that old server records do not make agents skip an available address
 public class ManagementServerHostDaoImplTest {
     private final ManagementServerHostDaoImpl dao = spy(new ManagementServerHostDaoImpl());
 
+    // Do not avoid an address if one record says Up and an old record says Down
     @Test
     public void staleDownIdentityDoesNotBlockAnUpServerAtTheSameIp() {
         ManagementServerHostVO down = host("10.0.0.1", State.Down);
@@ -41,27 +43,32 @@ public class ManagementServerHostDaoImplTest {
         assertAvoided(Arrays.asList(up, down));
     }
 
+    // Keep unavailable addresses in the avoid list and include each address only once
     @Test
     public void unavailableAddressesRemainAvoidedWithoutDuplicates() {
         assertAvoided(Arrays.asList(host("10.0.0.1", State.Down), host("10.0.0.1", State.Down),
                 host("10.0.0.2", State.Maintenance), host("10.0.0.3", State.Up)), "10.0.0.1", "10.0.0.2");
     }
 
+    // Allow an address marked Up even if an old record says it is in maintenance
     @Test
     public void upServerTakesPrecedenceOverAnOldMaintenanceRecord() {
         assertAvoided(Arrays.asList(host("10.0.0.1", State.Maintenance), host("10.0.0.1", State.Up)));
     }
 
+    // No server records means there are no addresses to avoid
     @Test
     public void emptyServerListHasNoAvoidedAddresses() {
         assertAvoided(Collections.emptyList());
     }
 
+    // Run the avoid-list code with pretend records and check the returned addresses
     private void assertAvoided(List<ManagementServerHostVO> hosts, String... expected) {
         doReturn(hosts).when(dao).listAll();
         assertEquals(Arrays.asList(expected), dao.listNonUpStateMsIPs());
     }
 
+    // Make a pretend server record with an address and a state
     private ManagementServerHostVO host(String ip, State state) {
         ManagementServerHostVO host = new ManagementServerHostVO();
         host.setServiceIP(ip);

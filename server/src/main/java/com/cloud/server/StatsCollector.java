@@ -390,6 +390,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ScheduledExecutorService _diskStatsUpdateExecutor;
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
+    // Use the saved ID to check which stats jobs this server should do
     private final long mgmtSrvrId = ManagementServerNode.getManagementServerId();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private boolean _dailyOrHourly = false;

@@ -37,10 +37,13 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.net.MacAddress;
 
+// Check that the server and its stats jobs use the saved ID
 public class ManagementServerIdentityTest {
+    // Use different values for the saved ID and the ID from the network card
     private static final long SAVED_ID = 123L;
     private static final long CHANGED_MAC_ID = 456L;
 
+    // Return the saved ID even when the network card gives a different ID
     @Test
     public void managementServiceReportsSavedIdAfterMacChanges() {
         try (MockedStatic<ManagementServerNode> node = mockStatic(ManagementServerNode.class);
@@ -53,6 +56,7 @@ public class ManagementServerIdentityTest {
         }
     }
 
+    // Still start the disk stats job when the saved ID says this server is in charge
     @Test
     public void owningServerStillUpdatesDiskStatsAfterMacChanges() {
         StatsCollector previous = StatsCollector.getInstance();
@@ -66,6 +70,7 @@ public class ManagementServerIdentityTest {
             locks.when(() -> GlobalLock.getInternLock("vm.disk.stats")).thenReturn(lock);
             when(lock.lock(5)).thenReturn(true);
 
+            // Pretend the database says this server should do the job
             ManagementServerHostVO host = new ManagementServerHostVO();
             host.setMsid(SAVED_ID);
             ManagementServerHostDao dao = mock(ManagementServerHostDao.class);
@@ -77,6 +82,7 @@ public class ManagementServerIdentityTest {
 
             transactions.verify(() -> Transaction.execute(any(TransactionCallbackNoReturn.class)));
         } finally {
+            // Put the old stats collector back so other tests are not affected
             ReflectionTestUtils.setField(StatsCollector.class, "s_instance", previous);
         }
     }

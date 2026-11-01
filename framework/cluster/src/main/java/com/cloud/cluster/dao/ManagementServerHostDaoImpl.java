@@ -263,20 +263,26 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         return listBy(sc);
     }
 
+    // The saved ID stops future ID changes but leaves old records behind
+    // This method handles duplicate records that already exist
+    // Old Down records must not make agents skip an address that also has an Up record
     @Override
     public List<String> listNonUpStateMsIPs() {
         Set<String> upIPs = new HashSet<>();
         Set<String> nonUpIPs = new LinkedHashSet<>();
-        // Read one snapshot, excluding removed records. An old identity must not
-        // make agents avoid an address that still has an Up management server.
+        // Read server records that have not been removed
         for (ManagementServerHostVO host : listAll()) {
             if (State.Up.equals(host.getState())) {
+                // Collect addresses marked Up
                 upIPs.add(host.getServiceIP());
             } else {
+                // Collect addresses in other states
                 nonUpIPs.add(host.getServiceIP());
             }
         }
+        // Keep every Up address out of the avoid list
         nonUpIPs.removeAll(upIPs);
+        // Give agents the remaining addresses to skip
         return new ArrayList<>(nonUpIPs);
     }
 

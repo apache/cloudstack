@@ -46,19 +46,23 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ManagementServerIdTest {
 
+    // Give each test its own temporary folder
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
+    // Choose where this test will save its ID
     private Path idFile() {
         return folder.getRoot().toPath().resolve("identity/management-server.id");
     }
 
+    // Fail the test if the code asks for a new ID when it should not
     private LongSupplier unexpectedLookup() {
         return () -> {
             throw new AssertionError("Network interfaces must not be consulted");
         };
     }
 
+    // Keep the saved ID even when the network card would give a different ID
     @Test
     public void preservesInitialIdWhenNetworkInterfacesChange() throws IOException {
         Path path = idFile();
@@ -67,6 +71,7 @@ public class ManagementServerIdTest {
         assertEquals(130014950130305L, ManagementServerId.load(path, null, unexpectedLookup()));
     }
 
+    // Use the chosen ID first and keep the saved ID for later
     @Test
     public void configuredIdTakesPrecedenceOverSavedId() throws IOException {
         Path path = idFile();
@@ -75,12 +80,14 @@ public class ManagementServerIdTest {
         assertEquals(42L, ManagementServerId.load(path, null, unexpectedLookup()));
     }
 
+    // A chosen ID still works when we cannot save a file
     @Test
     public void configuredIdDoesNotRequireWritableStorage() throws IOException {
         Path path = folder.newFile("not-a-directory").toPath().resolve("id");
         assertEquals(123L, ManagementServerId.load(path, "123", unexpectedLookup()));
     }
 
+    // Reject bad IDs from the settings and do not save them
     @Test
     public void rejectsInvalidConfiguredIds() {
         for (String value : new String[] {"", "0", "-1", "invalid", "9223372036854775808"}) {
@@ -90,6 +97,7 @@ public class ManagementServerIdTest {
         assertFalse(Files.exists(idFile()));
     }
 
+    // Reject a bad saved ID without changing its file
     @Test
     public void rejectsInvalidSavedIdsWithoutReplacingThem() throws IOException {
         Path path = folder.newFile("id").toPath();
@@ -101,6 +109,7 @@ public class ManagementServerIdTest {
         }
     }
 
+    // Do not save a new ID if it is zero or negative
     @Test
     public void rejectsInvalidInitialIdsWithoutSavingThem() {
         for (long value : new long[] {0L, -1L}) {
@@ -110,16 +119,19 @@ public class ManagementServerIdTest {
         assertFalse(Files.exists(idFile()));
     }
 
+    // Report an error when the ID file cannot be saved
     @Test
     public void failsWhenIdentityCannotBeSaved() throws IOException {
         Path path = folder.newFile("not-a-directory").toPath().resolve("id");
         assertThrows(IOException.class, () -> ManagementServerId.load(path, null, unexpectedLookup()));
     }
 
+    // A failed write leaves no broken ID file and a later try can succeed
     @Test
     public void failedInitialWriteDoesNotPublishAnInvalidIdentity() throws IOException {
         Path path = idFile();
         AtomicReference<FileChannel> underlyingWriter = new AtomicReference<>();
+        // Make the file writer fail on purpose
         FileChannel failedWriter = Mockito.mock(FileChannel.class);
         Mockito.when(failedWriter.write(Mockito.any(ByteBuffer.class))).thenThrow(new IOException("Interrupted write"));
         Mockito.doAnswer(invocation -> {
@@ -141,11 +153,12 @@ public class ManagementServerIdTest {
 
         assertFalse(Files.exists(path));
         try (Stream<Path> files = Files.list(path.getParent())) {
-            assertEquals(1L, files.count()); // Only the interprocess lock remains.
+            assertEquals(1L, files.count()); // Only the interprocess lock remains
         }
         assertEquals(43L, ManagementServerId.load(path, null, () -> 43L));
     }
 
+    // Allow spaces around a valid ID and accept the biggest allowed number
     @Test
     public void readsWhitespaceAndFullLongIds() throws IOException {
         Path path = folder.newFile("id").toPath();
@@ -153,6 +166,7 @@ public class ManagementServerIdTest {
         assertEquals(Long.MAX_VALUE, ManagementServerId.load(path, null, unexpectedLookup()));
     }
 
+    // Use the chosen file and ID settings and report a bad saved file
     @Test
     public void usesJvmSettingsAndReportsInvalidStorage() throws IOException {
         String previousFile = System.getProperty("management.server.id.file");
@@ -176,6 +190,7 @@ public class ManagementServerIdTest {
         }
     }
 
+    // Three programs using the same file must all get the same ID
     @Test
     public void concurrentProcessesUseTheSameId() throws Exception {
         Path path = idFile();
@@ -199,12 +214,14 @@ public class ManagementServerIdTest {
         }
     }
 
+    // A small helper program that loads an ID and prints it
     public static class IdWriter {
         public static void main(String[] args) throws IOException {
             System.out.println(ManagementServerId.load(Paths.get(args[0]), null, () -> Long.parseLong(args[1])));
         }
     }
 
+    // Put the settings back so one test does not affect another
     private void restoreProperty(String name, String value) {
         if (value == null) {
             System.clearProperty(name);

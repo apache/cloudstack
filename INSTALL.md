@@ -190,31 +190,23 @@ All the rpm packages will be created in `dist/rpmbuild/RPMS/x86_64` directory.
 
 ## Management server identity
 
-The management server saves its numeric ID in
-`${user.home}/.cloudstack/management-server.id`. Packaged installations run as
-`cloud`, whose home is normally `/var/lib/cloudstack/management`. On first use,
-the server saves the ID derived from its MAC address. Later starts reuse the
-saved ID, even if network interface order changes.
+The server saves its ID in `${user.home}/.cloudstack/management-server.id`
+and reuses it after restarts. Keep this file when upgrading or restoring the
+same server. Do not copy it to a different management server.
 
-Keep this file when upgrading or restoring the same management server. Do not
-copy it to a different management server. The service user needs read and write
-access to the directory, including the adjacent `.lock` file. If the ID cannot
-be read, validated, or saved, startup fails.
+The service account needs write access to the directory and its `.lock` file.
+Startup fails if the ID cannot be read, validated, or saved.
 
-These JVM options can be added to `JAVA_OPTS` in
-`/etc/default/cloudstack-management`:
+These options can be added to `JAVA_OPTS` in `/etc/default/cloudstack-management`:
 
-* `-Dmanagement.server.id.file=/path/to/management-server.id` changes the file
-  location. Use a persistent local directory writable by the service user.
-* `-Dmanagement.server.id=123456789` overrides the saved ID with a positive
-  decimal integer. Each management server must have its own ID. This option does
-  not change the saved file; removing it restores the saved ID.
+* `-Dmanagement.server.id.file=/path/to/management-server.id` chooses a different
+  persistent local file location.
+* `-Dmanagement.server.id=123456789` overrides the ID with a positive number
+  unique to this server. It does not change the saved file.
 
-For an existing installation, if interface order has already changed before the
-first start with this fix, set `management.server.id` to that server's original
-`msid` from `cloud.mshost`. Keep the override on subsequent starts. Existing stale
-rows in `cloud.mshost` are retained, but an old non-Up row no longer causes agents
-to avoid an IP address that also has an Up management server.
+If interface order already changed before upgrading, set `management.server.id`
+to this server's original `msid` from `cloud.mshost` before the first start.
+Keep that override configured on later starts.
 
 ## Notes
 

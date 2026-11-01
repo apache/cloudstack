@@ -252,6 +252,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
         private int _interval;
 
+        // Use the saved ID to check which traffic monitors this server is in charge of
         private final long mgmtSrvrId = ManagementServerNode.getManagementServerId();
 
         protected DirectNetworkStatsListener(int interval) {

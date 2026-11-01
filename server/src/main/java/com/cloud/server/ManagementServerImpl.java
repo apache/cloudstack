@@ -1197,6 +1197,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return _detailsDao.findDetail(hostId, name);
     }
 
+    // Return the persistent server ID shared by the other CloudStack components
     @Override
     public long getId() {
         return ManagementServerNode.getManagementServerId();
