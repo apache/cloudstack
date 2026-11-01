@@ -213,7 +213,8 @@ These JVM options can be added to `JAVA_OPTS` in
 For an existing installation, if interface order has already changed before the
 first start with this fix, set `management.server.id` to that server's original
 `msid` from `cloud.mshost`. Keep the override on subsequent starts. Existing stale
-rows in `cloud.mshost` are not removed by this change.
+rows in `cloud.mshost` are retained, but an old non-Up row no longer causes agents
+to avoid an IP address that also has an Up management server.
 
 ## Notes
 

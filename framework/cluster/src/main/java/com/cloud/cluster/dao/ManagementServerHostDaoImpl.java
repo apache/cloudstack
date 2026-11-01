@@ -21,7 +21,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 
 
@@ -35,7 +38,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
@@ -47,7 +49,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
-    protected GenericSearchBuilder<ManagementServerHostVO, String> NonUpStateMsSearch;
 
     @Override
     public void invalidateRunSession(long id, long runid) {
@@ -229,11 +230,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
         StateSearch.and("runid", StateSearch.entity().getRunid(), SearchCriteria.Op.GT);
         StateSearch.done();
-
-        NonUpStateMsSearch = createSearchBuilder(String.class);
-        NonUpStateMsSearch.selectFields(NonUpStateMsSearch.entity().getServiceIP());
-        NonUpStateMsSearch.and("state", NonUpStateMsSearch.entity().getState(), SearchCriteria.Op.NLIKE);
-        NonUpStateMsSearch.done();
     }
 
     @Override
@@ -269,9 +265,19 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
     @Override
     public List<String> listNonUpStateMsIPs() {
-        SearchCriteria<String> sc = NonUpStateMsSearch.create();
-        sc.addAnd("state", SearchCriteria.Op.NLIKE, State.Up);
-        return customSearch(sc, null);
+        Set<String> upIPs = new HashSet<>();
+        Set<String> nonUpIPs = new LinkedHashSet<>();
+        // Read one snapshot, excluding removed records. An old identity must not
+        // make agents avoid an address that still has an Up management server.
+        for (ManagementServerHostVO host : listAll()) {
+            if (State.Up.equals(host.getState())) {
+                upIPs.add(host.getServiceIP());
+            } else {
+                nonUpIPs.add(host.getServiceIP());
+            }
+        }
+        nonUpIPs.removeAll(upIPs);
+        return new ArrayList<>(nonUpIPs);
     }
 
     @Override
