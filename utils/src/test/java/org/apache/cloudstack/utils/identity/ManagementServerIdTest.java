@@ -23,6 +23,8 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,11 +32,15 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -108,6 +114,36 @@ public class ManagementServerIdTest {
     public void failsWhenIdentityCannotBeSaved() throws IOException {
         Path path = folder.newFile("not-a-directory").toPath().resolve("id");
         assertThrows(IOException.class, () -> ManagementServerId.load(path, null, unexpectedLookup()));
+    }
+
+    @Test
+    public void failedInitialWriteDoesNotPublishAnInvalidIdentity() throws IOException {
+        Path path = idFile();
+        AtomicReference<FileChannel> underlyingWriter = new AtomicReference<>();
+        FileChannel failedWriter = Mockito.mock(FileChannel.class);
+        Mockito.when(failedWriter.write(Mockito.any(ByteBuffer.class))).thenThrow(new IOException("Interrupted write"));
+        Mockito.doAnswer(invocation -> {
+            underlyingWriter.get().close();
+            return null;
+        }).when(failedWriter).close();
+
+        try (MockedStatic<FileChannel> channels = Mockito.mockStatic(FileChannel.class, invocation -> {
+            FileChannel channel = (FileChannel) invocation.callRealMethod();
+            Path openedPath = invocation.getArgument(0);
+            if (openedPath.getFileName().toString().endsWith(".lock")) {
+                return channel;
+            }
+            underlyingWriter.compareAndSet(null, channel);
+            return failedWriter;
+        })) {
+            assertThrows(IOException.class, () -> ManagementServerId.load(path, null, () -> 42L));
+        }
+
+        assertFalse(Files.exists(path));
+        try (Stream<Path> files = Files.list(path.getParent())) {
+            assertEquals(1L, files.count()); // Only the interprocess lock remains.
+        }
+        assertEquals(43L, ManagementServerId.load(path, null, () -> 43L));
     }
 
     @Test

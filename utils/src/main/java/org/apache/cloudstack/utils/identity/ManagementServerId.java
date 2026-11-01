@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.function.LongSupplier;
 
@@ -63,12 +64,18 @@ final class ManagementServerId {
             }
 
             long id = parse(Long.toString(initialId.getAsLong()));
-            try (FileChannel channel = FileChannel.open(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-                ByteBuffer buffer = StandardCharsets.UTF_8.encode(id + "\n");
-                while (buffer.hasRemaining()) {
-                    channel.write(buffer);
+            Path temporary = Files.createTempFile(path.toAbsolutePath().getParent(), "management-server-id-", ".tmp");
+            try {
+                try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
+                    ByteBuffer buffer = StandardCharsets.UTF_8.encode(id + "\n");
+                    while (buffer.hasRemaining()) {
+                        channel.write(buffer);
+                    }
+                    channel.force(true);
                 }
-                channel.force(true);
+                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE);
+            } finally {
+                Files.deleteIfExists(temporary);
             }
             return id;
         }
