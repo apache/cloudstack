@@ -84,7 +84,8 @@ export default {
   data () {
     return {
       loading: false,
-      customDiskOfferingIops: false
+      customDiskOfferingIops: false,
+      initialSize: null
     }
   },
   created () {
@@ -104,6 +105,7 @@ export default {
     fetchData () {
       if (this.resource.size != null) {
         this.form.size = this.resource.size / (1024 * 1024 * 1024)
+        this.initialSize = this.form.size
       }
       this.customDiskOfferingIops = this.resource.iscustomizediops
       if (this.customDiskOfferingIops) {
@@ -116,6 +118,9 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        if (this.initialSize != null && values.size != null && Number(values.size) === Number(this.initialSize)) {
+          delete values.size
+        }
         this.loading = true
         values.id = this.resource.id
         postAPI('resizeVolume', values).then(response => {
