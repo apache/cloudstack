@@ -5728,6 +5728,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
             options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
 
+            options.put(VmDetailConstants.KVM_HINT_DEDICATED, Arrays.asList("true", "false"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {

@@ -35,9 +35,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -63,6 +65,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeImportUnmanageService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
@@ -80,6 +83,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -285,6 +289,8 @@ public class UnmanagedVMsManagerImplTest {
     private ImportVmTasksManager importVmTasksManager;
     @Mock
     private SnapshotDao snapshotDao;
+    @Mock
+    private VolumeImportUnmanageService volumeImportUnmanageService;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -1068,6 +1074,8 @@ public class UnmanagedVMsManagerImplTest {
         DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
         when(volumeManager.allocateRawVolume(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
                         .thenReturn(diskProfile);
+        when(volumeManager.updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), any(), anyString(), any(), any(), any()))
+                        .thenReturn(diskProfile);
         Map<Volume, StoragePool> storage = new HashMap<>();
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
@@ -1097,6 +1105,9 @@ public class UnmanagedVMsManagerImplTest {
         // not the hypervisor default, so an RBD image is stored as RAW
         verify(volumeManager).updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), Mockito.eq(poolType),
                 Mockito.eq(diskPath), Mockito.isNull(), any(), Mockito.eq(expectedFormat));
+
+        // the storage driver must be told the volume is now imported, so e.g. StorPool can tag it
+        verify(volumeImportUnmanageService).notifyStorageDriverOfVolumeManagementChange(storagePool, volume, true);
 
         // the plan must be confined to the pod and cluster of the pool the caller asked for, so that the
         // volume check cannot land on a host in another cluster that has no access to that pool
@@ -2085,5 +2096,26 @@ public class UnmanagedVMsManagerImplTest {
                 Map.of("Network adapter 1", 200L), null,
                 Map.of("Network adapter 1", java.util.List.of("10.1.1.151")));
         Assert.assertEquals("10.1.1.151", result.get("Network adapter 1").getIp4Address());
+    }
+
+    @Test
+    public void getReservedDeviceIdsAlwaysReservesTheCdromOfConfigDrive() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        // the networks of the Instance are not imported yet, so the config drive is always assumed
+        Mockito.when(volumeApiService.getReservedDeviceIds(vm, true)).thenReturn(new HashSet<>(java.util.Arrays.asList(3L, 4L)));
+
+        Set<Long> reserved = ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getReservedDeviceIds", vm);
+
+        Assert.assertEquals(new HashSet<>(java.util.Arrays.asList(3L, 4L)), reserved);
+    }
+
+    @Test
+    public void getNextDeviceIdSkipsReservedDeviceIds() {
+        Set<Long> reserved = new HashSet<>(java.util.Arrays.asList(3L, 4L));
+
+        Assert.assertEquals(1L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 0L, reserved));
+        Assert.assertEquals(2L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 1L, reserved));
+        Assert.assertEquals(5L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 2L, reserved));
+        Assert.assertEquals(6L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 5L, reserved));
     }
 }

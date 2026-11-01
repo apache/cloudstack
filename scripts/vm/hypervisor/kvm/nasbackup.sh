@@ -36,6 +36,8 @@ QUIESCE=""
 QUIESCE_TIMEOUT=""    # Seconds to wait for the guest agent freeze/thaw; empty => libvirt default
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
+METHOD="qcow2"        # How the backup is taken: "qcow2" (push mode, incrementals from dirty bitmaps) or
+                      # "content" (pull mode, incrementals by content comparison; raw block storage)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
 BITMAP_PARENT=""      # For incremental: parent bitmap name to read changes since
 PARENT_PATHS=""       # For incremental: comma-separated list of parent backup file paths,
@@ -43,10 +45,15 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
                       # is rebased onto its corresponding parent file. Required because
                       # data-disk backup files don't share the root volume's UUID, so
                       # each disk must be rebased onto its own parent.
+SCRATCH_DEVS=""       # Pull mode: comma-separated list of copy-before-write scratch block devices, one
+                      # per VM volume in the same order as DISK_PATHS, created by the agent on the
+                      # VM's primary storage and at least as large as the disk plus qcow2 metadata.
+PULL_WORK_PARENT="/var/tmp"   # Parent dir for the pull-mode work dir (NBD socket + backup XML)
 logFile="/var/log/cloudstack/agent/agent.log"
 UNMOUNT_TIMEOUT=60
 EXIT_CLEANUP_FAILED=20
 BACKUP_JOB_ACTIVE=0
+PULL_WORK_DIR=""      # Work dir of a running pull-mode backup, removed by on_pull_backup_exit()
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -184,6 +191,236 @@ thaw_guest() {
   return 1
 }
 
+# ---------------------------------------------------------------------------
+# Content-based backup path (libvirt pull mode).
+#
+# Used for raw block-device disks such as LINSTOR/DRBD. Those cannot carry QEMU
+# persistent dirty bitmaps -- persistence is a qcow2-only feature -- so libvirt
+# checkpoints, and with them the push-mode incremental path, are unavailable.
+#
+# Instead libvirt is asked for a pull-mode backup: it starts an NBD server exposing a
+# point-in-time view of each disk, held consistent by copy-before-write into a scratch
+# block device per disk, which the agent creates on the VM's primary storage and libvirt
+# formats as qcow2. The backup is then derived from that export:
+#
+#   full         qemu-img convert -> sparse standalone qcow2. Zero detection happens
+#                while streaming, so the fully allocated push-mode output and its
+#                separate re-convert pass are both avoided.
+#   incremental  a qcow2 overlay backed by the NBD export, then a SAFE rebase onto the
+#                parent backup. That merges exactly the clusters which differ between
+#                export and parent into the overlay, yielding a delta qcow2 backed by the
+#                parent -- the same chain shape the push-mode incremental produces, so
+#                restore/delete are unchanged.
+#
+# Unlike a storage-snapshot based diff there is no trailing DRBD metadata to clip: the
+# DRBD device, and therefore the NBD export, is already net-sized.
+#
+# Assumes mount_operation() already ran, so $dest and $mount_point are set.
+# ---------------------------------------------------------------------------
+
+# EXIT trap of the pull-mode path, armed once the work dir exists and cleared once the
+# backup is complete. Any exit in between -- an explicit failure, an unexpected error under
+# "set -e", or SIGINT/SIGTERM/SIGHUP -- has to end the pull job: unlike a push job it never
+# finishes on its own, so it would keep the NBD server and the scratch devices busy and
+# block every later backup or migration of the VM. cleanup() aborts the job (via
+# BACKUP_JOB_ACTIVE) before removing the partial backup. SIGKILL cannot be trapped, so the
+# agent wrapper aborts the job itself when the script times out.
+on_pull_backup_exit() {
+  local rc=$?
+  trap - EXIT INT TERM HUP
+  [[ $rc -ne 0 ]] || rc=1
+  # The NBD socket belongs to the job: only remove it once the job is gone.
+  if abort_backup_job; then
+    rm -rf "$PULL_WORK_DIR"
+  fi
+  cleanup
+  exit $rc
+}
+
+backup_running_vm_pull() {
+  local effective_mode="$1"
+
+  # Work dir for the NBD socket and the backup XML. 711 lets the qemu process traverse in
+  # to the socket.
+  local work_dir
+  work_dir=$(mktemp -d "$PULL_WORK_PARENT/csbackup-pull.XXXXXX") || {
+    echo "Failed to create work directory under $PULL_WORK_PARENT"; cleanup; exit 1;
+  }
+  chmod 711 "$work_dir"
+  PULL_WORK_DIR="$work_dir"
+  trap on_pull_backup_exit EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  local nbd_sock="$work_dir/nbd.sock"
+  local backupxml="$work_dir/backup.xml"
+
+  # Snapshot the disk list once so the backup XML and the read-back loop stay in sync.
+  local -a disks
+  mapfile -t disks < <(
+    virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
+  )
+  if [[ ${#disks[@]} -eq 0 ]]; then
+    echo "No disks found for vm $VM"
+    exit 1
+  fi
+
+  # Copy-before-write saves each guest block overwritten during the backup into the disk's
+  # scratch device, at most once per block. The agent sizes each device for the whole disk,
+  # so it cannot fill up and pause the VM.
+  local -a scratch_devs=()
+  IFS=',' read -ra scratch_devs <<< "$SCRATCH_DEVS"
+  if [[ ${#scratch_devs[@]} -ne ${#disks[@]} ]]; then
+    echo "Pull-mode backup of vm $VM needs one scratch device per disk:" \
+      "got ${#scratch_devs[@]} for ${#disks[@]} disks"
+    exit 1
+  fi
+  local scratch_dev
+  for scratch_dev in "${scratch_devs[@]}"; do
+    if [[ ! -b "$scratch_dev" ]]; then
+      echo "Scratch device $scratch_dev for the backup of vm $VM is not a block device"
+      exit 1
+    fi
+  done
+
+  # Resolve each disk's parent backup up front. PARENT_PATHS is comma separated, one entry
+  # per volume in the same order as the disk list. Anything missing degrades this run to a
+  # full backup rather than failing it, mirroring the push-mode fallback.
+  local -a parent_paths_arr=()
+  if [[ "$effective_mode" == "incremental" ]]; then
+    if [[ -z "$PARENT_PATHS" ]]; then
+      log -e "content incremental: no parent paths supplied -- falling back to full"
+      echo "INCREMENTAL_FALLBACK=true"
+      effective_mode="full"
+    else
+      IFS=',' read -ra parent_paths_arr <<< "$PARENT_PATHS"
+      if [[ ${#parent_paths_arr[@]} -lt ${#disks[@]} ]]; then
+        log -e "content incremental: parent path list shorter than disk list -- falling back to full"
+        echo "INCREMENTAL_FALLBACK=true"
+        effective_mode="full"
+      else
+        local pp
+        for pp in "${parent_paths_arr[@]}"; do
+          if [[ ! -f "$mount_point/$pp" ]]; then
+            log -e "content incremental: parent $mount_point/$pp missing on NAS -- falling back to full"
+            echo "INCREMENTAL_FALLBACK=true"
+            effective_mode="full"
+            break
+          fi
+        done
+      fi
+    fi
+  fi
+
+  # Pull-mode backup XML: one NBD export and one scratch device per disk.
+  {
+    echo "<domainbackup mode='pull'>"
+    echo "<server transport='unix' socket='$nbd_sock'/>"
+    echo "<disks>"
+    local entry idx=0
+    for entry in "${disks[@]}"; do
+      echo "<disk name='${entry%% *}' backup='yes' type='block' backupmode='full'><scratch dev='${scratch_devs[$idx]}'/></disk>"
+      idx=$((idx + 1))
+    done
+    echo "</disks></domainbackup>"
+  } > "$backupxml"
+
+  local thaw=0
+  local freeze_ok=0
+  if [[ ${QUIESCE} == "true" ]]; then
+    # Always thaw after a freeze attempt, see backup_running_vm().
+    thaw=1
+    if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
+      freeze_ok=1
+    else
+      log -e "Failed to freeze the filesystem for vm $VM, continuing without quiescing: $freeze_err"
+    fi
+  fi
+
+  # backup-begin establishes the point-in-time and starts the NBD server.
+  local backup_begin=0
+  local backup_out
+  if backup_out=$(virsh -c qemu:///system backup-begin --domain "$VM" --backupxml "$backupxml" 2>&1); then
+    backup_begin=1
+    BACKUP_JOB_ACTIVE=1
+  fi
+
+  if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
+    exit 1
+  fi
+
+  if [[ $backup_begin -ne 1 ]]; then
+    echo "Failed to start pull-mode backup for $VM: $backup_out"
+    exit 1
+  fi
+
+  # Backup domain information
+  virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
+  virsh -c qemu:///system dominfo $VM > $dest/dominfo.xml 2>/dev/null
+  virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
+  virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
+
+  local name="root"
+  local disk_idx=0
+  local entry disk fullpath volUuid output export_uri parent_abs parent_rel
+  for entry in "${disks[@]}"; do
+    disk="${entry%% *}"
+    fullpath="${entry#* }"
+    if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
+      volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    elif [[ "$fullpath" == /dev/drbd[0-9]* ]]; then
+      if ! volUuid=$(get_linstor_uuid_from_device "$fullpath"); then
+        echo "Failed to resolve LINSTOR volume UUID for $fullpath"
+        exit 1
+      fi
+    else
+      volUuid="${fullpath##*/}"
+    fi
+    output="$dest/$name.$volUuid.qcow2"
+    # The export name defaults to the disk target (e.g. vda) and presents raw bytes.
+    export_uri="nbd+unix:///$disk?socket=$nbd_sock"
+
+    if [[ "$effective_mode" == "incremental" ]]; then
+      parent_abs="$mount_point/${parent_paths_arr[$disk_idx]}"
+      parent_rel=$(realpath --relative-to="$dest" "$parent_abs")
+      # Overlay over the export, safe-rebase onto the parent to merge the differing
+      # clusters in, then a metadata-only rebase to store the parent as a relative path
+      # so the chain survives being mounted at a different mount point.
+      if ! qemu-img create -f qcow2 -b "$export_uri" -F raw "$output" >> "$logFile" 2> >(cat >&2) \
+         || ! qemu-img rebase -b "$parent_abs" -F qcow2 "$output" >> "$logFile" 2> >(cat >&2) \
+         || ! qemu-img rebase -u -b "$parent_rel" -F qcow2 "$output" >> "$logFile" 2> >(cat >&2); then
+        echo "qemu-img incremental delta failed for $disk -> $output"
+        exit 1
+      fi
+    else
+      # Zero detection while streaming gives a sparse qcow2 in a single pass.
+      if ! qemu-img convert -f raw -O qcow2 "$export_uri" "$output" >> "$logFile" 2> >(cat >&2); then
+        echo "qemu-img convert failed for pull export $disk -> $output"
+        exit 1
+      fi
+    fi
+    name="datadisk"
+    disk_idx=$((disk_idx + 1))
+  done
+
+  # End the pull job. Aborting the active job is how a pull backup finishes (there is no
+  # backup-end command): libvirt tears down the NBD server and releases the scratch devices,
+  # which the agent then deletes. The data already pulled is a complete backup, so from here
+  # on a failure must no longer discard it.
+  trap - EXIT INT TERM HUP
+  if ! abort_backup_job; then
+    log -e "warning: failed to end (domjobabort) backup job for $VM"
+  fi
+  rm -rf "$work_dir"
+  sync
+
+  # Statistics -- the size on the last stdout line is parsed by the Java wrapper.
+  du -sb $dest | cut -f1
+
+  umount $mount_point
+  rmdir $mount_point
+}
+
 backup_running_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
@@ -194,6 +431,30 @@ backup_running_vm() {
   # invoking the script; the case below is a defensive fallback for direct invocations.
   local effective_mode="${MODE:-legacy-full}"
   local make_checkpoint=0
+  case "$METHOD" in
+    qcow2)
+      ;;
+    content)
+      # Raw block-device storage (LINSTOR/DRBD) cannot carry persistent dirty bitmaps,
+      # so checkpoints are unavailable. Use the content-based pull-mode path instead.
+      case "$effective_mode" in
+        full|incremental)
+          backup_running_vm_pull "$effective_mode"
+          return
+          ;;
+        *)
+          echo "Mode $effective_mode is not supported by the content method"
+          cleanup
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      echo "Unknown method: $METHOD"
+      cleanup
+      exit 1
+      ;;
+  esac
   case "$effective_mode" in
     incremental|full)
       make_checkpoint=1
@@ -631,7 +892,7 @@ function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
   echo "         [--quiesce-timeout <seconds>]"
-  echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
+  echo "         [-M|--mode <full|incremental>] [--method <qcow2|content>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
   echo "  -M|--mode full          Take a full backup AND create a checkpoint (--bitmap-new required) for future incrementals."
@@ -639,6 +900,15 @@ function usage {
   echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-paths (comma-separated list, one"
   echo "                          parent qcow2 path per disk: root.<uuid>.qcow2, datadisk.<uuid>.qcow2, … same order"
   echo "                          as -d|--disks)."
+  echo "  --method qcow2                Default. Push-mode backup; incrementals come from QEMU dirty bitmaps."
+  echo "  --method content              Libvirt pull-mode backup, for raw block-device storage (LINSTOR/DRBD) which"
+  echo "                                cannot carry the persistent dirty bitmaps checkpoints need. A full is written"
+  echo "                                as a sparse qcow2; an incremental is a qcow2 overlay on the NBD export,"
+  echo "                                safe-rebased onto the parent, keeping only the clusters that differ."
+  echo "                                Takes no bitmap names; an incremental requires --parent-paths."
+  echo "  --scratch-devs <d1,d2,...>    Copy-before-write scratch block devices for --method content on a running"
+  echo "                                VM, one per disk in the same order as -d|--disks, each large enough for"
+  echo "                                the whole disk plus qcow2 metadata. libvirt formats them."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1
@@ -696,6 +966,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    --method)
+      METHOD="$2"
+      shift
+      shift
+      ;;
     --bitmap-new)
       BITMAP_NEW="$2"
       shift
@@ -708,6 +983,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --parent-paths)
       PARENT_PATHS="$2"
+      shift
+      shift
+      ;;
+    --scratch-devs)
+      SCRATCH_DEVS="$2"
       shift
       shift
       ;;
