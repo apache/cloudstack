@@ -451,9 +451,9 @@ public class KVMStoragePoolManager {
     public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         if (isHaPoolRemovedOnDelete(type)) {
-            _haMonitor.removeStoragePool(uuid);
+            _haMonitor.unregisterStoragePool(uuid);
         }
-        boolean deleteStatus = adaptor.deleteStoragePool(uuid);;
+        boolean deleteStatus = adaptor.deleteStoragePool(uuid);
         synchronized (_storagePools) {
             _storagePools.remove(uuid);
         }
@@ -463,9 +463,11 @@ public class KVMStoragePoolManager {
     public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         if (isHaPoolRemovedOnDelete(type)) {
-            _haMonitor.removeStoragePool(uuid);
+            _haMonitor.unregisterStoragePool(uuid);
         }
-        boolean deleteStatus = adaptor.deleteStoragePool(uuid, details);
+        boolean deleteStatus = type == StoragePoolType.NetworkFilesystem
+                ? adaptor.deleteStoragePool(uuid)
+                : adaptor.deleteStoragePool(uuid, details);
         synchronized (_storagePools) {
             _storagePools.remove(uuid);
         }

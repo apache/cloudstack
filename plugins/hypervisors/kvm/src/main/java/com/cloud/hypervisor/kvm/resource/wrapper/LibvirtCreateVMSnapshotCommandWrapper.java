@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -57,7 +58,7 @@ public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<
                         "Create Instance Snapshot Failed due to Instance is not running: " + vmName + " with domainState = " + domainState);
             }
 
-            String vmSnapshotXML = "<domainsnapshot>" + "  <name>" + vmSnapshotName + "</name>"
+            String vmSnapshotXML = "<domainsnapshot>" + "  <name>" + StringEscapeUtils.escapeXml(vmSnapshotName) + "</name>"
                     + "  <memory snapshot='internal' />" + "</domainsnapshot>";
 
             dm.snapshotCreateXML(vmSnapshotXML);

@@ -20,13 +20,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import com.cloud.storage.Storage;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -35,6 +40,18 @@ public class SnapshotDataStoreDaoImplTest {
 
     @Spy
     SnapshotDataStoreDaoImpl snapshotDataStoreDaoImplSpy;
+
+    @Mock
+    VolumeDao volumeDaoMock;
+
+    @Mock
+    PrimaryDataStoreDao storagePoolDaoMock;
+
+    @Before
+    public void setUp() {
+        snapshotDataStoreDaoImplSpy.volumeDao = volumeDaoMock;
+        snapshotDataStoreDaoImplSpy.storagePoolDao = storagePoolDaoMock;
+    }
 
     @Test
     public void testExpungeByVmListNoVms() {
@@ -63,5 +80,49 @@ public class SnapshotDataStoreDaoImplTest {
         Mockito.verify(sc).setParameters("snapshotIds", array);
         Mockito.verify(snapshotDataStoreDaoImplSpy, Mockito.times(1))
                 .batchExpunge(sc, batchSize);
+    }
+
+    private VolumeVO mockVolume(Long poolId, Long passphraseId) {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getPoolId()).thenReturn(poolId);
+        Mockito.lenient().when(volume.getPassphraseId()).thenReturn(passphraseId);
+        Mockito.when(volumeDaoMock.findByIdIncludingRemoved(1L)).thenReturn(volume);
+        return volume;
+    }
+
+    @Test
+    public void testUsesContentBasedChainVolumeNotFound() {
+        Mockito.when(volumeDaoMock.findByIdIncludingRemoved(1L)).thenReturn(null);
+        Assert.assertFalse(snapshotDataStoreDaoImplSpy.usesContentBasedChain(1L));
+    }
+
+    @Test
+    public void testUsesContentBasedChainNoPool() {
+        mockVolume(null, null);
+        Assert.assertFalse(snapshotDataStoreDaoImplSpy.usesContentBasedChain(1L));
+    }
+
+    @Test
+    public void testUsesContentBasedChainEncryptedVolume() {
+        mockVolume(3L, 7L);
+        Assert.assertFalse(snapshotDataStoreDaoImplSpy.usesContentBasedChain(1L));
+    }
+
+    @Test
+    public void testUsesContentBasedChainLinstorPool() {
+        mockVolume(3L, null);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(storagePoolDaoMock.findById(3L)).thenReturn(pool);
+        Assert.assertTrue(snapshotDataStoreDaoImplSpy.usesContentBasedChain(1L));
+    }
+
+    @Test
+    public void testUsesContentBasedChainNonLinstorPool() {
+        mockVolume(3L, null);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePoolDaoMock.findById(3L)).thenReturn(pool);
+        Assert.assertFalse(snapshotDataStoreDaoImplSpy.usesContentBasedChain(1L));
     }
 }
