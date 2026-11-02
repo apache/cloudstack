@@ -304,7 +304,9 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 }
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                eventId = dispatchSnapshotCreateJob(snapshotToBeExecuted, volume, tmpSnapshotScheduleVO);
+                // assigned before dispatching, so a failed dispatch can complete this event instead of leaving it dangling
+                eventId = createScheduledSnapshotEvent(volume);
+                dispatchSnapshotCreateJob(snapshotToBeExecuted, volume, tmpSnapshotScheduleVO, eventId);
             } catch (final Exception e) {
                 logger.error("The scheduling of snapshot [{}] for volume [{}] failed due to [{}].", snapshotToBeExecuted, volume, e.toString(), e);
                 if (tmpSnapshotScheduleVO != null) {
@@ -336,17 +338,24 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     }
 
     /**
-     * Builds and dispatches the CreateSnapshotCmd async job for a scheduled snapshot, returning the "scheduled"
-     * action event id so the caller can complete it if dispatch subsequently fails.
+     * Logs the "scheduled" action event for a recurring snapshot of the volume and returns its id, which
+     * {@link #dispatchSnapshotCreateJob} passes on to the job and {@link #handleFailedSnapshotDispatch} completes if
+     * dispatching fails.
      */
-    protected Long dispatchSnapshotCreateJob(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume, final SnapshotScheduleVO tmpSnapshotScheduleVO) throws Exception {
+    protected Long createScheduledSnapshotEvent(final VolumeVO volume) {
+        return ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
+                volume.getUuid(), volume.getId(), ApiCommandResourceType.Volume.toString(), true, 0);
+    }
+
+    /**
+     * Builds and dispatches the CreateSnapshotCmd async job for a scheduled snapshot, started from the given
+     * "scheduled" action event.
+     */
+    protected void dispatchSnapshotCreateJob(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume, final SnapshotScheduleVO tmpSnapshotScheduleVO,
+            final Long eventId) throws Exception {
         final long snapshotScheId = snapshotToBeExecuted.getId();
         final long policyId = snapshotToBeExecuted.getPolicyId();
         final long volumeId = snapshotToBeExecuted.getVolumeId();
-
-        final Long eventId =
-            ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                volume.getUuid(), volumeId, ApiCommandResourceType.Volume.toString(), true, 0);
 
         logger.trace("Mapping parameters required to generate a CreateSnapshotCmd for snapshot [{}].", snapshotToBeExecuted);
         final Map<String, String> params = new HashMap<String, String>();
@@ -384,8 +393,6 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
         tmpSnapshotScheduleVO.setAsyncJobId(jobId);
         _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
-
-        return eventId;
     }
 
     /**

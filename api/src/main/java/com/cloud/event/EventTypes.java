@@ -1096,8 +1096,8 @@ public class EventTypes {
 
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_SKIPPED, Snapshot.class);
-        entityEventDetails.put(EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_SKIPPED, Volume.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED, Volume.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_EXTRACT, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_ON_PRIMARY, Snapshot.class);
