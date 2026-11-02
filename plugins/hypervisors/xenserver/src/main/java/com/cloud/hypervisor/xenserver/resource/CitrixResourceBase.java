@@ -5817,6 +5817,18 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return version.compareTo(new ComparableVersion("8.0")) < 0;
     }
 
+    /**
+     * XenServer and XCP-ng support the management interface on a tagged VLAN from product version 8.0 onwards.
+     * The XenAPI protocol version (Host.getAPIVersionMajor) cannot be used for this; it does not follow the product version.
+     */
+    public boolean isManagementNetworkOnVlanSupported() {
+        String productVersion = getHost().getProductVersion();
+        if (StringUtils.isBlank(productVersion)) {
+            return false;
+        }
+        return new ComparableVersion(productVersion).compareTo(new ComparableVersion("8.0")) >= 0;
+    }
+
     public void destroyVm(VM vm, Connection connection, boolean forced) throws XenAPIException, XmlRpcException {
         if (!isDestroyHaltedVms() && !forced) {
             return;
