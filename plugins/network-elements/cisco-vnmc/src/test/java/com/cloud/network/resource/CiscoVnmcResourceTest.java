@@ -32,6 +32,7 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.cloud.agent.api.Answer;
@@ -79,6 +80,7 @@ public class CiscoVnmcResourceTest {
     }
 
     //@Test
+    @Ignore
     public void resourceConfigure() throws ConfigurationException {
         _resource.configure("CiscoVnmcResource", _parameters);
         assertTrue("CiscoVnmc".equals(_resource.getName()));
@@ -86,6 +88,7 @@ public class CiscoVnmcResourceTest {
     }
 
     //@Test
+    @Ignore
     public void testInitialization() throws ConfigurationException {
         _resource.configure("CiscoVnmcResource", _parameters);
         StartupCommand[] sc = _resource.initialize();

@@ -41,4 +41,5 @@ public interface NioSocketHandler {
     void flushWriteBuffer();
     void startTLSConnection(NioSocketSSLEngineManager sslEngineManager);
     boolean isTLSConnection();
+    void close();
 }

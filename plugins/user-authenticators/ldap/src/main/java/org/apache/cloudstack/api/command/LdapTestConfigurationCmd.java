@@ -27,15 +27,14 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "testLdapConfiguration", description = "Tests connectivity to an LDAP server without saving a configuration", responseObject = SuccessResponse.class,
-        since = "4.23.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "ldapTestConfiguration", description = "Tests connectivity to an LDAP server without saving a configuration", responseObject = SuccessResponse.class,
+        since = "24.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapTestConfigurationCmd extends BaseCmd {
 
     @Inject
-    private LdapManager _ldapManager;
+    private LdapManager ldapManager;
 
     @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname")
     private String hostname;
@@ -52,7 +51,7 @@ public class LdapTestConfigurationCmd extends BaseCmd {
 
     public LdapTestConfigurationCmd(final LdapManager ldapManager) {
         super();
-        _ldapManager = ldapManager;
+        this.ldapManager = ldapManager;
     }
 
     public String getHostname() {
@@ -69,15 +68,10 @@ public class LdapTestConfigurationCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
+        // a failing bind throws InvalidParameterValueException, which is reported to the caller as an API error
+        ldapManager.testConnection(this);
         SuccessResponse response = new SuccessResponse(getCommandName());
-        try {
-            _ldapManager.testConnection(this);
-            response.setSuccess(true);
-            response.setDisplayText("Successfully connected to the LDAP server");
-        } catch (InvalidParameterValueException e) {
-            response.setSuccess(false);
-            response.setDisplayText(e.getMessage());
-        }
+        response.setDisplayText("Successfully connected to the LDAP server");
         setResponseObject(response);
     }
 

@@ -54,9 +54,9 @@ public class KVMPhysicalDisk {
         rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
-            rbdOpts += ":auth_supported=none";
+            rbdOpts += ":auth_client_required=none";
         } else {
-            rbdOpts += ":auth_supported=cephx";
+            rbdOpts += ":auth_client_required=cephx";
             rbdOpts += ":id=" + authUserName;
             rbdOpts += ":key=" + authSecret;
         }

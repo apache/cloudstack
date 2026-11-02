@@ -110,6 +110,11 @@ export default {
       required: false,
       default: null
     },
+    hostId: {
+      type: String,
+      required: false,
+      default: null
+    },
     suitabilityEnabled: {
       type: Boolean,
       required: false,
@@ -178,6 +183,12 @@ export default {
       if (newValue !== oldValue) {
         this.page = 1
       }
+    },
+    hostId () {
+      if (!this.resource || !this.resource.id) {
+        return
+      }
+      this.reset()
     }
   },
   methods: {
@@ -204,7 +215,9 @@ export default {
           page: this.page,
           pagesize: this.pageSize
         }
-        if (this.clusterId) {
+        if (this.hostId) {
+          params.hostid = this.hostId
+        } else if (this.clusterId) {
           params.clusterid = this.clusterId
         }
         getAPI('listStoragePools', params).then(response => {

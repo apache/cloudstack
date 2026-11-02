@@ -125,6 +125,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             Integer.class, "vm.job.lock.timeout", "1800",
             "Time in seconds to wait in acquiring lock to submit a vm worker job", false);
     private static final ConfigKey<Boolean> HidePassword = new ConfigKey<Boolean>("Advanced", Boolean.class, "log.hide.password", "true", "If set to true, the password is hidden", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> ApiJobPoolSize = new ConfigKey<>("Advanced", Integer.class, "api.job.pool.size", "50",
+        "Minimum size of the API job executor thread pool. Actual size is the max of this value and db.cloud.maxActive / 2.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> WorkJobPoolSize = new ConfigKey<>("Advanced", Integer.class, "work.job.pool.size", "50",
+        "Minimum size of the Worker job executor thread pool. Actual size is the max of this value and db.cloud.maxActive * 2 / 3.", false, ConfigKey.Scope.Global);
 
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;     // 3 seconds
@@ -198,7 +202,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, ApiJobPoolSize, WorkJobPoolSize};
     }
 
     @Override
@@ -995,11 +999,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
 
                     logger.trace("End cleanup expired async-jobs");
+
+                    cleanupNetworksStuckInImplementing();
+
                 } catch (Throwable e) {
                     logger.error("Unexpected exception when trying to execute queue item, ", e);
                 }
             }
         };
+    }
+
+    private void cleanupNetworksStuckInImplementing() {
+        // Cleanup orphaned networks stuck in Implementing state without async jobs
+        try {
+            cleanupOrphanedNetworks();
+        } catch (Throwable e) {
+            logger.error("Unexpected exception when trying to cleanup orphaned networks", e);
+        }
     }
 
     @DB
@@ -1088,13 +1104,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final Properties dbProps = DbProperties.getDbProperties();
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
 
-            int apiPoolSize = cloudMaxActive / 2;
-            int workPoolSize = (cloudMaxActive * 2) / 3;
+            int defaultApiPoolSize = cloudMaxActive / 2;
+            int defaultWorkPoolSize = (cloudMaxActive * 2) / 3;
 
-            logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize);
+            int apiPoolSize = Math.max(ApiJobPoolSize.value(), defaultApiPoolSize);
+            int workPoolSize = Math.max(WorkJobPoolSize.value(), defaultWorkPoolSize);
+
+            logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize +
+                " (configured=" + ApiJobPoolSize.value() + ", db.derived=" + defaultApiPoolSize + ", db.cloud.maxActive=" + cloudMaxActive + ")");
             _apiJobExecutor = Executors.newFixedThreadPool(apiPoolSize, new NamedThreadFactory(AsyncJobManager.API_JOB_POOL_THREAD_PREFIX));
 
-            logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize);
+            logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize +
+                " (configured=" + WorkJobPoolSize.value() + ", db.derived=" + defaultWorkPoolSize + ", db.cloud.maxActive=" + cloudMaxActive + ")");
             _workerJobExecutor = Executors.newFixedThreadPool(workPoolSize, new NamedThreadFactory(AsyncJobManager.WORK_JOB_POOL_THREAD_PREFIX));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
@@ -1336,6 +1357,74 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
             snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
             _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
+        }
+    }
+
+    /**
+     * Cleanup networks that are stuck in Implementing state without associated async jobs.
+     * This only processes networks that have been stuck for longer than the job expiration threshold.
+     */
+    private void cleanupOrphanedNetworks() {
+        try {
+            SearchCriteria<NetworkVO> sc = networkDao.createSearchCriteria();
+            sc.addAnd("state", SearchCriteria.Op.EQ, Network.State.Implementing);
+            sc.addAnd("removed", SearchCriteria.Op.NULL);
+            List<NetworkVO> implementingNetworks = networkDao.search(sc, null);
+
+            if (implementingNetworks == null || implementingNetworks.isEmpty()) {
+                return;
+            }
+
+            logger.debug("Found {} networks in Implementing state, checking for orphaned networks", implementingNetworks.size());
+
+            final long expireMinutes = JobExpireMinutes.value();
+            final Date cutoffTime = new Date(System.currentTimeMillis() - (expireMinutes * 60 * 1000));
+
+            for (NetworkVO network : implementingNetworks) {
+                if (network.getCreated().after(cutoffTime)) {
+                    logger.trace("Network {} in Implementing state is only {} minutes old (threshold: {} minutes), skipping cleanup",
+                               network.getId(),
+                               (System.currentTimeMillis() - network.getCreated().getTime()) / 60000,
+                               expireMinutes);
+                    continue;
+                }
+
+                List<AsyncJobVO> jobs = _jobDao.findInstancePendingAsyncJobs("Network", network.getAccountId());
+                boolean hasActiveJob = false;
+                for (AsyncJobVO job : jobs) {
+                    if (job.getInstanceId() != null && job.getInstanceId().equals(network.getId())) {
+                        hasActiveJob = true;
+                        break;
+                    }
+                }
+
+                if (hasActiveJob) {
+                    logger.debug("Network {} in Implementing state has active async job, skipping cleanup", network.getId());
+                    continue;
+                }
+
+                logger.warn("Found orphaned network {} in Implementing state without async job. " +
+                           "Network created: {}, age: {} minutes, expiration threshold: {} minutes. Transitioning to Shutdown state.",
+                           network.getId(), network.getCreated(),
+                           (System.currentTimeMillis() - network.getCreated().getTime()) / 60000,
+                           expireMinutes);
+                updateNetworkState(network);
+
+            }
+        } catch (Exception e) {
+            logger.error("Error while cleaning up orphaned networks", e);
+        }
+    }
+
+    private void updateNetworkState(NetworkVO network) {
+        try {
+            networkOrchestrationService.stateTransitTo(network, Network.Event.OperationFailed);
+            logger.info("Successfully transitioned orphaned network {} to Shutdown state using state machine", network.getId());
+        } catch (final NoTransitionException e) {
+            logger.debug("State transition failed for orphaned network {}, forcing state update", network.getId());
+            network.setState(Network.State.Shutdown);
+            networkDao.update(network.getId(), network);
+            logger.info("Successfully forced orphaned network {} to Shutdown state", network.getId());
         }
     }
 

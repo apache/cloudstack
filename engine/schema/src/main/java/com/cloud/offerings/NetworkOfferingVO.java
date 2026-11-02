@@ -138,7 +138,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     NetworkMode networkMode;
 
     @Column(name = "egress_default_policy")
-    boolean egressdefaultpolicy;
+    boolean egressDefaultPolicy;
 
     @Column(name = "concurrent_connections")
     Integer concurrentConnections;
@@ -343,12 +343,16 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     @Override
     public boolean isEgressDefaultPolicy() {
-        return egressdefaultpolicy;
+        return egressDefaultPolicy;
+    }
+
+    public void setEgressDefaultPolicy(boolean egressDefaultPolicy) {
+        this.egressDefaultPolicy = egressDefaultPolicy;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
-            Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
-            boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb, boolean isForVpc) {
+                             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
+                             boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb, boolean isForVpc) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -380,7 +384,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb,
             boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent,
-            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressdefaultpolicy, boolean supportsStrechedL2, boolean supportsPublicAccess) {
+            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressDefaultPolicy, boolean supportsStrechedL2, boolean supportsPublicAccess) {
         this(name,
             displayText,
             trafficType,
@@ -404,7 +408,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticLb = elasticLb;
         this.inline = inline;
         this.eipAssociatePublicIp = associatePublicIP;
-        this.egressdefaultpolicy = egressdefaultpolicy;
+        this.egressDefaultPolicy = egressDefaultPolicy;
         this.supportsStrechedL2 = supportsStrechedL2;
         this.supportsPublicAccess = supportsPublicAccess;
     }
@@ -436,7 +440,7 @@ public class NetworkOfferingVO implements NetworkOffering {
             true,
             Availability.Optional,
             null,
-            Network.GuestType.Isolated,
+            guestType,
             true,
             false,
             false,
@@ -486,6 +490,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean isAssociatePublicIP() {
         return eipAssociatePublicIp;
+    }
+
+    public void setEipAssociatePublicIp(boolean eipAssociatePublicIp) {
+        this.eipAssociatePublicIp = eipAssociatePublicIp;
     }
 
     @Override

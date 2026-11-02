@@ -164,6 +164,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMembershipGuard;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -656,6 +657,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected SnapshotHelper snapshotHelper;
     @Inject
     private AutoScaleManager autoScaleManager;
+    @Inject
+    private InstanceBootGroupMembershipGuard instanceBootGroupMembershipGuard;
     @Inject
     NsxProviderDao nsxProviderDao;
     @Inject
@@ -2348,7 +2351,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void validateDiskOfferingChecks(ServiceOfferingVO currentServiceOffering, ServiceOfferingVO newServiceOffering) {
-        if (currentServiceOffering.getDiskOfferingStrictness() != newServiceOffering.getDiskOfferingStrictness()) {
+        if (!currentServiceOffering.getDiskOfferingStrictness().equals(newServiceOffering.getDiskOfferingStrictness())) {
             throw new InvalidParameterValueException("Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
         }
 
@@ -2607,7 +2610,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
-        String vmIpWorkers = configs.get(VmIpFetchTaskWorkers.value());
+        String vmIpWorkers = configs.get(VmIpFetchTaskWorkers.key());
         int vmipwrks = NumbersUtil.parseInt(vmIpWorkers, 10);
 
         _vmIpFetchExecutor =   Executors.newScheduledThreadPool(vmipwrks, new NamedThreadFactory("UserVm-ipfetch"));
@@ -3368,8 +3371,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             osTypeId = vm.getGuestOSId();
         }
 
-        if (group != null) {
+        if (StringUtils.isNotBlank(group)) {
             addInstanceToGroup(id, group);
+        } else if (group != null) {
+            // Allow removing an instance from its group when passing an empty group on update
+            removeInstanceFromInstanceGroup(vm.getId());
         }
 
         if (isDynamicallyScalable == null) {
@@ -3784,6 +3790,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vm.getId());
 
+        // check if vm (directly, or via its instance group) is a member of an instance boot group
+        instanceBootGroupMembershipGuard.validateVmNotInBootGroup(vm);
+
         // check if vm belongs to any plugin resources
         checkPluginsIfVmCanBeDestroyed(vm);
     }
@@ -3879,6 +3888,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
             _groupVMMapDao.expunge(sc);
         }
+        // don't leave a stale instance boot group member pointing at a group that no longer exists
+        instanceBootGroupMembershipGuard.removeInstanceGroupBootGroupMembershipIfPresent(groupId);
 
         if (_vmGroupDao.remove(groupId)) {
             return true;
@@ -3891,6 +3902,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     public boolean addInstanceToGroup(final long userVmId, String groupName) {
         UserVmVO vm = _vmDao.findById(userVmId);
+
+        instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(userVmId);
 
         InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vm.getAccountId(), groupName);
         // Create vm group if the group doesn't exist for this account
@@ -3965,6 +3978,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public void removeInstanceFromInstanceGroup(long vmId) {
         try {
             List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(vmId);
+            if (CollectionUtils.isEmpty(groupVmMaps)) {
+                logger.debug("Vm id: {} does not belong to any group", vmId);
+                return;
+            }
             for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
                 SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao.createSearchCriteria();
                 sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
@@ -6067,7 +6084,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Set parameters
-        Map<VirtualMachineProfile.Param, Object> params = null;
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        params.putAll(additionalParams);
         if (vm.isUpdateParameters()) {
             _vmDao.loadDetails(vm);
             String password = getCurrentVmPasswordOrDefineNewPassword(String.valueOf(additionalParams.getOrDefault(VirtualMachineProfile.Param.VmPassword, "")), vm, template);
@@ -6077,18 +6095,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check if an SSH key pair was selected for the instance and if so
             // use it to encrypt & save the vm password
             encryptAndStorePassword(vm, password);
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
+            // overwrite VmPassword
+            params = createParameterInParameterMap(params, VirtualMachineProfile.Param.VmPassword, password);
         }
 
         if (additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
             if (!HypervisorType.VMware.equals(vm.getHypervisorType())) {
                 throw new InvalidParameterValueException(ApiConstants.BOOT_INTO_SETUP + " makes no sense for " + vm.getHypervisorType());
             }
+
+            //overwrite BootIntoSetup
             Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
-            if (logger.isTraceEnabled()) {
-                logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
-            }
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
+            logger.trace("It was specified whether to enter setup mode: {}", paramValue.toString());
+            params = createParameterInParameterMap(params, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
@@ -6109,7 +6128,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         vmEntity.deploy(reservationId, Long.toString(callerUser.getId()), params, deployOnGivenHost);
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
-        if (vm.isUpdateParameters()) {
+        if (shouldClearUpdateParametersFlag(vm, additionalParams)) {
             // this value is not being sent to the backend; need only for api
             // display purposes
             if (template.isEnablePassword()) {
@@ -6174,6 +6193,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
+     * False for a volume-prepare-only start that should still reset the password (isUpdateParameters must stay
+     * set for the real start that follows).
+     */
+    boolean shouldClearUpdateParametersFlag(UserVmVO vm, Map<VirtualMachineProfile.Param, Object> additionalParams) {
+        boolean isVolumePrepareOnly = Boolean.TRUE.equals(additionalParams.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare));
+        boolean resetPasswordOnRestore = Boolean.TRUE.equals(additionalParams.get(VirtualMachineProfile.Param.ResetPasswordOnRestore));
+        return vm.isUpdateParameters() && !(isVolumePrepareOnly && resetPasswordOnRestore);
+    }
+
+    /**
      * If the template is password enabled and the VM already has a password, returns it.
      * If the template is password enabled and the VM does not have a password, sets the password to the password defined by the user and returns it. If no password is informed,
      * sets it to a random password and returns it.
@@ -6206,20 +6235,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return password;
     }
 
-    private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(Map<VirtualMachineProfile.Param, Object> params, Map<VirtualMachineProfile.Param, Object> parameterMap, VirtualMachineProfile.Param parameter,
+    /**
+     * Create or overwrite a parameter in the list
+     * @param params the list of parameters
+     * @param parameter the parameter to create/overwrite
+     * @param parameterValue the value to give to the parameter
+     * @return the resulting updated list of parameters
+     */
+    private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(
+            Map<VirtualMachineProfile.Param, Object> params,
+            VirtualMachineProfile.Param parameter,
             Object parameterValue) {
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("createParameterInParameterMap(%s, %s)", parameter, parameterValue));
-        }
-        if (params == null) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("creating new Parameter map");
-            }
-            params = new HashMap<>();
-            if (parameterMap != null) {
-                params.putAll(parameterMap);
-            }
-        }
+        logger.trace("createParameterInParameterMap({}, {})", parameter, parameterValue);
         params.put(parameter, parameterValue);
         return params;
     }
@@ -8224,11 +8251,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
-        logger.trace("Verifying if the provided domain ID [{}] is valid.", domainId);
-        if (projectId != null && domainId == null) {
-            throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
-        }
-
         validateIfVmHasNoRules(vm, vmId);
 
         final List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
@@ -8238,10 +8260,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
         validateIfNewOwnerHasAccessToTemplate(vm, newAccount, template);
-
-        DomainVO domain = _domainDao.findById(domainId);
-        logger.trace("Verifying if the new account [{}] has access to the specified domain [{}].", newAccount, domain);
-        _accountMgr.checkAccess(newAccount, domain);
 
         List<Reserver> reservations = new ArrayList<>();
         try {
@@ -8255,7 +8273,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
+                    executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template);
                 }
             });
         } catch (Exception e) {
@@ -8453,10 +8471,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param offering The service offering which will be used to decrement and increment resource counts.
      * @param volumes The volumes of the VM which will be assigned to another user.
      * @param template The template of the VM which will be assigned to another user.
-     * @param domainId The ID of the domain where the VM which will be assigned to another user is.
      */
     protected void executeStepsToChangeOwnershipOfVm(AssignVMCmd cmd, Account caller, Account oldAccount, Account newAccount, UserVmVO vm, ServiceOfferingVO offering,
-                                                     List<VolumeVO> volumes, VirtualMachineTemplate template, Long domainId) {
+                                                     List<VolumeVO> volumes, VirtualMachineTemplate template) {
 
         logger.trace("Generating destroy event for VM [{}].", vm);
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
@@ -8469,7 +8486,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         removeInstanceFromInstanceGroup(vm.getId());
 
         Long newAccountId = newAccount.getAccountId();
-        updateVmOwner(newAccount, vm, domainId, newAccountId);
+        updateVmOwner(newAccount, vm);
 
         updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
 
@@ -8492,11 +8509,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
     }
 
-    protected void updateVmOwner(Account newAccount, UserVmVO vm, Long domainId, Long newAccountId) {
+    protected void updateVmOwner(Account newAccount, UserVmVO vm) {
         logger.debug("Updating VM [{}] owner to [{}].", vm, newAccount);
 
-        vm.setAccountId(newAccountId);
-        vm.setDomainId(domainId);
+        vm.setAccountId(newAccount.getId());
+        vm.setDomainId(newAccount.getDomainId());
 
         _vmDao.persist(vm);
     }
@@ -9484,7 +9501,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     resizedVolume.setMinIops(Long.parseLong(minIops));
                 }
                 if (StringUtils.isNumeric(maxIops)) {
-                    resizedVolume.setMinIops(Long.parseLong(maxIops));
+                    resizedVolume.setMaxIops(Long.parseLong(maxIops));
                 }
             }
         }
@@ -9554,17 +9571,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
             if (hostId != null) {
-                // default findById() won't search entries with removed field not null
-                Host host = _hostDao.findById(hostId);
+                Host host = _hostDao.findByIdIncludingRemoved(hostId);
+
+                // host row may have been hard-deleted from DB, treat like removed
                 if (host == null) {
-                    logger.warn("Host {} not found", hostId);
+                    logger.warn(String.format("Host with id {} not found in DB for VM %s ({})",
+                            hostId, vm.getUuid(), vm.getName()));
+                    return;
+                }
+                // host could be in removed state, in which case no operation is performed.
+                if (host.getStatus() == Status.Removed) {
+                    logger.warn("Host {} ({}) for VM {} ({}) removed on {}",
+                            host.getUuid(), host.getName(), vm.getUuid(), vm.getName(), host.getRemoved());
                     return;
                 }
 
-                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
-
                 final Command cmd;
 
+                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
                 if (host.getHypervisorType() == HypervisorType.XenServer) {
                     DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType());
 
@@ -9726,7 +9750,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
                 EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope,
                 VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva, AllowDifferentHostTagsOfferingsForVmScale,
-                AutoMigrateVmOnLiveScaleInsufficientCapacity, EnforceResourceLimitOnValidationVm};
+                AutoMigrateVmOnLiveScaleInsufficientCapacity, EnforceResourceLimitOnValidationVm, ResetPasswordOnRestoreFromBackup};
     }
 
     @Override
@@ -9875,6 +9899,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             if (host == null && hypervisorType == HypervisorType.VMware) {
                 throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
+            }
+            if (template == null) {
+                throw new InvalidParameterValueException("Unable to import virtual machine without a template");
+            }
+
+            // Ensure template details are loaded so that commitUserVm can copy them into the VM's details map
+            if (template instanceof VMTemplateVO) {
+                VMTemplateVO vmTemplateVO = (VMTemplateVO) template;
+                _templateDao.loadDetails(vmTemplateVO);
             }
 
             final long id = _vmDao.getNextInSequence(Long.class, "id");
@@ -10113,6 +10146,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
+    /**
+     * The cmd's resetpassword parameter, if set; otherwise the zone's ResetPasswordOnRestoreFromBackup setting.
+     */
+    boolean isResetPasswordOnRestoreFromBackup(CreateVMFromBackupCmd cmd) {
+        if (cmd.getResetPassword() != null) {
+            return cmd.getResetPassword();
+        }
+        UserVmVO vm = _vmDao.findById(cmd.getEntityId());
+        return ResetPasswordOnRestoreFromBackup.valueIn(vm.getDataCenterId());
+    }
+
     @Override
     public UserVm restoreVMFromBackup(CreateVMFromBackupCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
@@ -10120,6 +10164,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
         additonalParams.put(VirtualMachineProfile.Param.ReturnAfterVolumePrepare, true);
+        additonalParams.put(VirtualMachineProfile.Param.ResetPasswordOnRestore, isResetPasswordOnRestoreFromBackup(cmd));
 
         try {
             Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;

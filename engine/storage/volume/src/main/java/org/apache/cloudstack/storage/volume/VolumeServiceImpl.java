@@ -342,7 +342,7 @@ public class VolumeServiceImpl implements VolumeService {
             vo.processEvent(Event.OperationFailed);
             errMsg = result.getResult();
             VolumeVO volume = volDao.findById(vo.getId());
-            if (volume != null && volume.getState() == State.Allocated && volume.getPodId() != null) {
+            if (volume != null && volume.getState() == State.Allocated && volume.getPoolId() != null) {
                 volume.setPoolId(null);
                 volDao.update(volume.getId(), volume);
             }
@@ -765,7 +765,11 @@ public class VolumeServiceImpl implements VolumeService {
             volume.setPath(templateObjectTo.getPath());
 
             if (templateObjectTo.getFormat() != null) {
-                volume.setFormat(templateObjectTo.getFormat());
+                PrimaryDataStore primaryDataStore = context.getPrimaryDataStore();
+                boolean isOntapDataStore = primaryDataStore != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(primaryDataStore.getStorageProviderName());
+                if (!isOntapDataStore || volume.getFormat() == null) {
+                    volume.setFormat(templateObjectTo.getFormat());
+                }
             }
 
             volDao.update(volume.getId(), volume);
@@ -1294,7 +1298,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (volume.getState() == State.Allocated) { // Possible states here: Allocated, Ready & Creating
-            if (volume.getPodId() != null) {
+            if (volume.getPoolId() != null) {
                 volume.setPoolId(null);
                 volDao.update(volume.getId(), volume);
             }
