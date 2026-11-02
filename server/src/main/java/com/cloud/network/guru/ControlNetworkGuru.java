@@ -139,9 +139,9 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        // we have to get management/private ip for the control nic for vmware/hyperv due ssh issues.
+        // we have to get management/private ip for the control nic for vmware due ssh issues.
         HypervisorType hType = vm.getHypervisorType();
-        if (((hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv)) && isRouterVm(vm)) {
+        if (hType == HypervisorType.VMware && isRouterVm(vm)) {
             super.reserve(nic, config, vm, dest, context);
 
             String mac = networkModel.getNextAvailableMacAddressInNetwork(config.getId());
@@ -169,7 +169,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
         HypervisorType hType = vm.getHypervisorType();
-        if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
+        if (hType == HypervisorType.VMware && isRouterVm(vm)) {
             if (!VirtualNetworkApplianceManager.RemoveControlIpOnStop.valueIn(vm.getVirtualMachine().getDataCenterId())) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("not releasing %s from %s with reservationId %s, as systemvm.release.control.ip.on.stop is set to false for the data center.", nic, vm, reservationId));

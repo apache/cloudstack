@@ -364,7 +364,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private String _dnsBasicZoneUpdates = "all";
 
     private boolean _disableRpFilter = false;
-    private int _routerExtraPublicNics = 2;
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
@@ -547,8 +546,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         int routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
         int routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
-
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
         String value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
@@ -1965,7 +1962,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 buf.append(createRedundantRouterArgs(controlNic, router));
 
                 // DOMR control command is sent over management server in VMware
-                if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
+                if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
                     logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/"
                             + dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: "
                             + ApiServiceConfiguration.ManagementServerAddresses.value());
@@ -2047,10 +2044,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final String domain_suffix = dc.getDetail(ZoneConfig.DnsSearchOrder.getName());
         if (domain_suffix != null) {
             buf.append(" dnssearchorder=").append(domain_suffix);
-        }
-
-        if (profile.getHypervisorType() == HypervisorType.Hyperv) {
-            buf.append(" extra_pubnics=").append(_routerExtraPublicNics);
         }
 
         /*
@@ -3372,7 +3365,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return new ConfigKey<?>[] {
                 RouterTemplateKvm,
                 RouterTemplateVmware,
-                RouterTemplateHyperV,
                 RouterTemplateLxc,
                 RouterTemplateOvm3,
                 UseExternalDnsServers,

@@ -241,3 +241,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- UCS and Hyper-V hypervisor plugins are no longer built
+DELETE FROM `cloud`.`configuration` WHERE name = 'ucs.sync.blade.interval';
+DELETE FROM `cloud`.`configuration` WHERE name IN ('hyperv.public.network.device', 'hyperv.private.network.device', 'hyperv.guest.network.device', 'router.template.hyperv');
