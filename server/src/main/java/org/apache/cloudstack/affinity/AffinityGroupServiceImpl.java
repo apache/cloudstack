@@ -185,7 +185,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         final Long affinityGroupDomainId = getDomainIdBasedOnDomainLevel(owner, domainLevel, domainId);
 
-        return Transaction.execute(new TransactionCallback<AffinityGroupVO>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public AffinityGroupVO doInTransaction(TransactionStatus status) {
                 AffinityGroupVO group = new AffinityGroupVO(affinityGroupName, affinityGroupType, description, affinityGroupDomainId, owner.getId(), aclType);
@@ -198,7 +198,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                             subDomainAccess);
                     _affinityGroupDomainMapDao.persist(domainMap);
                     //send event for storing the domain wide resource access
-                    Map<String, Object> params = new HashMap<String, Object>();
+                    Map<String, Object> params = new HashMap<>();
                     params.put(ApiConstants.ENTITY_TYPE, AffinityGroup.class);
                     params.put(ApiConstants.ENTITY_ID, group.getId());
                     params.put(ApiConstants.DOMAIN_ID, affinityGroupDomainId);
@@ -261,7 +261,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         deleteAffinityGroup(affinityGroupIdFinal);
 
         // remove its related ACL permission
-        Pair<Class<?>, Long> params = new Pair<Class<?>, Long>(AffinityGroup.class, affinityGroupIdFinal);
+        Pair<Class<?>, Long> params = new Pair<>(AffinityGroup.class, affinityGroupIdFinal);
         _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, params);
 
         if (logger.isDebugEnabled()) {
@@ -342,7 +342,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @Override
     public List<String> listAffinityGroupTypes() {
-        List<String> types = new ArrayList<String>();
+        List<String> types = new ArrayList<>();
 
         for (AffinityGroupProcessor processor : _affinityProcessors) {
             if (processor.isAdminControlledGroup()) {
@@ -356,7 +356,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     protected Map<String, AffinityGroupProcessor> getAffinityTypeToProcessorMap() {
-        Map<String, AffinityGroupProcessor> typeProcessorMap = new HashMap<String, AffinityGroupProcessor>();
+        Map<String, AffinityGroupProcessor> typeProcessorMap = new HashMap<>();
 
         for (AffinityGroupProcessor processor : _affinityProcessors) {
             typeProcessorMap.put(processor.getType(), processor);
@@ -455,8 +455,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         // Check that the VM is stopped
         if (!vmInstance.getState().equals(State.Stopped)) {
-            logger.warn("Unable to update affinity groups of the virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
-            throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine " + vmInstance.toString() + " " + "in state " +
+            logger.warn("Unable to update affinity groups of the virtual machine {} in state {}", vmInstance, vmInstance.getState());
+            throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine " + vmInstance + " " + "in state " +
                     vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
 
@@ -532,15 +532,13 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             groupDomainId = domainMap.getDomainId();
         }
 
-        if (domainId == groupDomainId.longValue()) {
+        if (domainId == groupDomainId) {
             return true;
         }
 
         if (domainMap.subdomainAccess) {
             Set<Long> parentDomains = _domainMgr.getDomainParentIds(domainId);
-            if (parentDomains.contains(groupDomainId)) {
-                return true;
-            }
+            return parentDomains.contains(groupDomainId);
         }
 
         return false;
