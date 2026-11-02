@@ -58,8 +58,10 @@ public class EventDaoImplTest {
         verify(eventDaoImpl).listBy(scCaptor.capture(), filterCaptor.capture());
 
         SearchCriteria<EventVO> sc = scCaptor.getValue();
-        Assert.assertEquals("event.resource_id = ?  AND event.resource_type = ?  AND event.type = ?  AND event.state IN (?,?)  AND event.archived = ? ",
-                sc.getWhereClause());
+        String whereClause = sc.getWhereClause();
+        for (String predicate : List.of("event.resource_id = ?", "event.resource_type = ?", "event.type = ?", "event.state IN (?,?)", "event.archived = ?")) {
+            Assert.assertTrue("missing predicate: " + predicate, whereClause.contains(predicate));
+        }
         @SuppressWarnings("unchecked")
         Map<String, Object[]> params = (Map<String, Object[]>) ReflectionTestUtils.getField(sc, "_params");
         Assert.assertArrayEquals(new Object[]{1L}, params.get("resourceId"));

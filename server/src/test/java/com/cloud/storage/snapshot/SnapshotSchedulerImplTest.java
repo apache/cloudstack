@@ -37,6 +37,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
@@ -374,6 +376,38 @@ public class SnapshotSchedulerImplTest {
         Assert.assertEquals(Integer.valueOf(3), result);
     }
 
+    private Integer getScopedMaxFailuresWith(String accountValue, String domainValue, String zoneValue) {
+        doReturn(1L).when(volumeVoMock).getAccountId();
+        doReturn(3L).when(volumeVoMock).getDataCenterId();
+        doReturn(2L).when(accountVoMock).getDomainId();
+        String name = SnapshotManager.SnapshotRecurringMaxFailures.key();
+        ConfigDepotImpl configDepotMock = mock(ConfigDepotImpl.class);
+        doReturn(accountValue).when(configDepotMock).getConfigStringValue(name, ConfigKey.Scope.Account, 1L);
+        doReturn(domainValue).when(configDepotMock).getConfigStringValue(name, ConfigKey.Scope.Domain, 2L);
+        doReturn(zoneValue).when(configDepotMock).getConfigStringValue(name, ConfigKey.Scope.Zone, 3L);
+        ConfigKey.init(configDepotMock);
+        try {
+            return snapshotSchedulerImplSpy.getScopedConfigValue(SnapshotManager.SnapshotRecurringMaxFailures, volumeVoMock, accountVoMock);
+        } finally {
+            ConfigKey.init(null);
+        }
+    }
+
+    @Test
+    public void getScopedConfigValueTestZoneOverrideIsUsedWhenAccountAndDomainAreNotSet() {
+        Assert.assertEquals(Integer.valueOf(7), getScopedMaxFailuresWith(null, null, "7"));
+    }
+
+    @Test
+    public void getScopedConfigValueTestDomainOverrideWinsOverZone() {
+        Assert.assertEquals(Integer.valueOf(5), getScopedMaxFailuresWith(null, "5", "7"));
+    }
+
+    @Test
+    public void getScopedConfigValueTestAccountOverrideWinsOverDomainAndZone() {
+        Assert.assertEquals(Integer.valueOf(1), getScopedMaxFailuresWith("1", "5", "7"));
+    }
+
     // --- handleFailedSnapshotDispatch (#13454) ---
 
     private void stubVolumeAndAccount() {
@@ -470,29 +504,36 @@ public class SnapshotSchedulerImplTest {
     // --- dispatchSnapshotCreateJob (#13454) ---
 
     @Test
-    public void dispatchSnapshotCreateJobTestBuildsAsyncJobAndReturnsScheduledEventId() throws Exception {
+    public void createScheduledSnapshotEventTestReturnsScheduledEventIdForVolume() {
+        doReturn(2L).when(volumeVoMock).getId();
+        doReturn(1L).when(volumeVoMock).getAccountId();
+        doReturn("volume-uuid").when(volumeVoMock).getUuid();
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class)) {
+            actionEventUtilsMocked.when(() -> ActionEventUtils.onScheduledActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventTypes.EVENT_SNAPSHOT_CREATE), Mockito.anyString(), Mockito.eq(2L), Mockito.eq("Volume"), Mockito.anyBoolean(), Mockito.anyLong())
+            ).thenReturn(42L);
+
+            Assert.assertEquals(Long.valueOf(42L), snapshotSchedulerImplSpy.createScheduledSnapshotEvent(volumeVoMock));
+        }
+    }
+
+    @Test
+    public void dispatchSnapshotCreateJobTestBuildsAsyncJob() throws Exception {
         doReturn(1L).when(snapshotScheduleVoMock).getId();
         doReturn(1L).when(snapshotScheduleVoMock).getPolicyId();
         doReturn(2L).when(snapshotScheduleVoMock).getVolumeId();
         doReturn(new Date()).when(snapshotScheduleVoMock).getScheduledTimestamp();
 
         doReturn(1L).when(volumeVoMock).getAccountId();
-        doReturn("volume-uuid").when(volumeVoMock).getUuid();
 
         doReturn(Collections.emptyList()).when(taggedResourceServiceMock).listByResourceTypeAndId(Mockito.any(), Mockito.anyLong());
         doReturn(7L).when(asyncJobManagerMock).submitAsyncJob(Mockito.any(AsyncJobVO.class));
         doReturn("SnapshotDispatcher").when(asyncJobDispatcherMock).getName();
         snapshotSchedulerImplSpy.setAsyncJobDispatcher(asyncJobDispatcherMock);
 
-        try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
-             MockedStatic<com.cloud.utils.component.ComponentContext> componentContextMocked = Mockito.mockStatic(com.cloud.utils.component.ComponentContext.class)) {
-            actionEventUtilsMocked.when(() -> ActionEventUtils.onScheduledActionEvent(
-                    Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())
-            ).thenReturn(42L);
-
-            Long eventId = snapshotSchedulerImplSpy.dispatchSnapshotCreateJob(snapshotScheduleVoMock, volumeVoMock, snapshotScheduleVoMock);
-
-            Assert.assertEquals(Long.valueOf(42L), eventId);
+        try (MockedStatic<com.cloud.utils.component.ComponentContext> componentContextMocked = Mockito.mockStatic(com.cloud.utils.component.ComponentContext.class)) {
+            snapshotSchedulerImplSpy.dispatchSnapshotCreateJob(snapshotScheduleVoMock, volumeVoMock, snapshotScheduleVoMock, 42L);
         }
 
         verify(snapshotScheduleVoMock).setAsyncJobId(7L);
@@ -544,23 +585,24 @@ public class SnapshotSchedulerImplTest {
         snapshotSchedulerImplSpy.scheduleSnapshots();
 
         verify(snapshotScheduleDaoMock, never()).acquireInLockTable(Mockito.anyLong());
-        verify(snapshotSchedulerImplSpy, never()).dispatchSnapshotCreateJob(Mockito.any(), Mockito.any(), Mockito.any());
+        verify(snapshotSchedulerImplSpy, never()).dispatchSnapshotCreateJob(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
-    public void scheduleSnapshotsTestDispatchFailureIsHandledAndLockIsReleased() throws Exception {
+    public void scheduleSnapshotsTestDispatchFailureCompletesScheduledEventAndLockIsReleased() throws Exception {
         ReflectionTestUtils.setField(snapshotSchedulerImplSpy, "_currentTimestamp", new Date());
         doReturn(1L).when(snapshotScheduleVoMock).getId();
         doReturn(List.of(snapshotScheduleVoMock)).when(snapshotScheduleDaoMock).getSchedulesToExecute(Mockito.any(Date.class));
         doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
         doReturn(false).when(snapshotSchedulerImplSpy).shouldSkipSchedule(Mockito.any(), Mockito.any());
         doReturn(snapshotScheduleVoMock).when(snapshotScheduleDaoMock).acquireInLockTable(1L);
-        doThrow(new RuntimeException("dispatch boom")).when(snapshotSchedulerImplSpy).dispatchSnapshotCreateJob(Mockito.any(), Mockito.any(), Mockito.any());
+        doReturn(42L).when(snapshotSchedulerImplSpy).createScheduledSnapshotEvent(volumeVoMock);
+        doThrow(new RuntimeException("dispatch boom")).when(snapshotSchedulerImplSpy).dispatchSnapshotCreateJob(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         doNothing().when(snapshotSchedulerImplSpy).handleFailedSnapshotDispatch(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         snapshotSchedulerImplSpy.scheduleSnapshots();
 
-        verify(snapshotSchedulerImplSpy).handleFailedSnapshotDispatch(Mockito.eq(snapshotScheduleVoMock), Mockito.eq(volumeVoMock), Mockito.eq(snapshotScheduleVoMock), Mockito.isNull(), Mockito.any(Exception.class));
+        verify(snapshotSchedulerImplSpy).handleFailedSnapshotDispatch(Mockito.eq(snapshotScheduleVoMock), Mockito.eq(volumeVoMock), Mockito.eq(snapshotScheduleVoMock), Mockito.eq(42L), Mockito.any(Exception.class));
         verify(snapshotScheduleDaoMock).releaseFromLockTable(1L);
     }
 
