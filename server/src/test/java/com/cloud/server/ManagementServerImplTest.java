@@ -1827,9 +1827,7 @@ public class ManagementServerImplTest {
         HypervisorType[] supportedTypes = {
             HypervisorType.XenServer,
             HypervisorType.VMware,
-            HypervisorType.KVM,
-            HypervisorType.Ovm,
-            HypervisorType.Ovm3
+            HypervisorType.KVM
         };
 
         for (HypervisorType hypervisorType : supportedTypes) {
