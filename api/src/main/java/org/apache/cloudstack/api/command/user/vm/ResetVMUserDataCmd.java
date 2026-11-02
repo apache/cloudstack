@@ -65,6 +65,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
             length = 1048576)
     private String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the userdata")
     private Long userdataId;
 
@@ -143,7 +144,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         UserVm result = _userVmService.resetVMUserData(this);
 
         if (result != null) {

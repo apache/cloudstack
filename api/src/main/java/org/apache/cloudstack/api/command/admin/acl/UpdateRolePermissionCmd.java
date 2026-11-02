@@ -111,7 +111,7 @@ public class UpdateRolePermissionCmd extends BaseCmd {
             if (getRuleId() != null || getRulePermission() != null) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameters permission and ruleid must be mutually exclusive with ruleorder");
             }
-            CallContext.current().setEventDetails("Reordering permissions for role id: " + role.getId());
+            CallContext.current().setEventDetails("Reordering permissions for role with ID: " + role.getUuid());
             final List<RolePermission> rolePermissionsOrder = new ArrayList<>();
             for (Long rolePermissionId : getRulePermissionOrder()) {
                 final RolePermission rolePermission = roleService.findRolePermission(rolePermissionId);
@@ -129,7 +129,7 @@ public class UpdateRolePermissionCmd extends BaseCmd {
             if (rolePermission == null) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid rule id provided");
             }
-            CallContext.current().setEventDetails("Updating permission for rule id: " + getRuleId() + " to: " + getRulePermission().toString());
+            CallContext.current().setEventDetails("Updating permission for rule with ID: " + getResourceUuid(ApiConstants.RULE_ID) + " to: " + getRulePermission().toString());
             result = roleService.updateRolePermission(role, rolePermission, getRulePermission());
         }
         SuccessResponse response = new SuccessResponse(getCommandName());

@@ -106,7 +106,7 @@ export default {
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      if (this.resource.zoneid && (this.$route.name === 'deployVirtualMachine' || this.$route.path.startsWith('/backup'))) {
+      if (this.resource?.zoneid && (this.$route.name === 'deployVirtualMachine' || this.$route.path.startsWith('/backup'))) {
         params.id = this.resource.zoneid
       }
       this.actionZoneLoading = true

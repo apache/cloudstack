@@ -69,11 +69,11 @@ public class WebhookDeliveryDaoImplTest {
 
         doReturn(1).when(webhookDeliveryDao).remove(any(SearchCriteria.class));
 
-        int result = webhookDeliveryDao.deleteByDeleteApiParams(null, webhookId, null, startDate, null);
+        int result = webhookDeliveryDao.deleteByDeleteApiParams(null, List.of(webhookId), null, startDate, null, true);
 
         assertEquals(1, result);
         verify(webhookDeliveryDao).remove(any(SearchCriteria.class));
-        verify(mockSearchBuilder).and(eq("webhookId"), any(), eq(SearchCriteria.Op.EQ));
+        verify(mockSearchBuilder).and(eq("webhookId"), any(), eq(SearchCriteria.Op.IN));
         verify(mockSearchCriteria).setParameters("webhookId", webhookId);
     }
 
@@ -87,7 +87,7 @@ public class WebhookDeliveryDaoImplTest {
 
         doReturn(0).when(webhookDeliveryDao).remove(any(SearchCriteria.class));
 
-        int result = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookId, managementServerId, startDate, endDate);
+        int result = webhookDeliveryDao.deleteByDeleteApiParams(id, List.of(webhookId), managementServerId, startDate, endDate, true);
 
         assertEquals(0, result);
     }

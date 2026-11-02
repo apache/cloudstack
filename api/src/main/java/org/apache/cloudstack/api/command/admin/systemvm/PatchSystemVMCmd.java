@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -72,7 +71,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Attempting to live patch System VM with Id: %s ", this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        return String.format("Attempting to live patch System VM with ID: %s ", getResourceUuid(ApiConstants.ID));
     }
 
     @Override

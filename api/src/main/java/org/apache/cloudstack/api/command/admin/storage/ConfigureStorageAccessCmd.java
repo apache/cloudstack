@@ -130,6 +130,6 @@ public class ConfigureStorageAccessCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring storage access groups";
+        return "Configuring storage access groups";
     }
 }

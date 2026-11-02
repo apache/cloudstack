@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { i18n } from '@/locales'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'accountuser',
@@ -63,6 +64,12 @@ export default {
       resourceType: 'User',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
       show: () => { return 'listEvents' in store.getters.apis }
+    },
+    {
+      name: 'apikeypairs',
+      resourceType: 'User',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ApiKeyPairsTab.vue'))),
+      show: () => { return 'listUserKeys' in store.getters.apis }
     }
   ],
   actions: [
@@ -84,10 +91,32 @@ export default {
     },
     {
       api: 'updateUser',
+      icon: 'redo-outlined',
+      label: 'label.change.password.reset',
+      message: 'message.change.password.reset',
+      dataView: true,
+      args: ['passwordchangerequired'],
+      mapping: {
+        passwordchangerequired: {
+          value: (record) => { return true }
+        }
+      },
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          store.userInfo.id !== record.id && record.state === 'enabled' && record.usersource === 'native'
+      }
+    },
+    {
+      api: 'updateUser',
       icon: 'key-outlined',
       label: 'label.action.change.password',
       dataView: true,
       popup: true,
+      show: (record, store) => {
+        return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.userInfo.id === record.id) &&
+          ['native'].includes(record.usersource) && record.state === 'enabled'
+      },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ChangeUserPassword.vue')))
     },
     {
@@ -128,7 +157,7 @@ export default {
       api: 'lockUser',
       icon: 'LockOutlined',
       label: 'label.action.lock.user',
-      message: (record) => ['message.lock.user', { user: record.username }],
+      message: (record) => ['message.lock.user', { user: escapeHtml(record.username) }],
       successMessage: (record) => ['message.lock.user.success', { user: record.username }],
       dataView: true,
       popup: true,
@@ -157,7 +186,7 @@ export default {
       dataView: true,
       popup: true,
       show: (record, store) => {
-        return (record.is2faenabled === false && record.id === store.userInfo.id)
+        return (!record.is2faenabled && record.id === store.userInfo.id)
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
     },

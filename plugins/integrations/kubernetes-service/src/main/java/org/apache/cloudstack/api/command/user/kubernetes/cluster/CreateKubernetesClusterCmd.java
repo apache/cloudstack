@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -79,7 +80,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Inject
     public KubernetesClusterService kubernetesClusterService;
     @Inject
-    protected KubernetesServiceHelper kubernetesClusterHelper;
+    protected KubernetesServiceHelper kubernetesServiceHelper;
     @Inject
     private ConfigurationDao configurationDao;
     @Inject
@@ -115,15 +116,25 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter",
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter. " +
+                    "Example: nodeofferings[0].node='control'&nodeofferings[0].offering='<service-offering-uuid>'&" +
+                    "nodeofferings[1].node='worker'&nodeofferings[1].offering='<service-offering-uuid>'",
             since = "4.21.0")
     private Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_TEMPLATE_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template",
+            description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template. " +
+                    "Example: nodetemplates[0].node='control'&nodetemplates[0].template='<template-uuid>'&" +
+                    "nodetemplates[1].node='worker'&nodetemplates[1].template='<template-uuid>'",
             since = "4.21.0")
     private Map<String, Map<String, String>> templateNodeTypeMap;
+
+    @ACL(accessType = AccessType.UseEntry)
+    @Parameter(name = ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP, type = CommandType.MAP,
+            description = "(Optional) Node Type to Affinity Group ID mapping. If provided, VMs of each node type will be added to the specified affinity group",
+            since = "4.23.0")
+    private Map<String, Map<String, String>> affinityGroupNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
@@ -314,11 +325,15 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     }
 
     public Map<String, Long> getServiceOfferingNodeTypeMap() {
-        return kubernetesClusterHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
+        return kubernetesServiceHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
     }
 
     public Map<String, Long> getTemplateNodeTypeMap() {
-        return kubernetesClusterHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
+        return kubernetesServiceHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
+    }
+
+    public Map<String, List<Long>> getAffinityGroupNodeTypeMap() {
+        return kubernetesServiceHelper.getAffinityGroupNodeTypeMap(affinityGroupNodeTypeMap);
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {

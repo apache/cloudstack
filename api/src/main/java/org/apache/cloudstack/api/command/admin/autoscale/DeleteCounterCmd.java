@@ -91,6 +91,6 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting a counter.";
+        return "Deleting auto scaling counter with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

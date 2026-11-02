@@ -62,6 +62,10 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "Indicates if the VPC offering supports distributed router for one-hop forwarding", since = "4.4")
     private Boolean supportsDistributedRouter;
 
+    @SerializedName(ApiConstants.REDUNDANT_ROUTER)
+    @Param(description = "Indicates if the VPC offering supports redundant routers")
+    private Boolean redundantRouter;
+
     @SerializedName((ApiConstants.SUPPORTS_REGION_LEVEL_VPC))
     @Param(description = "Indicated if the offering can support region level VPC", since = "4.4")
     private Boolean supportsRegionLevelVpc;
@@ -101,6 +105,10 @@ public class VpcOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROUTING_MODE)
     @Param(description = "The routing mode for the network offering, supported types are Static or Dynamic.")
     private String routingMode;
+
+    @SerializedName(ApiConstants.CONSERVE_MODE)
+    @Param(description = "True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers.", since = "4.23.0")
+    private Boolean conserveMode;
 
     public void setId(String id) {
         this.id = id;
@@ -200,5 +208,17 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setRoutingMode(String routingMode) {
         this.routingMode = routingMode;
+    }
+
+    public Boolean getConserveMode() {
+        return conserveMode;
+    }
+
+    public void setConserveMode(Boolean conserveMode) {
+        this.conserveMode = conserveMode;
+    }
+
+    public void setRedundantRouter(Boolean redundantRouter) {
+        this.redundantRouter = redundantRouter;
     }
 }

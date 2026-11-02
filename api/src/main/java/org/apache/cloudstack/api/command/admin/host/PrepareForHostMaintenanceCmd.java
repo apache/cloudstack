@@ -76,7 +76,7 @@ public class PrepareForHostMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "preparing host: " + getId() + " for maintenance";
+        return "Preparing host with ID: " + getResourceUuid(ApiConstants.ID) + " for maintenance.";
     }
 
     @Override

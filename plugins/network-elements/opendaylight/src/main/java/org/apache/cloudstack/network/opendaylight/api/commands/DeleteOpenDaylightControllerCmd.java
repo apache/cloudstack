@@ -68,7 +68,7 @@ public class DeleteOpenDaylightControllerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleted OpenDaylight Controller";
+        return "Deleting OpenDaylight Controller with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -27,18 +27,14 @@ import org.libvirt.event.BlockJobListener;
 import org.libvirt.event.BlockJobStatus;
 import org.libvirt.event.BlockJobType;
 
-import java.util.concurrent.Semaphore;
-
 public class BlockCommitListener implements BlockJobListener {
-    private Semaphore semaphore;
     private String result;
     private String vmName;
 
     private Logger logger;
     private String logid;
 
-    protected BlockCommitListener(Semaphore semaphore, String vmName, String logid) {
-        this.semaphore = semaphore;
+    protected BlockCommitListener(String vmName, String logid) {
         this.vmName = vmName;
         this.logid = logid;
         logger = LogManager.getLogger(getClass());
@@ -54,24 +50,22 @@ public class BlockCommitListener implements BlockJobListener {
             return;
         }
 
+        ThreadContext.put("logcontextid", logid);
+        logger.debug("Received status [{}] on disk [{}] while listening for block commit of VM [{}].", status, diskPath, vmName);
         switch (status) {
             case COMPLETED:
                 result = null;
-                semaphore.release();
                 return;
             case READY:
                 try {
-                    ThreadContext.put("logcontextid", logid);
                     logger.debug("Pivoting disk [{}] of VM [{}].", diskPath, vmName);
                     domain.blockJobAbort(diskPath, Domain.BlockJobAbortFlags.PIVOT);
                 } catch (LibvirtException ex) {
                     result = String.format("Failed to pivot disk due to [%s].", ex.getMessage());
-                    semaphore.release();
                 }
                 return;
             default:
                 result = String.format("Failed to block commit disk with status [%s].", status);
-                semaphore.release();
         }
     }
 }

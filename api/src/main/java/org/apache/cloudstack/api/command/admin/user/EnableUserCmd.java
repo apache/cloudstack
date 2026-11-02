@@ -71,7 +71,7 @@ public class EnableUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.ID));
         UserAccount user = _regionService.enableUser(this);
 
         if (user != null) {

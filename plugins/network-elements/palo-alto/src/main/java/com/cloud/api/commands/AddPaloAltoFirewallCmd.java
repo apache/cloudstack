@@ -118,7 +118,7 @@ public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding a Palo Alto firewall device";
+        return "Adding a Palo Alto firewall device to physical network with ID: " + getResourceUuid(ApiConstants.PHYSICAL_NETWORK_ID);
     }
 
     @Override

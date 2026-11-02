@@ -148,7 +148,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("TrafficType Id: " + getEntityId());
+        CallContext.current().setEventDetails("Traffic type ID: " + getEntityUuid());
         PhysicalNetworkTrafficType result = _networkService.getPhysicalNetworkTrafficType(getEntityId());
         if (result != null) {
             TrafficTypeResponse response = _responseGenerator.createTrafficTypeResponse(result);

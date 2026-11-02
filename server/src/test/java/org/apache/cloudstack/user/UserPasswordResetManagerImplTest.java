@@ -16,7 +16,11 @@
 // under the License.
 package org.apache.cloudstack.user;
 
+import com.cloud.user.AccountManager;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDao;
+
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
@@ -44,6 +48,12 @@ public class UserPasswordResetManagerImplTest {
 
     @Mock
     private UserDetailsDao userDetailsDao;
+
+    @Mock
+    AccountManager accountManager;
+
+    @Mock
+    UserDao userDao;
 
     @Test
     public void testGetMessageBody() {
@@ -146,5 +156,22 @@ public class UserPasswordResetManagerImplTest {
                 PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)));
 
         Assert.assertFalse(passwordReset.validateExistingToken(userAccount));
+    }
+
+    @Test
+    public void testResetPassword() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        UserVO userVO = Mockito.mock(UserVO.class);
+        long userId = 1L;
+        String newPassword = "newPassword";
+        Mockito.when(userAccount.getId()).thenReturn(userId);
+        Mockito.when(userDao.getUser(userId)).thenReturn(userVO);
+        passwordReset.resetPassword(userAccount, newPassword);
+        Mockito.verify(userDao).getUser(userId);
+        Mockito.verify(accountManager).validateUserPasswordAndUpdateIfNeeded(newPassword, userVO, "", true);
+        Mockito.verify(userDetailsDao).removeDetail(userId, PasswordResetToken);
+        Mockito.verify(userDetailsDao).removeDetail(userId, PasswordResetTokenExpiryDate);
+        Mockito.verify(userDetailsDao).removeDetail(userId, UserDetailVO.PasswordChangeRequired);
+        Mockito.verify(userDao).persist(userVO);
     }
 }

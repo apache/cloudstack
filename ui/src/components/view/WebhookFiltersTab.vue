@@ -18,6 +18,7 @@
 <template>
   <div>
     <div class="add-row">
+      <p>{{ $t('message.webhook.filter.add') }}</p>
       <a-form
         :ref="addFormRef"
         :model="addFilterForm"
@@ -63,7 +64,12 @@
               <template #label>
                 <tooltip-label :title="$t('label.value')" :tooltip="addFilterApiParams.value.description"/>
               </template>
-              <a-input v-model:value="addFilterForm.value" placeholder="Enter filter value" />
+              <a-auto-complete
+                v-model:value="addFilterForm.value"
+                :options="filteredEventTypes"
+                :filterOption="false"
+                @search="onSearch"
+                placeholder="Enter filter value" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -90,7 +96,7 @@
       {{ (selectedRowKeys && selectedRowKeys.length > 0) ? $t('label.action.delete.webhook.filters') : $t('label.action.clear.webhook.filters') }}
     </a-button>
     <list-view
-      :tabLoading="tabLoading"
+      :loading="tabLoading"
       :columns="columns"
       :items="filters"
       :actions="actions"
@@ -167,7 +173,9 @@ export default {
       ],
       page: 1,
       pageSize: 20,
-      totalCount: 0
+      totalCount: 0,
+      eventTypes: [],
+      filteredEventTypes: []
     }
   },
   computed: {
@@ -189,6 +197,7 @@ export default {
     this.pageSize = this.pageSizeOptions[0] * 1
     this.initAddFilterForm()
     this.fetchData()
+    this.fetchEventTypes()
   },
   watch: {
     resource: {
@@ -198,6 +207,41 @@ export default {
     }
   },
   methods: {
+    onSearch (searchText) {
+      if (!searchText) {
+        this.filteredEventTypes = this.eventTypes
+        return
+      }
+      const searchLower = searchText.toLowerCase()
+      const prefixMatches = []
+      const otherMatches = []
+      for (const option of this.eventTypes) {
+        const valLower = option.value.toLowerCase()
+        if (valLower.startsWith(searchLower)) {
+          prefixMatches.push(option)
+        } else if (valLower.includes(searchLower)) {
+          otherMatches.push(option)
+        }
+      }
+      this.filteredEventTypes = [...prefixMatches, ...otherMatches]
+    },
+    fetchEventTypes () {
+      this.eventTypes = []
+      this.filteredEventTypes = []
+      if (!('listEventTypes' in this.$store.getters.apis)) {
+        return
+      }
+      getAPI('listEventTypes').then(json => {
+        const eventTypesObj = json?.listeventtypesresponse?.eventtype || []
+        this.eventTypes = eventTypesObj
+          .map(x => x.name)
+          .sort((a, b) => a.localeCompare(b))
+          .map(value => { return { value: value } })
+        this.filteredEventTypes = this.eventTypes
+      }).catch(error => {
+        console.error('Failed to load event types:', error)
+      })
+    },
     fetchData () {
       if ('listview' in this.$refs && this.$refs.listview) {
         this.$refs.listview.resetSelection()
@@ -268,6 +312,7 @@ export default {
       if (this.addFormRef.value) {
         this.addFormRef.value.resetFields()
       }
+      this.filteredEventTypes = this.eventTypes
     },
     addFilter (e) {
       e.preventDefault()

@@ -21,8 +21,11 @@ import java.util.Map;
 
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
 public interface ApiServerService {
@@ -49,5 +52,23 @@ public interface ApiServerService {
 
     boolean resetPassword(UserAccount userAccount, String token, String password);
 
+    String getDomainId(Map<String, Object[]> params);
+
     boolean isPostRequestsAndTimestampsEnforced();
+
+    AsyncCmdResult processAsyncCmd(BaseAsyncCmd cmdObj, Map<String, String> params, CallContext ctx, Long callerUserId, Account caller) throws Exception;
+
+    class AsyncCmdResult {
+        public final Long objectId;
+        public final String objectUuid;
+        public final BaseAsyncCmd asyncCmd;
+        public final long jobId;
+
+        public AsyncCmdResult(Long objectId, String objectUuid, BaseAsyncCmd asyncCmd, long jobId) {
+            this.objectId = objectId;
+            this.objectUuid = objectUuid;
+            this.asyncCmd = asyncCmd;
+            this.jobId = jobId;
+        }
+    }
 }

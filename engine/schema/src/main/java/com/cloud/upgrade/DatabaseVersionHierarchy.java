@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +97,9 @@ public final class DatabaseVersionHierarchy {
         // we cannot find the version specified, so get the
         // most recent one immediately before this version
         if (!contains(fromVersion)) {
-            return getPath(getRecentVersion(fromVersion), toVersion);
+            DbUpgrade[] dbUpgrades = getPath(getRecentVersion(fromVersion), toVersion);
+            return Arrays.stream(dbUpgrades).filter(up -> CloudStackVersion.compare(up.getUpgradedVersion(), fromVersion.toString()) > 0)
+                    .toArray(DbUpgrade[]::new);
         }
 
         final Predicate<? super VersionNode> predicate;

@@ -115,7 +115,7 @@ public class MigrateNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder eventMsg = new StringBuilder("Migrating network: " + getId());
+        String description = "Migrating Network with ID: " + getResourceUuid(ApiConstants.NETWORK_ID);
         if (getNetworkOfferingId() != null) {
             Network network = _networkService.getNetwork(getId());
             if (network == null) {
@@ -128,11 +128,11 @@ public class MigrateNetworkCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException("Network offering id supplied is invalid");
                 }
 
-                eventMsg.append(". Original network offering id: " + oldOff.getUuid() + ", new network offering id: " + newOff.getUuid());
+                description += ". Original Network Offering id: " + oldOff.getUuid() + ", new Network Offering id: " + newOff.getUuid();
             }
         }
 
-        return eventMsg.toString();
+        return description;
     }
 
     @Override

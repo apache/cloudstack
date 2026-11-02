@@ -63,6 +63,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "The OS category name of the host")
     private String osCategoryName;
 
+    @SerializedName(ApiConstants.GUEST_OS_RULE)
+    @Param(description = "the guest OS rule")
+    private String guestOsRule;
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "The IP address of the host")
     private String ipAddress;
@@ -196,6 +200,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "the virtual machine id for host type ConsoleProxy and SecondaryStorageVM", since = "4.21.0")
     private String virtualMachineId;
+
+    @SerializedName("msid")
+    @Param(description = "(only for details=core) the msid of the host's management server")
+    private Long msId;
 
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "The management server ID of the host")
@@ -486,6 +494,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setVirtualMachineId(String virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
+    }
+
+    public Long getMsId() {
+        return msId;
+    }
+
+    public void setMsId(Long msId) {
+        this.msId = msId;
     }
 
     public void setManagementServerId(String managementServerId) {
@@ -998,5 +1014,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public String getExtensionName() {
         return extensionName;
+    }
+
+    public String getGuestOsRule() {
+        return guestOsRule;
+    }
+
+    public void setGuestOsRule(String guestOsRule) {
+        this.guestOsRule = guestOsRule;
     }
 }

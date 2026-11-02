@@ -73,7 +73,7 @@ public class ReleaseIPAddrCmd extends BaseCmd {
 
     @Override
     public void execute() throws InsufficientAddressCapacityException {
-        CallContext.current().setEventDetails("IP ID: " + getIpAddressId());
+        CallContext.current().setEventDetails("IP address ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.releaseReservedIpAddress(getIpAddressId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

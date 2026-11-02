@@ -185,7 +185,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configuring AutoScale Instance Group. Instance Group Id: " + getEntityId();
+        return "Configuring AutoScale Instance Group with ID: " + getEntityId();
     }
 
     @Override

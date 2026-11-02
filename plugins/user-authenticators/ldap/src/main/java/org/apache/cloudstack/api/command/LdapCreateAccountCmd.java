@@ -138,7 +138,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
         final CallContext callContext = getCurrentContext();
         String finalAccountName = getAccountName();
         Long finalDomainId = getDomainId();
-        callContext.setEventDetails("Account Name: " + finalAccountName + ", Domain Id:" + finalDomainId);
+        callContext.setEventDetails("Account Name: " + finalAccountName + ", Domain ID:" + finalDomainId);
         try {
             final LdapUser user = _ldapManager.getUser(username, domainId);
             validateUser(user);

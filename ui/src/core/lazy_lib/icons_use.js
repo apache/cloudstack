@@ -182,6 +182,7 @@ import {
   UserSwitchOutlined,
   UploadOutlined,
   VerticalAlignBottomOutlined,
+  VerticalAlignMiddleOutlined,
   VerticalAlignTopOutlined,
   WarningOutlined,
   WifiOutlined,
@@ -357,6 +358,7 @@ export default {
     app.component('UserSwitchOutlined', UserSwitchOutlined)
     app.component('UploadOutlined', UploadOutlined)
     app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
+    app.component('VerticalAlignMiddleOutlined', VerticalAlignMiddleOutlined)
     app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)

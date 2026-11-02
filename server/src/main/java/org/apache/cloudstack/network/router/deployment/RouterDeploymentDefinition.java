@@ -394,7 +394,7 @@ public class RouterDeploymentDefinition {
         }
     }
 
-    protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
         DataCenter zone = dest.getDataCenter();
         Long zoneId = null;
@@ -547,5 +547,9 @@ public class RouterDeploymentDefinition {
         }
 
         return needReset;
+    }
+
+    public boolean getKeepMacAddressOnPublicNic() {
+        return guestNetwork == null || guestNetwork.getKeepMacAddressOnPublicNic();
     }
 }

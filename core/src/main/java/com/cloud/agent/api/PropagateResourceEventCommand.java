@@ -24,6 +24,8 @@ import com.cloud.resource.ResourceState;
 public class PropagateResourceEventCommand extends Command {
     long hostId;
     ResourceState.Event event;
+    boolean forced;
+    boolean forceDeleteStorage;
 
     protected PropagateResourceEventCommand() {
 
@@ -34,12 +36,27 @@ public class PropagateResourceEventCommand extends Command {
         this.event = event;
     }
 
+    public PropagateResourceEventCommand(long hostId, ResourceState.Event event, boolean forced, boolean forceDeleteStorage) {
+        this.hostId = hostId;
+        this.event = event;
+        this.forced = forced;
+        this.forceDeleteStorage = forceDeleteStorage;
+    }
+
     public long getHostId() {
         return hostId;
     }
 
     public ResourceState.Event getEvent() {
         return event;
+    }
+
+    public boolean isForced() {
+        return forced;
+    }
+
+    public boolean isForceDeleteStorage() {
+        return forceDeleteStorage;
     }
 
     @Override

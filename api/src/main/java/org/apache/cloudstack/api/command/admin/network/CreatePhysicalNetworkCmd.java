@@ -75,7 +75,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ISOLATION_METHODS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "The isolation method for the physical Network[VLAN/L3/GRE]")
+               description = "The isolation method for the physical Network[VLAN/VXLAN/GRE/STT/BCF_SEGMENT/SSP/ODL/L3VPN/VCS/NSX/NETRIS]")
     private List<String> isolationMethods;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the physical Network")
@@ -148,7 +148,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Physical Network ID: " + getEntityId());
+        CallContext.current().setEventDetails("Physical Network ID: " + getEntityUuid());
         PhysicalNetwork result = _networkService.getCreatedPhysicalNetwork(getEntityId());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);

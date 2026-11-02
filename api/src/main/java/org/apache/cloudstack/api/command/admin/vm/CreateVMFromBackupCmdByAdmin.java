@@ -45,11 +45,26 @@ public class CreateVMFromBackupCmdByAdmin extends CreateVMFromBackupCmd implemen
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "destination Cluster ID to deploy the VM to - parameter available for root admin only", since = "4.21")
     private Long clusterId;
 
+    private String instanceType;
+
     public Long getPodId() {
         return podId;
     }
 
     public Long getClusterId() {
         return clusterId;
+    }
+
+    @Override
+    public String getInstanceType() {
+        return instanceType;
+    }
+
+    public CreateVMFromBackupCmdByAdmin(){}
+
+    public CreateVMFromBackupCmdByAdmin(String hypervisor, String instanceType) {
+        this.displayVm = false;
+        this.hypervisor = hypervisor;
+        this.instanceType = instanceType;
     }
 }

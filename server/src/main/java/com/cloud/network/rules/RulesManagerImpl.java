@@ -336,7 +336,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                         if (!_firewallDao.setStateToAdd(newRule)) {
                             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                         }
-                        CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                        CallContext.current().setEventDetails("Rule ID: " + newRule.getUuid());
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), ipAddressFinal.getDataCenterId(), newRule.getId(), null,
                                 PortForwardingRule.class.getName(), newRule.getUuid());
                         return newRule;
@@ -420,7 +420,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                     if (!_firewallDao.setStateToAdd(newRule)) {
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
-                    CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                    CallContext.current().setEventDetails("Rule ID: " + newRule.getUuid());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null, FirewallRule.class.getName(),
                             newRule.getUuid());
 
@@ -453,13 +453,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         ResourceUnavailableException {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
-        CallContext.current().setEventDetails("Ip Id: " + ipId);
 
         // Verify input parameters
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to find ip address by id " + ipId);
         }
+
+        CallContext.current().setEventDetails("IP address ID: " + ipAddress.getUuid());
 
         // Verify input parameters
         boolean performedIpAssoc = false;

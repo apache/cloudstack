@@ -158,6 +158,11 @@ public class ScaleIOUtil {
      */
     private static final Pattern DRV_CFG_MDM_IPS_PATTERN = Pattern.compile("\\s*,\\s*");
 
+    /**
+     * Default command execution timeout 5 minutes.
+     */
+    public static final int DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
+
     public static boolean addMdms(String... mdmAddresses) {
         if (mdmAddresses.length < 1) {
             return false;
@@ -226,14 +231,10 @@ public class ScaleIOUtil {
                 }
             } else {
                 String command = String.format(REMOVE_MDM_CMD_TEMPLATE, mdmAddress, DRV_CFG_FILE);
-                String stdErr = Script.executeCommand(command).second();
-                if(StringUtils.isEmpty(stdErr)) {
-                    // restart SDC needed only if configuration file modified manually (not by CLI)
-                    restartSDC = true;
-                    changesApplied = true;
-                } else {
-                    LOGGER.error(String.format("Failed to remove MDM %s from %s: %s", mdmAddress, DRV_CFG_FILE, stdErr));
-                }
+                Script.runSimpleBashScript(command, DEFAULT_TIMEOUT_MS);
+                // restart SDC needed only if configuration file modified manually (not by CLI)
+                restartSDC = true;
+                changesApplied = true;
             }
         }
         if (restartSDC) {
@@ -338,9 +339,9 @@ public class ScaleIOUtil {
      */
     public static boolean isMdmPresent(String mdmAddress) {
         //query_mdms outputs "MDM-ID <System/MDM-Id> SDC ID <SDC-Id> INSTALLATION ID <Installation-Id> IPs [0]-x.x.x.x [1]-x.x.x.x" for a MDM with ID: <MDM-Id>
-        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
+        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD + " --file " + DRV_CFG_FILE;
         queryMdmsCmd += "|grep " + mdmAddress;
-        String result = Script.runSimpleBashScript(queryMdmsCmd);
+        String result = Script.runSimpleBashScript(queryMdmsCmd, DEFAULT_TIMEOUT_MS);
 
         return StringUtils.isNotBlank(result) && result.contains(mdmAddress);
     }
@@ -348,7 +349,7 @@ public class ScaleIOUtil {
     public static String getSdcHomePath() {
         String sdcHomePropertyCmdFormat = "sed -n '/%s/p' '%s' 2>/dev/null  | sed 's/%s=//g' 2>/dev/null";
         String sdcHomeCmd = String.format(sdcHomePropertyCmdFormat, SDC_HOME_PARAMETER, AGENT_PROPERTIES_FILE, SDC_HOME_PARAMETER);
-        String result = Script.runSimpleBashScript(sdcHomeCmd);
+        String result = Script.runSimpleBashScript(sdcHomeCmd, DEFAULT_TIMEOUT_MS);
         String sdcHomePath;
         if (result == null) {
             sdcHomePath = DEFAULT_SDC_HOME_PATH;
@@ -364,7 +365,7 @@ public class ScaleIOUtil {
         // Detecting new volumes
         String rescanCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.RESCAN_CMD;
 
-        String result = Script.runSimpleBashScript(rescanCmd);
+        String result = Script.runSimpleBashScript(rescanCmd, DEFAULT_TIMEOUT_MS);
         if (result == null) {
             LOGGER.warn("Failed to rescan for new volumes");
         }
@@ -375,7 +376,7 @@ public class ScaleIOUtil {
         String queryDiskCmd = SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_VOLUMES_CMD;
         queryDiskCmd += "|grep " + volumeId + "|awk '{print $4}'";
 
-        String result = Script.runSimpleBashScript(queryDiskCmd);
+        String result = Script.runSimpleBashScript(queryDiskCmd, DEFAULT_TIMEOUT_MS);
         if (result == null) {
             LOGGER.warn("Query volumes failed to get volume: " + volumeId + " details for system id");
             return null;
@@ -390,8 +391,8 @@ public class ScaleIOUtil {
     }
 
     public static String getSdcGuid() {
-        String queryGuidCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_GUID_CMD;
-        String result = Script.runSimpleBashScript(queryGuidCmd);
+        String queryGuidCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_GUID_CMD + " --file " + DRV_CFG_FILE;
+        String result = Script.runSimpleBashScript(queryGuidCmd, DEFAULT_TIMEOUT_MS);
         if (result == null) {
             LOGGER.warn("Failed to get SDC guid");
             return null;
@@ -412,9 +413,9 @@ public class ScaleIOUtil {
 
     public static String getSdcId(String mdmId) {
         //query_mdms outputs "MDM-ID <System/MDM-Id> SDC ID <SDC-Id> INSTALLATION ID <Installation-Id> IPs [0]-x.x.x.x [1]-x.x.x.x" for a MDM with ID: <MDM-Id>
-        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
+        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD + " --file " + DRV_CFG_FILE;
         queryMdmsCmd += "|grep " + mdmId + "|awk '{print $5}'";
-        String result = Script.runSimpleBashScript(queryMdmsCmd);
+        String result = Script.runSimpleBashScript(queryMdmsCmd, DEFAULT_TIMEOUT_MS);
         if (result == null) {
             LOGGER.warn("Failed to get SDC Id, for the MDM: " + mdmId);
             return null;

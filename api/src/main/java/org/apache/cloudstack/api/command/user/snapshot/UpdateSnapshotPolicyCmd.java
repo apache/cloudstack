@@ -104,7 +104,7 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("SnapshotPolicy ID: " + getId());
+        CallContext.current().setEventDetails("Snapshot policy ID: " + getResourceUuid(ApiConstants.ID));
         SnapshotPolicy result = _snapshotService.updateSnapshotPolicy(this);
         if (result != null) {
             SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);

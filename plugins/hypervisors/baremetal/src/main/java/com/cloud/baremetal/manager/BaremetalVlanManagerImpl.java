@@ -263,9 +263,8 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         user.setSource(User.Source.UNKNOWN);
         user = userDao.persist(user);
 
-        String[] keys = acntMgr.createApiKeyAndSecretKey(user.getId());
-        user.setApiKey(keys[0]);
-        user.setSecretKey(keys[1]);
+        acntMgr.createApiKeyAndSecretKey(user.getId());
+
         userDao.update(user.getId(), user);
         return true;
     }

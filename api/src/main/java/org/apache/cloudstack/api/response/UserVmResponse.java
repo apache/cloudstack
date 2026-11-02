@@ -166,6 +166,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "An alternate display text of the ISO attached to the Instance")
     private String isoDisplayText;
 
+    @SerializedName("isos")
+    @Param(description = "All ISOs attached to the Instance, keyed by cdrom slot. The first entry mirrors isoid/isoname for back-compat.", responseObject = AttachedIsoResponse.class, since = "4.23.0")
+    private List<AttachedIsoResponse> isos;
+
+    @SerializedName("isomaxcount")
+    @Param(description = "Maximum number of ISOs that may be attached to this Instance, after applying the cluster-scoped vm.iso.max.count and the hypervisor's own cap.", since = "4.23.0")
+    private Integer isoMaxCount;
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "The ID of the service offering of the Instance")
     private String serviceOfferingId;
@@ -225,6 +233,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
     @Param(description = "The name of the backup offering of the Instance", since = "4.14")
     private String backupOfferingName;
+
+    @SerializedName(ApiConstants.BACKUP_PROVIDER)
+    @Param(description = "The name of the backup provider of the offering attached to the Instance", since = "4.23.0")
+    private String backupProvider;
 
     @SerializedName("forvirtualnetwork")
     @Param(description = "The virtual Network for the service offering")
@@ -339,6 +351,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName("readonlydetails")
     @Param(description = "List of read-only Instance details as comma separated string.", since = "4.16.0")
     private String readOnlyDetails;
+
+    @SerializedName("alloweddetails")
+    @Param(description = "List of allowed Vm details as comma separated string if VM instance settings are read from OVA.", since = "4.22.1")
+    private String allowedDetails;
 
     @SerializedName(ApiConstants.SSH_KEYPAIRS)
     @Param(description = "SSH key-pairs")
@@ -867,6 +883,22 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.isoId = isoId;
     }
 
+    public void setIsos(List<AttachedIsoResponse> isos) {
+        this.isos = isos;
+    }
+
+    public List<AttachedIsoResponse> getIsos() {
+        return isos;
+    }
+
+    public void setIsoMaxCount(Integer isoMaxCount) {
+        this.isoMaxCount = isoMaxCount;
+    }
+
+    public Integer getIsoMaxCount() {
+        return isoMaxCount;
+    }
+
     public void setIsoName(String isoName) {
         this.isoName = isoName;
     }
@@ -1091,6 +1123,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.readOnlyDetails = readOnlyDetails;
     }
 
+    public void setAllowedDetails(String allowedDetails) {
+        this.allowedDetails = allowedDetails;
+    }
+
     public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
     }
@@ -1113,6 +1149,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getReadOnlyDetails() {
         return readOnlyDetails;
+    }
+
+    public String getAllowedDetails() {
+        return allowedDetails;
     }
 
     public Boolean getDynamicallyScalable() {
@@ -1326,4 +1366,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.leaseExpiryDate = leaseExpiryDate;
     }
 
+    public String getBackupProvider() {
+        return backupProvider;
+    }
+
+    public void setBackupProvider(String backupProvider) {
+        this.backupProvider = backupProvider;
+    }
 }

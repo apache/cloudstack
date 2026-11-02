@@ -45,7 +45,7 @@ export default {
     fields.push('managementservername')
     return fields
   },
-  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'externalprovisioner', 'arch', 'type', 'clustername', 'podname', 'zonename', 'storageaccessgroups', 'clusterstorageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups', 'managementservername', 'disconnected', 'created', 'externaldetails'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'externalprovisioner', 'arch', 'type', 'clustername', 'podname', 'zonename', 'lastpinged', 'storageaccessgroups', 'clusterstorageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups', 'managementservername', 'disconnected', 'created', 'externaldetails'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
@@ -103,7 +103,7 @@ export default {
       show: (record) => {
         return record.hypervisor === 'KVM' || record.hypervisor === store.getters.customHypervisorName
       },
-      args: ['hostid'],
+      args: ['hostid', 'forced'],
       mapping: {
         hostid: {
           value: (record) => { return record.id }

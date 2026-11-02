@@ -54,7 +54,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
 
-
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
@@ -177,7 +176,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         }
     }
 
-    private Long getVpcId() {
+    public Long getVpcId() {
         if (ipAddressId != null) {
             IpAddress ipAddr = _networkService.getIp(ipAddressId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
@@ -199,7 +198,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         boolean success = true;
         PortForwardingRule rule = null;
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
 
             if (getOpenFirewall()) {
                 success = success && _firewallService.applyIngressFirewallRules(ipAddressId, callerContext.getCallingAccount());
@@ -276,15 +275,9 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
         IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
-        Long ntwkId = null;
-
-        if (ip.getAssociatedWithNetworkId() != null) {
-            ntwkId = ip.getAssociatedWithNetworkId();
-        } else {
-            ntwkId = networkId;
-        }
+        Long ntwkId = _networkService.getPreferredNetworkIdForPublicIpRuleAssignment(ip, networkId);
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule for the ipAddress id=" + ipAddressId +
                     " as ip is not associated with any network and no networkId is passed in");

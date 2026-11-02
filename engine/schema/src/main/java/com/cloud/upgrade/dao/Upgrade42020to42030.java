@@ -57,8 +57,4 @@ public class Upgrade42020to42030 extends DbUpgradeAbstractImpl implements DbUpgr
     public InputStream[] getCleanupScripts() {
         return null;
     }
-
-    @Override
-    public void updateSystemVmTemplates(Connection conn) {
-    }
 }

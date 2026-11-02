@@ -83,7 +83,7 @@ public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating guest IPv6 prefix " + getPrefix() + " for zone=" + getZoneId();
+        return "Creating guest IPv6 prefix " + getPrefix() + " for zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

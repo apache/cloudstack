@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cloud.network.Network;
 import com.cloud.usage.dao.UsageNetworksDao;
@@ -179,6 +180,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private final List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
 
     private final ScheduledExecutorService _executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
+    private final AtomicBoolean isParsingJobRunning = new AtomicBoolean(false);
     private final ScheduledExecutorService _heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
     private final ScheduledExecutorService _sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
     private Future _scheduledFuture = null;
@@ -354,7 +356,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         (new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
-                runInContextInternal();
+                isParsingJobRunning.set(true);
+                try {
+                    runInContextInternal();
+                } finally {
+                    isParsingJobRunning.set(false);
+                }
             }
         }).run();
     }
@@ -2031,7 +2038,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
-    private void createBackupEvent(final UsageEventVO event) {
+    protected void createBackupEvent(final UsageEventVO event) {
         Long vmId = event.getResourceId();
         Long zoneId = event.getZoneId();
         Long accountId = event.getAccountId();
@@ -2041,12 +2048,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Date created = event.getCreateDate();
 
         if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
+            // Removing the offering while keeping the backups leaves the usage active, so re-assigning the
+            // same offering must not add a second row that bills the same backups again.
+            if (!usageBackupDao.listActiveUsage(vmId, backupOfferingId).isEmpty()) {
+                logger.debug("VM [{}] already has active usage for backup offering [{}], not creating another usage entry.", vmId, backupOfferingId);
+                return;
+            }
             final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, backupOfferingId, created);
             usageBackupDao.persist(backupVO);
         } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED.equals(event.getType())) {
             usageBackupDao.removeUsage(accountId, vmId, backupOfferingId, event.getCreateDate());
         } else if (EventTypes.EVENT_VM_BACKUP_USAGE_METRIC.equals(event.getType())) {
-            usageBackupDao.updateMetrics(vmId, backupOfferingId, event.getSize(), event.getVirtualSize());
+            usageBackupDao.updateMetrics(vmId, backupOfferingId, event.getSize(), event.getVirtualSize(), created);
         }
     }
 
@@ -2177,9 +2190,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                         if ((timeSinceLastSuccessJob > 0) && (timeSinceLastSuccessJob > (aggregationDurationMillis - 100))) {
                             if (timeToJob > (aggregationDurationMillis / 2)) {
-                                logger.debug("it's been {} ms since last usage job and {} ms until next job, scheduling an immediate job to catch up (aggregation duration is {} minutes)"
-                                    , timeSinceLastSuccessJob, timeToJob, _aggregationDuration);
-                                scheduleParse();
+                                logger.debug("Heartbeat: it's been {} ms since last finished usage job and {} ms until next job (aggregation duration is {} minutes)",
+                                        timeSinceLastSuccessJob, timeToJob, _aggregationDuration);
+                                if (isParsingJobRunning.get()) {
+                                    logger.debug("Heartbeat: A parsing job is already running");
+                                } else {
+                                    logger.debug("Heartbeat: Scheduling an immediate job to catch up");
+                                    scheduleParse();
+                                }
                             }
                         }
 

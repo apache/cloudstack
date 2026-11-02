@@ -18,6 +18,7 @@
 package com.cloud.api.query;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
@@ -46,6 +48,7 @@ import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.UserResponse;
@@ -79,7 +82,9 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventVO;
@@ -87,8 +92,10 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.VNF;
@@ -102,6 +109,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -157,6 +165,9 @@ public class QueryManagerImplTest {
     HostDao hostDao;
 
     @Mock
+    HostTagsDao hostTagsDao;
+
+    @Mock
     ClusterDao clusterDao;
 
     @Mock
@@ -178,6 +189,12 @@ public class QueryManagerImplTest {
 
     @Mock
     ExtensionHelper extensionHelper;
+
+    @Mock
+    DedicatedResourceDao dedicatedResourceDao;
+
+    @Mock
+    DomainManager domainManager;
 
     private AccountVO account;
     private UserVO user;
@@ -267,7 +284,7 @@ public class QueryManagerImplTest {
     public void searchForEventsFailResourceIdInvalid() {
         ListEventsCmd cmd  = setupMockListEventsCmd();
         Mockito.when(cmd.getResourceId()).thenReturn("random");
-        Mockito.when(cmd.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine.toString());
+        Mockito.lenient().when(cmd.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine.toString());
         queryManager.searchForEvents(cmd);
     }
 
@@ -466,6 +483,7 @@ public class QueryManagerImplTest {
         Assert.assertTrue(CollectionUtils.isNotEmpty(result));
     }
 
+    @Test
     public void testListAffectedVmsForScopeChange() {
         Long clusterId = 1L;
         Long poolId = 2L;
@@ -549,6 +567,222 @@ public class QueryManagerImplTest {
     }
 
     @Test
+    public void getDedicatedHostIdsForDomainReturnsEmptyWhenNoDedications() {
+        AccountVO caller = createAccount("domain-admin", 5L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getDedicatedHostIdsForDomainIncludesHostDedicatedToOwnDomain() {
+        AccountVO caller = createAccount("domain-admin", 5L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+                List.of(new DedicatedResourceVO(null, null, null, 10L, 5L, null, 1L)));
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertEquals(Set.of(10L), new HashSet<>(result));
+    }
+
+    @Test
+    public void getDedicatedHostIdsForDomainIncludesHostDedicatedToOtherAccountInOwnDomain() {
+        // dedications narrowed to a specific account (not the caller's own) within the caller's
+        // domain should still be visible to the domain admin
+        AccountVO caller = createAccount("domain-admin", 5L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+                List.of(new DedicatedResourceVO(null, null, null, 99L, 5L, 200L, 1L)));
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertEquals(Set.of(99L), new HashSet<>(result));
+    }
+
+    @Test
+    public void getDedicatedHostIdsForDomainResolvesClusterPodAndZoneDedicationsToMemberHosts() {
+        AccountVO caller = createAccount("domain-admin", 5L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(List.of(
+                new DedicatedResourceVO(null, null, 7L, null, 5L, null, 1L),
+                new DedicatedResourceVO(null, 8L, null, null, 5L, null, 2L),
+                new DedicatedResourceVO(9L, null, null, null, 5L, null, 3L)));
+        HostVO host20 = mockHost(20L);
+        HostVO host21 = mockHost(21L);
+        HostVO host22 = mockHost(22L);
+        Mockito.when(hostDao.findByClusterId(7L)).thenReturn(List.of(host20));
+        Mockito.when(hostDao.findByPodId(8L)).thenReturn(List.of(host21));
+        Mockito.when(hostDao.findByDataCenterId(9L)).thenReturn(List.of(host22));
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertEquals(Set.of(20L, 21L, 22L), new HashSet<>(result));
+    }
+
+    @Test
+    public void getDedicatedHostIdsForDomainIncludesSubDomainDedications() {
+        // domain admin of the parent domain "Acme" should see a host dedicated to its sub-domain "Acme/EU"
+        AccountVO caller = createAccount("acme-admin", 5L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L, 6L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(6L)).thenReturn(
+                List.of(new DedicatedResourceVO(null, null, null, 30L, 6L, null, 1L)));
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertEquals(Set.of(30L), new HashSet<>(result));
+    }
+
+    @Test
+    public void getDedicatedHostIdsForDomainExcludesParentDomainDedications() {
+        // domain admin of the sub-domain "Acme/EU" must NOT see a host dedicated to its parent domain "Acme"
+        AccountVO caller = createAccount("eu-admin", 6L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/EU/");
+        Mockito.when(domainDao.findById(6L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/EU/")).thenReturn(new HashSet<>(List.of(6L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(6L)).thenReturn(new ArrayList<>());
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertTrue(result.isEmpty());
+        Mockito.verify(dedicatedResourceDao, Mockito.never()).listAllByDomainId(5L);
+    }
+
+    @Test
+    public void getDedicatedHostIdsForDomainDeduplicatesHostIds() {
+        AccountVO caller = createAccount("domain-admin", 5L, 100L);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        // host 40 is dedicated directly, and also belongs to a cluster that is separately dedicated
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(List.of(
+                new DedicatedResourceVO(null, null, null, 40L, 5L, null, 1L),
+                new DedicatedResourceVO(null, null, 7L, null, 5L, null, 2L)));
+        HostVO host40 = mockHost(40L);
+        HostVO host41 = mockHost(41L);
+        Mockito.when(hostDao.findByClusterId(7L)).thenReturn(List.of(host40, host41));
+
+        List<Long> result = invokeGetDedicatedHostIdsForDomain(caller);
+
+        Assert.assertEquals(2, result.size());
+        Assert.assertEquals(Set.of(40L, 41L), new HashSet<>(result));
+    }
+
+    @Test
+    public void searchForHostTagsRootAdminSkipsDedicationFiltering() {
+        Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(true);
+        ListHostTagsCmd cmd = Mockito.mock(ListHostTagsCmd.class);
+        setupHostTagSearchBuilder(new Pair<>(new ArrayList<>(), 0));
+
+        try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {
+            Mockito.when(ViewResponseHelper.createHostTagResponse(Mockito.any())).thenReturn(new ArrayList<>());
+            ListResponse<HostTagResponse> response = queryManager.searchForHostTags(cmd);
+            Assert.assertEquals(0, response.getCount().intValue());
+        }
+
+        Mockito.verifyNoInteractions(dedicatedResourceDao);
+        Mockito.verifyNoInteractions(domainManager);
+    }
+
+    @Test
+    public void searchForHostTagsNonRootAdminWithNoDedicatedHostsReturnsEmptyWithoutQuerying() {
+        account.setDomainId(5L);
+        Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+        ListHostTagsCmd cmd = Mockito.mock(ListHostTagsCmd.class);
+        setupHostTagSearchBuilder(null);
+
+        try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {
+            Mockito.when(ViewResponseHelper.createHostTagResponse(Mockito.any())).thenReturn(new ArrayList<>());
+            ListResponse<HostTagResponse> response = queryManager.searchForHostTags(cmd);
+            Assert.assertEquals(0, response.getCount().intValue());
+        }
+
+        Mockito.verify(hostTagsDao, Mockito.never()).searchAndCount(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void searchForHostTagsNonRootAdminRestrictsQueryToDedicatedHostIds() {
+        account.setDomainId(5L);
+        Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
+        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
+        Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+        Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+        Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+                List.of(new DedicatedResourceVO(null, null, null, 10L, 5L, null, 1L)));
+        ListHostTagsCmd cmd = Mockito.mock(ListHostTagsCmd.class);
+
+        HostTagVO tagVO = Mockito.mock(HostTagVO.class);
+        Mockito.when(tagVO.getId()).thenReturn(1L);
+        SearchCriteria<HostTagVO> sc = setupHostTagSearchBuilder(new Pair<>(List.of(tagVO), 1));
+        Mockito.when(hostTagsDao.searchByIds(Mockito.any())).thenReturn(List.of(tagVO));
+
+        try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {
+            Mockito.when(ViewResponseHelper.createHostTagResponse(Mockito.any())).thenReturn(List.of(Mockito.mock(HostTagResponse.class)));
+            ListResponse<HostTagResponse> response = queryManager.searchForHostTags(cmd);
+            Assert.assertEquals(1, response.getCount().intValue());
+        }
+
+        Mockito.verify(sc).setParameters("hostId", new Object[]{10L});
+    }
+
+    private AccountVO createAccount(String name, long domainId, long accountId) {
+        AccountVO acct = new AccountVO(name, domainId, "networkdomain", Account.Type.DOMAIN_ADMIN, UUID.randomUUID().toString());
+        acct.setId(accountId);
+        return acct;
+    }
+
+    private HostVO mockHost(long hostId) {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        return host;
+    }
+
+    private List<Long> invokeGetDedicatedHostIdsForDomain(Account caller) {
+        return (List<Long>) ReflectionTestUtils.invokeMethod(queryManager, "getDedicatedHostIdsForDomain", caller);
+    }
+
+    @SuppressWarnings("unchecked")
+    private SearchCriteria<HostTagVO> setupHostTagSearchBuilder(Pair<List<HostTagVO>, Integer> searchResult) {
+        SearchBuilder<HostTagVO> sb = Mockito.mock(SearchBuilder.class);
+        HostTagVO entity = Mockito.mock(HostTagVO.class);
+        SearchCriteria<HostTagVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.entity()).thenReturn(entity);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.when(hostTagsDao.createSearchBuilder()).thenReturn(sb);
+        if (searchResult != null) {
+            Mockito.when(hostTagsDao.searchAndCount(Mockito.eq(sc), Mockito.any(Filter.class))).thenReturn(searchResult);
+        }
+        return sc;
+    }
+
+    @Test
     public void testSearchForAccounts() {
         ListAccountsCmd cmd = mock(ListAccountsCmd.class);
         Long domainId = 1L;
@@ -621,5 +855,40 @@ public class QueryManagerImplTest {
 
         verify(host1).setExtensionId("a");
         verify(host2).setExtensionId("b");
+    }
+
+    @Test
+    public void testAddVmCurrentClusterHostTags() {
+        String tag1 = "tag1";
+        String tag2 = "tag2";
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        HostVO host = mock(HostVO.class);
+        when(vmInstance.getHostId()).thenReturn(null);
+        when(vmInstance.getLastHostId()).thenReturn(1L);
+        when(hostDao.findById(1L)).thenReturn(host);
+        when(host.getClusterId()).thenReturn(1L);
+        when(hostTagsDao.listByClusterId(1L)).thenReturn(Arrays.asList(tag1, tag2));
+
+        List<String> hostTags = new ArrayList<>(Collections.singleton(tag1));
+        queryManagerImplSpy.addVmCurrentClusterHostTags(vmInstance, hostTags);
+        assertEquals(2, hostTags.size());
+        assertTrue(hostTags.contains(tag2));
+    }
+
+    @Test
+    public void testAddVmCurrentClusterHostTagsEmptyHostTagsInCluster() {
+        String tag1 = "tag1";
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        HostVO host = mock(HostVO.class);
+        when(vmInstance.getHostId()).thenReturn(null);
+        when(vmInstance.getLastHostId()).thenReturn(1L);
+        when(hostDao.findById(1L)).thenReturn(host);
+        when(host.getClusterId()).thenReturn(1L);
+        when(hostTagsDao.listByClusterId(1L)).thenReturn(null);
+
+        List<String> hostTags = new ArrayList<>(Collections.singleton(tag1));
+        queryManagerImplSpy.addVmCurrentClusterHostTags(vmInstance, hostTags);
+        assertEquals(1, hostTags.size());
+        assertTrue(hostTags.contains(tag1));
     }
 }

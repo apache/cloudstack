@@ -40,17 +40,17 @@ public final class RootCACustomTrustManager implements X509TrustManager {
     private boolean authStrictness = true;
     private boolean allowExpiredCertificate = true;
     private CrlDao crlDao;
-    private X509Certificate caCertificate;
+    private List<X509Certificate> caCertificates;
     private Map<String, X509Certificate> activeCertMap;
 
-    public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final X509Certificate caCertificate, final CrlDao crlDao) {
+    public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final List<X509Certificate> caCertificates, final CrlDao crlDao) {
         if (StringUtils.isNotEmpty(clientAddress)) {
             this.clientAddress = clientAddress.replace("/", "").split(":")[0];
         }
         this.authStrictness = authStrictness;
         this.allowExpiredCertificate = allowExpiredCertificate;
         this.activeCertMap = activeCertMap;
-        this.caCertificate = caCertificate;
+        this.caCertificates = caCertificates;
         this.crlDao = crlDao;
     }
 
@@ -151,6 +151,6 @@ public final class RootCACustomTrustManager implements X509TrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[]{caCertificate};
+        return caCertificates.toArray(new X509Certificate[0]);
     }
 }

@@ -95,12 +95,12 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @Param(description = "The timezone user was created in")
     private String timezone;
 
-    @SerializedName("apikey")
+    @SerializedName(ApiConstants.API_KEY)
     @Param(description = "The API key of the user", isSensitive = true)
     private String apiKey;
 
     @Deprecated
-    @SerializedName("secretkey")
+    @SerializedName(ApiConstants.SECRET_KEY)
     @Param(description = "The secret key of the user", isSensitive = true)
     private String secretKey;
 

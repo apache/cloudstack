@@ -415,10 +415,10 @@ public class NsxResource implements ServerResource {
 
     private NsxAnswer executeRequest(DeleteNsxNatRuleCommand cmd) {
         String ruleName = null;
-        if (cmd.getService() == Network.Service.StaticNat) {
+        if (Network.Service.StaticNat.getName().equals(cmd.getNetworkServiceName())) {
             ruleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                     cmd.getNetworkResourceId(), cmd.isResourceVpc());
-        } else if (cmd.getService() == Network.Service.PortForwarding) {
+        } else if (Network.Service.PortForwarding.getName().equals(cmd.getNetworkServiceName())) {
             ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                     cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
         }
@@ -456,7 +456,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId());
         } catch (Exception e) {
-            logger.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            logger.error(String.format("Failed to delete NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

@@ -415,6 +415,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), SearchCriteria.Op.NEQ);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("crossZone", AllFieldsSearch.entity().isCrossZones(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
 
         ParentTemplateIdSearch = createSearchBuilder();
@@ -457,7 +458,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         if (detailsStr == null) {
             return;
         }
-        List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+        List<VMTemplateDetailVO> details = new ArrayList<>();
         for (String key : detailsStr.keySet()) {
             VMTemplateDetailVO detail = new VMTemplateDetailVO(tmpl.getId(), key, detailsStr.get(key), true);
             details.add(detail);
@@ -479,7 +480,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             }
 
             if (tmplt.getDetails() != null) {
-                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                List<VMTemplateDetailVO> details = new ArrayList<>();
                 for (String key : tmplt.getDetails().keySet()) {
                     details.add(new VMTemplateDetailVO(tmplt.getId(), key, tmplt.getDetails().get(key), true));
                 }
@@ -565,6 +566,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> listAllActive() {
         SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
         sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateVO> listAllCrossZoneTemplates() {
+        SearchCriteria<VMTemplateVO> sc = AllFieldsSearch.create();
+        sc.setParameters("crossZone", true);
         return listBy(sc);
     }
 
@@ -944,5 +952,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             }
         }
         return rows > 0;
+    }
+
+    @Override
+    public VMTemplateVO findByAccountAndName(Long accountId, String templateName) {
+        SearchCriteria<VMTemplateVO> sc = NameAccountIdSearch.create();
+        sc.setParameters("name", templateName);
+        sc.setParameters("accountId", accountId);
+        return findOneBy(sc);
     }
 }

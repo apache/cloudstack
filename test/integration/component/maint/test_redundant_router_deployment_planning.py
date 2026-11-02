@@ -398,141 +398,146 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
             self.apiclient.updatePod(cmd)
             self.debug("Enabled first pod for testing..")
 
-        # Creating network using the network offering created
-        self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
-        network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id
-                                )
-        self.debug("Created network with ID: %s" % network.id)
+        try:
+            # Creating network using the network offering created
+            self.debug("Creating network with network offering: %s" %
+                                                        self.network_offering.id)
+            network = Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+            self.debug("Created network with ID: %s" % network.id)
 
-        networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
-        self.assertEqual(
-            isinstance(networks, list),
-            True,
-            "List networks should return a valid response for created network"
-             )
-        nw_response = networks[0]
+            networks = Network.list(
+                                    self.apiclient,
+                                    id=network.id,
+                                    listall=True
+                                    )
+            self.assertEqual(
+                isinstance(networks, list),
+                True,
+                "List networks should return a valid response for created network"
+                 )
+            nw_response = networks[0]
 
-        self.debug("Network state: %s" % nw_response.state)
-        self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
-
-        self.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
-        self.assertEqual(
-            routers,
-            None,
-            "Routers should not be spawned when network is in allocated state"
-            )
-
-        self.debug("Deploying VM in account: %s" % self.account.name)
-
-        # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)]
-                                  )
-        self.debug("Deployed VM in network: %s" % network.id)
-
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=virtual_machine.id,
-                                  listall=True
-                                  )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List Vms should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Running",
-                         "Vm should be in running state after deployment"
-                         )
-
-        self.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
-        self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Primary and backup routers"
-                    )
-        self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & Primary)"
-                    )
-
-        hosts = Host.list(
-                          self.apiclient,
-                          id=routers[0].hostid,
-                          listall=True
-                          )
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List host should return a valid data"
-                         )
-        first_host = hosts[0]
-
-        hosts = Host.list(
-                          self.apiclient,
-                          id=routers[1].hostid,
-                          listall=True
-                          )
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List host should return a valid data"
-                         )
-        second_host = hosts[0]
-
-        # Checking if the cluster IDs of both routers are different?
-        self.assertNotEqual(
-                            first_host.clusterid,
-                            second_host.clusterid,
-                            "Both the routers should be in different clusters"
-                            )
-        self.debug("Enabling remaining pods if any..")
-        pods = Pod.list(
-                        self.apiclient,
-                        zoneid=self.zone.id,
-                        listall=True,
-                        allocationstate="Disabled"
+            self.debug("Network state: %s" % nw_response.state)
+            self.assertEqual(
+                        nw_response.state,
+                        "Allocated",
+                        "The network should be in allocated state after creation"
                         )
 
-        if pods is not None:
-            for pod in pods:
-                cmd = updatePod.updatePodCmd()
-                cmd.id = pod.id
-                cmd.allocationstate = 'Enabled'
-                self.apiclient.updatePod(cmd)
+            self.debug("Listing routers for network: %s" % network.name)
+            routers = Router.list(
+                                  self.apiclient,
+                                  networkid=network.id,
+                                  listall=True
+                                  )
+            self.assertEqual(
+                routers,
+                None,
+                "Routers should not be spawned when network is in allocated state"
+                )
+
+            self.debug("Deploying VM in account: %s" % self.account.name)
+
+            # Spawn an instance in that network
+            virtual_machine = VirtualMachine.create(
+                                      self.apiclient,
+                                      self.services["virtual_machine"],
+                                      accountid=self.account.name,
+                                      domainid=self.account.domainid,
+                                      serviceofferingid=self.service_offering.id,
+                                      networkids=[str(network.id)]
+                                      )
+            self.debug("Deployed VM in network: %s" % network.id)
+
+            vms = VirtualMachine.list(
+                                      self.apiclient,
+                                      id=virtual_machine.id,
+                                      listall=True
+                                      )
+            self.assertEqual(
+                             isinstance(vms, list),
+                             True,
+                             "List Vms should return a valid list"
+                             )
+            vm = vms[0]
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm should be in running state after deployment"
+                             )
+
+            self.debug("Listing routers for network: %s" % network.name)
+            routers = Router.list(
+                                  self.apiclient,
+                                  networkid=network.id,
+                                  listall=True
+                                  )
+            self.assertEqual(
+                        isinstance(routers, list),
+                        True,
+                        "list router should return Primary and backup routers"
+                        )
+            self.assertEqual(
+                        len(routers),
+                        2,
+                        "Length of the list router should be 2 (Backup & Primary)"
+                        )
+
+            hosts = Host.list(
+                              self.apiclient,
+                              id=routers[0].hostid,
+                              listall=True
+                              )
+            self.assertEqual(
+                             isinstance(hosts, list),
+                             True,
+                             "List host should return a valid data"
+                             )
+            first_host = hosts[0]
+
+            hosts = Host.list(
+                              self.apiclient,
+                              id=routers[1].hostid,
+                              listall=True
+                              )
+            self.assertEqual(
+                             isinstance(hosts, list),
+                             True,
+                             "List host should return a valid data"
+                             )
+            second_host = hosts[0]
+
+            # Checking if the cluster IDs of both routers are different?
+            self.assertNotEqual(
+                                first_host.clusterid,
+                                second_host.clusterid,
+                                "Both the routers should be in different clusters"
+                                )
+        finally:
+            try:
+                self.debug("Enabling remaining pods if any..")
+                pods = Pod.list(
+                                self.apiclient,
+                                zoneid=self.zone.id,
+                                listall=True,
+                                allocationstate="Disabled"
+                                )
+
+                if pods is not None:
+                    for pod in pods:
+                        cmd = updatePod.updatePodCmd()
+                        cmd.id = pod.id
+                        cmd.allocationstate = 'Enabled'
+                        self.apiclient.updatePod(cmd)
+            except Exception as e:
+                self.debug("Warning: Exception during pod re-enablement: %s" % e)
         return
 
     # @attr(tags=["advanced", "advancedns"])
@@ -557,7 +562,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         # 3. VM should be deployed and in Running state and on the specified
         #    host
         # 4. There should be two routers (PRIMARY and BACKUP) for this network
-        #    ensure both routers should be on different storage pools
+        #    ensure both routers should be on different hosts
 
         self.debug(
             "Checking if the current zone has multiple active pods in it..")
@@ -636,143 +641,149 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
             self.apiclient.updateCluster(cmd)
             self.debug("Enabled first cluster for testing..")
 
-        # Creating network using the network offering created
-        self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
-        network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id
-                                )
-        self.debug("Created network with ID: %s" % network.id)
+        try:
+            # Creating network using the network offering created
+            self.debug("Creating network with network offering: %s" %
+                                                        self.network_offering.id)
+            network = Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+            self.debug("Created network with ID: %s" % network.id)
 
-        networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
-        self.assertEqual(
-            isinstance(networks, list),
-            True,
-            "List networks should return a valid response for created network"
-             )
-        nw_response = networks[0]
+            networks = Network.list(
+                                    self.apiclient,
+                                    id=network.id,
+                                    listall=True
+                                    )
+            self.assertEqual(
+                isinstance(networks, list),
+                True,
+                "List networks should return a valid response for created network"
+                 )
+            nw_response = networks[0]
 
-        self.debug("Network state: %s" % nw_response.state)
-        self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
+            self.debug("Network state: %s" % nw_response.state)
+            self.assertEqual(
+                        nw_response.state,
+                        "Allocated",
+                        "The network should be in allocated state after creation"
+                        )
 
-        self.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
-        self.assertEqual(
-            routers,
-            None,
-            "Routers should not be spawned when network is in allocated state"
-            )
-
-        self.debug("Retrieving the list of hosts in the cluster")
-        hosts = Host.list(
-                          self.apiclient,
-                          clusterid=enabled_cluster.id,
-                          listall=True
-                          )
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should not return an empty response"
-                         )
-        host = hosts[0]
-
-        self.debug("Deploying VM in account: %s" % self.account.name)
-
-        # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
+            self.debug("Listing routers for network: %s" % network.name)
+            routers = Router.list(
                                   self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)],
-                                  hostid=host.id
-                                  )
-        self.debug("Deployed VM in network: %s" % network.id)
-
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=virtual_machine.id,
+                                  networkid=network.id,
                                   listall=True
                                   )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List Vms should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Running",
-                         "Vm should be in running state after deployment"
-                         )
+            self.assertEqual(
+                routers,
+                None,
+                "Routers should not be spawned when network is in allocated state"
+                )
 
-        self.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
+            self.debug("Retrieving the list of hosts in the cluster")
+            hosts = Host.list(
                               self.apiclient,
-                              networkid=network.id,
+                              clusterid=enabled_cluster.id,
                               listall=True
                               )
-        self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Primary and backup routers"
-                    )
-        self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & Primary)"
-                    )
-        self.assertNotEqual(
-                    routers[0].hostid,
-                    routers[1].hostid,
-                    "Both the routers should be in different storage pools"
-                            )
-        self.debug("Enabling remaining pods if any..")
-        pods = Pod.list(
-                        self.apiclient,
-                        zoneid=self.zone.id,
-                        listall=True,
-                        allocationstate="Disabled"
+            self.assertEqual(
+                             isinstance(hosts, list),
+                             True,
+                             "List hosts should not return an empty response"
+                             )
+            host = hosts[0]
+
+            self.debug("Deploying VM in account: %s" % self.account.name)
+
+            # Spawn an instance in that network
+            virtual_machine = VirtualMachine.create(
+                                      self.apiclient,
+                                      self.services["virtual_machine"],
+                                      accountid=self.account.name,
+                                      domainid=self.account.domainid,
+                                      serviceofferingid=self.service_offering.id,
+                                      networkids=[str(network.id)],
+                                      hostid=host.id
+                                      )
+            self.debug("Deployed VM in network: %s" % network.id)
+
+            vms = VirtualMachine.list(
+                                      self.apiclient,
+                                      id=virtual_machine.id,
+                                      listall=True
+                                      )
+            self.assertEqual(
+                             isinstance(vms, list),
+                             True,
+                             "List Vms should return a valid list"
+                             )
+            vm = vms[0]
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm should be in running state after deployment"
+                             )
+
+            self.debug("Listing routers for network: %s" % network.name)
+            routers = Router.list(
+                                  self.apiclient,
+                                  networkid=network.id,
+                                  listall=True
+                                  )
+            self.assertEqual(
+                        isinstance(routers, list),
+                        True,
+                        "list router should return Primary and backup routers"
                         )
-        if pods is not None:
-            for pod in pods:
-                cmd = updatePod.updatePodCmd()
-                cmd.id = pod.id
-                cmd.allocationstate = 'Enabled'
-                self.apiclient.updatePod(cmd)
-
-        clusters = Cluster.list(
-                                self.apiclient,
-                                allocationstate="Disabled",
-                                podid=enabled_pod.id,
-                                listall=True
+            self.assertEqual(
+                        len(routers),
+                        2,
+                        "Length of the list router should be 2 (Backup & Primary)"
+                        )
+            self.assertNotEqual(
+                        routers[0].hostid,
+                        routers[1].hostid,
+                        "Both the routers should be in different hosts"
                                 )
+        finally:
+            try:
+                self.debug("Enabling remaining pods if any..")
+                pods = Pod.list(
+                                self.apiclient,
+                                zoneid=self.zone.id,
+                                listall=True,
+                                allocationstate="Disabled"
+                                )
+                if pods is not None:
+                    for pod in pods:
+                        cmd = updatePod.updatePodCmd()
+                        cmd.id = pod.id
+                        cmd.allocationstate = 'Enabled'
+                        self.apiclient.updatePod(cmd)
 
-        if clusters is not None:
-            for cluster in clusters:
-                    cmd = updateCluster.updateClusterCmd()
-                    cmd.id = cluster.id
-                    cmd.allocationstate = 'Enabled'
-                    self.apiclient.updateCluster(cmd)
+                clusters = Cluster.list(
+                                        self.apiclient,
+                                        allocationstate="Disabled",
+                                        podid=enabled_pod.id,
+                                        listall=True
+                                        )
+
+                if clusters is not None:
+                    for cluster in clusters:
+                        cmd = updateCluster.updateClusterCmd()
+                        cmd.id = cluster.id
+                        cmd.allocationstate = 'Enabled'
+                        self.apiclient.updateCluster(cmd)
+            except Exception as e:
+                self.debug("Warning: Exception during resource re-enablement: %s" % e)
         return
+
 
     # @attr(tags=["advanced", "advancedns", "ssh"])
     @attr(tags=["TODO"])
@@ -874,140 +885,145 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
             self.apiclient.updateCluster(cmd)
             self.debug("Enabled first cluster for testing..")
 
-        # Creating network using the network offering created
-        self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
-        network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id
-                                )
-        self.debug("Created network with ID: %s" % network.id)
+        try:
+            # Creating network using the network offering created
+            self.debug("Creating network with network offering: %s" %
+                                                        self.network_offering.id)
+            network = Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+            self.debug("Created network with ID: %s" % network.id)
 
-        networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
-        self.assertEqual(
-            isinstance(networks, list),
-            True,
-            "List networks should return a valid response for created network"
-             )
-        nw_response = networks[0]
+            networks = Network.list(
+                                    self.apiclient,
+                                    id=network.id,
+                                    listall=True
+                                    )
+            self.assertEqual(
+                isinstance(networks, list),
+                True,
+                "List networks should return a valid response for created network"
+                 )
+            nw_response = networks[0]
 
-        self.debug("Network state: %s" % nw_response.state)
-        self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
-
-        self.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
-        self.assertEqual(
-            routers,
-            None,
-            "Routers should not be spawned when network is in allocated state"
-            )
-
-        self.debug("Retrieving the list of hosts in the cluster")
-        hosts = Host.list(
-                          self.apiclient,
-                          clusterid=enabled_cluster.id,
-                          listall=True
-                          )
-        self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should not return an empty response"
-                         )
-        host = hosts[0]
-
-        self.debug("Deploying VM in account: %s" % self.account.name)
-
-        # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)],
-                                  hostid=host.id
-                                  )
-        self.debug("Deployed VM in network: %s" % network.id)
-
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=virtual_machine.id,
-                                  listall=True
-                                  )
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List Vms should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Running",
-                         "Vm should be in running state after deployment"
-                         )
-
-        self.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
-        self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Primary and backup routers"
-                    )
-        self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & Primary)"
-                  )
-        self.assertNotEqual(
-                            routers[0].hostid,
-                            routers[1].hostid,
-                            "Both the routers should be in different hosts"
-                            )
-        self.debug("Enabling remaining pods if any..")
-        pods = Pod.list(
-                        self.apiclient,
-                        zoneid=self.zone.id,
-                        listall=True,
-                        allocationstate="Disabled"
+            self.debug("Network state: %s" % nw_response.state)
+            self.assertEqual(
+                        nw_response.state,
+                        "Allocated",
+                        "The network should be in allocated state after creation"
                         )
 
-        if pods is not None:
-            for pod in pods:
-                cmd = updatePod.updatePodCmd()
-                cmd.id = pod.id
-                cmd.allocationstate = 'Enabled'
-                self.apiclient.updatePod(cmd)
+            self.debug("Listing routers for network: %s" % network.name)
+            routers = Router.list(
+                                  self.apiclient,
+                                  networkid=network.id,
+                                  listall=True
+                                  )
+            self.assertEqual(
+                routers,
+                None,
+                "Routers should not be spawned when network is in allocated state"
+                )
 
-        clusters = Cluster.list(
-                                self.apiclient,
-                                allocationstate="Disabled",
-                                podid=enabled_pod.id,
-                                listall=True
+            self.debug("Retrieving the list of hosts in the cluster")
+            hosts = Host.list(
+                              self.apiclient,
+                              clusterid=enabled_cluster.id,
+                              listall=True
+                              )
+            self.assertEqual(
+                             isinstance(hosts, list),
+                             True,
+                             "List hosts should not return an empty response"
+                             )
+            host = hosts[0]
+
+            self.debug("Deploying VM in account: %s" % self.account.name)
+
+            # Spawn an instance in that network
+            virtual_machine = VirtualMachine.create(
+                                      self.apiclient,
+                                      self.services["virtual_machine"],
+                                      accountid=self.account.name,
+                                      domainid=self.account.domainid,
+                                      serviceofferingid=self.service_offering.id,
+                                      networkids=[str(network.id)],
+                                      hostid=host.id
+                                      )
+            self.debug("Deployed VM in network: %s" % network.id)
+
+            vms = VirtualMachine.list(
+                                      self.apiclient,
+                                      id=virtual_machine.id,
+                                      listall=True
+                                      )
+            self.assertEqual(
+                             isinstance(vms, list),
+                             True,
+                             "List Vms should return a valid list"
+                             )
+            vm = vms[0]
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm should be in running state after deployment"
+                             )
+
+            self.debug("Listing routers for network: %s" % network.name)
+            routers = Router.list(
+                                  self.apiclient,
+                                  networkid=network.id,
+                                  listall=True
+                                  )
+            self.assertEqual(
+                        isinstance(routers, list),
+                        True,
+                        "list router should return Primary and backup routers"
+                        )
+            self.assertEqual(
+                        len(routers),
+                        2,
+                        "Length of the list router should be 2 (Backup & Primary)"
+                        )
+            self.assertNotEqual(
+                                routers[0].hostid,
+                                routers[1].hostid,
+                                "Both the routers should be in different hosts"
                                 )
-        if clusters is not None:
-            for cluster in clusters:
-                cmd = updateCluster.updateClusterCmd()
-                cmd.id = cluster.id
-                cmd.allocationstate = 'Enabled'
-                self.apiclient.updateCluster(cmd)
+        finally:
+            try:
+                self.debug("Enabling remaining pods if any..")
+                pods = Pod.list(
+                                self.apiclient,
+                                zoneid=self.zone.id,
+                                listall=True,
+                                allocationstate="Disabled"
+                                )
+
+                if pods is not None:
+                    for pod in pods:
+                        cmd = updatePod.updatePodCmd()
+                        cmd.id = pod.id
+                        cmd.allocationstate = 'Enabled'
+                        self.apiclient.updatePod(cmd)
+
+                clusters = Cluster.list(
+                                        self.apiclient,
+                                        allocationstate="Disabled",
+                                        podid=enabled_pod.id,
+                                        listall=True
+                                        )
+                if clusters is not None:
+                    for cluster in clusters:
+                        cmd = updateCluster.updateClusterCmd()
+                        cmd.id = cluster.id
+                        cmd.allocationstate = 'Enabled'
+                        self.apiclient.updateCluster(cmd)
+            except Exception as e:
+                self.debug("Warning: Exception during resource re-enablement: %s" % e)
         return

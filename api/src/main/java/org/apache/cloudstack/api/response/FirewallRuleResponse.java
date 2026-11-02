@@ -94,6 +94,10 @@ public class FirewallRuleResponse extends BaseResponse {
     @Param(description = "The ID of the guest Network the port forwarding rule belongs to")
     private String networkId;
 
+    @SerializedName(ApiConstants.NETWORK_NAME)
+    @Param(description = "The Name of the guest Network the port forwarding rule belongs to")
+    private String networkName;
+
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "Is firewall for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
@@ -221,6 +225,10 @@ public class FirewallRuleResponse extends BaseResponse {
 
     public void setNetworkId(String networkId) {
         this.networkId = networkId;
+    }
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
     }
 
     public void setForDisplay(Boolean forDisplay) {

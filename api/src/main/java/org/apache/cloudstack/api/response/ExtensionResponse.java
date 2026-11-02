@@ -85,6 +85,12 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Removal timestamp of the extension, if applicable")
     private Date removed;
 
+    @SerializedName(ApiConstants.RESERVED_RESOURCE_DETAILS)
+    @Param(description = "Resource detail names as comma separated string that should be reserved and not visible " +
+                    "to end users",
+            since = "4.22.1")
+    protected String reservedResourceDetails;
+
     public ExtensionResponse(String id, String name, String description, String type) {
         this.id = id;
         this.name = name;
@@ -178,5 +184,9 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public void setReservedResourceDetails(String reservedResourceDetails) {
+        this.reservedResourceDetails = reservedResourceDetails;
     }
 }

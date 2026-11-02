@@ -20,6 +20,8 @@ package com.cloud.hypervisor.vmware.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.cloud.hypervisor.vmware.mo.ClusterMO;
+import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.Description;
 import com.vmware.vim25.ManagedObjectReference;
@@ -104,5 +106,26 @@ public class VmwareHelperTest {
         Assert.assertEquals(diskLabel, disk.getLabel());
         Assert.assertEquals(diskFileBaseName, disk.getFileBaseName());
         Assert.assertEquals(dataStoreName, disk.getDatastoreName());
+    }
+
+    @Test
+    public void testGetVmwareHostVersionException() throws Exception {
+        HostMO hostMO = Mockito.mock(HostMO.class);
+        Mockito.when(hostMO.getProductVersion()).thenThrow(new Exception("Error obtaining host version"));
+        Assert.assertNull(VmwareHelper.getVmwareHostVersion(hostMO));
+    }
+
+    @Test
+    public void testGetVmwareHostVersion() throws Exception {
+        HostMO hostMO = Mockito.mock(HostMO.class);
+        String version = "8.0.3";
+        Mockito.when(hostMO.getProductVersion()).thenReturn(version);
+        Assert.assertEquals(version, VmwareHelper.getVmwareHostVersion(hostMO));
+    }
+
+    @Test
+    public void testGetVmwareHostVersionInvalidParameter() {
+        ClusterMO clusterMO = Mockito.mock(ClusterMO.class);
+        Assert.assertNull(VmwareHelper.getVmwareHostVersion(clusterMO));
     }
 }

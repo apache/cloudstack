@@ -198,11 +198,11 @@ public class StorPoolStoragePool implements KVMStoragePool {
 
     @Override
     public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
-        boolean isStorageNodeUp = checkingHeartBeat(primaryStoragePool, null);
+        boolean isStorageNodeUp = hasHeartBeat(primaryStoragePool, null);
         if (!isStorageNodeUp && !hostValidation) {
             //restart the host
             logger.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, primaryStoragePool.getPool().getType()));
-            Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeout, logger);
+            Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
             cmd.add("-c");
             cmd.execute();
             return "Down";
@@ -240,7 +240,7 @@ public class StorPoolStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
+    public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
         boolean isNodeWorking = false;
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
@@ -300,8 +300,8 @@ public class StorPoolStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUuidListString, String vmActivityCheckPath, long duration) {
-        return checkingHeartBeat(pool, host);
+    public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUuidListString, String vmActivityCheckPath, long duration) {
+        return hasHeartBeat(pool, host);
     }
 
     @Override

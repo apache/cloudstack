@@ -23,6 +23,7 @@ import com.cloud.agent.api.CheckConvertInstanceAnswer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
+import com.cloud.agent.api.CleanupConvertedInstanceDisksCommand;
 import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
@@ -38,6 +39,7 @@ import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VmwareVddkSourceDiskTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
@@ -86,6 +88,8 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.resourcelimit.ReservationHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
@@ -105,6 +109,8 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -140,7 +146,9 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import com.google.gson.Gson;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -155,8 +163,6 @@ import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.NicResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -164,12 +170,16 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeImportUnmanageService;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
@@ -186,6 +196,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,21 +207,30 @@ import java.util.stream.Collectors;
 
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+import static org.apache.cloudstack.storage.volume.VolumeImportUnmanageService.AllowImportVolumeWithBackingFile;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.CloningInstance;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.Completed;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.ConvertingInstance;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.Importing;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
-    public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
-    public static final String KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME = "kvm-default-vm-import-dummy-template";
     protected Logger logger = LogManager.getLogger(UnmanagedVMsManagerImpl.class);
+    private static final long OTHER_LINUX_64_GUEST_OS_ID = 99;
     private static final List<Hypervisor.HypervisorType> importUnmanagedInstancesSupportedHypervisors =
             Arrays.asList(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM);
 
     private static final List<Storage.StoragePoolType> forceConvertToPoolAllowedTypes =
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
                     Storage.StoragePoolType.SharedMountPoint);
+    private static final List<Storage.StoragePoolType> vddkDirectConvertToPoolAllowedTypes =
+            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
+                    Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.RBD,
+                    Storage.StoragePoolType.Linstor);
+    private static final List<Storage.StoragePoolType> stagedConversionDestinationPoolTypes =
+            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.RBD,
+                    Storage.StoragePoolType.Linstor);
+    private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
+    private static final String DETAIL_VDDK_THUMBPRINT = "vddk.thumbprint";
 
     ConfigKey<Boolean> ConvertVmwareInstanceToKvmExtraParamsAllowed = new ConfigKey<>(Boolean.class,
             "convert.vmware.instance.to.kvm.extra.params.allowed",
@@ -253,6 +274,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private ResourceManager resourceManager;
     @Inject
     private ResourceLimitService resourceLimitService;
+    @Inject
+    private ReservationDao reservationDao;
     @Inject
     private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
@@ -312,6 +335,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Inject
     private DataStoreManager dataStoreManager;
     @Inject
+    private VolumeImportUnmanageService volumeImportUnmanageService;
+    @Inject
     private ImportVmTasksManager importVmTasksManager;
 
     protected Gson gson;
@@ -326,7 +351,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             template = VMTemplateVO.createSystemIso(templateDao.getNextInSequence(Long.class, "id"), templateName, templateName, true,
                     "", true, 64, Account.ACCOUNT_ID_SYSTEM, "",
-                    "VM Import Default Template", false, 1);
+                    "VM Import Default Template", false, OTHER_LINUX_64_GUEST_OS_ID);
             template.setState(VirtualMachineTemplate.State.Inactive);
             template = templateDao.persist(template);
             if (template == null) {
@@ -338,68 +363,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.error("Unable to create default dummy template for VM import", e);
         }
         return template;
-    }
-
-    private UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host) {
-        UnmanagedInstanceResponse response = new UnmanagedInstanceResponse();
-        response.setName(instance.getName());
-
-        if (cluster != null) {
-            response.setClusterId(cluster.getUuid());
-        }
-        if (host != null) {
-            response.setHostId(host.getUuid());
-            response.setHostName(host.getName());
-        }
-        response.setPowerState(instance.getPowerState().toString());
-        response.setCpuCores(instance.getCpuCores());
-        response.setCpuSpeed(instance.getCpuSpeed());
-        response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());
-        response.setMemory(instance.getMemory());
-        response.setOperatingSystemId(instance.getOperatingSystemId());
-        response.setOperatingSystem(instance.getOperatingSystem());
-        response.setObjectName("unmanagedinstance");
-
-        if (instance.getDisks() != null) {
-            for (UnmanagedInstanceTO.Disk disk : instance.getDisks()) {
-                UnmanagedInstanceDiskResponse diskResponse = new UnmanagedInstanceDiskResponse();
-                diskResponse.setDiskId(disk.getDiskId());
-                if (StringUtils.isNotEmpty(disk.getLabel())) {
-                    diskResponse.setLabel(disk.getLabel());
-                }
-                diskResponse.setCapacity(disk.getCapacity());
-                diskResponse.setController(disk.getController());
-                diskResponse.setControllerUnit(disk.getControllerUnit());
-                diskResponse.setPosition(disk.getPosition());
-                diskResponse.setImagePath(disk.getImagePath());
-                diskResponse.setDatastoreName(disk.getDatastoreName());
-                diskResponse.setDatastoreHost(disk.getDatastoreHost());
-                diskResponse.setDatastorePath(disk.getDatastorePath());
-                diskResponse.setDatastoreType(disk.getDatastoreType());
-                response.addDisk(diskResponse);
-            }
-        }
-
-        if (instance.getNics() != null) {
-            for (UnmanagedInstanceTO.Nic nic : instance.getNics()) {
-                NicResponse nicResponse = new NicResponse();
-                nicResponse.setId(nic.getNicId());
-                nicResponse.setNetworkName(nic.getNetwork());
-                nicResponse.setMacAddress(nic.getMacAddress());
-                if (StringUtils.isNotEmpty(nic.getAdapterType())) {
-                    nicResponse.setAdapterType(nic.getAdapterType());
-                }
-                if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
-                    nicResponse.setIpAddresses(nic.getIpAddress());
-                }
-                nicResponse.setVlanId(nic.getVlan());
-                nicResponse.setIsolatedPvlanId(nic.getPvlan());
-                nicResponse.setIsolatedPvlanType(nic.getPvlanType());
-                response.addNic(nicResponse);
-            }
-        }
-
-        return response;
     }
 
     private List<String> getAdditionalNameFilters(Cluster cluster) {
@@ -570,6 +533,27 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private StoragePool getStoragePool(final UnmanagedInstanceTO.Disk disk, final DataCenter zone, final Cluster cluster, DiskOffering diskOffering) {
+        return getStoragePool(disk, zone, cluster, diskOffering, null);
+    }
+
+    private StoragePool getStoragePool(final UnmanagedInstanceTO.Disk disk, final DataCenter zone, final Cluster cluster, DiskOffering diskOffering, Long storagePoolId) {
+        if (storagePoolId != null) {
+            StoragePoolVO storagePool = primaryDataStoreDao.findById(storagePoolId);
+            if (storagePool == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool ID %s for disk %s(%s) not found", storagePoolId, disk.getLabel(), disk.getDiskId()));
+            }
+            if (storagePool.getDataCenterId() != zone.getId()) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool %s does not belong to zone %s", storagePool.getUuid(), zone.getUuid()));
+            }
+            if (storagePool.getClusterId() != null && !storagePool.getClusterId().equals(cluster.getId())) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool %s does not belong to cluster %s", storagePool.getUuid(), cluster.getUuid()));
+            }
+            if (!volumeApiService.doesStoragePoolSupportDiskOffering(storagePool, diskOffering)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool %s does not support disk offering %s for disk %s(%s)",
+                        storagePool.getUuid(), diskOffering.getUuid(), disk.getLabel(), disk.getDiskId()));
+            }
+            return storagePool;
+        }
         StoragePool storagePool = null;
         final String dsHost = disk.getDatastoreHost();
         final String dsPath = disk.getDatastorePath();
@@ -639,7 +623,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<>(rootDisk, dataDisks);
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(String instanceName, UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(String instanceName, UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed, List<Reserver> reservations)
+            throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
+        checkUnmanagedDiskAndOfferingForImport(instanceName, disk, diskOffering, serviceOffering, owner, zone, cluster, migrateAllowed, reservations, null);
+    }
+
+    private void checkUnmanagedDiskAndOfferingForImport(String instanceName, UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed, List<Reserver> reservations, Long storagePoolId)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (serviceOffering == null && diskOffering == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID [%s] not found during VM [%s] import.", disk.getDiskId(), instanceName));
@@ -647,7 +636,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (diskOffering != null) {
             accountService.checkAccess(owner, diskOffering, zone);
         }
-        resourceLimitService.checkVolumeResourceLimit(owner, true, null, diskOffering);
         if (disk.getCapacity() == null || disk.getCapacity() == 0) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk(ID: %s) is found invalid during VM import", disk.getDiskId()));
         }
@@ -658,13 +646,19 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import", diskOffering.getUuid(), (diskOffering.getDiskSize() / Resource.ResourceType.bytesToGiB), disk.getDiskId(), (disk.getCapacity() / (Resource.ResourceType.bytesToGiB))));
         }
         diskOffering = diskOffering != null ? diskOffering : diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering);
+        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering, storagePoolId);
         if (diskOffering != null && !migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
         }
+        resourceLimitService.checkVolumeResourceLimit(owner, true, disk.getCapacity(), diskOffering, reservations);
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(String intanceName, List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(String intanceName, List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed, List<Reserver> reservations)
+            throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
+        checkUnmanagedDiskAndOfferingForImport(intanceName, disks, diskOfferingMap, owner, zone, cluster, migrateAllowed, reservations, null);
+    }
+
+    private void checkUnmanagedDiskAndOfferingForImport(String intanceName, List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed, List<Reserver> reservations, Long storagePoolId)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         String diskController = null;
         for (UnmanagedInstanceTO.Disk disk : disks) {
@@ -681,7 +675,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple data disk controllers of different type (%s, %s) are not supported for import. Please make sure that all data disk controllers are of the same type", diskController, disk.getController()));
                 }
             }
-            checkUnmanagedDiskAndOfferingForImport(intanceName, disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), null, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(intanceName, disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), null, owner, zone, cluster, migrateAllowed, reservations, storagePoolId);
         }
     }
 
@@ -805,8 +799,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private Pair<DiskProfile, StoragePool> importExternalDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, DeployDestination dest, DiskOffering diskOffering,
-                                                      Volume.Type type, VirtualMachineTemplate template,Long deviceId, String remoteUrl, String username, String password,
-                                                      String tmpPath, DiskProfile diskProfile) {
+                                                              Volume.Type type, VirtualMachineTemplate template,Long deviceId, String remoteUrl, String username, String password,
+                                                              String tmpPath, DiskProfile diskProfile) {
         final String path = StringUtils.isEmpty(disk.getDatastorePath()) ? disk.getImagePath() : disk.getDatastorePath();
         String chainInfo = disk.getChainInfo();
         if (StringUtils.isEmpty(chainInfo)) {
@@ -852,14 +846,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
-                storagePool.getId(), storagePool.getPoolType(), copyRemoteVolumeAnswer.getFilename(), chainInfo, diskProfile);
+                storagePool.getId(), storagePool.getPoolType(), copyRemoteVolumeAnswer.getFilename(), chainInfo, diskProfile,
+                getImageFormatFromVolumeDetails(copyRemoteVolumeAnswer.getVolumeDetails()));
 
         return new Pair<>(profile, storagePool);
     }
 
     private Pair<DiskProfile, StoragePool> importKVMLocalDisk(VirtualMachine vm, DiskOffering diskOffering,
                                                               Volume.Type type, VirtualMachineTemplate template,
-                                                              Long deviceId, Long hostId, String diskPath, DiskProfile diskProfile) {
+                                                              Long deviceId, Long hostId, String diskPath, DiskProfile diskProfile,
+                                                              Storage.ImageFormat format) {
         List<StoragePoolVO> storagePools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
         if(storagePools.size() < 1) {
             throw new CloudRuntimeException("Local Storage not found for host");
@@ -868,25 +864,66 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         StoragePool storagePool = storagePools.get(0);
 
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
-                storagePool.getId(), storagePool.getPoolType(), diskPath, null, diskProfile);
+                storagePool.getId(), storagePool.getPoolType(), diskPath, null, diskProfile, format);
+
+        notifyStorageDriverOfVolumeImport(storagePool, profile.getVolumeId());
 
         return new Pair<>(profile, storagePool);
     }
 
     private Pair<DiskProfile, StoragePool> importKVMSharedDisk(VirtualMachine vm, DiskOffering diskOffering,
                                                               Volume.Type type, VirtualMachineTemplate template,
-                                                              Long deviceId, Long poolId, String diskPath, DiskProfile diskProfile) {
+                                                              Long deviceId, Long poolId, String diskPath, DiskProfile diskProfile,
+                                                              Storage.ImageFormat format) {
         StoragePool storagePool = primaryDataStoreDao.findById(poolId);
 
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
-                poolId, storagePool.getPoolType(), diskPath, null, diskProfile);
+                poolId, storagePool.getPoolType(), diskPath, null, diskProfile, format);
+
+        notifyStorageDriverOfVolumeImport(storagePool, profile.getVolumeId());
 
         return new Pair<>(profile, storagePool);
+    }
+
+    private void notifyStorageDriverOfVolumeImport(StoragePool pool, long volumeId) {
+        Volume volume = volumeDao.findById(volumeId);
+        if (volume == null) {
+            logger.warn(String.format("Could not find volume with id [%s] to notify storage driver after import", volumeId));
+            return;
+        }
+        volumeImportUnmanageService.notifyStorageDriverOfVolumeManagementChange(pool, volume, true);
+    }
+
+    /**
+     * Reads the image format the hypervisor reported for an existing volume, so that the imported
+     * volume records what is actually on the pool (raw on RBD, qcow2 on file based pools) instead of
+     * the cluster default for the hypervisor. Returns null when the agent did not report a format.
+     */
+    protected Storage.ImageFormat getImageFormatFromVolumeDetails(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
+        if (MapUtils.isEmpty(volumeDetails)) {
+            return null;
+        }
+        String fileFormat = volumeDetails.get(VolumeOnStorageTO.Detail.FILE_FORMAT);
+        if (StringUtils.isBlank(fileFormat)) {
+            return null;
+        }
+        try {
+            return Storage.ImageFormat.valueOf(fileFormat.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unrecognised image format {} reported for the volume being imported, falling back to the hypervisor default", fileFormat);
+            return null;
+        }
     }
 
     private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
                                                       Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
                                                       Account owner, Long deviceId) {
+        return importDisk(disk, vm, cluster, diskOffering, type, name, diskSize, minIops, maxIops, template, owner, deviceId, null);
+    }
+
+    private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
+                                                      Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
+                                                      Account owner, Long deviceId, Long storagePoolId) {
         final DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
         final String path = StringUtils.isEmpty(disk.getFileBaseName()) ? disk.getImagePath() : disk.getFileBaseName();
         String chainInfo = disk.getChainInfo();
@@ -896,11 +933,26 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             diskInfo.setDiskChain(new String[]{disk.getImagePath()});
             chainInfo = gson.toJson(diskInfo);
         }
-        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering);
+        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering, storagePoolId);
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
-                minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), storagePool.getPoolType(), path, chainInfo);
+                minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), storagePool.getPoolType(), path, chainInfo, null);
 
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
+    }
+
+    /**
+     * Returns the device ids which cannot be used by the volumes of the imported Instance: the ones of the CD-ROM devices,
+     * and the one of the config drive ISO (always kept free, as the NICs of the Instance are not imported yet at this point).
+     */
+    private Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+        return volumeApiService.getReservedDeviceIds(vm, true);
+    }
+
+    private long getNextDeviceId(long deviceId, Set<Long> reservedDeviceIds) {
+        do {
+            deviceId++;
+        } while (reservedDeviceIds.contains(deviceId));
+        return deviceId;
     }
 
     private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
@@ -1082,7 +1134,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm %s during publishing usage records", userVm.getInstanceName()));
         }
-        resourceLimitService.incrementVmResourceCount(userVm.getAccountId(), userVm.isDisplayVm(), serviceOfferingVO, templateVO);
+        resourceLimitService.incrementVmResourceCount(userVm.getAccountId(), userVm.isDisplayVm(), serviceOfferingVO, templateVO, null);
         // Save usage event and update resource count for user vm volumes
         List<VolumeVO> volumes = volumeDao.findByInstance(userVm.getId());
         for (VolumeVO volume : volumes) {
@@ -1108,45 +1160,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    protected void checkUnmanagedDiskLimits(Account account, UnmanagedInstanceTO.Disk rootDisk, ServiceOffering serviceOffering,
-            List<UnmanagedInstanceTO.Disk> dataDisks, Map<String, Long> dataDiskOfferingMap) throws ResourceAllocationException {
-        Long totalVolumes = 0L;
-        Long totalVolumesSize = 0L;
-        List<UnmanagedInstanceTO.Disk> disks = new ArrayList<>();
-        disks.add(rootDisk);
-        disks.addAll(dataDisks);
-        Map<String, Long> diskOfferingMap = new HashMap<>(dataDiskOfferingMap);
-        diskOfferingMap.put(rootDisk.getDiskId(), serviceOffering.getDiskOfferingId());
-        Map<Long, Long> diskOfferingVolumeCountMap = new HashMap<>();
-        Map<Long, Long> diskOfferingSizeMap = new HashMap<>();
-        for (UnmanagedInstanceTO.Disk disk : disks) {
-            totalVolumes++;
-            totalVolumesSize += disk.getCapacity();
-            Long diskOfferingId = diskOfferingMap.get(disk.getDiskId());
-            if (diskOfferingVolumeCountMap.containsKey(diskOfferingId)) {
-                diskOfferingVolumeCountMap.put(diskOfferingId, diskOfferingVolumeCountMap.get(diskOfferingId) + 1);
-                diskOfferingSizeMap.put(diskOfferingId, diskOfferingSizeMap.get(diskOfferingId) + disk.getCapacity());
-            } else {
-                diskOfferingVolumeCountMap.put(diskOfferingId, 1L);
-                diskOfferingSizeMap.put(diskOfferingId, disk.getCapacity());
-            }
-        }
-        resourceLimitService.checkResourceLimit(account, Resource.ResourceType.volume, totalVolumes);
-        resourceLimitService.checkResourceLimit(account, Resource.ResourceType.primary_storage, totalVolumesSize);
-        for (Long diskOfferingId : diskOfferingVolumeCountMap.keySet()) {
-            List<String> tags = resourceLimitService.getResourceLimitStorageTags(diskOfferingDao.findById(diskOfferingId));
-            for (String tag : tags) {
-                resourceLimitService.checkResourceLimitWithTag(account, Resource.ResourceType.volume, tag, diskOfferingVolumeCountMap.get(diskOfferingId));
-                resourceLimitService.checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, tag, diskOfferingSizeMap.get(diskOfferingId));
-            }
-        }
+    private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceNameInternal, final DataCenter zone, final Cluster cluster, final HostVO host,
+                                                final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
+                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final Long guestOsId,
+                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
+        return importVirtualMachineInternal(unmanagedInstance, instanceNameInternal, zone, cluster, host, template, displayName, hostName, caller, owner,
+                userId, serviceOffering, dataDiskOfferingMap, nicNetworkMap, callerNicIpAddressMap, guestOsId, details, migrateAllowed,
+                forced, isImportUnmanagedFromSameHypervisor, null);
     }
 
     private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceNameInternal, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final Long guestOsId,
+                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor,
+                                                final Long storagePoolId) {
         logger.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
                 unmanagedInstance, displayName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
         UserVm userVm = null;
@@ -1199,99 +1228,104 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             allDetails.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(size));
         }
 
+        List<Reserver> reservations = new ArrayList<>();
         try {
-            checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed, reservations, storagePoolId);
             if (CollectionUtils.isNotEmpty(dataDisks)) { // Data disk(s) present
-                checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
+                checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed, reservations, storagePoolId);
                 allDetails.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDisks.get(0).getController());
             }
-            checkUnmanagedDiskLimits(owner, rootDisk, serviceOffering, dataDisks, dataDiskOfferingMap);
-        } catch (ResourceAllocationException e) {
+
+            // Check NICs and supplied networks
+            Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
+            Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, cluster.getHypervisorType());
+            if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+                allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
+            }
+
+            if (StringUtils.isNotEmpty(unmanagedInstance.getVncPassword())) {
+                allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPassword());
+            }
+
+            addImportingVMBootTypeAndModeDetails(unmanagedInstance.getBootType(), unmanagedInstance.getBootMode(), allDetails);
+
+            VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
+            if (unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOn)) {
+                powerState = VirtualMachine.PowerState.PowerOn;
+            }
+
+            try {
+                userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
+                        null, caller, true, null, owner.getAccountId(), userId,
+                        validatedServiceOffering, null, guestOsId, hostName,
+                        cluster.getHypervisorType(), allDetails, powerState, null);
+            } catch (InsufficientCapacityException ice) {
+                String errorMsg = String.format("Failed to import VM [%s] due to [%s].", displayName, ice.getMessage());
+                logger.error(errorMsg, ice);
+                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg);
+            }
+
+            if (userVm == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", displayName));
+            }
+            List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+            try {
+                if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
+                    throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
+                }
+                Long minIops = null;
+                if (details.containsKey(MIN_IOPS)) {
+                    minIops = Long.parseLong(details.get(MIN_IOPS));
+                }
+                Long maxIops = null;
+                if (details.containsKey(MAX_IOPS)) {
+                    maxIops = Long.parseLong(details.get(MAX_IOPS));
+                }
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+                diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
+                        rootDisk.getCapacity(), minIops, maxIops, template, owner, null, storagePoolId));
+                Set<Long> reservedDeviceIds = getReservedDeviceIds(userVm);
+                long deviceId = getNextDeviceId(0L, reservedDeviceIds);
+                for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+                    if (disk.getCapacity() == null || disk.getCapacity() == 0) {
+                        throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
+                    }
+                    DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+                    diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
+                            disk.getCapacity(), offering.getMinIops(), offering.getMaxIops(),
+                            template, owner, deviceId, storagePoolId));
+                    deviceId = getNextDeviceId(deviceId, reservedDeviceIds);
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import volumes while importing vm: %s", displayName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", displayName, StringUtils.defaultString(e.getMessage())));
+            }
+            try {
+                int nicIndex = 0;
+                for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
+                    Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
+                    Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
+                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex == 0, forced);
+                    nicIndex++;
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import NICs while importing vm: %s", displayName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", displayName, StringUtils.defaultString(e.getMessage())));
+            }
+            if (migrateAllowed) {
+                userVm = migrateImportedVM(host, template, validatedServiceOffering, userVm, owner, diskProfileStoragePoolList);
+            }
+            publishVMUsageUpdateResourceCount(userVm, validatedServiceOffering, template);
+            return userVm;
+
+        } catch (ResourceAllocationException e) { // This will be thrown by checkUnmanagedDiskAndOfferingForImport, so the VM was not imported yet
             logger.error("Volume resource allocation error for owner: {}", owner, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resource allocation error for owner: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
+        } finally {
+            ReservationHelper.closeAll(reservations);
         }
-        // Check NICs and supplied networks
-        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, cluster.getHypervisorType());
-        if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
-            allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
-        }
-
-        if (StringUtils.isNotEmpty(unmanagedInstance.getVncPassword())) {
-            allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPassword());
-        }
-
-        addImportingVMBootTypeAndModeDetails(unmanagedInstance.getBootType(), unmanagedInstance.getBootMode(), allDetails);
-
-        VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
-        if (unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOn)) {
-            powerState = VirtualMachine.PowerState.PowerOn;
-        }
-
-        try {
-            userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
-                    null, caller, true, null, owner.getAccountId(), userId,
-                    validatedServiceOffering, null, hostName,
-                    cluster.getHypervisorType(), allDetails, powerState, null);
-        } catch (InsufficientCapacityException ice) {
-            String errorMsg = String.format("Failed to import VM [%s] due to [%s].", displayName, ice.getMessage());
-            logger.error(errorMsg, ice);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg);
-        }
-
-        if (userVm == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", displayName));
-        }
-        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
-        try {
-            if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
-                throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
-            }
-            Long minIops = null;
-            if (details.containsKey(MIN_IOPS)) {
-                minIops = Long.parseLong(details.get(MIN_IOPS));
-            }
-            Long maxIops = null;
-            if (details.containsKey(MAX_IOPS)) {
-                maxIops = Long.parseLong(details.get(MAX_IOPS));
-            }
-            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
-                    rootDisk.getCapacity(), minIops, maxIops, template, owner, null));
-            long deviceId = 1L;
-            for (UnmanagedInstanceTO.Disk disk : dataDisks) {
-                if (disk.getCapacity() == null || disk.getCapacity() == 0) {
-                    throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
-                }
-                DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-                diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
-                        disk.getCapacity(), offering.getMinIops(), offering.getMaxIops(),
-                        template, owner, deviceId));
-                deviceId++;
-            }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import volumes while importing vm: %s", displayName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", displayName, StringUtils.defaultString(e.getMessage())));
-        }
-        try {
-            int nicIndex = 0;
-            for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
-                Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
-                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex == 0, forced);
-                nicIndex++;
-            }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import NICs while importing vm: %s", displayName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", displayName, StringUtils.defaultString(e.getMessage())));
-        }
-        if (migrateAllowed) {
-            userVm = migrateImportedVM(host, template, validatedServiceOffering, userVm, owner, diskProfileStoragePoolList);
-        }
-        publishVMUsageUpdateResourceCount(userVm, validatedServiceOffering, template);
-        return userVm;
     }
 
     private void addImportingVMBootTypeAndModeDetails(String bootType, String bootMode, Map<String, String> allDetails) {
@@ -1335,6 +1369,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException(String.format("VM import is currently not supported for hypervisor [%s].", cluster.getHypervisorType().toString()));
         }
         return cluster;
+    }
+
+    protected void validateStorageVolumeForImport(StoragePool pool, String path) {
+        if (pool.getPoolType() == Storage.StoragePoolType.Linstor) {
+            ((PrimaryDataStoreDriver) dataStoreManager.getPrimaryDataStore(pool.getId()).getDriver())
+                    .validateVolumeForImport(pool, path);
+        }
     }
 
     @Override
@@ -1396,8 +1437,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         VMTemplateVO template = getTemplateForImportInstance(cmd.getTemplateId(), cluster.getHypervisorType());
         ServiceOfferingVO serviceOffering = getServiceOfferingForImportInstance(cmd.getServiceOfferingId(), owner, zone);
 
-        checkResourceLimitForImportInstance(owner);
-
         String displayName = getDisplayNameForImportInstance(cmd.getDisplayName(), instanceName);
         String hostName = getHostNameForImportInstance(cmd.getHostName(), cluster.getHypervisorType(), instanceName, displayName);
 
@@ -1413,31 +1452,38 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<String> managedVms = new ArrayList<>(additionalNameFilters);
         managedVms.addAll(getHostsManagedVms(hosts));
 
-        ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
-                cmd.getEventDescription(), null, null, true, 0);
+        try {
 
-        if (cmd instanceof ImportVmCmd) {
-            ImportVmCmd importVmCmd = (ImportVmCmd) cmd;
-            if (StringUtils.isBlank(importVmCmd.getImportSource())) {
-                throw new CloudRuntimeException("Please provide an import source for importing the VM");
+            ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
+                    cmd.getEventDescription(), null, null, true, 0);
+
+            if (cmd instanceof ImportVmCmd) {
+                ImportVmCmd importVmCmd = (ImportVmCmd) cmd;
+                if (StringUtils.isBlank(importVmCmd.getImportSource())) {
+                    throw new CloudRuntimeException("Please provide an import source for importing the VM");
+                }
+                String source = importVmCmd.getImportSource().toUpperCase();
+                ImportSource importSource = Enum.valueOf(ImportSource.class, source);
+                if (ImportSource.VMWARE == importSource) {
+                    userVm = importUnmanagedInstanceFromVmwareToKvm(zone, cluster,
+                            template, instanceName, displayName, hostName, caller, owner, userId,
+                            serviceOffering, dataDiskOfferingMap,
+                            nicNetworkMap, nicIpAddressMap,
+                            details, importVmCmd, forced);
+                }
+            } else {
+                if (List.of(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM).contains(cluster.getHypervisorType())) {
+                    userVm = importUnmanagedInstanceFromHypervisor(zone, cluster, hosts, additionalNameFilters,
+                            template, instanceName, displayName, hostName, caller, owner, userId,
+                            serviceOffering, dataDiskOfferingMap,
+                            nicNetworkMap, nicIpAddressMap,
+                            details, cmd.getMigrateAllowed(), managedVms, forced);
+                }
             }
-            String source = importVmCmd.getImportSource().toUpperCase();
-            ImportSource importSource = Enum.valueOf(ImportSource.class, source);
-            if (ImportSource.VMWARE == importSource) {
-                userVm = importUnmanagedInstanceFromVmwareToKvm(zone, cluster,
-                        template, instanceName, displayName, hostName, caller, owner, userId,
-                        serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap,
-                        details, importVmCmd, forced);
-            }
-        } else {
-            if (List.of(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM).contains(cluster.getHypervisorType())) {
-                userVm = importUnmanagedInstanceFromHypervisor(zone, cluster, hosts, additionalNameFilters,
-                        template, instanceName, displayName, hostName, caller, owner, userId,
-                        serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap,
-                        details, cmd.getMigrateAllowed(), managedVms, forced);
-            }
+
+        } catch (ResourceAllocationException e) {
+            logger.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
         }
 
         if (userVm == null) {
@@ -1526,15 +1572,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return StringUtils.isEmpty(displayName) ? instanceName : displayName;
     }
 
-    private void checkResourceLimitForImportInstance(Account owner) {
-        try {
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, 1);
-        } catch (ResourceAllocationException e) {
-            logger.error("VM resource allocation error for account: {}", owner, e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
-        }
-    }
-
     private ServiceOfferingVO getServiceOfferingForImportInstance(Long serviceOfferingId, Account owner, DataCenter zone) {
         if (serviceOfferingId == null) {
             throw new InvalidParameterValueException("Service offering ID cannot be null");
@@ -1550,10 +1587,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     protected VMTemplateVO getTemplateForImportInstance(Long templateId, Hypervisor.HypervisorType hypervisorType) {
         VMTemplateVO template;
         if (templateId == null) {
-            String templateName = (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) ? KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME : VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+            boolean isKVMHypervisor = Hypervisor.HypervisorType.KVM.equals(hypervisorType);
+            String templateName = (isKVMHypervisor) ? KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME : VM_IMPORT_DEFAULT_TEMPLATE_NAME;
             template = templateDao.findByName(templateName);
             if (template == null) {
-                template = createDefaultDummyVmImportTemplate(Hypervisor.HypervisorType.KVM == hypervisorType);
+                template = createDefaultDummyVmImportTemplate(isKVMHypervisor);
                 if (template == null) {
                     throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", templateName, hypervisorType.toString()));
                 }
@@ -1586,7 +1624,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                          String hostName, Account caller, Account owner, long userId,
                                                          ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                          Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) {
+                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) throws ResourceAllocationException {
         UserVm userVm = null;
         for (HostVO host : hosts) {
             HashMap<String, UnmanagedInstanceTO> unmanagedInstances = getUnmanagedInstancesForHost(host, instanceName, managedVms);
@@ -1630,11 +1668,18 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
                     template.setGuestOSId(guestOSHypervisor.getGuestOsId());
                 }
-                userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
-                        template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
-                        serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap,
-                        details, migrateAllowed, forced, true);
+
+                List<Reserver> reservations = new ArrayList<>();
+                try {
+                    checkVmResourceLimitsForUnmanagedInstanceImport(owner, unmanagedInstance, serviceOffering, template, reservations);
+                    userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
+                            template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
+                            serviceOffering, dataDiskOfferingMap,
+                            nicNetworkMap, nicIpAddressMap, null,
+                            details, migrateAllowed, forced, true);
+                } finally {
+                    ReservationHelper.closeAll(reservations);
+                }
                 break;
             }
             if (userVm != null) {
@@ -1644,14 +1689,45 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
+    protected void checkVmResourceLimitsForUnmanagedInstanceImport(Account owner, UnmanagedInstanceTO unmanagedInstance, ServiceOfferingVO serviceOffering, VMTemplateVO template, List<Reserver> reservations) throws ResourceAllocationException {
+        // When importing an unmanaged instance, the amount of CPUs and memory is obtained from the hypervisor unless powered off
+        // and not using a dynamic offering, unlike the external VM import that always obtains it from the compute offering
+        Integer cpu = serviceOffering.getCpu();
+        Integer memory = serviceOffering.getRamSize();
+
+        if (serviceOffering.isDynamic() || !UnmanagedInstanceTO.PowerState.PowerOff.equals(unmanagedInstance.getPowerState())) {
+            cpu = unmanagedInstance.getCpuCores();
+            memory = unmanagedInstance.getMemory();
+        }
+
+        if (cpu == null || cpu == 0) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores [%s] is not valid for importing VM [%s].", cpu, unmanagedInstance.getName()));
+        }
+        if (memory == null || memory == 0) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory [%s] is not valid for importing VM [%s].", memory, unmanagedInstance.getName()));
+        }
+
+        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
+
+        CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, cpu.longValue(), reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
+        CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, memory.longValue(), reservationDao, resourceLimitService);
+        reservations.add(memReservation);
+    }
+
     private Pair<UnmanagedInstanceTO, Boolean> getSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username,
                                                                                 String password, String clusterName, String sourceHostName,
-                                                                                String sourceVM, ServiceOfferingVO serviceOffering) {
+                                                                                String sourceVM, ServiceOfferingVO serviceOffering,
+                                                                                Map<String, String> details) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
                 username, password, clusterName, sourceHostName, sourceVM);
-        addServiceOfferingDetailsToParams(params, serviceOffering);
+        addServiceOfferingDetailsToParams(params, serviceOffering, details);
 
         return vmwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(sourceHostName, sourceVM, params);
     }
@@ -1662,22 +1738,33 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * @param serviceOffering service offering for the converted VM
      */
     protected void addServiceOfferingDetailsToParams(Map<String, String> params, ServiceOfferingVO serviceOffering) {
+        addServiceOfferingDetailsToParams(params, serviceOffering, null);
+    }
+
+    protected void addServiceOfferingDetailsToParams(Map<String, String> params, ServiceOfferingVO serviceOffering, Map<String, String> callerDetails) {
         if (serviceOffering != null) {
             serviceOfferingDao.loadDetails(serviceOffering);
             Map<String, String> serviceOfferingDetails = serviceOffering.getDetails();
+            Map<String, String> details = MapUtils.isEmpty(callerDetails) ? new HashMap<>() : callerDetails;
 
             if (serviceOffering.getCpu() != null) {
                 params.put(VmDetailConstants.CPU_NUMBER, String.valueOf(serviceOffering.getCpu()));
+            } else if (details.containsKey(VmDetailConstants.CPU_NUMBER)) {
+                params.put(VmDetailConstants.CPU_NUMBER, details.get(VmDetailConstants.CPU_NUMBER));
             } else if (MapUtils.isNotEmpty(serviceOfferingDetails) && serviceOfferingDetails.containsKey(ApiConstants.MIN_CPU_NUMBER)) {
                 params.put(VmDetailConstants.CPU_NUMBER, serviceOfferingDetails.get(ApiConstants.MIN_CPU_NUMBER));
             }
 
             if (serviceOffering.getSpeed() != null) {
                 params.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
+            } else if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
+                params.put(VmDetailConstants.CPU_SPEED, details.get(VmDetailConstants.CPU_SPEED));
             }
 
             if (serviceOffering.getRamSize() != null) {
                 params.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
+            } else if (details.containsKey(VmDetailConstants.MEMORY)) {
+                params.put(VmDetailConstants.MEMORY, details.get(VmDetailConstants.MEMORY));
             } else if (MapUtils.isNotEmpty(serviceOfferingDetails) && serviceOfferingDetails.containsKey(ApiConstants.MIN_MEMORY)) {
                 params.put(VmDetailConstants.MEMORY, serviceOfferingDetails.get(ApiConstants.MIN_MEMORY));
             }
@@ -1696,11 +1783,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     protected UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, VMTemplateVO template,
-                                                          String sourceVMName, String displayName, String hostName,
-                                                          Account caller, Account owner, long userId,
-                                                          ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
-                                                          Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                          Map<String, String> details, ImportVmCmd cmd, boolean forced) {
+                                                            String sourceVMName, String displayName, String hostName,
+                                                            Account caller, Account owner, long userId,
+                                                            ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
+                                                            Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                            Map<String, String> details, ImportVmCmd cmd, boolean forced) throws ResourceAllocationException {
         Long existingVcenterId = cmd.getExistingVcenterId();
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
@@ -1713,6 +1800,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long convertStoragePoolId = cmd.getConvertStoragePoolId();
         String extraParams = cmd.getExtraParams();
         boolean forceConvertToPool = cmd.getForceConvertToPool();
+        Long guestOsId = cmd.getGuestOsId();
+        boolean forceMsToImportVmFiles = Boolean.TRUE.equals(cmd.getForceMsToImportVmFiles());
+        ImportVmCmd.VmwareMigrationMode vmwareMigrationMode = getVmwareMigrationMode(cmd, cmd.getUseVddk());
+        if (ImportVmCmd.VmwareMigrationMode.CBT == vmwareMigrationMode) {
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR,
+                    "VMware CBT warm migration is not executable yet. Use OVF or VDDK migration mode until CBT replication support is implemented.");
+        }
+        boolean useVddk = ImportVmCmd.VmwareMigrationMode.VDDK == vmwareMigrationMode;
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1722,8 +1817,21 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
+        if (forceMsToImportVmFiles && useVddk) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Parameters %s and %s are mutually exclusive",
+                            ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, ApiConstants.USE_VDDK));
+        }
 
-        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool);
+        StoragePoolVO selectedConversionStoragePool = convertStoragePoolId == null ? null : primaryDataStoreDao.findById(convertStoragePoolId);
+        boolean directRbdVddkImport = useVddk && forceConvertToPool && selectedConversionStoragePool != null &&
+                selectedConversionStoragePool.getPoolType() == Storage.StoragePoolType.RBD;
+        StoragePoolVO directLinstorVddkImportPool = (useVddk && forceConvertToPool && selectedConversionStoragePool != null &&
+                selectedConversionStoragePool.getPoolType() == Storage.StoragePoolType.Linstor) ? selectedConversionStoragePool : null;
+        boolean directLinstorVddkImport = directLinstorVddkImportPool != null;
+
+        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool, useVddk);
+        validateSelectedConversionStoragePoolForVddk(useVddk, forceConvertToPool, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
 
         checkExtraParamsAllowed(extraParams);
 
@@ -1745,37 +1853,52 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DataStoreTO temporaryConvertLocation = null;
         String ovfTemplateOnConvertLocation = null;
         ImportVmTask importVMTask = null;
+        List<Reserver> reservations = new ArrayList<>();
         try {
-            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId);
-            HostVO importHost = selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
-            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false);
+            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, directRbdVddkImport, directLinstorVddkImportPool);
+            HostVO importHost = (useVddk && importInstanceHostId == null)
+                    ? convertHost
+                    : selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
+
+            boolean isOvfExportSupported = false;
+            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false, useVddk, details, directRbdVddkImport, directLinstorVddkImport);
+            if (!useVddk) {
+                isOvfExportSupported = conversionSupportAnswer.isOvfExportSupported();
+            }
             logger.debug("The host {}  is selected to execute the conversion of the " +
                     "instance {} from VMware to KVM ", convertHost, sourceVMName);
+
+            long importStartTime = System.currentTimeMillis();
+            importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
+                    convertHost, importHost);
 
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(
                     destinationCluster, convertHost, importHost, convertStoragePoolId, forceConvertToPool);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionDestinationStoragePoolsInCluster(destinationCluster, serviceOffering, dataDiskOfferingMap, temporaryConvertLocation, forceConvertToPool);
 
-            long importStartTime = System.currentTimeMillis();
-            importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
-                    convertHost, importHost);
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, CloningInstance);
 
             // sourceVMwareInstance could be a cloned instance from sourceVMName, of the sourceVMName itself if its powered off.
             // isClonedInstance indicates if the VM is a clone of sourceVMName
 
-            Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName, serviceOffering);
+            Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName, serviceOffering, details);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
+            validateDirectVddkImportSourceVm(directRbdVddkImport || directLinstorVddkImport, sourceVMName, sourceVMwareInstance, isClonedInstance);
+            checkDataDiskOfferingsBeforeConvertingVmwareInstance(sourceVMName, sourceVMwareInstance, dataDiskOfferingMap);
 
-            boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
+            // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
+            checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
+
+            boolean isWindowsVm = isWindowsGuest(sourceVMwareInstance);
             if (isWindowsVm) {
-                checkConversionSupportOnHost(convertHost, sourceVMName, true);
+                checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details, directRbdVddkImport, directLinstorVddkImport);
             }
 
+            nicIpAddressMap = autoFillStaticNicIpAddresses(nicNetworkMap, nicIpAddressMap, buildSourceNicCidrMap(sourceVMwareInstance));
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
             UnmanagedInstanceTO convertedInstance;
-            if (cmd.getForceMsToImportVmFiles() || !conversionSupportAnswer.isOvfExportSupported()) {
+            if (!useVddk && (forceMsToImportVmFiles || !isOvfExportSupported)) {
                 // Uses MS for OVF export to temporary conversion location
                 int noOfThreads = UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.value();
                 importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
@@ -1787,21 +1910,24 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         serviceOffering, dataDiskOfferingMap, temporaryConvertLocation,
                         ovfTemplateOnConvertLocation, forceConvertToPool, extraParams);
             } else {
-                // Uses KVM Host for OVF export to temporary conversion location, through ovftool
+                // Uses KVM Host for direct conversion using VDDK, or for OVF export to temporary conversion location through ovftool
                 importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
-                convertedInstance = convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
+                convertedInstance = convertVmwareInstanceToKVMUsingVDDKOrAfterExportingOVFToConvertLocation(
                         sourceVMName, sourceVMwareInstance, convertHost, importHost,
                         convertStoragePools, serviceOffering, dataDiskOfferingMap,
-                        temporaryConvertLocation, vcenter, username, password, datacenterName, forceConvertToPool, extraParams);
+                        temporaryConvertLocation, vcenter, username, password, datacenterName, forceConvertToPool, extraParams, useVddk, details);
             }
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, Importing);
+            if (guestOsId == null) {
+                guestOsId = resolveGuestOsIdForVmwareImport(sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getOperatingSystemId());
+            }
             UserVm userVm = importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap,
-                    details, false, forced, false);
+                    nicNetworkMap, nicIpAddressMap, guestOsId,
+                    applyVmwareSourceHardwareDetails(details, sourceVMwareInstance), false, forced, false);
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, displayName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
@@ -1809,7 +1935,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return userVm;
         } catch (CloudRuntimeException e) {
             logger.error(String.format("Error importing VM: %s", e.getMessage()), e);
-            importVmTasksManager.updateImportVMTaskErrorState(importVMTask, ImportVmTask.TaskState.Failed, e.getMessage());
+            if (importVMTask != null) {
+                importVmTasksManager.updateImportVMTaskErrorState(importVMTask, ImportVmTask.TaskState.Failed, e.getMessage());
+            }
             ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,
                     cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -1820,6 +1948,69 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (temporaryConvertLocation != null  && StringUtils.isNotBlank(ovfTemplateOnConvertLocation)) {
                 removeTemplate(temporaryConvertLocation, ovfTemplateOnConvertLocation);
             }
+            ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    @Override
+    public UserVm importConvertedVmwareCbtInstanceToKvm(String vcenter, String datacenterName, String username, String password,
+                                                        String clusterName, String sourceHostName, String sourceVMName,
+                                                        UnmanagedInstanceTO convertedInstance, DataCenter zone,
+                                                        Cluster destinationCluster, String displayName, String hostName,
+                                                        Account caller, Account owner, long userId, Long templateId,
+                                                        Long serviceOfferingId, Map<String, Long> dataDiskOfferingMap,
+                                                        Map<String, Long> nicNetworkMap,
+                                                        Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                        Long guestOsId, Map<String, String> details, boolean forced,
+                                                        Long storagePoolId) {
+        VMTemplateVO template = getTemplateForImportInstance(templateId, Hypervisor.HypervisorType.KVM);
+        ServiceOfferingVO serviceOffering = getServiceOfferingForImportInstance(serviceOfferingId, owner, zone);
+        String resolvedDisplayName = getDisplayNameForImportInstance(displayName, sourceVMName);
+        String resolvedHostName = getHostNameForImportInstance(hostName, Hypervisor.HypervisorType.KVM,
+                sourceVMName, resolvedDisplayName);
+        checkVmwareInstanceNameForImportInstance(Hypervisor.HypervisorType.KVM, sourceVMName, resolvedHostName, zone);
+
+        boolean isClonedInstance = false;
+        UnmanagedInstanceTO sourceVMwareInstance = null;
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName,
+                    username, password, clusterName, sourceHostName, sourceVMName, serviceOffering, details);
+            sourceVMwareInstance = sourceInstanceDetails.first();
+            isClonedInstance = sourceInstanceDetails.second();
+
+            checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
+            Map<String, Network.IpAddresses> effectiveNicIpAddressMap = autoFillStaticNicIpAddresses(nicNetworkMap,
+                    nicIpAddressMap, buildSourceNicCidrMap(sourceVMwareInstance));
+            checkNetworkingBeforeConvertingVmwareInstance(zone, owner, resolvedDisplayName, resolvedHostName,
+                    sourceVMwareInstance, nicNetworkMap, effectiveNicIpAddressMap, forced);
+
+            sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
+            if (guestOsId == null) {
+                guestOsId = resolveGuestOsIdForVmwareImport(sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getOperatingSystemId());
+            }
+            return importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null, template,
+                    resolvedDisplayName, resolvedHostName, caller, owner, userId, serviceOffering, dataDiskOfferingMap,
+                    nicNetworkMap, effectiveNicIpAddressMap, guestOsId,
+                    applyVmwareSourceHardwareDetails(details, sourceVMwareInstance), false, forced, false, storagePoolId);
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        } catch (ResourceAllocationException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, StringUtils.defaultString(e.getMessage()));
+        } finally {
+            if (isClonedInstance && sourceVMwareInstance != null) {
+                removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName,
+                        sourceVMwareInstance.getName(), sourceVMName);
+            }
+            ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    protected ImportVmCmd.VmwareMigrationMode getVmwareMigrationMode(ImportVmCmd cmd, boolean useVddkFallback) {
+        try {
+            return ImportVmCmd.VmwareMigrationMode.fromValue(cmd.getVmwareMigrationMode(), useVddkFallback);
+        } catch (IllegalArgumentException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         }
     }
 
@@ -1831,6 +2022,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * @throws CloudRuntimeException in case these requirements are not met
      */
     protected void checkConversionStoragePool(Long convertStoragePoolId, boolean forceConvertToPool) {
+        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool, false);
+    }
+
+    protected void checkConversionStoragePool(Long convertStoragePoolId, boolean forceConvertToPool, boolean useVddk) {
         if (forceConvertToPool && convertStoragePoolId == null) {
             String msg = "The parameter forceconverttopool is set to true, but a primary storage pool has not been provided for conversion";
             logFailureAndThrowException(msg);
@@ -1840,9 +2035,59 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (selectedStoragePool == null) {
                 logFailureAndThrowException(String.format("Cannot find a storage pool with ID %s", convertStoragePoolId));
             }
-            if (forceConvertToPool && !forceConvertToPoolAllowedTypes.contains(selectedStoragePool.getPoolType())) {
+            List<Storage.StoragePoolType> allowedTypes = useVddk ? vddkDirectConvertToPoolAllowedTypes : forceConvertToPoolAllowedTypes;
+            if (forceConvertToPool && !allowedTypes.contains(selectedStoragePool.getPoolType())) {
                 logFailureAndThrowException(String.format("The selected storage pool %s does not support direct conversion " +
                         "as its type %s", selectedStoragePool.getName(), selectedStoragePool.getPoolType().name()));
+            }
+            if (forceConvertToPool && !useVddk &&
+                    (selectedStoragePool.getPoolType() == Storage.StoragePoolType.RBD || selectedStoragePool.getPoolType() == Storage.StoragePoolType.Linstor)) {
+                logFailureAndThrowException(String.format("The selected %s storage pool %s can be used for direct conversion only with %s=true",
+                        selectedStoragePool.getPoolType().name(), selectedStoragePool.getName(), ApiConstants.USE_VDDK));
+            }
+        }
+    }
+
+    protected void validateSelectedConversionStoragePoolForVddk(boolean useVddk, Long convertStoragePoolId,
+                                                                ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap) {
+        validateSelectedConversionStoragePoolForVddk(useVddk, true, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
+    }
+
+    protected void validateSelectedConversionStoragePoolForVddk(boolean useVddk, boolean forceConvertToPool, Long convertStoragePoolId,
+                                                                ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap) {
+        if (!useVddk || !forceConvertToPool || convertStoragePoolId == null) {
+            return;
+        }
+
+        StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
+        if (selectedStoragePool == null) {
+            return;
+        }
+
+        if (serviceOffering.getDiskOfferingId() != null) {
+            DiskOfferingVO rootDiskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            if (rootDiskOffering == null) {
+                throw new InvalidParameterValueException(String.format("Cannot find disk offering with ID %s that belongs to the service offering %s",
+                        serviceOffering.getDiskOfferingId(), serviceOffering.getName()));
+            }
+            if (!volumeApiService.doesStoragePoolSupportDiskOffering(selectedStoragePool, rootDiskOffering)) {
+                throw new InvalidParameterValueException(String.format("The root disk offering '%s' is not supported by the selected conversion storage pool '%s'. " +
+                                "When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes.",
+                        rootDiskOffering.getName(), selectedStoragePool.getName()));
+            }
+        }
+
+        if (MapUtils.isNotEmpty(dataDiskOfferingMap)) {
+            for (Long diskOfferingId : dataDiskOfferingMap.values()) {
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
+                if (diskOffering == null) {
+                    throw new InvalidParameterValueException(String.format("Cannot find disk offering with ID %s", diskOfferingId));
+                }
+                if (!volumeApiService.doesStoragePoolSupportDiskOffering(selectedStoragePool, diskOffering)) {
+                    throw new InvalidParameterValueException(String.format("The data disk offering '%s' is not supported by the selected conversion storage pool '%s'. " +
+                                    "When using VDDK, all selected disk offerings must be compatible with the conversion storage pool, as it will become the primary storage for the imported volumes.",
+                            diskOffering.getName(), selectedStoragePool.getName()));
+                }
             }
         }
     }
@@ -1891,6 +2136,222 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
+    protected boolean isWindowsGuest(UnmanagedInstanceTO sourceVMwareInstance) {
+        return sourceVMwareInstance != null
+                && StringUtils.isNotBlank(sourceVMwareInstance.getOperatingSystem())
+                && sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
+    }
+
+    private static final Pattern OS_RELEASE_YEAR_PATTERN = Pattern.compile("(19|20)\\d{2}");
+
+    @Override
+    public Long resolveGuestOsIdForVmwareImport(String osName, String osId) {
+        if (StringUtils.isNotBlank(osName)) {
+            // VMware reports e.g. "Microsoft Windows Server 2022 (64-bit)" while the CloudStack
+            // guest OS catalog names it "Windows Server 2022 (64-bit)" - try both forms.
+            for (String candidate : new String[] {osName, osName.replaceFirst("(?i)^Microsoft\\s+", "")}) {
+                GuestOSVO guestOS = guestOSDao.findOneByDisplayName(candidate);
+                if (guestOS != null) {
+                    return guestOS.getId();
+                }
+            }
+        }
+        if (StringUtils.isNotBlank(osId)) {
+            GuestOSHypervisorVO mapping = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(osId,
+                    Hypervisor.HypervisorType.VMware.toString(), null);
+            if (mapping != null) {
+                return mapping.getGuestOsId();
+            }
+        }
+        return resolveWindowsGuestOsIdByYear(osName, osId);
+    }
+
+    /**
+     * Last-resort match for Windows guests whose exact release is newer than the guest OS catalog
+     * (e.g. "Microsoft Windows Server 2025 ..." on a catalog that ends at 2022): pick the newest
+     * catalog entry of the same family not newer than the source. The returned display name must
+     * start with "Windows" - the KVM agent keys Windows guest behaviour (localtime clock, hyperv
+     * enlightenments) off that prefix, and a generic non-Windows type would break the guest clock.
+     */
+    private Long resolveWindowsGuestOsIdByYear(String osName, String osId) {
+        String reference = StringUtils.isNotBlank(osName) ? osName : StringUtils.defaultString(osId);
+        if (!reference.toLowerCase().contains("win")) {
+            return null;
+        }
+        boolean server = reference.toLowerCase().contains("server") || reference.toLowerCase().contains("srv");
+        Matcher yearMatcher = OS_RELEASE_YEAR_PATTERN.matcher(reference);
+        int sourceYear = yearMatcher.find() ? Integer.parseInt(yearMatcher.group()) : Integer.MAX_VALUE;
+        List<GuestOSVO> candidates = guestOSDao.listLikeDisplayName(server ? "Windows Server" : "Windows");
+        GuestOSVO best = null;
+        int bestYear = -1;
+        for (GuestOSVO candidate : candidates) {
+            String name = candidate.getDisplayName();
+            if (name == null || !name.startsWith("Windows") || !name.contains("64-bit")) {
+                continue;
+            }
+            Matcher candidateYear = OS_RELEASE_YEAR_PATTERN.matcher(name);
+            if (!candidateYear.find()) {
+                continue;
+            }
+            int year = Integer.parseInt(candidateYear.group());
+            if (year <= sourceYear && year > bestYear) {
+                bestYear = year;
+                best = candidate;
+            }
+        }
+        if (best != null) {
+            logger.info("Mapped VMware guest OS [{} / {}] to nearest catalog entry [{}] for import", osName, osId, best.getDisplayName());
+            return best.getId();
+        }
+        return null;
+    }
+
+    /**
+     * Copies the source VM's firmware and (for Windows) console-hardware requirements into the
+     * imported VM's details, so the guest boots the way it booted on VMware. Without this every
+     * import lands on the KVM defaults - BIOS firmware and libvirt's legacy cirrus video - which
+     * leaves a UEFI source unbootable and a Windows Server Core console blank. Caller-provided
+     * details always win; only absent keys are filled in.
+     */
+    @Override
+    public Map<String, String> applyVmwareImportHardwareDetails(Map<String, String> details, String bootType, String bootMode, String osName) {
+        Map<String, String> merged = details == null ? new HashMap<>() : new HashMap<>(details);
+        if ("UEFI".equalsIgnoreCase(bootType)) {
+            merged.putIfAbsent("UEFI", "SECURE".equalsIgnoreCase(bootMode) ? "SECURE" : "LEGACY");
+            merged.putIfAbsent(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, "q35");
+        }
+        if (StringUtils.isNotBlank(osName) && osName.toLowerCase().contains("windows")) {
+            merged.putIfAbsent(VmDetailConstants.VIDEO_HARDWARE, "vga");
+            merged.putIfAbsent(VmDetailConstants.VIDEO_RAM, "32768");
+        }
+        return merged;
+    }
+
+    protected Map<String, String> applyVmwareSourceHardwareDetails(Map<String, String> details, UnmanagedInstanceTO sourceVMwareInstance) {
+        if (sourceVMwareInstance == null) {
+            return details == null ? new HashMap<>() : new HashMap<>(details);
+        }
+        return applyVmwareImportHardwareDetails(details, sourceVMwareInstance.getBootType(),
+                sourceVMwareInstance.getBootMode(), sourceVMwareInstance.getOperatingSystem());
+    }
+
+    protected Map<String, List<String>> buildSourceNicCidrMap(UnmanagedInstanceTO sourceVMwareInstance) {
+        Map<String, List<String>> nicIdToCidrs = new HashMap<>();
+        if (sourceVMwareInstance == null || CollectionUtils.isEmpty(sourceVMwareInstance.getNics())) {
+            return nicIdToCidrs;
+        }
+        for (UnmanagedInstanceTO.Nic nic : sourceVMwareInstance.getNics()) {
+            if (StringUtils.isBlank(nic.getNicId())) {
+                continue;
+            }
+            if (CollectionUtils.isNotEmpty(nic.getIpv4Cidrs())) {
+                nicIdToCidrs.put(nic.getNicId(), nic.getIpv4Cidrs());
+            } else if (CollectionUtils.isNotEmpty(nic.getIpAddress())) {
+                // Older or limited VMware Tools report only the bare address list without
+                // ipConfig; there is no prefix, but IP preservation only needs the address
+                // itself (the fit test runs against the target network's CIDR).
+                nicIdToCidrs.put(nic.getNicId(), nic.getIpAddress());
+            }
+        }
+        return nicIdToCidrs;
+    }
+
+    @Override
+    public Map<String, Network.IpAddresses> autoFillStaticNicIpAddresses(Map<String, Long> nicNetworkMap,
+            Map<String, Network.IpAddresses> nicIpAddressMap, Map<String, List<String>> nicIdToIpv4Cidrs) {
+        Map<String, Network.IpAddresses> effective = nicIpAddressMap == null ? new HashMap<>() : new HashMap<>(nicIpAddressMap);
+        if (MapUtils.isEmpty(nicNetworkMap)) {
+            return effective;
+        }
+        for (Map.Entry<String, Long> mapping : nicNetworkMap.entrySet()) {
+            String nicId = mapping.getKey();
+            if (effective.containsKey(nicId)) {
+                continue;
+            }
+            NetworkVO network = networkDao.findById(mapping.getValue());
+            if (network == null || network.getGuestType() == Network.GuestType.L2 || StringUtils.isBlank(network.getCidr())) {
+                continue;
+            }
+            String preservedIp = null;
+            List<String> sourceCidrs = nicIdToIpv4Cidrs == null ? null : nicIdToIpv4Cidrs.get(nicId);
+            if (CollectionUtils.isNotEmpty(sourceCidrs)) {
+                for (String sourceCidr : sourceCidrs) {
+                    String sourceIp = sourceCidr.contains("/") ? sourceCidr.substring(0, sourceCidr.indexOf('/')) : sourceCidr;
+                    if (!NetUtils.isValidIp4(sourceIp) || !NetUtils.isIpWithInCidrRange(sourceIp, network.getCidr())) {
+                        continue;
+                    }
+                    if (sourceIp.equals(network.getGateway())) {
+                        logger.warn("Not preserving source IP {} for NIC {}: it is the gateway of network {}", sourceIp, nicId, network.getUuid());
+                        continue;
+                    }
+                    if (nicDao.findByIp4AddressAndNetworkId(sourceIp, network.getId()) != null) {
+                        logger.warn("Not preserving source IP {} for NIC {}: it is already in use in network {}; the NIC falls back to automatic allocation",
+                                sourceIp, nicId, network.getUuid());
+                        continue;
+                    }
+                    preservedIp = sourceIp;
+                    break;
+                }
+            }
+            if (preservedIp != null) {
+                logger.info("Preserving static source IP {} for NIC {} in network {}", preservedIp, nicId, network.getUuid());
+                effective.put(nicId, new Network.IpAddresses(preservedIp, null));
+            } else {
+                // Isolated/shared networks reject import NICs without an IP; "auto" makes the
+                // network orchestrator pick a free address instead (see allocateNic import path).
+                logger.info("No preservable source IP for NIC {}; falling back to automatic allocation in network {}", nicId, network.getUuid());
+                effective.put(nicId, new Network.IpAddresses("auto", null));
+            }
+        }
+        return effective;
+    }
+
+    // Matches the creation position embedded in a direct-to-pool converted disk image name:
+    // RBD "<uuid>-disk-NNN" (see buildRbdImageName) and Linstor "<uuid>-dNN" (see buildLinstorDiskName).
+    private static final Pattern CONVERTED_POOL_DISK_POSITION_PATTERN = Pattern.compile("-(?:disk-|d)(\\d+)");
+
+    /**
+     * Extracts the creation position encoded in a direct-to-pool converted disk's image path, or
+     * {@code null} when the path carries no such position (e.g. OVF-converted qcow2 images). When a
+     * path contains multiple candidate matches, the last one wins so that digits inside the conversion
+     * UUID are not mistaken for the position.
+     */
+    protected Integer extractConvertedPoolDiskPosition(String imagePath) {
+        if (StringUtils.isBlank(imagePath)) {
+            return null;
+        }
+        Matcher matcher = CONVERTED_POOL_DISK_POSITION_PATTERN.matcher(imagePath);
+        Integer position = null;
+        while (matcher.find()) {
+            position = Integer.parseInt(matcher.group(1));
+        }
+        return position;
+    }
+
+    /**
+     * Resolves, for each converted disk, the index of the source VMware disk whose ID it should adopt.
+     * Direct-to-pool (RBD/Linstor) converted disks are matched to source disks by the creation position
+     * embedded in their image name; this is used only when every converted disk yields a distinct, valid
+     * position for the given source disk count. Otherwise (OVF path) it falls back to list-index pairing.
+     */
+    protected int[] resolveConvertedToSourceDiskIndexes(List<UnmanagedInstanceTO.Disk> convertedDisks, int sourceDiskCount) {
+        int[] indexes = new int[convertedDisks.size()];
+        Integer[] positions = new Integer[convertedDisks.size()];
+        boolean usePositions = convertedDisks.size() == sourceDiskCount;
+        Set<Integer> seenPositions = new HashSet<>();
+        for (int i = 0; i < convertedDisks.size(); i++) {
+            Integer position = extractConvertedPoolDiskPosition(convertedDisks.get(i).getImagePath());
+            positions[i] = position;
+            if (position == null || position < 0 || position >= sourceDiskCount || !seenPositions.add(position)) {
+                usePositions = false;
+            }
+        }
+        for (int i = 0; i < convertedDisks.size(); i++) {
+            indexes[i] = usePositions ? positions[i] : i;
+        }
+        return indexes;
+    }
+
     private void sanitizeConvertedInstance(UnmanagedInstanceTO convertedInstance, UnmanagedInstanceTO sourceVMwareInstance) {
         convertedInstance.setCpuCores(sourceVMwareInstance.getCpuCores());
         convertedInstance.setCpuSpeed(sourceVMwareInstance.getCpuSpeed());
@@ -1899,9 +2360,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         convertedInstance.setPowerState(UnmanagedInstanceTO.PowerState.PowerOff);
         List<UnmanagedInstanceTO.Disk> convertedInstanceDisks = convertedInstance.getDisks();
         List<UnmanagedInstanceTO.Disk> sourceVMwareInstanceDisks = sourceVMwareInstance.getDisks();
+        // The source disk IDs (which drive the root-vs-data classification during import) must be
+        // copied onto the matching converted disk. Direct-to-pool conversions (RBD/Linstor) discover
+        // the converted disks from the finalized libvirt domain, whose device order (vda, vdb, ...) need
+        // not match the source disk order, so pairing purely by list index would swap root and data on
+        // multi-disk imports. Their image names embed the creation position (<uuid>-disk-NNN for RBD,
+        // <uuid>-dNN for Linstor), which follows the source order, so pair by that position when present
+        // and fall back to index pairing for OVF conversions (whose image names carry no such position).
+        int[] sourceIndexForConvertedDisk = resolveConvertedToSourceDiskIndexes(convertedInstanceDisks, sourceVMwareInstanceDisks.size());
         for (int i = 0; i < convertedInstanceDisks.size(); i++) {
             UnmanagedInstanceTO.Disk disk = convertedInstanceDisks.get(i);
-            disk.setDiskId(sourceVMwareInstanceDisks.get(i).getDiskId());
+            disk.setDiskId(sourceVMwareInstanceDisks.get(sourceIndexForConvertedDisk[i]).getDiskId());
         }
         List<UnmanagedInstanceTO.Nic> convertedInstanceNics = convertedInstance.getNics();
         List<UnmanagedInstanceTO.Nic> sourceVMwareInstanceNics = sourceVMwareInstance.getNics();
@@ -2009,7 +2478,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(err);
     }
 
-    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk) {
+        return selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, false);
+    }
+
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk, boolean requireVddkRbdDirectImportSupport) {
+        return selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk, requireVddkRbdDirectImportSupport, null);
+    }
+
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk, boolean requireVddkRbdDirectImportSupport,
+                                               StoragePoolVO linstorDirectImportPool) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             String err = null;
@@ -2032,6 +2510,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 err = String.format(
                         "Cannot perform the conversion on the host %s as it is not in the same zone as the destination cluster",
                         selectedHost);
+            } else if (linstorDirectImportPool != null &&
+                    storagePoolHostDao.findByPoolHost(linstorDirectImportPool.getId(), selectedHost.getId()) == null) {
+                err = String.format(
+                        "Cannot perform the direct Linstor VDDK import on the host %s as it does not have access to " +
+                        "the Linstor storage pool %s. The host must be a LINSTOR satellite connected to the pool.",
+                        selectedHost, linstorDirectImportPool.getName());
             }
             if (err != null) {
                 logger.error(err);
@@ -2043,24 +2527,108 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         // Auto select host with conversion capability
         List<HostVO> hosts = hostDao.listByClusterHypervisorTypeAndHostCapability(destinationCluster.getId(), destinationCluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION);
         if (CollectionUtils.isNotEmpty(hosts)) {
-            return hosts.get(new Random().nextInt(hosts.size()));
+            if (useVddk) {
+                List<HostVO> vddkHosts = filterHostsWithVddkSupport(hosts);
+                if (CollectionUtils.isNotEmpty(vddkHosts)) {
+                    hosts = vddkHosts;
+                }
+            }
+            if (requireVddkRbdDirectImportSupport) {
+                List<HostVO> directRbdHosts = filterHostsWithVddkRbdDirectImportSupport(hosts);
+                hosts = directRbdHosts;
+            }
+            if (linstorDirectImportPool != null) {
+                hosts = filterHostsForLinstorDirectImport(hosts, linstorDirectImportPool);
+            }
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                return hosts.get(new Random().nextInt(hosts.size()));
+            }
         }
 
         // Try without host capability check
         hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
         if (CollectionUtils.isNotEmpty(hosts)) {
-            return hosts.get(new Random().nextInt(hosts.size()));
+            if (useVddk) {
+                List<HostVO> vddkHosts = filterHostsWithVddkSupport(hosts);
+                if (CollectionUtils.isNotEmpty(vddkHosts)) {
+                    hosts = vddkHosts;
+                }
+            }
+            if (requireVddkRbdDirectImportSupport) {
+                List<HostVO> directRbdHosts = filterHostsWithVddkRbdDirectImportSupport(hosts);
+                hosts = directRbdHosts;
+            }
+            if (linstorDirectImportPool != null) {
+                hosts = filterHostsForLinstorDirectImport(hosts, linstorDirectImportPool);
+            }
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                return hosts.get(new Random().nextInt(hosts.size()));
+            }
         }
 
-        String err = String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
-                destinationCluster.getHypervisorType(), destinationCluster);
+        String err;
+        if (requireVddkRbdDirectImportSupport) {
+            err = String.format("Could not find any suitable %s host in cluster %s with '%s' enabled, which is required to perform direct RBD VDDK import. " +
+                    "This usually means the host is missing VDDK, qemu-img RBD support, or in-place virt-v2v support through the virt-v2v-in-place binary or virt-v2v --in-place option.",
+                    destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
+        } else if (linstorDirectImportPool != null) {
+            err = String.format("Could not find any suitable %s host in cluster %s to perform direct Linstor VDDK import. " +
+                    "The host must have VDDK, in-place virt-v2v support ('%s'), and access to the Linstor storage pool %s.",
+                    destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VIRTV2V_INPLACE_SUPPORT, linstorDirectImportPool.getName());
+        } else if (useVddk) {
+            err = String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform the VDDK-based instance conversion",
+                    destinationCluster.getHypervisorType(), destinationCluster, Host.HOST_VDDK_SUPPORT);
+        } else {
+            err = String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
+                    destinationCluster.getHypervisorType(), destinationCluster);
+        }
         logger.error(err);
         throw new CloudRuntimeException(err);
     }
 
-    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM, boolean checkWindowsGuestConversionSupport) {
-        logger.debug(String.format("Checking the %s conversion support on the host %s", checkWindowsGuestConversionSupport? "windows guest" : "", convertHost));
-        CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport);
+    private List<HostVO> filterHostsForLinstorDirectImport(List<HostVO> hosts, StoragePoolVO linstorPool) {
+        return hosts.stream().filter(h -> {
+            hostDao.loadDetails(h);
+            return Boolean.parseBoolean(h.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)) &&
+                    storagePoolHostDao.findByPoolHost(linstorPool.getId(), h.getId()) != null;
+        }).collect(Collectors.toList());
+    }
+
+    private List<HostVO> filterHostsWithVddkSupport(List<HostVO> hosts) {
+        return hosts.stream().filter(h -> {
+            hostDao.loadDetails(h);
+            return Boolean.parseBoolean(h.getDetail(Host.HOST_VDDK_SUPPORT));
+        }).collect(Collectors.toList());
+    }
+
+    private List<HostVO> filterHostsWithVddkRbdDirectImportSupport(List<HostVO> hosts) {
+        return hosts.stream().filter(h -> {
+            hostDao.loadDetails(h);
+            return Boolean.parseBoolean(h.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT));
+        }).collect(Collectors.toList());
+    }
+
+    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
+                                                                    boolean checkWindowsGuestConversionSupport,
+                                                                    boolean useVddk, Map<String, String> details) {
+        return checkConversionSupportOnHost(convertHost, sourceVM, checkWindowsGuestConversionSupport, useVddk, details, false, false);
+    }
+
+    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
+                                                                    boolean checkWindowsGuestConversionSupport,
+                                                                    boolean useVddk, Map<String, String> details,
+                                                                    boolean checkVddkRbdDirectImportSupport,
+                                                                    boolean checkVddkInPlaceFinalizationSupport) {
+        logger.debug(String.format("Checking the %s%s conversion support on the host %s",
+                useVddk ? "VDDK " : "",
+                checkWindowsGuestConversionSupport ? "windows guest " : "",
+                convertHost));
+        CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport, useVddk);
+        cmd.setCheckVddkRbdDirectImportSupport(checkVddkRbdDirectImportSupport);
+        cmd.setCheckVddkInPlaceFinalizationSupport(checkVddkInPlaceFinalizationSupport);
+        if (MapUtils.isNotEmpty(details)) {
+            cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
+        }
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 
@@ -2094,31 +2662,37 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} using OVF {} on conversion datastore",
                 sourceVM, convertHost, ovfTemplateDirConvertLocation);
 
-        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
-        List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM, sourceVMwareInstance.getClusterName(), sourceVMwareInstance.getHostName());
+        List<StoragePoolVO> destinationStoragePools = selectInstanceConversionDestinationStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        validateStagedImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation,
                 ovfTemplateDirConvertLocation, false, false, sourceVM);
         if (StringUtils.isNotBlank(extraParams)) {
             cmd.setExtraParams(extraParams);
         }
+        cmd.setWindowsGuest(isWindowsGuest(sourceVMwareInstance));
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
-                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation, forceConvertToPool);
+                remoteInstanceTO, getStoragePoolUuids(destinationStoragePools), getStoragePoolTypes(destinationStoragePools),
+                temporaryConvertLocation, forceConvertToPool);
     }
 
-    private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
+    private UnmanagedInstanceTO convertVmwareInstanceToKVMUsingVDDKOrAfterExportingOVFToConvertLocation(
             String sourceVM, UnmanagedInstanceTO sourceVMwareInstance, HostVO convertHost,
             HostVO importHost, List<StoragePoolVO> convertStoragePools,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
             DataStoreTO temporaryConvertLocation, String vcenterHost, String vcenterUsername,
-            String vcenterPassword, String datacenterName, boolean forceConvertToPool, String extraParams) {
+            String vcenterPassword, String datacenterName, boolean forceConvertToPool, String extraParams,
+            boolean useVddk, Map<String, String> details) {
         logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} after OVF export through ovftool", sourceVM, convertHost);
 
-        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
-        List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName, sourceVMwareInstance.getClusterName(), sourceVMwareInstance.getHostName());
+        remoteInstanceTO.setVmwareMoref(sourceVMwareInstance.getVmwareMoref());
+        List<StoragePoolVO> destinationStoragePools = selectInstanceConversionDestinationStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
+        validateStagedImportHostSupport(forceConvertToPool, destinationStoragePools, importHost);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true, sourceVM);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
@@ -2132,14 +2706,99 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (StringUtils.isNotBlank(extraParams)) {
             cmd.setExtraParams(extraParams);
         }
+        cmd.setUseVddk(useVddk);
+        if (useVddk) {
+            cmd.setVmwareVddkSourceDisks(toVmwareVddkSourceDisks(sourceVMwareInstance.getDisks()));
+        }
+        cmd.setWindowsGuest(isWindowsGuest(sourceVMwareInstance));
+        applyVddkOverridesFromDetails(cmd, details);
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
-                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation, forceConvertToPool);
+                remoteInstanceTO, getStoragePoolUuids(destinationStoragePools), getStoragePoolTypes(destinationStoragePools),
+                temporaryConvertLocation, forceConvertToPool);
+    }
+
+    private List<VmwareVddkSourceDiskTO> toVmwareVddkSourceDisks(List<UnmanagedInstanceTO.Disk> disks) {
+        if (CollectionUtils.isEmpty(disks)) {
+            return Collections.emptyList();
+        }
+        List<VmwareVddkSourceDiskTO> sourceDisks = new ArrayList<>(disks.size());
+        for (int i = 0; i < disks.size(); i++) {
+            UnmanagedInstanceTO.Disk disk = disks.get(i);
+            sourceDisks.add(new VmwareVddkSourceDiskTO(disk.getDiskId(), disk.getImagePath(),
+                    disk.getCapacity() == null ? 0L : disk.getCapacity(), i));
+        }
+        return sourceDisks;
+    }
+
+    private void applyVddkOverridesFromDetails(ConvertInstanceCommand cmd, Map<String, String> details) {
+        if (MapUtils.isEmpty(details)) {
+            return;
+        }
+
+        cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
+        cmd.setVddkTransports(StringUtils.trimToNull(details.get(DETAIL_VDDK_TRANSPORTS)));
+        cmd.setVddkThumbprint(StringUtils.trimToNull(details.get(DETAIL_VDDK_THUMBPRINT)));
+    }
+
+    /**
+     * Pre-conversion twin of the getRootAndDataDisks() disk-offering requirement:
+     * the same mismatch used to surface only AFTER every byte of the source disks
+     * had been copied and converted. Fail before the conversion starts instead.
+     */
+    protected void checkDataDiskOfferingsBeforeConvertingVmwareInstance(String sourceVMName, UnmanagedInstanceTO sourceVMwareInstance,
+                                                                        Map<String, Long> dataDiskOfferingMap) {
+        int diskCount = sourceVMwareInstance == null || CollectionUtils.isEmpty(sourceVMwareInstance.getDisks()) ?
+                0 : sourceVMwareInstance.getDisks().size();
+        int mappedCount = dataDiskOfferingMap == null ? 0 : dataDiskOfferingMap.size();
+        if (diskCount > 0 && mappedCount != diskCount - 1) {
+            String msg = String.format("Source VM %s has total %d disks for which %d disk offering mappings were provided; %d disk(s) need a disk offering. " +
+                    "%s parameter can be used to provide disk offerings for the data disks", sourceVMName, diskCount, mappedCount, diskCount - 1,
+                    ApiConstants.DATADISK_OFFERING_LIST);
+            logger.error(msg);
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, msg);
+        }
+    }
+
+    private void validateDirectVddkImportSourceVm(boolean directBlockVddkImport, String sourceVM,
+                                               UnmanagedInstanceTO sourceVMwareInstance, boolean isClonedInstance) {
+        if (!directBlockVddkImport) {
+            return;
+        }
+        if (isClonedInstance || sourceVMwareInstance == null || sourceVMwareInstance.getPowerState() != UnmanagedInstanceTO.PowerState.PowerOff) {
+            throw new CloudRuntimeException(String.format("Direct VDDK import to a block storage pool is supported only for powered-off VMware VMs. " +
+                    "Please power off VM %s, or disable %s and use staged import with temporary conversion storage.",
+                    sourceVM, ApiConstants.FORCE_CONVERT_TO_POOL));
+        }
+    }
+
+    protected void validateStagedImportHostSupport(boolean forceConvertToPool, List<StoragePoolVO> destinationStoragePools, HostVO importHost) {
+        if (forceConvertToPool) {
+            return;
+        }
+        if (destinationStoragePools.stream().anyMatch(pool -> pool.getPoolType() == Storage.StoragePoolType.RBD)) {
+            hostDao.loadDetails(importHost);
+            if (!Boolean.parseBoolean(importHost.getDetail(Host.HOST_QEMU_RBD_SUPPORT))) {
+                throw new CloudRuntimeException(String.format("Import host %s cannot copy converted qcow2 disks to RBD. " +
+                        "Please select an import host with %s=true, or use a non-RBD destination pool.",
+                        importHost.getName(), Host.HOST_QEMU_RBD_SUPPORT));
+            }
+        }
+        for (StoragePoolVO pool : destinationStoragePools) {
+            if (pool.getPoolType() == Storage.StoragePoolType.Linstor &&
+                    storagePoolHostDao.findByPoolHost(pool.getId(), importHost.getId()) == null) {
+                throw new CloudRuntimeException(String.format("Import host %s does not have access to the Linstor " +
+                        "destination storage pool %s. Please select an import host that is a LINSTOR satellite " +
+                        "connected to the pool, or use a different destination pool.",
+                        importHost.getName(), pool.getName()));
+            }
+        }
     }
 
     private UnmanagedInstanceTO convertAndImportToKVM(ConvertInstanceCommand convertInstanceCommand, HostVO convertHost, HostVO importHost,
                                                       String sourceVM,
                                                       RemoteInstanceTO remoteInstanceTO,
                                                       List<String> destinationStoragePools,
+                                                      List<Storage.StoragePoolType> destinationStoragePoolTypes,
                                                       DataStoreTO temporaryConvertLocation,
                                                       boolean forceConvertToPool) {
         Answer convertAnswer;
@@ -2159,29 +2818,54 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException(err);
         }
 
+        boolean cleanupConvertedDisks = false;
+        String convertedDisksPrefix = null;
         Answer importAnswer;
         try {
+            convertedDisksPrefix = ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid();
             ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(
-                    remoteInstanceTO, destinationStoragePools, temporaryConvertLocation,
-                    ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid(), forceConvertToPool);
+                    remoteInstanceTO, destinationStoragePools, destinationStoragePoolTypes, temporaryConvertLocation,
+                    convertedDisksPrefix, forceConvertToPool);
             importAnswer = agentManager.send(importHost.getId(), importCmd);
+
+            if (!importAnswer.getResult()) {
+                cleanupConvertedDisks = true;
+                String err = String.format(
+                        "The import process failed for instance %s from VMware to KVM on host %s: %s",
+                        sourceVM, importHost, importAnswer.getDetails());
+                logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
         } catch (AgentUnavailableException | OperationTimedoutException e) {
+            cleanupConvertedDisks = true;
             String err = String.format(
                     "Could not send the import converted instance command to host %s due to: %s",
                     importHost, e.getMessage());
             logger.error(err, e);
             throw new CloudRuntimeException(err);
-        }
-
-        if (!importAnswer.getResult()) {
-            String err = String.format(
-                    "The import process failed for instance %s from VMware to KVM on host %s: %s",
-                    sourceVM, importHost, importAnswer.getDetails());
-            logger.error(err);
-            throw new CloudRuntimeException(err);
+        } finally {
+            if (cleanupConvertedDisks) {
+                cleanupConvertedDisks(sourceVM, convertHost, temporaryConvertLocation, convertedDisksPrefix);
+            }
         }
 
         return ((ImportConvertedInstanceAnswer) importAnswer).getConvertedInstance();
+    }
+
+    private void cleanupConvertedDisks(String sourceVM, HostVO convertHost, DataStoreTO temporaryConvertLocation, String convertedDisksPrefix) {
+        logger.debug("Cleaning up the converted disks for the VM {} through the conversion host {}", sourceVM, convertHost.getName());
+        CleanupConvertedInstanceDisksCommand cleanupCommand =
+                new CleanupConvertedInstanceDisksCommand(temporaryConvertLocation, convertedDisksPrefix);
+        try {
+            Answer cleanupAnswer = agentManager.send(convertHost.getId(), cleanupCommand);
+            if (!cleanupAnswer.getResult()) {
+                logger.warn("Failed to cleanup the converted disks for the VM {} through " +
+                        "the conversion host {}: {}", sourceVM, convertHost.getName(), cleanupAnswer.getDetails());
+            }
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Error cleaning up converted disks for VM {} through the conversion host {}",
+                    sourceVM, convertHost.getName(), e);
+        }
     }
 
     private List<StoragePoolVO> findInstanceConversionDestinationStoragePoolsInCluster(
@@ -2190,8 +2874,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             DataStoreTO temporaryConvertLocation, boolean forceConvertToPool) {
         List<StoragePoolVO> poolsList;
         if (!forceConvertToPool) {
-            Set<StoragePoolVO> pools = new HashSet<>(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
-            pools.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
+            List<StoragePoolVO> pools = new ArrayList<>();
+            for (Storage.StoragePoolType poolType : stagedConversionDestinationPoolTypes) {
+                Set<StoragePoolVO> poolsForType = new HashSet<>(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, poolType));
+                poolsForType.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, poolType));
+                pools.addAll(poolsForType);
+            }
             if (pools.isEmpty()) {
                 String msg = String.format("Cannot find suitable storage pools in the cluster %s for the conversion", destinationCluster.getName());
                 logger.error(msg);
@@ -2211,7 +2899,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException(msg);
             }
             if (getStoragePoolWithTags(poolsList, diskOffering.getTags()) == null) {
-                String msg = String.format("Cannot find suitable storage pool for disk offering %s that belongs to the service offering %s", diskOffering.getName(), serviceOffering.getName());
+                String msg = String.format("Cannot find an Up destination primary storage pool matching storage tags '%s' required by service offering %s",
+                        diskOffering.getTags(), serviceOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
@@ -2224,7 +2913,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException(msg);
             }
             if (getStoragePoolWithTags(poolsList, diskOffering.getTags()) == null) {
-                String msg = String.format("Cannot find suitable storage pool for disk offering %s", diskOffering.getName());
+                String msg = String.format("Cannot find an Up destination primary storage pool matching storage tags '%s' required by data disk offering %s",
+                        diskOffering.getTags(), diskOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
@@ -2249,7 +2939,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             List<StoragePoolVO> pools, List<UnmanagedInstanceTO.Disk> disks,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap
     ) {
-        List<String> storagePools = new ArrayList<>(disks.size());
+        return getStoragePoolUuids(selectInstanceConversionDestinationStoragePools(pools, disks, serviceOffering, dataDiskOfferingMap));
+    }
+
+    private List<StoragePoolVO> selectInstanceConversionDestinationStoragePools(
+            List<StoragePoolVO> pools, List<UnmanagedInstanceTO.Disk> disks,
+            ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap
+    ) {
+        List<StoragePoolVO> storagePools = new ArrayList<>(disks.size());
         Set<String> dataDiskIds = dataDiskOfferingMap.keySet();
         for (UnmanagedInstanceTO.Disk disk : disks) {
             Long diskOfferingId = null;
@@ -2261,14 +2958,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             //TODO: Choose pools by capacity
             if (diskOfferingId == null) {
-                storagePools.add(pools.get(0).getUuid());
+                storagePools.add(pools.get(0));
             } else {
                 DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
                 StoragePoolVO pool = getStoragePoolWithTags(pools, diskOffering.getTags());
-                storagePools.add(pool.getUuid());
+                storagePools.add(pool);
             }
         }
         return storagePools;
+    }
+
+    private List<String> getStoragePoolUuids(List<StoragePoolVO> pools) {
+        return pools.stream().map(StoragePoolVO::getUuid).collect(Collectors.toList());
+    }
+
+    private List<Storage.StoragePoolType> getStoragePoolTypes(List<StoragePoolVO> pools) {
+        return pools.stream().map(StoragePoolVO::getPoolType).collect(Collectors.toList());
     }
 
     private void logFailureAndThrowException(String msg) {
@@ -2366,6 +3071,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * Perform validations before attempting to unmanage a VM from CloudStack:
      * - VM must not have any associated volume snapshot
      * - VM must not have an attached ISO
+     * - VM must not belong to any CKS cluster
+     * @throws UnsupportedServiceException in case any of the validations above fail
      */
     void performUnmanageVMInstancePrechecks(VMInstanceVO vmVO) {
         if (hasVolumeSnapshotsPriorToUnmanageVM(vmVO)) {
@@ -2376,6 +3083,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (hasISOAttached(vmVO)) {
             throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
                     " as there is an ISO attached. Please detach ISO before unmanaging.");
+        }
+
+        if (userVmManager.isVMPartOfAnyCKSCluster(vmVO)) {
+            throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
+                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before unmanaging.");
         }
     }
 
@@ -2521,12 +3233,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException(String.format("Service offering ID: %d cannot be found", serviceOfferingId));
         }
         accountService.checkAccess(owner, serviceOffering, zone);
-        try {
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, 1);
-        } catch (ResourceAllocationException e) {
-            logger.error("VM resource allocation error for account: {}", owner, e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
-        }
         String displayName = cmd.getDisplayName();
         if (StringUtils.isEmpty(displayName)) {
             displayName = instanceName;
@@ -2574,6 +3280,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException("Disk Path is required for Import from shared/local storage");
             }
 
+            if (MapUtils.isNotEmpty(dataDiskOfferingMap)) {
+                // The shared/local path only ever adopts the single root disk; silently accepting
+                // the parameter would let callers believe their data disks were imported.
+                throw new InvalidParameterValueException("datadiskofferinglist is not supported for Import from shared/local storage. " +
+                        "Import the root disk first, then adopt each data disk with importVolume and attach it to the imported instance.");
+            }
+
             if (networkId == null) {
                 throw new InvalidParameterValueException("Network is required for Import from shared/local storage");
             }
@@ -2589,6 +3302,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             if (volumeDao.findByPoolIdAndPath(poolId, diskPath) != null) {
                 throw new InvalidParameterValueException("Disk image is already in use");
+            }
+
+            validateStorageVolumeForImport(storagePool, diskPath);
+
+            // A host the planner is pinned to must be able to see the pool, otherwise the volume check
+            // runs on a host that cannot reach the image and reports it as missing.
+            if (ImportSource.SHARED == importSource && hostId != null && storagePoolHostDao.findByPoolHost(poolId, hostId) == null) {
+                throw new InvalidParameterValueException(String.format(
+                        "Specified host does not have access to the storage pool: %s", storagePool.getUuid()));
             }
 
             DiskOffering diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
@@ -2614,26 +3336,34 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         UserVm userVm = null;
 
-        if (ImportSource.EXTERNAL == importSource) {
-            String username = cmd.getUsername();
-            String password = cmd.getPassword();
-            String tmpPath = cmd.getTmpPath();
-            userVm = importExternalKvmVirtualMachine(unmanagedInstanceTO, instanceName, zone,
-                    template, displayName, hostName, caller, owner, userId,
-                    serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap, remoteUrl, username, password, tmpPath, details);
-        } else if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
-            try {
-                userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
+        try {
+
+            if (ImportSource.EXTERNAL == importSource) {
+                String username = cmd.getUsername();
+                String password = cmd.getPassword();
+                String tmpPath = cmd.getTmpPath();
+                userVm = importExternalKvmVirtualMachine(unmanagedInstanceTO, instanceName, zone,
                         template, displayName, hostName, caller, owner, userId,
-                        serviceOffering, dataDiskOfferingMap, networkId, hostId, poolId, diskPath,
-                        details);
-            } catch (InsufficientCapacityException e) {
-                throw new RuntimeException(e);
-            } catch (ResourceAllocationException e) {
-                throw new RuntimeException(e);
+                        serviceOffering, dataDiskOfferingMap,
+                        nicNetworkMap, nicIpAddressMap, remoteUrl, username, password, tmpPath, details);
+            } else if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
+                try {
+                    userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
+                            template, displayName, hostName, caller, owner, userId,
+                            serviceOffering, dataDiskOfferingMap, networkId, hostId, poolId, diskPath,
+                            details);
+                } catch (InsufficientCapacityException e) {
+                    throw new RuntimeException(e);
+                } catch (ResourceAllocationException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
+        } catch (ResourceAllocationException e) {
+            logger.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
         }
+
         if (userVm == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import Vm with name: %s ", instanceName));
         }
@@ -2644,10 +3374,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private UserVm importExternalKvmVirtualMachine(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone,
-                                                final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
-                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final String remoteUrl, String username, String password, String tmpPath, final Map<String, String> details) {
+                                                   final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
+                                                   final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
+                                                   final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
+                                                   final String remoteUrl, String username, String password, String tmpPath, final Map<String, String> details) throws ResourceAllocationException {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
@@ -2658,6 +3388,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", instanceName));
         }
 
+        DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
         Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
         final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
         final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
@@ -2666,97 +3397,119 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
 
-        // Check NICs and supplied networks
-        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, Hypervisor.HypervisorType.KVM);
-        if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
-            allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
-        }
-        VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
-
+        List<Reserver> reservations = new ArrayList<>();
         try {
-            userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
-                    null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
-                    Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
-        } catch (InsufficientCapacityException ice) {
-            logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
-        }
-        if (userVm == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
-        }
-        DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        String rootVolumeName = String.format("ROOT-%s", userVm.getId());
-        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
+            checkVmResourceLimitsForExternalKvmVmImport(owner, serviceOffering, (VMTemplateVO) template, details, reservations);
+            checkVolumeResourceLimitsForExternalKvmVmImport(owner, rootDisk, dataDisks, diskOffering, dataDiskOfferingMap, reservations);
 
-        DiskProfile[] dataDiskProfiles = new DiskProfile[dataDisks.size()];
-        int diskSeq = 0;
+            // Check NICs and supplied networks
+            Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
+            Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, Hypervisor.HypervisorType.KVM);
+            if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+                allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
+            }
+            VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
+
+            try {
+                userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
+                        null, caller, true, null, owner.getAccountId(), userId,
+                        serviceOffering, null, null, hostName,
+                        Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
+            } catch (InsufficientCapacityException ice) {
+                logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
+                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
+            }
+            if (userVm == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
+            }
+            String rootVolumeName = String.format("ROOT-%s", userVm.getId());
+            DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, null, false);
+
+            DiskProfile[] dataDiskProfiles = new DiskProfile[dataDisks.size()];
+            int diskSeq = 0;
+            for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+                DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+                DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null, null, false);
+                dataDiskProfiles[diskSeq++] = dataDiskProfile;
+            }
+
+            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
+            ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
+            profile.setServiceOffering(dummyOffering);
+            DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
+            final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
+            DeployDestination dest = null;
+            try {
+                dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
+            } catch (Exception e) {
+                logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
+            }
+            if(dest == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
+            }
+
+            List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+            try {
+                diskProfileStoragePoolList.add(importExternalDisk(rootDisk, userVm, dest, diskOffering, Volume.Type.ROOT,
+                        template, null, remoteUrl, username, password, tmpPath, diskProfile));
+
+                Set<Long> reservedDeviceIds = getReservedDeviceIds(userVm);
+                long deviceId = getNextDeviceId(0L, reservedDeviceIds);
+                diskSeq = 0;
+                for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+                    DiskProfile dataDiskProfile = dataDiskProfiles[diskSeq++];
+                    DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+
+                    diskProfileStoragePoolList.add(importExternalDisk(disk, userVm, dest, offering, Volume.Type.DATADISK,
+                            template, deviceId, remoteUrl, username, password, tmpPath, dataDiskProfile));
+                    deviceId = getNextDeviceId(deviceId, reservedDeviceIds);
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+            }
+            try {
+                int nicIndex = 0;
+                for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
+                    Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
+                    Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
+                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true);
+                    nicIndex++;
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+            }
+            publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
+            return userVm;
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    protected void checkVolumeResourceLimitsForExternalKvmVmImport(Account owner, UnmanagedInstanceTO.Disk rootDisk,
+                                                                   List<UnmanagedInstanceTO.Disk> dataDisks, DiskOfferingVO rootDiskOffering,
+                                                                   Map<String, Long> dataDiskOfferingMap, List<Reserver> reservations) throws ResourceAllocationException {
+        if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
+            throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
+        }
+        resourceLimitService.checkVolumeResourceLimit(owner, true, rootDisk.getCapacity(), rootDiskOffering, reservations);
+
+        if (CollectionUtils.isEmpty(dataDisks)) {
+            return;
+        }
         for (UnmanagedInstanceTO.Disk disk : dataDisks) {
             if (disk.getCapacity() == null || disk.getCapacity() == 0) {
-                throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", disk.getDiskId()));
+                throw new InvalidParameterValueException(String.format("Data disk ID: %s size is invalid", disk.getDiskId()));
             }
             DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-            DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null);
-            dataDiskProfiles[diskSeq++] = dataDiskProfile;
+            resourceLimitService.checkVolumeResourceLimit(owner, true, disk.getCapacity(), offering, reservations);
         }
-
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
-        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
-        profile.setServiceOffering(dummyOffering);
-        DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
-        final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
-        DeployDestination dest = null;
-        try {
-            dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
-        } catch (Exception e) {
-            logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
-        }
-        if(dest == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
-        }
-
-        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
-        try {
-            if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
-                throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
-            }
-
-            diskProfileStoragePoolList.add(importExternalDisk(rootDisk, userVm, dest, diskOffering, Volume.Type.ROOT,
-                    template, null, remoteUrl, username, password, tmpPath, diskProfile));
-
-            long deviceId = 1L;
-            diskSeq = 0;
-            for (UnmanagedInstanceTO.Disk disk : dataDisks) {
-                DiskProfile dataDiskProfile = dataDiskProfiles[diskSeq++];
-                DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-
-                diskProfileStoragePoolList.add(importExternalDisk(disk, userVm, dest, offering, Volume.Type.DATADISK,
-                        template, deviceId, remoteUrl, username, password, tmpPath, dataDiskProfile));
-                deviceId++;
-            }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
-        try {
-            int nicIndex = 0;
-            for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
-                Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
-                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true);
-                nicIndex++;
-            }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
-        publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
-        return userVm;
     }
 
     private UserVm importKvmVirtualMachineFromDisk(final ImportSource importSource, final String instanceName, final DataCenter zone,
@@ -2812,82 +3565,201 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         profiles.add(nicProfile);
         networkNicMap.put(network.getUuid(), profiles);
 
+        List<Reserver> reservations = new ArrayList<>();
         try {
+            checkVmResourceLimitsForExternalKvmVmImport(owner, serviceOffering, (VMTemplateVO) template, details, reservations);
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
+                    serviceOffering, null, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
-        } catch (InsufficientCapacityException ice) {
+
+            if (userVm == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
+            }
+
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering, null);
+            CheckedReservation volumeReservation = new CheckedReservation(owner, Resource.ResourceType.volume, resourceLimitStorageTags,
+                    CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? 1L : 0L, reservationDao, resourceLimitService);
+            reservations.add(volumeReservation);
+
+            String rootVolumeName = String.format("ROOT-%s", userVm.getId());
+            DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, null, false);
+
+            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
+            ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
+            profile.setServiceOffering(dummyOffering);
+            DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
+            // Confine the plan to the pod and cluster of the pool the caller asked for. Otherwise the
+            // planner is free to pick a host in another cluster that cannot see the pool, and the volume
+            // check then runs against whichever pool that cluster does have. Both are null for a zone
+            // wide pool, which every host can see.
+            StoragePoolVO importStoragePool = primaryDataStoreDao.findById(poolId);
+            if (importStoragePool == null) {
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Storage pool with id: %s not found", userVm.getInstanceName(), poolId));
+            }
+            final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), importStoragePool.getPodId(),
+                    importStoragePool.getClusterId(), hostId, poolId, null);
+            DeployDestination dest = null;
+            try {
+                dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
+            } catch (Exception e) {
+                logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
+            }
+            if(dest == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
+            }
+
+            Map<Volume, StoragePool> storage = dest.getStorageForDisks();
+            Volume volume = volumeDao.findById(diskProfile.getVolumeId());
+            StoragePool storagePool = storage.get(volume);
+            try {
+                validateStorageVolumeForImport(storagePool, diskPath);
+            } catch (RuntimeException e) {
+                cleanupFailedImportVM(userVm);
+                throw e;
+            }
+            CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
+            checkVolumeCommand.setSrcFile(diskPath);
+            StorageFilerTO storageTO = new StorageFilerTO(storagePool);
+            checkVolumeCommand.setStorageFilerTO(storageTO);
+            Answer answer = agentManager.easySend(dest.getHost().getId(), checkVolumeCommand);
+            if (!(answer instanceof CheckVolumeAnswer)) {
+                cleanupFailedImportVM(userVm);
+                throw new CloudRuntimeException("Disk not found or is invalid");
+            }
+            CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
+
+            Pair<Map<VolumeOnStorageTO.Detail, String>, Long> volumeDetailsAndSize;
+            try {
+                volumeDetailsAndSize = getVolumeDetailsAndSize(storagePool, diskPath, dest.getHost().getId());
+            } catch (CloudRuntimeException e) {
+                cleanupFailedImportVM(userVm);
+                throw e;
+            }
+            Map<VolumeOnStorageTO.Detail, String> volumeDetails = volumeDetailsAndSize.first();
+            diskProfile.setSize(volumeDetailsAndSize.second());
+
+            CheckedReservation primaryStorageReservation = new CheckedReservation(owner, Resource.ResourceType.primary_storage, resourceLimitStorageTags,
+                    CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? diskProfile.getSize() : 0L, reservationDao, resourceLimitService);
+            reservations.add(primaryStorageReservation);
+
+            List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+            try {
+                long deviceId = 1L;
+                Storage.ImageFormat diskFormat = getImageFormatFromVolumeDetails(volumeDetails);
+                if (storagePool.getPoolType() == Storage.StoragePoolType.StorPool) {
+                    diskFormat = Storage.ImageFormat.QCOW2;
+                }
+                if(ImportSource.SHARED == importSource) {
+                    diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
+                            template, deviceId, poolId, diskPath, diskProfile, diskFormat));
+                } else if(ImportSource.LOCAL == importSource) {
+                    diskProfileStoragePoolList.add(importKVMLocalDisk(userVm, diskOffering, Volume.Type.ROOT,
+                            template, deviceId, hostId, diskPath, diskProfile, diskFormat));
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+            }
+            networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
+            publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
+            return userVm;
+
+        } catch (InsufficientCapacityException ice) { // This will be thrown by com.cloud.vm.UserVmService.importVM
             logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
-        }
-        if (userVm == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
-        }
-        DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        String rootVolumeName = String.format("ROOT-%s", userVm.getId());
-        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
-
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
-        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
-        profile.setServiceOffering(dummyOffering);
-        DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
-        final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, hostId, poolId, null);
-        DeployDestination dest = null;
-        try {
-            dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
-        } catch (Exception e) {
-            logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
+        } catch (ResourceAllocationException e) {
             cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
+            throw e;
+        } finally {
+            ReservationHelper.closeAll(reservations);
         }
-        if(dest == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
+    }
+
+    protected void checkVmResourceLimitsForExternalKvmVmImport(Account owner, ServiceOfferingVO serviceOffering, VMTemplateVO template, Map<String, String> details, List<Reserver> reservations) throws ResourceAllocationException {
+        // When importing an external VM, the amount of CPUs and memory is always obtained from the compute offering,
+        // unlike the unmanaged instance import that obtains it from the hypervisor unless the VM is powered off and the offering is fixed
+        Integer cpu = serviceOffering.getCpu();
+        Integer memory = serviceOffering.getRamSize();
+
+        if (serviceOffering.isDynamic()) {
+            cpu = getDetailAsInteger(VmDetailConstants.CPU_NUMBER, details);
+            memory = getDetailAsInteger(VmDetailConstants.MEMORY, details);
         }
 
-        Map<Volume, StoragePool> storage = dest.getStorageForDisks();
-        Volume volume = volumeDao.findById(diskProfile.getVolumeId());
-        StoragePool storagePool = storage.get(volume);
+        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
+
+        CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, cpu.longValue(), reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
+        CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, memory.longValue(), reservationDao, resourceLimitService);
+        reservations.add(memReservation);
+    }
+
+    protected Integer getDetailAsInteger(String key, Map<String, String> details) {
+        String detail = details.get(key);
+        if (detail == null) {
+            throw new InvalidParameterValueException(String.format("Detail '%s' must be provided.", key));
+        }
+        try {
+            return Integer.valueOf(detail);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException(String.format("Please provide a valid integer value for detail '%s'.", key));
+        }
+    }
+
+    /**
+     * @return null if the pool's storage driver does not support enumerating its own volumes
+     * (the caller should fall back to a host agent command), otherwise the (possibly empty)
+     * list of volumes the driver found at volumePath.
+     */
+    private List<VolumeOnStorageTO> listVolumesForImportFromDriver(StoragePool pool, String volumePath) {
+        DataStore dataStore = dataStoreManager.getPrimaryDataStore(pool.getId());
+        if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return null;
+        }
+        return ((PrimaryDataStoreDriver) dataStore.getDriver()).listVolumesForImport(pool, volumePath, null, false);
+    }
+
+    /**
+     * Retrieves the details and the virtual size of the disk at diskPath, either from the pool's
+     * storage driver (if it can enumerate its own volumes) or from the host agent.
+     * @throws CloudRuntimeException if the disk is not found, is invalid or fails the volume checks
+     */
+    private Pair<Map<VolumeOnStorageTO.Detail, String>, Long> getVolumeDetailsAndSize(StoragePool storagePool, String diskPath, long hostId) {
+        List<VolumeOnStorageTO> volumesFromDriver = listVolumesForImportFromDriver(storagePool, diskPath);
+        if (volumesFromDriver != null) {
+            // The storage driver can enumerate its own volumes (e.g. StorPool, via its
+            // management API), so there is no need to reach the host agent just to read size.
+            if (CollectionUtils.isEmpty(volumesFromDriver)) {
+                throw new CloudRuntimeException("Disk not found or is invalid");
+            }
+            VolumeOnStorageTO volumeOnStorage = volumesFromDriver.get(0);
+            checkVolume(volumeOnStorage.getDetails());
+            return new Pair<>(volumeOnStorage.getDetails(), volumeOnStorage.getVirtualSize());
+        }
+
         CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
         checkVolumeCommand.setSrcFile(diskPath);
-        StorageFilerTO storageTO = new StorageFilerTO(storagePool);
-        checkVolumeCommand.setStorageFilerTO(storageTO);
-        Answer answer = agentManager.easySend(dest.getHost().getId(), checkVolumeCommand);
+        checkVolumeCommand.setStorageFilerTO(new StorageFilerTO(storagePool));
+        Answer answer = agentManager.easySend(hostId, checkVolumeCommand);
         if (!(answer instanceof CheckVolumeAnswer)) {
-            cleanupFailedImportVM(userVm);
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
         CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
-        try {
-            checkVolume(checkVolumeAnswer.getVolumeDetails());
-        } catch (CloudRuntimeException e) {
-            cleanupFailedImportVM(userVm);
-            throw e;
-        }
+        checkVolume(checkVolumeAnswer.getVolumeDetails());
         if (!checkVolumeAnswer.getResult()) {
-            cleanupFailedImportVM(userVm);
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
-        diskProfile.setSize(checkVolumeAnswer.getSize());
-
-        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
-        try {
-            long deviceId = 1L;
-            if(ImportSource.SHARED == importSource) {
-                diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
-                        template, deviceId, poolId, diskPath, diskProfile));
-            } else if(ImportSource.LOCAL == importSource) {
-                diskProfileStoragePoolList.add(importKVMLocalDisk(userVm, diskOffering, Volume.Type.ROOT,
-                        template, deviceId, hostId, diskPath, diskProfile));
-            }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
-        networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
-        publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
-        return userVm;
+        return new Pair<>(checkVolumeAnswer.getVolumeDetails(), checkVolumeAnswer.getSize());
     }
 
     private void checkVolume(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
@@ -2909,7 +3781,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -3000,9 +3872,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     !instance.getName().toLowerCase().contains(keyword)) {
                 continue;
             }
-            responses.add(createUnmanagedInstanceResponse(instance, null, null));
+            responses.add(responseGenerator.createUnmanagedInstanceResponse(instance, null, null));
         }
-
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, responses.size());
         return listResponses;

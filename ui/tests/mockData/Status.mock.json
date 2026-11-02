@@ -97,7 +97,8 @@
       "message.guestnetwork.state.disabled": "message.guestnetwork.state.disabled",
       "message.guestnetwork.state.migrating": "message.guestnetwork.state.migrating",
       "message.guestnetwork.state.alert": "message.guestnetwork.state.alert",
-      "message.guestnetwork.state.allocated": "message.guestnetwork.state.allocated"
+      "message.guestnetwork.state.allocated": "message.guestnetwork.state.allocated",
+      "label.allocated": "Allocated"
     }
   },
   "routes": [

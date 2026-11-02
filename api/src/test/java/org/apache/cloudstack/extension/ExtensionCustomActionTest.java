@@ -41,6 +41,12 @@ public class ExtensionCustomActionTest {
     }
 
     @Test
+    public void testNetworkResourceType() {
+        ExtensionCustomAction.ResourceType networkType = ExtensionCustomAction.ResourceType.Network;
+        assertEquals(com.cloud.network.Network.class, networkType.getAssociatedClass());
+    }
+
+    @Test
     public void testParameterTypeSupportsOptions() {
         assertTrue(ExtensionCustomAction.Parameter.Type.STRING.canSupportsOptions());
         assertTrue(ExtensionCustomAction.Parameter.Type.NUMBER.canSupportsOptions());

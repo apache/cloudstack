@@ -131,6 +131,6 @@ public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding a BigSwitch BCF Controller";
+        return "Adding a BigSwitch BCF Controller to physical network with ID: " + getResourceUuid(ApiConstants.PHYSICAL_NETWORK_ID);
     }
 }

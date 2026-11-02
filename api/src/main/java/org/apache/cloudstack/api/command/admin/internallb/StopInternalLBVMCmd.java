@@ -86,7 +86,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping Internal LB Instance: " + getId();
+        return "Stopping Internal LB Instance: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -105,7 +105,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Internal LB Instance Id: " + getId());
+        CallContext.current().setEventDetails("Internal LB Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter vm = _routerService.findRouter(getId());
         if (vm == null || vm.getRole() != Role.INTERNAL_LB_VM) {

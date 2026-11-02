@@ -72,7 +72,7 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Delete site-to-site VPN customer gateway for Account " + getEntityOwnerId();
+        return "Deleting site-to-site VPN customer gateway for Account " + getEntityOwnerId();
     }
 
     @Override

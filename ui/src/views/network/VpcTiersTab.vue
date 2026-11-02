@@ -193,8 +193,14 @@
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
+              }"
+               >
+              <a-select-option
+                v-for="item in networkOfferings"
+                :key="item.id"
+                :value="item.id"
+                :label="item.displaytext || item.name || item.description"
+                :title="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>

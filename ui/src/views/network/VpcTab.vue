@@ -252,7 +252,7 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.vpn.gateway')" key="vpngw" v-if="'listVpnGateways' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.vpn.gateway')" key="vpngw" v-if="'listVpnGateways' in $store.getters.apis && resource.service && resource.service.some(s => s.name === 'Vpn')">
         <a-button
           v-if="vpnGateways.length === 0"
           type="dashed"
@@ -313,7 +313,7 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.vpn.connection')" key="vpnc" v-if="'listVpnConnections' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.vpn.connection')" key="vpnc" v-if="'listVpnConnections' in $store.getters.apis && resource.service && resource.service.some(s => s.name === 'Vpn')">
         <a-button
           type="dashed"
           style="width: 100%"
@@ -405,6 +405,9 @@
       <a-tab-pane :tab="$t('label.vnf.appliances')" key="vnf" v-if="'deployVnfAppliance' in $store.getters.apis">
         <VnfAppliancesTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.custom.actions')" key="customactions" v-if="'runCustomAction' in $store.getters.apis && 'listCustomActions' in $store.getters.apis && resource.service && resource.service.some(s => s.name === 'CustomAction')">
+        <RunCustomAction :resource="resource" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="resource" resourceType="Vpc" :loading="loading" />
       </a-tab-pane>
@@ -433,6 +436,7 @@ import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
 import StaticRoutesTab from './StaticRoutesTab'
+import RunCustomAction from '@/views/extension/RunCustomAction'
 
 export default {
   name: 'VpcTab',
@@ -445,6 +449,7 @@ export default {
     VpcTiersTab,
     VnfAppliancesTab,
     StaticRoutesTab,
+    RunCustomAction,
     EventsTab,
     AnnotationsTab,
     ResourceIcon

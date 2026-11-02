@@ -176,7 +176,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + getId());
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         NetworkACLItem aclItem = _networkACLService.updateNetworkACLItem(this);
         NetworkACLItemResponse aclResponse = _responseGenerator.createNetworkACLItemResponse(aclItem);
         setResponseObject(aclResponse);

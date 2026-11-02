@@ -18,8 +18,14 @@ package com.cloud.utils.db;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -262,5 +268,142 @@ public class GenericDaoBaseTest {
         Assert.assertEquals(" INNER JOIN tableA tableA1Alias ON tableB.column2=tableA1Alias.column1 " +
                 " INNER JOIN tableA tableA2Alias ON tableC.column3=tableA2Alias.column2 " +
                 " INNER JOIN tableA tableA3Alias ON tableD.column4=tableA3Alias.column3 AND tableD.column5=? ", joinString.toString());
+    }
+
+
+    @Test
+    public void testLockOneRandomRowUsesRandomFilter() {
+        // Create a mock DAO to test lockOneRandomRow behavior
+        GenericDaoBase<DbTestVO, Long> testDao = Mockito.mock(GenericDaoBase.class);
+
+        // Capture the filter passed to the search method
+        final Filter[] capturedFilter = new Filter[1];
+
+        Mockito.when(testDao.lockOneRandomRow(Mockito.any(SearchCriteria.class), Mockito.anyBoolean()))
+                .thenCallRealMethod();
+
+        Mockito.when(testDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class),
+                        Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenAnswer(invocation -> {
+                    capturedFilter[0] = invocation.getArgument(1);
+                    return new ArrayList<DbTestVO>();
+                });
+
+        SearchCriteria<DbTestVO> sc = Mockito.mock(SearchCriteria.class);
+        testDao.lockOneRandomRow(sc, true);
+
+        // Verify that the filter uses random ordering
+        Assert.assertNotNull(capturedFilter[0]);
+        Assert.assertNotNull(capturedFilter[0].getOrderBy());
+        Assert.assertTrue(capturedFilter[0].getOrderBy().contains("ORDER BY RAND()"));
+        Assert.assertTrue(capturedFilter[0].getOrderBy().contains("LIMIT 1"));
+    }
+
+    @Test
+    public void testLockOneRandomRowReturnsNullOnEmptyResult() {
+        GenericDaoBase<DbTestVO, Long> testDao = Mockito.mock(GenericDaoBase.class);
+
+        Mockito.when(testDao.lockOneRandomRow(Mockito.any(SearchCriteria.class), Mockito.anyBoolean()))
+                .thenCallRealMethod();
+
+        Mockito.when(testDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class),
+                        Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenReturn(new ArrayList<DbTestVO>());
+
+        SearchCriteria<DbTestVO> sc = Mockito.mock(SearchCriteria.class);
+        DbTestVO result = testDao.lockOneRandomRow(sc, true);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void testLockOneRandomRowReturnsFirstElement() {
+        GenericDaoBase<DbTestVO, Long> testDao = Mockito.mock(GenericDaoBase.class);
+        DbTestVO expectedResult = new DbTestVO();
+        List<DbTestVO> resultList = new ArrayList<>();
+        resultList.add(expectedResult);
+
+        Mockito.when(testDao.lockOneRandomRow(Mockito.any(SearchCriteria.class), Mockito.anyBoolean()))
+                .thenCallRealMethod();
+
+        Mockito.when(testDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class),
+                        Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenReturn(resultList);
+
+        SearchCriteria<DbTestVO> sc = Mockito.mock(SearchCriteria.class);
+        DbTestVO result = testDao.lockOneRandomRow(sc, true);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void gmtCalendarUsesGmtTimeZone() {
+        Calendar calendar = GenericDaoBase.gmtCalendar();
+
+        Assert.assertEquals(TimeZone.getTimeZone("GMT"), calendar.getTimeZone());
+    }
+
+    @Test
+    public void gmtCalendarReturnsFreshInstancePerCall() {
+        Assert.assertNotSame(GenericDaoBase.gmtCalendar(), GenericDaoBase.gmtCalendar());
+    }
+
+    @Test
+    public void temporalSqlTypeDate() {
+        Attribute attr = new Attribute("table", "column");
+        attr.flags = Attribute.Flag.Date.setTrue(attr.flags);
+
+        Assert.assertEquals(Types.DATE, GenericDaoBase.temporalSqlType(attr));
+    }
+
+    @Test
+    public void temporalSqlTypeTime() {
+        Attribute attr = new Attribute("table", "column");
+        attr.flags = Attribute.Flag.Time.setTrue(attr.flags);
+
+        Assert.assertEquals(Types.TIME, GenericDaoBase.temporalSqlType(attr));
+    }
+
+    @Test
+    public void temporalSqlTypeDefaultsToTimestamp() {
+        Attribute attr = new Attribute("table", "column");
+        attr.flags = Attribute.Flag.TimeStamp.setTrue(attr.flags);
+
+        Assert.assertEquals(Types.TIMESTAMP, GenericDaoBase.temporalSqlType(attr));
+    }
+
+    @Test
+    public void getObjectDateReadsViaGmtTimestamp() throws SQLException {
+        Timestamp ts = new Timestamp(1_700_000_000_000L);
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(2), Mockito.any(Calendar.class))).thenReturn(ts);
+
+        Date result = GenericDaoBase.getObject(Date.class, resultSet, 2);
+
+        Assert.assertEquals(ts.getTime(), result.getTime());
+    }
+
+    @Test
+    public void getObjectDateNullTimestampReturnsNull() throws SQLException {
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(3), Mockito.any(Calendar.class))).thenReturn(null);
+
+        Assert.assertNull(GenericDaoBase.getObject(Date.class, resultSet, 3));
+    }
+
+    @Test
+    public void getObjectCalendarReadsViaGmtTimestamp() throws SQLException {
+        Timestamp ts = new Timestamp(1_700_000_000_000L);
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(4), Mockito.any(Calendar.class))).thenReturn(ts);
+
+        Calendar result = GenericDaoBase.getObject(Calendar.class, resultSet, 4);
+
+        Assert.assertEquals(ts.getTime(), result.getTimeInMillis());
+    }
+
+    @Test
+    public void getObjectCalendarNullTimestampReturnsNull() throws SQLException {
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(5), Mockito.any(Calendar.class))).thenReturn(null);
+
+        Assert.assertNull(GenericDaoBase.getObject(Calendar.class, resultSet, 5));
     }
 }

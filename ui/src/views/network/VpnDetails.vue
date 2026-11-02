@@ -216,16 +216,24 @@ export default {
         this.$notifyError(error)
       })
       if (this.resource.vpcid) {
-        this.vpnGatewayEnabled = true
-        getAPI('listVpnGateways', {
-          vpcid: this.resource.vpcid,
-          listAll: true
-        }).then(response => {
-          const vpnGateways = response.listvpngatewaysresponse.vpngateway || []
-          for (const vpnGateway of vpnGateways) {
-            if (vpnGateway.publicip === this.resource.ipaddress) {
-              this.vpnGateway = vpnGateway
-            }
+        getAPI('listVPCs', { id: this.resource.vpcid, listAll: true }).then(vpcResponse => {
+          const vpc = vpcResponse.listvpcsresponse?.vpc?.[0]
+          if (vpc?.service?.some(s => s.name === 'Vpn')) {
+            this.vpnGatewayEnabled = true
+            getAPI('listVpnGateways', {
+              vpcid: this.resource.vpcid,
+              listAll: true
+            }).then(response => {
+              const vpnGateways = response.listvpngatewaysresponse.vpngateway || []
+              for (const vpnGateway of vpnGateways) {
+                if (vpnGateway.publicip === this.resource.ipaddress) {
+                  this.vpnGateway = vpnGateway
+                }
+              }
+            }).catch(error => {
+              console.log(error)
+              this.$notifyError(error)
+            })
           }
         }).catch(error => {
           console.log(error)

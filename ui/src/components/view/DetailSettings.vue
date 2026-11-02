@@ -100,7 +100,7 @@
             <tooltip-button
               :tooltip="$t('label.edit')"
               icon="edit-outlined"
-              :disabled="deployasistemplate === true || item.name.startsWith('extraconfig')"
+              :disabled="item.name.startsWith('extraconfig')"
               v-if="!item.edit"
               @onClick="showEditDetail(index)" />
           </div>
@@ -115,7 +115,7 @@
             >
               <tooltip-button
                 :tooltip="$t('label.delete')"
-                :disabled="deployasistemplate === true || item.name.startsWith('extraconfig')"
+                :disabled="item.name.startsWith('extraconfig')"
                 type="primary"
                 :danger="true"
                 icon="delete-outlined" />
@@ -213,11 +213,16 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && resource.state !== 'Stopped')
-      getAPI('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
-        this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
-      })
+      if (this.$route.meta.name === 'vm') {
+        getAPI('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
+          this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
+        })
+      }
     },
     allowEditOfDetail (name) {
+      if (this.deployasistemplate) {
+        return this.resource.alloweddetails && this.resource.alloweddetails.split(',').map(item => item.trim()).includes(name)
+      }
       if (this.resource.readonlydetails) {
         if (this.resource.readonlydetails.split(',').map(item => item.trim()).includes(name)) {
           return false
@@ -320,7 +325,11 @@ export default {
         return
       }
       if (!this.allowEditOfDetail(this.newKey)) {
-        this.error = this.$t('error.unable.to.proceed')
+        if (this.deployasistemplate) {
+          this.error = this.$t('error.unable.to.add.setting') + ' : ' + this.newKey + '. ' + this.$t('message.error.setting.deployasistemplate')
+        } else {
+          this.error = this.$t('error.unable.to.add.setting') + ' : ' + this.newKey
+        }
         return
       }
       this.error = false

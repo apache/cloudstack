@@ -138,7 +138,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
         boolean success = false;
 
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = _lbService.applyLBStickinessPolicy(this);
             if (success) {
                 // State might be different after the rule is applied, so get new object here

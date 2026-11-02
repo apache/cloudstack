@@ -75,7 +75,7 @@ fi
 #delete VMs on this mountpoint
 deleteVMs() {
   local mountPoint=$1
-  vmPids=$(ps aux| grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
+  vmPids=$(ps aux | grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
   if [ $? -gt 0 ]
   then
      return
@@ -93,7 +93,7 @@ deleteVMs() {
 }
 
 #checking is there the same nfs server mounted under $MountPoint?
-mounts=$(cat /proc/mounts |grep nfs|grep $MountPoint)
+mounts=$(cat /proc/mounts | grep nfs | grep $MountPoint)
 if [ $? -gt 0 ]
 then
    # remount it

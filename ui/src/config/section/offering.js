@@ -32,13 +32,17 @@ export default {
       permission: ['listServiceOfferings'],
       searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
-        var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          return { isrecursive: 'true' }
         }
-        return params
+        return { state: 'Active' }
       },
-      filters: ['active', 'inactive'],
+      filters: () => {
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          return ['active', 'inactive']
+        }
+        return []
+      },
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails']
@@ -143,6 +147,14 @@ export default {
         },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
+      }, {
+        api: 'cloneServiceOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.compute.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-compute-offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneComputeOffering.vue')))
       }]
     },
     {
@@ -225,6 +237,15 @@ export default {
         },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
+      }, {
+        api: 'cloneServiceOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.system.service.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-system-service-offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneComputeOffering.vue')))
       }]
     },
     {
@@ -332,6 +353,14 @@ export default {
         },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
+      }, {
+        api: 'cloneDiskOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.disk.offering',
+        docHelp: 'adminguide/service_offerings.html#creating-a-new-disk-offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneDiskOffering.vue')))
       }]
     },
     {
@@ -342,7 +371,7 @@ export default {
       permission: ['listBackupOfferings'],
       searchFilters: ['zoneid', 'domainid'],
       columns: ['name', 'description', 'domain', 'zonename'],
-      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created'],
+      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created', 'backupofferingdetails'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -369,6 +398,13 @@ export default {
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
       }, {
+        api: 'createBackupOffering',
+        icon: 'plus-outlined',
+        label: 'label.create.backup.offering',
+        listView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CreateBackupOffering.vue')))
+      }, {
         api: 'updateBackupOffering',
         icon: 'edit-outlined',
         label: 'label.edit',
@@ -376,6 +412,14 @@ export default {
         popup: true,
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
         args: ['name', 'description', 'allowuserdrivenbackups']
+      }, {
+        api: 'cloneBackupOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.backup.offering',
+        docHelp: 'adminguide/virtual_machines.html#importing-backup-offerings',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneBackupOffering.vue')))
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',
@@ -396,7 +440,13 @@ export default {
       permission: ['listNetworkOfferings'],
       filters: ['all', 'forvpc', 'guestnetwork'],
       searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
-      columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
+      columns: () => {
+        const fields = ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'egressdefaultpolicy', 'order']
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.splice(fields.length - 1, 0, { field: 'serviceofferingname', customTitle: 'virtual.routers.system.offering' })
+        }
+        return fields
+      },
       details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       customParamHandler: (params, query) => {
@@ -488,6 +538,14 @@ export default {
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
+        api: 'cloneNetworkOffering',
+        icon: 'copy-outlined',
+        label: 'label.clone.network.offering',
+        docHelp: 'adminguide/networking.html#creating-a-new-network-offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneNetworkOffering.vue')))
+      }, {
         api: 'deleteNetworkOffering',
         icon: 'delete-outlined',
         label: 'label.remove.network.offering',
@@ -508,7 +566,7 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'redundantrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'conservemode', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',
@@ -579,6 +637,14 @@ export default {
         dataView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
+      }, {
+        api: 'cloneVPCOffering',
+        icon: 'copy-outlined',
+        docHelp: 'plugins/nuage-plugin.html?#optional-create-and-enable-vpc-offering',
+        label: 'label.clone.vpc.offering',
+        dataView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CloneVpcOffering.vue')))
       }, {
         api: 'deleteVPCOffering',
         icon: 'delete-outlined',

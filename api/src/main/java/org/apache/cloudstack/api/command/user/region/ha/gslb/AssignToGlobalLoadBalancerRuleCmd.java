@@ -145,13 +145,13 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "assign load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") + " to global load balancer rule " + getGlobalLoadBalancerRuleId();
+        return "Assigning load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") + " to global load balancer rule " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
         CallContext.current().setEventDetails(
-            "Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
+            "Global Load balancer rule ID: " + getResourceUuid(ApiConstants.ID) + " Instances IDs: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Resource;
 import com.cloud.user.ResourceLimitService;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermissionEntity;
@@ -57,7 +58,9 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -86,6 +89,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMa
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
@@ -169,6 +173,7 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterScaleWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStopWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -300,6 +305,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final String DEFAULT_NSX_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNSXVPCNetworkOfferingforKubernetesService";
     private static final String DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes Service";
     private static final String DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes service on VPC";
+    private static final String DEFAULT_NETRIS_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNetrisVPCNetworkOfferingforKubernetesService";
+    private static final String DEFAULT_NETRIS_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for Netris CloudStack Kubernetes Service on VPC";
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
@@ -315,6 +322,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     public KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
     @Inject
+    public KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
+    @Inject
     public KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
     @Inject
     protected SSHKeyPairDao sshKeyPairDao;
@@ -328,6 +337,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected HostDao hostDao;
     @Inject
     protected AffinityGroupDao affinityGroupDao;
+    @Inject
+    protected AffinityGroupVMMapDao affinityGroupVMMapDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -598,6 +609,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateIsolatedNetworkIpRules(sourceNatIp.getId(), FirewallRule.Purpose.PortForwarding, network, clusterTotalNodeCount);
     }
 
+    public boolean isNetrisNetwork(Network network) {
+        return networkModel.isProviderSupportServiceInNetwork(
+                network.getId(), Service.Lb, Network.Provider.Netris);
+    }
+
+    protected void validateNetrisNetwork(Network network) {
+        if (network.getVpcId() == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Netris Kubernetes provider supports only VPC networks / tiers. " +
+                            "Network '%s' (id: %s) is not part of a VPC. " +
+                            "Please create the cluster within a VPC tier.",
+                    network.getName(), network.getUuid()));
+        }
+    }
+
     protected void validateVpcTier(Network network) {
         if (Network.State.Allocated.equals(network.getState())) { // Allocated networks won't have IP and rules
             return;
@@ -698,8 +724,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             } else if (Objects.nonNull(domainId)) {
                 dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
             }
-            for (DedicatedResourceVO dedicatedHost : dedicatedHosts) {
-                hosts.add(hostDao.findById(dedicatedHost.getHostId()));
+            for (DedicatedResourceVO dedicatedResource : dedicatedHosts) {
+                hosts.addAll(getHostsForDedicatedResource(dedicatedResource, zone));
                 useDedicatedHosts = true;
             }
         }
@@ -765,6 +791,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering);
         logger.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
+    }
+
+    public List<HostVO> getHostsForDedicatedResource(DedicatedResourceVO dedicatedResource, DataCenter zone) {
+        if (dedicatedResource.getHostId() != null) {
+            HostVO host = hostDao.findById(dedicatedResource.getHostId());
+            return host != null ? List.of(host) : Collections.emptyList();
+        }
+        if (dedicatedResource.getClusterId() != null) {
+            return hostDao.findByClusterId(dedicatedResource.getClusterId());
+        }
+        if (dedicatedResource.getPodId() != null) {
+            return hostDao.findByPodId(dedicatedResource.getPodId(), Host.Type.Routing);
+        }
+        if (dedicatedResource.getDataCenterId() != null) {
+            return resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, dedicatedResource.getDataCenterId());
+        }
+        return Collections.emptyList();
     }
 
     protected void setNodeTypeServiceOfferingResponse(KubernetesClusterResponse response,
@@ -858,24 +901,38 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         List<KubernetesUserVmResponse> vmResponses = new ArrayList<>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        ResponseView respView = ResponseView.Restricted;
+        ResponseView userVmResponseView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (accountService.isRootAdmin(caller.getId())) {
-            respView = ResponseView.Full;
+            userVmResponseView = ResponseView.Full;
         }
         final String responseName = "virtualmachine";
         if (vmList != null && !vmList.isEmpty()) {
-            for (KubernetesClusterVmMapVO vmMapVO : vmList) {
-                UserVmJoinVO userVM = userVmJoinDao.findById(vmMapVO.getVmId());
-                if (userVM != null) {
-                    UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
-                        EnumSet.of(VMDetails.nics), caller);
+            Map<Long, KubernetesClusterVmMapVO> vmMapById = vmList.stream()
+                    .collect(Collectors.toMap(KubernetesClusterVmMapVO::getVmId, vm -> vm));
+            Long[] vmIds = vmMapById.keySet().toArray(new Long[0]);
+            List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vmIds);
+            if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+                Map<Long, UserVmResponse> vmResponseMap = new HashMap<>();
+                for (UserVmJoinVO userVM : userVmJoinVOs) {
+                    Long vmId = userVM.getId();
+                    UserVmResponse vmResponse = vmResponseMap.get(vmId);
+                    if (vmResponse == null) {
+                        vmResponse = ApiDBUtils.newUserVmResponse(userVmResponseView, responseName, userVM,
+                                EnumSet.of(VMDetails.nics, VMDetails.affgrp), caller);
+                        vmResponseMap.put(vmId, vmResponse);
+                    } else {
+                        ApiDBUtils.fillVmDetails(userVmResponseView, vmResponse, userVM);
+                    }
+                }
+                for (Map.Entry<Long, UserVmResponse> vmIdResponseEntry : vmResponseMap.entrySet()) {
                     KubernetesUserVmResponse kubernetesUserVmResponse = new KubernetesUserVmResponse();
                     try {
-                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmResponse);
+                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmIdResponseEntry.getValue());
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
                     }
+                    KubernetesClusterVmMapVO vmMapVO = vmMapById.get(vmIdResponseEntry.getKey());
                     kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
                     kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
                     kubernetesUserVmResponse.setNodeVersion(vmMapVO.getNodeVersion());
@@ -905,8 +962,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCsiEnabled(kubernetesCluster.isCsiEnabled());
         response.setCreated(kubernetesCluster.getCreated());
+        setNodeTypeAffinityGroupResponse(response, kubernetesCluster.getId());
 
         return response;
+    }
+
+    protected void setNodeTypeAffinityGroupResponse(KubernetesClusterResponse response, long clusterId) {
+        setAffinityGroupResponseForNodeType(response, clusterId, CONTROL.name());
+        setAffinityGroupResponseForNodeType(response, clusterId, WORKER.name());
+        setAffinityGroupResponseForNodeType(response, clusterId, ETCD.name());
+    }
+
+    protected void setAffinityGroupResponseForNodeType(KubernetesClusterResponse response, long clusterId, String nodeType) {
+        List<Long> affinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, nodeType);
+        if (CollectionUtils.isEmpty(affinityGroupIds)) {
+            return;
+        }
+        List<String> affinityGroupUuids = new ArrayList<>();
+        List<String> affinityGroupNames = new ArrayList<>();
+        for (Long affinityGroupId : affinityGroupIds) {
+            AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+            if (affinityGroup != null) {
+                affinityGroupUuids.add(affinityGroup.getUuid());
+                affinityGroupNames.add(affinityGroup.getName());
+            }
+        }
+        String affinityGroupUuidsCsv = String.join(",", affinityGroupUuids);
+        String affinityGroupNamesCsv = String.join(",", affinityGroupNames);
+        if (CONTROL.name().equals(nodeType)) {
+            response.setControlAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setControlAffinityGroupNames(affinityGroupNamesCsv);
+        } else if (WORKER.name().equals(nodeType)) {
+            response.setWorkerAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setWorkerAffinityGroupNames(affinityGroupNamesCsv);
+        } else if (ETCD.name().equals(nodeType)) {
+            response.setEtcdAffinityGroupIds(affinityGroupUuidsCsv);
+            response.setEtcdAffinityGroupNames(affinityGroupNamesCsv);
+        }
     }
 
     private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId, Long networkId) {
@@ -1146,6 +1238,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
+            if (isNetrisNetwork(network)) {
+                validateNetrisNetwork(network);
+            }
             if (Network.GuestType.Isolated.equals(network.getGuestType())) {
                 if (kubernetesClusterDao.listByNetworkId(network.getId()).isEmpty()) {
                     validateNetwork(network, controlNodesCount + nodesCount);
@@ -1188,6 +1283,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
         return network;
+    }
+
+    private void persistAffinityGroupMappings(long clusterId, Map<String, List<Long>> affinityGroupNodeTypeMap) {
+        if (MapUtils.isEmpty(affinityGroupNodeTypeMap)) {
+            return;
+        }
+        for (Map.Entry<String, List<Long>> nodeTypeAffinityGroupEntry : affinityGroupNodeTypeMap.entrySet()) {
+            String nodeType = nodeTypeAffinityGroupEntry.getKey();
+            List<Long> affinityGroupIds = nodeTypeAffinityGroupEntry.getValue();
+            for (Long affinityGroupId : affinityGroupIds) {
+                kubernetesClusterAffinityGroupMapDao.persist(
+                    new KubernetesClusterAffinityGroupMapVO(clusterId, nodeType, affinityGroupId));
+            }
+        }
     }
 
     private void addKubernetesClusterDetails(final KubernetesCluster kubernetesCluster, final Network network, final CreateKubernetesClusterCmd cmd) {
@@ -1629,6 +1738,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
+        Map<String, List<Long>> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT, clusterKubernetesVersion);
         final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL, clusterKubernetesVersion);
         final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER, clusterKubernetesVersion);
@@ -1674,6 +1784,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
+                persistAffinityGroupMappings(newCluster.getId(), affinityGroupNodeTypeMap);
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
             }
@@ -1890,12 +2001,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
             keys = createUserApiKeyAndSecretKey(kube.getId());
         } else {
-            String apiKey = kubeadmin.getApiKey();
-            String secretKey = kubeadmin.getSecretKey();
-            if (StringUtils.isAnyEmpty(apiKey, secretKey)) {
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(kubeadmin.getId());
+
+            if (latestKeypair == null) {
                 keys = createUserApiKeyAndSecretKey(kubeadmin.getId());
             } else {
-                keys = new String[]{apiKey, secretKey};
+                keys = new String[]{latestKeypair.getApiKey(), latestKeypair.getSecretKey()};
             }
         }
         return keys;
@@ -2230,6 +2341,94 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return upgradeWorker.upgradeCluster();
     }
 
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_AFFINITY_UPDATE,
+            eventDescription = "updating Kubernetes cluster affinity groups")
+    public boolean updateKubernetesClusterAffinityGroups(UpdateKubernetesClusterAffinityGroupCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterVO kubernetesCluster = validateClusterForAffinityGroupUpdate(cmd.getId());
+        Map<String, List<Long>> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
+        validateNodeAffinityGroups(affinityGroupNodeTypeMap, kubernetesCluster.getAccountId());
+
+        final Long clusterId = kubernetesCluster.getId();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                kubernetesClusterAffinityGroupMapDao.removeByClusterId(clusterId);
+                persistAffinityGroupMappings(clusterId, affinityGroupNodeTypeMap);
+                syncVmAffinityGroups(clusterId, affinityGroupNodeTypeMap);
+            }
+        });
+        logger.info("Updated affinity groups for Kubernetes cluster {}", kubernetesCluster.getName());
+        return true;
+    }
+
+    private KubernetesClusterVO validateClusterForAffinityGroupUpdate(Long clusterId) {
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+        if (Objects.isNull(kubernetesCluster) || Objects.nonNull(kubernetesCluster.getRemoved())) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+        if (!KubernetesCluster.ClusterType.CloudManaged.equals(kubernetesCluster.getClusterType())) {
+            throw new InvalidParameterValueException("Affinity groups can only be updated for CloudManaged Kubernetes clusters");
+        }
+        if (!KubernetesCluster.State.Stopped.equals(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format(
+                    "Kubernetes cluster %s must be stopped before updating affinity groups (current state: %s)",
+                    kubernetesCluster.getName(), kubernetesCluster.getState()));
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(),
+                SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+        return kubernetesCluster;
+    }
+
+    private void validateNodeAffinityGroups(Map<String, List<Long>> affinityGroupNodeTypeMap, long ownerAccountId) {
+        if (MapUtils.isEmpty(affinityGroupNodeTypeMap)) {
+            return;
+        }
+        Account owner = accountDao.findById(ownerAccountId);
+        for (List<Long> affinityGroupIds : affinityGroupNodeTypeMap.values()) {
+            for (Long affinityGroupId : affinityGroupIds) {
+                AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+                if (Objects.isNull(affinityGroup)) {
+                    throw new InvalidParameterValueException("Unable to find affinity group with ID: " + affinityGroupId);
+                }
+                if (affinityGroup.getAccountId() != owner.getAccountId()) {
+                    throw new InvalidParameterValueException(String.format(
+                            "Affinity group %s does not belong to the cluster owner account %s",
+                            affinityGroup.getName(), owner.getAccountName()));
+                }
+            }
+        }
+    }
+
+    private void syncVmAffinityGroups(Long clusterId, Map<String, List<Long>> affinityGroupNodeTypeMap) {
+        List<KubernetesClusterVmMapVO> clusterVmMappings = kubernetesClusterVmMapDao.listByClusterId(clusterId);
+        if (CollectionUtils.isEmpty(clusterVmMappings)) {
+            return;
+        }
+        Map<String, List<Long>> nodeTypeAffinityMap = MapUtils.isEmpty(affinityGroupNodeTypeMap)
+                ? Collections.emptyMap() : affinityGroupNodeTypeMap;
+        for (KubernetesClusterVmMapVO clusterVmMapping : clusterVmMappings) {
+            if (clusterVmMapping.isExternalNode()) {
+                continue;
+            }
+            String nodeType = getNodeType(clusterVmMapping);
+            affinityGroupVMMapDao.updateMap(clusterVmMapping.getVmId(),
+                    nodeTypeAffinityMap.getOrDefault(nodeType, Collections.emptyList()));
+        }
+    }
+
+    private String getNodeType(KubernetesClusterVmMapVO clusterVmMapping) {
+        if (clusterVmMapping.isControlNode()) {
+            return CONTROL.name();
+        } else if (clusterVmMapping.isEtcdNode()) {
+            return ETCD.name();
+        }
+        return WORKER.name();
+    }
+
     private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
         List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
@@ -2291,6 +2490,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (validNodeIds.isEmpty()) {
             throw new CloudRuntimeException("No valid nodes found to be added to the Kubernetes cluster");
         }
+        validateNodeAffinityGroups(validNodeIds, kubernetesCluster);
         KubernetesClusterAddWorker addWorker = new KubernetesClusterAddWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
         addWorker = ComponentContext.inject(addWorker);
         return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr(), cmd.isManualUpgrade());
@@ -2316,17 +2516,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
+        Account caller = CallContext.current().getCallingAccount();
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         return kubernetesCluster;
     }
 
     private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> validNodeIds = new ArrayList<>(nodeIds);
         for (Long id : nodeIds) {
             VMInstanceVO node = vmInstanceDao.findById(id);
             if (Objects.isNull(node)) {
                 logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
                 validNodeIds.remove(id);
-            } else if (!removeNodes) {
+                continue;
+            }
+            accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, node);
+            if (!removeNodes) {
                 VMTemplateVO template = templateDao.findById(node.getTemplateId());
                 if (Objects.isNull(template)) {
                     logger.error((String.format("Failed to find template with ID: %s", id)));
@@ -2348,6 +2554,98 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
         return validNodeIds;
+    }
+
+    protected void validateNodeAffinityGroups(List<Long> nodeIds, KubernetesCluster cluster) {
+        List<Long> workerAffinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(
+                cluster.getId(), WORKER.name());
+        if (CollectionUtils.isEmpty(workerAffinityGroupIds)) {
+            return;
+        }
+
+        Set<Long> existingWorkerHostIds = getExistingWorkerHostIds(cluster);
+
+        for (Long affinityGroupId : workerAffinityGroupIds) {
+            AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+            if (affinityGroup == null) {
+                continue;
+            }
+
+            validateNodesAgainstExistingWorkers(nodeIds, existingWorkerHostIds, affinityGroup, cluster);
+            validateNewNodesAntiAffinity(nodeIds, affinityGroup, cluster);
+        }
+    }
+
+    protected Set<Long> getExistingWorkerHostIds(KubernetesCluster cluster) {
+        List<KubernetesClusterVmMapVO> existingWorkerVms = kubernetesClusterVmMapDao.listByClusterIdAndVmType(cluster.getId(), WORKER);
+        Set<Long> existingWorkerHostIds = new HashSet<>();
+        for (KubernetesClusterVmMapVO workerVmMap : existingWorkerVms) {
+            VMInstanceVO workerVm = vmInstanceDao.findById(workerVmMap.getVmId());
+            if (workerVm != null && workerVm.getHostId() != null) {
+                existingWorkerHostIds.add(workerVm.getHostId());
+            }
+        }
+        return existingWorkerHostIds;
+    }
+
+    protected void validateNodesAgainstExistingWorkers(List<Long> nodeIds, Set<Long> existingWorkerHostIds,
+                                                       AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
+        for (Long nodeId : nodeIds) {
+            VMInstanceVO node = vmInstanceDao.findById(nodeId);
+            if (node == null || node.getHostId() == null) {
+                continue;
+            }
+            Long nodeHostId = node.getHostId();
+            String nodeHostName = getHostName(nodeHostId);
+
+            if (AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
+                if (existingWorkerHostIds.contains(nodeHostId)) {
+                    throw new InvalidParameterValueException(String.format(
+                            "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
+                            "host anti-affinity rule (affinity group: %s). Existing worker VMs are already running on this host.",
+                            node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
+                }
+            } else if (AffinityProcessorBase.AFFINITY_TYPE_HOST.equals(affinityGroup.getType())) {
+                if (!existingWorkerHostIds.isEmpty() && !existingWorkerHostIds.contains(nodeHostId)) {
+                    List<String> existingHostNames = existingWorkerHostIds.stream()
+                            .map(this::getHostName)
+                            .collect(Collectors.toList());
+                    throw new InvalidParameterValueException(String.format(
+                            "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
+                            "host affinity rule (affinity group: %s). All worker VMs must run on the same host. " +
+                            "Existing workers are on host(s): %s.",
+                            node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName(),
+                            String.join(", ", existingHostNames)));
+                }
+            }
+        }
+    }
+
+    protected void validateNewNodesAntiAffinity(List<Long> nodeIds, AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
+        if (!AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
+            return;
+        }
+
+        Set<Long> newNodeHostIds = new HashSet<>();
+        for (Long nodeId : nodeIds) {
+            VMInstanceVO node = vmInstanceDao.findById(nodeId);
+            if (node != null && node.getHostId() != null) {
+                Long nodeHostId = node.getHostId();
+                if (newNodeHostIds.contains(nodeHostId)) {
+                    String nodeHostName = getHostName(nodeHostId);
+                    throw new InvalidParameterValueException(String.format(
+                            "Cannot add VM %s to cluster %s. Multiple VMs being added are running on the same host %s, " +
+                            "which violates the cluster's host anti-affinity rule (affinity group: %s).",
+                            node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
+                }
+                newNodeHostIds.add(nodeHostId);
+            }
+        }
+    }
+
+    protected String getHostName(Long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        return host != null ? host.getName() : String.valueOf(hostId);
     }
 
     @Override
@@ -2486,6 +2784,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
         cmdList.add(AddNodesToKubernetesClusterCmd.class);
         cmdList.add(RemoveNodesFromKubernetesClusterCmd.class);
+        cmdList.add(UpdateKubernetesClusterAffinityGroupCmd.class);
         return cmdList;
     }
 
@@ -2689,13 +2988,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Override
     public boolean start() {
         createNetworkOfferingForKubernetes(DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, false, false);
+                DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, null, false);
 
         createNetworkOfferingForKubernetes(DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, true, false);
+                DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT, Network.Provider.Nsx, false);
 
         createNetworkOfferingForKubernetes(DEFAULT_NSX_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
-                DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , true, true);
+                DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , Network.Provider.Nsx, true);
+
+        createNetworkOfferingForKubernetes(DEFAULT_NETRIS_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
+                DEFAULT_NETRIS_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , Network.Provider.Netris, true);
 
         getProjectKubernetesAccountRole();
 
@@ -2705,23 +3007,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    private void createNetworkOfferingForKubernetes(String offeringName, String offeringDesc, boolean forNsx, boolean forVpc) {
+    private void createNetworkOfferingForKubernetes(String offeringName, String offeringDesc, Network.Provider extNetProvider, boolean forVpc) {
         final Map<Network.Service, Network.Provider> defaultKubernetesServiceNetworkOfferingProviders = new HashMap<Service, Network.Provider>();
         Network.Provider provider = forVpc ? Network.Provider.VPCVirtualRouter : Network.Provider.VirtualRouter;
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.Dhcp, provider);
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.Dns, provider);
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.UserData, provider);
         if (forVpc) {
-            defaultKubernetesServiceNetworkOfferingProviders.put(Service.NetworkACL, forNsx ? Network.Provider.Nsx : provider);
+            defaultKubernetesServiceNetworkOfferingProviders.put(Service.NetworkACL, Objects.requireNonNullElse(extNetProvider, provider));
         } else {
-            defaultKubernetesServiceNetworkOfferingProviders.put(Service.Firewall, forNsx ? Network.Provider.Nsx : provider);
+            defaultKubernetesServiceNetworkOfferingProviders.put(Service.Firewall, Objects.requireNonNullElse(extNetProvider, provider));
         }
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Lb, forNsx ? Network.Provider.Nsx : provider);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.SourceNat, forNsx ? Network.Provider.Nsx : provider);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.StaticNat, forNsx ? Network.Provider.Nsx : provider);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.PortForwarding, forNsx ? Network.Provider.Nsx : provider);
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Lb, Objects.requireNonNullElse(extNetProvider, provider));
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.SourceNat, Objects.requireNonNullElse(extNetProvider, provider));
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.StaticNat, Objects.requireNonNullElse(extNetProvider, provider));
+        defaultKubernetesServiceNetworkOfferingProviders.put(Service.PortForwarding, Objects.requireNonNullElse(extNetProvider, provider));
 
-        if (!forNsx) {
+        if (Objects.isNull(extNetProvider)) {
             defaultKubernetesServiceNetworkOfferingProviders.put(Service.Gateway, Network.Provider.VirtualRouter);
             defaultKubernetesServiceNetworkOfferingProviders.put(Service.Vpn, Network.Provider.VirtualRouter);
         }
@@ -2734,7 +3036,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         true, false, false, false, false,
                         false, false, false, true, true, false,
                         forVpc, true, false, false);
-        if (forNsx) {
+        if (Objects.nonNull(extNetProvider)) {
             defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
         }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);
@@ -2746,7 +3048,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     new NetworkOfferingServiceMapVO(defaultKubernetesServiceNetworkOffering.getId(), service,
                             defaultKubernetesServiceNetworkOfferingProviders.get(service));
             networkOfferingServiceMapDao.persist(offService);
-            logger.trace("Added service for the network offering: " + offService);
+            logger.trace("Added service for the network offering: {}", offService);
         }
     }
 

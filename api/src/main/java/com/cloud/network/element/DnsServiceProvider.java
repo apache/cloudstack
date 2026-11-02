@@ -33,4 +33,6 @@ public interface DnsServiceProvider extends NetworkElement {
         throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
     boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException;
+
+    default boolean removeDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vmProfile) throws ResourceUnavailableException  { return true; }
 }

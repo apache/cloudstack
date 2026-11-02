@@ -39,6 +39,7 @@ import com.cloud.agent.api.to.VirtualMachineMetadataTO;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.template.TemplateManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -56,6 +57,12 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 public class LibvirtVMDef {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
+
+    // Number of CD-ROMs supported by CloudStack per VM (not a limit of the guest OS or QEMU). The CD-ROMs are on the IDE bus,
+    // which has 4 slots: the first two are kept for disks, so the ISOs get hdc and hdd (getDevLabel() maps deviceSeq=3,4).
+    // Going past 2 means putting the CD-ROMs on the SATA bus (or on a second IDE controller): the CD-ROMs with a device id
+    // beyond these slots, e.g. the one following the config drive ISO (which keeps the device id 4), are on the SATA bus.
+    public static final int MAX_CDROMS_PER_VM = 2;
 
     private String _hvsType;
     private static long s_libvirtVersion;
@@ -443,15 +450,15 @@ public class LibvirtVMDef {
     }
 
     public static class GuestResourceDef {
-        private long memory;
+        private long maxMemory;
         private long currentMemory = -1;
         private int vcpu = -1;
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
         private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
 
-        public void setMemorySize(long mem) {
-            this.memory = mem;
+        public void setMaxMemory(long mem) {
+            this.maxMemory = mem;
         }
 
         public void setCurrentMem(long currMem) {
@@ -484,8 +491,8 @@ public class LibvirtVMDef {
             response.append(String.format("<memory>%s</memory>\n", this.currentMemory));
             response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
 
-            if (this.memory > this.currentMemory) {
-                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.memory));
+            if (this.maxMemory > this.currentMemory) {
+                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.maxMemory));
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
@@ -565,12 +572,18 @@ public class LibvirtVMDef {
         private final List<String> _features = new ArrayList<String>();
 
         private HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = null;
+        private boolean kvmHintDedicated = false;
+
         public void addFeatures(String feature) {
             _features.add(feature);
         }
 
         public void addHyperVFeature(HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef) {
             this.hyperVEnlightenmentFeatureDef = hyperVEnlightenmentFeatureDef;
+        }
+
+        public void setKvmHintDedicated(boolean kvmHintDedicated) {
+            this.kvmHintDedicated = kvmHintDedicated;
         }
 
         @Override
@@ -589,6 +602,9 @@ public class LibvirtVMDef {
                 if (!hpervF.isEmpty()) {
                     feaBuilder.append(hpervF);
                 }
+            }
+            if (kvmHintDedicated) {
+                feaBuilder.append("<kvm><hint-dedicated state='on'/></kvm>\n");
             }
             feaBuilder.append("</features>\n");
             return feaBuilder.toString();
@@ -784,14 +800,21 @@ public class LibvirtVMDef {
         public static class LibvirtDiskEncryptDetails {
             String passphraseUuid;
             QemuObject.EncryptFormat encryptFormat;
+            String engine; // optional libvirt encryption engine (e.g. "librbd"); null => libvirt/qemu default
 
             public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat) {
+                this(passphraseUuid, encryptFormat, null);
+            }
+
+            public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat, String engine) {
                 this.passphraseUuid = passphraseUuid;
                 this.encryptFormat = encryptFormat;
+                this.engine = engine;
             }
 
             public String getPassphraseUuid() { return this.passphraseUuid; }
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
+            public String getEngine() { return this.engine; }
         }
 
         public static class DiskGeometry {
@@ -971,6 +994,7 @@ public class LibvirtVMDef {
         private BlockIOSize logicalBlockIOSize = null;
         private BlockIOSize physicalBlockIOSize = null;
         private DiskGeometry geometry = null;
+        private List<String> backingStoreList = null; // Ordered list of backing stores, the first in the list is the immediate backing store, and the last in the list is the base
 
         public DiscardType getDiscard() {
             return _discard;
@@ -1126,7 +1150,16 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
+        private boolean isIdeCdromSlot(Integer devId) {
+            return devId == null || devId < TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + MAX_CDROMS_PER_VM;
+        }
+
         public void defISODisk(String volPath, Integer devId, boolean isSecure, DiskType diskType) {
+            // the IDE bus only has the slots of MAX_CDROMS_PER_VM CD-ROMs (hdc and hdd), the other ones (e.g. the config drive ISO)
+            // are on the SATA bus
+            if (!isSecure && !isIdeCdromSlot(devId)) {
+                isSecure = true;
+            }
             if (!isSecure) {
                 defISODisk(volPath, devId, diskType);
             } else {
@@ -1342,6 +1375,14 @@ public class LibvirtVMDef {
             return _sourcePath;
         }
 
+        public List<String> getBackingStoreList() {
+            return backingStoreList;
+        }
+
+        public void setBackingStoreList(List<String> backingStoreList) {
+            this.backingStoreList = backingStoreList;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -1433,7 +1474,11 @@ public class LibvirtVMDef {
             }
 
             if (encryptDetails != null) {
-                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'>\n");
+                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'");
+                if (encryptDetails.engine != null) {
+                    diskBuilder.append(" engine='" + encryptDetails.engine + "'");
+                }
+                diskBuilder.append(">\n");
                 diskBuilder.append("<secret type='passphrase' uuid='" + encryptDetails.passphraseUuid + "' />\n");
                 diskBuilder.append("</encryption>\n");
             }
@@ -1920,11 +1965,12 @@ public class LibvirtVMDef {
 
     public static class CpuTuneDef {
         private int _shares = 0;
-        private int quota = 0;
+        private long quota = 0;
         private int period = 0;
         static final int DEFAULT_PERIOD = 10000;
         static final int MIN_QUOTA = 1000;
         static final int MAX_PERIOD = 1000000;
+        public static final long MAX_CPU_QUOTA = 17592186044415L;
 
         public void setShares(int shares) {
             _shares = shares;
@@ -1934,11 +1980,11 @@ public class LibvirtVMDef {
             return _shares;
         }
 
-        public int getQuota() {
+        public long getQuota() {
             return quota;
         }
 
-        public void setQuota(int quota) {
+        public void setQuota(long quota) {
             this.quota = quota;
         }
 

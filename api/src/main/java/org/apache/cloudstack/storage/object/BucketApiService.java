@@ -95,7 +95,7 @@ public interface BucketApiService {
      */
     Bucket createBucket(CreateBucketCmd cmd);
 
-    boolean deleteBucket(long bucketId, Account caller);
+    boolean deleteBucket(long bucketId, Account caller) throws ResourceAllocationException;
 
     boolean updateBucket(UpdateBucketCmd cmd, Account caller) throws ResourceAllocationException;
 

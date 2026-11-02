@@ -66,7 +66,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project Id: " + id);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _projectService.deleteProject(id, isCleanup());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -83,7 +83,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting project: " + id;
+        return "Deleting project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

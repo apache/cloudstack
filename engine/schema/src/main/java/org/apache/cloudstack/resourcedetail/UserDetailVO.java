@@ -48,6 +48,8 @@ public class UserDetailVO implements ResourceDetail {
     public static final String Setup2FADetail = "2FASetupStatus";
     public static final String PasswordResetToken = "PasswordResetToken";
     public static final String PasswordResetTokenExpiryDate = "PasswordResetTokenExpiryDate";
+    public static final String PasswordChangeRequired = "PasswordChangeRequired";
+    public static final String OauthLogin = "OauthLogin";
 
     public UserDetailVO() {
     }

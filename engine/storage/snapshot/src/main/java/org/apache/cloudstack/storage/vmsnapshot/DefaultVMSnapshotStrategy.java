@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
@@ -468,6 +469,13 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
     @Override
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
+        UserVmVO vm = userVmDao.findById(vmSnapshot.getVmId());
+        String cantHandleLog = String.format("Default VM snapshot cannot handle VM snapshot for [%s]", vm);
+
+        if (isRunningVMVolumeOnCLVMStorage(vm, cantHandleLog)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         return StrategyPriority.DEFAULT;
     }
 
@@ -493,10 +501,31 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         return vmSnapshotDao.remove(vmSnapshot.getId());
     }
 
+    protected boolean isRunningVMVolumeOnCLVMStorage(UserVmVO vm, String cantHandleLog) {
+        Long vmId = vm.getId();
+        if (State.Running.equals(vm.getState())) {
+            List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+            for (VolumeVO volume : volumes) {
+                StoragePool pool = primaryDataStoreDao.findById(volume.getPoolId());
+                if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+                    logger.warn("Rejecting VM snapshot request: {} - VM is running on CLVM storage (pool: {}, poolType: CLVM)",
+                            cantHandleLog, pool.getName());
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         UserVmVO vm = userVmDao.findById(vmId);
         String cantHandleLog = String.format("Default VM snapshot cannot handle VM snapshot for [%s]", vm);
+
+        if (isRunningVMVolumeOnCLVMStorage(vm, cantHandleLog)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         if (State.Running.equals(vm.getState()) && !snapshotMemory) {
             logger.debug("{} as it is running and its memory will not be affected.", cantHandleLog, vm);
             return StrategyPriority.CANT_HANDLE;

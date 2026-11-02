@@ -67,7 +67,7 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing a certificate from a load balancer with ID " + getLbRuleId();
+        return "Removing certificate from load balancer with ID " + getResourceUuid(ApiConstants.LBID);
     }
 
     @Override

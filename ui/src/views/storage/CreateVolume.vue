@@ -116,6 +116,67 @@
             :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
+      <span v-if="diskOfferingSupportsEncryption && kmsKeys !== null">
+        <a-form-item ref="kmskeyid" name="kmskeyid">
+          <template #label>
+            <tooltip-label :title="$t('label.kms.key')" :tooltip="apiParams.kmskeyid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.kmskeyid"
+            :loading="loadingKmsKeys"
+            :placeholder="$t('label.select.kms.key.optional')"
+            showSearch
+            optionFilterProp="label"
+            allowClear>
+            <a-select-option
+              v-for="key in kmsKeys"
+              :key="key.id"
+              :value="key.id"
+              :label="key.name">
+              {{ key.name }}
+            </a-select-option>
+          </a-select>
+          <p style="color: gray; font-size: 12px; margin-top: 5px">
+            {{ $t('message.kms.key.optional') }}
+          </p>
+        </a-form-item>
+      </span>
+      <a-form-item name="createOnStorage" ref="createOnStorage" v-if="showStoragePoolSelect">
+        <template #label>
+          <tooltip-label :title="$t('label.create.on.storage')" :tooltip="$t('label.create.volume.on.primary.storage')" />
+        </template>
+        <a-switch
+          v-model:checked="form.createOnStorage"
+          :checked="createOnStorage"
+          @change="onChangeCreateOnStorage" />
+      </a-form-item>
+      <span v-if="showStoragePoolSelect && createOnStorage">
+        <a-form-item ref="storageid" name="storageid">
+          <template #label>
+            <tooltip-label :title="$t('label.storageid')" />
+          </template>
+          <a-select
+            v-model:value="form.storageid"
+            :loading="loading"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="(pool, index) in storagePools"
+              :value="pool.id"
+              :key="index"
+              :label="pool.name">
+              <span>
+                <resource-icon v-if="pool.icon" :image="pool.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <hdd-outlined v-else style="margin-right: 5px"/>
+                {{ pool.name }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </span>
       <a-form-item name="attachVolume" ref="attachVolume" v-if="!createVolumeFromVM">
         <template #label>
           <tooltip-label :title="$t('label.action.attach.to.instance')" :tooltip="$t('label.attach.vol.to.instance')" />
@@ -170,6 +231,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
@@ -203,11 +265,26 @@ export default {
       loading: false,
       isCustomizedDiskIOps: false,
       virtualmachines: [],
+      createOnStorage: false,
+      storagePools: [],
       attachVolume: false,
-      vmidtoattach: null
+      vmidtoattach: null,
+      kmsKeys: [],
+      loadingKmsKeys: false,
+      kmsKeysZoneId: null
     }
   },
   computed: {
+    selectedDiskOffering () {
+      if (!this.form.diskofferingid || !this.offerings.length) return null
+      return this.offerings.find(o => o.id === this.form.diskofferingid) || null
+    },
+    diskOfferingSupportsEncryption () {
+      return this.selectedDiskOffering?.encrypt === true
+    },
+    showStoragePoolSelect () {
+      return isAdmin() && !this.createVolumeFromSnapshot
+    },
     createVolumeFromVM () {
       return this.$route.path.startsWith('/vm/')
     },
@@ -299,6 +376,9 @@ export default {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
         this.fetchDiskOfferings(this.form.zoneid)
+        if (this.createOnStorage) {
+          this.fetchStoragePools(this.form.zoneid)
+        }
         if (this.attachVolume) {
           this.fetchVirtualMachines(this.form.zoneid)
         }
@@ -327,6 +407,11 @@ export default {
       })
     },
     fetchDiskOfferings (zoneId) {
+      if (zoneId !== this.kmsKeysZoneId) {
+        this.kmsKeys = []
+        this.kmsKeysZoneId = null
+        this.form.kmskeyid = undefined
+      }
       this.loading = true
       var params = {
         zoneid: zoneId,
@@ -351,6 +436,31 @@ export default {
         }
         this.customDiskOffering = this.offerings[0].iscustomized || false
         this.isCustomizedDiskIOps = this.offerings[0]?.iscustomizediops || false
+        if (this.offerings[0]?.encrypt) {
+          this.fetchKmsKeys()
+        } else {
+          this.form.kmskeyid = undefined
+          this.kmsKeys = []
+        }
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchStoragePools (zoneId) {
+      if (!zoneId) {
+        this.storagePools = []
+        return
+      }
+      this.loading = true
+      getAPI('listStoragePools', {
+        zoneid: zoneId,
+        showicon: true
+      }).then(json => {
+        const pools = json.liststoragepoolsresponse.storagepool || []
+        this.storagePools = pools.filter(p => p.state === 'Up')
+      }).catch(error => {
+        this.$notifyError(error)
+        this.storagePools = []
       }).finally(() => {
         this.loading = false
       })
@@ -394,12 +504,16 @@ export default {
         if (this.customDiskOffering) {
           values.size = values.size.trim()
         }
+        delete values.createOnStorage
         if (this.createVolumeFromSnapshot) {
           values.snapshotid = this.resource.id
         }
         if (this.attachVolume) {
           this.vmidtoattach = values.virtualmachineid
           values.virtualmachineid = null
+        }
+        if (!this.diskOfferingSupportsEncryption && 'kmskeyid' in values) {
+          delete values.kmskeyid
         }
         values.domainid = this.owner.domainid
         if (this.owner.projectid) {
@@ -459,6 +573,38 @@ export default {
       const offering = this.offerings.filter(x => x.id === id)
       this.customDiskOffering = offering[0]?.iscustomized || false
       this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
+      if (offering[0]?.encrypt) {
+        this.fetchKmsKeys()
+      } else {
+        this.form.kmskeyid = undefined
+      }
+    },
+    fetchKmsKeys () {
+      const zoneId = this.form.zoneid || (this.createVolumeFromVM && this.resource?.zoneid)
+      if (!zoneId) return
+      if (zoneId === this.kmsKeysZoneId) return
+      this.kmsKeysZoneId = zoneId
+      this.loadingKmsKeys = true
+      this.kmsKeys = []
+      const params = {
+        zoneid: zoneId,
+        account: this.owner.account,
+        domainid: this.owner.domainid,
+        projectid: this.owner.projectid,
+        purpose: 'volume'
+      }
+      getAPI('listKMSKeys', params).then(response => {
+        const kmskeyMap = response.listkmskeysresponse.kmskey || []
+        if (kmskeyMap.length > 0) {
+          this.kmsKeys = kmskeyMap
+        } else {
+          this.kmsKeys = null
+        }
+      }).catch(() => {
+        this.kmsKeys = null
+      }).finally(() => {
+        this.loadingKmsKeys = false
+      })
     },
     onChangeAttachToVM (zone) {
       this.attachVolume = !this.attachVolume
@@ -466,6 +612,15 @@ export default {
       if (this.attachVolume) {
         this.attachVolumeApiParams = this.$getApiParams('attachVolume')
         this.fetchVirtualMachines(this.form.zoneid)
+      }
+    },
+    onChangeCreateOnStorage () {
+      this.createOnStorage = !this.createOnStorage
+      if (this.createOnStorage) {
+        this.fetchStoragePools(this.form.zoneid)
+        this.form.storageid = this.storagePools[0]?.id || undefined
+      } else {
+        this.form.storageid = undefined
       }
     }
   }

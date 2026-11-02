@@ -94,6 +94,6 @@ public class DownloadImageStoreObjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Downloading object at path " + getPath() + " on image store " + getStoreId();
+        return "Downloading object at path " + getPath() + " on image store " + getResourceUuid(ApiConstants.ID);
     }
 }

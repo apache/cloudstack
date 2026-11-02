@@ -55,6 +55,9 @@ public class UnmanagedInstanceTO {
 
     private String hostName;
 
+    private String hypervisorType;
+    private String hostHypervisorVersion;
+
     private List<Disk> disks;
 
     private List<Nic> nics;
@@ -63,6 +66,7 @@ public class UnmanagedInstanceTO {
 
     private String bootType;
     private String bootMode;
+    private String vmwareMoref;
 
     public String getName() {
         return name;
@@ -168,6 +172,22 @@ public class UnmanagedInstanceTO {
         this.hostName = hostName;
     }
 
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
+    public String getHostHypervisorVersion() {
+        return hostHypervisorVersion;
+    }
+
+    public void setHostHypervisorVersion(String hostHypervisorVersion) {
+        this.hostHypervisorVersion = hostHypervisorVersion;
+    }
+
     public List<Disk> getDisks() {
         return disks;
     }
@@ -213,6 +233,14 @@ public class UnmanagedInstanceTO {
 
     public void setBootMode(String bootMode) {
         this.bootMode = bootMode;
+    }
+
+    public String getVmwareMoref() {
+        return vmwareMoref;
+    }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
     }
 
     public static class Disk {
@@ -381,6 +409,16 @@ public class UnmanagedInstanceTO {
 
         private List<String> ipAddress;
 
+        // Guest network facts captured from VMware Tools while the source runs, used to preserve
+        // static configuration across the migration: IPv4 addresses in CIDR form, the default
+        // gateway serving this NIC's subnet, and the guest's DNS servers. Null when Tools is not
+        // running or the guest reports nothing for this NIC.
+        private List<String> ipv4Cidrs;
+
+        private String ipv4Gateway;
+
+        private List<String> dnsServers;
+
         private String pciSlot;
 
         public String getNicId() {
@@ -445,6 +483,30 @@ public class UnmanagedInstanceTO {
 
         public void setIpAddress(List<String> ipAddress) {
             this.ipAddress = ipAddress;
+        }
+
+        public List<String> getIpv4Cidrs() {
+            return ipv4Cidrs;
+        }
+
+        public void setIpv4Cidrs(List<String> ipv4Cidrs) {
+            this.ipv4Cidrs = ipv4Cidrs;
+        }
+
+        public String getIpv4Gateway() {
+            return ipv4Gateway;
+        }
+
+        public void setIpv4Gateway(String ipv4Gateway) {
+            this.ipv4Gateway = ipv4Gateway;
+        }
+
+        public List<String> getDnsServers() {
+            return dnsServers;
+        }
+
+        public void setDnsServers(List<String> dnsServers) {
+            this.dnsServers = dnsServers;
         }
 
         public String getPciSlot() {

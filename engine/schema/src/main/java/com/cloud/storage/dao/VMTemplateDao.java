@@ -62,6 +62,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public List<VMTemplateVO> listAllActive();
 
+    List<VMTemplateVO> listAllCrossZoneTemplates();
+
     public List<VMTemplateVO> listByState(VirtualMachineTemplate.State... states);
 
     public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes);
@@ -106,4 +108,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     VMTemplateVO findActiveSystemTemplateByHypervisorArchAndUrlPath(HypervisorType hypervisorType,
                 CPU.CPUArch arch, String urlPathSuffix);
+
+    VMTemplateVO findByAccountAndName(Long accountId, String templateName);
 }

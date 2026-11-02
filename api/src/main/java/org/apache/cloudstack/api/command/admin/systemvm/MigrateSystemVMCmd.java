@@ -120,7 +120,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
+        return "Attempting to migrate System VM with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override
@@ -138,7 +138,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                 if (destStoragePool == null) {
                     throw new InvalidParameterValueException("Unable to find the storage pool to migrate the Instance");
                 }
-                CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStorageId());
+                CallContext.current().setEventDetails("System VM ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to storage pool with ID: " + getResourceUuid(ApiConstants.STORAGE_ID));
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
             } else {
                 Host destinationHost = null;
@@ -153,7 +153,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                 } else if (! isAutoSelect()) {
                     throw new InvalidParameterValueException("Please specify a host or storage as destination, or pass 'autoselect=true' to automatically select a destination host which do not require storage migration");
                 }
-                CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
+                CallContext.current().setEventDetails("System VM ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to host with ID: " + getResourceUuid(ApiConstants.HOST_ID));
                 if (destinationHost == null) {
                     migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), null);
                 } else {

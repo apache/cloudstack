@@ -99,7 +99,7 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "attaching ISO: " + getId() + " to Instance: " + getVirtualMachineId();
+        return  "Attaching ISO with ID: " + getResourceUuid(ApiConstants.ID) + " to Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
@@ -114,7 +114,7 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + getVirtualMachineId() + " ISO ID: " + getId());
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " ISO ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _templateService.attachIso(id, virtualMachineId, isForced());
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);

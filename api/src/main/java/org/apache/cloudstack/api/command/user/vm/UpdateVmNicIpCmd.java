@@ -53,7 +53,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType = NicResponse.class, required = true,
-            description = "The ID of the   NIC  to which you want to assign private IP")
+            description = "The ID of the NIC to which you want to assign private IP")
             private Long nicId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false,
@@ -123,7 +123,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Associating IP to NIC id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " in zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
+        return  "Associating IP to NIC with ID: " + getResourceUuid(ApiConstants.NIC_ID) + " in zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
     }
 
     /////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, ResourceAllocationException,
     ConcurrentOperationException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Nic Id: " + getNicId() );
+        CallContext.current().setEventDetails("NIC ID: " + getResourceUuid(ApiConstants.NIC_ID));
         String ip;
         if ((ip = getIpaddress()) != null) {
             if (!NetUtils.isValidIp4(ip)) {

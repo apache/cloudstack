@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +68,7 @@ public class AddTungstenFabricPolicyRuleCmdTest {
         ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "destEndPort", 1);
     }
 
+    @After
     public void tearDown() throws Exception {
         closeable.close();
     }

@@ -69,7 +69,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting static route id=" + id);
+        return "Deleting static route with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Route Id: " + id);
+        CallContext.current().setEventDetails("Route ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _vpcService.revokeStaticRoute(id);
 
         if (result) {

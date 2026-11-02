@@ -96,7 +96,7 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping User Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         UserVm result;
 
         result = _userVmService.stopVirtualMachine(getId(), isForced());

@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.23.0.0-SNAPSHOT</version>
+    <version>24.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -55,6 +55,10 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.exclusions>engine/schema/src/main/java/org/apache/cloudstack/backup/BackupOfferingDetailsVO.java</sonar.exclusions>
         <sonar.exclusions>api/src/main/java/org/apache/cloudstack/api/response/BackupOfferingResponse.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/com/cloud/agent/api/PostMigrationAnswer.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/com/cloud/agent/api/PostMigrationCommand.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/com/cloud/agent/api/PreMigrationCommand.java</sonar.exclusions>
+        <sonar.exclusions>core/src/main/java/org/apache/cloudstack/storage/command/ClvmLockTransferCommand.java</sonar.exclusions>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
@@ -65,20 +69,20 @@
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
-        <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
+        <cs.checkstyle-plugin.version>3.6.0</cs.checkstyle-plugin.version>
         <cs.jacoco-plugin.version>0.8.11</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
-        <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
+        <cs.dependency-plugin.version>3.9.0</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
         <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
         <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
-        <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
+        <cs.pmd-plugin.version>3.28.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.owasp.dependency-checker-plugin.version>7.4.4</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
-        <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
+        <cs.site-plugin.version>3.21.0</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
         <cs.exec-maven-plugin.version>3.2.0</cs.exec-maven-plugin.version>
@@ -132,7 +136,7 @@
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
-        <cs.bcprov.version>1.70</cs.bcprov.version>
+        <cs.bcprov.version>1.83</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cron-utils.version>9.2.0</cs.cron-utils.version>
@@ -170,12 +174,12 @@
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
         <cs.mustache.version>0.9.14</cs.mustache.version>
-        <cs.mysql.version>8.0.33</cs.mysql.version>
+        <cs.mysql.version>8.4.0</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.6.1</cs.java-linstor.version>
+        <cs.java-linstor.version>0.7.0</cs.java-linstor.version>
         <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
@@ -191,6 +195,9 @@
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
         <cs.protobuf.version>3.25.5</cs.protobuf.version>
+        <cs.minio.version>8.6.0</cs.minio.version>
+        <cs.opentelemetry.version>1.51.0</cs.opentelemetry.version>
+        <cs.opentelemetry-instrumentation.version>2.16.0</cs.opentelemetry-instrumentation.version>
     </properties>
 
     <distributionManagement>
@@ -430,6 +437,16 @@
                 <version>${cs.commons-validator.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${cs.opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+                <version>${cs.opentelemetry-instrumentation.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${cs.javax.annotation.version}</version>
@@ -574,26 +591,26 @@
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjtools</artifactId>
-                <version>1.8.13</version>
+                <version>${cs.aspectjrt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjweaver</artifactId>
-                <version>1.8.13</version>
+                <version>${cs.aspectjrt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bctls-jdk15on</artifactId>
+                <artifactId>bctls-jdk18on</artifactId>
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
@@ -667,6 +684,18 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>log4j-over-slf4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1077,6 +1106,7 @@
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>
                             <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
+                            <exclude>services/console-proxy/rdpconsole/src/test/doc/rdp-key.pem</exclude>
                             <exclude>services/console-proxy/server/conf/agent.properties</exclude>
                             <exclude>services/console-proxy/server/conf/uefi.properties</exclude>
                             <exclude>services/console-proxy/server/conf/environment.properties</exclude>
@@ -1092,9 +1122,11 @@
                             <exclude>systemvm/agent/noVNC/**</exclude>
                             <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
+                            <exclude>systemvm/test/frr-bgppeers-ipv4-ipv6.conf</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
+                            <exclude>tools/apidoc-versions-diff/**</exclude>
                             <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
                             <exclude>tools/docker/Dockerfile</exclude>
                             <exclude>tools/docker/supervisord.conf</exclude>
@@ -1114,6 +1146,10 @@
                             <exclude>utils/testsmallfileinactive</exclude>
                             <exclude>**/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
                             <exclude>.github/workflows/dependabot.yaml</exclude>
+                            <exclude>.gitattributes</exclude>
+                            <exclude>.github/workflows/*.md</exclude>
+                            <exclude>.github/workflows/*.lock.ya?ml</exclude>
+                            <exclude>.github/aw/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>

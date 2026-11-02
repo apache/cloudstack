@@ -71,7 +71,6 @@ import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
@@ -107,14 +106,6 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface ManagementService {
     static final String Name = "management-server";
-
-    ConfigKey<Boolean> JsInterpretationEnabled = new ConfigKey<>("Hidden"
-            , Boolean.class
-            , "js.interpretation.enabled"
-            , "false"
-            , "Enable/Disable all JavaScript interpretation related functionalities to create or update Javascript rules."
-            , false
-            , ConfigKey.Scope.Global);
 
     /**
      * returns the a map of the names/values in the configuration table
@@ -533,7 +524,5 @@ public interface ManagementService {
     Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
 
     boolean removeManagementServer(RemoveManagementServerCmd cmd);
-
-    void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue);
 
 }

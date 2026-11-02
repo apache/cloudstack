@@ -42,7 +42,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description = "Resets the password for the Instance. " +
                     "The Instance must be in a \"Stopped\" state and the Template must already " +
         "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-    requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+    requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
 
     private static final String s_name = "resetpasswordforvirtualmachineresponse";
@@ -101,7 +101,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "resetting password for Instance: " + getId();
+        return  "Resetting password for Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
         } else {
             logger.debug("Resetting VM [{}] password to password defined by user.", vm.getUuid());
         }
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);

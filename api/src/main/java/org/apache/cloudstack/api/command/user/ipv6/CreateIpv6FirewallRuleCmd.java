@@ -232,7 +232,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         FirewallRule rule = ipv6Service.getIpv6FirewallRule(getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = ipv6Service.applyIpv6FirewallRule(rule.getId());
 
             // State is different after the rule is applied, so get new object here

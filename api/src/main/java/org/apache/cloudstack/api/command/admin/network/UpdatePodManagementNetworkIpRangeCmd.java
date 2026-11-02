@@ -113,7 +113,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId();
+        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getResourceUuid(ApiConstants.POD_ID);
     }
 
     @Override

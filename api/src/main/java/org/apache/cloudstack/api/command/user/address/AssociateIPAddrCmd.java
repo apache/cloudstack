@@ -334,7 +334,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("IP ID: " + getEntityId());
+        CallContext.current().setEventDetails("IP address ID: " + getEntityUuid());
 
         IpAddress result = null;
 

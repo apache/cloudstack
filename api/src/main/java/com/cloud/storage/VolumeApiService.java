@@ -21,12 +21,15 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VirtualMachine;
 
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -70,6 +73,10 @@ public interface VolumeApiService {
      */
     Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
 
+    Volume allocVolume(long ownerId, Long zoneId, Long diskOfferingId, Long vmId, Long snapshotId, String name,
+           Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId, Long kmsKeyId)
+            throws ResourceAllocationException;
+
     /**
      * Creates the volume based on the given criteria
      *
@@ -79,6 +86,8 @@ public interface VolumeApiService {
      * @return the volume object
      */
     Volume createVolume(CreateVolumeCmd cmd);
+
+    Volume createVolume(long volumeId, Long vmId, Long snapshotId, Long storageId, Boolean display);
 
     /**
      * Resizes the volume based on the given criteria
@@ -107,7 +116,7 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
-    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS);
+    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS, boolean allowAttachOnRestoring);
 
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
 
@@ -180,9 +189,25 @@ public interface VolumeApiService {
      */
     boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
 
+    /**
+     * Returns the device ids of the Instance which are used by non-volume devices (the CD-ROM drives and the config drive ISO),
+     * and therefore must not be assigned to its volumes. Otherwise the hypervisor may end up with two devices using the same
+     * target name (e.g. sde), which is rejected.
+     *
+     * @param vm the Instance
+     * @return the reserved device ids
+     */
+    Set<Long> getReservedDeviceIds(VirtualMachine vm);
+
+    /**
+     * Same as {@link #getReservedDeviceIds(VirtualMachine)}, with the specified usage of config drive instead of the one
+     * of the Instance. It is useful when the networks of the Instance are not known yet, e.g. when importing it.
+     */
+    Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed);
+
     boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
 
-    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
+    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge, Boolean countDisplayFalseInResourceCount);
 
     void destroyVolume(long volumeId);
 
@@ -203,4 +228,6 @@ public interface VolumeApiService {
     Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
 
     Long getVolumePhysicalSize(Storage.ImageFormat format, String path, String chainInfo);
+
+    Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone, boolean encryptEnabledOnly);
 }

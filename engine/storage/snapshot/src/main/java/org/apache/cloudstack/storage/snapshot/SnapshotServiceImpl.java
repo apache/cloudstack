@@ -30,6 +30,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -116,6 +117,8 @@ public class SnapshotServiceImpl implements SnapshotService {
     ConfigurationDao _configDao;
     @Inject
     HostDao hostDao;
+    @Inject
+    private InternalBackupService internalBackupService;
 
     @Inject
     private HeuristicRuleHelper heuristicRuleHelper;
@@ -603,6 +606,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 res = new SnapshotResult(context.snapshot, null);
                 res.setResult(result.getResult());
             } else {
+                internalBackupService.cleanupBackupMetadata(context.snapshot.getVolumeId());
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
