@@ -309,7 +309,6 @@ public class SystemVmTemplateRegistration {
             new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64),
             new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64),
             new Pair<>(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64),
-            new Pair<>(Hypervisor.HypervisorType.Hyperv, CPU.CPUArch.amd64),
             new Pair<>(Hypervisor.HypervisorType.LXC, CPU.CPUArch.amd64),
             new Pair<>(Hypervisor.HypervisorType.Ovm3, CPU.CPUArch.amd64)
     );
@@ -321,7 +320,6 @@ public class SystemVmTemplateRegistration {
         ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
         ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
         ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
-        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
         ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
         ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
     }
@@ -331,7 +329,6 @@ public class SystemVmTemplateRegistration {
         HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.KVM, ImageFormat.QCOW2);
         HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.XenServer, ImageFormat.VHD);
         HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.VMware, ImageFormat.OVA);
-        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.Hyperv, ImageFormat.VHD);
         HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.LXC, ImageFormat.QCOW2);
         HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.Ovm3, ImageFormat.RAW);
     }
@@ -341,7 +338,6 @@ public class SystemVmTemplateRegistration {
         hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
         hypervisorGuestOsMap.put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
         hypervisorGuestOsMap.put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
-        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
         hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
         hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
     }
@@ -704,7 +700,6 @@ public class SystemVmTemplateRegistration {
             LOGGER.debug("Updating system VM Template guest OS [{}] ID", DEFAULT_SYSTEM_VM_GUEST_OS_NAME);
             SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
         } catch (Exception e) {

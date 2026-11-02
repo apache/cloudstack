@@ -52,10 +52,6 @@ public class TrafficTypeResponse extends BaseResponse {
     @Param(description = "The Network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
 
-    @SerializedName(ApiConstants.HYPERV_NETWORK_LABEL)
-    @Param(description = "The Network name label of the physical device dedicated to this traffic on a HyperV host")
-    private String hypervNetworkLabel;
-
     @SerializedName(ApiConstants.VLAN)
     @Param(description = "The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
@@ -105,16 +101,8 @@ public class TrafficTypeResponse extends BaseResponse {
         return kvmNetworkLabel;
     }
 
-    public String getHypervLabel() {
-        return hypervNetworkLabel;
-    }
-
     public void setXenLabel(String xenLabel) {
         this.xenNetworkLabel = xenLabel;
-    }
-
-    public void setHypervLabel(String hypervLabel) {
-        this.hypervNetworkLabel = hypervLabel;
     }
 
     public void setKvmLabel(String kvmLabel) {
