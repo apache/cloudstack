@@ -27,8 +27,6 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -220,11 +218,9 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.server.StatsCollector;
-import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
@@ -358,8 +354,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject
-    ConfigurationServer _configServer;
-    @Inject
     DataStoreManager _dataStoreMgr;
     @Inject
     DataStoreProviderManager _dataStoreProviderMgr;
@@ -376,8 +370,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     SnapshotService _snapshotService;
     @Inject
-    public StorageService storageService;
-    @Inject
     StoragePoolTagsDao _storagePoolTagsDao;
     @Inject
     StoragePoolAndAccessGroupMapDao _storagePoolAccessGroupMapDao;
@@ -385,8 +377,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     PrimaryDataStoreDao primaryStoreDao;
     @Inject
     DiskOfferingDetailsDao _diskOfferingDetailsDao;
-    @Inject
-    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
@@ -416,21 +406,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     ResourceManager _resourceMgr;
     @Inject
-    StorageManager storageManager;
-    @Inject
     ManagementService managementService;
     @Inject
     JsInterpreterHelper jsInterpreterHelper;
-
-    protected List<StoragePoolDiscoverer> _discoverers;
-
-    public List<StoragePoolDiscoverer> getDiscoverers() {
-        return _discoverers;
-    }
-
-    public void setDiscoverers(List<StoragePoolDiscoverer> discoverers) {
-        _discoverers = discoverers;
-    }
 
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
@@ -449,44 +427,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private static final String NFS_MOUNT_OPTIONS_INCORRECT = "An incorrect mount option was specified";
 
-    public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
-
-        // if pool is in maintenance and it is the ONLY pool available; reject
-        List<VolumeVO> rootVolForGivenVm = volumeDao.findByInstanceAndType(vm.getId(), Type.ROOT);
-        if (rootVolForGivenVm != null && rootVolForGivenVm.size() > 0) {
-            boolean isPoolAvailable = isPoolAvailable(rootVolForGivenVm.get(0).getPoolId());
-            if (!isPoolAvailable) {
-                throw new StorageUnavailableException("Can not share " + vm, rootVolForGivenVm.get(0).getPoolId());
-            }
-        }
-
-        // this check is done for maintenance mode for primary storage
-        // if any one of the volume is unusable, we return false
-        // if we return false, the allocator will try to switch to another PS if
-        // available
-        for (VolumeVO vol : vols) {
-            if (vol.getRemoved() != null) {
-                logger.warn("Volume: {} is removed, cannot share on this instance: {}", vol, vm);
-                // not ok to share
-                return false;
-            }
-        }
-        // ok to share
-        return true;
-    }
-
-    private boolean isPoolAvailable(Long poolId) {
-        // get list of all pools
-        List<StoragePoolVO> pools = _storagePoolDao.listAll();
-
-        // if no pools or 1 pool which is in maintenance
-        if (pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(StoragePoolStatus.Maintenance))) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     protected void enableDefaultDatastoreDownloadRedirectionForExistingInstallations() {
         if (!configDepot.isNewConfig(DataStoreDownloadFollowRedirects)) {
             logger.trace("{} is not a new configuration, skipping updating its value",
@@ -500,29 +440,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreDownloadFollowRedirects.key()));
             configurationDao.update(DataStoreDownloadFollowRedirects.key(), "true");
         }
-    }
-
-    @Override
-    public List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type) {
-        List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(datacenterId);
-        List<StoragePoolVO> retPools = new ArrayList<>();
-        for (StoragePoolVO pool : pools) {
-            if (pool.getStatus() != StoragePoolStatus.Up) {
-                continue;
-            }
-            if (pool.getScope() == ScopeType.ZONE) {
-                if (pool.getHypervisor() != null && pool.getHypervisor() == type) {
-                    retPools.add(pool);
-                }
-            } else {
-                ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
-                if (type == cluster.getHypervisorType()) {
-                    retPools.add(pool);
-                }
-            }
-        }
-        Collections.shuffle(retPools);
-        return retPools;
     }
 
     @Override
@@ -616,31 +533,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean poolProvidesCustomStorageStats(StoragePool pool) {
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).poolProvidesCustomStorageStats();
-    }
-
-    @Override
-    public Map<String, String> getCustomStorageStats(StoragePool pool) {
-        if (pool == null) {
-            return null;
-        }
-
-        if (!pool.isManaged()) {
-            return null;
-        }
-
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-        if (storeDriver instanceof PrimaryDataStoreDriver) {
-            return ((PrimaryDataStoreDriver)storeDriver).getCustomStorageStats(pool);
-        }
-        return null;
-    }
-
-    @Override
     public Answer getVolumeStats(StoragePool pool, Command cmd) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
@@ -659,35 +551,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         return new GetVolumeStatsAnswer(getVolumeStatsCommand, "", statEntry);
-    }
-
-    public Long chooseHostForStoragePool(StoragePoolVO poolVO, List<Long> avoidHosts, boolean sendToVmResidesOn, Long vmId) {
-        if (sendToVmResidesOn) {
-            if (vmId != null) {
-                VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-                if (vmInstance != null) {
-                    Long hostId = vmInstance.getHostId();
-                    if (hostId != null && !avoidHosts.contains(vmInstance.getHostId())) {
-                        return hostId;
-                    }
-                }
-            }
-            /*
-             * Can't find the vm where host resides on(vm is destroyed? or
-             * volume is detached from vm), randomly choose a host to send the
-             * cmd
-             */
-        }
-        List<StoragePoolHostVO> poolHosts = _storagePoolHostDao.listByHostStatus(poolVO.getId(), Status.Up);
-        Collections.shuffle(poolHosts);
-        if (poolHosts != null && poolHosts.size() > 0) {
-            for (StoragePoolHostVO sphvo : poolHosts) {
-                if (!avoidHosts.contains(sphvo.getHostId())) {
-                    return sphvo.getHostId();
-                }
-            }
-        }
-        return null;
     }
 
     @Override
@@ -2415,48 +2278,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    @DB
-    List<Long> findAllVolumeIdInSnapshotTable(Long storeId) {
-        String sql = "SELECT volume_id from snapshots, snapshot_store_ref WHERE snapshots.id = snapshot_store_ref.snapshot_id and store_id=? GROUP BY volume_id";
-        List<Long> list = new ArrayList<>();
-        try {
-            TransactionLegacy txn = TransactionLegacy.currentTxn();
-            ResultSet rs = null;
-            PreparedStatement pstmt = null;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, storeId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                list.add(rs.getLong(1));
-            }
-            return list;
-        } catch (Exception e) {
-            logger.debug("failed to get all volumes who has snapshots in secondary storage " + storeId + " due to " + e.getMessage());
-            return null;
-        }
-
-    }
-
-    List<String> findAllSnapshotForVolume(Long volumeId) {
-        String sql = "SELECT backup_snap_id FROM snapshots WHERE volume_id=? and backup_snap_id is not NULL";
-        try {
-            TransactionLegacy txn = TransactionLegacy.currentTxn();
-            ResultSet rs = null;
-            PreparedStatement pstmt = null;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, volumeId);
-            rs = pstmt.executeQuery();
-            List<String> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rs.getString(1));
-            }
-            return list;
-        } catch (Exception e) {
-            logger.debug("failed to get all snapshots for a volume " + volumeId + " due to " + e.getMessage());
-            return null;
-        }
-    }
-
     @Override
     @DB
     public void cleanupSecondaryStorage(boolean recurring) {
@@ -2538,18 +2359,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } catch (Exception e3) {
             logger.warn("problem cleaning up secondary storage DB entries. ", e3);
         }
-    }
-
-    @Override
-    public String getPrimaryStorageNameLabel(VolumeVO volume) {
-        Long poolId = volume.getPoolId();
-
-        // poolId is null only if volume is destroyed, which has been checked
-        // before.
-        assert poolId != null;
-        StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(poolId);
-        assert primaryDataStoreVO != null;
-        return primaryDataStoreVO.getUuid();
     }
 
     @Override
@@ -2986,8 +2795,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     }
 
                     if (CollectionUtils.isNotEmpty(srcStorageAccessGroups) && CollectionUtils.isNotEmpty(destStorageAccessGroups)) {
-                        List<String> intersection = new ArrayList<>(srcStorageAccessGroups);
-                        intersection.retainAll(destStorageAccessGroups);
 
                         if (ArrayUtils.isNotEmpty(hostStorageAccessGroups)) {
                             boolean hasSrcCommon = srcStorageAccessGroups.stream()
@@ -3364,24 +3171,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
-        if (pool == null || !pool.isManaged()) {
-            return true;
-        }
-
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canDisconnectHostFromStoragePool(host, pool);
-    }
-
-    @Override
     @DB
     public Host getHost(long hostId) {
         return _hostDao.findById(hostId);
     }
 
     @Override
-    public Host updateSecondaryStorage(long secStorageId, String newUrl) {
+    public void updateSecondaryStorage(long secStorageId, String newUrl) {
         HostVO secHost = _hostDao.findById(secStorageId);
         if (secHost == null) {
             throw new InvalidParameterValueException("Can not find out the secondary storage id: " + secStorageId);
@@ -3428,7 +3224,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         secHost.setGuid(newUrl);
         secHost.setName(newUrl);
         _hostDao.update(secHost.getId(), secHost);
-        return secHost;
     }
 
     @Override
