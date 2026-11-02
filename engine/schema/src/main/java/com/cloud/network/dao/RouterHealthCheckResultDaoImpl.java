@@ -17,6 +17,7 @@
 
 package com.cloud.network.dao;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -30,9 +31,14 @@ public class RouterHealthCheckResultDaoImpl extends GenericDaoBase<RouterHealthC
 
     private SearchBuilder<RouterHealthCheckResultVO> RouterChecksSearchBuilder;
     private SearchBuilder<RouterHealthCheckResultVO> IsRouterFailingSearchBuilder;
+    private SearchBuilder<RouterHealthCheckResultVO> RoutersChecksSearchBuilder;
 
     protected RouterHealthCheckResultDaoImpl() {
         super();
+        RoutersChecksSearchBuilder = createSearchBuilder();
+        RoutersChecksSearchBuilder.and("routerIds", RoutersChecksSearchBuilder.entity().getRouterId(), SearchCriteria.Op.IN);
+        RoutersChecksSearchBuilder.done();
+
         RouterChecksSearchBuilder = createSearchBuilder();
         RouterChecksSearchBuilder.and("routerId", RouterChecksSearchBuilder.entity().getRouterId(), SearchCriteria.Op.EQ);
         RouterChecksSearchBuilder.and("checkName", RouterChecksSearchBuilder.entity().getCheckName(), SearchCriteria.Op.EQ);
@@ -49,6 +55,16 @@ public class RouterHealthCheckResultDaoImpl extends GenericDaoBase<RouterHealthC
     public List<RouterHealthCheckResultVO> getHealthCheckResults(long routerId) {
         SearchCriteria<RouterHealthCheckResultVO> sc = RouterChecksSearchBuilder.create();
         sc.setParameters("routerId", routerId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<RouterHealthCheckResultVO> getHealthCheckResults(List<Long> routerIds) {
+        if (routerIds == null || routerIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<RouterHealthCheckResultVO> sc = RoutersChecksSearchBuilder.create();
+        sc.setParameters("routerIds", routerIds.toArray());
         return listBy(sc);
     }
 

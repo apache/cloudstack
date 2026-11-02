@@ -63,6 +63,7 @@ import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
@@ -511,31 +512,38 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         }
     }
 
-    private void addVirtualRouterHealthCheckMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid) {
+    protected void addVirtualRouterHealthCheckMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid) {
         List<DomainRouterVO> routers = domainRouterDao.listByDataCenter(dcId);
         if (routers == null) {
             return;
         }
-        for (DomainRouterVO router : routers) {
-            if (router.getRole() != VirtualRouter.Role.VIRTUAL_ROUTER) {
+        // only running virtual routers; results of stopped or destroyed routers are stale
+        Map<Long, DomainRouterVO> runningRouters = routers.stream()
+                .filter(router -> router.getRole() == VirtualRouter.Role.VIRTUAL_ROUTER && router.getState() == State.Running)
+                .collect(Collectors.toMap(DomainRouterVO::getId, router -> router));
+        if (runningRouters.isEmpty()) {
+            return;
+        }
+        // one query for all routers in the zone instead of one per router
+        List<RouterHealthCheckResultVO> checks = routerHealthCheckResultDao.getHealthCheckResults(new ArrayList<>(runningRouters.keySet()));
+        if (checks == null) {
+            return;
+        }
+        for (RouterHealthCheckResultVO check : checks) {
+            DomainRouterVO router = runningRouters.get(check.getRouterId());
+            if (router == null) {
                 continue;
             }
-            List<RouterHealthCheckResultVO> checks = routerHealthCheckResultDao.getHealthCheckResults(router.getId());
-            if (checks == null || checks.isEmpty()) {
-                continue;
-            }
-            for (RouterHealthCheckResultVO check : checks) {
-                int resultValue = (check.getCheckResult() ==
-                        VirtualNetworkApplianceService.RouterHealthStatus.SUCCESS) ? 1 : 0;
-                metricsList.add(new ItemVRHealthCheckResult(
+            int resultValue = (check.getCheckResult() ==
+                    VirtualNetworkApplianceService.RouterHealthStatus.SUCCESS) ? 1 : 0;
+            metricsList.add(new ItemVRHealthCheckResult(
+                    zoneName, router.getInstanceName(),
+                    check.getCheckName(), check.getCheckType(), resultValue));
+            if (check.getLastUpdateTime() != null) {
+                long epochSeconds = check.getLastUpdateTime().getTime() / 1000L;
+                metricsList.add(new ItemVRHealthCheckLastCheck(
                         zoneName, router.getInstanceName(),
-                        check.getCheckName(), check.getCheckType(), resultValue));
-                if (check.getLastUpdateTime() != null) {
-                    long epochSeconds = check.getLastUpdateTime().getTime() / 1000L;
-                    metricsList.add(new ItemVRHealthCheckLastCheck(
-                            zoneName, router.getInstanceName(),
-                            check.getCheckName(), check.getCheckType(), epochSeconds));
-                }
+                        check.getCheckName(), check.getCheckType(), epochSeconds));
             }
         }
     }
@@ -544,6 +552,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     public void updateMetrics() {
         final List<Item> latestMetricsItems = new ArrayList<Item>();
         try {
+            final boolean routerHealthChecksEnabled = Boolean.TRUE.equals(VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value());
             for (final DataCenterVO dc : dcDao.listAll()) {
                 final String zoneName = dc.getName();
                 final String zoneUuid = dc.getUuid();
@@ -557,7 +566,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 addDomainMetrics(latestMetricsItems, zoneName, zoneUuid);
                 addAccountMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addVMsBySizeMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
-                addVirtualRouterHealthCheckMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
+                if (routerHealthChecksEnabled) {
+                    addVirtualRouterHealthCheckMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
+                }
             }
             addDomainLimits(latestMetricsItems);
             addDomainResourceCount(latestMetricsItems);
