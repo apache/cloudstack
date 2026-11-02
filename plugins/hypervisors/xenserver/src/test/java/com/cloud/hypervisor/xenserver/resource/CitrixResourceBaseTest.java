@@ -616,4 +616,28 @@ public class CitrixResourceBaseTest {
         Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
     }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestBlankVersion() {
+        citrixResourceBase._host.setProductVersion(null);
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported());
+        citrixResourceBase._host.setProductVersion("");
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported());
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestBefore8() {
+        for (String version : new String[] {"6.5.0", "7.1.2", "7.6.0"}) {
+            citrixResourceBase._host.setProductVersion(version);
+            Assert.assertFalse(version, citrixResourceBase.isManagementNetworkOnVlanSupported());
+        }
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTest8AndLater() {
+        for (String version : new String[] {"8.0", "8.0.0", "8.2.1", "8.3.0", "8.4.0"}) {
+            citrixResourceBase._host.setProductVersion(version);
+            Assert.assertTrue(version, citrixResourceBase.isManagementNetworkOnVlanSupported());
+        }
+    }
 }
