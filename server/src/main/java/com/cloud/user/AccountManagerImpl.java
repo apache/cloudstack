@@ -786,13 +786,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     && !(entity instanceof Network && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
                     && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)
                     && !(entity instanceof DnsServer) && !(entity instanceof DnsZone)) {
-                List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
-                if (toBeChecked == null) {
-                    toBeChecked = new ArrayList<>();
-                    domains.put(domainId, toBeChecked);
-                }
-                toBeChecked.add(entity);
+                domains.computeIfAbsent(domainId, k -> new ArrayList<>()).add(entity);
             }
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
@@ -834,7 +829,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     }
 
-    private static long getDomainIdFor(ControlledEntity entity) {
+    private long getDomainIdFor(ControlledEntity entity) {
         long domainId = entity.getDomainId();
         if (entity.getAccountId() != -1 && domainId == -1) {
             // If account exists domainId should too so calculate it.
@@ -3076,7 +3071,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    logger.warn("Request by account '{}' was denied since {} does not match {}", account , loginIpAddress.toString().replace("/", ""), accessAllowedCidrs);
+                    logger.warn("Request by account '{}' was denied since {} does not match {}", account, loginIpAddress.toString().replace("/", ""), accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
                             + loginIpAddress.toString().replace("/", "") + "; please provide valid credentials");
                 }
