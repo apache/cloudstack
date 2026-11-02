@@ -268,3 +268,26 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- @APICommand(authorized=...) alone doesn't grant access under dynamic RBAC (the default).
+-- Backfill the LDAP account APIs for any role that can already create accounts natively.
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'listLdapUsers', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'listLdapUsers');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'ldapCreateAccount', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'ldapCreateAccount');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'linkAccountToLdap', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'linkAccountToLdap');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'importLdapUsers', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'importLdapUsers');
+
