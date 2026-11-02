@@ -333,7 +333,7 @@ public class SnapshotSchedulerImplTest {
         int result = snapshotSchedulerImplSpy.countConsecutiveFailedAttempts(1L, 0);
 
         Assert.assertEquals(0, result);
-        verify(eventDaoMock, never()).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        verify(eventDaoMock, never()).listLatestOutcomeEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
     }
 
     @Test
@@ -345,7 +345,7 @@ public class SnapshotSchedulerImplTest {
         EventVO success = mock(EventVO.class);
         doReturn(EventVO.LEVEL_INFO).when(success).getLevel();
 
-        doReturn(List.of(error1, error2, success)).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        doReturn(List.of(error1, error2, success)).when(eventDaoMock).listLatestOutcomeEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
 
         int result = snapshotSchedulerImplSpy.countConsecutiveFailedAttempts(1L, 3);
 
@@ -354,7 +354,7 @@ public class SnapshotSchedulerImplTest {
 
     @Test
     public void countConsecutiveFailedAttemptsTestNoEventsReturnsZero() {
-        doReturn(Collections.emptyList()).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        doReturn(Collections.emptyList()).when(eventDaoMock).listLatestOutcomeEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
 
         int result = snapshotSchedulerImplSpy.countConsecutiveFailedAttempts(1L, 3);
 
@@ -390,7 +390,7 @@ public class SnapshotSchedulerImplTest {
             doReturn(EventVO.LEVEL_ERROR).when(event).getLevel();
             events.add(event);
         }
-        doReturn(events).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        doReturn(events).when(eventDaoMock).listLatestOutcomeEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
     }
 
     // Must use a distinct event type from EVENT_SNAPSHOT_CREATE, otherwise it becomes the "latest event" scanned
@@ -405,7 +405,7 @@ public class SnapshotSchedulerImplTest {
     @Test
     public void handleFailedSnapshotDispatchTestUnderMaxReschedulesWithRetryIntervalOnly() {
         stubVolumeAndAccount();
-        doReturn(Collections.emptyList()).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        doReturn(Collections.emptyList()).when(eventDaoMock).listLatestOutcomeEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
         ReflectionTestUtils.setField(snapshotSchedulerImplSpy, "_currentTimestamp", new Date());
 
         try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class)) {
@@ -464,7 +464,7 @@ public class SnapshotSchedulerImplTest {
         }
 
         verify(accountDaoMock, never()).findById(Mockito.anyLong());
-        verify(eventDaoMock, never()).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        verify(eventDaoMock, never()).listLatestOutcomeEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
     }
 
     // --- dispatchSnapshotCreateJob (#13454) ---

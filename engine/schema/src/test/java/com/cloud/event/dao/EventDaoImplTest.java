@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.event.dao;
 
+import com.cloud.event.Event;
 import com.cloud.event.EventVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
@@ -44,11 +45,11 @@ public class EventDaoImplTest {
     EventDaoImpl eventDaoImpl = new EventDaoImpl();
 
     @Test
-    public void listLatestEventsByResourceQueriesByResourceAndTypeExcludingArchived() {
+    public void listLatestOutcomeEventsByResourceQueriesOutcomesByResourceAndTypeExcludingArchived() {
         List<EventVO> expected = Collections.singletonList(new EventVO());
         doReturn(expected).when(eventDaoImpl).listBy(any(SearchCriteria.class), any(Filter.class));
 
-        List<EventVO> result = eventDaoImpl.listLatestEventsByResource(1L, "Volume", "SNAPSHOT.CREATE", 3);
+        List<EventVO> result = eventDaoImpl.listLatestOutcomeEventsByResource(1L, "Volume", "SNAPSHOT.CREATE", 3);
 
         Assert.assertSame(expected, result);
 
@@ -57,26 +58,27 @@ public class EventDaoImplTest {
         verify(eventDaoImpl).listBy(scCaptor.capture(), filterCaptor.capture());
 
         SearchCriteria<EventVO> sc = scCaptor.getValue();
-        Assert.assertEquals("event.resource_id = ?  AND event.resource_type = ?  AND event.type = ?  AND event.archived = ? ",
+        Assert.assertEquals("event.resource_id = ?  AND event.resource_type = ?  AND event.type = ?  AND event.state IN (?,?)  AND event.archived = ? ",
                 sc.getWhereClause());
         @SuppressWarnings("unchecked")
         Map<String, Object[]> params = (Map<String, Object[]>) ReflectionTestUtils.getField(sc, "_params");
         Assert.assertArrayEquals(new Object[]{1L}, params.get("resourceId"));
         Assert.assertArrayEquals(new Object[]{"Volume"}, params.get("resourceType"));
         Assert.assertArrayEquals(new Object[]{"SNAPSHOT.CREATE"}, params.get("type"));
+        Assert.assertArrayEquals(new Object[]{Event.State.Created, Event.State.Completed}, params.get("state"));
         Assert.assertArrayEquals(new Object[]{false}, params.get("archived"));
 
         Filter filter = filterCaptor.getValue();
-        Assert.assertEquals(" ORDER BY event.created DESC ", filter.getOrderBy());
+        Assert.assertEquals(" ORDER BY event.created DESC , event.id DESC ", filter.getOrderBy());
         Assert.assertEquals(Long.valueOf(0L), filter.getOffset());
         Assert.assertEquals(Long.valueOf(3L), filter.getLimit());
     }
 
     @Test
-    public void listLatestEventsByResourceReturnsEmptyListWhenNoneFound() {
+    public void listLatestOutcomeEventsByResourceReturnsEmptyListWhenNoneFound() {
         doReturn(Collections.emptyList()).when(eventDaoImpl).listBy(any(SearchCriteria.class), any(Filter.class));
 
-        List<EventVO> result = eventDaoImpl.listLatestEventsByResource(1L, "Volume", "SNAPSHOT.CREATE", 3);
+        List<EventVO> result = eventDaoImpl.listLatestOutcomeEventsByResource(1L, "Volume", "SNAPSHOT.CREATE", 3);
 
         Assert.assertTrue(result.isEmpty());
     }

@@ -55,6 +55,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         LatestEventsByResourceSearch.and(FIELD_RESOURCE_ID, LatestEventsByResourceSearch.entity().getResourceId(), Op.EQ);
         LatestEventsByResourceSearch.and(FIELD_RESOURCE_TYPE, LatestEventsByResourceSearch.entity().getResourceType(), Op.EQ);
         LatestEventsByResourceSearch.and("type", LatestEventsByResourceSearch.entity().getType(), Op.EQ);
+        LatestEventsByResourceSearch.and("state", LatestEventsByResourceSearch.entity().getState(), Op.IN);
         LatestEventsByResourceSearch.and("archived", LatestEventsByResourceSearch.entity().getArchived(), Op.EQ);
         LatestEventsByResourceSearch.done();
 
@@ -137,13 +138,16 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     }
 
     @Override
-    public List<EventVO> listLatestEventsByResource(long resourceId, String resourceType, String type, int limit) {
+    public List<EventVO> listLatestOutcomeEventsByResource(long resourceId, String resourceType, String type, int limit) {
         SearchCriteria<EventVO> sc = LatestEventsByResourceSearch.create();
         sc.setParameters(FIELD_RESOURCE_ID, resourceId);
         sc.setParameters(FIELD_RESOURCE_TYPE, resourceType);
         sc.setParameters("type", type);
+        sc.setParameters("state", State.Created, State.Completed);
         sc.setParameters("archived", false);
         Filter filter = new Filter(EventVO.class, "createDate", false, 0L, (long) limit);
+        // created has one-second granularity; break ties by insertion order
+        filter.addOrderBy(EventVO.class, "id", false);
         return listBy(sc, filter);
     }
 

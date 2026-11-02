@@ -430,16 +430,17 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     }
 
     /**
-     * Counts how many of the most recent {@code EVENT_SNAPSHOT_CREATE} events logged for this volume are
+     * Counts how many of the most recent {@code EVENT_SNAPSHOT_CREATE} outcome events logged for this volume are
      * consecutive failures (level ERROR), starting from the most recent event and stopping at the first
-     * non-failure (or absent) event. This derives the "number of failed attempts" from event history instead of a
+     * non-failure (or absent) event. The Scheduled event logged before every dispatch is not an outcome and is
+     * excluded by the DAO, otherwise it would interrupt every run of failures. This derives the "number of failed attempts" from event history instead of a
      * dedicated counter column.
      */
     protected int countConsecutiveFailedAttempts(final long volumeId, final int limit) {
         if (limit <= 0) {
             return 0;
         }
-        final List<EventVO> recentEvents = eventDao.listLatestEventsByResource(volumeId, ApiCommandResourceType.Volume.toString(),
+        final List<EventVO> recentEvents = eventDao.listLatestOutcomeEventsByResource(volumeId, ApiCommandResourceType.Volume.toString(),
                 EventTypes.EVENT_SNAPSHOT_CREATE, limit);
         int count = 0;
         for (final EventVO event : recentEvents) {
