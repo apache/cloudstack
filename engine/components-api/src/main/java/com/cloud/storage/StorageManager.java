@@ -280,11 +280,8 @@ public interface StorageManager extends StorageService {
      */
     List<String> getStoragePoolTagList(long poolId);
 
-    Answer sendToPool(long poolId, Command cmd) throws StorageUnavailableException;
-
     Answer sendToPool(StoragePool pool, Command cmd) throws StorageUnavailableException;
 
-    Answer[] sendToPool(long poolId, Commands cmd) throws StorageUnavailableException;
 
     Answer[] sendToPool(StoragePool pool, Commands cmds) throws StorageUnavailableException;
 
@@ -304,9 +301,8 @@ public interface StorageManager extends StorageService {
 
     /**
      * Cleans up storage pools by removing unused templates.
-     * @param recurring - true if this cleanup is part of a recurring garbage collection thread
      */
-    void cleanupStorage(boolean recurring);
+    void cleanupStorage();
 
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
@@ -340,7 +336,7 @@ public interface StorageManager extends StorageService {
 
     List<Long> getUpHostsInPool(long poolId);
 
-    void cleanupSecondaryStorage(boolean recurring);
+    void cleanupSecondaryStorage();
 
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
