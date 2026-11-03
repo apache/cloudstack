@@ -155,7 +155,7 @@ public class ConfigurationVO implements Configuration {
 
     @Override
     public String getValue() {
-        if(isEncrypted()) {
+        if (isEncrypted()) {
             return DBEncryptionUtil.decrypt(value);
         } else {
             return value;
