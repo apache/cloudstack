@@ -17,6 +17,7 @@
 package org.apache.cloudstack.metrics;
 
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.net.NetUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -31,7 +32,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PrometheusExporterServerImpl extends ManagerBase implements PrometheusExporterServer, Configurable {
@@ -40,6 +43,9 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
 
     @Inject
     private PrometheusExporter prometheusExporter;
+
+    private String allowedAddressesConfig;
+    private Set<String> allowedAddresses = Collections.emptySet();
 
     private final class ExporterHandler implements HttpHandler {
         private PrometheusExporter prometheusExporter;
@@ -55,17 +61,7 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
             logger.debug("Prometheus exporter received client request from: " + remoteClientAddress);
             String response = "Forbidden";
             int responseCode = 403;
-            final List<String> allowedAddresses = Arrays.stream(PrometheusExporterAllowedAddresses.value().split(","))
-                    .map(addr -> {
-                        try {
-                            return InetAddress.getByName(addr.trim()).getHostAddress();
-                        } catch (UnknownHostException e) {
-                            logger.warn("Invalid IP address in prometheus.exporter.allowed.ips: " + addr.trim());
-                            return addr.trim();
-                        }
-                    })
-                    .collect(Collectors.toList());
-            if (allowedAddresses.contains(remoteClientAddress)) {
+            if (getAllowedAddresses().contains(remoteClientAddress)) {
                 prometheusExporter.updateMetrics();
                 response = prometheusExporter.getMetrics();
                 responseCode = 200;
@@ -85,6 +81,42 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
             } finally {
                 os.close();
             }
+        }
+    }
+
+    private synchronized Set<String> getAllowedAddresses() {
+        final String config = PrometheusExporterAllowedAddresses.value();
+        if (!config.equals(allowedAddressesConfig)) {
+            allowedAddresses = normalizeAddresses(config);
+            allowedAddressesConfig = config;
+        }
+        return allowedAddresses;
+    }
+
+    /**
+     * Normalizes a comma separated list of IP addresses to their canonical text form, so that
+     * equivalent notations (e.g. ::1 and 0:0:0:0:0:0:0:1) match the remote client address.
+     * Blank entries and anything that is not an IP literal are ignored, so no DNS resolution takes place.
+     */
+    protected Set<String> normalizeAddresses(final String addresses) {
+        return Arrays.stream(addresses.split(","))
+                .map(String::trim)
+                .filter(addr -> !addr.isEmpty())
+                .map(this::normalizeAddress)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private String normalizeAddress(final String address) {
+        if (!NetUtils.isValidIp4(address) && !NetUtils.isValidIp6(address)) {
+            logger.warn("Ignoring invalid IP address [{}] in {}", address, PrometheusExporterAllowedAddresses.key());
+            return null;
+        }
+        try {
+            return InetAddress.getByName(address).getHostAddress();
+        } catch (UnknownHostException e) {
+            logger.warn("Ignoring IP address [{}] in {} that could not be parsed", address, PrometheusExporterAllowedAddresses.key(), e);
+            return null;
         }
     }
 
