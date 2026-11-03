@@ -418,10 +418,6 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         String rootUrl = managementServer.getConsoleAccessUrlRoot(vmId);
-        if (rootUrl == null) {
-            throw new CloudRuntimeException("Console access will be ready in a few minutes. Please try it again later.");
-        }
-
         ConsoleEndpoint consoleEndpoint = composeConsoleAccessEndpoint(rootUrl, vm, host, clientAddress, sessionUuid, extraSecurityToken);
         logger.debug("The console URL is: " + consoleEndpoint.getUrl());
         return consoleEndpoint;
@@ -520,6 +516,11 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (ConsoleConnectionDetails.Mode.Direct.equals(result.getMode())) {
             persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
             return new ConsoleEndpoint(true, result.getDirectUrl());
+        }
+
+        // Only consoles served through the console proxy need its URL; direct consoles do not
+        if (rootUrl == null) {
+            throw new CloudRuntimeException("Console access will be ready in a few minutes. Please try it again later.");
         }
 
         String ticket = genAccessTicket(result.getHost(), String.valueOf(result.getPort()), result.getSid(),
