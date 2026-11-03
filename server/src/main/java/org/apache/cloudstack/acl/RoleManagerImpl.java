@@ -262,6 +262,8 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                     throw new CloudRuntimeException("Unable to import the role: " + name + ", failed to persist in DB");
                 }
 
+                accountManager.refreshRoleCheckersCacheOnPermissionsChange(newRole);
+
                 if (rules != null && !rules.isEmpty()) {
                     for (Map<String, Object> ruleDetail : rules) {
                         Rule rule = (Rule)ruleDetail.get(ApiConstants.RULE);
@@ -410,6 +412,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         if (role.isDefault()) {
             throw new PermissionDeniedException("Role permission cannot be updated for Default roles");
         }
+        accountManager.refreshRoleCheckersCacheOnPermissionsChange(role);
         return role != null && newOrder != null && rolePermissionsDao.update(role, newOrder);
     }
 
@@ -419,6 +422,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         if (role.isDefault()) {
             throw new PermissionDeniedException("Role permission cannot be updated for Default roles");
         }
+        accountManager.refreshRoleCheckersCacheOnPermissionsChange(role);
         return role != null && rolePermissionsDao.update(role, rolePermission, permission);
     }
 
