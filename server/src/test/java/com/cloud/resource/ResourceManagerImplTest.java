@@ -555,6 +555,20 @@ public class ResourceManagerImplTest {
     }
 
     @Test
+    public void testCheckAndMaintainStillInErrorInPrepareForMaintenanceDoesNotRepeatErrorEvent() throws NoTransitionException {
+        setupFailedMigrations();
+        setupPendingMigrationRetries();
+        when(host.getResourceState()).thenReturn(ResourceState.ErrorInPrepareForMaintenance);
+        boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
+        verify(resourceManager).setHostIntoErrorInPrepareForMaintenance(eq(host), any());
+        verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onCompletedActionEvent(
+                anyLong(), anyLong(), anyString(), eq(EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR),
+                anyString(), anyLong(), any(), anyLong()), never());
+        Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    @Test
     public void testMaintenancePrepareErrorEventMapsToHostEntity() {
         Assert.assertEquals(Host.class, EventTypes.getEntityClassForEvent(EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR));
     }

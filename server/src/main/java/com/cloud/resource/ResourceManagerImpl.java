@@ -1723,20 +1723,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _haMgr.cancelScheduledMigrations(host);
         configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMaintain, _nodeId);
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
-                EventVO.LEVEL_ERROR, EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR,
-                String.format("failed to put host %s into maintenance due to running VMs that could not be migrated or VMs in error state", host), host.getId(), null, 0);
+        emitMaintenanceErrorEvent(host, String.format("failed to put host %s into maintenance due to running VMs that could not be migrated or VMs in error state", host));
         return false;
     }
 
+    /**
+     * Set host into ErrorInPrepareForMaintenance state. The agent monitor calls this on every check while the errors
+     * persist, so the error event is only emitted when the host enters this state.
+     */
     protected boolean setHostIntoErrorInPrepareForMaintenance(HostVO host, List<VMInstanceVO> errorVms) throws NoTransitionException {
         logger.debug("Host {} entering in PrepareForMaintenanceWithErrors state", host);
+        final boolean alreadyInErrorState = host.getResourceState() == ResourceState.ErrorInPrepareForMaintenance;
         configureVncAccessForKVMHostFailedMigrations(host, errorVms);
         resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
-                EventVO.LEVEL_ERROR, EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR,
-                String.format("failed to prepare host %s for maintenance due to migration or VM state errors", host), host.getId(), null, 0);
+        if (!alreadyInErrorState) {
+            emitMaintenanceErrorEvent(host, String.format("failed to prepare host %s for maintenance due to migration or VM state errors", host));
+        }
         return false;
+    }
+
+    private void emitMaintenanceErrorEvent(HostVO host, String description) {
+        final CallContext context = CallContext.current();
+        ActionEventUtils.onCompletedActionEvent(context.getCallingUserId(), context.getCallingAccountId(),
+                EventVO.LEVEL_ERROR, EventTypes.EVENT_MAINTENANCE_PREPARE_ERROR, description, host.getId(), null, 0);
     }
 
     protected boolean setHostIntoPrepareForMaintenanceAfterErrorsFixed(HostVO host) throws NoTransitionException {
