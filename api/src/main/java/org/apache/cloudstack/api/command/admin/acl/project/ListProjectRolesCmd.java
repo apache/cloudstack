@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -55,7 +56,6 @@ public class ListProjectRolesCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public Long getProjectRoleId() { return projectRoleId; }
 
     public Long getProjectId() {
@@ -72,7 +72,10 @@ public class ListProjectRolesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<ProjectRole> projectRoles = new ArrayList<>();
+        if (getProjectId() != null && _projectService.getProject(getProjectId()) == null) {
+            throw new InvalidParameterValueException("Failed to find project by ID.");
+        }
+        List<ProjectRole> projectRoles;
         if (getProjectId() != null && getProjectRoleId() != null) {
             projectRoles = Collections.singletonList(projRoleService.findProjectRole(getProjectRoleId(), getProjectId()));
         } else if (StringUtils.isNotBlank(getRoleName())) {
