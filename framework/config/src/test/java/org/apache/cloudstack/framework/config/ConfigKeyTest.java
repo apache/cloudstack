@@ -17,6 +17,7 @@
 package org.apache.cloudstack.framework.config;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -75,5 +76,27 @@ public class ConfigKeyTest {
         for (Scope descendant : descendants) {
             Assert.assertTrue(descendant == Scope.Cluster || descendant == Scope.StoragePool || descendant == Scope.ImageStore);
         }
+    }
+
+    @Test
+    public void testValidatedNumericValue() {
+        AtomicReference<Long> received = new AtomicReference<>();
+        ValidatedConfigKey<Long> key = new ValidatedConfigKey<>("Advanced", Long.class, "test.validated", "0",
+                "Test configuration", true, Scope.Global, null, received::set);
+        key.validateValue("60000");
+        Assert.assertEquals(Long.valueOf(60000), received.get());
+        Assert.assertThrows(NumberFormatException.class, () -> key.validateValue("invalid"));
+        Assert.assertEquals(Long.valueOf(60000), received.get());
+    }
+
+    @Test
+    public void testValidatedStringValueIsUnchanged() {
+        AtomicReference<String> received = new AtomicReference<>();
+        ValidatedConfigKey<String> key = new ValidatedConfigKey<>("Advanced", String.class, "test.validated", null,
+                "Test configuration", true, Scope.Global, null, received::set);
+        key.validateValue("  value  ");
+        Assert.assertEquals("  value  ", received.get());
+        key.validateValue(null);
+        Assert.assertNull(received.get());
     }
 }
