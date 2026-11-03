@@ -153,7 +153,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public String getConfigComponentName() {
-        return ConsoleAccessManager.class.getName();
+        return ConsoleAccessManager.class.getSimpleName();
     }
 
     @Override

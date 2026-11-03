@@ -270,7 +270,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     @Override
     public String getConfigComponentName() {
-        return WebhookService.class.getName();
+        return WebhookService.class.getSimpleName();
     }
 
     @Override
