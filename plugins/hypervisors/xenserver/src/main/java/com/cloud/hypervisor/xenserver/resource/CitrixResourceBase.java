@@ -2785,7 +2785,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         for (final PIF pif : hostPifs) {
             final PIF.Record rec = pif.getRecord(conn);
             if (rec.management) {
-                if (rec.VLAN != null && rec.VLAN != -1) {
+                if (!isVlanAllowedForManagementPif(rec)) {
                     final String msg = "Unsupported configuration.  Management network is on a VLAN.  host=" + _host.getUuid() + "; pif=" + rec.uuid +
                             "; vlan=" + rec.VLAN;
                     logger.warn(msg);
@@ -5827,6 +5827,14 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             return false;
         }
         return new ComparableVersion(productVersion).compareTo(new ComparableVersion("8.0")) >= 0;
+    }
+
+    /**
+     * Whether a PIF may carry the management (or cloud-private) network: untagged PIFs always may, tagged ones only
+     * on hosts that support the management interface on a VLAN.
+     */
+    public boolean isVlanAllowedForManagementPif(PIF.Record rec) {
+        return rec.VLAN == null || rec.VLAN == -1 || isManagementNetworkOnVlanSupported();
     }
 
     public void destroyVm(VM vm, Connection connection, boolean forced) throws XenAPIException, XmlRpcException {
