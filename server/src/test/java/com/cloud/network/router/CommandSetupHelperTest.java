@@ -65,6 +65,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -226,6 +227,10 @@ public class CommandSetupHelperTest {
         when(dcDao.findById(zoneId)).thenReturn(dc);
         when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
 
+        NetworkOfferingVO offering = Mockito.mock(NetworkOfferingVO.class);
+        when(networkOfferingDao.findByIdIncludingRemoved(anyLong())).thenReturn(offering);
+        when(offering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+
         commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
 
         Assert.assertEquals(1, cmds.size());
@@ -254,6 +259,7 @@ public class CommandSetupHelperTest {
         NetworkOfferingVO offering = Mockito.mock(NetworkOfferingVO.class);
         when(networkOfferingDao.findByIdIncludingRemoved(networkOfferingId)).thenReturn(offering);
         when(offering.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Dynamic);
+        when(offering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         NetworkVO network1 = Mockito.mock(NetworkVO.class);
         when(network1.getNetworkOfferingId()).thenReturn(networkOfferingId);
         NetworkVO network2 = Mockito.mock(NetworkVO.class);
