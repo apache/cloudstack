@@ -56,11 +56,14 @@ import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Host.Record;
+import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -639,5 +642,58 @@ public class CitrixResourceBaseTest {
             citrixResourceBase._host.setProductVersion(version);
             Assert.assertTrue(version, citrixResourceBase.isManagementNetworkOnVlanSupported());
         }
+    }
+
+    private PIF.Record pifRecordWithVlan(Long vlan) {
+        PIF.Record rec = new PIF.Record();
+        rec.uuid = "pifUuid";
+        rec.VLAN = vlan;
+        return rec;
+    }
+
+    @Test
+    public void isVlanAllowedForManagementPifTestUntagged() {
+        citrixResourceBase._host.setProductVersion("7.1.2");
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(null)));
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(-1L)));
+    }
+
+    @Test
+    public void isVlanAllowedForManagementPifTestTagged() {
+        citrixResourceBase._host.setProductVersion("7.1.2");
+        Assert.assertFalse(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(100L)));
+        citrixResourceBase._host.setProductVersion("8.2.1");
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(100L)));
+    }
+
+    private PIF.Record mockManagementPifOnVlan(long vlan) throws XenAPIException, XmlRpcException {
+        PIF pif = Mockito.mock(PIF.class);
+        PIF.Record rec = pifRecordWithVlan(vlan);
+        rec.management = true;
+        rec.network = Mockito.mock(Network.class);
+        Mockito.when(pif.getRecord(connectionMock)).thenReturn(rec);
+        Mockito.when(hostMock.getPIFs(connectionMock)).thenReturn(Set.of(pif));
+        return rec;
+    }
+
+    @Test
+    public void getManagementNetworkTestVlanOnProductVersion8() throws XenAPIException, XmlRpcException {
+        citrixResourceBase._host.setProductVersion("8.2.1");
+        PIF.Record pifRecord = mockManagementPifOnVlan(100L);
+        Network.Record networkRecord = new Network.Record();
+        Mockito.when(pifRecord.network.getRecord(connectionMock)).thenReturn(networkRecord);
+
+        XsLocalNetwork network = citrixResourceBase.getManagementNetwork(connectionMock);
+
+        Assert.assertSame(networkRecord, network.getNetworkRecord(connectionMock));
+        Assert.assertSame(pifRecord, network.getPifRecord(connectionMock));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getManagementNetworkTestVlanBeforeProductVersion8() throws XenAPIException, XmlRpcException {
+        citrixResourceBase._host.setProductVersion("7.1.2");
+        mockManagementPifOnVlan(100L);
+
+        citrixResourceBase.getManagementNetwork(connectionMock);
     }
 }
