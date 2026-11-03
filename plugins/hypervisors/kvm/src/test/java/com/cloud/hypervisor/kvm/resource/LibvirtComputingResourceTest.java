@@ -5980,6 +5980,14 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testGetDiskPathFromDiskDefForLocalStorage() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk("/var/lib/libvirt/images/filepath", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertEquals("filepath", diskPath);
+    }
+
+    @Test
     public void testGetDiskPathFromDiskDefForNFSWithNullPath() {
         DiskDef diskDef = new DiskDef();
         diskDef.defFileBasedDisk(null, 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
