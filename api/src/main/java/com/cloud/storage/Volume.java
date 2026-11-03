@@ -279,5 +279,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     void setEncryptFormat(String encryptFormat);
 
+    boolean isEncrypted();
+
     boolean isDeleteProtection();
 }
