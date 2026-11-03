@@ -41,7 +41,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "destroyVirtualMachine", description = "Destroys  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
@@ -54,12 +54,12 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the Instance")
     private Long id;
 
     @Parameter(name = ApiConstants.EXPUNGE,
                type = CommandType.BOOLEAN,
-               description = "If true is passed, the vm is expunged immediately. False by default.",
+               description = "If true is passed, the Instance is expunged immediately. False by default.",
                since = "4.2.1")
     private Boolean expunge;
 
@@ -90,9 +90,21 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
         return volumeIds;
     }
 
+    public boolean isForced() {
+        return false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    public DestroyVMCmd() {
+    }
+
+    public DestroyVMCmd(Long id, Boolean expunge) {
+        this.id = id;
+        this.expunge = expunge;
+    }
 
     @Override
     public String getCommandName() {
@@ -116,7 +128,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return  "Destroying Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -131,8 +143,8 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
-        UserVm result = _userVmService.destroyVm(this);
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
+        UserVm result = _userVmService.destroyVm(this, true);
 
         UserVmResponse response = new UserVmResponse();
         if (result != null) {
@@ -140,10 +152,11 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
             if (responses != null && !responses.isEmpty()) {
                 response = responses.get(0);
             }
-            response.setResponseName("virtualmachine");
+            response.setResponseName(getCommandName());
+            response.setObjectName("virtualmachine");
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy Instance");
         }
     }
 }

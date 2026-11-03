@@ -32,35 +32,35 @@ import com.google.gson.annotations.SerializedName;
 public class SecurityGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the security group")
+    @Param(description = "The ID of the security group")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the security group")
+    @Param(description = "The name of the security group")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the security group")
+    @Param(description = "The description of the security group")
     private String description;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the security group")
+    @Param(description = "The Account owning the security group")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the group")
+    @Param(description = "The project id of the group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the group")
+    @Param(description = "The project name of the group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the security group")
+    @Param(description = "The domain ID of the security group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the security group")
+    @Param(description = "The domain name of the security group")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -68,23 +68,23 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
     private String domainPath;
 
     @SerializedName("ingressrule")
-    @Param(description = "the list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
+    @Param(description = "The list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private Set<SecurityGroupRuleResponse> ingressRules;
 
     @SerializedName("egressrule")
-    @Param(description = "the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
+    @Param(description = "The list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private Set<SecurityGroupRuleResponse> egressRules;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_COUNT)
-    @Param(description = "the number of virtualmachines associated with this securitygroup", since = "4.6.0")
+    @Param(description = "The number of Instances associated with this Security Group", since = "4.6.0")
     private Integer virtualMachineCount;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
-    @Param(description = "the list of virtualmachine ids associated with this securitygroup", since = "4.6.0")
+    @Param(description = "The list of Instance IDs associated with this Security Group", since = "4.6.0")
     private Set<String> virtualMachineIds;
 
     public SecurityGroupResponse() {

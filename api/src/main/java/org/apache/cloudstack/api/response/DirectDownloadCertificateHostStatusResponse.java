@@ -24,19 +24,19 @@ import org.apache.cloudstack.api.BaseResponse;
 public class DirectDownloadCertificateHostStatusResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the host")
+    @Param(description = "The ID of the host")
     private String hostId;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the name of the host")
+    @Param(description = "The name of the host")
     private String hostName;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "indicates if the certificate has been revoked from the host, failed or skipped")
+    @Param(description = "Indicates if the certificate has been revoked from the host, failed or skipped")
     private String status;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "indicates the details in case of failure or host skipped")
+    @Param(description = "Indicates the details in case of failure or host skipped")
     private String details;
 
     public String getHostId() {

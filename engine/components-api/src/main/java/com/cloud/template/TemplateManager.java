@@ -17,6 +17,7 @@
 package com.cloud.template;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -29,6 +30,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -36,6 +38,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -44,9 +47,11 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface TemplateManager {
     static final String AllowPublicUserTemplatesCK = "allow.public.user.templates";
     static final String TemplatePreloaderPoolSizeCK = "template.preloader.pool.size";
+    static final String PublicTemplateSecStorageCopyCK = "secstorage.public.template.copy.max";
+    static final String PrivateTemplateSecStorageCopyCK = "secstorage.private.template.copy.max";
 
     static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
-        "If false, users will not be able to create public templates.", true, ConfigKey.Scope.Account);
+        "If false, users will not be able to create public Templates.", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
             "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
@@ -55,6 +60,40 @@ public interface TemplateManager {
             "validate.url.is.resolvable.before.registering.template", "true", "Indicates whether CloudStack "
             + "will validate if the provided URL is resolvable during the register of templates/ISOs before persisting them in the database.",
             true);
+
+    ConfigKey<Boolean> TemplateDeleteFromPrimaryStorage = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "template.delete.from.primary.storage", "true",
+            "Template when deleted will be instantly deleted from the Primary Storage",
+            true,
+            ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> PublicTemplateSecStorageCopy = new ConfigKey<Integer>("Advanced", Integer.class,
+            PublicTemplateSecStorageCopyCK, "0",
+            "Maximum number of secondary storage pools to which a public template is copied. " +
+            "0 means copy to all secondary storage pools (default behavior).",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> PrivateTemplateSecStorageCopy = new ConfigKey<Integer>("Advanced", Integer.class,
+            PrivateTemplateSecStorageCopyCK, "1",
+            "Maximum number of secondary storage pools to which a private template is copied. " +
+            "Default is 1 to preserve existing behavior.",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> VmIsoMaxCount = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.iso.max.count", "1",
+            "Maximum number of ISOs that may be attached to a VM.",
+            true,
+            ConfigKey.Scope.Cluster);
+
+    // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
+    // user_vm.iso_id has always pointed at this slot; additional cdroms live in vm_iso_map.
+    int CDROM_PRIMARY_DEVICE_SEQ = 3;
+
+    // Fallback per-VM cdrom cap when the placement host hasn't advertised host.cdrom.max.count
+    // (older agent, never-deployed VM, etc.).
+    int DEFAULT_CDROM_MAX_PER_VM = 1;
 
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
@@ -103,6 +142,8 @@ public interface TemplateManager {
      */
     List<VMTemplateStoragePoolVO> getUnusedTemplatesInPool(StoragePoolVO pool);
 
+    void evictTemplateFromStoragePoolsForZones(Long templateId, List<Long> zoneId);
+
     /**
      * Deletes a template in the specified storage pool.
      *
@@ -128,6 +169,12 @@ public interface TemplateManager {
 
     List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
 
+    /**
+     * Max number of secondary storage copies for the template in this zone; {@code 0} means no limit.
+     * SYSTEM/ROUTING/BUILTIN templates are always exempt (returns {@code 0}).
+     */
+    int getSecStorageCopyLimit(VMTemplateVO template, long zoneId);
+
     TemplateInfo prepareIso(long isoId, long dcId, Long hostId, Long poolId);
 
 
@@ -138,10 +185,30 @@ public interface TemplateManager {
      */
     void prepareIsoForVmProfile(VirtualMachineProfile profile, DeployDestination dest);
 
+    /**
+     * Returns the device ids of the CD-ROM devices of the Instance, starting from {@link #CDROM_PRIMARY_DEVICE_SEQ}.
+     * They cannot be used by the volumes of the Instance.
+     * The hypervisor defines all the CD-ROM devices it supports for the Instance (see {@code host.cdrom.max.count}),
+     * whether or not ISOs are attached to them. If the Instance uses config drive, the config drive ISO is one more
+     * CD-ROM: it keeps its device id (4), and the CD-ROMs of the ISOs from that device id are moved to the next ones.
+     *
+     * @param vm the Instance
+     * @return the device ids of the CD-ROM devices, including the one of the config drive ISO if the Instance uses config drive
+     */
+    Set<Long> getCdromDeviceIds(VirtualMachine vm);
+
+    /**
+     * Same as {@link #getCdromDeviceIds(VirtualMachine)}, with the specified usage of config drive instead of the one of
+     * the Instance. It is useful when the networks of the Instance are not known yet, e.g. when importing it.
+     */
+    Set<Long> getCdromDeviceIds(VirtualMachine vm, boolean configDriveUsed);
+
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 
-    TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones);
+    TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, Hypervisor.HypervisorType hypervisorType);
+
+    DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId);
 
     List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
 

@@ -53,7 +53,6 @@ import java.util.Map;
         responseObject = SuccessResponse.class)
 public class DefaultResetPasswordAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////

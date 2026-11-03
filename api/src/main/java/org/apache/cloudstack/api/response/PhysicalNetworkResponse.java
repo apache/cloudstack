@@ -32,47 +32,47 @@ import com.cloud.serializer.Param;
 public class PhysicalNetworkResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the uuid of the physical network")
+    @Param(description = "The UUID of the physical Network")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the physical network")
+    @Param(description = "Name of the physical Network")
     private String name;
 
     @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE)
-    @Param(description = "Broadcast domain range of the physical network")
+    @Param(description = "Broadcast domain range of the physical Network")
     private String broadcastDomainRange;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id of the physical network")
+    @Param(description = "Zone ID of the physical Network")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "zone name of the physical network")
+    @Param(description = "Zone name of the physical Network")
     private String zoneName;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the physical network")
+    @Param(description = "State of the physical Network")
     private String state;
 
     @SerializedName(ApiConstants.VLAN)
-    @Param(description = "the vlan of the physical network")
+    @Param(description = "The VLAN of the physical Network")
     private String vlan;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the physical network owner")
+    @Param(description = "The domain ID of the physical Network owner")
     private String domainId;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "comma separated tag")
+    @Param(description = "Comma separated tag")
     private String tags;
 
     @SerializedName(ApiConstants.ISOLATION_METHODS)
-    @Param(description = "isolation methods")
+    @Param(description = "Isolation methods")
     private String isolationMethods;
 
     @SerializedName(ApiConstants.NETWORK_SPEED)
-    @Param(description = "the speed of the physical network")
+    @Param(description = "The speed of the physical Network")
     private String networkSpeed;
 
     @Override

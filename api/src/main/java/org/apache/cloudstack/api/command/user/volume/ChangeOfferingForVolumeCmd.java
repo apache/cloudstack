@@ -22,7 +22,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.offering.DiskOffering;
 import com.cloud.storage.Volume;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -50,14 +49,14 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "the ID of the volume")
+    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, required = true, type = CommandType.UUID, description = "The ID of the volume")
     private Long id;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
             entityType = DiskOfferingResponse.class,
             type = CommandType.UUID,
             required = true,
-            description = "new disk offering id")
+            description = "New disk offering ID")
     private Long newDiskOfferingId;
 
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, required = false, description = "New volume size in GB for the custom disk offering")
@@ -130,12 +129,12 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
 
     @Override
     public String getEventDescription() {
-        return "Changing Disk offering of Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()) + " to " + this._uuidMgr.getUuid(DiskOffering.class, getNewDiskOfferingId());
+        return "Changing disk offering of volume with ID: " + getResourceUuid(ApiConstants.ID) + " to " + getResourceUuid(ApiConstants.DISK_OFFERING_ID);
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.changeDiskOfferingForVolume(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Restricted, result);

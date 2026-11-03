@@ -44,13 +44,13 @@ public class CreatePrivateGatewayByAdminCmd extends CreatePrivateGatewayCmd impl
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
             type = CommandType.UUID,
             entityType = PhysicalNetworkResponse.class,
-            description = "the Physical Network ID the network belongs to")
+            description = "The Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the network implementation uri for the private gateway")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The network implementation uri for the private gateway")
     private String broadcastUri;
 
-    @Parameter(name = ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type = CommandType.BOOLEAN, description = "when true bypasses VLAN id/range overlap check during private gateway creation")
+    @Parameter(name = ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type = CommandType.BOOLEAN, description = "When true bypasses VLAN id/range overlap check during private gateway creation")
     private Boolean bypassVlanOverlapCheck;
 
     /////////////////////////////////////////////////////

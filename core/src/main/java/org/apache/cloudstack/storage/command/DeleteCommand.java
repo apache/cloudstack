@@ -24,6 +24,8 @@ import com.cloud.agent.api.to.DataTO;
 public final class DeleteCommand extends StorageSubSystemCommand {
     private DataTO data;
 
+    private boolean deleteChain;
+
     public DeleteCommand(final DataTO data) {
         super();
         this.data = data;
@@ -40,6 +42,14 @@ public final class DeleteCommand extends StorageSubSystemCommand {
 
     public DataTO getData() {
         return data;
+    }
+
+    public void setDeleteChain(boolean deleteChain) {
+        this.deleteChain = deleteChain;
+    }
+
+    public boolean isDeleteChain() {
+        return deleteChain;
     }
 
     @Override

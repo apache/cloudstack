@@ -93,5 +93,5 @@ public interface NetworkACLManager {
 
     boolean applyACLToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
 
-    boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems);
+    boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems, Network.Provider networkProvider);
 }

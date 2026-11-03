@@ -307,9 +307,6 @@ public class PipelineImpl implements Pipeline {
      * Example.
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
-        // System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         Pipeline pipeline = new PipelineImpl("main");
 

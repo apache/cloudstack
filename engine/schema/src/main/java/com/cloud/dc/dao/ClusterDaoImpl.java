@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.cpu.CPU;
@@ -38,6 +40,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -168,16 +171,26 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns distinct (HypervisorType, CPUArch) pairs from clusters in the given zone,
+     * excluding clusters with {@link HypervisorType#External}.
+     *
+     * @param zoneId the zone ID to filter by, or {@code null} to include all zones
+     * @return list of unique hypervisor type and CPU architecture pairs
+     */
     @Override
-    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsAndArchExcludingExternalType(Long zoneId) {
         SearchBuilder<ClusterVO> sb = createSearchBuilder();
         sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.NEQ);
         sb.done();
         SearchCriteria<ClusterVO> sc = sb.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
+        sc.setParameters("hypervisorType", HypervisorType.External);
+
         final List<ClusterVO> clusters = search(sc, null);
         return clusters.stream()
                 .map(c -> new Pair<>(c.getHypervisorType(), c.getArch()))
@@ -377,5 +390,45 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         }
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listEnabledClusterIdsByZoneHypervisorArch(Long zoneId, HypervisorType hypervisorType, CPU.CPUArch arch) {
+        GenericSearchBuilder<ClusterVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("allocationState", sb.entity().getAllocationState(), Op.EQ);
+        sb.and("managedState", sb.entity().getManagedState(), Op.EQ);
+        sb.and("hypervisor", sb.entity().getHypervisorType(), Op.EQ);
+        sb.and("arch", sb.entity().getArch(), Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        sc.setParameters("managedState", Managed.ManagedState.Managed);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisor", hypervisorType);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<ClusterVO> listByZonesAndHypervisorType(List<Long> zoneIds, HypervisorType hypervisorType, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<ClusterVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<ClusterVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
+        sc.setParameters("hypervisorType", hypervisorType.toString());
+        return listBy(sc, filter);
     }
 }

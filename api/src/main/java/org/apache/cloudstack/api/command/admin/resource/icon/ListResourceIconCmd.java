@@ -42,10 +42,10 @@ public class ListResourceIconCmd extends BaseCmd {
             type = BaseCmd.CommandType.LIST,
             required = true,
             collectionType = BaseCmd.CommandType.STRING,
-            description = "list of resources to upload the icon/image for")
+            description = "List of resources to upload the icon/image for")
     private List<String> resourceIds;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
     /////////////////////////////////////////////////////

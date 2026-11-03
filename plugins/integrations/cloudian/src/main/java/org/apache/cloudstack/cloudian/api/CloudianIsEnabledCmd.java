@@ -31,7 +31,8 @@ import com.cloud.user.Account;
         responseObject = CloudianEnabledResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11.0",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        httpMethod = "GET")
 public class CloudianIsEnabledCmd extends BaseCmd {
 
     @Inject

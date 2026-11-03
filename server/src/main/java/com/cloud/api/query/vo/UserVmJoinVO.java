@@ -32,21 +32,22 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.util.HypervisorTypeConverter;
+
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -131,6 +132,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "guest_os_uuid")
     private String guestOsUuid;
 
+    @Column(name = "guest_os_display_name")
+    private String guestOsDisplayName;
+
     @Column(name = "hypervisor_type")
     @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
@@ -207,6 +211,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_format")
     private Storage.ImageFormat templateFormat;
 
+    @Column(name = "template_extension_id")
+    private Long templateExtensionId;
+
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
 
@@ -239,6 +246,40 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "service_offering_name")
     private String serviceOfferingName;
+
+
+    @Column(name = "gpu_card_id")
+    private Long gpuCardId;
+
+    @Column(name = "gpu_card_uuid")
+    private String gpuCardUuid;
+
+    @Column(name = "gpu_card_name")
+    private String gpuCardName;
+
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
+
+    @Column(name = "vgpu_profile_uuid")
+    private String vgpuProfileUuid;
+
+    @Column(name = "vgpu_profile_name")
+    private String vgpuProfileName;
+
+    @Column(name = "vgpu_profile_video_ram")
+    private Long videoRam;
+
+    @Column(name = "vgpu_profile_max_heads")
+    private Long maxHeads;
+
+    @Column(name = "vgpu_profile_max_resolution_x")
+    private Long maxResolutionX;
+
+    @Column(name = "vgpu_profile_max_resolution_y")
+    private Long maxResolutionY;
+
+    @Column(name = "gpu_count")
+    private Integer gpuCount;
 
     @Column(name = "backup_offering_id")
     private Long backupOfferingId;
@@ -311,6 +352,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "is_default_nic")
     private boolean isDefaultNic;
 
+    @Column(name = "is_nic_enabled")
+    private boolean isNicEnabled;
+
     @Column(name = "ip_address")
     private String ipAddress;
 
@@ -364,6 +408,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "public_ip_address")
     private String publicIpAddress;
 
+    @Column(name = "nic_dns_name")
+    private String nicDnsName;
+
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
@@ -392,7 +439,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private int jobStatus;
 
     @Column(name = "affinity_group_id")
-    private long affinityGroupId;
+    private Long affinityGroupId;
 
     @Column(name = "affinity_group_uuid")
     private String affinityGroupUuid;
@@ -575,6 +622,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return guestOsUuid;
     }
 
+    public String getGuestOsDisplayName() {
+        return guestOsDisplayName;
+    }
+
     public HypervisorType getHypervisorType() {
         return hypervisorType;
     }
@@ -675,6 +726,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return templateFormat;
     }
 
+    public Long getTemplateExtensionId() {
+        return templateExtensionId;
+    }
+
     public boolean isPasswordEnabled() {
         return passwordEnabled;
     }
@@ -701,6 +756,50 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getServiceOfferingName() {
         return serviceOfferingName;
+    }
+
+    public Long getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public String getGpuCardUuid() {
+        return gpuCardUuid;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileUuid() {
+        return vgpuProfileUuid;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
     }
 
     public String getBackupOfferingUuid() {
@@ -931,7 +1030,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return ip6Cidr;
     }
 
-    public long getAffinityGroupId() {
+    public Long getAffinityGroupId() {
         return affinityGroupId;
     }
 
@@ -976,7 +1075,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userDataId;
     }
 
-    public String getUserDataUUid() {
+    public String getUserDataUuid() {
         return userDataUuid;
     }
 
@@ -1010,5 +1109,13 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getLeaseActionExecution() {
         return leaseActionExecution;
+    }
+
+    public boolean isNicEnabled() {
+        return isNicEnabled;
+    }
+
+    public String getNicDnsName() {
+        return nicDnsName;
     }
 }

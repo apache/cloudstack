@@ -241,6 +241,21 @@ public class StringUtilsTest {
     }
 
     @Test
+    public void testCleanSessionkeyFromAccessLogString() {
+        final String input = "GET /client/api/?managementserverid=cad7010f-216f-48cb-af11-280588863c4e&command=readyForShutdown&response=json&sessionkey=-FrgnKy6pj-JB4BI2sXqo HTTP/1.1\" 200 180 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15 Ddg/18.5";
+        final String expected = "GET /client/api/?managementserverid=cad7010f-216f-48cb-af11-280588863c4e&command=readyForShutdown&response=json& HTTP/1.1\" 200 180 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15 Ddg/18.5";
+        final String result = StringUtils.cleanString(input);
+        assertEquals(expected, result);
+    }
+    @Test
+    public void testCleanSessionkeyFromRequestJsonString() {
+        final String input = "{id=64b5e71d-2ae8-11ef-9466-1e00c400042b, showicon=true, command=listUsers, response=json, sessionkey=lXfAicKQXPBzt7KjLx6DwVfcOuA}";
+        final String expected = "{id=64b5e71d-2ae8-11ef-9466-1e00c400042b, showicon=true, command=listUsers, response=json, }";
+        final String result = StringUtils.cleanString(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
     public void listToCsvTags() {
         assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
         assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
@@ -261,5 +276,34 @@ public class StringUtilsTest {
         Pair<String, String> output = StringUtils.getKeyValuePairWithSeparator(kp, "=");
         assertEquals(key, output.first());
         assertEquals(value, output.second());
+    }
+
+    @Test
+    public void testCleanSensitiveDetailsAtEndOfQuery() {
+        for (String index : new String[] {"[1]", "%5B1%5D"}) {
+            for (String key : new String[] {"password", "Password", "accesskey", "secretkey"}) {
+                String query = "command=addImageStore&name=store-1"
+                        + "&details[2].key=bucket&details[2].value=archive"
+                        + "&details" + index + ".value=SECRET_SENTINEL&details" + index + ".key=" + key;
+                assertEquals("Terminal descriptor " + key + " at " + index,
+                        "command=addImageStore&name=store-1&details[2].key=bucket&details[2].value=archive&",
+                        StringUtils.cleanString(query));
+            }
+        }
+    }
+
+    @Test
+    public void testCleanDetailsDoesNotTreatSensitiveKeyPrefixesAsCredentials() {
+        for (String key : new String[] {"secretkeyname", "accesskeyid", "passwordenabled", "bucket"}) {
+            String query = "command=addImageStore&details[1].value=retained-value&details[1].key=" + key;
+            assertEquals(query, StringUtils.cleanString(query));
+        }
+    }
+
+    @Test
+    public void testCleanSensitiveDetailsAtEndOfEncodedQuery() {
+        String query = "command%3DaddImageStore%26name%3Dstore-1"
+                + "%26details%5B1%5D.value%3DSECRET_SENTINEL%26details%5B1%5D.key%3Dsecretkey";
+        assertEquals("command%3DaddImageStore%26name%3Dstore-1&", StringUtils.cleanString(query));
     }
 }

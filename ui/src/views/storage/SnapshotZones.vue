@@ -38,7 +38,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="record.datastoreid">
-            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + record.datastoreid }">
+            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + encodeURIComponent(record.datastoreid) }">
               <span v-if="fetchZoneIcon(record.zoneid)">
                 <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
               </span>
@@ -137,10 +137,45 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-
+          <a-form-item name="useStorageReplication" ref="useStorageReplication">
+            <template #label>
+              <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
+            </template>
+            <a-switch v-model:checked="form.useStorageReplication" />
+          </a-form-item>
+          <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageid" name="storageid" :label="$t('label.storagepools')">
+            <a-select
+              id="storage-selection"
+              mode="multiple"
+              :placeholder="$t('label.select.storagepools')"
+              v-model:value="form.storageid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="storagePoolLoading"
+              v-focus="true">
+              <a-select-option v-for="opt in storagePools" :key="opt.id" :label="opt.name || opt.description">
+                <div>
+                  <span v-if="opt.icon && opt.icon.base64image">
+                    <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  </span>
+                  <global-outlined v-else style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </div>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" ref="submit" @click="handleCopySnapshotSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button
+              type="primary"
+              ref="submit"
+              :disabled="isCopySnapshotSubmitDisabled"
+              @click="handleCopySnapshotSubmit">
+                {{ $t('label.ok') }}
+              </a-button>
           </div>
         </a-form>
       </a-spin>
@@ -200,9 +235,11 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import Status from '@/components/widgets/Status'
 import eventBus from '@/config/eventBus'
@@ -211,6 +248,7 @@ export default {
   name: 'SnapshotZones',
   components: {
     TooltipButton,
+    TooltipLabel,
     OsLogo,
     ResourceIcon,
     BulkActionProgress,
@@ -238,6 +276,8 @@ export default {
       currentRecord: {},
       zones: [],
       zoneLoading: false,
+      storagePools: [],
+      storagePoolLoading: false,
       copyLoading: false,
       deleteLoading: false,
       showDeleteSnapshot: false,
@@ -297,19 +337,28 @@ export default {
       }
     }
   },
+  computed: {
+    isCopySnapshotSubmitDisabled () {
+      return this.form.storageid.length === 0 && this.form.zoneid.length === 0
+    },
+    isAdmin () {
+      return isAdmin()
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        useStorageReplication: false
+      })
       this.rules = reactive({
-        zoneid: [{ type: 'array', required: true, message: this.$t('message.error.select') }]
+        zoneid: [{ type: 'array', required: false }]
       })
     },
     fetchData () {
       const params = {}
       params.id = this.resource.id
       params.showunique = false
-      params.locationtype = 'Secondary'
       params.listall = true
       params.page = this.page
       params.pagesize = this.pageSize
@@ -320,6 +369,9 @@ export default {
       getAPI('listSnapshots', params).then(json => {
         this.dataSource = json.listsnapshotsresponse.snapshot || []
         this.itemCount = json.listsnapshotsresponse.count || 0
+        if (this.itemCount > 0) {
+          this.dataSource = this.dataSource.filter((obj, index) => this.dataSource.findIndex((item) => item.zoneid === obj.zoneid) === index)
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -486,10 +538,28 @@ export default {
         this.zoneLoading = false
       })
     },
+    fetchStoragePoolData () {
+      const params = {}
+      params.showicon = true
+      this.storagePoolsLoading = true
+      getAPI('listStoragePools', params).then(json => {
+        const listStoragePools = json.liststoragepoolsresponse.storagepool
+        if (listStoragePools) {
+          this.storagePools = listStoragePools
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE && pool.zoneid !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.storagePoolsLoading = false
+      })
+    },
     showCopySnapshot (record) {
       this.currentRecord = record
       this.form.zoneid = []
+      this.form.storageid = []
       this.fetchZoneData()
+      if (isAdmin) {
+        this.fetchStoragePoolData()
+      }
       this.showCopyActionForm = true
     },
     onShowDeleteModal (record) {
@@ -518,7 +588,9 @@ export default {
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,
-          destzoneids: values.zoneid.join()
+          useStorageReplication: values.useStorageReplication,
+          destzoneids: values.zoneid.join(),
+          storageids: values.storageid.join()
         }
         this.copyLoading = true
         postAPI(this.copyApi, params).then(json => {

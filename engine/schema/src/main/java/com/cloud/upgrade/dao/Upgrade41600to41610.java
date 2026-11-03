@@ -75,12 +75,12 @@ public class Upgrade41600to41610 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public void updateSystemVmTemplates(Connection conn) {
-        logger.debug("Updating System Vm template IDs");
+        logger.debug("Updating System VM Template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+            throw new CloudRuntimeException("Failed to find / register SystemVM Template(s)");
         }
     }
 }

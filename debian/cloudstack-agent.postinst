@@ -23,7 +23,7 @@ case "$1" in
     configure)
         OLDCONFDIR="/etc/cloud/agent"
         NEWCONFDIR="/etc/cloudstack/agent"
-        CONFFILES="agent.properties log4j.xml log4j-cloud.xml"
+        CONFFILES="agent.properties uefi.properties log4j.xml log4j-cloud.xml"
 
         mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 

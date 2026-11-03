@@ -25,8 +25,8 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
-        "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
-        "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "updateVirtualMachine", description = "Updates properties of  an Instance. The Instance has to be stopped and restarted for the " +
+        "new properties to take effect. UpdateVirtualMachine does not first check whether the Instance is stopped. " +
+        "Therefore, stop the Instance manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateVMCmdByAdmin extends UpdateVMCmd implements AdminCmd {}

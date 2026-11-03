@@ -119,7 +119,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                 continue;
             }
             String device = parts[0];
-            String mac = parts[1];
+            String mac = parts[parts.length - 3];
             if (found) {
                 if (!device.equals("-") || !mac.equals("-")) {
                     break;
@@ -128,8 +128,8 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                 continue;
             }
             found = true;
-            String ipFamily = parts[2];
-            String ipPart = parts[3].split("/")[0];
+            String ipFamily = parts[parts.length - 2];
+            String ipPart = parts[parts.length - 1].split("/")[0];
             if (ipFamily.equals("ipv4")) {
                 ipv4 = ipPart;
             } else if (ipFamily.equals("ipv6")) {

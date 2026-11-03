@@ -40,6 +40,7 @@ import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.io.Files;
@@ -248,6 +249,7 @@ public class HypervDirectConnectResourceTest {
         Assert.assertTrue(ans.getDetails(), ans.getResult());
     }
 
+    @Ignore
     public final void testStartupCommand() {
         StartupRoutingCommand defaultStartRoutCmd =
             new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
@@ -278,6 +280,7 @@ public class HypervDirectConnectResourceTest {
     }
 
     // @Test
+    @Ignore
     public final void testJson() {
         StartupStorageCommand sscmd = null;
         com.cloud.agent.api.StoragePoolInfo pi = new com.cloud.agent.api.StoragePoolInfo("test123", "192.168.0.1", "c:\\", "c:\\", StoragePoolType.Filesystem, 100L, 50L);

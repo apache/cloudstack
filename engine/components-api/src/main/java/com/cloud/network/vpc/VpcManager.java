@@ -195,4 +195,25 @@ public interface VpcManager {
      * @return
      */
     boolean isSrcNatIpRequired(long vpcOfferingId);
+
+    boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId);
+
+    List<StaticRouteVO> getVpcStaticRoutes(Long vpcId);
+
+    List<StaticRouteProfile> getVpcStaticRoutes(List<? extends StaticRoute> routes);
+
+    boolean isProviderSupportServiceInVpc(long vpcId, Service service, Provider provider);
+
+    IPAddressVO getIpAddressForVpcVr(Vpc vpc, IPAddressVO ipAddress, boolean allocateIpIfNeeded);
+
+    boolean configStaticNatForVpcVr(Vpc vpc, IPAddressVO ipAddress);
+
+    void reconfigStaticNatForVpcVr(Long vpcId);
+
+    boolean applyStaticRouteForVpcVpnIfNeeded(Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException;
+
+    /**
+     * Returns true if the network is part of a VPC, and the VPC is created from conserve mode enabled VPC offering
+     */
+    boolean isNetworkOnVpcEnabledConserveMode(Network network);
 }

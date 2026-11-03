@@ -48,6 +48,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 
 public class LibvirtDomainXMLParser {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -63,6 +64,8 @@ public class LibvirtDomainXMLParser {
     private LibvirtVMDef.CpuTuneDef cpuTuneDef;
     private LibvirtVMDef.CpuModeDef cpuModeDef;
     private String name;
+    private GuestDef.BootType bootType;
+    private GuestDef.BootMode bootMode;
 
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
@@ -108,7 +111,9 @@ public class LibvirtDomainXMLParser {
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
                         DiskDef.DiskBus.valueOf(bus.toUpperCase()),
                         DiskDef.DiskProtocol.valueOf(protocol.toUpperCase()), fmt);
-                    def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    if (StringUtils.isNotBlank(diskCacheMode)) {
+                        def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    }
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
@@ -126,6 +131,7 @@ public class LibvirtDomainXMLParser {
                                 fmt = DiskDef.DiskFmtType.valueOf(diskFmtType.toUpperCase());
                             }
                             def.defFileBasedDisk(diskFile, diskLabel, DiskDef.DiskBus.valueOf(bus.toUpperCase()), fmt);
+                            parseBackingFiles(disk, def);
                         } else if (device.equalsIgnoreCase("cdrom")) {
                             def.defISODisk(diskFile, i+1, diskLabel, DiskDef.DiskType.FILE);
                         }
@@ -388,6 +394,7 @@ public class LibvirtDomainXMLParser {
             }
             extractCpuTuneDef(rootElement);
             extractCpuModeDef(rootElement);
+            extractBootDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
             logger.debug(e.toString());
@@ -397,6 +404,21 @@ public class LibvirtDomainXMLParser {
             logger.debug(e.toString());
         }
         return false;
+    }
+
+    private void parseBackingFiles(Element disk, DiskDef def) {
+        NodeList backingStoreNodeList = disk.getElementsByTagName("backingStore");
+        List<String> backingStoreList = new ArrayList<>();
+        while (backingStoreNodeList.getLength() > 0) {
+            Element backingStore = (Element)backingStoreNodeList.item(0);
+            String path = getAttrValue("source", "file", backingStore);
+            if (StringUtils.isEmpty(path)) {
+                break;
+            }
+            backingStoreList.add(path.substring(path.lastIndexOf(File.separator))+1);
+            backingStoreNodeList = backingStore.getElementsByTagName("backingStore");
+        }
+        def.setBackingStoreList(backingStoreList);
     }
 
     /**
@@ -516,6 +538,14 @@ public class LibvirtDomainXMLParser {
         return cpuModeDef;
     }
 
+    public GuestDef.BootType getBootType() {
+        return bootType;
+    }
+
+    public GuestDef.BootMode getBootMode() {
+        return bootMode;
+    }
+
     private void extractCpuTuneDef(final Element rootElement) {
         NodeList cpuTunesList = rootElement.getElementsByTagName("cputune");
         if (cpuTunesList.getLength() > 0) {
@@ -528,7 +558,7 @@ public class LibvirtDomainXMLParser {
 
             final String quota = getTagValue("quota", cpuTuneDefElement);
             if (StringUtils.isNotBlank(quota)) {
-                cpuTuneDef.setQuota((Integer.parseInt(quota)));
+                cpuTuneDef.setQuota((Long.parseLong(quota)));
             }
 
             final String period = getTagValue("period", cpuTuneDefElement);
@@ -567,6 +597,28 @@ public class LibvirtDomainXMLParser {
             if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
                 cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
             }
+        }
+    }
+
+    protected void extractBootDef(final Element rootElement) {
+        bootType = GuestDef.BootType.BIOS;
+        bootMode = GuestDef.BootMode.LEGACY;
+        Element osElement = (Element) rootElement.getElementsByTagName("os").item(0);
+        if (osElement == null) {
+            return;
+        }
+        NodeList loaderList = osElement.getElementsByTagName("loader");
+        if (loaderList.getLength() == 0) {
+            return;
+        }
+        Element loader = (Element) loaderList.item(0);
+        String type = loader.getAttribute("type");
+        String secure = loader.getAttribute("secure");
+        if ("pflash".equalsIgnoreCase(type) || loader.getTextContent().toLowerCase().contains("uefi")) {
+            bootType = GuestDef.BootType.UEFI;
+        }
+        if ("yes".equalsIgnoreCase(secure)) {
+            bootMode = GuestDef.BootMode.SECURE;
         }
     }
 }

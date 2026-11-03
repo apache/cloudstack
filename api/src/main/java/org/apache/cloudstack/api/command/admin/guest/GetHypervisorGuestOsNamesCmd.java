@@ -44,11 +44,11 @@ public class GetHypervisorGuestOsNamesCmd extends BaseAsyncCmd {
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = true, description = "Hypervisor version to get the guest os names (atleast one hypervisor host with the version specified must be available)",
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = true, description = "Hypervisor version to get the guest OS names (at least one hypervisor host with the version specified must be available)",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String hypervisorVersion;
 
-    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, required = false, description = "Keyword for guest os name")
+    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, required = false, description = "Keyword for guest OS name")
     private String keyword;
 
     /////////////////////////////////////////////////////

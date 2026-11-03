@@ -51,15 +51,18 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.network.NetworkOfferingBaseCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -113,6 +116,24 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceOffering cloneServiceOffering(CloneServiceOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public DiskOffering cloneDiskOffering(CloneDiskOfferingCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public NetworkOffering cloneNetworkOffering(CloneNetworkOfferingCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -336,7 +357,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#createNetworkOffering(org.apache.cloudstack.api.commands.CreateNetworkOfferingCmd)
      */
     @Override
-    public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) {
+    public NetworkOffering createNetworkOffering(NetworkOfferingBaseCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -548,7 +569,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
                                                    Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                                    Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol,
+                                                   Boolean forTungsten, boolean forNsx, boolean forNetris, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol,
                                                    NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
         // TODO Auto-generated method stub
         return null;
@@ -559,7 +580,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
-                                           String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6, boolean forNsx)
+                                           String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6, Provider provider)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;

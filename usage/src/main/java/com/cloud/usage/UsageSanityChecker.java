@@ -289,7 +289,7 @@ public class UsageSanityChecker {
     }
 
     /**
-     * usage something like: /usr/bin/java -Xmx2G -cp /usr/share/cloudstack-usage/*:/usr/share/cloudstack-usage/lib/*:/usr/share/cloudstack-mysql-ha/lib/*:/etc/cloudstack/usage:/usr/share/java/mysql-connector-java.jar:/usr/share/cloudstack-common com.cloud.usage.UsageSanityChecker
+     * usage something like: /usr/bin/java -Xmx2G -cp /usr/share/cloudstack-usage/*:/usr/share/cloudstack-usage/lib/*:/usr/share/cloudstack-mysql-ha/lib/*:/etc/cloudstack/usage:/usr/share/cloudstack-common com.cloud.usage.UsageSanityChecker
      * @param args none
      */
     public static void main(String[] args) {

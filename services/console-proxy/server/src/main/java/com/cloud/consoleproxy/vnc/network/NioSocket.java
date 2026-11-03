@@ -36,54 +36,53 @@ public class NioSocket {
     private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private void initializeSocket() {
+    private void initializeSocket() throws IOException {
         try {
             socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(false);
             socketChannel.socket().setSoTimeout(5000);
+            socketChannel.socket().setKeepAlive(true);
+            socketChannel.socket().setTcpNoDelay(true);
             writeSelector = Selector.open();
             readSelector = Selector.open();
             socketChannel.register(writeSelector, SelectionKey.OP_WRITE);
             socketChannel.register(readSelector, SelectionKey.OP_READ);
         } catch (IOException e) {
             logger.error("Could not initialize NioSocket: " + e.getMessage(), e);
+            throw e;
         }
     }
 
-    private void waitForSocketSelectorConnected(Selector selector) {
-        try {
-            while (selector.select(CONNECTION_TIMEOUT_MILLIS) <= 0) {
-                logger.debug("Waiting for ready operations to connect to the socket");
-            }
-            Set<SelectionKey> keys = selector.selectedKeys();
-            for (SelectionKey selectionKey: keys) {
-                if (selectionKey.isConnectable()) {
-                    if (socketChannel.isConnectionPending()) {
-                        socketChannel.finishConnect();
-                    }
-                    logger.debug("Connected to the socket");
-                    break;
+    private void waitForSocketSelectorConnected(Selector selector) throws IOException {
+        while (selector.select(CONNECTION_TIMEOUT_MILLIS) <= 0) {
+            logger.debug("Waiting for ready operations to connect to the socket");
+        }
+        Set<SelectionKey> keys = selector.selectedKeys();
+        for (SelectionKey selectionKey: keys) {
+            if (selectionKey.isConnectable()) {
+                if (socketChannel.isConnectionPending()) {
+                    socketChannel.finishConnect();
                 }
+                logger.debug("Connected to the socket");
+                break;
             }
-        } catch (IOException e) {
-            logger.error(String.format("Error waiting for socket selector ready: %s", e.getMessage()), e);
         }
     }
 
-    private void connectSocket(String host, int port) {
+    private void connectSocket(String host, int port) throws IOException {
         try {
             socketChannel.connect(new InetSocketAddress(host, port));
             Selector selector = Selector.open();
             socketChannel.register(selector, SelectionKey.OP_CONNECT);
 
             waitForSocketSelectorConnected(selector);
-            socketChannel.socket().setTcpNoDelay(false);
         } catch (IOException e) {
-            logger.error(String.format("Error creating NioSocket to %s:%s: %s", host, port, e.getMessage()), e);
+            logger.error("Error connecting NioSocket to {}:{}: {}", host, port, e.getMessage(), e);
+            throw e;
         }
     }
 
-    public NioSocket(String host, int port) {
+    public NioSocket(String host, int port) throws IOException {
         initializeSocket();
         connectSocket(host, port);
     }
@@ -119,6 +118,30 @@ public class NioSocket {
         } catch (java.io.IOException e) {
             logger.error("Error writing bytes to socket channel: " + e.getMessage(), e);
             return 0;
+        }
+    }
+
+    public void close() {
+        try {
+            if (socketChannel != null) {
+                socketChannel.close();
+            }
+        } catch (IOException e) {
+            logger.debug("Error closing socket channel: " + e.getMessage(), e);
+        }
+        try {
+            if (readSelector != null) {
+                readSelector.close();
+            }
+        } catch (IOException e) {
+            logger.debug("Error closing read selector: " + e.getMessage(), e);
+        }
+        try {
+            if (writeSelector != null) {
+                writeSelector.close();
+            }
+        } catch (IOException e) {
+            logger.debug("Error closing write selector: " + e.getMessage(), e);
         }
     }
 }

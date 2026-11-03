@@ -57,6 +57,7 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRules;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.Networks.TrafficType;
 
 public class ConfigHelperTest {
@@ -223,15 +224,18 @@ public class ConfigHelperTest {
     protected LoadBalancerConfigCommand generateLoadBalancerConfigCommand() {
         final List<LoadBalancerTO> lbs = new ArrayList<>();
         final List<LbDestination> dests = new ArrayList<>();
+        final LbSslCert lbSslCert = new LbSslCert("cert", "key", "password", "chain", "fingerprint", false);
         dests.add(new LbDestination(80, 8080, "10.1.10.2", false));
         dests.add(new LbDestination(80, 8080, "10.1.10.2", true));
-        lbs.add(new LoadBalancerTO(UUID.randomUUID().toString(), "64.10.1.10", 80, "tcp", "algo", false, false, false, dests));
+        LoadBalancerTO loadBalancerTO = new LoadBalancerTO(UUID.randomUUID().toString(), "64.10.1.10", 80, "tcp", "algo", false, false, false, dests);
+        loadBalancerTO.setLbSslCert(lbSslCert);
+        lbs.add(loadBalancerTO);
 
         final LoadBalancerTO[] arrayLbs = new LoadBalancerTO[lbs.size()];
         lbs.toArray(arrayLbs);
 
         final NicTO nic = new NicTO();
-        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false);
+        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, null, "1000", false, 0L);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
 

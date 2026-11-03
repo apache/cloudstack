@@ -17,8 +17,10 @@
 
 package org.apache.cloudstack.api.command.user.backup.repository;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -56,19 +58,22 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "backup repository provider")
     private String provider;
 
-    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
+    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options",
+            validations = {ApiArgValidator.SafeCommandOptions})
     private String mountOptions;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
             required = true,
-            description = "ID of the zone where the backup repository is to be added")
+            description = "ID of the zone where the backup repository is to be added for taking backups")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, description = "capacity of this backup repository")
     private Long capacityBytes;
 
+    @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups on this repository can be used to create Instances on all Zones", since = "4.22.0")
+    private Boolean crossZoneInstanceCreation;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,7 +103,7 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     }
 
     public String getMountOptions() {
-        return mountOptions == null ? "" : mountOptions;
+        return StringUtils.isBlank(mountOptions) ? "" : mountOptions;
     }
 
     public Long getZoneId() {
@@ -107,6 +112,10 @@ public class AddBackupRepositoryCmd extends BaseCmd {
 
     public Long getCapacityBytes() {
         return capacityBytes;
+    }
+
+    public Boolean crossZoneInstanceCreationEnabled() {
+        return crossZoneInstanceCreation;
     }
 
     /////////////////////////////////////////////////////

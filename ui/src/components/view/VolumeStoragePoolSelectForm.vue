@@ -21,9 +21,19 @@
       ref="selectionView"
       :resource="resource"
       :clusterId="clusterId"
+      :hostId="hostId"
       :suitabilityEnabled="suitabilityEnabled"
       :autoAssignAllowed="autoAssignAllowed"
       @select="handleSelect" />
+
+    <a-form-item
+      class="top-spaced">
+      <template #label>
+        <tooltip-label :title="$t('label.apply.to.all')" :tooltip="$t('message.volume.pool.apply.to.all')"/>
+      </template>
+      <a-switch
+        v-model:checked="applyToAll" />
+    </a-form-item>
 
     <a-divider />
 
@@ -36,11 +46,13 @@
 </template>
 
 <script>
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 
 export default {
   name: 'VolumeStoragePoolSelectionForm',
   components: {
+    TooltipLabel,
     StoragePoolSelectView
   },
   props: {
@@ -49,6 +61,11 @@ export default {
       required: true
     },
     clusterId: {
+      type: String,
+      required: false,
+      default: null
+    },
+    hostId: {
       type: String,
       required: false,
       default: null
@@ -70,7 +87,8 @@ export default {
   },
   data () {
     return {
-      selectedStoragePool: null
+      selectedStoragePool: null,
+      applyToAll: false
     }
   },
   watch: {
@@ -95,7 +113,7 @@ export default {
       }
     },
     submitForm () {
-      this.$emit('select', this.resource.id, this.selectedStoragePool)
+      this.$emit('select', this.resource.id, this.selectedStoragePool, this.applyToAll)
       this.closeModal()
     }
   }

@@ -32,95 +32,95 @@ import com.google.gson.annotations.SerializedName;
 public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the autoscale vm group ID")
+    @Param(description = "The autoscale Instance group ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the autoscale vm group ")
+    @Param(description = "The name of the autoscale Instance group ")
     private String name;
 
     @SerializedName(ApiConstants.LBID)
-    @Param(description = "the load balancer rule ID")
+    @Param(description = "The Load balancer rule ID")
     private String loadBalancerId;
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
-    @Param(description = "the name of the guest network the lb rule belongs to")
+    @Param(description = "The name of the guest Network the LB rule belongs to")
     private String networkName;
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
-    @Param(description = "the id of the guest network the lb rule belongs to")
+    @Param(description = "The id of the guest Network the LB rule belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.LB_PROVIDER)
-    @Param(description = "the lb provider of the guest network the lb rule belongs to")
+    @Param(description = "The LB provider of the guest Network the LB rule belongs to")
     private String lbProvider;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "the public ip address id")
+    @Param(description = "The public IP address ID")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "the public ip address")
+    @Param(description = "The public IP address")
     private String publicIp;
 
     @SerializedName(ApiConstants.PUBLIC_PORT)
-    @Param(description = "the public port")
+    @Param(description = "The public port")
     private String publicPort;
 
     @SerializedName(ApiConstants.PRIVATE_PORT)
-    @Param(description = "the private port")
+    @Param(description = "The private port")
     private String privatePort;
 
     @SerializedName(ApiConstants.VMPROFILE_ID)
-    @Param(description = "the autoscale profile that contains information about the vms in the vm group.")
+    @Param(description = "The autoscale profile that contains information about the Instances in the Instance group.")
     private String profileId;
 
     @SerializedName(ApiConstants.MIN_MEMBERS)
-    @Param(description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+    @Param(description = "The minimum number of members in the Instance Group, the number of Instances in the Instance group will be equal to or more than this number.")
     private int minMembers;
 
     @SerializedName(ApiConstants.MAX_MEMBERS)
-    @Param(description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+    @Param(description = "The maximum number of members in the Instance Group, The number of Instances in the Instance group will be equal to or less than this number.")
     private int maxMembers;
 
     @SerializedName(ApiConstants.AVAILABLE_VIRTUAL_MACHINE_COUNT)
-    @Param(description = "the number of available virtual machines (in Running, Starting, Stopping or Migrating state) in the vmgroup", since = "4.18.0")
+    @Param(description = "The number of available Instances (in Running, Starting, Stopping or Migrating state) in the Instance Group", since = "4.18.0")
     private int availableVirtualMachineCount;
 
     @SerializedName(ApiConstants.INTERVAL)
-    @Param(description = "the frequency at which the conditions have to be evaluated")
+    @Param(description = "The frequency at which the conditions have to be evaluated")
     private int interval;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the current state of the AutoScale Vm Group")
+    @Param(description = "The current state of the AutoScale Instance Group")
     private String state;
 
     @SerializedName(ApiConstants.SCALEUP_POLICIES)
-    @Param(description = "list of scaleup autoscale policies")
+    @Param(description = "List of scaleup autoscale policies")
     private List<AutoScalePolicyResponse> scaleUpPolicies;
 
     @SerializedName(ApiConstants.SCALEDOWN_POLICIES)
-    @Param(description = "list of scaledown autoscale policies")
+    @Param(description = "List of scaledown autoscale policies")
     private List<AutoScalePolicyResponse> scaleDownPolicies;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the vm group")
+    @Param(description = "The Account owning the Instance group")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vm group")
+    @Param(description = "The project id of the Instance group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vm group")
+    @Param(description = "The project name of the Instance group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the vm group")
+    @Param(description = "The domain ID of the Instance group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the vm group")
+    @Param(description = "The domain name of the Instance group")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -128,11 +128,11 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     private String domainPath;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is group for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is group for display to the regular User", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date when this vm group was created")
+    @Param(description = "The date when this Instance group was created")
     private Date created;
 
     public AutoScaleVmGroupResponse() {

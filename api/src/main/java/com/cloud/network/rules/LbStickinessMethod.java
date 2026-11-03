@@ -108,8 +108,7 @@ public class LbStickinessMethod {
     }
 
     public void addParam(String name, Boolean required, String description, Boolean isFlag) {
-        /* FIXME : UI is breaking if the capability string length is larger , temporarily description is commented out */
-        // LbStickinessMethodParam param = new LbStickinessMethodParam(name, required, description);
+        /* is this still a valid comment: FIXME : UI is breaking if the capability string length is larger , temporarily description is commented out */
         LbStickinessMethodParam param = new LbStickinessMethodParam(name, required, " ", isFlag);
         _paramList.add(param);
         return;
@@ -133,7 +132,6 @@ public class LbStickinessMethod {
 
     public void setDescription(String description) {
         /* FIXME : UI is breaking if the capability string length is larger , temporarily description is commented out */
-        //this.description = description;
         this._description = " ";
     }
 }

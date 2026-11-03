@@ -28,14 +28,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -62,7 +65,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
@@ -78,6 +83,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -89,6 +96,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -100,6 +108,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.projects.ProjectService;
@@ -122,12 +131,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
@@ -185,7 +196,7 @@ public class KubernetesClusterActionWorker {
     @Inject
     protected UserVmDao userVmDao;
     @Inject
-    protected UserVmDetailsDao userVmDetailsDao;
+    protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     protected UserVmService userVmService;
     @Inject
@@ -212,10 +223,15 @@ public class KubernetesClusterActionWorker {
     private NicDao nicDao;
     @Inject
     protected AffinityGroupDao affinityGroupDao;
+    @Inject
+    protected AffinityGroupVMMapDao affinityGroupVMMapDao;
+    @Inject
+    protected VMInstanceDao vmInstanceDao;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     protected KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+    protected KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
     protected KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
 
     protected KubernetesCluster kubernetesCluster;
@@ -226,18 +242,41 @@ public class KubernetesClusterActionWorker {
     protected VirtualMachineTemplate etcdTemplate;
     protected File sshKeyFile;
     protected String publicIpAddress;
+    /** For Netris VPC-tier clusters the Kubernetes API is exposed via the L4 LB rule on the LB IP.
+     *  For all other clusters: same value as {@link #publicIpAddress}. */
+    protected String apiPublicIpAddress;
     protected int sshPort;
+
+    /**
+     * Returns the public IP that Kubernetes nodes should use as the API server cluster endpoint.
+     * For Netris VPC-tier clusters this is the LB IP (stored under {@code PUBLIC_IP_ID}); for all
+     * other clusters it falls back to {@link #publicIpAddress}.
+     * {@link #publicIpAddress} must be set before calling this method.
+     */
+    protected String resolveApiPublicIpAddress(Network network) {
+        if (network != null && network.getVpcId() != null && manager.isNetrisNetwork(network)) {
+            IpAddress lbIp = getVpcTierKubernetesPublicIp(network);
+            if (lbIp != null) {
+                return lbIp.getAddress().addr();
+            }
+        }
+        return publicIpAddress;
+    }
 
 
     protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
     protected final String deployProviderScriptFilename = "deploy-provider";
+    protected final String deployCsiDriverScriptFilename = "deploy-csi-driver";
+    protected final String deletePvScriptFilename = "delete-pv-reclaimpolicy-delete";
     protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
     protected final String validateNodeScript = "validate-cks-node";
     protected final String removeNodeFromClusterScript = "remove-node-from-cluster";
     protected final String scriptPath = "/opt/bin/";
     protected File deploySecretsScriptFile;
     protected File deployProviderScriptFile;
+    protected File deployCsiDriverScriptFile;
     protected File autoscaleScriptFile;
+    protected File deletePvScriptFile;
     protected KubernetesClusterManagerImpl manager;
     protected String[] keys;
 
@@ -246,6 +285,7 @@ public class KubernetesClusterActionWorker {
         this.kubernetesClusterDao = clusterManager.kubernetesClusterDao;
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
+        this.kubernetesClusterAffinityGroupMapDao = clusterManager.kubernetesClusterAffinityGroupMapDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
         this.manager = clusterManager;
     }
@@ -257,7 +297,8 @@ public class KubernetesClusterActionWorker {
         DataCenterVO dataCenterVO = dataCenterDao.findById(zoneId);
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType type = template.getHypervisorType();
-        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT);
+        KubernetesSupportedVersionVO kubernetesSupportedVersion = kubernetesSupportedVersionDao.findById(this.kubernetesCluster.getKubernetesVersionId());
+        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT, kubernetesSupportedVersion);
         this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlNodeTemplateId());
         this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerNodeTemplateId());
         this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdNodeTemplateId());
@@ -281,7 +322,7 @@ public class KubernetesClusterActionWorker {
             if (userVM == null) {
                 throw new CloudRuntimeException("Failed to find login user, Unable to log in to node to fetch details");
             }
-            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
+            VMInstanceDetailVO vmDetail = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
             if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
                 return vmDetail.getValue();
             } else {
@@ -337,7 +378,7 @@ public class KubernetesClusterActionWorker {
 
     protected void deleteTemplateLaunchPermission() {
         if (isDefaultTemplateUsed() && owner != null) {
-            logger.info("Revoking launch permission for systemVM template");
+            logger.info("Revoking launch permission for systemVM Template");
             launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
         }
     }
@@ -433,7 +474,11 @@ public class KubernetesClusterActionWorker {
     }
 
     protected IpAddress getVpcTierKubernetesPublicIp(Network network) {
-        KubernetesClusterDetailsVO detailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
+        return getVpcTierKubernetesPublicIp(network, ApiConstants.PUBLIC_IP_ID);
+    }
+
+    protected IpAddress getVpcTierKubernetesPublicIp(Network network, String detailKey) {
+        KubernetesClusterDetailsVO detailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), detailKey);
         if (detailsVO == null || StringUtils.isEmpty(detailsVO.getValue())) {
             return null;
         }
@@ -452,7 +497,8 @@ public class KubernetesClusterActionWorker {
 
     protected IpAddress getPublicIp(Network network) throws ManagementServerException {
         if (network.getVpcId() != null) {
-            IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
+            String detailKey = manager.isNetrisNetwork(network) ? ApiConstants.NETRIS_NAT_PUBLIC_IP_ID : ApiConstants.PUBLIC_IP_ID;
+            IpAddress publicIp = getVpcTierKubernetesPublicIp(network, detailKey);
             if (publicIp == null) {
                 throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             }
@@ -468,14 +514,24 @@ public class KubernetesClusterActionWorker {
 
     protected IpAddress acquireVpcTierKubernetesPublicIp(Network network, boolean forEtcd) throws
             InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
-        IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
+        return acquireVpcTierKubernetesPublicIp(network, forEtcd ? null : ApiConstants.PUBLIC_IP_ID);
+    }
+
+    protected IpAddress acquireVpcTierKubernetesPublicIp(Network network, String detailKey) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        IpAddress ip;
+        if (manager.isNetrisNetwork(network)) {
+            ip = allocateIpFromNetrisRange(network);
+        } else {
+            ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
+        }
         if (ip == null) {
             return null;
         }
         ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
         ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
-        if (!forEtcd) {
-            kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID, ip.getUuid(), false);
+        if (detailKey != null) {
+            kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), detailKey, ip.getUuid(), false);
         }
         return ip;
     }
@@ -488,6 +544,39 @@ public class KubernetesClusterActionWorker {
         }
         ip = networkService.associateIPToNetwork(ip.getId(), network.getId());
         return ip;
+    }
+
+    /**
+     * Finds and allocates a free public IP from the Netris-reserved VLAN range in the cluster's
+     * zone. Used for both the LB IP ({@code PUBLIC_IP_ID}) and the NAT IP
+     * ({@code NETRIS_NAT_PUBLIC_IP_ID}): all IPs acquired for a Netris cluster must come from
+     * VLANs tagged {@code forNetris=true} in {@code vlan_details}. The actual allocation is
+     * delegated to {@link NetworkService#allocateIP} with the discovered address so that the
+     * normal account-lock / state-transition path is preserved.
+     *
+     * @return the allocated {@link IpAddress}, or {@code null} if the Netris range is exhausted
+     */
+    private IpAddress allocateIpFromNetrisRange(Network network) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        long dcId = kubernetesCluster.getZoneId();
+        List<Long> netrisVlanIds = vlanDao.listVlansForExternalNetworkProvider(dcId, ApiConstants.NETRIS_DETAIL_KEY)
+                .stream().map(VlanVO::getId).collect(Collectors.toList());
+        if (netrisVlanIds.isEmpty()) {
+            throw new CloudRuntimeException(String.format(
+                    "Cannot allocate Netris LB IP for Kubernetes cluster %s: no VLANs tagged " +
+                    "'forNetris=true' found in zone %d", kubernetesCluster.getName(), dcId));
+        }
+        List<IPAddressVO> available = ipAddressManager.listAvailablePublicIps(
+                dcId, null, netrisVlanIds, owner, VlanType.VirtualNetwork,
+                network.getId(), false, false, false, null, null, false,
+                null, null, false, false);
+        if (available.isEmpty()) {
+            logger.warn(String.format("No available IPs in the Netris range for zone %d, " +
+                    "Kubernetes cluster %s", dcId, kubernetesCluster.getName()));
+            return null;
+        }
+        String requestedIp = available.get(0).getAddress().addr();
+        return networkService.allocateIP(owner, dcId, network.getId(), null, requestedIp);
     }
 
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForIsolatedNetwork(Network network) {
@@ -513,6 +602,27 @@ public class KubernetesClusterActionWorker {
                                                                                   boolean acquireNewPublicIpForVpcTierIfNeeded) throws
             InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+        if (manager.isNetrisNetwork(network)) {
+            // For Netris:
+            // NAT IP is the SSH/API/port-forwarding endpoint.
+            // LB IP (PUBLIC_IP_ID) is reserved for Kubernetes LoadBalancer
+            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp != null) {
+                return new Pair<>(natIp.getAddress().addr(), port);
+            }
+            if (acquireNewPublicIpForVpcTierIfNeeded) {
+                // Acquire LB IP first so it is stored under PUBLIC_IP_ID for Netris
+                if (getVpcTierKubernetesPublicIp(network) == null) {
+                    acquireVpcTierKubernetesPublicIp(network, false);
+                }
+                natIp = acquireVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+                if (natIp != null) {
+                    return new Pair<>(natIp.getAddress().addr(), port);
+                }
+            }
+            logger.warn(String.format("No NAT public IP found for Netris VPC tier: %s, Kubernetes cluster: %s", network, kubernetesCluster.getName()));
+            return new Pair<>(null, port);
+        }
         IpAddress address = getVpcTierKubernetesPublicIp(network);
         if (address != null) {
             return new Pair<>(address.getAddress().addr(), port);
@@ -654,7 +764,7 @@ public class KubernetesClusterActionWorker {
             for (Long vmId : clusterVMs) {
                 UserVm controlNode = userVmDao.findById(vmId);
                 if (controlNode != null) {
-                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
+                    vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
                 }
             }
         }
@@ -679,7 +789,7 @@ public class KubernetesClusterActionWorker {
 
         try {
             String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
-                    scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
+                scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.getApiServletPathValue(), keys[0], keys[1]);
             Account account = accountDao.findById(kubernetesCluster.getAccountId());
             if (account != null && account.getType() == Account.Type.PROJECT) {
                 String projectId = projectService.findByProjectAccountId(account.getId()).getUuid();
@@ -713,12 +823,16 @@ public class KubernetesClusterActionWorker {
     protected void retrieveScriptFiles() {
         deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
         deployProviderScriptFile = retrieveScriptFile(deployProviderScriptFilename);
+        deployCsiDriverScriptFile = retrieveScriptFile(deployCsiDriverScriptFilename);
+        deletePvScriptFile = retrieveScriptFile(deletePvScriptFilename);
         autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
     }
 
     protected void copyScripts(String nodeAddress, final int sshPort) {
         copyScriptFile(nodeAddress, sshPort, deploySecretsScriptFile, deploySecretsScriptFilename);
         copyScriptFile(nodeAddress, sshPort, deployProviderScriptFile, deployProviderScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, deployCsiDriverScriptFile, deployCsiDriverScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
         copyScriptFile(nodeAddress, sshPort, autoscaleScriptFile, autoscaleScriptFilename);
     }
 
@@ -796,6 +910,43 @@ public class KubernetesClusterActionWorker {
             // Maybe the file isn't present. Try and copy it
             if (!result.first()) {
                 logMessage(Level.INFO, "Provider files missing. Adding them now", null);
+                retrieveScriptFiles();
+                copyScripts(publicIpAddress, sshPort);
+
+                if (!createCloudStackSecret(keys)) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                            kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                }
+
+                // If at first you don't succeed ...
+                result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                        pkFile, null, command, 10000, 10000, 60000);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(result.second());
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to deploy kubernetes provider: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        }
+    }
+
+    protected boolean deployCsiDriver() {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            String command = String.format("sudo %s/%s", scriptPath, deployCsiDriverScriptFilename);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    pkFile, null, command, 10000, 10000, 60000);
+
+            // Maybe the file isn't present. Try and copy it
+            if (!result.first()) {
+                logMessage(Level.INFO, "CSI files missing. Adding them now", null);
                 retrieveScriptFiles();
                 copyScripts(publicIpAddress, sshPort);
 
@@ -1064,5 +1215,77 @@ public class KubernetesClusterActionWorker {
             return groupVO.getId();
         }
         return null;
+    }
+
+    protected List<Long> getAffinityGroupIdsForNodeType(KubernetesClusterNodeType nodeType) {
+        List<Long> affinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(
+            kubernetesCluster.getId(), nodeType.name());
+        if (CollectionUtils.isEmpty(affinityGroupIds)) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(affinityGroupIds);
+    }
+
+    protected List<Long> getMergedAffinityGroupIds(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
+        List<Long> affinityGroupIds = getAffinityGroupIdsForNodeType(nodeType);
+        Long explicitAffinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        if (explicitAffinityGroupId != null && !affinityGroupIds.contains(explicitAffinityGroupId)) {
+            affinityGroupIds.add(explicitAffinityGroupId);
+        }
+        return affinityGroupIds.isEmpty() ? null : affinityGroupIds;
+    }
+
+    private Set<Long> getRunningVmHostIds(Long affinityGroupId) {
+        return affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId).stream()
+                .map(vmInstanceDao::findById)
+                .filter(vm -> Objects.nonNull(vm) && Objects.nonNull(vm.getHostId()) && VirtualMachine.State.Running.equals(vm.getState()))
+                .map(VMInstanceVO::getHostId)
+                .collect(Collectors.toSet());
+    }
+
+    protected AffinityConstraints resolveAffinityConstraints(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
+        Set<Long> antiAffinityOccupiedHosts = new HashSet<>();
+        Long requiredHostId = null;
+        boolean hasHostAntiAffinity = false;
+        boolean hasHostAffinity = false;
+
+        if (Objects.nonNull(nodeType)) {
+            List<Long> affinityGroupIds = getMergedAffinityGroupIds(nodeType, domainId, accountId);
+            if (CollectionUtils.isNotEmpty(affinityGroupIds)) {
+            for (Long affinityGroupId : affinityGroupIds) {
+                AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+                if (Objects.isNull(affinityGroup)) {
+                    continue;
+                }
+                if (AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
+                    hasHostAntiAffinity = true;
+                    antiAffinityOccupiedHosts.addAll(getRunningVmHostIds(affinityGroupId));
+                } else if (AffinityProcessorBase.AFFINITY_TYPE_HOST.equals(affinityGroup.getType())) {
+                    hasHostAffinity = true;
+                    Set<Long> hostIds = getRunningVmHostIds(affinityGroupId);
+                    if (CollectionUtils.isNotEmpty(hostIds)) {
+                        requiredHostId = hostIds.iterator().next();
+                    }
+                }
+            }
+            }
+        }
+
+        return new AffinityConstraints(hasHostAntiAffinity, hasHostAffinity, antiAffinityOccupiedHosts, requiredHostId);
+    }
+
+    protected static class AffinityConstraints {
+        final boolean hasHostAntiAffinity;
+        final boolean hasHostAffinity;
+        final Set<Long> antiAffinityOccupiedHosts;
+        final Long requiredHostId;
+
+        AffinityConstraints(boolean hasHostAntiAffinity, boolean hasHostAffinity,
+                            Set<Long> antiAffinityOccupiedHosts, Long requiredHostId) {
+            this.hasHostAntiAffinity = hasHostAntiAffinity;
+            this.hasHostAffinity = hasHostAffinity;
+            this.antiAffinityOccupiedHosts = antiAffinityOccupiedHosts;
+            this.requiredHostId = requiredHostId;
+        }
     }
 }

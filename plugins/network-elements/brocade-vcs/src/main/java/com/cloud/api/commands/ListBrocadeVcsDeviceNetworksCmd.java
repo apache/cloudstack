@@ -44,7 +44,7 @@ import com.cloud.network.brocade.Constants;
 import com.cloud.network.element.BrocadeVcsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listBrocadeVcsDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a brocade vcs switch", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "listBrocadeVcsDeviceNetworks", responseObject = NetworkResponse.class, description = "Lists network that are using a brocade vcs switch", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBrocadeVcsDeviceNetworksCmd extends BaseListCmd {
 
     private static final String s_name = "listbrocadevcsdevicenetworks";
@@ -55,7 +55,7 @@ public class ListBrocadeVcsDeviceNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = Constants.BROCADE_VCS_DEVICE_ID, type = CommandType.UUID, entityType = BrocadeVcsDeviceResponse.class, required = true, description = "brocade vcs switch ID")
+    @Parameter(name = Constants.BROCADE_VCS_DEVICE_ID, type = CommandType.UUID, entityType = BrocadeVcsDeviceResponse.class, required = true, description = "Brocade vcs switch ID")
     private Long brocadeVcsDeviceId;
 
     /////////////////////////////////////////////////////

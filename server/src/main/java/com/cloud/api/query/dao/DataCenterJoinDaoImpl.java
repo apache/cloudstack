@@ -16,17 +16,13 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.cpu.CPU;
-import com.cloud.dc.ASNumberRangeVO;
-import com.cloud.dc.dao.ASNumberRangeDao;
-import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -43,11 +39,22 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.cpu.CPU;
+import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -63,7 +70,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     @Inject
     private NsxProviderDao nsxProviderDao;
     @Inject
+    private NetrisProviderDao netrisProviderDao;
+    @Inject
     private ASNumberRangeDao asNumberRangeDao;
+    @Inject
+    private HostGpuGroupsDao hostGpuGroupsDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -92,6 +103,13 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
         zoneResponse.setType(ObjectUtils.defaultIfNull(dataCenter.getType(), DataCenter.Type.Core).toString());
         zoneResponse.setStorageAccessGroups(dataCenter.getStorageAccessGroups());
+        Pair<Long, Long> gpuStats = hostGpuGroupsDao.getGpuStats(dataCenter.getId(), null, null, null);
+        if (gpuStats != null) {
+            Long totalGpuDevices = gpuStats.first();
+            Long usedGpuDevices = totalGpuDevices - gpuStats.second();
+            zoneResponse.setGpuTotal(totalGpuDevices);
+            zoneResponse.setGpuUsed(usedGpuDevices);
+        }
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());
@@ -140,10 +158,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             }
         }
 
-        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(dataCenter.getId());
-        if (Objects.nonNull(nsxProviderVO)) {
-            zoneResponse.setNsxEnabled(true);
-        }
+        setExternalNetworkProviderUsedByZone(zoneResponse, dataCenter.getId());
 
         List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
         zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
@@ -165,6 +180,19 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         return zoneResponse;
     }
 
+    private void setExternalNetworkProviderUsedByZone(ZoneResponse zoneResponse, Long zoneId) {
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProviderVO)) {
+            zoneResponse.setNsxEnabled(true);
+            zoneResponse.setProvider(Network.Provider.Nsx.getName());
+        }
+
+        NetrisProviderVO netrisProviderVO = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(netrisProviderVO)) {
+            zoneResponse.setProvider(Network.Provider.Netris.getName());
+        }
+    }
+
     @Override
     public DataCenterJoinVO newDataCenterView(DataCenter dataCenter) {
         SearchCriteria<DataCenterJoinVO> sc = dofIdSearch.create();
@@ -174,4 +202,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         return dcs.get(0);
     }
 
+    @Override
+    public List<DataCenterJoinVO> listByIds(List<Long> ids, Filter filter) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<DataCenterJoinVO> sb = createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), SearchCriteria.Op.IN);
+        SearchCriteria<DataCenterJoinVO> sc = sb.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc, filter);
+    }
 }

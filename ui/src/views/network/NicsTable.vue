@@ -39,7 +39,7 @@
           {{ record.traffictype }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('label.secondaryips')" v-if="record.secondaryip && record.secondaryip.length > 0 && record.type !== 'L2'">
-          {{ record.secondaryip.map(x => x.ipaddress).join(', ') }}
+          {{ record.secondaryip.map(secondaryIp => secondaryIp.description ? (secondaryIp.ipaddress + ': ' + secondaryIp.description) : secondaryIp.ipaddress).join(', ') }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('label.ip6address')" v-if="record.ip6address">
           {{ record.ip6address }}
@@ -58,6 +58,9 @@
             {{ record.isolationuri }}
           </a-descriptions-item>
         </template>
+        <a-descriptions-item :label="$t('label.dns.name')" v-if="record.nicdnsname">
+            {{ record.nicdnsname }}
+        </a-descriptions-item>
       </a-descriptions>
     </template>
     <template #bodyCell="{ column, text, record }">
@@ -71,6 +74,9 @@
           {{ $t('label.default') }}
         </a-tag>
       </template>
+      <template v-if="column.key === 'enabled'">
+        <status :text="text ? 'enabled' : 'disabled'"/> {{ text ? 'Enabled' : 'Disabled' }}
+      </template>
     </template>
   </a-table>
 </template>
@@ -78,6 +84,7 @@
 <script>
 import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'NicsTable',
@@ -92,7 +99,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   inject: ['parentFetchData'],
   data () {
@@ -123,6 +131,11 @@ export default {
         {
           title: this.$t('label.gateway'),
           dataIndex: 'gateway'
+        },
+        {
+          key: 'enabled',
+          title: this.$t('label.state'),
+          dataIndex: 'enabled'
         }
       ],
       networkicon: {},

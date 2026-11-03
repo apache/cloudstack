@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.inject.Inject;
 
-import com.cloud.configuration.Resource;
-import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
@@ -34,14 +33,15 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainJoinVO;
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.domain.Domain;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import javax.inject.Inject;
 
 @Component
 public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implements DomainJoinDao {
@@ -79,9 +79,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         if (domain.getParentUuid() != null) {
             domainResponse.setParentDomainId(domain.getParentUuid());
         }
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-        domainResponse.setPath(domainPath.toString());
+        domainResponse.setPath(ApiResponseHelper.getPrettyDomainPath(domain.getPath()));
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(domain.getParentName());
         }
@@ -111,6 +109,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         }
 
         domainResponse.setDetails(ApiDBUtils.getDomainDetails(domain.getId()));
+        ApiResponseHelper.populateDomainTags(domain.getUuid(), domainResponse);
         domainResponse.setObjectName("domain");
 
         return domainResponse;
@@ -195,6 +194,9 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setMemoryTotal(memoryTotal);
         response.setMemoryAvailable(memoryAvail);
 
+        //get resource limits for gpus
+        setGpuResourceLimits(domain, fullView, response);
+
       //get resource limits for primary storage space and convert it from Bytes to GiB
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), ResourceType.primary_storage, domain.getId());
         String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
@@ -248,6 +250,16 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setObjectStorageLimit(objectStorageLimitDisplay);
         response.setObjectStorageTotal(objectStorageTotal);
         response.setObjectStorageAvailable(objectStorageAvail);
+    }
+
+    private void setGpuResourceLimits(DomainJoinVO domain, boolean fullView, ResourceLimitAndCountResponse response) {
+        long gpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getGpuLimit(), ResourceType.gpu, domain.getId());
+        String gpuLimitDisplay = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit);
+        long gpuTotal = (domain.getGpuTotal() == null) ? 0 : domain.getGpuTotal();
+        String gpuAvail = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit - gpuTotal);
+        response.setGpuLimit(gpuLimitDisplay);
+        response.setGpuTotal(gpuTotal);
+        response.setGpuAvailable(gpuAvail);
     }
 
     @Override

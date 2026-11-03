@@ -17,11 +17,13 @@
 
 package org.apache.cloudstack.mom.webhook;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,7 +34,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
@@ -42,10 +43,14 @@ import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookFilterDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookFilterVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
+import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.webhook.WebhookHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.vo.EventJoinVO;
@@ -75,7 +80,9 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Inject
     WebhookDao webhookDao;
     @Inject
-    protected WebhookDeliveryDao webhookDeliveryDao;
+    WebhookDeliveryDao webhookDeliveryDao;
+    @Inject
+    WebhookFilterDao webhookFilterDao;
     @Inject
     ManagementServerHostDao managementServerHostDao;
     @Inject
@@ -83,7 +90,29 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Inject
     AccountManager accountManager;
 
-    protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, Pair<Integer, Integer> configs) {
+    protected LazyCache<org.apache.commons.lang3.tuple.Pair<Long, List<Long>>, List<WebhookVO>> webhooksCache;
+    protected LazyCache<Long, List<WebhookFilterVO>> webhookFiltersCache;
+
+    static class DeliveryConfig {
+        final int tries;
+        final int timeout;
+        final String blocklist;
+        final boolean blockLocalAddresses;
+        final boolean allowRedirects;
+        final boolean allowHttp;
+
+        DeliveryConfig(int tries, int timeout, String blocklist, boolean blockLocalAddresses,
+                boolean allowRedirects, boolean allowHttp) {
+            this.tries = tries;
+            this.timeout = timeout;
+            this.blocklist = blocklist;
+            this.blockLocalAddresses = blockLocalAddresses;
+            this.allowRedirects = allowRedirects;
+            this.allowHttp = allowHttp;
+        }
+    }
+
+    protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, DeliveryConfig config) {
         WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
                 new WebhookDeliveryThread.WebhookDeliveryContext<>(null, event.getEventId(), webhook.getId());
         AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
@@ -92,9 +121,74 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 .setContext(context);
         WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
         job = ComponentContext.inject(job);
-        job.setDeliveryTries(configs.first());
-        job.setDeliveryTimeout(configs.second());
+        job.setDeliveryTries(config.tries);
+        job.setDeliveryTimeout(config.timeout);
+        job.setDestinationBlocklist(config.blocklist);
+        job.setBlockLocalAddresses(config.blockLocalAddresses);
+        job.setAllowRedirects(config.allowRedirects);
+        job.setAllowHttp(config.allowHttp);
         return job;
+    }
+
+    protected String getEventValueByFilterType(Event event, WebhookFilter.Type filterType) {
+        if (WebhookFilter.Type.EventType.equals(filterType)) {
+            return event.getEventType();
+        }
+        return null;
+    }
+
+    protected boolean isValueMatchingFilter(String eventValue, WebhookFilter.MatchType matchType, String filterValue) {
+        switch (matchType) {
+            case Exact:
+                return eventValue.equals(filterValue);
+            case Prefix:
+                return eventValue.startsWith(filterValue);
+            case Suffix:
+                return eventValue.endsWith(filterValue);
+            case Contains:
+                return eventValue.contains(filterValue);
+            default:
+                return false;
+        }
+    }
+
+    protected boolean isEventMatchingFilters(Event event, List<? extends WebhookFilter> filters) {
+        if (CollectionUtils.isEmpty(filters)) {
+            return true;
+        }
+
+        boolean hasAnyInclude = false;
+        boolean anyIncludeMatched = false;
+
+        // First pass: short-circuit on any Exclude match; track Include presence/match
+        for (WebhookFilter f : filters) {
+            final WebhookFilter.Type type = f.getType();
+            String eventValue = getEventValueByFilterType(event, type);
+
+            if (f.getMode() == WebhookFilter.Mode.Exclude) {
+                if (eventValue != null && isValueMatchingFilter(eventValue, f.getMatchType(), f.getValue())) {
+                    logger.trace("{} matched Exclude {}, webhook delivery will be skipped", event, f);
+                    return false;
+                }
+                continue;
+            }
+
+            if (f.getMode() == WebhookFilter.Mode.Include) {
+                hasAnyInclude = true;
+                if (!anyIncludeMatched && eventValue != null &&
+                        isValueMatchingFilter(eventValue, f.getMatchType(), f.getValue())) {
+                    logger.trace("{} matched Include {}", event, f);
+                    anyIncludeMatched = true;
+                }
+            }
+        }
+
+        // If there were includes, we must have matched at least one; otherwise allow by default
+        if (hasAnyInclude && !anyIncludeMatched) {
+            return false;
+        }
+
+        return true;
     }
 
     protected List<Runnable> getDeliveryJobs(Event event) throws EventBusException {
@@ -103,7 +197,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             return jobs;
         }
         if (event.getResourceAccountId() == null) {
-            logger.warn("Skipping delivering event {} to any webhook as account ID is missing", event);
+            logger.warn("Skipping delivering {} to any webhook as account ID is missing", event);
             throw new EventBusException(String.format("Account missing for the event ID: %s", event.getEventUuid()));
         }
         List<Long> domainIds = new ArrayList<>();
@@ -112,23 +206,33 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             domainIds.addAll(domainDao.getDomainParentIds(event.getResourceDomainId()));
         }
         List<WebhookVO> webhooks =
-                webhookDao.listByEnabledForDelivery(event.getResourceAccountId(), domainIds);
-        Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
+                webhooksCache.get(org.apache.commons.lang3.tuple.Pair.of(event.getResourceAccountId(), domainIds));
+        Map<Long, DeliveryConfig> domainConfigs = new HashMap<>();
         for (WebhookVO webhook : webhooks) {
+            List<? extends WebhookFilter> filters = webhookFiltersCache.get(webhook.getId());
+            if (!isEventMatchingFilters(event, filters)) {
+                logger.debug("Skipping delivering {} to {} as it doesn't match filters", event, webhook);
+                continue;
+            }
             if (!domainConfigs.containsKey(webhook.getDomainId())) {
                 domainConfigs.put(webhook.getDomainId(),
-                        new Pair<>(WebhookDeliveryTries.valueIn(webhook.getDomainId()),
-                        WebhookDeliveryTimeout.valueIn(webhook.getDomainId())));
+                        new DeliveryConfig(
+                                WebhookDeliveryTries.valueIn(webhook.getDomainId()),
+                                WebhookDeliveryTimeout.valueIn(webhook.getDomainId()),
+                                WebhookDeliveryBlocklist.valueIn(webhook.getDomainId()),
+                                WebhookDeliveryBlockLocalAddresses.value(),
+                                WebhookDeliveryAllowRedirects.valueIn(webhook.getDomainId()),
+                                WebhookDeliveryAllowHttp.valueIn(webhook.getDomainId())));
             }
-            Pair<Integer, Integer> configs = domainConfigs.get(webhook.getDomainId());
-            WebhookDeliveryThread job = getDeliveryJob(event, webhook, configs);
+            DeliveryConfig config = domainConfigs.get(webhook.getDomainId());
+            WebhookDeliveryThread job = getDeliveryJob(event, webhook, config);
             jobs.add(job);
         }
         return jobs;
     }
 
-    protected Runnable getManualDeliveryJob(WebhookDelivery existingDelivery, Webhook webhook, String payload,
-                AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future) {
+    protected Runnable getManualDeliveryJob(WebhookDelivery existingDelivery, Webhook webhook, String payload, URI uri,
+                        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future) {
         if (StringUtils.isBlank(payload)) {
             payload = "{ \"CloudStack\": \"works!\" }";
         }
@@ -155,14 +259,18 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         event.setDescription(description);
         event.setResourceAccountUuid(resourceAccountUuid);
         ManualDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
-                new ManualDeliveryContext<>(null, webhook, future);
+                new ManualDeliveryContext<>(null, future);
         AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
                 AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().manualDeliveryCompleteCallback(null, null))
                 .setContext(context);
-        WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
+        WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, uri, caller);
         job.setDeliveryTries(WebhookDeliveryTries.valueIn(webhook.getDomainId()));
         job.setDeliveryTimeout(WebhookDeliveryTimeout.valueIn(webhook.getDomainId()));
+        job.setDestinationBlocklist(WebhookDeliveryBlocklist.valueIn(webhook.getDomainId()));
+        job.setBlockLocalAddresses(WebhookDeliveryBlockLocalAddresses.value());
+        job.setAllowRedirects(WebhookDeliveryAllowRedirects.valueIn(webhook.getDomainId()));
+        job.setAllowHttp(WebhookDeliveryAllowHttp.valueIn(webhook.getDomainId()));
         return job;
     }
 
@@ -181,7 +289,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
             ManualDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context) {
         WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
-        context.future.complete(result);
+        context.getFuture().complete(result);
         return null;
     }
 
@@ -205,8 +313,20 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return processed;
     }
 
+    protected void initCaches() {
+        webhooksCache = new LazyCache<>(
+                16, 60,
+                (key) -> webhookDao.listByEnabledForDelivery(key.getLeft(), key.getRight())
+        );
+        webhookFiltersCache = new LazyCache<>(
+                16, 60,
+                (webhookId) -> webhookFilterDao.listByWebhook(webhookId)
+        );
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        initCaches();
         try {
             webhookJobExecutor = Executors.newFixedThreadPool(WebhookDeliveryThreadPoolSize.value(),
                     new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
@@ -246,6 +366,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 WebhookDeliveryTimeout,
                 WebhookDeliveryTries,
                 WebhookDeliveryThreadPoolSize,
+                WebhookDeliveryBlocklist,
+                WebhookDeliveryBlockLocalAddresses,
+                WebhookDeliveryAllowRedirects,
+                WebhookDeliveryAllowHttp,
                 WebhookDeliveriesLimit,
                 WebhookDeliveriesCleanupInitialDelay,
                 WebhookDeliveriesCleanupInterval
@@ -271,10 +395,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     @Override
-    public WebhookDelivery executeWebhookDelivery(WebhookDelivery delivery, Webhook webhook, String payload)
+    public WebhookDelivery executeWebhookDelivery(WebhookDelivery delivery, Webhook webhook, String payload, URI uri)
             throws CloudRuntimeException {
-        AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = new AsyncCallFuture<>();
-        Runnable job = getManualDeliveryJob(delivery, webhook, payload, future);
+        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = new CompletableFuture<>();
+        Runnable job = getManualDeliveryJob(delivery, webhook, payload, uri, future);
         webhookJobExecutor.submit(job);
         WebhookDeliveryThread.WebhookDeliveryResult result = null;
         WebhookDeliveryVO webhookDeliveryVO;
@@ -298,21 +422,32 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     @Override
+    public void invalidateWebhooksCache() {
+        webhooksCache.clear();
+    }
+
+    @Override
+    public void invalidateWebhookFiltersCache(long webhookId) {
+        webhookFiltersCache.invalidate(webhookId);
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         return new ArrayList<>();
     }
 
-    static public class ManualDeliveryContext<T> extends AsyncRpcContext<T> {
-        final Webhook webhook;
-        final AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future;
+    protected static class ManualDeliveryContext<T> extends AsyncRpcContext<T> {
+        private final CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future;
 
-        public ManualDeliveryContext(AsyncCompletionCallback<T> callback, Webhook webhook,
-                 AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future) {
-            super(callback);
-            this.webhook = webhook;
-            this.future = future;
+        public CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> getFuture() {
+            return future;
         }
 
+        public ManualDeliveryContext(AsyncCompletionCallback<T> callback,
+                                           CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future) {
+            super(callback);
+            this.future = future;
+        }
     }
 
     public class WebhookDeliveryCleanupWorker extends ManagedContextRunnable {

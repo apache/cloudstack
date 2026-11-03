@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "listCounters", description = "List the counters for VM auto scaling", responseObject = CounterResponse.class,
+@APICommand(name = "listCounters", description = "List the counters for Instance auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCountersCmd extends BaseListCmd {
     private static final String s_name = "counterresponse";

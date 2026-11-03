@@ -36,19 +36,19 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the host ID")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The host ID")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster ID")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster ID")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.SHOULD_UPDATE_PASSWORD, type = CommandType.BOOLEAN, description = "if the password should also be updated on the hosts")
+    @Parameter(name = ApiConstants.SHOULD_UPDATE_PASSWORD, type = CommandType.BOOLEAN, description = "If the password should also be updated on the hosts")
     private Boolean updatePasswdOnHost;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the username for the host/cluster")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "The username for the host/cluster")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the new password for the host/cluster")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "The new password for the host/cluster")
     private String password;
 
 

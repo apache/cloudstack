@@ -26,10 +26,6 @@ import java.util.List;
 public class ReadyCommand extends Command {
     private String _details;
 
-    public ReadyCommand() {
-        super();
-    }
-
     private Long dcId;
     private Long hostId;
     private String hostUuid;
@@ -40,6 +36,10 @@ public class ReadyCommand extends Command {
     private Long lbCheckInterval;
     private Boolean enableHumanReadableSizes;
     private String arch;
+
+    public ReadyCommand() {
+        super();
+    }
 
     public ReadyCommand(Long dcId) {
         super();
@@ -95,7 +95,7 @@ public class ReadyCommand extends Command {
         return avoidMsHostList;
     }
 
-    public void setAvoidMsHostList(List<String> msHostList) {
+    public void setAvoidMsHostList(List<String> avoidMsHostList) {
         this.avoidMsHostList = avoidMsHostList;
     }
 

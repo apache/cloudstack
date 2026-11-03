@@ -32,18 +32,18 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
-@APICommand(name = "associateUcsProfileToBlade", description = "associate a profile to a blade", responseObject = UcsBladeResponse.class,
+@APICommand(name = "associateUcsProfileToBlade", description = "Associate a profile to a blade", responseObject = UcsBladeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
 
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "ucs manager id", entityType = UcsManagerResponse.class, required = true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "UCS manager ID", entityType = UcsManagerResponse.class, required = true)
     private Long ucsManagerId;
-    @Parameter(name = ApiConstants.UCS_PROFILE_DN, type = CommandType.STRING, description = "profile dn", required = true)
+    @Parameter(name = ApiConstants.UCS_PROFILE_DN, type = CommandType.STRING, description = "Profile dn", required = true)
     private String profileDn;
-    @Parameter(name = ApiConstants.UCS_BLADE_ID, type = CommandType.UUID, entityType = UcsBladeResponse.class, description = "blade id", required = true)
+    @Parameter(name = ApiConstants.UCS_BLADE_ID, type = CommandType.UUID, entityType = UcsBladeResponse.class, description = "Blade ID", required = true)
     private Long bladeId;
 
     @Override

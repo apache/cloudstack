@@ -44,10 +44,10 @@ public class StopRouterCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the router")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM (vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the VM is stopped and should be marked as such.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance (Instance is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the Instance is stopped and should be marked as such.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping router: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping virtual router with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Router ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {

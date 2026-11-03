@@ -29,6 +29,7 @@ public class CreateSnapshotPayload {
     private boolean asyncBackup;
     private List<Long> zoneIds;
     private boolean kvmIncrementalSnapshot = false;
+    private List<Long> storagePoolIds;
 
     public Long getSnapshotPolicyId() {
         return snapshotPolicyId;
@@ -85,6 +86,15 @@ public class CreateSnapshotPayload {
     }
 
     public void setKvmIncrementalSnapshot(boolean kvmIncrementalSnapshot) {
+
         this.kvmIncrementalSnapshot = kvmIncrementalSnapshot;
+    }
+
+    public List<Long> getStoragePoolIds() {
+        return storagePoolIds;
+    }
+
+    public void setStoragePoolIds(List<Long> storagePoolIds) {
+        this.storagePoolIds = storagePoolIds;
     }
 }

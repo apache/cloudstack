@@ -30,10 +30,11 @@ public class TemplateUploadParams extends UploadParamsBase {
                                 Long zoneId, Hypervisor.HypervisorType hypervisorType, String chksum,
                                 String templateTag, long templateOwnerId,
                                 Map details, Boolean sshkeyEnabled,
-                                Boolean isDynamicallyScalable, Boolean isRoutingType, boolean deployAsIs, boolean forCks) {
+                                Boolean isDynamicallyScalable, Boolean isRoutingType, boolean deployAsIs,
+                                boolean forCks, String templateType) {
         super(userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, isPublic, featured, isExtractable,
                 format, guestOSId, zoneId, hypervisorType, chksum, templateTag, templateOwnerId, details,
-                sshkeyEnabled, isDynamicallyScalable, isRoutingType, deployAsIs, forCks);
+                sshkeyEnabled, isDynamicallyScalable, isRoutingType, deployAsIs, forCks, templateType);
         setBootable(true);
     }
 }

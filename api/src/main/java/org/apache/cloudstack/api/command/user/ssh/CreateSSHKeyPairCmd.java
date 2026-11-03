@@ -40,16 +40,16 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     private String name;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the ssh key. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the SSH key. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId for the SSH key. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the SSH key")
     private Long projectId;
 
     /////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

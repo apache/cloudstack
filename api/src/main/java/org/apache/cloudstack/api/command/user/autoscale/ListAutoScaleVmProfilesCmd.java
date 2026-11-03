@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.as.AutoScaleVmProfile;
 
-@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale vm profiles.", responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
+@APICommand(name = "listAutoScaleVmProfiles", description = "Lists autoscale Instance profiles.", responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
 
@@ -42,22 +42,22 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, description = "the ID of the autoscale vm profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, description = "The ID of the autoscale Instance profile")
     private Long id;
 
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the templateid of the autoscale vm profile")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "The templateid of the autoscale Instance profile")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list profiles by service offering id", since = "4.4")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "List profiles by service offering id", since = "4.4")
     private Long serviceOffId;
 
-    @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "the otherdeployparameters of the autoscale vm profile")
+    @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "The otherdeployparameters of the autoscale Instance profile")
     private String otherDeployParams;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, since = "4.4", description = "availability zone for the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, since = "4.4", description = "Availability zone for the auto deployed Instance")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////

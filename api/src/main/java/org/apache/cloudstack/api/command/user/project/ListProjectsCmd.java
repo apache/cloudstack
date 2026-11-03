@@ -48,16 +48,16 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list projects by project ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "List projects by project ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list projects by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List projects by name")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "list projects by display text")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "List projects by display text")
     private String displayText;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list projects by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List projects by state")
     private String state;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
@@ -69,11 +69,11 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of project details requested, value can be a list of [ all, resource, min]")
+               description = "Comma separated list of project details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for projects")
+            description = "Flag to display the resource icon for projects")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////

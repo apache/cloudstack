@@ -44,7 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = ListSimulatorHAStateTransitions.APINAME,
-        description="list recent simulator HA state transitions for a host for probing and testing",
+        description = "List recent simulator HA state transitions for a host for probing and testing",
         responseObject=SimulatorHAStateResponse.class,
         since = "4.11", authorized = {RoleType.Admin})
 public final class ListSimulatorHAStateTransitions extends BaseListCmd {

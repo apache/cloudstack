@@ -22,6 +22,9 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -123,6 +126,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     Ipv6AddressManager ipv6AddressManager;
     @Inject
     DomainRouterDao domainRouterDao;
+    @Inject
+    public NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
+    public AccountDao accountDao;
+    @Inject
+    public DomainDao domainDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
 
@@ -301,7 +310,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void deallocate(final Network network, final NicProfile nic, final VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Deallocate network: {}, nic: {}", network, nic);
+                logger.debug("Deallocate Network: {}, NIC: {}", network, nic);
             }
 
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -360,7 +369,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO,
-                    EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
+                    EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone VLAN: " + vnet + " Network ID: " + network.getUuid(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
@@ -520,11 +529,14 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
 
         if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.isSpecifyVlan()) {
-            logger.debug("Releasing vnet for the network: {}", profile);
-            _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
+            logger.debug("Releasing vnet for the network id=" + profile.getId());
+            final String vnetValue = BroadcastDomainType.getValue(profile.getBroadcastUri());
+            _dcDao.releaseVnet(vnetValue, profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
                     profile.getReservationId());
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE,
-                    String.format("Released Zone Vnet: %s for Network: %s", BroadcastDomainType.getValue(profile.getBroadcastUri()), profile),
+            String eventType = profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan
+                    ? EventTypes.EVENT_ZONE_VXLAN_RELEASE : EventTypes.EVENT_ZONE_VLAN_RELEASE;
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, eventType,
+                    "Released Zone Vnet: " + vnetValue + " for Network: " + profile.getId(),
                     profile.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
         }
 

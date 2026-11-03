@@ -32,12 +32,12 @@ log_it() {
 }
 
 validate_checksums() {
-  local oldmd5=
-  [ -f ${1} ] && oldmd5=$(cat ${1})
-  local newmd5=
-  [ -f ${2} ] && newmd5=$(md5sum ${2} | awk '{print $1}')
-  log_it "Scripts checksum detected: oldmd5=$oldmd5 newmd5=$newmd5" >> /dev/null 2>&1
-  echo "oldmd5='${oldmd5}'; newmd5='${newmd5}'"
+  local oldchecksum=
+  [ -f ${1} ] && oldchecksum=$(cat ${1})
+  local newchecksum=
+  [ -f ${2} ] && newchecksum=$(sha512sum ${2} | awk '{print $1}')
+  log_it "Scripts checksum detected: oldchecksum=$oldchecksum newchecksum=$newchecksum" >> /dev/null 2>&1
+  echo "oldchecksum='${oldchecksum}'; newchecksum='${newchecksum}'"
 }
 
 patch() {
@@ -46,15 +46,15 @@ patch() {
   local oldpatchfile=/usr/share/cloud/$PATCH_SCRIPTS
   local patchfile=$PATCH_MOUNT/$PATCH_SCRIPTS
   local privkey=$PATCH_MOUNT/authorized_keys
-  local md5file=/var/cache/cloud/cloud-scripts-signature
+  local checksumfile=/var/cache/cloud/cloud-scripts-signature
   mkdir -p $PATCH_MOUNT
 
   if [ -f /var/cache/cloud/authorized_keys ]; then
     privkey=/var/cache/cloud/authorized_keys
   fi
 
-  eval $(validate_checksums $md5file $oldpatchfile)
-  if [ "$oldmd5" == "$newmd5" ] && [ -d /usr/local/cloud/systemvm ] && [ "$(ls -A /usr/local/cloud/systemvm)" ]; then
+  eval $(validate_checksums $checksumfile $oldpatchfile)
+  if [ "$oldchecksum" == "$newchecksum" ] && [ -d /usr/local/cloud/systemvm ] && [ "$(ls -A /usr/local/cloud/systemvm)" ]; then
     log_it "Checksum matches, no need to patch"
     return 0
   fi
@@ -67,11 +67,11 @@ patch() {
     while [ $retry -gt 0 ]
     do
       if tar tf $patchfile &> /dev/null; then
-        eval $(validate_checksums $md5file $patchfile)
-        if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+        eval $(validate_checksums $checksumfile $patchfile)
+        if [ "$oldchecksum" != "$newchecksum" ] && [ -f ${patchfile} ] && [ "$newchecksum" != "" ]
         then
           tar xzf $patchfile -C /
-          echo ${newmd5} > ${md5file}
+          echo ${newchecksum} > ${checksumfile}
           log_it "Patched scripts using $patchfile"
           touch /var/cache/cloud/patch.required
         fi

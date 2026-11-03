@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.object.datastore;
 
+import com.cloud.configuration.Resource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailVO;
@@ -44,6 +45,7 @@ public class ObjectStoreHelper {
         store.setUuid(UUID.randomUUID().toString());
         store.setUrl((String)params.get("url"));
         store.setName((String)params.get("name"));
+        store.setTotalSize((Long)params.get("size") * Resource.ResourceType.bytesToGiB);
 
         store = ObjectStoreDao.persist(store);
 

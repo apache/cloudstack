@@ -54,7 +54,7 @@ public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper
 
             if (dm == null) {
                 return new RestoreVMSnapshotAnswer(cmd, false,
-                        "Restore VM Snapshot Failed due to can not find vm: " + vmName);
+                        "Restore Instance Snapshot Failed due to can not find Instance: " + vmName);
             }
             String xmlDesc = dm.getXMLDesc(0);
 
@@ -63,7 +63,7 @@ public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper
             for (VMSnapshotTO snapshot: snapshots) {
                 VMSnapshotTO parent = snapshotAndParents.get(snapshot.getId());
                 String vmSnapshotXML = libvirtUtilitiesHelper.generateVMSnapshotXML(snapshot, parent, xmlDesc);
-                logger.debug("Restoring vm snapshot " + snapshot.getSnapshotName() + " on " + vmName + " with XML:\n " + vmSnapshotXML);
+                logger.debug("Restoring Instance Snapshot " + snapshot.getSnapshotName() + " on " + vmName + " with XML:\n " + vmSnapshotXML);
                 try {
                     int flags = 1; // VIR_DOMAIN_SNAPSHOT_CREATE_REDEFINE = 1
                     if (snapshot.getCurrent()) {
@@ -71,7 +71,7 @@ public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper
                     }
                     dm.snapshotCreateXML(vmSnapshotXML, flags);
                 } catch (LibvirtException e) {
-                    logger.debug("Failed to restore vm snapshot " + snapshot.getSnapshotName() + " on " + vmName);
+                    logger.debug("Failed to restore Instance Snapshot " + snapshot.getSnapshotName() + " on " + vmName);
                     return new RestoreVMSnapshotAnswer(cmd, false, e.toString());
                 }
             }

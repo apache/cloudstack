@@ -28,7 +28,7 @@ import com.cloud.server.ResourceTag;
 import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listDetailOptions",
-        description = "Lists all possible details and their options for a resource type such as a VM or a template",
+        description = "Lists all possible details and their options for a resource type such as an Instance or a Template",
         responseObject = DetailOptionsResponse.class,
         since = "4.13",
         requestHasSensitiveInfo = false,
@@ -41,11 +41,11 @@ public class ListDetailOptionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true,
-            description = "the resource type such as UserVm, Template etc.")
+            description = "The resource type such as UserVm, Template etc.")
     private String resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,
-            description = "the UUID of the resource (optional)")
+            description = "The UUID of the resource (optional)")
     private String resourceId;
 
     /////////////////////////////////////////////////////

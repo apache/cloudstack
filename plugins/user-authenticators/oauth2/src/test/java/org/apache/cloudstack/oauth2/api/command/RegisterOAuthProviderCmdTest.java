@@ -20,6 +20,7 @@
 package org.apache.cloudstack.oauth2.api.command;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,40 +29,32 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
 public class RegisterOAuthProviderCmdTest {
 
-    @Mock
     private OAuth2AuthManager _oauth2mgr;
-
-    @InjectMocks
     private RegisterOAuthProviderCmd _cmd;
-
-    private AutoCloseable closeable;
 
     @Before
     public void setUp() throws Exception {
-        closeable = MockitoAnnotations.openMocks(this);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        closeable.close();
+        _oauth2mgr = mock(OAuth2AuthManager.class);
+        _cmd = new RegisterOAuthProviderCmd();
+        _cmd._oauth2mgr = _oauth2mgr;
     }
 
     @Test
     public void testExecute() throws ServerApiException {
         OauthProviderVO provider = mock(OauthProviderVO.class);
-        when(_oauth2mgr.registerOauthProvider(_cmd)).thenReturn(provider);
+        when(provider.getDomainId()).thenReturn(null);
+        when(provider.getUuid()).thenReturn("test-uuid");
+        when(provider.getProvider()).thenReturn("github");
+        when(provider.getDescription()).thenReturn("test");
+        when(provider.getClientId()).thenReturn("client-id");
+        when(provider.getSecretKey()).thenReturn("secret-key");
+        when(provider.getRedirectUri()).thenReturn("http://localhost");
+        when(_oauth2mgr.registerOauthProvider(any(RegisterOAuthProviderCmd.class))).thenReturn(provider);
 
         _cmd.execute();
         assertEquals(ApiConstants.OAUTH_PROVIDER, ((OauthProviderResponse)_cmd.getResponseObject()).getObjectName());

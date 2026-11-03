@@ -30,71 +30,76 @@ import java.util.Map;
 @EntityReference(value = StoragePool.class)
 public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
-    @Param(description = "the ID of the storage pool")
+    @Param(description = "The ID of the storage pool")
     private String id;
 
     @SerializedName("zoneid")
-    @Param(description = "the Zone ID of the storage pool")
+    @Param(description = "The Zone ID of the storage pool")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the storage pool")
+    @Param(description = "The Zone name of the storage pool")
     private String zoneName;
 
     @SerializedName("podid")
-    @Param(description = "the Pod ID of the storage pool")
+    @Param(description = "The Pod ID of the storage pool")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name of the storage pool")
+    @Param(description = "The Pod name of the storage pool")
     private String podName;
 
     @SerializedName("name")
-    @Param(description = "the name of the storage pool")
+    @Param(description = "The name of the storage pool")
     private String name;
 
     @SerializedName("ipaddress")
-    @Param(description = "the IP address of the storage pool")
+    @Param(description = "The IP address of the storage pool")
     private String ipAddress;
 
     @SerializedName("path")
-    @Param(description = "the storage pool path")
+    @Param(description = "The storage pool path")
     private String path;
 
     @SerializedName("created")
-    @Param(description = "the date and time the storage pool was created")
+    @Param(description = "The date and time the storage pool was created")
     private Date created;
 
     @SerializedName("type")
-    @Param(description = "the storage pool type")
+    @Param(description = "The storage pool type")
     private String type;
 
     @SerializedName("clusterid")
-    @Param(description = "the ID of the cluster for the storage pool")
+    @Param(description = "The ID of the cluster for the storage pool")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the name of the cluster for the storage pool")
+    @Param(description = "The name of the cluster for the storage pool")
     private String clusterName;
 
+    @SerializedName(ApiConstants.CAPACITY_BYTES)
+    @Param(description = "bytes CloudStack can provision from this storage pool", since = "4.22.0")
+    private Long capacityBytes;
+
+    @Deprecated(since = "4.22.0")
     @SerializedName("disksizetotal")
-    @Param(description = "the total disk size of the storage pool")
+    @Param(description = "The total disk size of the storage pool")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeallocated")
-    @Param(description = "the host's currently allocated disk size")
+    @Param(description = "The pool's currently allocated disk size")
     private Long diskSizeAllocated;
 
     @SerializedName("disksizeused")
-    @Param(description = "the host's currently used disk size")
+    @Param(description = "The pool's currently used disk size")
     private Long diskSizeUsed;
 
-    @SerializedName("capacityiops")
+    @SerializedName(ApiConstants.CAPACITY_IOPS)
     @Param(description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
     @SerializedName("allocatediops")
-    @Param(description = "total min IOPS currently in use by volumes")
+    @Param(description = "Total min IOPS currently in use by volumes")
     private Long allocatedIops;
 
     @SerializedName(ApiConstants.USED_IOPS)
@@ -106,7 +111,7 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private Map<String, String> customStats;
 
     @SerializedName("tags")
-    @Param(description = "the tags for the storage pool")
+    @Param(description = "The tags for the storage pool")
     private String tags;
 
     @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
@@ -122,23 +127,23 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private Boolean isTagARule;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the storage pool")
+    @Param(description = "The state of the storage pool")
     private StoragePoolStatus state;
 
     @SerializedName(ApiConstants.SCOPE)
-    @Param(description = "the scope of the storage pool")
+    @Param(description = "The scope of the storage pool")
     private String scope;
 
     @SerializedName("overprovisionfactor")
-    @Param(description = "the overprovisionfactor for the storage pool", since = "4.4")
+    @Param(description = "The overprovisionfactor for the storage pool", since = "4.4")
     private String overProvisionFactor;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor type of the storage pool")
+    @Param(description = "The hypervisor type of the storage pool")
     private String hypervisor;
 
     @SerializedName("suitableformigration")
-    @Param(description = "true if this pool is suitable to migrate a volume," + " false otherwise")
+    @Param(description = "True if this pool is suitable to migrate a volume," + " false otherwise")
     private Boolean suitableForMigration;
 
     @SerializedName("provider")
@@ -146,7 +151,7 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private String provider;
 
     @SerializedName(ApiConstants.STORAGE_CAPABILITIES)
-    @Param(description = "the storage pool capabilities")
+    @Param(description = "The storage pool capabilities")
     private Map<String, String> caps;
 
     @SerializedName(ApiConstants.MANAGED)
@@ -286,6 +291,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+
+    public Long getCapacityBytes() {
+        return capacityBytes;
+    }
+
+    public void setCapacityBytes(Long capacityBytes) {
+        this.capacityBytes = capacityBytes;
     }
 
     public Long getDiskSizeTotal() {

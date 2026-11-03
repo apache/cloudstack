@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.utils.db.GenericDaoBase;
@@ -65,7 +66,7 @@ public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitati
 
         response.setDomainId(invite.getDomainUuid());
         response.setDomainName(invite.getDomainName());
-        response.setDomainPath(invite.getDomainPath());
+        response.setDomainPath(ApiResponseHelper.getPrettyDomainPath(invite.getDomainPath()));
 
         response.setObjectName("projectinvitation");
         return response;

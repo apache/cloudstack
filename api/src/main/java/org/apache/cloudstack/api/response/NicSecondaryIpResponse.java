@@ -30,11 +30,11 @@ import com.cloud.vm.NicSecondaryIp;
 public class NicSecondaryIpResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the secondary private IP addr")
+    @Param(description = "The ID of the secondary private IP addr")
     private String id;
 
     @SerializedName("secondaryip")
-    @Param(description = "the list of Secondary ipv4 addr of nic")
+    @Param(description = "The list of Secondary IPv4 addr of NIC")
     private List<NicSecondaryIpResponse> secondaryIpsList;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -42,16 +42,20 @@ public class NicSecondaryIpResponse extends BaseResponse {
     private String ipAddr;
 
     @SerializedName(ApiConstants.NIC_ID)
-    @Param(description = "the ID of the nic")
+    @Param(description = "The ID of the NIC")
     private String nicId;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the ID of the network")
+    @Param(description = "The ID of the Network")
     private String nwId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "the ID of the vm")
+    @Param(description = "The ID of the Instance")
     private String vmId;
+
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "Description of the secondary IP address")
+    private String description;
 
     @Override
     public String getObjectId() {
@@ -96,6 +100,14 @@ public class NicSecondaryIpResponse extends BaseResponse {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<NicSecondaryIpResponse> getSecondaryIpsList() {

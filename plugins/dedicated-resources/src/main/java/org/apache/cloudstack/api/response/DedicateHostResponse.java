@@ -24,27 +24,27 @@ import com.cloud.serializer.Param;
 
 public class DedicateHostResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the dedicated resource")
+    @Param(description = "The ID of the dedicated resource")
     private String id;
 
     @SerializedName("hostid")
-    @Param(description = "the ID of the host")
+    @Param(description = "The ID of the host")
     private String hostId;
 
     @SerializedName("hostname")
-    @Param(description = "the name of the host")
+    @Param(description = "The name of the host")
     private String hostName;
 
     @SerializedName("domainid")
-    @Param(description = "the domain ID of the host")
+    @Param(description = "The domain ID of the host")
     private String domainId;
 
     @SerializedName("accountid")
-    @Param(description = "the Account ID of the host")
+    @Param(description = "The Account ID of the host")
     private String accountId;
 
     @SerializedName("affinitygroupid")
-    @Param(description = "the Dedication Affinity Group ID of the host")
+    @Param(description = "The Dedication Affinity Group ID of the host")
     private String affinityGroupId;
 
     public String getId() {

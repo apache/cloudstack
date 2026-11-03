@@ -28,4 +28,6 @@ public interface BackupRepositoryDao extends GenericDao<BackupRepositoryVO, Long
     List<BackupRepository> listByZoneAndProvider(Long zoneId, String provider);
 
     BackupRepository findByBackupOfferingId(Long backupOfferingId);
+
+    boolean updateCapacity(BackupRepository backupRepository, Long capacityBytes, Long usedBytes);
 }

@@ -177,6 +177,12 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "memoryTotal")
     private Long memoryTotal;
 
+    @Column(name = "gpuLimit")
+    private Long gpuLimit;
+
+    @Column(name = "gpuTotal")
+    private Long gpuTotal;
+
     @Column(name = "primaryStorageLimit")
     private Long primaryStorageLimit;
 
@@ -357,6 +363,10 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return memoryTotal;
     }
 
+    public Long getGpuTotal() {
+        return gpuTotal;
+    }
+
     public Long getPrimaryStorageTotal() {
         return primaryStorageTotal;
     }
@@ -419,6 +429,10 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public Long getMemoryLimit() {
         return memoryLimit;
+    }
+
+    public Long getGpuLimit() {
+        return gpuLimit;
     }
 
     public Long getPrimaryStorageLimit() {

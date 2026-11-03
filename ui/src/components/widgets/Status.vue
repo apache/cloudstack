@@ -88,6 +88,9 @@ export default {
           case 'ReadWrite':
             state = this.$t('state.readwrite')
             break
+          case 'partiallyallocated':
+            state = this.$t('state.partiallyallocated')
+            break
           case 'InProgress':
             state = this.$t('state.inprogress')
             break
@@ -96,6 +99,30 @@ export default {
             break
           case 'Up':
             state = this.$t('state.up')
+            break
+          case 'Yes':
+            state = this.$t('label.yes')
+            break
+          case 'no':
+            state = this.$t('label.no')
+            break
+          case 'backedup':
+            state = this.$t('label.backedup')
+            break
+          case 'backingup':
+            state = this.$t('label.backingup')
+            break
+          case 'allocated':
+            state = this.$t('label.allocated')
+            break
+          case 'queued':
+            state = this.$t('label.queued')
+            break
+          case 'restoring':
+            state = this.$t('label.restoring')
+            break
+          case 'failed':
+            state = this.$t('label.failed')
             break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
@@ -124,6 +151,10 @@ export default {
         case 'success':
         case 'poweron':
         case 'primary':
+        case 'managed':
+        case 'yes':
+        case 'compressed':
+        case 'valid':
           status = 'success'
           break
         case 'alert':
@@ -138,6 +169,11 @@ export default {
         case 'poweroff':
         case 'stopped':
         case 'failed':
+        case 'unmanaged':
+        case 'no':
+        case 'notvalid':
+        case 'unabletovalidate':
+        case 'compressionerror':
           status = 'error'
           break
         case 'migrating':
@@ -146,6 +182,8 @@ export default {
         case 'stopping':
         case 'upgrading':
         case 'inprogress':
+        case 'validating':
+        case 'compressing':
           status = 'processing'
           break
         case 'allocated':
@@ -161,6 +199,8 @@ export default {
         case 'unsecure':
         case 'warning':
         case 'backup':
+        case 'partiallyallocated':
+        case 'uncompressed':
           status = 'warning'
           break
       }

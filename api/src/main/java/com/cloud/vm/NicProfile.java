@@ -52,6 +52,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     boolean defaultNic;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
+    boolean enabled;
 
     Integer orderIndex;
 
@@ -87,6 +88,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         broadcastType = network.getBroadcastDomainType();
         trafficType = network.getTrafficType();
         format = nic.getAddressFormat();
+        enabled = nic.isEnabled();
 
         iPv4Address = nic.getIPv4Address();
         iPv4Netmask = nic.getIPv4Netmask();
@@ -414,6 +416,14 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.ipv4AllocationRaceCheck = ipv4AllocationRaceCheck;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     //
     // OTHER METHODS
     //
@@ -453,6 +463,6 @@ public class NicProfile implements InternalIdentity, Serializable {
         return String.format("NicProfile %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "uuid", "vmId", "deviceId",
-                        "broadcastUri", "reservationId", "iPv4Address"));
+                        "broadcastType", "broadcastUri", "reservationId", "iPv4Address"));
     }
 }

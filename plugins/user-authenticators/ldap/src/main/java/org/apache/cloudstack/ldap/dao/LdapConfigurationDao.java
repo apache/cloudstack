@@ -29,17 +29,15 @@ import com.cloud.utils.db.GenericDao;
 public interface LdapConfigurationDao extends GenericDao<LdapConfigurationVO, Long> {
     /**
      * @deprecated there might well be more then one ldap implementation on a host and or a double binding of several domains
-     * @param hostname
-     * @return
+     * @param hostname the hostname or ip address of the LDAP server
+     * @return the LDAP configuration for the given hostname
      */
     @Deprecated
     LdapConfigurationVO findByHostname(String hostname);
 
     LdapConfigurationVO find(String hostname, int port, Long domainId);
 
-    LdapConfigurationVO find(String hostname, int port, Long domainId, boolean listAll);
-
     Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(String hostname, int port, Long domainId);
 
-    Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(String hostname, int port, Long domainId, boolean listAll);
+    Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(Long id, String hostname, int port, Long domainId, boolean listAll);
 }

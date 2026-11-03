@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deletePortableIpRange", description = "deletes a range of portable public IP's associated with a region", responseObject = SuccessResponse.class,
+@APICommand(name = "deletePortableIpRange", description = "Deletes a range of portable public IP's associated with a region", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
 
@@ -83,7 +83,7 @@ public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting a portable public ip range";
+        return "Deleting a portable public ip range with ID: " + getResourceUuid(ApiConstants.ID) ;
     }
 
     @Override

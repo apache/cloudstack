@@ -21,12 +21,15 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VirtualMachine;
 
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -56,9 +59,9 @@ public interface VolumeApiService {
             Boolean.class,
             "use.https.to.upload",
             "true",
-            "Determines the protocol (HTTPS or HTTP) ACS will use to generate links to upload ISOs, volumes, and templates. When set as 'true', ACS will use protocol HTTPS, otherwise, it will use protocol HTTP. Default value is 'true'.",
+            "Controls whether upload links for ISOs, volumes, and templates use HTTPS (true, default) or HTTP (false). After changing this setting, the Secondary Storage VM (SSVM) must be recreated",
             true,
-            ConfigKey.Scope.StoragePool);
+            ConfigKey.Scope.Zone);
 
     /**
      * Creates the database object for a volume based on the given criteria
@@ -70,6 +73,10 @@ public interface VolumeApiService {
      */
     Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
 
+    Volume allocVolume(long ownerId, Long zoneId, Long diskOfferingId, Long vmId, Long snapshotId, String name,
+           Long cmdSize, Boolean displayVolume, Long cmdMinIops, Long cmdMaxIops, String customId, Long kmsKeyId)
+            throws ResourceAllocationException;
+
     /**
      * Creates the volume based on the given criteria
      *
@@ -79,6 +86,8 @@ public interface VolumeApiService {
      * @return the volume object
      */
     Volume createVolume(CreateVolumeCmd cmd);
+
+    Volume createVolume(long volumeId, Long vmId, Long snapshotId, Long storageId, Boolean display);
 
     /**
      * Resizes the volume based on the given criteria
@@ -107,16 +116,16 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
-    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS);
+    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS, boolean allowAttachOnRestoring);
 
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
-    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds)
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication)
             throws ResourceAllocationException;
 
-    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds) throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds, List<Long> storagePoolIds, Boolean useStorageReplication) throws ResourceAllocationException;
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId,
                         Boolean displayVolume, Boolean deleteProtection,
@@ -137,7 +146,7 @@ public interface VolumeApiService {
 
     void updateDisplay(Volume volume, Boolean displayVolume);
 
-    Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException;
+    Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName, Long vmSnapshotId) throws ResourceAllocationException;
 
     /**
      *  Checks if the storage pool supports the disk offering tags.
@@ -171,9 +180,34 @@ public interface VolumeApiService {
      *   </table>
      */
     boolean doesStoragePoolSupportDiskOffering(StoragePool destPool, DiskOffering diskOffering);
+
+    /**
+     * Checks if the storage pool supports the required disk offering tags
+     * destPool the storage pool to check the disk offering tags
+     * diskOfferingTags the tags that should be supported
+     * return whether the tags are supported in the storage pool
+     */
     boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
 
-    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
+    /**
+     * Returns the device ids of the Instance which are used by non-volume devices (the CD-ROM drives and the config drive ISO),
+     * and therefore must not be assigned to its volumes. Otherwise the hypervisor may end up with two devices using the same
+     * target name (e.g. sde), which is rejected.
+     *
+     * @param vm the Instance
+     * @return the reserved device ids
+     */
+    Set<Long> getReservedDeviceIds(VirtualMachine vm);
+
+    /**
+     * Same as {@link #getReservedDeviceIds(VirtualMachine)}, with the specified usage of config drive instead of the one
+     * of the Instance. It is useful when the networks of the Instance are not known yet, e.g. when importing it.
+     */
+    Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed);
+
+    boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
+
+    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge, Boolean countDisplayFalseInResourceCount);
 
     void destroyVolume(long volumeId);
 
@@ -194,4 +228,6 @@ public interface VolumeApiService {
     Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
 
     Long getVolumePhysicalSize(Storage.ImageFormat format, String path, String chainInfo);
+
+    Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone, boolean encryptEnabledOnly);
 }

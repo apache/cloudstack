@@ -169,7 +169,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
             }
         }
 
-        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType);
+        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType, null, null);
     }
 
     @Override

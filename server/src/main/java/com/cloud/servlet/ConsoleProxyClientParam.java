@@ -34,6 +34,8 @@ public class ConsoleProxyClientParam {
     private String username;
     private String password;
 
+    private boolean sessionRequiresNewViewer = false;
+
     /**
      * IP that has generated the console endpoint
      */
@@ -217,5 +219,9 @@ public class ConsoleProxyClientParam {
 
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
+    }
+
+    public void setSessionRequiresNewViewer(boolean sessionRequiresNewViewer) {
+        this.sessionRequiresNewViewer = sessionRequiresNewViewer;
     }
 }

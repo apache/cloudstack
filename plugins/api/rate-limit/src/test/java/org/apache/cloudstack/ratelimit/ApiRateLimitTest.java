@@ -89,7 +89,7 @@ public static void setUp() throws ConfigurationException {
 
     private boolean isUnderLimit(User key) {
         try {
-            s_limitService.checkAccess(key, null);
+            s_limitService.checkAccess(key, null, null);
             return true;
         } catch (RequestLimitException ex) {
             return false;

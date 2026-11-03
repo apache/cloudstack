@@ -42,15 +42,15 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "list children domain by parent domain ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "List children domain by parent domain ID.")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list children domains by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List children domains by name")
     private String domainName;
 
     @Parameter(name = ApiConstants.IS_RECURSIVE,
                type = CommandType.BOOLEAN,
-               description = "to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
+               description = "To return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
     private Boolean recursive;
 
     @Parameter(name = ApiConstants.LIST_ALL,
@@ -59,7 +59,7 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for domains")
+            description = "Flag to display the resource icon for domains")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////

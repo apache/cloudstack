@@ -28,4 +28,6 @@ public interface LBStickinessPolicyDao extends GenericDao<LBStickinessPolicyVO, 
     List<LBStickinessPolicyVO> listByLoadBalancerIdAndDisplayFlag(long loadBalancerId, boolean forDisplay);
 
     List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean revoke);
+
+    List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId);
 }

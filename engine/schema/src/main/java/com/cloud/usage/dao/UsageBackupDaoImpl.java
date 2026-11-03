@@ -30,35 +30,68 @@ import org.springframework.stereotype.Component;
 import com.cloud.exception.CloudException;
 import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
-    protected static final String UPDATE_DELETED = "UPDATE usage_backup SET removed = ? WHERE account_id = ? AND vm_id = ? and removed IS NULL";
+    protected static final String UPDATE_DELETED = "UPDATE usage_backup SET removed = ? WHERE account_id = ? AND vm_id = ? and backup_offering_id = ? and removed IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, backup_offering_id, size, protected_size, created, removed FROM usage_backup WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
-    public void updateMetrics(final Long vmId, final Long size, final Long virtualSize) {
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
-            sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
-            UsageBackupVO vo = findOneBy(sc);
-            if (vo != null) {
-                vo.setSize(size);
-                vo.setProtectedSize(virtualSize);
-                update(vo.getId(), vo);
+    public List<UsageBackupVO> listActiveUsage(Long vmId, Long backupOfferingId) {
+        SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+        sc.addAnd("backupOfferingId", SearchCriteria.Op.EQ, backupOfferingId);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+        return listBy(sc, new Filter(UsageBackupVO.class, "created", false));
+    }
+
+    @Override
+    public void updateMetrics(final Long vmId, final Long backupOfferingId, final Long size, final Long virtualSize, final Date eventDate) {
+        final long newSize = size != null ? size : 0L;
+        final long newProtectedSize = virtualSize != null ? virtualSize : 0L;
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            txn.start();
+            List<UsageBackupVO> activeUsage = listActiveUsage(vmId, backupOfferingId);
+            if (activeUsage.isEmpty()) {
+                logger.warn("No active backup usage for VM [{}] and backup offering [{}], ignoring backup metrics of size [{}] and protected size [{}].",
+                        vmId, backupOfferingId, newSize, newProtectedSize);
+                txn.commit();
+                return;
             }
+
+            UsageBackupVO latest = activeUsage.get(0);
+            if (activeUsage.size() == 1 && latest.getSize() == newSize && latest.getProtectedSize() == newProtectedSize) {
+                txn.commit();
+                return;
+            }
+
+            // Close the active rows and open one with the new size; this also merges duplicates.
+            for (UsageBackupVO usage : activeUsage) {
+                usage.setRemoved(eventDate);
+                update(usage.getId(), usage);
+            }
+            UsageBackupVO newUsage = new UsageBackupVO(latest.getZoneId(), latest.getAccountId(), latest.getDomainId(), vmId, backupOfferingId, eventDate);
+            newUsage.setSize(newSize);
+            newUsage.setProtectedSize(newProtectedSize);
+            persist(newUsage);
+            txn.commit();
         } catch (final Exception e) {
+            txn.rollback();
             logger.error("Error updating backup metrics: " + e.getMessage(), e);
+        } finally {
+            txn.close();
         }
     }
 
     @Override
-    public void removeUsage(Long accountId, Long vmId, Date eventDate) {
+    public void removeUsage(Long accountId, Long vmId, Long backupOfferingId, Date eventDate) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             txn.start();
@@ -67,6 +100,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                     pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), eventDate));
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, vmId);
+                    pstmt.setLong(4, backupOfferingId);
                     pstmt.executeUpdate();
                 }
             } catch (SQLException e) {

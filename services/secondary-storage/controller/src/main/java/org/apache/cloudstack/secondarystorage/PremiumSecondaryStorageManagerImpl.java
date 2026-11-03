@@ -28,6 +28,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Command;
 import com.cloud.configuration.Config;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -121,8 +122,8 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         boolean suspendAutoLoading = !reserveStandbyCapacity();
         if (!suspendAutoLoading) {
             // this is a hacking, has nothing to do with console proxy, it is just a flag that primary storage is being under maintenance mode
-            String restart = _configDao.getValue("consoleproxy.restart");
-            if (restart != null && restart.equalsIgnoreCase("false")) {
+            Boolean restart = ConsoleProxyManager.ConsoleProxyRestart.valueIn(dataCenterId);
+            if (Boolean.FALSE.equals(restart)) {
                 logger.debug("Capacity scan disabled purposefully, consoleproxy.restart = false. This happens when the primarystorage is in maintenance mode");
                 suspendAutoLoading = true;
             }

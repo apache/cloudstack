@@ -17,6 +17,7 @@
 package com.cloud.consoleproxy.vnc.network;
 
 
+import com.cloud.consoleproxy.ConsoleProxy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,14 +28,14 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     private NioSocketInputStream inputStream;
     private NioSocketOutputStream outputStream;
     private boolean isTLS = false;
-
-    private static final int DEFAULT_BUF_SIZE = 16384;
+    private final NioSocket socket;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
     public NioSocketHandlerImpl(NioSocket socket) {
-        this.inputStream = new NioSocketInputStream(DEFAULT_BUF_SIZE, socket);
-        this.outputStream = new NioSocketOutputStream(DEFAULT_BUF_SIZE, socket);
+        this.socket = socket;
+        this.inputStream = new NioSocketInputStream(ConsoleProxy.defaultBufferSize, socket);
+        this.outputStream = new NioSocketOutputStream(ConsoleProxy.defaultBufferSize, socket);
     }
 
     @Override
@@ -97,13 +98,8 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     }
 
     @Override
-    public int readNextBytes() {
-        return inputStream.getNextBytes();
-    }
-
-    @Override
-    public void readNextByteArray(byte[] arr, int len) {
-        inputStream.readNextByteArrayFromReadBuffer(arr, len);
+    public int readAvailableDataIntoBuffer(ByteBuffer buffer, int maxSize) {
+        return inputStream.readAvailableDataIntoBuffer(buffer, maxSize);
     }
 
     @Override
@@ -114,5 +110,10 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     @Override
     public NioSocketOutputStream getOutputStream() {
         return outputStream;
+    }
+
+    @Override
+    public void close() {
+        socket.close();
     }
 }

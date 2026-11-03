@@ -19,6 +19,7 @@ package com.cloud.vm.snapshot;
 
 import java.util.List;
 
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -53,4 +54,6 @@ public interface VMSnapshotService {
      * @param id vm id
      */
     boolean deleteVMSnapshotsFromDB(Long vmId, boolean unmanage);
+
+    void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException;
 }

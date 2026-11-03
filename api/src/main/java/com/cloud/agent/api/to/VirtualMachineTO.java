@@ -19,12 +19,14 @@ package com.cloud.agent.api.to;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VmDetailConstants;
 
 public class VirtualMachineTO {
     private long id;
@@ -49,6 +51,7 @@ public class VirtualMachineTO {
 
     private long minRam;
     private long maxRam;
+    private long requestedRam;
     private String hostName;
     private String arch;
     private String os;
@@ -87,6 +90,7 @@ public class VirtualMachineTO {
     private DeployAsIsInfoTO deployAsIsInfo;
     private String metadataManufacturer;
     private String metadataProductName;
+    private VirtualMachineMetadataTO metadata;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -204,13 +208,18 @@ public class VirtualMachineTO {
         return minRam;
     }
 
-    public void setRam(long minRam, long maxRam) {
+    public void setRam(long minRam, long maxRam, long requestedRam) {
         this.minRam = minRam;
         this.maxRam = maxRam;
+        this.requestedRam = requestedRam;
     }
 
     public long getMaxRam() {
         return maxRam;
+    }
+
+    public long getRequestedRam() {
+        return requestedRam;
     }
 
     public String getHostName() {
@@ -492,8 +501,28 @@ public class VirtualMachineTO {
         this.metadataProductName = metadataProductName;
     }
 
+    public VirtualMachineMetadataTO getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(VirtualMachineMetadataTO metadata) {
+        this.metadata = metadata;
+    }
+
     @Override
     public String toString() {
         return String.format("VM {id: \"%s\", name: \"%s\", uuid: \"%s\", type: \"%s\"}", id, name, uuid, type);
+    }
+
+    public Map<String, String> getExternalDetails() {
+        if (details == null) {
+            return new HashMap<>();
+        }
+        return details.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length()),
+                        Map.Entry::getValue
+                ));
     }
 }

@@ -88,15 +88,16 @@ public class NoVncClient {
         setTunnelSocketStreams();
     }
 
-    public void connectTo(String host, int port) {
+    public void connectTo(String host, int port) throws IOException {
         // Connect to server
         logger.info("Connecting to VNC server {}:{} ...", host, port);
         try {
             NioSocket nioSocket = new NioSocket(host, port);
             this.nioSocketConnection = new NioSocketHandlerImpl(nioSocket);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error(String.format("Cannot create socket to host: %s and port %s: %s", host, port,
                     e.getMessage()), e);
+            throw e;
         }
     }
 
@@ -125,6 +126,28 @@ public class NoVncClient {
     public void proxyMsgOverWebSocketConnection(ByteBuffer msg) {
         if (isVncOverWebSocketConnection()) {
             webSocketReverseProxy.proxyMsgFromRemoteSessionToEndpoint(msg);
+        }
+    }
+
+    public void close() {
+        if (nioSocketConnection != null) {
+            nioSocketConnection.close();
+        }
+        if (webSocketReverseProxy != null) {
+            webSocketReverseProxy.close();
+        }
+        if (socket != null) {
+            try {
+                if (is != null) {
+                    is.close();
+                }
+                if (os != null) {
+                    os.close();
+                }
+                socket.close();
+            } catch (IOException e) {
+                logger.debug("Error closing socket: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -502,16 +525,12 @@ public class NoVncClient {
         return nioSocketConnection.readServerInit();
     }
 
-    public int getNextBytes() {
-        return nioSocketConnection.readNextBytes();
+    public int readAvailableDataIntoBuffer(ByteBuffer buffer, int maxSize) {
+        return nioSocketConnection.readAvailableDataIntoBuffer(buffer, maxSize);
     }
 
     public boolean isTLSConnectionEstablished() {
         return nioSocketConnection.isTLSConnection();
-    }
-
-    public void readBytes(byte[] arr, int len) {
-        nioSocketConnection.readNextByteArray(arr, len);
     }
 
     public void processHandshakeSecurityType(int secType, String vmPassword, String host, int port) {

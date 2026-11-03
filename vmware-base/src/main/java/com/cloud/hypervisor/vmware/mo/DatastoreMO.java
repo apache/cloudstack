@@ -451,7 +451,7 @@ public class DatastoreMO extends BaseMO {
         return isAccessible;
     }
 
-    public boolean isDatastoreStoragePolicyComplaint(String storagePolicyId) throws Exception {
+    public boolean isDatastoreStoragePolicyCompliant(String storagePolicyId) throws Exception {
         PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(_context);
         PbmProfile profile = profMgrMo.getStorageProfile(storagePolicyId);
 

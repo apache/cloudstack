@@ -27,7 +27,7 @@ public class ImageStoreUtilTest {
 
     @Test
     public void testgenerateHttpsPostUploadUrl() throws MalformedURLException {
-        String ssvmdomain = "*.realhostip.com";
+        String ssvmdomain = "*.example.com";
         String ipAddress = "10.147.28.14";
         String uuid = UUID.randomUUID().toString();
         String protocol = "https";
@@ -47,7 +47,7 @@ public class ImageStoreUtilTest {
 
     @Test
     public void testgenerateHttpPostUploadUrl() throws MalformedURLException {
-        String ssvmdomain = "*.realhostip.com";
+        String ssvmdomain = "*.example.com";
         String ipAddress = "10.147.28.14";
         String uuid = UUID.randomUUID().toString();
         String protocol = "http";

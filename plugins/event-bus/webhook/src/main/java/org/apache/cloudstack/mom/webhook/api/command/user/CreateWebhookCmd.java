@@ -28,13 +28,12 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.apache.cloudstack.mom.webhook.Webhook;
+import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -42,10 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "createWebhook",
         description = "Creates a Webhook",
         responseObject = WebhookResponse.class,
-        responseView = ResponseObject.ResponseView.Restricted,
         entityType = {Webhook.class},
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
 public class CreateWebhookCmd extends BaseCmd {

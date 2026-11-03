@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -114,6 +115,69 @@ public class VolumeDaoImplTest {
     }
 
     @Test
+    public void findByInstanceAndNotState_queriesWithInstanceIdAndExcludedStates() {
+        SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+        VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(sb.entity()).thenReturn(mockedVO);
+
+        volumeDao.findByInstanceAndNotStates(42L, Volume.State.Ready);
+
+        Mockito.verify(sc).setParameters("instanceId", 42L);
+        Mockito.verify(sc).setParameters("state", (Object[]) new Volume.State[]{Volume.State.Ready});
+    }
+
+    @Test
+    public void findByInstanceAndNotStates_withMultipleExcludedStates_passesAllStatesToCriteria() {
+        SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+        VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(sb.entity()).thenReturn(mockedVO);
+
+        volumeDao.findByInstanceAndNotStates(7L, Volume.State.Destroy, Volume.State.Expunged);
+
+        Mockito.verify(sc).setParameters("instanceId", 7L);
+        Mockito.verify(sc).setParameters("state",
+                (Object[]) new Volume.State[]{Volume.State.Destroy, Volume.State.Expunged});
+    }
+
+    @Test
+    public void findByInstanceAndNotStates_returnsResultFromDao() {
+        SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        VolumeVO vol = Mockito.mock(VolumeVO.class);
+        Mockito.doReturn(List.of(vol)).when(volumeDao).listBy(sc);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+        Mockito.when(sb.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+
+        List<VolumeVO> result = volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready);
+
+        Assert.assertEquals(1, result.size());
+        Assert.assertSame(vol, result.get(0));
+    }
+
+    @Test
+    public void findByInstanceAndNotStates_noMatchingVolumes_returnsEmptyList() {
+        SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+        Mockito.when(sb.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+
+        List<VolumeVO> result = volumeDao.findByInstanceAndNotStates(99L, Volume.State.Ready);
+
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
     public void testSearchRemovedByVmsNoVms() {
         Assert.assertTrue(CollectionUtils.isEmpty(volumeDao.searchRemovedByVms(
                 new ArrayList<>(), 100L)));
@@ -141,5 +205,4 @@ public class VolumeDaoImplTest {
                 Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
                 Mockito.eq(false));
     }
-
 }

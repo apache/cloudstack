@@ -103,7 +103,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     }
 
     @Override
-    public Status isAgentAlive(Host agent) {
+    public Status getHostAgentStatus(Host agent) {
         if (logger.isDebugEnabled()) {
             logger.debug("checking if agent ({}) is alive", agent);
         }

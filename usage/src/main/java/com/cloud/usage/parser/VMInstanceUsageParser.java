@@ -22,46 +22,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.usage.UsageVMInstanceVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 
 @Component
-public class VMInstanceUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(VMInstanceUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageVMInstanceDao s_usageInstanceDao;
-
+public class VMInstanceUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;;
-    @Inject
-    private UsageVMInstanceDao _usageInstanceDao;
+    private UsageVMInstanceDao usageInstanceDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageInstanceDao = _usageInstanceDao;
+    @Override
+    public String getParserName() {
+        return "VM Instance";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all VMInstance usage events for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -71,7 +57,7 @@ public class VMInstanceUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageVMInstanceVO> usageInstances = s_usageInstanceDao.getUsageRecords(account.getId(), startDate, endDate);
+        List<UsageVMInstanceVO> usageInstances = usageInstanceDao.getUsageRecords(account.getId(), startDate, endDate);
 //ToDo: Add domainID for getting usage records
 
         // This map has both the running time *and* the usage amount.
@@ -151,7 +137,7 @@ public class VMInstanceUsageParser {
         return true;
     }
 
-    private static void updateVmUsageData(Map<String, Pair<String, Long>> usageDataMap, String key, String vmName, long duration) {
+    private void updateVmUsageData(Map<String, Pair<String, Long>> usageDataMap, String key, String vmName, long duration) {
         Pair<String, Long> vmUsageInfo = usageDataMap.get(key);
         if (vmUsageInfo == null) {
             vmUsageInfo = new Pair<String, Long>(vmName, new Long(duration));
@@ -163,19 +149,17 @@ public class VMInstanceUsageParser {
         usageDataMap.put(key, vmUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId,
+    private void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId,
         long serviceOfferingId, long templateId, String hypervisorType, Long cpuCores, Long cpuSpeed, Long memory) {
         // Our smallest increment is hourly for now
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Total running time " + runningTime + "ms");
-        }
+        logger.debug("Total running time {} ms", runningTime);
 
         float usage = runningTime / 1000f / 60f / 60f;
 
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        LOGGER.debug("Creating VM usage record for vm [{}], type [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+        logger.debug("Creating VM usage record for vm [{}], type [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
                 vmName, type, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                 DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
@@ -190,7 +174,7 @@ public class VMInstanceUsageParser {
         UsageVO usageRecord =
             new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), Long.valueOf(vmId),
                 vmName, cpuCores, cpuSpeed, memory, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
-        s_usageDao.persist(usageRecord);
+        usageDao.persist(usageRecord);
     }
 
     private static class VMInfo {

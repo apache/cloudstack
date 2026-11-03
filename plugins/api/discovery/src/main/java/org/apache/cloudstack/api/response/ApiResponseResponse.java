@@ -26,19 +26,19 @@ import java.util.Set;
 
 public class ApiResponseResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the api response field")
+    @Param(description = "The name of the API response field")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description of the api response field")
+    @Param(description = "Description of the API response field")
     private String description;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "response field type")
+    @Param(description = "Response field type")
     private String type;
 
     @SerializedName(ApiConstants.RESPONSE)
-    @Param(description = "api response fields")
+    @Param(description = "API response fields")
     private Set<ApiResponseResponse> apiResponse;
 
     public void setName(String name) {

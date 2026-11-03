@@ -39,13 +39,13 @@ public class ListAlertsCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AlertResponse.class, description = "the ID of the alert")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AlertResponse.class, description = "The ID of the alert")
     private Long id;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "list by alert type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "List by alert type")
     private String type;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list by alert name", since = "4.3")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List by alert name", since = "4.3")
     private String name;
 
     // ///////////////////////////////////////////////////

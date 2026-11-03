@@ -36,6 +36,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -72,7 +73,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
@@ -307,84 +307,60 @@ public class NsxElementTest {
         assertNotNull(vpcNetworkPair.second());
     }
 
-    private Method getPublicPortRangeMethod() throws NoSuchMethodException {
-        Method method = NsxElement.class.getDeclaredMethod("getPublicPortRange", PortForwardingRule.class);
-        method.setAccessible(true);
-        return method;
-    }
-
-    private Method getPrivatePFPortRangeMethod() throws NoSuchMethodException {
-        Method method = NsxElement.class.getDeclaredMethod("getPrivatePFPortRange", PortForwardingRule.class);
-        method.setAccessible(true);
-        return method;
-    }
-
-    private Method getPrivatePortRangeMethod() throws NoSuchMethodException {
-        Method method = NsxElement.class.getDeclaredMethod("getPrivatePortRange", FirewallRule.class);
-        method.setAccessible(true);
-        return method;
-    }
-
-    private Method getPrivatePortRangeForACLRuleMethod() throws NoSuchMethodException {
-        Method method = NsxElement.class.getDeclaredMethod("getPrivatePortRangeForACLRule", NetworkACLItem.class);
-        method.setAccessible(true);
-        return method;
-    }
-
     @Test
     public void testGetPublicPortRangeWhenStartAndEndPortNumbersAreDifferent() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         PortForwardingRule rule = new PortForwardingRuleVO("1", 11L, 80, 90, new Ip("172.30.10.11"), 8080, 8090, "tcp", 12L,
                 5L, 2L, 15L);
-        assertEquals("80-90", getPublicPortRangeMethod().invoke(null, rule));
+        assertEquals("80-90", PortForwardingServiceProvider.getPublicPortRange(rule));
     }
 
     @Test
     public void testGetPublicPortRangeWhenStartAndEndPortNumbersAreSame() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         PortForwardingRule rule = new PortForwardingRuleVO("1", 11L, 80, 80, new Ip("172.30.10.11"), 8080, 8080, "tcp", 12L,
                 5L, 2L, 15L);
-        assertEquals("80", getPublicPortRangeMethod().invoke(null, rule));
+        assertEquals("80", PortForwardingServiceProvider.getPublicPortRange(rule));
     }
 
     @Test
     public void testGetPrivatePFPortRangeWhenStartAndEndPortNumbersAreDifferent() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         PortForwardingRule rule = new PortForwardingRuleVO("1", 11L, 80, 90, new Ip("172.30.10.11"), 8080, 8090, "tcp", 12L,
                 5L, 2L, 15L);
-        assertEquals("8080-8090", getPrivatePFPortRangeMethod().invoke(null, rule));
+        assertEquals("8080-8090", PortForwardingServiceProvider.getPrivatePFPortRange(rule));
     }
 
     @Test
     public void testGetPrivatePFPortRangeWhenStartAndEndPortNumbersAreSame() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         PortForwardingRule rule = new PortForwardingRuleVO("1", 11L, 80, 80, new Ip("172.30.10.11"), 8080, 8080, "tcp", 12L,
                 5L, 2L, 15L);
-        assertEquals("8080", getPrivatePFPortRangeMethod().invoke(null, rule));
+        assertEquals("8080", PortForwardingServiceProvider.getPrivatePFPortRange(rule));
     }
 
     @Test
     public void testGetPrivatePortRangeWhenStartAndEndPortNumbersAreSame() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         FirewallRuleVO rule = new FirewallRuleVO("1", 11L, 80, 80, "tcp", 23L, 5L, 2L,
         FirewallRule.Purpose.Firewall, List.of("172.30.10.0/24"), null, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.User);
-        assertEquals("80", getPrivatePortRangeMethod().invoke(null, rule));
+        assertEquals("80", PortForwardingServiceProvider.getPrivatePortRange(rule));
     }
 
     @Test
     public void testGetPrivatePortRangeWhenStartAndEndPortNumbersAreDifferent() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         FirewallRuleVO rule = new FirewallRuleVO("1", 11L, 80, 90, "tcp", 23L, 5L, 2L,
                 FirewallRule.Purpose.Firewall, List.of("172.30.10.0/24"), null, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.User);
-        assertEquals("80-90", getPrivatePortRangeMethod().invoke(null, rule));
+        assertEquals("80-90", PortForwardingServiceProvider.getPrivatePortRange(rule));
     }
 
     @Test
     public void testGetPrivatePortRangeForACLWhenStartAndEndPortNumbersAreSame() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         NetworkACLItem rule = new NetworkACLItemVO(80, 80, "udp", 10L, List.of("172.30.10.0/24"), null, null, NetworkACLItem.TrafficType.Ingress, NetworkACLItem.Action.Allow,
         2, null);
-        assertEquals("80", getPrivatePortRangeForACLRuleMethod().invoke(null, rule));
+        assertEquals("80", PortForwardingServiceProvider.getPrivatePortRangeForACLRule(rule));
     }
 
     @Test
     public void testGetPrivatePortRangeForACLWhenStartAndEndPortNumbersAreDifferent() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         NetworkACLItem rule = new NetworkACLItemVO(80, 90, "udp", 10L, List.of("172.30.10.0/24"), null, null, NetworkACLItem.TrafficType.Ingress, NetworkACLItem.Action.Allow,
                 2, null);
-        assertEquals("80-90", getPrivatePortRangeForACLRuleMethod().invoke(null, rule));
+        assertEquals("80-90", PortForwardingServiceProvider.getPrivatePortRangeForACLRule(rule));
     }
 
     @Test

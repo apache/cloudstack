@@ -22,15 +22,15 @@ package com.cloud.network.dao;
 import com.cloud.network.Networks;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-
+import java.util.Collections;
 import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -46,26 +46,43 @@ public class NetworkDaoImplTest {
     List<NetworkVO> listNetworkVoMock;
 
     @Test
-    public void listByPhysicalNetworkTrafficTypeTestSetParametersValidation() throws Exception {
+    public void listByPhysicalNetworkTrafficTypeTestSetParametersValidation() {
         NetworkDaoImpl networkDaoImplSpy = Mockito.spy(NetworkDaoImpl.class);
-        TransactionLegacy txn = TransactionLegacy.open("runNetworkDaoImplTest");
-        try {
-            networkDaoImplSpy.AllFieldsSearch = searchBuilderNetworkVoMock;
-            Mockito.doReturn(searchCriteriaNetworkVoMock).when(searchBuilderNetworkVoMock).create();
-            Mockito.doNothing().when(searchCriteriaNetworkVoMock).setParameters(Mockito.anyString(), Mockito.any());
-            Mockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
+        networkDaoImplSpy.AllFieldsSearch = searchBuilderNetworkVoMock;
+        Mockito.doReturn(searchCriteriaNetworkVoMock).when(searchBuilderNetworkVoMock).create();
+        Mockito.doNothing().when(searchCriteriaNetworkVoMock).setParameters(Mockito.anyString(), Mockito.any());
+        Mockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
 
-            long expectedPhysicalNetwork = 2513l;
+        long expectedPhysicalNetwork = 2513l;
 
-            for (Networks.TrafficType trafficType : Networks.TrafficType.values()) {
-                List<NetworkVO> result = networkDaoImplSpy.listByPhysicalNetworkTrafficType(expectedPhysicalNetwork, trafficType);
-                Assert.assertEquals(listNetworkVoMock, result);
-                Mockito.verify(searchCriteriaNetworkVoMock).setParameters("trafficType", trafficType);
-            }
-
-            Mockito.verify(searchCriteriaNetworkVoMock, Mockito.times(Networks.TrafficType.values().length)).setParameters("physicalNetwork", expectedPhysicalNetwork);
-        } finally {
-            txn.close();
+        for (Networks.TrafficType trafficType : Networks.TrafficType.values()) {
+            List<NetworkVO> result = networkDaoImplSpy.listByPhysicalNetworkTrafficType(expectedPhysicalNetwork, trafficType);
+            Assert.assertEquals(listNetworkVoMock, result);
+            Mockito.verify(searchCriteriaNetworkVoMock).setParameters("trafficType", trafficType);
         }
+
+        Mockito.verify(searchCriteriaNetworkVoMock, Mockito.times(Networks.TrafficType.values().length)).setParameters("physicalNetworkId", expectedPhysicalNetwork);
+    }
+
+    @Test
+    public void listByIdsTestNullOrEmptyIdsReturnsEmptyList() {
+        NetworkDaoImpl networkDaoImplSpy = Mockito.spy(NetworkDaoImpl.class);
+
+        Assert.assertTrue(networkDaoImplSpy.listByIds(null).isEmpty());
+        Assert.assertTrue(networkDaoImplSpy.listByIds(Collections.emptyList()).isEmpty());
+        Mockito.verify(networkDaoImplSpy, Mockito.never()).listBy(Mockito.any(SearchCriteria.class));
+    }
+
+    @Test
+    public void listByIdsTestBuildsInClause() {
+        NetworkDaoImpl networkDaoImplSpy = Mockito.spy(NetworkDaoImpl.class);
+        Mockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
+
+        List<NetworkVO> result = networkDaoImplSpy.listByIds(List.of(1L, 2L, 3L));
+
+        Assert.assertEquals(listNetworkVoMock, result);
+        ArgumentCaptor<SearchCriteria> scCaptor = ArgumentCaptor.forClass(SearchCriteria.class);
+        Mockito.verify(networkDaoImplSpy).listBy(scCaptor.capture());
+        Assert.assertEquals("networks.id IN (?,?,?)", scCaptor.getValue().getWhereClause().trim());
     }
 }

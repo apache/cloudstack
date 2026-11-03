@@ -107,6 +107,7 @@ export default {
       this.fetchNetworks()
     },
     fetchNetworks () {
+      this.selectedNetwork = null
       this.loading = true
       var params = {
         domainId: this.selectedDomain,

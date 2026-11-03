@@ -177,14 +177,14 @@ Copyright (c) 2014 The Apache Software Foundation
       of your accepting any such warranty or additional liability.
 
    END OF TERMS AND CONDITIONS
-            
+
 
 This distribution contains third party resources.
 Within the console-proxy/js directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2009, John Resig 
-            
+            Copyright (c) 2009, John Resig
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -192,10 +192,10 @@ Within the console-proxy/js directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -203,43 +203,43 @@ Within the console-proxy/js directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from John Resig   
-            jquery.js 
+
+        from John Resig
+            jquery.js
 
 
 Within the systemvm/debian/etc directory
     placed in the public domain
-        by Adiscon GmbH  http://www.adiscon.com/ 
-            rsyslog.conf 
-        by Simon Kelley   
-            dnsmasq.conf 
-            vpcdnsmasq.conf 
+        by Adiscon GmbH  http://www.adiscon.com/
+            rsyslog.conf
+        by Simon Kelley
+            dnsmasq.conf
+            vpcdnsmasq.conf
 
 Within the systemvm/debian/etc/apache2 directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2012 The Apache Software Foundation
-        from The Apache Software Foundation  http://www.apache.org/ 
-            httpd.conf 
+        from The Apache Software Foundation  http://www.apache.org/
+            httpd.conf
             vhost.template
 
 Within the systemvm/debian/etc/ssh/ directory
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
- 
-            
+
+
             Redistribution and use in source and binary forms, with or without modification,
             are permitted provided that the following conditions are met:
-            
+
             Redistributions of source code must retain the above copyright notice, this list
             of  conditions and the following disclaimer. Redistributions in binary form must
             reproduce the above copyright notice, this list  of conditions and the following
             disclaimer in the documentation and/or other materials  provided with the
             distribution.
-            
+
             Neither the name of the author nor the names of contributors may be used to
             endorse  or promote products derived from this software without specific prior
             written permission.
-            
+
             THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
             ANY  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
             WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -250,55 +250,55 @@ Within the systemvm/debian/etc/ssh/ directory
             ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
             (INCLUDING  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
             SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
-                        
-        from OpenSSH Project  http://www.openssh.org/ 
-            sshd_config 
+
+        from OpenSSH Project  http://www.openssh.org/
+            sshd_config
 
 Within the systemvm/debian/root/redundant_router directory
     placed in the public domain
-        by The netfilter.org project  http://www.netfilter.org/ 
-            conntrackd.conf.templ 
+        by The netfilter.org project  http://www.netfilter.org/
+            conntrackd.conf.templ
 
 Within the scripts/storage/secondary directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2010-2011 OpenStack, LLC.
-        from OpenStack, LLC  http://www.openstack.org 
-            swift 
+        from OpenStack, LLC  http://www.openstack.org
+            swift
 
 Within the scripts/vm/hypervisor/xenserver directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2010-2011 OpenStack, LLC.
-        from OpenStack, LLC  http://www.openstack.org 
-            swift 
+        from OpenStack, LLC  http://www.openstack.org
+            swift
 
 Within the ui/lib directory
     placed in the public domain
-        by Eric Meyer  http://meyerweb.com/eric/ 
+        by Eric Meyer  http://meyerweb.com/eric/
             reset.css  from http://meyerweb.com/eric/tools/css/reset/
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2006 Google Inc.
-        from Google Inc.  http://google.com 
+        from Google Inc.  http://google.com
             excanvas.js  from http://code.google.com/p/explorercanvas/
 
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
 
             Copyright (c) 2008 George McGinley Smith
-            All rights reserved. 
-            
+            All rights reserved.
+
             Redistribution and use in source and binary forms, with or without modification,
             are permitted provided that the following conditions are met:
-            
+
             Redistributions of source code must retain the above copyright notice, this list
             of  conditions and the following disclaimer. Redistributions in binary form must
             reproduce the above copyright notice, this list  of conditions and the following
             disclaimer in the documentation and/or other materials  provided with the
             distribution.
-            
+
             Neither the name of the author nor the names of contributors may be used to
             endorse  or promote products derived from this software without specific prior
             written permission.
-            
+
             THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
             ANY  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
             WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -309,13 +309,13 @@ Within the ui/lib directory
             ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
             (INCLUDING  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
             SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
-                        
-        from George McGinley Smith   
-            jquery.easing.js 
+
+        from George McGinley Smith
+            jquery.easing.js
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
- 
-            
+
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -323,10 +323,10 @@ Within the ui/lib directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -334,14 +334,14 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from The Dojo Foundation  http://dojofoundation.org/ 
+
+        from The Dojo Foundation  http://dojofoundation.org/
             require.js  from http://github.com/jrburke/requirejs
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2011, John Resig 
-            
+            Copyright (c) 2011, John Resig
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -349,10 +349,10 @@ Within the ui/lib directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -360,14 +360,14 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from John Resig   
-            jquery.js 
+
+        from John Resig
+            jquery.js
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
             Copyright (c) 2014 Jörn Zaefferer
-            
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -375,10 +375,10 @@ Within the ui/lib directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -386,9 +386,9 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from Jorn Zaefferer   
-            jquery.validate.js 
+
+        from Jorn Zaefferer
+            jquery.validate.js
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
@@ -418,8 +418,8 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2010, Sebastian Tschan 
-            
+            Copyright (c) 2010, Sebastian Tschan
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -427,10 +427,10 @@ Within the ui/lib directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -438,14 +438,14 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from Sebastian Tschan  https://blueimp.net 
-            jquery.md5.js 
+
+        from Sebastian Tschan  https://blueimp.net
+            jquery.md5.js
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2006 Klaus Hartl (stilbuero.de) 
-            
+            Copyright (c) 2006 Klaus Hartl (stilbuero.de)
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -453,10 +453,10 @@ Within the ui/lib directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -464,15 +464,15 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from Klaus Hartl  http://stilbuero.de 
-            jquery.cookies.js 
+
+        from Klaus Hartl  http://stilbuero.de
+            jquery.cookies.js
 
 Within the ui/lib/flot directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Released under the MIT license by IOLA, December 2007. 
-            
+            Released under the MIT license by IOLA, December 2007.
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -480,10 +480,10 @@ Within the ui/lib/flot directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -491,24 +491,24 @@ Within the ui/lib/flot directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from IOLA  http://www.iola.dk/ 
-            jquery.flot.crosshair.js 
-            jquery.flot.fillbetween.js 
-            jquery.flot.image.js 
-            jquery.flot.js 
-            jquery.flot.navigate.js 
-            jquery.flot.resize.js 
-            jquery.flot.selection.js 
-            jquery.flot.stack.js 
-            jquery.flot.symbol.js 
-            jquery.flot.threshold.js 
+
+        from IOLA  http://www.iola.dk/
+            jquery.flot.crosshair.js
+            jquery.flot.fillbetween.js
+            jquery.flot.image.js
+            jquery.flot.js
+            jquery.flot.navigate.js
+            jquery.flot.resize.js
+            jquery.flot.selection.js
+            jquery.flot.stack.js
+            jquery.flot.symbol.js
+            jquery.flot.threshold.js
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
             Created by Brian Medendorp, June 2009
-            Updated November 2009 with contributions from: btburnett3, Anthony Aragues and Xavi Ivars 
-            
+            Updated November 2009 with contributions from: btburnett3, Anthony Aragues and Xavi Ivars
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -516,10 +516,10 @@ Within the ui/lib/flot directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -527,13 +527,13 @@ Within the ui/lib/flot directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from Brian Medendorp   
-            jquery.pie.js 
+
+        from Brian Medendorp
+            jquery.pie.js
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
- 
-            
+
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -541,10 +541,10 @@ Within the ui/lib/flot directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -552,14 +552,14 @@ Within the ui/lib/flot directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from Ole Laursen   
-            jquery.colorhelpers.js 
+
+        from Ole Laursen
+            jquery.colorhelpers.js
 
 Within the ui/lib/jquery-ui directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
- 
-            
+
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -567,10 +567,10 @@ Within the ui/lib/jquery-ui directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -578,17 +578,17 @@ Within the ui/lib/jquery-ui directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from jQuery UI Developers  http://jqueryui.com/about 
-            css/jquery-ui.css 
-            index.html 
-            js/jquery-ui.js 
+
+        from jQuery UI Developers  http://jqueryui.com/about
+            css/jquery-ui.css
+            index.html
+            js/jquery-ui.js
 
 Within the ui/lib/qunit directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2012 John Resig, Jörn Zaefferer 
-            
+            Copyright (c) 2012 John Resig, Jörn Zaefferer
+
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
             "Software"), to  deal in  the Software without  restriction, including
@@ -596,10 +596,10 @@ Within the ui/lib/qunit directory
             distribute,  sublicense, and/or sell  copies of  the Software,  and to
             permit persons to whom the Software  is furnished to do so, subject to
             the following conditions:
-            
+
             The  above  copyright  notice  and  this permission  notice  shall  be
             included in all copies or substantial portions of the Software.
-            
+
             THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
             EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
             MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
@@ -607,20 +607,20 @@ Within the ui/lib/qunit directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from Jorn Zaefferer   
+
+        from Jorn Zaefferer
             qunit.css  from http://docs.jquery.com/QUnit
             qunit.js  from http://docs.jquery.com/QUnit
 
 Within the utils/src/main/java/com/cloud/utils/db directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2004 Clinton Begin
-        from Clinton Begin  http://code.google.com/p/mybatis/ 
+        from Clinton Begin  http://code.google.com/p/mybatis/
             ScriptRunner.java  from http://code.google.com/p/mybatis/
 
 Within the utils/src/main/java/org/apache/commons/httpclient/contrib/ssl directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2007 The Apache Software Foundation
-        from The Apache Software Foundation  http://www.apache.org/ 
-            EasySSLProtocolSocketFactory.java 
-            EasyX509TrustManager.java 
+        from The Apache Software Foundation  http://www.apache.org/
+            EasySSLProtocolSocketFactory.java
+            EasyX509TrustManager.java

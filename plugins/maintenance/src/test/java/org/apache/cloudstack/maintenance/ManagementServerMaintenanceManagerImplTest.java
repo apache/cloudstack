@@ -321,7 +321,6 @@ public class ManagementServerMaintenanceManagerImplTest {
             spy.prepareForMaintenance("static", false);
         });
 
-        Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Maintenance);
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelMaintenance();
         Mockito.verify(jobManagerMock).enableAsyncJobs();
@@ -339,7 +338,6 @@ public class ManagementServerMaintenanceManagerImplTest {
             spy.prepareForMaintenance("static", false);
         });
 
-        Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.PreparingForMaintenance);
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelMaintenance();
         Mockito.verify(jobManagerMock).enableAsyncJobs();

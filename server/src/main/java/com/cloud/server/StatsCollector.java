@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -56,6 +57,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -112,6 +114,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -165,15 +169,16 @@ import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
@@ -200,6 +205,11 @@ import com.sun.management.OperatingSystemMXBean;
  */
 @Component
 public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable, DbStatsCollection {
+
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite"), INFLUXDB("influxdb");
@@ -266,9 +276,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
             "Minimal interval (in seconds) to report vm disk statistics. If vm.disk.stats.interval is smaller than this, use this to report vm disk statistics.", false);
     private static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.network.stats.interval", "0",
-            "Interval (in seconds) to report vm network statistics (for Shared networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
+            "Interval (in seconds) to report vm network statistics (for Shared and Routed networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
-            "Minimal Interval (in seconds) to report vm network statistics (for Shared networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.",
+            "Minimal Interval (in seconds) to report vm network statistics (for Shared and Routed networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.",
             false);
     private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<>("Advanced", Integer.class, "stats.timeout", "60000",
             "The timeout for stats call in milli seconds.", true,
@@ -294,6 +304,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new Gson();
+    private static Gson msStatsGson = new GsonBuilder()
+            .setDateFormat(DateUtil.ZONED_DATETIME_FORMAT)
+            .create();
 
     private ScheduledExecutorService _executor = null;
     @Inject
@@ -383,7 +396,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
-    final static MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+
+    public static void registerMetric(String name, Metric metric) {
+        METRIC_REGISTRY.register(name, metric);
+    }
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -406,6 +423,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         registerAll("memory", new MemoryUsageGaugeSet(), METRIC_REGISTRY);
         registerAll("threads", new ThreadStatesGaugeSet(), METRIC_REGISTRY);
         registerAll("jvm", new JvmAttributeGaugeSet(), METRIC_REGISTRY);
+        try {
+            JmxReporter.forRegistry(METRIC_REGISTRY).inDomain("vm-extra").build().start();
+        } catch (Exception e) {
+            logger.warn("Failed to start JMX reporter for METRIC_REGISTRY, metrics will not be visible via JMX", e);
+        }
         return true;
     }
     @Override
@@ -739,7 +761,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              dbStats.put(uptime, (Long.valueOf(stats.get(uptime))));
          }
 
-
          @Override
          protected Point createInfluxDbPoint(Object metricsObject) {
              return null;
@@ -759,7 +780,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 msHostStatsEntry = getDataFrom(mshost);
                 managementServerHostStats.put(mshost.getUuid(), msHostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(msHostStatsEntry));
+                clusterManager.publishStatus(msStatsGson.toJson(msHostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
@@ -940,12 +961,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.info(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
             }
             try {
-                String bootTime = Script.runSimpleBashScript("uptime -s");
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.ENGLISH);
+                String bootTime = Script.runSimpleBashScript("date -d @$(grep btime /proc/stat | awk '{print $2}') '+%Y-%m-%d %H:%M:%S'");
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                 Date date = formatter.parse(bootTime);
                 newEntry.setSystemBootTime(date);
             } catch (ParseException e) {
-                logger.error("can not retrieve system uptime");
+                logger.error("can not retrieve system uptime", e);
             }
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse) * 1024);
@@ -983,7 +1004,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             double totalcpucap = 0;
             if (StringUtils.isEmpty(cpucaps)) {
                 String totalCpus = Script.runSimpleBashScript("nproc --all| tr '\\n' \" \"");
-                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | egrep 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
+                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | grep -E 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
                 if (StringUtils.isNotEmpty(totalCpus) && StringUtils.isNotEmpty(maxCpuSpeed)) {
                     totalcpucap = Double.parseDouble(totalCpus) * Double.parseDouble(maxCpuSpeed);
                 }
@@ -1161,9 +1182,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.debug(String.format("StatusUpdate from %s, json: %s", pdu.getSourcePeer(), pdu.getJsonPackage()));
             }
 
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry hostStatsEntry;
             try {
-                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),new TypeToken<ManagementServerHostStatsEntry>(){}.getType());
+                hostStatsEntry = msStatsGson.fromJson(pdu.getJsonPackage(), ManagementServerHostStatsEntry.class);
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
 
                 // Update peer state to Up in mshost_peer
@@ -1285,14 +1306,24 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * can be enabled/disabled independently.</p>
      */
     class VmStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
-            cleanUpVirtualMachineStats();
+            try {
+                cleanUpVirtualMachineStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up VM stats", e);
+            }
         }
     }
 
     class VolumeStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
-            cleanUpVolumeStats();
+            try {
+                cleanUpVolumeStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up Volume stats", e);
+            }
         }
     }
 
@@ -1462,7 +1493,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 for (VmDiskStats vmDiskStat : vmDiskStats) {
                                     VmDiskStatsEntry vmDiskStatEntry = (VmDiskStatsEntry)vmDiskStat;
                                     SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
-                                    sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStatEntry.getPath());
+                                    sc_volume.addAnd("path", SearchCriteria.Op.LIKE, vmDiskStatEntry.getPath() + "%");
                                     List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
 
                                     if (CollectionUtils.isEmpty(volumes))
@@ -1578,9 +1609,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
                                     sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStatEntry.getMacAddress());
                                     NicVO nic = _nicDao.search(sc_nic, null).get(0);
-                                    List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
-                                    if (vlan == null || vlan.size() == 0 || vlan.get(0).getVlanType() != VlanType.DirectAttached)
-                                        continue; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
+                                    if (!isNetworkEligibleForNetworkStats(nic.getNetworkId())) {
+                                        continue; // only get network statistics for Shared or Routed network
+                                    }
                                     UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(),
                                             nic.getIPv4Address(), vmId, "UserVm");
                                     if (previousvmNetworkStats == null) {
@@ -1646,7 +1677,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 List<StoragePoolVO> pools = _storagePoolDao.listAll();
 
                 for (StoragePoolVO pool : pools) {
-                    List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
+                    List<VolumeVO> volumes = _volsDao.findNonDestroyedVolumesByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
                         if (!List.of(ImageFormat.QCOW2, ImageFormat.VHD, ImageFormat.OVA, ImageFormat.RAW).contains(volume.getFormat()) &&
                             !List.of(Storage.StoragePoolType.PowerFlex, Storage.StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
@@ -2134,6 +2165,27 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return bytesReadDifferentFromPrevious || bytesWriteDifferentFromPrevious || ioReadDifferentFromPrevious || ioWriteDifferentFromPrevious;
         }
         return true;
+    }
+
+    /**
+     * Returns {@code true} if the given network is eligible for VM network statistics collection.
+     * Only Shared (DirectAttached) networks and Routed networks qualify.
+     *
+     * @param networkId the network id to evaluate
+     * @return {@code true} when the network is routed or direct-attached, {@code false} otherwise
+     */
+    protected boolean isNetworkEligibleForNetworkStats(Long networkId) {
+        if (networkId == null) {
+            return false;
+        }
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        boolean isDirectAttachedNetwork = CollectionUtils.isNotEmpty(vlans)
+                && vlans.get(0).getVlanType() == VlanType.DirectAttached;
+        if (isDirectAttachedNetwork) {
+            return true;
+        }
+        NetworkVO networkVO = networkDao.findById(networkId);
+        return networkVO != null && routedIpv4Manager.isRoutedNetwork(networkVO);
     }
 
     /**

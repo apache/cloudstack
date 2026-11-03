@@ -41,6 +41,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -651,7 +653,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private VMTemplateVO createVMTemplateRecord(String vmInternalName, long guestOsId, long accountId) {
         Long nextTemplateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO templateVO = new VMTemplateVO(nextTemplateId, "Imported-from-" + vmInternalName, Storage.ImageFormat.OVA, false, false, false, Storage.TemplateType.USER, null,
-                false, 64, accountId, null, "Template imported from VM " + vmInternalName, false, guestOsId, false, HypervisorType.VMware, null, null, false, false, false, false, CPU.CPUArch.amd64);
+                false, 64, accountId, null, "Template imported from VM " + vmInternalName, false, guestOsId, false, HypervisorType.VMware, null, null, false, false, false, false, CPU.CPUArch.amd64, null);
         return vmTemplateDao.persist(templateVO);
     }
 
@@ -694,7 +696,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     updateTemplateRef(templateId, poolId, templatePath, templateSize);
                     return templateId;
                 } else {
-                    return volumeVO.getTemplateId();
+                    Long templateId = volumeVO.getTemplateId();
+                    if (templateId == null && volumeVO.getInstanceId() != null) {
+                        VMInstanceVO vmInstanceVO = vmDao.findByIdIncludingRemoved(volumeVO.getInstanceId());
+                        return vmInstanceVO.getTemplateId();
+                    }
+                    return templateId;
                 }
             }
         }
@@ -870,7 +877,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),
+                vol.getDeviceId(), diskOffering.getUuid(), vol.getMinIops(), vol.getMaxIops()));
             }
             return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
@@ -1154,9 +1163,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup,
+            BackupProvider backupProvider) throws Exception {
         logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "type")));
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmToImport = dcMo.findVm(vmInternalName);
         if (vmToImport == null) {
@@ -1183,7 +1193,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup)
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup,
+            BackupProvider backupProvider)
             throws Exception {
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmRestored = findVM(dcMo, location);
@@ -1391,6 +1402,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        Integer requestedCpuNumber = params.containsKey(VmDetailConstants.CPU_NUMBER) ? Integer.parseInt(params.get(VmDetailConstants.CPU_NUMBER)) : null;
+        Integer requestedCpuSpeed = params.containsKey(VmDetailConstants.CPU_SPEED) ? Integer.parseInt(params.get(VmDetailConstants.CPU_SPEED)) : null;
+        Integer requestedMemory = params.containsKey(VmDetailConstants.MEMORY) ? Integer.parseInt(params.get(VmDetailConstants.MEMORY)) : null;
 
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
@@ -1402,6 +1416,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 throw new CloudRuntimeException(err);
             }
 
+            checkSourceVmResourcesAgainstSelectedOfferingResources(vmMo, requestedCpuNumber, requestedCpuSpeed, requestedMemory);
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
 
             if (sourceVmPowerState == VirtualMachinePowerState.POWERED_OFF) {
@@ -1439,6 +1454,29 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String err = String.format("Error while finding or cloning VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
             logger.error(err, e);
             throw new CloudRuntimeException(err, e);
+        }
+    }
+
+    protected void checkSourceVmResourcesAgainstSelectedOfferingResources(VirtualMachineMO vmMo, Integer requestedCpuNumber, Integer requestedCpuSpeed, Integer requestedMemory) throws Exception {
+        if (ObjectUtils.allNull(requestedCpuNumber, requestedCpuSpeed, requestedMemory)) {
+            return;
+        }
+        VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
+        if (configSummary != null) {
+            compareSourceVmResourceAgainstRequested(configSummary.getNumCpu(), requestedCpuNumber, "CPU number");
+            compareSourceVmResourceAgainstRequested(configSummary.getCpuReservation(), requestedCpuSpeed, "CPU speed");
+            compareSourceVmResourceAgainstRequested(configSummary.getMemorySizeMB(), requestedMemory, "Memory");
+        }
+    }
+
+    protected void compareSourceVmResourceAgainstRequested(Integer actualResource, Integer requestedResource, String resourceName) throws Exception {
+        if (ObjectUtils.anyNull(actualResource, requestedResource)) {
+            return;
+        }
+        if (requestedResource < actualResource) {
+            String err = String.format("The requested %s (%d) is less than the source VM %s (%d)", resourceName, requestedResource, resourceName, actualResource);
+            logger.error(err);
+            throw new CloudRuntimeException(err);
         }
     }
 

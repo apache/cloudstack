@@ -73,42 +73,32 @@
           <template #label>
             <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
+            allowClear="true"
             :placeholder="apiParams.domainid.description"
-            @change="val => { handleDomainChange(val) }">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description" :value="opt.id">
-              <span>
-                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <block-outlined v-else style="margin-right: 5px" />
-                {{ opt.path || opt.name || opt.description }}
-              </span>
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="domainid">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.account.description"
-            @change="val => { handleAccountChange(val) }">
-            <a-select-option v-for="(acc, index) in accounts" :value="acc.name" :key="index">
-              {{ acc.name }}
-            </a-select-option>
-          </a-select>
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
+            allowClear="true"
+            :placeholder="apiParams.account.description" />
         </a-form-item>
 
       <a-form-item
@@ -128,6 +118,25 @@
               {{ opt.name || opt.description }}
           </a-select-option>
           </a-select>
+      </a-form-item>
+      <a-form-item
+        name="arch"
+        ref="arch">
+        <template #label>
+          <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+        </template>
+        <a-select
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          v-model:value="form.arch"
+          :placeholder="apiParams.arch.description">
+          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+            {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
       </a-form-item>
       <a-row :gutter="12">
         <a-col :md="24" :lg="12">
@@ -163,7 +172,7 @@
                 <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
               </template>
               <a-switch v-model:checked="form.isfeatured" />
-            </a-form-item>
+          </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
@@ -180,13 +189,15 @@ import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'CreateTemplate',
   mixins: [mixinForm],
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InfiniteScrollSelect
   },
   props: {
     resource: {
@@ -200,16 +211,29 @@ export default {
       zones: [],
       osTypes: {},
       loading: false,
-      domains: [],
-      accounts: [],
-      domainLoading: false,
       domainid: null,
-      account: null
+      account: null,
+      architectureTypes: {}
     }
   },
   computed: {
     isAdminRole () {
       return this.$store.getters.userInfo.roletype === 'Admin'
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        showicon: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      if (!this.domainid) {
+        return null
+      }
+      return {
+        domainid: this.domainid
+      }
     }
   },
   beforeCreate () {
@@ -236,9 +260,7 @@ export default {
       if (this.resource.intervaltype) {
         this.fetchSnapshotZones()
       }
-      if ('listDomains' in this.$store.getters.apis) {
-        this.fetchDomains()
-      }
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
     },
     fetchOsTypes () {
       this.osTypes.opts = []
@@ -288,44 +310,16 @@ export default {
         }
       })
     },
-    fetchDomains () {
-      const params = {}
-      params.listAll = true
-      params.showicon = true
-      params.details = 'min'
-      this.domainLoading = true
-      getAPI('listDomains', params).then(json => {
-        this.domains = json.listdomainsresponse.domain
-      }).finally(() => {
-        this.domainLoading = false
-        this.handleDomainChange(null)
-      })
-    },
-    async handleDomainChange (domain) {
-      this.domainid = domain
+    handleDomainChange (domainId) {
+      this.domainid = domainId
       this.form.account = null
       this.account = null
-      if ('listAccounts' in this.$store.getters.apis) {
-        await this.fetchAccounts()
-      }
     },
-    fetchAccounts () {
-      return new Promise((resolve, reject) => {
-        getAPI('listAccounts', {
-          domainid: this.domainid
-        }).then(response => {
-          this.accounts = response?.listaccountsresponse?.account || []
-          resolve(this.accounts)
-        }).catch(error => {
-          this.$notifyError(error)
-        })
-      })
-    },
-    handleAccountChange (acc) {
-      if (acc) {
-        this.account = acc.name
+    handleAccountChange (accountName) {
+      if (accountName) {
+        this.account = accountName
       } else {
-        this.account = acc
+        this.account = null
       }
     },
     handleSubmit (e) {

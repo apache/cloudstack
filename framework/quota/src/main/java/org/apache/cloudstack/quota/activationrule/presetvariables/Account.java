@@ -36,7 +36,6 @@ public class Account extends GenericPresetVariable {
 
     public void setRole(Role role) {
         this.role = role;
-        fieldNamesToIncludeInToString.add("role");
     }
 
     public String getCreated() {
@@ -45,6 +44,5 @@ public class Account extends GenericPresetVariable {
 
     public void setCreated(Date created) {
         this.created = DateUtil.displayDateInTimezone(TimeZone.getTimeZone("GMT"), created);
-        fieldNamesToIncludeInToString.add("created");
     }
 }

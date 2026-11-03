@@ -30,7 +30,7 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "createInstanceGroup", description = "Creates a vm group", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
+@APICommand(name = "createInstanceGroup", description = "Creates an Instance group", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVMGroupCmd extends BaseCmd {
 
@@ -39,21 +39,21 @@ public class CreateVMGroupCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the instance group")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Instance group")
     private String groupName;
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
+               description = "The account of the Instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the domain ID of account owning the instance group")
+               description = "The domain ID of account owning the Instance group")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "The project of the instance group")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "The project of the Instance group")
     private Long projectId;
 
     // ///////////////////////////////////////////////////
@@ -82,7 +82,7 @@ public class CreateVMGroupCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -98,7 +98,7 @@ public class CreateVMGroupCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm instance group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Instance Instance group");
         }
     }
 }

@@ -1,0 +1,46 @@
+#!/bin/bash -e
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+(/opt/bin/kubectl get pods -A | grep cloudstack-csi-controller) && exit 0
+
+if [ -e /opt/csi/snapshot-crds.yaml ]; then
+    /opt/bin/kubectl apply -f /opt/csi/snapshot-crds.yaml
+    sleep 5
+    /opt/bin/kubectl apply -f /opt/csi/manifest.yaml
+    exit 0
+else
+    TARGET_DIR="/opt/csi"
+    mkdir -p "$TARGET_DIR"
+    CSI_URLS=(
+      "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml"
+      "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml"
+    )
+    for url in "${CSI_URLS[@]}"; do
+        filename=$(basename "$url")
+
+        curl -sSL ${url} -o ${TARGET_DIR}/${filename}
+        if [ $? -ne 0 ]; then
+          echo "Unable to connect to the internet to download the relevant files to install and setup CloudStack CSI driver"
+          exit 1
+        else
+          /opt/bin/kubectl apply -f /opt/csi/snapshot-crds.yaml
+          /opt/bin/kubectl apply -f /opt/csi/manifest.yaml
+          exit 0
+        fi
+    done
+fi

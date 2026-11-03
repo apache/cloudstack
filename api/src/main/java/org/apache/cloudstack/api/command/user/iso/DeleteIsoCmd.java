@@ -41,13 +41,13 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the ISO file")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the ISO file")
     private Long id;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "the ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
+               description = "The ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting ISO " + getId();
+        return "Deleting ISO with ID: " + getResourceUuid(ApiConstants.ID) + " from zone " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("ISO Id: " + getId());
+        CallContext.current().setEventDetails("ISO ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _templateService.deleteIso(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

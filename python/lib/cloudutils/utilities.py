@@ -63,7 +63,7 @@ class bash:
         return self.stdout.decode('utf-8').strip('\n')
 
     def getLines(self):
-        return self.stdout.decode('utf-8').strip('\n')
+        return self.stdout.decode('utf-8').strip('\n').split('\n')
 
     def getStderr(self):
         return self.stderr.decode('utf-8').strip('\n')
@@ -98,7 +98,7 @@ def writeProgressBar(msg, result):
     sys.stdout.flush()
 
 class UnknownSystemException(Exception):
-    "This Excption is raised if the current operating enviornment is unknown"
+    "This Exception is raised if the current operating environment is unknown"
     pass
 
 class Distribution:

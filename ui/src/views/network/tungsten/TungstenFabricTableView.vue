@@ -122,7 +122,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { postAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TungstenNetworkAction from '@/views/network/tungsten/TungstenNetworkAction'
 import TungstenNetworkTable from '@/views/network/tungsten/TungstenNetworkTable'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -233,7 +233,7 @@ export default {
       this.dataSource = []
       this.fetchLoading = true
 
-      postAPI(this.apiName, params).then(json => {
+      getAPI(this.apiName, params).then(json => {
         let responseName
         let objectName
         for (const key in json) {
@@ -274,7 +274,7 @@ export default {
           const fieldIndex = this.currentAction.fields.findIndex(item => item.name === field.name)
           this.currentAction.fields[fieldIndex].loading = true
 
-          postAPI(field.api, params).then(json => {
+          getAPI(field.api, params).then(json => {
             let responseName
             let objectName
             for (const key in json) {

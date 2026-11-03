@@ -49,10 +49,13 @@ public interface AlertManager extends Manager, AlertService {
             "Percentage (as a value between 0 and 1) of guest network IPv6 subnet utilization above which alerts will be sent.",
             true);
 
+    ConfigKey<String> AllowedRepetitiveAlertTypes = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, String.class,
+            "alert.allowed.repetitive.types", "",
+            "Comma-separated list of alert types (by name) that can be sent multiple times", true);
+
     void clearAlert(AlertType alertType, long dataCenterId, long podId);
 
     void recalculateCapacity();
 
     void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String body);
-
 }

@@ -193,8 +193,14 @@
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
+              }"
+               >
+              <a-select-option
+                v-for="item in networkOfferings"
+                :key="item.id"
+                :value="item.id"
+                :label="item.displaytext || item.name || item.description"
+                :title="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
@@ -460,6 +466,7 @@ export default {
       publicLBExists: false,
       setMTU: false,
       isNsxEnabled: false,
+      zoneExtNetProvider: null,
       isOfferingNatMode: false,
       isOfferingRoutedMode: false,
       displayCollapsible: [],
@@ -536,6 +543,7 @@ export default {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
         this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
         this.isNsxEnabled = json?.listzonesresponse?.zone?.[0]?.isnsxenabled || false
+        this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
       })
     },
     fetchNetworkAclList () {
@@ -615,7 +623,7 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      if (!this.isNsxEnabled && !this.isOfferingRoutedMode) {
+      if ((!this.isNsxEnabled || !['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase())) && !this.isOfferingRoutedMode) {
         params.supportedServices = 'SourceNat'
       }
       getAPI('listNetworkOfferings', params).then(json => {
@@ -638,7 +646,7 @@ export default {
           }
         }
         this.networkOfferings = filteredOfferings
-        if (this.isNsxEnabled) {
+        if (this.isNsxEnabled || (this.zoneExtNetProvider && ['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase()))) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
         if (this.resource.asnumberid) {

@@ -22,20 +22,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.UsageVmDiskVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.SearchCriteria;
@@ -43,38 +39,27 @@ import com.cloud.utils.db.SearchCriteria;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
-public class VmDiskUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(VmDiskUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageVmDiskDao s_usageVmDiskDao;
-
+public class VmDiskUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageVmDiskDao _usageVmDiskDao;
+    private UsageVmDiskDao usageVmDiskDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageVmDiskDao = _usageVmDiskDao;
+    @Override
+    public String getParserName() {
+        return "VM Disk";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all Vm Disk usage events for account: " + account.getId());
-        }
-
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
         // - query usage_disk table for all entries for userId with
         // event_date in the given range
-        SearchCriteria<UsageVmDiskVO> sc = s_usageVmDiskDao.createSearchCriteria();
+        SearchCriteria<UsageVmDiskVO> sc = usageVmDiskDao.createSearchCriteria();
         sc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
         sc.addAnd("eventTimeMillis", SearchCriteria.Op.BETWEEN, startDate.getTime(), endDate.getTime());
-        List<UsageVmDiskVO> usageVmDiskVOs = s_usageVmDiskDao.search(sc, null);
+        List<UsageVmDiskVO> usageVmDiskVOs = usageVmDiskDao.search(sc, null);
 
         Map<String, VmDiskInfo> vmDiskUsageByZone = new HashMap<String, VmDiskInfo>();
 
@@ -110,7 +95,7 @@ public class VmDiskUsageParser {
             long bytesWrite = vmDiskInfo.getBytesWrite();
 
             if ((ioRead > 0L) || (ioWrite > 0L) || (bytesRead > 0L) || (bytesWrite > 0L)) {
-                LOGGER.debug("Creating vm disk usage record, io read [{}], io write [{}], bytes read [{}], bytes write [{}], startDate [{}], and endDate [{}], " +
+                logger.debug("Creating vm disk usage record, io read [{}], io write [{}], bytes read [{}], bytes write [{}], startDate [{}], and endDate [{}], " +
                                 "for account [{}] in availability zone [{}].", toHumanReadableSize(ioRead), toHumanReadableSize(ioWrite), toHumanReadableSize(bytesRead),
                         toHumanReadableSize(bytesWrite), DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                         DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId(), vmDiskInfo.getZoneId());
@@ -162,13 +147,11 @@ public class VmDiskUsageParser {
 
             } else {
                 // Don't charge anything if there were zero bytes processed
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("No vm disk usage record (0 bytes used) generated for account: " + account.getId());
-                }
+                logger.debug("No vm disk usage record (0 bytes used) generated for account: [{}]", account.getId());
             }
         }
 
-        s_usageDao.saveUsageRecords(usageRecords);
+        usageDao.saveUsageRecords(usageRecords);
 
         return true;
     }

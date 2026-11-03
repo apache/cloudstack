@@ -53,10 +53,10 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the host")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "the new host management interface password of maximum length 16, if none is provided a random password would be used")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The new host management interface password of maximum length 16, if none is provided a random password would be used")
     private String password;
 
     /////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
         }
 
-        CallContext.current().setEventDetails("Host Id: " + host.getId() + " Password: " + getPassword().charAt(0) + "****");
+        CallContext.current().setEventDetails("Host ID: " + host.getUuid() + " Password: " + getPassword().charAt(0) + "****");
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         final OutOfBandManagementResponse response = outOfBandManagementService.changePassword(host, getPassword());
@@ -101,7 +101,7 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "change out-of-band management password for host: " + getHostId();
+        return "Changing out-of-band management password for host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override

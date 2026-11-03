@@ -59,8 +59,6 @@ SELECT
     `network_offerings`.`supports_public_access` AS `supports_public_access`,
     `network_offerings`.`supports_vm_autoscaling` AS `supports_vm_autoscaling`,
     `network_offerings`.`for_vpc` AS `for_vpc`,
-    `network_offerings`.`for_tungsten` AS `for_tungsten`,
-    `network_offerings`.`for_nsx` AS `for_nsx`,
     `network_offerings`.`network_mode` AS `network_mode`,
     `network_offerings`.`service_package_id` AS `service_package_id`,
     `network_offerings`.`routing_mode` AS `routing_mode`,

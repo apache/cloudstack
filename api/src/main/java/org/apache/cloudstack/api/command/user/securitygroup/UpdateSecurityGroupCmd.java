@@ -42,7 +42,7 @@ public class UpdateSecurityGroupCmd extends BaseCustomIdCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required=true, description="The ID of the security group.", entityType=SecurityGroupResponse.class)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required=true, description = "The ID of the security group.", entityType=SecurityGroupResponse.class)
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The new name of the security group.")

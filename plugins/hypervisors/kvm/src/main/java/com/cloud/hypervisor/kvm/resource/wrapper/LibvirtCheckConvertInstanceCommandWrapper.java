@@ -30,9 +30,32 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
 
     @Override
     public Answer execute(CheckConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
-        if (!serverResource.hostSupportsInstanceConversion()) {
+        if (cmd.isUseVddk()) {
+            if (cmd.isCheckVddkRbdDirectImportSupport() && !serverResource.hostSupportsVddkRbdDirectImport(cmd.getVddkLibDir())) {
+                String msg = String.format("Cannot directly import VMware disks to RBD on host %s. Direct RBD VDDK import requires VDDK, qemu-img RBD support, and in-place virt-v2v support. " +
+                                "Use staged import with temporary conversion storage on this host, or select an EL9/Ubuntu 24.04-like conversion host with virt-v2v-in-place support.",
+                        serverResource.getPrivateIp());
+                logger.info(msg);
+                return new CheckConvertInstanceAnswer(cmd, false, msg);
+            }
+            if (cmd.isCheckVddkInPlaceFinalizationSupport() && !serverResource.hostSupportsVirtV2vInPlace()) {
+                String msg = String.format("Cannot directly import VMware disks to a block storage pool on host %s as it lacks " +
+                                "in-place virt-v2v support (the virt-v2v-in-place binary or the virt-v2v --in-place option). " +
+                                "Use staged import with temporary conversion storage on this host, or select an EL9/Ubuntu 24.04-like conversion host.",
+                        serverResource.getPrivateIp());
+                logger.info(msg);
+                return new CheckConvertInstanceAnswer(cmd, false, msg);
+            }
+            if (!serverResource.hostSupportsVddk(cmd.getVddkLibDir())) {
+                String msg = String.format("Cannot convert the instance from VMware using VDDK on host %s. " +
+                                "Please make sure virt-v2v%s, nbdkit-vddk and a valid VDDK library directory are available on the host.",
+                        serverResource.getPrivateIp(), serverResource.isUbuntuOrDebianHost() ? ", nbdkit" : "");
+                logger.info(msg);
+                return new CheckConvertInstanceAnswer(cmd, false, msg);
+            }
+        } else if (!serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance from VMware as the virt-v2v binary is not found on host %s. " +
-                    "Please install virt-v2v%s on the host before attempting the instance conversion.", serverResource.getPrivateIp(), serverResource.isUbuntuHost()? ", nbdkit" : "");
+                    "Please install virt-v2v%s on the host before attempting the instance conversion.", serverResource.getPrivateIp(), serverResource.isUbuntuOrDebianHost()? ", nbdkit" : "");
             logger.info(msg);
             return new CheckConvertInstanceAnswer(cmd, false, msg);
         }

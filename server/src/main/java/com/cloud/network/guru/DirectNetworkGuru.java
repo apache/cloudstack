@@ -293,7 +293,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         allocateDirectIp(nic, network, vm, dc, nic.getRequestedIPv4(), nic.getRequestedIPv6());
         nic.setReservationStrategy(ReservationStrategy.Create);
 
-        if (nic.getMacAddress() == null) {
+        if (nic.getMacAddress() == null || !_networkModel.isMACUnique(nic.getMacAddress(), network.getId())) {
             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
             if (nic.getMacAddress() == null) {
                 throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, network.getId());
@@ -329,8 +329,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                             Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                             if (placeholderNic == null) {
-                                logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " and ipv6 address " + nic.getIPv6Address() +
-                                        " for the network " + network);
+                                logger.debug("Saving placeholder NIC with IPv4 address " + nic.getIPv4Address() + " and IPv6 address " + nic.getIPv6Address() +
+                                        " for the Network " + network);
                                 _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), nic.getIPv6Address(), VirtualMachine.Type.DomainRouter);
                             }
                         }
@@ -359,7 +359,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @DB
     public void deallocate(final Network network, final NicProfile nic, VirtualMachineProfile vm) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Deallocate network: network: {}, nic: {}", network, nic);
+            logger.debug("Deallocate network: Network: {}, NIC: {}", network, nic);
         }
 
         if (nic.getIPv4Address() != null) {
@@ -371,14 +371,14 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                         // if the ip address a part of placeholder, don't release it
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                         if (placeholderNic != null && placeholderNic.getIPv4Address().equalsIgnoreCase(ip.getAddress().addr())) {
-                            logger.debug("Not releasing direct ip {} yet as its ip is saved in the placeholder", ip);
+                            logger.debug("Not releasing direct IP {} yet as its IP is saved in the placeholder", ip);
                         } else {
                             _ipAddrMgr.markIpAsUnavailable(ip.getId());
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
 
                         //unassign nic secondary ip address
-                        logger.debug("remove nic {} secondary ip ", nic);
+                        logger.debug("Remove NIC {} secondary IP ", nic);
                         List<String> nicSecIps = null;
                         nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
                         for (String secIp : nicSecIps) {
@@ -418,12 +418,12 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         for (Nic nic : nics) {
                             if (nic.getIPv4Address() != null) {
-                                logger.debug("Releasing ip " + nic.getIPv4Address() + " of placeholder nic " + nic);
+                                logger.debug("Releasing IP " + nic.getIPv4Address() + " of placeholder NIC " + nic);
                                 IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
                                 if (ip != null) {
                                     _ipAddrMgr.markIpAsUnavailable(ip.getId());
                                     _ipAddressDao.unassignIpAddress(ip.getId());
-                                    logger.debug("Removing placeholder nic " + nic);
+                                    logger.debug("Removing placeholder NIC " + nic);
                                     _nicDao.remove(nic.getId());
                                 }
                             }

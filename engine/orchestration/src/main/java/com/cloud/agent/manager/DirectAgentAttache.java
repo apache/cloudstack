@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.cloud.utils.ThreadUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -149,6 +150,11 @@ public class DirectAgentAttache extends AgentAttache {
         }
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     protected class PingTask extends ManagedContextRunnable {
         @Override
         protected synchronized void runInContext() {
@@ -166,7 +172,7 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     int retried = 0;
                     while (cmd == null && ++retried <= _HostPingRetryCount.value()) {
-                        Thread.sleep(1000*_HostPingRetryTimer.value());
+                        ThreadUtil.wait(this, 1000L *_HostPingRetryTimer.value(), _id, _uuid, _name);
                         cmd = resource.getCurrentStatus(_id);
                     }
 

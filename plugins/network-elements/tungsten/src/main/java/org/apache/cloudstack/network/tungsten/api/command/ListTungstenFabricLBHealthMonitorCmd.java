@@ -39,7 +39,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricLBHealthMonitorCmd.APINAME, description = "list Tungsten-Fabric LB health monitor", responseObject =
+@APICommand(name = ListTungstenFabricLBHealthMonitorCmd.APINAME, description = "List Tungsten-Fabric LB health monitor", responseObject =
     TungstenFabricLBHealthMonitorResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricLBHealthMonitorCmd extends BaseListCmd {
     public static final String APINAME = "listTungstenFabricLBHealthMonitor";
@@ -47,7 +47,7 @@ public class ListTungstenFabricLBHealthMonitorCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of lb rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of lb rule")
     private Long lbID;
 
     @Override

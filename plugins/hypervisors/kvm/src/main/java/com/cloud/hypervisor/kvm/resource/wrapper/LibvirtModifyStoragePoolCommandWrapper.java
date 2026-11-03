@@ -31,6 +31,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles =  ModifyStoragePoolCommand.class)
 public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper<ModifyStoragePoolCommand, Answer, LibvirtComputingResource> {
@@ -49,11 +50,26 @@ public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper
             return answer;
         }
 
-        final KVMStoragePool storagepool =
-                storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                        .getUserInfo(), command.getPool().getType(), command.getDetails());
-        if (storagepool == null) {
-            return new Answer(command, false, " Failed to create storage pool");
+        final KVMStoragePool storagepool;
+        try {
+            Map<String, String> poolDetails = command.getDetails();
+            if (poolDetails == null) {
+                poolDetails = new HashMap<>();
+            }
+
+            // Ensure CLVM secure zero-fill setting has a default value if not provided by MS
+            if (!poolDetails.containsKey(KVMStoragePool.CLVM_SECURE_ZERO_FILL)) {
+                poolDetails.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+            }
+
+            storagepool =
+                    storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
+                            .getUserInfo(), command.getPool().getType(), poolDetails);
+            if (storagepool == null) {
+                return new Answer(command, false, " Failed to create storage pool");
+            }
+        } catch (CloudRuntimeException e) {
+            return new Answer(command, false, String.format("Failed to create storage pool: %s", e.getLocalizedMessage()));
         }
 
         final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();

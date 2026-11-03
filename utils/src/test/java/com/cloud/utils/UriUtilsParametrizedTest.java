@@ -44,7 +44,7 @@ public class UriUtilsParametrizedTest {
     }
 
     private static final Set<String> COMMPRESSION_FORMATS = ImmutableSet.of("",".zip", ".bz2", ".gz");
-    private static final Set<String> ILLEGAL_COMMPRESSION_FORMATS = ImmutableSet.of(".7z", ".xz");
+    private static final Set<String> ILLEGAL_COMMPRESSION_FORMATS = ImmutableSet.of(".7z");
     private final static Set<String> FORMATS = ImmutableSet.of(
             "vhd",
             "vhdx",

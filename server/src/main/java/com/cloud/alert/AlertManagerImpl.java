@@ -19,7 +19,6 @@ package com.cloud.alert;
 import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,23 +36,25 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.org.Cluster;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -66,9 +67,11 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -82,10 +85,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
@@ -93,23 +98,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 
-import org.jetbrains.annotations.Nullable;
-
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     protected Logger logger = LogManager.getLogger(AlertManagerImpl.class.getName());
-
-    public static final List<AlertType> ALERTS = Arrays.asList(AlertType.ALERT_TYPE_HOST
-            , AlertType.ALERT_TYPE_USERVM
-            , AlertType.ALERT_TYPE_DOMAIN_ROUTER
-            , AlertType.ALERT_TYPE_CONSOLE_PROXY
-            , AlertType.ALERT_TYPE_SSVM
-            , AlertType.ALERT_TYPE_STORAGE_MISC
-            , AlertType.ALERT_TYPE_MANAGEMENT_NODE
-            , AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED
-            , AlertType.ALERT_TYPE_UPLOAD_FAILED
-            , AlertType.ALERT_TYPE_OOBM_AUTH_ERROR
-            , AlertType.ALERT_TYPE_HA_ACTION
-            , AlertType.ALERT_TYPE_CA_CERT);
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
@@ -143,11 +133,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Inject
     ConfigurationManager _configMgr;
     @Inject
+    protected BackupManager backupManager;
+    @Inject
     protected ConfigDepot _configDepot;
+    @Inject
+    private ObjectStoreDao _objectStoreDao;
     @Inject
     Ipv6Service ipv6Service;
     @Inject
     HostDao hostDao;
+    @Inject
+    MessageBus messageBus;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -157,6 +153,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private double _vlanCapacityThreshold = 0.75;
     private double _directNetworkPublicIpCapacityThreshold = 0.75;
     private double _localStorageCapacityThreshold = 0.75;
+    private double _backupStorageCapacityThreshold = 0.75;
+    private double _objectStorageCapacityThreshold = 0.75;
     Map<Short, Double> _capacityTypeThresholdMap = new HashMap<>();
 
     private final ExecutorService _executor;
@@ -164,6 +162,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
     protected String senderAddress = null;
+
+    private final List<String> allowedRepetitiveAlertTypeNames = new ArrayList<>();
 
     public AlertManagerImpl() {
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
@@ -199,6 +199,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());
         String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
         String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
+        String backupStorageCapacityThreshold = _configDao.getValue(BackupManager.BackupStorageCapacityThreshold.key());
+        String objectStorageCapacityThreshold = _configDao.getValue(_storageMgr.ObjectStorageCapacityThreshold.key());
 
         if (publicIPCapacityThreshold != null) {
             _publicIPCapacityThreshold = Double.parseDouble(publicIPCapacityThreshold);
@@ -218,6 +220,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         if (localStorageCapacityThreshold != null) {
             _localStorageCapacityThreshold = Double.parseDouble(localStorageCapacityThreshold);
         }
+        if (backupStorageCapacityThreshold != null) {
+            _backupStorageCapacityThreshold = Double.parseDouble(backupStorageCapacityThreshold);
+        }
+        if (objectStorageCapacityThreshold != null) {
+            _objectStorageCapacityThreshold = Double.parseDouble(objectStorageCapacityThreshold);
+        }
 
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
@@ -226,6 +234,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, _localStorageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, Ipv6SubnetCapacityThreshold.value());
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, _backupStorageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, _objectStorageCapacityThreshold);
 
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -234,10 +244,30 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
             }
         }
+        initMessageBusListener();
+        setupRepetitiveAlertTypes();
 
         _timer = new Timer("CapacityChecker");
 
         return true;
+    }
+
+    protected void setupRepetitiveAlertTypes() {
+        allowedRepetitiveAlertTypeNames.clear();
+        String allowedRepetitiveAlertsStr = AllowedRepetitiveAlertTypes.value();
+        logger.trace("Allowed repetitive alert types specified by {}: {} ", AllowedRepetitiveAlertTypes.key(),
+                allowedRepetitiveAlertsStr);
+        if (StringUtils.isBlank(allowedRepetitiveAlertsStr)) {
+            return;
+        }
+        String[] allowedRepetitiveAlertTypesArray = allowedRepetitiveAlertsStr.split(",");
+        for (String allowedTypeName : allowedRepetitiveAlertTypesArray) {
+            if (StringUtils.isBlank(allowedTypeName)) {
+                continue;
+            }
+            allowedRepetitiveAlertTypeNames.add(allowedTypeName.toLowerCase());
+        }
+        logger.trace("{} alert types specified for repetitive alerts", allowedRepetitiveAlertTypeNames.size());
     }
 
     @Override
@@ -294,13 +324,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
             futures.put(hostId, executorService.submit(() -> {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        final HostVO host = hostDao.findById(hostId);
-                        _capacityMgr.updateCapacityForHost(host);
-                    }
-                });
+                final HostVO host = hostDao.findById(hostId);
+                _capacityMgr.updateCapacityForHost(host);
                 return null;
             }));
         }
@@ -549,7 +574,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             for (Short capacityType : dataCenterCapacityTypes) {
                 List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
 
-                if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+                if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
                     capacity.add(getUsedStats(capacityType, dc.getId(), null, null));
                 }
                 if (capacity == null || capacity.isEmpty()) {
@@ -618,18 +645,22 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     private SummedCapacity getUsedStats(short capacityType, long zoneId, Long podId, Long clusterId) {
-        CapacityVO capacity;
+        CapacityVO capacity = null;
+
         if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
             capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
-        } else {
+        } else if (capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
             capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE) {
+            capacity = _storageMgr.getObjectStorageUsedStats(zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
+            capacity = (CapacityVO) backupManager.getBackupStorageUsedStats(zoneId);
         }
         if (capacity != null) {
             return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);
         } else {
             return null;
         }
-
     }
 
     private void generateEmailAlert(DataCenterVO dc, HostPodVO pod, ClusterVO cluster, double totalCapacity, double usedCapacity, short capacityType) {
@@ -706,6 +737,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 msgContent = String.format("Number of unallocated virtual network guest IPv6 subnets is low, total: [%s], allocated: [%s] (%s%%).", totalInString, usedInString, percentual);
                 alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
                 break;
+            case Capacity.CAPACITY_TYPE_BACKUP_STORAGE:
+                msgSubject = "System Alert: Low Available Backup Storage in availability zone " + dc.getName();
+                msgContent = "Available backup storage space is low, total: " + totalInString + " MB, used: " + usedInString + " MB (" + percentual + "%)";
+                alertType = AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_OBJECT_STORAGE:
+                msgSubject = "System Alert: Low Available Object Storage in availability zone " + dc.getName();
+                msgContent = "Available object storage space is low, total: " + totalInString + " MB, used: " + usedInString + " MB (" + percentual + "%)";
+                alertType = AlertManager.AlertType.ALERT_TYPE_OBJECT_STORAGE;
+                break;
         }
 
         try {
@@ -724,6 +765,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VLAN);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
         return dataCenterCapacityTypes;
 
     }
@@ -817,11 +860,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     @Nullable
     private AlertVO getAlertForTrivialAlertType(AlertType alertType, long dataCenterId, Long podId, Long clusterId) {
-        AlertVO alert = null;
-        if (!ALERTS.contains(alertType)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+        if (alertType.isRepetitionAllowed() || (StringUtils.isNotBlank(alertType.getName()) &&
+                allowedRepetitiveAlertTypeNames.contains(alertType.getName().toLowerCase()))) {
+            return null;
         }
-        return alert;
+        return _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
     }
 
     protected void sendMessage(SMTPMailProperties mailProps) {
@@ -850,7 +893,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
-            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth};
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth, AllowedRepetitiveAlertTypes};
     }
 
     @Override
@@ -863,5 +906,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void initMessageBusListener() {
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (senderAddress, subject, args) -> {
+            Ternary<String, ConfigKey.Scope, Long> updatedSetting = (Ternary<String, ConfigKey.Scope, Long>) args;
+            String updatedSettingName = updatedSetting.first();
+            if (!AllowedRepetitiveAlertTypes.key().equals(updatedSettingName)) {
+                return;
+            }
+            setupRepetitiveAlertTypes();
+        });
     }
 }

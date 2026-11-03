@@ -22,13 +22,15 @@ set -x
 function configure_locale() {
   grep LANG=en_US.UTF-8 /etc/default/locale && \
       grep LC_ALL=en_US.UTF-8 /etc/default/locale && \
-      grep "en_US.UTF-8 UTF-8" /etc/locale.gen &&
+      grep "^en_US.UTF-8 UTF-8" /etc/locale.gen &&
       return
 
   cat >> /etc/default/locale  << EOF
 LANG=en_US.UTF-8
 LC_ALL=en_US.UTF-8
 EOF
+
+  grep "^en_US.UTF-8 UTF-8" /etc/locale.gen || \
   cat >> /etc/locale.gen  << EOF
 en_US.UTF-8 UTF-8
 EOF

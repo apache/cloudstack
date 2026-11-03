@@ -27,23 +27,23 @@ public class ConsoleEndpointWebsocketResponse extends BaseResponse {
     }
 
     @SerializedName(ApiConstants.TOKEN)
-    @Param(description = "the console websocket token")
+    @Param(description = "The console websocket token")
     private String token;
 
     @SerializedName("host")
-    @Param(description = "the console websocket host")
+    @Param(description = "The console websocket host")
     private String host;
 
     @SerializedName(ApiConstants.PORT)
-    @Param(description = "the console websocket port")
+    @Param(description = "The console websocket port")
     private String port;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description = "the console websocket path")
+    @Param(description = "The console websocket path")
     private String path;
 
     @SerializedName("extra")
-    @Param(description = "the console websocket extra field for validation (if enabled)")
+    @Param(description = "The console websocket extra field for validation (if enabled)")
     private String extra;
 
     public String getToken() {

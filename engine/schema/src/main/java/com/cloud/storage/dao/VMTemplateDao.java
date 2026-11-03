@@ -62,6 +62,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public List<VMTemplateVO> listAllActive();
 
+    List<VMTemplateVO> listAllCrossZoneTemplates();
+
     public List<VMTemplateVO> listByState(VirtualMachineTemplate.State... states);
 
     public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes);
@@ -74,7 +76,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     VMTemplateVO findSystemVMTemplate(long zoneId);
 
-    VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType);
+    VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType, String preferredArch);
 
     List<VMTemplateVO> findSystemVMReadyTemplates(long zoneId, HypervisorType hypervisorType, String preferredArch);
 
@@ -94,11 +96,18 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
 
-    VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch);
+    VMTemplateVO findLatestTemplateByName(String name, HypervisorType hypervisorType, CPU.CPUArch arch);
 
     List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId);
 
     List<VMTemplateVO> listByIds(List<Long> ids);
 
     List<Long> listIdsByTemplateTag(String tag);
+
+    List<Long> listIdsByExtensionId(long extensionId);
+
+    VMTemplateVO findActiveSystemTemplateByHypervisorArchAndUrlPath(HypervisorType hypervisorType,
+                CPU.CPUArch arch, String urlPathSuffix);
+
+    VMTemplateVO findByAccountAndName(Long accountId, String templateName);
 }

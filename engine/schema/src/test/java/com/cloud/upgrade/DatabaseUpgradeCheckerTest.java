@@ -16,14 +16,29 @@
 // under the License.
 package com.cloud.upgrade;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.upgrade.DatabaseUpgradeChecker.NoopDbUpgrade;
 import com.cloud.upgrade.dao.DbUpgrade;
@@ -34,6 +49,10 @@ import com.cloud.upgrade.dao.Upgrade41120to41130;
 import com.cloud.upgrade.dao.Upgrade41120to41200;
 import com.cloud.upgrade.dao.Upgrade41510to41520;
 import com.cloud.upgrade.dao.Upgrade41610to41700;
+import com.cloud.upgrade.dao.Upgrade42020to42030;
+import com.cloud.upgrade.dao.Upgrade42030to42040;
+import com.cloud.upgrade.dao.Upgrade42040to42100;
+import com.cloud.upgrade.dao.Upgrade42300to2400;
 import com.cloud.upgrade.dao.Upgrade452to453;
 import com.cloud.upgrade.dao.Upgrade453to460;
 import com.cloud.upgrade.dao.Upgrade460to461;
@@ -42,8 +61,52 @@ import com.cloud.upgrade.dao.Upgrade470to471;
 import com.cloud.upgrade.dao.Upgrade471to480;
 import com.cloud.upgrade.dao.Upgrade480to481;
 import com.cloud.upgrade.dao.Upgrade490to4910;
+import com.cloud.utils.db.TransactionLegacy;
 
+
+@RunWith(MockitoJUnitRunner.class)
 public class DatabaseUpgradeCheckerTest {
+
+    @Mock
+    DataSource dataSource;
+
+    @Mock
+    Connection connection;
+
+    @Mock
+    PreparedStatement preparedStatement;
+
+    @Mock
+    ResultSet resultSet;
+
+    private DataSource backupDataSource;
+    private String previousCsMajorVersion;
+    private String previousCsTinyVersion;
+
+    @Before
+    public void setup() throws Exception {
+        Field dsField = TransactionLegacy.class.getDeclaredField("s_ds");
+        dsField.setAccessible(true);
+        backupDataSource = (DataSource) dsField.get(null);
+        dsField.set(null, dataSource);
+
+        Mockito.when(dataSource.getConnection()).thenReturn(connection);
+        Mockito.when(connection.prepareStatement(ArgumentMatchers.anyString())).thenReturn(preparedStatement);
+        Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+
+        previousCsMajorVersion = SystemVmTemplateRegistration.CS_MAJOR_VERSION;
+        previousCsTinyVersion = SystemVmTemplateRegistration.CS_TINY_VERSION;
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        Field dsField = TransactionLegacy.class.getDeclaredField("s_ds");
+        dsField.setAccessible(true);
+        dsField.set(null, backupDataSource);
+
+        SystemVmTemplateRegistration.CS_MAJOR_VERSION = previousCsMajorVersion;
+        SystemVmTemplateRegistration.CS_TINY_VERSION = previousCsTinyVersion;
+    }
 
     @Test
     public void testCalculateUpgradePath480to481() {
@@ -79,7 +142,7 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades.length >= 1);
         assertTrue(upgrades[0] instanceof Upgrade490to4910);
 
-        assertTrue(Arrays.equals(new String[] {"4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange()));
+        assertArrayEquals(new String[]{"4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange());
         assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
 
     }
@@ -104,7 +167,7 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades[3] instanceof Upgrade41120to41130);
         assertTrue(upgrades[4] instanceof Upgrade41120to41200);
 
-        assertTrue(Arrays.equals(new String[] {"4.11.0.0", "4.11.1.0"}, upgrades[1].getUpgradableVersionRange()));
+        assertArrayEquals(new String[]{"4.11.0.0", "4.11.1.0"}, upgrades[1].getUpgradableVersionRange());
         assertEquals(currentVersion.toString(), upgrades[4].getUpgradedVersion());
 
     }
@@ -151,17 +214,17 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades[5] instanceof Upgrade471to480);
         assertTrue(upgrades[6] instanceof Upgrade480to481);
 
-        assertTrue(Arrays.equals(new String[] {"4.8.1", currentVersion.toString()}, upgrades[upgrades.length - 1].getUpgradableVersionRange()));
+        assertArrayEquals(new String[]{"4.8.1", currentVersion.toString()}, upgrades[upgrades.length - 1].getUpgradableVersionRange());
         assertEquals(currentVersion.toString(), upgrades[upgrades.length - 1].getUpgradedVersion());
     }
 
     @Test
-    public void testCalculateUpgradePathUnkownDbVersion() {
+    public void testCalculateUpgradePathUnknownDbVersion() {
 
-        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.99.0.0");
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("99.0.0");
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.99.1.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("99.1.0");
         assertNotNull(currentVersion);
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
@@ -173,12 +236,12 @@ public class DatabaseUpgradeCheckerTest {
     }
 
     @Test
-    public void testCalculateUpgradePathFromKownDbVersion() {
+    public void testCalculateUpgradePathFromKnownDbVersion() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.0.0");
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.99.1.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("99.1.0");
         assertNotNull(currentVersion);
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
@@ -212,10 +275,7 @@ public class DatabaseUpgradeCheckerTest {
         final CloudStackVersion dbVersion = checker.getLatestVersion();
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse(dbVersion.getMajorRelease() + "."
-                + dbVersion.getMinorRelease() + "."
-                + dbVersion.getPatchRelease() + "."
-                + (dbVersion.getSecurityRelease() + 1));
+        final CloudStackVersion currentVersion = getNextSecurityRelease(dbVersion);
         assertNotNull(currentVersion);
 
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
@@ -237,10 +297,7 @@ public class DatabaseUpgradeCheckerTest {
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
         assertNotNull(upgrades);
 
-        final CloudStackVersion nextSecurityRelease = CloudStackVersion.parse(currentVersion.getMajorRelease() + "."
-                + currentVersion.getMinorRelease() + "."
-                + currentVersion.getPatchRelease() + "."
-                + (currentVersion.getSecurityRelease() + 1));
+        final CloudStackVersion nextSecurityRelease = getNextSecurityRelease(currentVersion);
         assertNotNull(nextSecurityRelease);
 
         final DbUpgrade[] upgradesToNext = checker.calculateUpgradePath(dbVersion, nextSecurityRelease);
@@ -250,16 +307,26 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgradesToNext[upgradesToNext.length - 1] instanceof NoopDbUpgrade);
     }
 
+    private static CloudStackVersion getNextSecurityRelease(CloudStackVersion version, int increment) {
+        String nextSecurityReleaseVersionStr = version.getMajorRelease() + "."
+                + version.getMinorRelease() + "."
+                + (version.usesNewVersioning() ? "" : version.getPatchRelease() + ".")
+                + (version.getSecurityRelease() + increment);
+
+        return CloudStackVersion.parse(nextSecurityReleaseVersionStr);
+    }
+
+    private static CloudStackVersion getNextSecurityRelease(CloudStackVersion version) {
+        return getNextSecurityRelease(version, 1);
+    }
+
     @Test
     public void testCalculateUpgradePathFromSecurityReleaseToLatest() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.2.0");    // a EOL version
         assertNotNull(dbVersion);
 
-        final CloudStackVersion oldSecurityRelease = CloudStackVersion.parse(dbVersion.getMajorRelease() + "."
-                + dbVersion.getMinorRelease() + "."
-                + dbVersion.getPatchRelease() + "."
-                + (dbVersion.getSecurityRelease() + 100));
+        final CloudStackVersion oldSecurityRelease = getNextSecurityRelease(dbVersion, 100);
         assertNotNull(oldSecurityRelease);      // fake security release 4.17.2.100
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
@@ -291,10 +358,7 @@ public class DatabaseUpgradeCheckerTest {
         final CloudStackVersion currentVersion = checker.getLatestVersion();
         assertNotNull(currentVersion);
 
-        final CloudStackVersion nextSecurityRelease = CloudStackVersion.parse(currentVersion.getMajorRelease() + "."
-                + currentVersion.getMinorRelease() + "."
-                + currentVersion.getPatchRelease() + "."
-                + (currentVersion.getSecurityRelease() + 1));
+        final CloudStackVersion nextSecurityRelease = getNextSecurityRelease(currentVersion);
         assertNotNull(nextSecurityRelease);     // fake security release
 
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
@@ -305,5 +369,109 @@ public class DatabaseUpgradeCheckerTest {
 
         assertEquals(upgrades.length + 1, upgradesFromSecurityReleaseToNext.length);
         assertTrue(upgradesFromSecurityReleaseToNext[upgradesFromSecurityReleaseToNext.length - 1] instanceof NoopDbUpgrade);
+    }
+
+    @Test
+    public void isStandalone() throws SQLException {
+        // simulate zero 'UP' hosts -> standalone
+        Mockito.when(resultSet.next()).thenReturn(true);
+        Mockito.when(resultSet.getInt(1)).thenReturn(0);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        assertTrue("DatabaseUpgradeChecker should be a standalone component", checker.isStandalone());
+    }
+
+    @Test
+    public void isNotStandalone() throws SQLException {
+        // simulate at least one 'UP' host -> not standalone
+        Mockito.when(resultSet.next()).thenReturn(true);
+        Mockito.when(resultSet.getInt(1)).thenReturn(1);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        assertFalse("DatabaseUpgradeChecker should not be a standalone component", checker.isStandalone());
+    }
+
+    @Test
+    public void testCalculateUpgradePath42010to42030() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.20.1.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.20.3.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertEquals(1, upgrades.length);
+        assertTrue(upgrades[0] instanceof Upgrade42020to42030);
+
+        assertArrayEquals(new String[]{"4.20.2.0", "4.20.3.0"}, upgrades[0].getUpgradableVersionRange());
+        assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
+    }
+
+    @Test
+    public void testCalculateUpgradePath42010to42100() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.20.1.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.21.0.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertEquals(3, upgrades.length);
+        assertTrue(upgrades[0] instanceof Upgrade42020to42030);
+        assertTrue(upgrades[1] instanceof Upgrade42030to42040);
+        assertTrue(upgrades[2] instanceof Upgrade42040to42100);
+        assertEquals(currentVersion.toString(), upgrades[2].getUpgradedVersion());
+    }
+
+    @Test
+    public void testCalculateUpgradePath42300to2400() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.23.0.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("24.0.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertEquals(1, upgrades.length);
+        assertTrue(upgrades[0] instanceof Upgrade42300to2400);
+
+        assertArrayEquals(new String[]{"4.23.0.0", "24.0.0"}, upgrades[0].getUpgradableVersionRange());
+        assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
+    }
+
+    @Test
+    public void testUpdateSystemVmTemplateVersionBelowCutover() {
+        DatabaseUpgradeChecker.updateSystemVmTemplateVersion(CloudStackVersion.parse("4.22.1.0"));
+
+        assertEquals("4.22", SystemVmTemplateRegistration.CS_MAJOR_VERSION);
+        assertEquals("1", SystemVmTemplateRegistration.CS_TINY_VERSION);
+    }
+
+    @Test
+    public void testUpdateSystemVmTemplateVersionAtCutover() {
+        DatabaseUpgradeChecker.updateSystemVmTemplateVersion(CloudStackVersion.parse("24.0.1"));
+
+        assertEquals("24.0", SystemVmTemplateRegistration.CS_MAJOR_VERSION);
+        assertEquals("1", SystemVmTemplateRegistration.CS_TINY_VERSION);
+    }
+
+    @Test
+    public void testUpdateSystemVmTemplateVersionAfterCutover() {
+        DatabaseUpgradeChecker.updateSystemVmTemplateVersion(CloudStackVersion.parse("25.3.2"));
+
+        assertEquals("25.3", SystemVmTemplateRegistration.CS_MAJOR_VERSION);
+        assertEquals("2", SystemVmTemplateRegistration.CS_TINY_VERSION);
     }
 }

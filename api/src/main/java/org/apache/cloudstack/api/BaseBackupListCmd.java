@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.context.CallContext;
 
-public abstract class BaseBackupListCmd extends BaseListCmd {
+public abstract class BaseBackupListCmd extends BaseListAccountResourcesCmd {
 
     protected void setupResponseBackupOfferingsList(final List<BackupOffering> offerings, final Integer count) {
         final ListResponse<BackupOfferingResponse> response = new ListResponse<>();

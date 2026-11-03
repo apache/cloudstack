@@ -45,7 +45,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the router")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting router: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Starting virtual router with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Router Id: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {

@@ -17,12 +17,13 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 public interface BackupProvider {
+
+    Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering);
 
     /**
      * Returns the unique name of the provider
@@ -62,6 +63,7 @@ public interface BackupProvider {
      */
     boolean removeVMFromBackupOffering(VirtualMachine vm);
 
+
     /**
      * Whether the provider will delete backups on removal of VM from the offering
      * @return boolean result
@@ -71,10 +73,15 @@ public interface BackupProvider {
     /**
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
-     * @param vm the machine to make a backup of
+     *
+     * @param vm
+     *         the machine to make a backup of
+     * @param quiesceVM
+     *         instance will be quiesced for checkpointing for backup. Applicable only to NAS plugin.
+     * @param isolated
      * @return the result and {code}Backup{code} {code}Object{code}
      */
-    Pair<Boolean, Backup> takeBackup(VirtualMachine vm);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM, boolean isolated);
 
     /**
      * Delete an existing backup
@@ -85,34 +92,69 @@ public interface BackupProvider {
     boolean deleteBackup(Backup backup, boolean forced);
 
     /**
+     * Whether {@link #deleteBackup(Backup, boolean)} owns DB-row removal and resource-count /
+     * usage accounting for every backup it physically removes. Providers that manage incremental
+     * chains (e.g. NAS) delete several backups per call — the leaf plus swept delete-pending
+     * ancestors — and decrement once per removed backup themselves, so the manager must NOT
+     * decrement or remove the row again. Defaults to {@code false}: the manager does the
+     * single-backup accounting (the historical behaviour for non-chain providers).
+     */
+    default boolean handlesChainDeleteResourceAccounting() {
+        return false;
+    }
+
+    Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid, boolean quickrestore);
+
+    /**
      * Restore VM from backup
      */
-    boolean restoreVMFromBackup(VirtualMachine vm, Backup backup);
+    boolean restoreVMFromBackup(VirtualMachine vm, Backup backup, boolean quickRestore, Long hostId);
 
     /**
      * Restore a volume from a backup
      */
-    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState);
+    Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid,
+            Pair<String, VirtualMachine.State> vmNameAndState, VirtualMachine vm, boolean quickRestore);
 
     /**
-     * Returns backup metrics for a list of VMs in a zone
+     * Syncs backup metrics (backup size, protected size) from the plugin and stores it within the provider
      * @param zoneId the zone for which to return metrics
-     * @param vms a list of machines to get measurements for
-     * @return a map of machine -> backup metrics
      */
-    Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
+    void syncBackupMetrics(Long zoneId);
 
     /**
-     * This method should TODO
-     * @param vm the machine to get restore point for
+     * Returns a list of Backup.RestorePoint
+     * @param vm the machine to get the restore points for
      */
     List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
 
     /**
-     * This method should TODO
+     * Creates and returns an entry in the backups table by getting the information from restorePoint and vm.
+     *
      * @param restorePoint the restore point to create a backup for
-     * @param vm The machine for which to create a backup
-     * @param metric the metric object to update with the new backup data
+     * @param vm           The machine for which to create a backup
      */
-    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric);
+    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm);
+
+    /**
+     * Returns if the backup provider supports creating new instance from backup
+     */
+    boolean supportsInstanceFromBackup();
+
+    default boolean supportsMemoryVmSnapshot() {
+        return true;
+    }
+
+    /**
+     * Returns the backup storage usage (Used, Total) for a backup provider
+     * @param zoneId the zone for which to return metrics
+     * @return a pair of Used size and Total size for the backup storage
+     */
+    Pair<Long, Long> getBackupStorageStats(Long zoneId);
+
+    /**
+     * Gets the backup storage usage (Used, Total) from the plugin and stores it in db
+     * @param zoneId the zone for which to return metrics
+     */
+    void syncBackupStorageStats(Long zoneId);
 }

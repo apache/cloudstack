@@ -23,6 +23,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -88,6 +89,14 @@ public interface NetworkElement extends Adapter {
         ResourceUnavailableException;
 
     /**
+     * Release IP from the network provider if reserved
+     * @param ipAddress
+     */
+    default boolean releaseIp(IpAddress ipAddress) {
+        return true;
+    }
+
+    /**
      * The network is being shutdown.
      * @param network
      * @param context
@@ -137,4 +146,8 @@ public interface NetworkElement extends Adapter {
      * @return true/false
      */
     boolean verifyServicesCombination(Set<Service> services);
+
+    default boolean rollingRestartSupported() {
+        return true;
+    }
 }

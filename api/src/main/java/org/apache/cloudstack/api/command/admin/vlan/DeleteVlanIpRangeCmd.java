@@ -37,7 +37,7 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "the id of the VLAN IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "The ID of the VLAN IP range")
     private Long id;
 
     /////////////////////////////////////////////////////

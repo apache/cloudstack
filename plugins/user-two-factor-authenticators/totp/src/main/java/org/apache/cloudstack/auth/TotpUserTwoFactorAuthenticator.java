@@ -54,7 +54,9 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
             logger.info("2FA matches user's input");
             return;
         }
-        throw new CloudTwoFactorAuthenticationException("two-factor authentication code provided is invalid");
+        String msg = "two-factor authentication code provided is invalid";
+        logger.error(msg);
+        throw new CloudTwoFactorAuthenticationException(msg);
     }
 
     private String get2FAKey(UserAccount userAccount) {
@@ -71,7 +73,7 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
     @Override
     public String setup2FAKey(UserAccount userAccount) {
         if (StringUtils.isNotEmpty(userAccount.getKeyFor2fa())) {
-            throw new CloudRuntimeException(String.format("2FA key is already setup for the user account %s", userAccount.getAccountName()));
+            throw new CloudRuntimeException(String.format("2FA key is already setup for the user Account %s", userAccount.getAccountName()));
         }
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[20];

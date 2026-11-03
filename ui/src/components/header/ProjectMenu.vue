@@ -33,6 +33,7 @@
 
 <script>
 import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'ProjectMenu',
@@ -42,7 +43,8 @@ export default {
   data () {
     return {
       selectedProjectId: null,
-      loading: false
+      loading: false,
+      timestamp: new Date().getTime()
     }
   },
   created () {
@@ -59,7 +61,8 @@ export default {
     projectsApiParams () {
       return {
         details: 'min',
-        listall: true
+        listall: true,
+        timestamp: this.timestamp
       }
     }
   },
@@ -70,6 +73,9 @@ export default {
         this.selectedProjectId = newId
       }
     )
+    eventBus.on('projects-updated', (args) => {
+      this.timestamp = new Date().getTime()
+    })
   },
   beforeUnmount () {
     if (this.unwatchProject) {

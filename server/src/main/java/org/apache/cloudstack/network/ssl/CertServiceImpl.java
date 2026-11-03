@@ -26,8 +26,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
@@ -48,10 +49,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -62,9 +59,21 @@ import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tls.CertService;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMEncryptedKeyPair;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
@@ -89,7 +98,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 import com.google.common.base.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 
 public class CertServiceImpl implements CertService {
 
@@ -279,11 +287,11 @@ public class CertServiceImpl implements CertService {
         return certResponseList;
     }
 
-    private void validate(final String certInput, final String keyInput, final String password, final String chainInput, boolean revocationEnabled) {
+    protected void validate(final String certInput, final String keyInput, final String password, final String chainInput, boolean revocationEnabled) {
         try {
             List<Certificate> chain = null;
             final Certificate cert = parseCertificate(certInput);
-            final PrivateKey key = parsePrivateKey(keyInput);
+            final PrivateKey key = parsePrivateKey(keyInput, password);
 
             if (chainInput != null) {
                 chain = CertificateHelper.parseChain(chainInput);
@@ -295,7 +303,9 @@ public class CertServiceImpl implements CertService {
             if (chainInput != null) {
                 validateChain(chain, cert, revocationEnabled);
             }
-        } catch (final IOException | CertificateException e) {
+        } catch (final IOException | CertificateException | OperatorCreationException | PKCSException |
+                       NoSuchAlgorithmException | InvalidKeySpecException e) {
+            logger.warn("Failed to validate certificate", e);
             throw new IllegalStateException("Parsing certificate/key failed: " + e.getMessage(), e);
         }
     }
@@ -370,18 +380,17 @@ public class CertServiceImpl implements CertService {
 
         try {
             final String data = "ENCRYPT_DATA";
-            final SecureRandom random = new SecureRandom();
-            final Cipher cipher = Cipher.getInstance(pubKey.getAlgorithm());
-            cipher.init(Cipher.ENCRYPT_MODE, privKey, random);
-            final byte[] encryptedData = cipher.doFinal(data.getBytes());
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initSign(privKey);
+            sig.update(data.getBytes());
+            byte[] signature = sig.sign();
 
-            cipher.init(Cipher.DECRYPT_MODE, pubKey, random);
-            final String decreptedData = new String(cipher.doFinal(encryptedData));
-            if (!decreptedData.equals(data)) {
+            sig.initVerify(pubKey);
+            sig.update(data.getBytes());
+            if (!sig.verify(signature)) {
                 throw new IllegalStateException("Bad public-private key");
             }
-
-        } catch (final BadPaddingException | IllegalBlockSizeException | InvalidKeyException | NoSuchPaddingException e) {
+        } catch (final InvalidKeyException | SignatureException e) {
             throw new IllegalStateException("Bad public-private key", e);
         } catch (final NoSuchAlgorithmException e) {
             throw new IllegalStateException("Invalid algorithm for public-private key", e);
@@ -423,19 +432,55 @@ public class CertServiceImpl implements CertService {
 
     }
 
-    public PrivateKey parsePrivateKey(final String key) throws IOException {
+    public PrivateKey parsePrivateKey(final String key, String password) throws IOException, OperatorCreationException, PKCSException, NoSuchAlgorithmException, InvalidKeySpecException {
         Preconditions.checkArgument(StringUtils.isNotEmpty(key));
-        try (final PemReader pemReader = new PemReader(new StringReader(key));) {
-            final PemObject pemObject = pemReader.readPemObject();
-            final byte[] content = pemObject.getContent();
-            final PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(content);
-            final KeyFactory factory = KeyFactory.getInstance("RSA", "BC");
-            return factory.generatePrivate(privKeySpec);
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            throw new IOException("No encryption provider available.", e);
-        } catch (final InvalidKeySpecException e) {
-            throw new IOException("Invalid Key format.", e);
+        PEMParser pemParser = new PEMParser(new StringReader(key));
+        Object privateKeyObj = pemParser.readObject();
+        if (privateKeyObj == null) {
+            throw new CloudRuntimeException("Cannot parse private key");
         }
+        PrivateKey privateKey;
+        if (privateKeyObj instanceof PKCS8EncryptedPrivateKeyInfo) {
+            privateKey = parsePKCS8EncryptedPrivateKeyInfo((PKCS8EncryptedPrivateKeyInfo)privateKeyObj, password);
+        } else if (privateKeyObj instanceof PEMEncryptedKeyPair) {
+            privateKey = parsePEMEncryptedKeyPair((PEMEncryptedKeyPair)privateKeyObj, password);
+        } else if (privateKeyObj instanceof PEMKeyPair) {
+            // Key pair
+            PEMKeyPair pemKeyPair = (PEMKeyPair) privateKeyObj;
+            privateKey = new JcaPEMKeyConverter().getKeyPair(pemKeyPair).getPrivate();
+        } else if (privateKeyObj instanceof PrivateKeyInfo) {
+            // Private key only
+            PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo) privateKeyObj;
+            privateKey = new JcaPEMKeyConverter().getPrivateKey(privateKeyInfo);
+        } else {
+            throw new IllegalArgumentException("Unsupported PEM object: " + privateKeyObj.getClass());
+        }
+        pemParser.close();
+        return privateKey;
+    }
+
+    private PrivateKey parsePKCS8EncryptedPrivateKeyInfo(PKCS8EncryptedPrivateKeyInfo privateKeyObj, String password)
+            throws IOException, OperatorCreationException, PKCSException, NoSuchAlgorithmException, InvalidKeySpecException {
+        if (password == null) {
+            throw new CloudRuntimeException("Key is encrypted by PKCS#8 but password is null");
+        }
+        PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = (PKCS8EncryptedPrivateKeyInfo)privateKeyObj;
+        JceOpenSSLPKCS8DecryptorProviderBuilder builder = new JceOpenSSLPKCS8DecryptorProviderBuilder();
+        InputDecryptorProvider decryptor = builder.build(password.toCharArray());
+
+        PrivateKeyInfo privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(decryptor);
+        String algorithm = privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm().getId();
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
+        return keyFactory.generatePrivate(keySpec);
+    }
+
+    private PrivateKey parsePEMEncryptedKeyPair(PEMEncryptedKeyPair encryptedKeyPair, String password) throws IOException {
+        if (password == null) {
+            throw new CloudRuntimeException("Key is encrypted but password is null");
+        }
+        return new JcaPEMKeyConverter().getKeyPair(
+                encryptedKeyPair.decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(password.toCharArray()))).getPrivate();
     }
 
     @Override

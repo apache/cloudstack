@@ -26,47 +26,47 @@ import com.google.gson.annotations.SerializedName;
 public class UnmanagedInstanceDiskResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the disk")
+    @Param(description = "The ID of the disk")
     private String diskId;
 
     @SerializedName(ApiConstants.LABEL)
-    @Param(description = "the label of the disk")
+    @Param(description = "The label of the disk")
     private String label;
 
     @SerializedName(ApiConstants.CAPACITY)
-    @Param(description = "the capacity of the disk in bytes")
+    @Param(description = "The capacity of the disk in bytes")
     private Long capacity;
 
     @SerializedName(ApiConstants.IMAGE_PATH)
-    @Param(description = "the file path of the disk image")
+    @Param(description = "The file path of the disk image")
     private String imagePath;
 
     @SerializedName(ApiConstants.CONTROLLER)
-    @Param(description = "the controller of the disk")
+    @Param(description = "The controller of the disk")
     private String controller;
 
     @SerializedName(ApiConstants.CONTROLLER_UNIT)
-    @Param(description = "the controller unit of the disk")
+    @Param(description = "The controller unit of the disk")
     private Integer controllerUnit;
 
     @SerializedName(ApiConstants.POSITION)
-    @Param(description = "the position of the disk")
+    @Param(description = "The position of the disk")
     private Integer position;
 
     @SerializedName(ApiConstants.DATASTORE_NAME)
-    @Param(description = "the controller of the disk")
+    @Param(description = "The controller of the disk")
     private String datastoreName;
 
     @SerializedName(ApiConstants.DATASTORE_HOST)
-    @Param(description = "the controller of the disk")
+    @Param(description = "The controller of the disk")
     private String datastoreHost;
 
     @SerializedName(ApiConstants.DATASTORE_PATH)
-    @Param(description = "the controller of the disk")
+    @Param(description = "The controller of the disk")
     private String datastorePath;
 
     @SerializedName(ApiConstants.DATASTORE_TYPE)
-    @Param(description = "the controller of the disk")
+    @Param(description = "The controller of the disk")
     private String datastoreType;
 
     public String getDiskId() {

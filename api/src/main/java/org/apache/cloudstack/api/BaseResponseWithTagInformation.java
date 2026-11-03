@@ -26,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 public abstract class BaseResponseWithTagInformation extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated", responseObject = ResourceTagResponse.class)
     protected Set<ResourceTagResponse> tags;
 
     public void addTag(ResourceTagResponse tag) {

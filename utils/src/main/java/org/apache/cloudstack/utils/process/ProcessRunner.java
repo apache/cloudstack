@@ -67,11 +67,13 @@ public final class ProcessRunner {
     public ProcessRunner(ExecutorService executor) {
         this.executor = executor;
         commandLogReplacements.add(new Ternary<>("ipmitool", "-P\\s+\\S+", "-P *****"));
+        commandLogReplacements.add(new Ternary<>("ipmitool", "(?i)password\\s+\\S+\\s+\\S+", "password **** ****"));
     }
 
     /**
      * Executes a process with provided list of commands with a max default timeout
      * of 5 minutes
+     *
      * @param commands list of string commands
      * @return returns process result
      */
@@ -82,6 +84,7 @@ public final class ProcessRunner {
     /**
      * Executes a process with provided list of commands with a given timeout that is less
      * than or equal to DEFAULT_MAX_TIMEOUT
+     *
      * @param commands list of string commands
      * @param timeOut timeout duration
      * @return returns process result
@@ -109,14 +112,16 @@ public final class ProcessRunner {
                 }
             });
             try {
-                logger.debug("Waiting for a response from command [{}]. Defined timeout: [{}].", commandLog, timeOut.getStandardSeconds());
+                logger.debug("Waiting for a response from command [{}]. Defined timeout: [{}].", commandLog,
+                        timeOut.getStandardSeconds());
                 retVal = processFuture.get(timeOut.getStandardSeconds(), TimeUnit.SECONDS);
             } catch (ExecutionException e) {
-                logger.warn("Failed to complete the requested command [{}] due to execution error.", commands, e);
+                logger.warn("Failed to complete the requested command [{}] due to execution error.", commandLog, e);
                 retVal = -2;
                 stdError = e.getMessage();
             } catch (TimeoutException e) {
-                logger.warn("Failed to complete the requested command [{}] within timeout. Defined timeout: [{}].", commandLog, timeOut.getStandardSeconds(), e);
+                logger.warn("Failed to complete the requested command [{}] within timeout. Defined timeout: [{}].",
+                        commandLog, timeOut.getStandardSeconds(), e);
                 retVal = -1;
                 stdError = "Operation timed out, aborted.";
             } finally {

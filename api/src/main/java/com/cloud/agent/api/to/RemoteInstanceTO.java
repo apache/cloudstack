@@ -36,13 +36,18 @@ public class RemoteInstanceTO implements Serializable {
     private String vcenterPassword;
     private String vcenterHost;
     private String datacenterName;
+    private String clusterName;
+    private String hostName;
+    private String vmwareMoref;
 
     public RemoteInstanceTO() {
     }
 
-    public RemoteInstanceTO(String instanceName) {
+    public RemoteInstanceTO(String instanceName, String clusterName, String hostName) {
         this.hypervisorType = Hypervisor.HypervisorType.VMware;
         this.instanceName = instanceName;
+        this.clusterName = clusterName;
+        this.hostName = hostName;
     }
 
     public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
@@ -53,6 +58,17 @@ public class RemoteInstanceTO implements Serializable {
         this.vcenterUsername = vcenterUsername;
         this.vcenterPassword = vcenterPassword;
         this.datacenterName = datacenterName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName, String clusterName, String hostName) {
+        this(instanceName, instancePath, vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
+        this.clusterName = clusterName;
+        this.hostName = hostName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName, String clusterName, String hostName, String vmwareMoref) {
+        this(instanceName, instancePath, vcenterHost, vcenterUsername, vcenterPassword, datacenterName, clusterName, hostName);
+        this.vmwareMoref = vmwareMoref;
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {
@@ -81,5 +97,21 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getDatacenterName() {
         return datacenterName;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public String getVmwareMoref() {
+        return vmwareMoref;
+    }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
     }
 }

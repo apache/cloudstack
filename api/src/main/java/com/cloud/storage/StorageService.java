@@ -134,7 +134,7 @@ public interface StorageService {
 
     void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd);
 
-    ObjectStore discoverObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
     boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd);
 

@@ -27,10 +27,10 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -67,7 +67,7 @@ public class RollingMaintenanceManagerImplTest {
     @Mock
     ServiceOfferingDao serviceOfferingDao;
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Spy
     @InjectMocks
@@ -213,18 +213,18 @@ public class RollingMaintenanceManagerImplTest {
         Mockito.when(serviceOffering.getSpeed()).thenReturn(null);
         Mockito.when(serviceOffering.getRamSize()).thenReturn(null);
 
-        List<UserVmDetailVO> vmDetails = new ArrayList<>();
-        UserVmDetailVO cpuDetail = new UserVmDetailVO(1L, VmDetailConstants.CPU_NUMBER, "2",  false);
+        List<VMInstanceDetailVO> vmDetails = new ArrayList<>();
+        VMInstanceDetailVO cpuDetail = new VMInstanceDetailVO(1L, VmDetailConstants.CPU_NUMBER, "2",  false);
         vmDetails.add(cpuDetail);
-        UserVmDetailVO speedDetail = new UserVmDetailVO(1L, VmDetailConstants.CPU_SPEED, "1000",  false);
+        VMInstanceDetailVO speedDetail = new VMInstanceDetailVO(1L, VmDetailConstants.CPU_SPEED, "1000",  false);
         vmDetails.add(speedDetail);
-        UserVmDetailVO ramSizeDetail = new UserVmDetailVO(1L, VmDetailConstants.MEMORY, "1024",  false);
+        VMInstanceDetailVO ramSizeDetail = new VMInstanceDetailVO(1L, VmDetailConstants.MEMORY, "1024",  false);
         vmDetails.add(ramSizeDetail);
 
         Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
         Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
-        Mockito.when(userVmDetailsDao.listDetails(1L)).thenReturn(vmDetails);
+        Mockito.when(vmInstanceDetailsDao.listDetails(1L)).thenReturn(vmDetails);
 
         Ternary<Integer, Integer, Integer> cpuSpeedAndRamSize = manager.getComputeResourcesCpuSpeedAndRamSize(vm);
 

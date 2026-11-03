@@ -21,6 +21,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import java.util.List;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.fsm.NoTransitionException;
 
 public interface SnapshotDataFactory {
     SnapshotInfo getSnapshot(long snapshotId, DataStore store);
@@ -28,6 +29,8 @@ public interface SnapshotDataFactory {
     SnapshotInfo getSnapshot(DataObject obj, DataStore store);
 
     SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role);
+
+    SnapshotInfo getSnapshotIncludingRemoved(long snapshotId, long storeId, DataStoreRole role);
 
     SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId);
 
@@ -42,4 +45,6 @@ public interface SnapshotDataFactory {
     List<SnapshotInfo> listSnapshotOnCache(long snapshotId);
 
     SnapshotInfo getReadySnapshotOnCache(long snapshotId);
+
+    void updateOperationFailed(long snapshotId) throws NoTransitionException;
 }

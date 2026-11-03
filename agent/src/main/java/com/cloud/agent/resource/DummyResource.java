@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -40,6 +39,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UuidUtils;
 
 public class DummyResource implements ServerResource {
     String _name;
@@ -133,7 +133,7 @@ public class DummyResource implements ServerResource {
         String hostIp = getConfiguredProperty("private.ip.address", "127.0.0.1");
         String localStoragePath = getConfiguredProperty("local.storage.path", "/mnt");
         String lh = hostIp + localStoragePath;
-        String uuid = UUID.nameUUIDFromBytes(lh.getBytes(StringUtils.getPreferredCharset())).toString();
+        String uuid = UuidUtils.nameUUIDFromBytes(lh.getBytes(StringUtils.getPreferredCharset())).toString();
 
         String capacity = getConfiguredProperty("local.storage.capacity", "1000000000");
         String available = getConfiguredProperty("local.storage.avail", "10000000");

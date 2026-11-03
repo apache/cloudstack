@@ -42,7 +42,6 @@ public class ServerMCSPDU extends BaseElement {
         switch (type) {
         // Expected type: send data indication: 26 (0x1a, top 6 bits, or 0x68)
         case 0x1a: {
-            // int userId = buf.readUnsignedShort() + 1001; // User ID: 1002 (1001+1)
             buf.skipBytes(2); // Ignore user ID
 
             int channelId = buf.readUnsignedShort(); // Channel ID: 1003
@@ -78,9 +77,6 @@ public class ServerMCSPDU extends BaseElement {
      *
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
-        // System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         byte[] packet = new byte[] {
                 // TPKT

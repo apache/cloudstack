@@ -16,350 +16,350 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<class-diagram version="1.0.11" icons="true" automaticImage="JPEG" always-add-relationships="false" 
-  generalizations="true" realizations="true" associations="true" dependencies="false" nesting-relationships="true">    
-  <class id="1" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore" project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/DefaultPrimaryDataStore.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="418" y="554"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="false"/>      
-      <operations public="true" package="false" protected="true" private="false"/>    
-    </display>  
-  </class>  
-  <interface id="2" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle" project="cloud-engine-api" 
-    file="/cloud-engine-api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreLifeCycle.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="727" y="1011"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </interface>  
-  <interface id="3" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver" project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/driver/PrimaryDataStoreDriver.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="1494" y="1138"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="false"/>      
-      <operations public="true" package="true" protected="true" private="false"/>    
-    </display>  
-  </interface>  
-  <interface id="4" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/StorageProtocolTransformer.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="1584" y="606"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </interface>  
-  <interface id="5" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider" project="cloud-engine-api" 
-    file="/cloud-engine-api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreProvider.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="189" y="87"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </interface>  
-  <class id="6" corner="BOTTOM_RIGHT" language="java" 
+<class-diagram version="1.0.11" icons="true" automaticImage="JPEG" always-add-relationships="false"
+  generalizations="true" realizations="true" associations="true" dependencies="false" nesting-relationships="true">
+  <class id="1" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore" project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/DefaultPrimaryDataStore.java"
+    binary="false">
+    <position height="-1" width="-1" x="418" y="554"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="false"/>
+      <operations public="true" package="false" protected="true" private="false"/>
+    </display>
+  </class>
+  <interface id="2" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle" project="cloud-engine-api"
+    file="/cloud-engine-api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreLifeCycle.java"
+    binary="false">
+    <position height="-1" width="-1" x="727" y="1011"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </interface>
+  <interface id="3" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver" project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/driver/PrimaryDataStoreDriver.java"
+    binary="false">
+    <position height="-1" width="-1" x="1494" y="1138"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="false"/>
+      <operations public="true" package="true" protected="true" private="false"/>
+    </display>
+  </interface>
+  <interface id="4" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/StorageProtocolTransformer.java"
+    binary="false">
+    <position height="-1" width="-1" x="1584" y="606"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </interface>
+  <interface id="5" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider" project="cloud-engine-api"
+    file="/cloud-engine-api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreProvider.java"
+    binary="false">
+    <position height="-1" width="-1" x="189" y="87"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </interface>
+  <class id="6" corner="BOTTOM_RIGHT" language="java"
     name="org.apache.cloudstack.storage.datastore.configurator.xenserver.XenNfsConfigurator"
-    project="cloud-engine-storage-volume" 
+    project="cloud-engine-storage-volume"
     file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenNfsConfigurator.java"
-    binary="false">    
-    <position height="-1" width="-1" x="1482" y="448"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="true"/>      
-      <operations public="true" package="false" protected="false" private="false"/>    
-    </display>  
-  </class>  
-  <class id="7" corner="BOTTOM_RIGHT" language="java" 
+    binary="false">
+    <position height="-1" width="-1" x="1482" y="448"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="true"/>
+      <operations public="true" package="false" protected="false" private="false"/>
+    </display>
+  </class>
+  <class id="7" corner="BOTTOM_RIGHT" language="java"
     name="org.apache.cloudstack.storage.datastore.configurator.xenserver.AbstractXenConfigurator"
-    project="cloud-engine-storage-volume" 
+    project="cloud-engine-storage-volume"
     file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/xenserver/AbstractXenConfigurator.java"
-    binary="false">    
-    <position height="-1" width="-1" x="1536" y="278"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="false" private="true"/>    
-    </display>  
-  </class>  
-  <class id="8" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.AbstractPrimaryDataStoreConfigurator" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/AbstractPrimaryDataStoreConfigurator.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="1386" y="104"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="true" package="true" protected="true" private="false"/>      
-      <operations public="true" package="false" protected="false" private="false"/>    
-    </display>  
-  </class>  
-  <interface id="9" corner="BOTTOM_RIGHT" language="java" 
+    binary="false">
+    <position height="-1" width="-1" x="1536" y="278"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="false" private="true"/>
+    </display>
+  </class>
+  <class id="8" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.AbstractPrimaryDataStoreConfigurator"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/AbstractPrimaryDataStoreConfigurator.java"
+    binary="false">
+    <position height="-1" width="-1" x="1386" y="104"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="true" package="true" protected="true" private="false"/>
+      <operations public="true" package="false" protected="false" private="false"/>
+    </display>
+  </class>
+  <interface id="9" corner="BOTTOM_RIGHT" language="java"
     name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore" project="cloud-engine-storage"
-    file="/cloud-engine-storage/src/main/java/org/apache/cloudstack/storage/datastore/PrimaryDataStore.java" binary="false">    
-    <position height="-1" width="-1" x="770" y="-4"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </interface>  
-  <interface id="10" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/PrimaryDataStoreConfigurator.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="1394" y="-75"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </interface>  
-  <class id="11" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.validator.NfsProtocolTransformer" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/NfsProtocolTransformer.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="1557" y="830"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </class>  
-  <class id="12" corner="BOTTOM_RIGHT" language="java" 
+    file="/cloud-engine-storage/src/main/java/org/apache/cloudstack/storage/datastore/PrimaryDataStore.java" binary="false">
+    <position height="-1" width="-1" x="770" y="-4"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </interface>
+  <interface id="10" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/PrimaryDataStoreConfigurator.java"
+    binary="false">
+    <position height="-1" width="-1" x="1394" y="-75"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </interface>
+  <class id="11" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.validator.NfsProtocolTransformer"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/NfsProtocolTransformer.java"
+    binary="false">
+    <position height="-1" width="-1" x="1557" y="830"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </class>
+  <class id="12" corner="BOTTOM_RIGHT" language="java"
     name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultXenServerPrimaryDataStoreLifeCycle"
-    project="cloud-engine-storage-volume" 
+    project="cloud-engine-storage-volume"
     file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/lifecycle/DefaultXenServerPrimaryDataStoreLifeCycle.java"
-    binary="false">    
-    <position height="-1" width="-1" x="724" y="1502"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </class>  
-  <class id="13" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/lifecycle/DefaultPrimaryDataStoreLifeCycleImpl.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="487" y="1290"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="false" protected="true" private="false"/>      
-      <operations public="true" package="false" protected="true" private="false"/>    
-    </display>  
-  </class>  
-  <class id="14" corner="BOTTOM_RIGHT" language="java" 
+    binary="false">
+    <position height="-1" width="-1" x="724" y="1502"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </class>
+  <class id="13" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/lifecycle/DefaultPrimaryDataStoreLifeCycleImpl.java"
+    binary="false">
+    <position height="-1" width="-1" x="487" y="1290"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="false" protected="true" private="false"/>
+      <operations public="true" package="false" protected="true" private="false"/>
+    </display>
+  </class>
+  <class id="14" corner="BOTTOM_RIGHT" language="java"
     name="org.apache.cloudstack.storage.datastore.configurator.xenserver.XenServerIscsiConfigurator"
-    project="cloud-engine-storage-volume" 
+    project="cloud-engine-storage-volume"
     file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenServerIscsiConfigurator.java"
-    binary="false">    
-    <position height="-1" width="-1" x="1817" y="450"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="false" private="true"/>    
-    </display>  
-  </class>  
-  <class id="15" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.kvm.AbstractKvmConfigurator" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/AbstractKvmConfigurator.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="2255" y="278"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="false" private="true"/>    
-    </display>  
-  </class>  
-  <class id="16" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.kvm.KvmNfsConfigurator" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmNfsConfigurator.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="2155" y="459"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="false" private="true"/>    
-    </display>  
-  </class>  
-  <class id="17" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.kvm.KvmCLVMConfigurator" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmCLVMConfigurator.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="2515" y="453"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="false" private="true"/>    
-    </display>  
-  </class>  
-  <class id="18" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIProtocolTransformer" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/ISCSIProtocolTransformer.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="1935" y="823"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </class>  
-  <class id="19" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.validator.CLVMProtocolTransformer" 
-    project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/CLVMProtocolTransformer.java" 
-    binary="false">    
-    <position height="-1" width="-1" x="2319" y="824"/>    
-    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
-      <attributes public="false" package="true" protected="true" private="true"/>      
-      <operations public="true" package="true" protected="true" private="true"/>    
-    </display>  
-  </class>  
-  <dependency id="20">    
-    <bendpoint x="1180" y="389"/>    
-    <end type="SOURCE" refId="7"/>    
-    <end type="TARGET" refId="12"/>  
-  </dependency>  
-  <dependency id="21">    
-    <end type="SOURCE" refId="14"/>    
-    <end type="TARGET" refId="18"/>  
-  </dependency>  
-  <dependency id="22">    
-    <bendpoint x="1880" y="557"/>    
-    <end type="SOURCE" refId="16"/>    
-    <end type="TARGET" refId="4"/>  
-  </dependency>  
-  <dependency id="23">    
-    <end type="SOURCE" refId="14"/>    
-    <end type="TARGET" refId="4"/>  
-  </dependency>  
-  <association id="24">    
-    <end type="SOURCE" refId="1" navigable="false">      
-      <attribute id="25" name="driver"/>      
-      <multiplicity id="26" minimum="0" maximum="1"/>    
-    </end>    
-    <end type="TARGET" refId="3" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <dependency id="27">    
-    <end type="SOURCE" refId="6"/>    
-    <end type="TARGET" refId="4"/>  
-  </dependency>  
-  <generalization id="28">    
-    <end type="SOURCE" refId="17"/>    
-    <end type="TARGET" refId="15"/>  
-  </generalization>  
-  <generalization id="29">    
-    <end type="SOURCE" refId="14"/>    
-    <end type="TARGET" refId="7"/>  
-  </generalization>  
-  <association id="30">    
-    <end type="SOURCE" refId="1" navigable="false">      
-      <attribute id="31" name="protocalTransformer"/>      
-      <multiplicity id="32" minimum="0" maximum="1"/>    
-    </end>    
-    <end type="TARGET" refId="4" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <generalization id="33">    
-    <end type="SOURCE" refId="16"/>    
-    <end type="TARGET" refId="15"/>  
-  </generalization>  
-  <realization id="34">    
-    <end type="SOURCE" refId="13"/>    
-    <end type="TARGET" refId="2"/>  
-  </realization>  
-  <dependency id="35">    
-    <bendpoint x="1285" y="629"/>    
-    <end type="SOURCE" refId="6"/>    
-    <end type="TARGET" refId="11"/>  
-  </dependency>  
-  <realization id="36">    
-    <bendpoint x="1975" y="680"/>    
-    <end type="SOURCE" refId="19"/>    
-    <end type="TARGET" refId="4"/>  
-  </realization>  
-  <realization id="37">    
-    <end type="SOURCE" refId="11"/>    
-    <end type="TARGET" refId="4"/>  
-  </realization>  
-  <dependency id="38">    
-    <end type="SOURCE" refId="16"/>    
-    <end type="TARGET" refId="11"/>  
-  </dependency>  
-  <dependency id="39">    
-    <bendpoint x="1267" y="405"/>    
-    <bendpoint x="1165" y="912"/>    
-    <end type="SOURCE" refId="7"/>    
-    <end type="TARGET" refId="3"/>  
-  </dependency>  
-  <generalization id="40">    
-    <end type="SOURCE" refId="15"/>    
-    <end type="TARGET" refId="8"/>  
-  </generalization>  
-  <dependency id="41">    
-    <bendpoint x="2138" y="629"/>    
-    <end type="SOURCE" refId="17"/>    
-    <end type="TARGET" refId="4"/>  
-  </dependency>  
-  <dependency id="42">    
-    <end type="SOURCE" refId="17"/>    
-    <end type="TARGET" refId="19"/>  
-  </dependency>  
-  <generalization id="43">    
-    <end type="SOURCE" refId="6"/>    
-    <end type="TARGET" refId="7"/>  
-  </generalization>  
-  <dependency id="44">    
-    <end type="SOURCE" refId="8"/>    
-    <end type="TARGET" refId="1"/>  
-  </dependency>  
-  <realization id="45">    
-    <end type="SOURCE" refId="1"/>    
-    <end type="TARGET" refId="9"/>  
-  </realization>  
-  <generalization id="46">    
-    <end type="SOURCE" refId="12"/>    
-    <end type="TARGET" refId="13"/>  
-  </generalization>  
-  <realization id="47">    
-    <end type="SOURCE" refId="18"/>    
-    <end type="TARGET" refId="4"/>  
-  </realization>  
-  <association id="48">    
-    <end type="SOURCE" refId="1" navigable="false">      
-      <attribute id="49" name="lifeCycle"/>      
-      <multiplicity id="50" minimum="0" maximum="1"/>    
-    </end>    
-    <end type="TARGET" refId="2" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <generalization id="51">    
-    <end type="SOURCE" refId="7"/>    
-    <end type="TARGET" refId="8"/>  
-  </generalization>  
-  <realization id="52">    
-    <end type="SOURCE" refId="8"/>    
-    <end type="TARGET" refId="10"/>  
-  </realization>  
-  <association id="53">    
-    <end type="SOURCE" refId="1" navigable="false">      
-      <attribute id="54" name="provider"/>      
-      <multiplicity id="55" minimum="0" maximum="1"/>    
-    </end>    
-    <end type="TARGET" refId="5" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <classifier-display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
-    visibility="true">    
-    <attributes public="false" package="true" protected="true" private="true"/>    
-    <operations public="true" package="true" protected="true" private="true"/>  
-  </classifier-display>  
+    binary="false">
+    <position height="-1" width="-1" x="1817" y="450"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="false" private="true"/>
+    </display>
+  </class>
+  <class id="15" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.kvm.AbstractKvmConfigurator"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/AbstractKvmConfigurator.java"
+    binary="false">
+    <position height="-1" width="-1" x="2255" y="278"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="false" private="true"/>
+    </display>
+  </class>
+  <class id="16" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.kvm.KvmNfsConfigurator"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmNfsConfigurator.java"
+    binary="false">
+    <position height="-1" width="-1" x="2155" y="459"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="false" private="true"/>
+    </display>
+  </class>
+  <class id="17" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.kvm.KvmCLVMConfigurator"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmCLVMConfigurator.java"
+    binary="false">
+    <position height="-1" width="-1" x="2515" y="453"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="false" private="true"/>
+    </display>
+  </class>
+  <class id="18" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIProtocolTransformer"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/ISCSIProtocolTransformer.java"
+    binary="false">
+    <position height="-1" width="-1" x="1935" y="823"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </class>
+  <class id="19" corner="BOTTOM_RIGHT" language="java"
+    name="org.apache.cloudstack.storage.datastore.configurator.validator.CLVMProtocolTransformer"
+    project="cloud-engine-storage-volume"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/CLVMProtocolTransformer.java"
+    binary="false">
+    <position height="-1" width="-1" x="2319" y="824"/>
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">
+      <attributes public="false" package="true" protected="true" private="true"/>
+      <operations public="true" package="true" protected="true" private="true"/>
+    </display>
+  </class>
+  <dependency id="20">
+    <bendpoint x="1180" y="389"/>
+    <end type="SOURCE" refId="7"/>
+    <end type="TARGET" refId="12"/>
+  </dependency>
+  <dependency id="21">
+    <end type="SOURCE" refId="14"/>
+    <end type="TARGET" refId="18"/>
+  </dependency>
+  <dependency id="22">
+    <bendpoint x="1880" y="557"/>
+    <end type="SOURCE" refId="16"/>
+    <end type="TARGET" refId="4"/>
+  </dependency>
+  <dependency id="23">
+    <end type="SOURCE" refId="14"/>
+    <end type="TARGET" refId="4"/>
+  </dependency>
+  <association id="24">
+    <end type="SOURCE" refId="1" navigable="false">
+      <attribute id="25" name="driver"/>
+      <multiplicity id="26" minimum="0" maximum="1"/>
+    </end>
+    <end type="TARGET" refId="3" navigable="true"/>
+    <display labels="true" multiplicity="true"/>
+  </association>
+  <dependency id="27">
+    <end type="SOURCE" refId="6"/>
+    <end type="TARGET" refId="4"/>
+  </dependency>
+  <generalization id="28">
+    <end type="SOURCE" refId="17"/>
+    <end type="TARGET" refId="15"/>
+  </generalization>
+  <generalization id="29">
+    <end type="SOURCE" refId="14"/>
+    <end type="TARGET" refId="7"/>
+  </generalization>
+  <association id="30">
+    <end type="SOURCE" refId="1" navigable="false">
+      <attribute id="31" name="protocalTransformer"/>
+      <multiplicity id="32" minimum="0" maximum="1"/>
+    </end>
+    <end type="TARGET" refId="4" navigable="true"/>
+    <display labels="true" multiplicity="true"/>
+  </association>
+  <generalization id="33">
+    <end type="SOURCE" refId="16"/>
+    <end type="TARGET" refId="15"/>
+  </generalization>
+  <realization id="34">
+    <end type="SOURCE" refId="13"/>
+    <end type="TARGET" refId="2"/>
+  </realization>
+  <dependency id="35">
+    <bendpoint x="1285" y="629"/>
+    <end type="SOURCE" refId="6"/>
+    <end type="TARGET" refId="11"/>
+  </dependency>
+  <realization id="36">
+    <bendpoint x="1975" y="680"/>
+    <end type="SOURCE" refId="19"/>
+    <end type="TARGET" refId="4"/>
+  </realization>
+  <realization id="37">
+    <end type="SOURCE" refId="11"/>
+    <end type="TARGET" refId="4"/>
+  </realization>
+  <dependency id="38">
+    <end type="SOURCE" refId="16"/>
+    <end type="TARGET" refId="11"/>
+  </dependency>
+  <dependency id="39">
+    <bendpoint x="1267" y="405"/>
+    <bendpoint x="1165" y="912"/>
+    <end type="SOURCE" refId="7"/>
+    <end type="TARGET" refId="3"/>
+  </dependency>
+  <generalization id="40">
+    <end type="SOURCE" refId="15"/>
+    <end type="TARGET" refId="8"/>
+  </generalization>
+  <dependency id="41">
+    <bendpoint x="2138" y="629"/>
+    <end type="SOURCE" refId="17"/>
+    <end type="TARGET" refId="4"/>
+  </dependency>
+  <dependency id="42">
+    <end type="SOURCE" refId="17"/>
+    <end type="TARGET" refId="19"/>
+  </dependency>
+  <generalization id="43">
+    <end type="SOURCE" refId="6"/>
+    <end type="TARGET" refId="7"/>
+  </generalization>
+  <dependency id="44">
+    <end type="SOURCE" refId="8"/>
+    <end type="TARGET" refId="1"/>
+  </dependency>
+  <realization id="45">
+    <end type="SOURCE" refId="1"/>
+    <end type="TARGET" refId="9"/>
+  </realization>
+  <generalization id="46">
+    <end type="SOURCE" refId="12"/>
+    <end type="TARGET" refId="13"/>
+  </generalization>
+  <realization id="47">
+    <end type="SOURCE" refId="18"/>
+    <end type="TARGET" refId="4"/>
+  </realization>
+  <association id="48">
+    <end type="SOURCE" refId="1" navigable="false">
+      <attribute id="49" name="lifeCycle"/>
+      <multiplicity id="50" minimum="0" maximum="1"/>
+    </end>
+    <end type="TARGET" refId="2" navigable="true"/>
+    <display labels="true" multiplicity="true"/>
+  </association>
+  <generalization id="51">
+    <end type="SOURCE" refId="7"/>
+    <end type="TARGET" refId="8"/>
+  </generalization>
+  <realization id="52">
+    <end type="SOURCE" refId="8"/>
+    <end type="TARGET" refId="10"/>
+  </realization>
+  <association id="53">
+    <end type="SOURCE" refId="1" navigable="false">
+      <attribute id="54" name="provider"/>
+      <multiplicity id="55" minimum="0" maximum="1"/>
+    </end>
+    <end type="TARGET" refId="5" navigable="true"/>
+    <display labels="true" multiplicity="true"/>
+  </association>
+  <classifier-display autosize="true" stereotype="true" package="true" initial-value="false" signature="true"
+    visibility="true">
+    <attributes public="false" package="true" protected="true" private="true"/>
+    <operations public="true" package="true" protected="true" private="true"/>
+  </classifier-display>
   <association-display labels="true" multiplicity="true"/>
 </class-diagram>

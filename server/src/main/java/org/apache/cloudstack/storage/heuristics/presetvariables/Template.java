@@ -16,41 +16,35 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.Storage;
-
 public class Template extends GenericHeuristicPresetVariable {
 
-    private Hypervisor.HypervisorType hypervisorType;
+    private String hypervisorType;
 
-    private Storage.ImageFormat format;
+    private String format;
 
-    private Storage.TemplateType templateType;
+    private String templateType;
 
-    public Hypervisor.HypervisorType getHypervisorType() {
+    public String getHypervisorType() {
         return hypervisorType;
     }
 
-    public void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
+    public void setHypervisorType(String hypervisorType) {
         this.hypervisorType = hypervisorType;
-        fieldNamesToIncludeInToString.add("hypervisorType");
     }
 
-    public Storage.ImageFormat getFormat() {
+    public String getFormat() {
         return format;
     }
 
-    public void setFormat(Storage.ImageFormat format) {
+    public void setFormat(String format) {
         this.format = format;
-        fieldNamesToIncludeInToString.add("format");
     }
 
-    public Storage.TemplateType getTemplateType() {
+    public String getTemplateType() {
         return templateType;
     }
 
-    public void setTemplateType(Storage.TemplateType templateType) {
+    public void setTemplateType(String templateType) {
         this.templateType = templateType;
-        fieldNamesToIncludeInToString.add("templateType");
     }
 }

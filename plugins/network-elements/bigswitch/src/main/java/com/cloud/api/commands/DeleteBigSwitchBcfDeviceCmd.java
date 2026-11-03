@@ -22,6 +22,7 @@ package com.cloud.api.commands;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -98,7 +99,7 @@ public class DeleteBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting BigSwitch BCF Controller";
+        return "Deleting BigSwitch BCF Controller with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
 }

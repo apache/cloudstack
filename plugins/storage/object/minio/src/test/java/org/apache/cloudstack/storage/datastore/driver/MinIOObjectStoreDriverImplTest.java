@@ -129,10 +129,15 @@ public class MinIOObjectStoreDriverImplTest {
     @Test
     public void testDeleteBucket() throws Exception {
         String bucketName = "test-bucket";
-        BucketTO bucket = new BucketTO(bucketName);
+        BucketVO bucketVO = new BucketVO(1L, 1L, 1L, bucketName, 1, false, false, false, null);
+        BucketTO bucket = new BucketTO(bucketVO);
+        when(accountDao.findById(1L)).thenReturn(account);
+        when(account.getUuid()).thenReturn(UUID.randomUUID().toString());
+        when(bucketDao.listByObjectStoreIdAndAccountId(anyLong(), anyLong())).thenReturn(new ArrayList<BucketVO>());
         doReturn(minioClient).when(minioObjectStoreDriverImpl).getMinIOClient(anyLong());
         when(minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())).thenReturn(true);
         doNothing().when(minioClient).removeBucket(RemoveBucketArgs.builder().bucket(bucketName).build());
+        doReturn(minioAdminClient).when(minioObjectStoreDriverImpl).getMinIOAdminClient(anyLong());
         boolean success = minioObjectStoreDriverImpl.deleteBucket(bucket, 1L);
         assertTrue(success);
         verify(minioClient, times(1)).bucketExists(any());

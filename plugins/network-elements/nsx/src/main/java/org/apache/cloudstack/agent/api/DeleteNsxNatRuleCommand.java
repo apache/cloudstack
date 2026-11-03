@@ -54,6 +54,13 @@ public class DeleteNsxNatRuleCommand extends NsxNetworkCommand {
         return protocol;
     }
 
+    public String getNetworkServiceName() {
+        if (service != null) {
+            return service.getName();
+        }
+        return null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

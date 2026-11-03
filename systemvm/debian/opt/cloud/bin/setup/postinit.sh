@@ -18,6 +18,8 @@
 #
 # This scripts before ssh.service but after cloud-early-config
 
+. /lib/lsb/init-functions
+
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
   log_action_msg "$@"
@@ -47,6 +49,97 @@ fi
 
 CMDLINE=/var/cache/cloud/cmdline
 TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+
+# Execute cloud-init if user data is present
+run_cloud_init() {
+  if [ ! -f "$CMDLINE" ]; then
+    log_it "No cmdline file found, skipping cloud-init execution"
+    return 0
+  fi
+
+  local encoded_userdata=$(grep -Po 'userdata=\K[^[:space:]]*' "$CMDLINE" || true)
+  if [ -z "$encoded_userdata" ]; then
+    log_it "No user data found in cmdline, skipping cloud-init execution"
+    return 0
+  fi
+
+  log_it "User data detected, setting up and running cloud-init"
+
+  # Update cloud-init config to use NoCloud datasource
+  cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+#cloud-config
+datasource_list: ['NoCloud']
+network:
+  config: disabled
+manage_etc_hosts: false
+manage_resolv_conf: false
+users: []
+disable_root: false
+ssh_pwauth: false
+cloud_init_modules:
+  - migrator
+  - seed_random
+  - bootcmd
+  - write-files
+  - growpart
+  - resizefs
+  - disk_setup
+  - mounts
+  - rsyslog
+cloud_config_modules:
+  - locale
+  - timezone
+  - runcmd
+cloud_final_modules:
+  - scripts-per-once
+  - scripts-per-boot
+  - scripts-per-instance
+  - scripts-user
+  - final-message
+  - power-state-change
+EOF
+
+  # Set up user data files (reuse the function from init.sh)
+  mkdir -p /var/lib/cloud/seed/nocloud
+
+  # Decode and decompress user data
+  local decoded_userdata
+  decoded_userdata=$(echo "$encoded_userdata" | base64 -d 2>/dev/null | gunzip 2>/dev/null)
+  if [ $? -ne 0 ] || [ -z "$decoded_userdata" ]; then
+    log_it "ERROR: Failed to decode or decompress user data"
+    return 1
+  fi
+
+  # Write user data
+  echo "$decoded_userdata" > /var/lib/cloud/seed/nocloud/user-data
+  chmod 600 /var/lib/cloud/seed/nocloud/user-data
+
+  # Create meta-data
+  local instance_name=$(grep -Po 'name=\K[^[:space:]]*' "$CMDLINE" || hostname)
+  cat > /var/lib/cloud/seed/nocloud/meta-data << EOF
+instance-id: $instance_name
+local-hostname: $instance_name
+EOF
+  chmod 644 /var/lib/cloud/seed/nocloud/meta-data
+
+  log_it "User data files created, executing cloud-init..."
+
+  # Run cloud-init stages manually
+  cloud-init init --local && \
+  cloud-init init && \
+  cloud-init modules --mode=config && \
+  cloud-init modules --mode=final
+
+  local cloud_init_result=$?
+  if [ $cloud_init_result -eq 0 ]; then
+    log_it "Cloud-init executed successfully"
+  else
+    log_it "ERROR: Cloud-init execution failed with exit code: $cloud_init_result"
+  fi
+
+  return $cloud_init_result
+}
+
 if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsrvr" ]
 then
   if [ -x /opt/cloud/bin/update_config.py ]
@@ -70,5 +163,7 @@ for svc in $(cat /var/cache/cloud/disabled_svcs)
 do
   systemctl disable --now --no-block $svc
 done
+
+run_cloud_init
 
 date > /var/cache/cloud/boot_up_done

@@ -49,19 +49,19 @@ public class ListDedicatedHostsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the ID of the host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The ID of the host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the host")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The ID of the domain associated with the host")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the host. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account associated with the host. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID,
                type = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
-               description = "list dedicated hosts by affinity group")
+               description = "List dedicated hosts by affinity group")
     private Long affinityGroupId;
 
     /////////////////////////////////////////////////////

@@ -58,7 +58,8 @@
                   :count="count"
                   :page="page"
                   :pagesize="pagesize"
-                  @change-page="changePage" />
+                  @change-page="changePage"
+                  @refresh-config="handleConfigRefresh" />
             </a-tab-pane>
             <a-tab-pane
               v-for="(group) in groups"
@@ -74,7 +75,8 @@
                   :tab="subgroup.name" >
                   <ConfigurationHierarchy
                     :columns="columns"
-                    :config="config" />
+                    :config="config"
+                    @refresh-config="handleConfigRefresh" />
                 </a-tab-pane>
               </a-tabs>
             </a-tab-pane>
@@ -321,6 +323,13 @@ export default {
           null,
           '#' + this.$route.path
         )
+      }
+    },
+    handleConfigRefresh (name, updatedRecord) {
+      if (!name || !updatedRecord) return
+      const index = this.config.findIndex(item => item.name === name)
+      if (index !== -1) {
+        this.config.splice(index, 1, updatedRecord)
       }
     }
   }

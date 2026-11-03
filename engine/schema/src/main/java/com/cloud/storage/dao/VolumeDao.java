@@ -46,9 +46,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
 
+    List<VolumeVO> findByInstanceAndNotStates(long id, Volume.State...states);
+
     List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
 
-    List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId);
+    List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId);
 
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
 
@@ -70,11 +72,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findCreatedByInstance(long id);
 
-    List<VolumeVO> findByPoolId(long poolId);
+    List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId);
 
     VolumeVO findByPoolIdName(long poolId, String name);
 
-    List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType);
+    List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId, Volume.Type volumeType);
 
     List<VolumeVO> findByPoolIdAndState(long poolid, Volume.State state);
 
@@ -108,6 +110,17 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
      * @return list of volumes
      */
     List<VolumeVO> listVolumesByPassphraseId(long passphraseId);
+
+    /**
+     * List volumes with passphrase_id for migration to KMS
+     *
+     * @param zoneId    Zone ID (required)
+     * @param accountId Account ID filter (optional, null for all accounts)
+     * @param domainId  Domain ID filter (optional, null for all domains)
+     * @param limit     Maximum number of volumes to return
+     * @return list of volumes that need migration
+     */
+    Pair<List<VolumeVO>, Integer> listVolumesForKMSMigration(Long zoneId, Long accountId, Long domainId, Integer limit);
 
     /**
      * Gets the Total Primary Storage space allocated for an account
@@ -163,5 +176,19 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     VolumeVO findOneByIScsiName(String iScsiName);
 
+    int getVolumeCountByOfferingId(long diskOfferingId);
+
     VolumeVO findByLastIdAndState(long lastVolumeId, Volume.State...states);
+
+    boolean existsWithKmsKey(long kmsKeyId);
+
+    /**
+     *  Retrieves volume by its externalId
+     *
+     * @param externalUuid
+     * @return Volume Object of matching search criteria
+     */
+    VolumeVO findByExternalUuid(String externalUuid);
+
+    List<VolumeVO> findByKmsWrappedKeyId(Long kmsWrappedKeyId);
 }

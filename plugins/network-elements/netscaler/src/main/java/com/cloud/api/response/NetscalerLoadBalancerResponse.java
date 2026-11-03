@@ -32,59 +32,59 @@ import com.cloud.serializer.Param;
 public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_ID)
-    @Param(description = "device id of the netscaler load balancer")
+    @Param(description = "Device ID of the netscaler load balancer")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network to which this netscaler device belongs to")
+    @Param(description = "The physical Network to which this netscaler device belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "name of the provider")
+    @Param(description = "Name of the provider")
     private String providerName;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_NAME)
-    @Param(description = "device name")
+    @Param(description = "Device name")
     private String deviceName;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_STATE)
-    @Param(description = "device state")
+    @Param(description = "Device state")
     private String deviceState;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY)
-    @Param(description = "device capacity")
+    @Param(description = "Device capacity")
     private Long deviceCapacity;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)
-    @Param(description = "true if device is dedicated for an account")
+    @Param(description = "True if device is dedicated for an account")
     private Boolean dedicatedLoadBalancer;
 
     @SerializedName(ApiConstants.PUBLIC_INTERFACE)
-    @Param(description = "the public interface of the load balancer")
+    @Param(description = "The public interface of the load balancer")
     private String publicInterface;
 
     @SerializedName(ApiConstants.PRIVATE_INTERFACE)
-    @Param(description = "the private interface of the load balancer")
+    @Param(description = "The private interface of the load balancer")
     private String privateInterface;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the management IP address of the external load balancer")
+    @Param(description = "The management IP address of the external load balancer")
     private String ipAddress;
 
     @SerializedName(ApiConstants.GSLB_PROVIDER)
-    @Param(description = "true if NetScaler device is provisioned to be a GSLB service provider")
+    @Param(description = "True if NetScaler device is provisioned to be a GSLB service provider")
     private Boolean isGslbProvider;
 
     @SerializedName(ApiConstants.EXCLUSIVE_GSLB_PROVIDER)
-    @Param(description = "true if NetScaler device is provisioned exclusively to be a GSLB service provider")
+    @Param(description = "True if NetScaler device is provisioned exclusively to be a GSLB service provider")
     private Boolean isExclusiveGslbProvider;
 
     @SerializedName(ApiConstants.GSLB_PROVIDER_PUBLIC_IP)
-    @Param(description = "public IP of the NetScaler representing GSLB site")
+    @Param(description = "Public IP of the NetScaler representing GSLB site")
     private String gslbSitePublicIp;
 
     @SerializedName(ApiConstants.GSLB_PROVIDER_PRIVATE_IP)
-    @Param(description = "private IP of the NetScaler representing GSLB site")
+    @Param(description = "Private IP of the NetScaler representing GSLB site")
     private String gslbSitePrivateIp;
 
     @SerializedName(ApiConstants.POD_IDS)

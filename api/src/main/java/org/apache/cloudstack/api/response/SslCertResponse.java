@@ -27,8 +27,6 @@ import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.network.tls.SslCert;
 import com.cloud.serializer.Param;
 
-//import org.apache.cloudstack.api.EntityReference;
-
 @EntityReference(value = SslCert.class)
 public class SslCertResponse extends BaseResponse {
 
@@ -37,35 +35,35 @@ public class SslCertResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.CERTIFICATE)
-    @Param(description = "certificate")
+    @Param(description = "Certificate")
     private String certificate;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "account for the certificate")
+    @Param(description = "Account for the certificate")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the certificate")
+    @Param(description = "The project id of the certificate")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the certificate")
+    @Param(description = "The project name of the certificate")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the network owner")
+    @Param(description = "The domain id of the Network owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the network owner")
+    @Param(description = "The domain name of the Network owner")
     private String domain;
 
     @SerializedName(ApiConstants.CERTIFICATE_CHAIN)
-    @Param(description = "certificate chain")
+    @Param(description = "Certificate chain")
     private String certchain;
 
     @SerializedName(ApiConstants.CERTIFICATE_FINGERPRINT)
-    @Param(description = "certificate fingerprint")
+    @Param(description = "Certificate fingerprint")
     private String fingerprint;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_RULE_LIST)
@@ -73,7 +71,7 @@ public class SslCertResponse extends BaseResponse {
     List<String> lbIds;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name")
+    @Param(description = "Name")
     private String name;
 
     public SslCertResponse() {

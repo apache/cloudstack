@@ -92,7 +92,7 @@ public class ClusterDaoImplTest {
         when(cluster2.getArch()).thenReturn(CPU.CPUArch.arm64);
         List<ClusterVO> dummyHosts = Arrays.asList(cluster1, cluster2);
         doReturn(dummyHosts).when(clusterDao).search(any(SearchCriteria.class), isNull());
-        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
+        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals(Hypervisor.HypervisorType.XenServer, result.get(0).first());
@@ -109,7 +109,7 @@ public class ClusterDaoImplTest {
         when(cluster.getArch()).thenReturn(CPU.CPUArch.amd64);
         List<ClusterVO> dummyHosts = Collections.singletonList(cluster);
         doReturn(dummyHosts).when(clusterDao).search(any(SearchCriteria.class), isNull());
-        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
+        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(Hypervisor.HypervisorType.VMware, result.get(0).first());

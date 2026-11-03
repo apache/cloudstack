@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import com.cloud.vm.Nic;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -41,7 +39,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on an Instance", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "updatedefaultnicforvirtualmachineresponse";
@@ -52,7 +50,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+            required=true, description = "Instance ID")
     private Long vmId;
 
     @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "NIC ID")
@@ -90,7 +88,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " on user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return "Setting NIC " + getResourceUuid(ApiConstants.NIC_ID) + " as default to User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
@@ -104,7 +102,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " NIC ID: " + getResourceUuid(ApiConstants.NIC_ID));
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));
@@ -114,7 +112,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set default nic for VM. Refer to server logs for details.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set default NIC for Instance. Refer to server logs for details.");
         }
     }
 }

@@ -59,7 +59,7 @@ public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FIREWALL_DEVICE_CAPACITY,
                type = CommandType.LONG,
                required = false,
-               description = "capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
+               description = "Capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
     /////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configuring a Palo Alto firewall device";
+        return "Configuring Palo Alto firewall device with ID: " + getResourceUuid(ApiConstants.FIREWALL_DEVICE_ID);
     }
 
     @Override

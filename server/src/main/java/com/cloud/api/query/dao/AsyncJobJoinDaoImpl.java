@@ -16,18 +16,19 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-
 import javax.inject.Inject;
-
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.SerializationContext;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -60,9 +61,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setAccountId(job.getAccountUuid());
         jobResponse.setAccount(job.getAccountName());
         jobResponse.setDomainId(job.getDomainUuid());
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(job.getDomainPath())).deleteCharAt(domainPath.length() - 1);
-        jobResponse.setDomainPath(domainPath.toString());
+        jobResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(job.getDomainPath()));
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
@@ -116,4 +115,16 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
 
     }
 
+    @Override
+    public List<AsyncJobJoinVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<AsyncJobJoinVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<AsyncJobJoinVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
+    }
 }

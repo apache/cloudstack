@@ -44,22 +44,22 @@ public class AddSspCmd extends BaseCmd {
     @Inject
     DataCenterDao _dcDao;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "stratosphere ssp server url")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "Stratosphere ssp server URL")
     private String url;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = false, description = "stratosphere ssp api username")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = false, description = "Stratosphere ssp API username")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = false, description = "stratosphere ssp api password")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = false, description = "Stratosphere ssp API password")
     private String password;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "stratosphere ssp api name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Stratosphere ssp API name")
     private String name; // required because HostVO name field defined as NOT NULL.
 
-    @Parameter(name = "tenantuuid", type = CommandType.STRING, required = false, description = "stratosphere ssp tenant uuid")
+    @Parameter(name = "tenantuuid", type = CommandType.STRING, required = false, description = "Stratosphere ssp tenant UUID")
     private String tenantUuid; // required in creating ssp tenant_network
 
     @Override

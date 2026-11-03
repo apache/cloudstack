@@ -69,7 +69,6 @@ public class PrivateGatewayRules extends RuleApplier {
             // setup source nat
             if (_nicProfile != null) {
                 _isAddOperation = true;
-                // result = setupVpcPrivateNetwork(router, true, guestNic);
                 result = visitor.visit(this);
             }
         } catch (final Exception ex) {

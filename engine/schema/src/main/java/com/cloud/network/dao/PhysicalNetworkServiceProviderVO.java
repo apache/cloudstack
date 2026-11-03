@@ -97,6 +97,9 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @Column(name = "networkacl_service_provided")
     boolean networkAclServiceProvided;
 
+    @Column(name = "custom_action_service_provided")
+    boolean customActionServiceProvided;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
@@ -278,6 +281,7 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.setUserdataServiceProvided(services.contains(Service.UserData));
         this.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
         this.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
+        this.setCustomActionServiceProvided(services.contains(Service.CustomAction));
     }
 
     @Override
@@ -301,20 +305,26 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         if (this.isLbServiceProvided()) {
             services.add(Service.Lb);
         }
-        if (this.sourcenatServiceProvided) {
+        if (this.isSourcenatServiceProvided()) {
             services.add(Service.SourceNat);
         }
-        if (this.staticnatServiceProvided) {
+        if (this.isStaticnatServiceProvided()) {
             services.add(Service.StaticNat);
         }
-        if (this.portForwardingServiceProvided) {
+        if (this.isPortForwardingServiceProvided()) {
             services.add(Service.PortForwarding);
+        }
+        if (this.isNetworkAclServiceProvided()) {
+            services.add(Service.NetworkACL);
         }
         if (this.isUserdataServiceProvided()) {
             services.add(Service.UserData);
         }
         if (this.isSecuritygroupServiceProvided()) {
             services.add(Service.SecurityGroup);
+        }
+        if (this.isCustomActionServiceProvided()) {
+            services.add(Service.CustomAction);
         }
         return services;
     }
@@ -326,5 +336,13 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
 
     public void setNetworkAclServiceProvided(boolean networkAclServiceProvided) {
         this.networkAclServiceProvided = networkAclServiceProvided;
+    }
+
+    public boolean isCustomActionServiceProvided() {
+        return customActionServiceProvided;
+    }
+
+    public void setCustomActionServiceProvided(boolean customActionServiceProvided) {
+        this.customActionServiceProvided = customActionServiceProvided;
     }
 }

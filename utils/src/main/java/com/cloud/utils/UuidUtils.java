@@ -22,6 +22,8 @@ package com.cloud.utils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.xerces.impl.xpath.regex.RegularExpression;
 
+import java.util.UUID;
+
 public class UuidUtils {
 
     private static final RegularExpression uuidRegex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
@@ -63,5 +65,10 @@ public class UuidUtils {
 
     public static RegularExpression getUuidRegex() {
         return uuidRegex;
+    }
+
+
+    public static UUID nameUUIDFromBytes(byte[] name) {
+        return UUID.nameUUIDFromBytes(name);
     }
 }

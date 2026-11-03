@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.network;
 
+import com.cloud.consoleproxy.ConsoleProxy;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
@@ -43,9 +45,9 @@ public class NioSocketSSLEngineManager {
 
         executor = Executors.newSingleThreadExecutor();
 
-        int pktBufSize = engine.getSession().getPacketBufferSize();
-        myNetData = ByteBuffer.allocate(pktBufSize);
-        peerNetData = ByteBuffer.allocate(pktBufSize);
+        int networkBufSize = Math.max(engine.getSession().getPacketBufferSize(), ConsoleProxy.defaultBufferSize);
+        myNetData = ByteBuffer.allocate(networkBufSize);
+        peerNetData = ByteBuffer.allocate(networkBufSize);
     }
 
     private void handshakeNeedUnwrap(ByteBuffer peerAppData) throws SSLException {
@@ -155,22 +157,25 @@ public class NioSocketSSLEngineManager {
     }
 
     public int write(ByteBuffer data) throws IOException {
-        int n = 0;
+        int totalBytesConsumed = 0;
+        int sessionAppBufSize = engine.getSession().getApplicationBufferSize();
+        boolean shouldBatch = ConsoleProxy.defaultBufferSize > sessionAppBufSize;
+
         while (data.hasRemaining()) {
             SSLEngineResult result = engine.wrap(data, myNetData);
-            n += result.bytesConsumed();
+            totalBytesConsumed += result.bytesConsumed();
             switch (result.getStatus()) {
                 case OK:
-                    myNetData.flip();
-                    outputStream.writeBytes(myNetData, myNetData.remaining());
-                    outputStream.flushWriteBuffer();
-                    myNetData.compact();
+                    // Flush immediately if: batching is disabled, small data, or last chunk
+                    if (!shouldBatch || result.bytesConsumed() < sessionAppBufSize || !data.hasRemaining()) {
+                        flush();
+                    }
+                    // Otherwise accumulate for batching (large chunk with more data coming)
                     break;
 
                 case BUFFER_OVERFLOW:
-                    myNetData.flip();
-                    outputStream.writeBytes(myNetData, myNetData.remaining());
-                    myNetData.compact();
+                    // Flush when buffer is full
+                    flush();
                     break;
 
                 case CLOSED:
@@ -181,7 +186,16 @@ public class NioSocketSSLEngineManager {
                     break;
             }
         }
-        return n;
+        return totalBytesConsumed;
+    }
+
+    public void flush() {
+        if (myNetData.position() > 0) {
+            myNetData.flip();
+            outputStream.writeBytes(myNetData, myNetData.remaining());
+            outputStream.flushWriteBuffer();
+            myNetData.compact();
+        }
     }
 
     public SSLSession getSession() {

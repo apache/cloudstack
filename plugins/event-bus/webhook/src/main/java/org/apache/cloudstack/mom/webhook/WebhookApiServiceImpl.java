@@ -29,23 +29,30 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.mom.webhook.api.command.user.AddWebhookFilterCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDeliveryCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookFilterCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ExecuteWebhookDeliveryCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveriesCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookFiltersCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhooksCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookFilterResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryJoinDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookFilterDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookJoinDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookFilterVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -59,9 +66,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -84,6 +91,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     @Inject
     WebhookDeliveryJoinDao webhookDeliveryJoinDao;
     @Inject
+    WebhookFilterDao webhookFilterDao;
+    @Inject
     ManagementServerHostDao managementServerHostDao;
     @Inject
     WebhookService webhookService;
@@ -104,12 +113,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         return response;
     }
 
-    protected List<Long> getIdsOfAccessibleWebhooks(Account caller) {
-        if (Account.Type.ADMIN.equals(caller.getType())) {
+    protected List<Long> getIdsOfAccessibleWebhooks(Account caller, boolean isCallerRootAdmin) {
+        if (isCallerRootAdmin) {
             return new ArrayList<>();
         }
         String domainPath = null;
-        if (Account.Type.DOMAIN_ADMIN.equals(caller.getType())) {
+        if (accountManager.isDomainAdmin(caller.getId())) {
             Domain domain = domainDao.findById(caller.getDomainId());
             domainPath = domain.getPath();
         }
@@ -118,7 +127,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     protected ManagementServerHostVO basicWebhookDeliveryApiCheck(Account caller, final Long id, final Long webhookId,
-                final Long managementServerId, final Date startDate, final Date endDate) {
+              final Long managementServerId, final Date startDate, final Date endDate, boolean isCallerRootAdmin) {
         if (id != null) {
             WebhookDeliveryVO webhookDeliveryVO = webhookDeliveryDao.findById(id);
             if (webhookDeliveryVO == null) {
@@ -141,7 +150,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         ManagementServerHostVO managementServerHostVO = null;
         if (managementServerId != null) {
-            if (!Account.Type.ADMIN.equals(caller.getType())) {
+            if (!isCallerRootAdmin) {
                 throw new PermissionDeniedException("Invalid parameter specified");
             }
             managementServerHostVO = managementServerHostDao.findById(managementServerId);
@@ -221,8 +230,34 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             return;
         }
         String error = String.format("Payload URL: %s is already in use by another webhook", payloadUrl);
-        logger.error(String.format("%s: %s for Account [%s]", error, webhookVO, owner));
+        logger.error("{}: {} for Account [{}]", error, webhookVO, owner);
         throw new InvalidParameterValueException(error);
+    }
+
+    protected WebhookFilterResponse createWebhookFilterResponse(WebhookFilter webhookFilter, WebhookVO webhookVO) {
+        WebhookFilterResponse response = new WebhookFilterResponse();
+        response.setObjectName("webhookfilter");
+        response.setId(webhookFilter.getUuid());
+        if (webhookVO == null) {
+            webhookVO = webhookDao.findById(webhookFilter.getWebhookId());
+        }
+        if (webhookVO != null) {
+            response.setWebhookId(webhookVO.getUuid());
+            response.setWebhookName(webhookVO.getName());
+        }
+        response.setType(webhookFilter.getType().toString());
+        response.setMode(webhookFilter.getMode().toString());
+        response.setMatchType(webhookFilter.getMatchType().toString());
+        response.setValue(webhookFilter.getValue());
+        response.setCreated(webhookFilter.getCreated());
+        return response;
+    }
+
+    protected URI validatePayloadUrlByDeliverySecurityPolicy(String payloadUrl, long domainId) {
+        return WebhookUrlValidator.validateWebhookDestinationUrl(payloadUrl,
+                WebhookService.WebhookDeliveryAllowHttp.valueIn(domainId),
+                WebhookService.WebhookDeliveryBlocklist.valueIn(domainId),
+                WebhookService.WebhookDeliveryBlockLocalAddresses.value());
     }
 
     @Override
@@ -234,6 +269,27 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
         final String scopeStr = cmd.getScope();
+        final boolean isCallerRootAdmin = accountManager.isRootAdmin(caller.getId());
+        final boolean isCallerAdmin = isCallerRootAdmin || accountManager.isAdmin(caller.getId());
+
+        Webhook.Scope scope = null;
+        if (StringUtils.isNotEmpty(scopeStr)) {
+            scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
+            if (scope == null) {
+                throw new InvalidParameterValueException("Invalid scope specified");
+            }
+        }
+        if ((Webhook.Scope.Global.equals(scope) && !isCallerRootAdmin) ||
+                (Webhook.Scope.Domain.equals(scope) && !isCallerAdmin)) {
+            throw new InvalidParameterValueException(String.format("Scope %s can not be specified", scope));
+        }
+        Webhook.State state = null;
+        if (StringUtils.isNotEmpty(stateStr)) {
+            state = EnumUtils.getEnumIgnoreCase(Webhook.State.class, stateStr);
+            if (state == null) {
+                throw new InvalidParameterValueException("Invalid state specified");
+            }
+        }
         List<WebhookResponse> responsesList = new ArrayList<>();
         List<Long> permittedAccounts = new ArrayList<>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
@@ -258,27 +314,6 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         SearchCriteria<WebhookJoinVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
-        Webhook.Scope scope = null;
-        if (StringUtils.isNotEmpty(scopeStr)) {
-            try {
-                scope = Webhook.Scope.valueOf(scopeStr);
-            } catch (IllegalArgumentException iae) {
-                throw new InvalidParameterValueException("Invalid scope specified");
-            }
-        }
-        if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(caller.getType())) ||
-                (Webhook.Scope.Domain.equals(scope) &&
-                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(caller.getType()))) {
-            throw new InvalidParameterValueException(String.format("Scope %s can not be specified", scope));
-        }
-        Webhook.State state = null;
-        if (StringUtils.isNotEmpty(stateStr)) {
-            try {
-                state = Webhook.State.valueOf(stateStr);
-            } catch (IllegalArgumentException iae) {
-                throw new InvalidParameterValueException("Invalid state specified");
-            }
-        }
         if (scope != null) {
             sc.setParameters("scope", scope.name());
         }
@@ -315,28 +350,27 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String scopeStr = cmd.getScope();
         final String stateStr = cmd.getState();
         Webhook.Scope scope = Webhook.Scope.Local;
+        final boolean isOwnerRootAdmin = accountManager.isRootAdmin(owner.getId());
+        final boolean isOwnerAdmin = isOwnerRootAdmin || accountManager.isAdmin(owner.getId());
         if (StringUtils.isNotEmpty(scopeStr)) {
-            try {
-                scope = Webhook.Scope.valueOf(scopeStr);
-            } catch (IllegalArgumentException iae) {
+            scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
+            if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
         }
-        if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
-                (Webhook.Scope.Domain.equals(scope) &&
-                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
+        if ((Webhook.Scope.Global.equals(scope) && !isOwnerRootAdmin) ||
+                (Webhook.Scope.Domain.equals(scope) && !isOwnerAdmin)) {
             throw new InvalidParameterValueException(
                     String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
         }
         Webhook.State state = Webhook.State.Enabled;
         if (StringUtils.isNotEmpty(stateStr)) {
-            try {
-                state = Webhook.State.valueOf(stateStr);
-            } catch (IllegalArgumentException iae) {
+            state = EnumUtils.getEnumIgnoreCase(Webhook.State.class, stateStr);
+            if (state == null) {
                 throw new InvalidParameterValueException("Invalid state specified");
             }
         }
-        UriUtils.validateUrl(payloadUrl);
+        validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, owner.getDomainId());
         validateWebhookOwnerPayloadUrl(owner, payloadUrl, null);
         URI uri = URI.create(payloadUrl);
         if (sslVerification && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
@@ -345,14 +379,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         long domainId = owner.getDomainId();
         Long cmdDomainId = cmd.getDomainId();
-        if (cmdDomainId != null &&
-                List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()) &&
-                Webhook.Scope.Domain.equals(scope)) {
+        if (cmdDomainId != null && isOwnerAdmin && Webhook.Scope.Domain.equals(scope)) {
             domainId = cmdDomainId;
         }
         WebhookVO webhook = new WebhookVO(name, description, state, domainId, owner.getId(), payloadUrl, secretKey,
                 sslVerification, scope);
         webhook = webhookDao.persist(webhook);
+        webhookService.invalidateWebhooksCache();
         return createWebhookResponse(webhook.getId());
     }
 
@@ -365,7 +398,11 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             throw new InvalidParameterValueException("Unable to find the webhook with the specified ID");
         }
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
-        return webhookDao.remove(id);
+        boolean removed = webhookDao.remove(id);
+        if (removed) {
+            webhookService.invalidateWebhooksCache();
+        }
+        return removed;
     }
 
     @Override
@@ -394,40 +431,39 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             updateNeeded = true;
         }
         if (StringUtils.isNotEmpty(stateStr)) {
-            try {
-                Webhook.State state = Webhook.State.valueOf(stateStr);
-                webhook.setState(state);
-                updateNeeded = true;
-            } catch (IllegalArgumentException iae) {
+            Webhook.State state = EnumUtils.getEnumIgnoreCase(Webhook.State.class, stateStr);
+            if (state == null) {
                 throw new InvalidParameterValueException("Invalid state specified");
             }
+            webhook.setState(state);
+            updateNeeded = true;
         }
         Account owner = accountManager.getAccount(webhook.getAccountId());
+        final boolean isOwnerRootAdmin = accountManager.isRootAdmin(owner.getId());
+        final boolean isOwnerAdmin = isOwnerRootAdmin || accountManager.isAdmin(owner.getId());
         if (StringUtils.isNotEmpty(scopeStr)) {
-            try {
-                Webhook.Scope scope = Webhook.Scope.valueOf(scopeStr);
-                if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
-                        (Webhook.Scope.Domain.equals(scope) &&
-                                !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
-                    throw new InvalidParameterValueException(
-                            String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
-                }
-                webhook.setScope(scope);
-                updateNeeded = true;
-            } catch (IllegalArgumentException iae) {
+            Webhook.Scope scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
+            if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
+            if ((Webhook.Scope.Global.equals(scope) && !isOwnerRootAdmin) ||
+                    (Webhook.Scope.Domain.equals(scope) && !isOwnerAdmin)) {
+                throw new InvalidParameterValueException(
+                        String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
+            }
+            webhook.setScope(scope);
+            updateNeeded = true;
         }
         URI uri = URI.create(webhook.getPayloadUrl());
         if (StringUtils.isNotEmpty(payloadUrl)) {
-            UriUtils.validateUrl(payloadUrl);
+            validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, owner.getDomainId());
             validateWebhookOwnerPayloadUrl(owner, payloadUrl, webhook);
             uri = URI.create(payloadUrl);
             webhook.setPayloadUrl(payloadUrl);
             updateNeeded = true;
         }
         if (sslVerification != null) {
-            if (Boolean.TRUE.equals(sslVerification) && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
+            if (sslVerification && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
                 throw new InvalidParameterValueException(
                         String.format("SSL verification can be specified only for HTTPS URLs, %s", payloadUrl));
             }
@@ -444,6 +480,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (updateNeeded && !webhookDao.update(id, webhook)) {
             return null;
         }
+        webhookService.invalidateWebhooksCache();
         return createWebhookResponse(webhook.getId());
     }
 
@@ -455,8 +492,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
 
     @Override
     public ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveriesCmd cmd) {
-        final CallContext ctx = CallContext.current();
-        final Account caller = ctx.getCallingAccount();
+        final Account caller = CallContext.current().getCallingAccount();
         final Long id = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
         final Long managementServerId = cmd.getManagementServerId();
@@ -464,9 +500,10 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Date startDate = cmd.getStartDate();
         final Date endDate = cmd.getEndDate();
         final String eventType = cmd.getEventType();
+        final boolean isCallerRootAdmin = accountManager.isRootAdmin(caller.getId());
         List<WebhookDeliveryResponse> responsesList = new ArrayList<>();
         ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
-                startDate, endDate);
+                startDate, endDate, isCallerRootAdmin);
 
         Filter searchFilter = new Filter(WebhookDeliveryJoinVO.class, "id", false, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
@@ -474,11 +511,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (webhookId != null) {
             webhookIds.add(webhookId);
         } else {
-            webhookIds.addAll(getIdsOfAccessibleWebhooks(caller));
+            webhookIds.addAll(getIdsOfAccessibleWebhooks(caller, isCallerRootAdmin));
         }
         Pair<List<WebhookDeliveryJoinVO>, Integer> deliveriesAndCount =
                 webhookDeliveryJoinDao.searchAndCountByListApiParameters(id, webhookIds,
-                        (host != null ? host.getMsid() : null), keyword, startDate, endDate, eventType, searchFilter);
+                        (host != null ? host.getMsid() : null), keyword, startDate, endDate, eventType, searchFilter,
+                        isCallerRootAdmin);
         for (WebhookDeliveryJoinVO delivery : deliveriesAndCount.first()) {
             WebhookDeliveryResponse response = createWebhookDeliveryResponse(delivery);
             responsesList.add(response);
@@ -498,17 +536,23 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Date startDate = cmd.getStartDate();
         final Date endDate = cmd.getEndDate();
         ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
-                startDate, endDate);
-        int removed = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookId,
-                (host != null ? host.getMsid() : null), startDate, endDate);
+                startDate, endDate, false);
+        final boolean isCallerRootAdmin = accountManager.isRootAdmin(caller.getId());
+        List<Long> webhookIds = new ArrayList<>();
+        if (webhookId != null) {
+            webhookIds.add(webhookId);
+        } else {
+            webhookIds.addAll(getIdsOfAccessibleWebhooks(caller, isCallerRootAdmin));
+        }
+        int removed = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookIds,
+                (host != null ? host.getMsid() : null), startDate, endDate, isCallerRootAdmin);
         logger.info("{} webhook deliveries removed", removed);
         return removed;
     }
 
     @Override
     public WebhookDeliveryResponse executeWebhookDelivery(ExecuteWebhookDeliveryCmd cmd) throws CloudRuntimeException {
-        final CallContext ctx = CallContext.current();
-        final Account caller = ctx.getCallingAccount();
+        final Account caller = CallContext.current().getCallingAccount();
         final Long deliveryId = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
         final String payloadUrl = getNormalizedPayloadUrl(cmd.getPayloadUrl());
@@ -521,6 +565,11 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             throw new InvalidParameterValueException(String.format("One of the %s, %s or %s must be specified",
                     ApiConstants.ID, ApiConstants.WEBHOOK_ID, ApiConstants.PAYLOAD_URL));
         }
+        if (deliveryId != null && (webhookId != null || StringUtils.isNotBlank(payloadUrl))) {
+            throw new InvalidParameterValueException(
+                    String.format("%s cannot be specified with %s or %s", ApiConstants.ID, ApiConstants.WEBHOOK_ID,
+                            ApiConstants.PAYLOAD_URL));
+        }
         WebhookDeliveryVO existingDelivery = null;
         WebhookVO webhook = null;
         if (deliveryId != null) {
@@ -530,8 +579,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             }
             webhook = webhookDao.findById(existingDelivery.getWebhookId());
         }
+        URI uri = null;
         if (StringUtils.isNotBlank(payloadUrl)) {
-            UriUtils.validateUrl(payloadUrl);
+            long domainId = owner.getDomainId();
+            if (webhook != null) {
+                domainId = webhook.getDomainId();
+            }
+            uri = validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, domainId);
         }
         if (webhookId != null) {
             webhook = webhookDao.findById(webhookId);
@@ -545,18 +599,102 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 webhook.setSecretKey(secretKey);
             }
             if (sslVerification != null) {
-                webhook.setSslVerification(Boolean.TRUE.equals(sslVerification));
+                webhook.setSslVerification(sslVerification);
             }
         }
+        if (webhook != null) {
+            accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
+        }
         if (ObjectUtils.allNull(deliveryId, webhookId)) {
-            webhook = new WebhookVO(owner.getDomainId(), owner.getId(), payloadUrl, secretKey,
+            webhook = new WebhookVO(caller.getDomainId(), caller.getId(), payloadUrl, secretKey,
                     Boolean.TRUE.equals(sslVerification));
         }
-        WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload);
+        WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload, uri);
         if (webhookDelivery.getId() != WebhookDelivery.ID_DUMMY) {
             return createWebhookDeliveryResponse(webhookDeliveryJoinDao.findById(webhookDelivery.getId()));
         }
         return createTestWebhookDeliveryResponse(webhookDelivery, webhook);
+    }
+
+    @Override
+    public ListResponse<WebhookFilterResponse> listWebhookFilters(ListWebhookFiltersCmd cmd) throws CloudRuntimeException {
+        Pair<List<WebhookFilterVO>, Integer> filtersAndCount = webhookFilterDao.searchBy(cmd.getId(), cmd.getWebhookId(),
+                        cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<WebhookFilterResponse> responsesList = new ArrayList<>();
+        WebhookVO webhookVO = null;
+        if (filtersAndCount.second() > 0) {
+            webhookVO = webhookDao.findById(filtersAndCount.first().get(0).getWebhookId());
+        }
+        for (WebhookFilterVO filter : filtersAndCount.first()) {
+            WebhookFilterResponse response = createWebhookFilterResponse(filter, webhookVO);
+            responsesList.add(response);
+        }
+        ListResponse<WebhookFilterResponse> response = new ListResponse<>();
+        response.setResponses(responsesList, responsesList.size());
+        return response;
+    }
+
+    @Override
+    public WebhookFilterResponse addWebhookFilter(AddWebhookFilterCmd cmd) throws CloudRuntimeException {
+        final Account caller = CallContext.current().getCallingAccount();
+        final long id = cmd.getId();
+        final String typeStr = cmd.getType();
+        final String modeStr = cmd.getMode();
+        final String matchTypeStr = cmd.getMatchType();
+        final String value = cmd.getValue();
+        WebhookVO webhook = webhookDao.findById(id);
+        if (webhook == null) {
+            throw new InvalidParameterValueException("Unable to find the webhook with the specified ID");
+        }
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
+        WebhookFilter.Type type = EnumUtils.getEnumIgnoreCase(WebhookFilter.Type.class, typeStr, WebhookFilter.Type.EventType);
+        WebhookFilter.Mode mode = WebhookFilter.Mode.Include;
+        if (StringUtils.isNotBlank(modeStr)) {
+            mode = EnumUtils.getEnumIgnoreCase(WebhookFilter.Mode.class, modeStr);
+            if (mode == null) {
+                throw new InvalidParameterValueException("Invalid mode specified");
+            }
+        }
+        WebhookFilter.MatchType matchType = WebhookFilter.MatchType.Exact;
+        if (StringUtils.isNotBlank(matchTypeStr)) {
+            matchType = EnumUtils.getEnumIgnoreCase(WebhookFilter.MatchType.class, matchTypeStr);
+            if (matchType == null) {
+                throw new InvalidParameterValueException("Invalid match type specified");
+            }
+        }
+        WebhookFilterVO webhookFilter = new WebhookFilterVO(webhook.getId(), type, mode, matchType, value);
+        List<? extends WebhookFilter> existingFilters = webhookFilterDao.listByWebhook(webhook.getId());
+        if (CollectionUtils.isNotEmpty(existingFilters)) {
+            WebhookFilter conflicting = webhookFilter.getConflicting(existingFilters);
+            if (conflicting != null) {
+                logger.error("Conflict detected when adding WebhookFilter having type: {}, mode: {}, " +
+                        "matchtype: {}, value: {} with existing {} for {}", type, mode, matchType, value, conflicting,
+                        webhook);
+                throw new InvalidParameterValueException(String.format("Conflicting Webhook filter exists ID: %s",
+                        conflicting.getId()));
+            }
+        }
+        webhookFilter = webhookFilterDao.persist(webhookFilter);
+        webhookService.invalidateWebhookFiltersCache(webhook.getId());
+        return createWebhookFilterResponse(webhookFilter, webhook);
+    }
+
+    @Override
+    public int deleteWebhookFilter(DeleteWebhookFilterCmd cmd) throws CloudRuntimeException {
+        final Account caller = CallContext.current().getCallingAccount();
+        final Pair<List<WebhookFilterVO>, Integer> filtersAndCount =
+                webhookFilterDao.searchBy(cmd.getId(), cmd.getWebhookId(), 0L, 1L);
+        if (filtersAndCount.second() == 0) {
+            return 0;
+        }
+        final long webhookId = filtersAndCount.first().get(0).getWebhookId();
+        Webhook webhook = webhookDao.findById(webhookId);
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhook);
+        int result = webhookFilterDao.delete(cmd.getId(), webhookId);
+        if (result > 0) {
+            webhookService.invalidateWebhookFiltersCache(webhookId);
+        }
+        return result;
     }
 
     @Override
@@ -569,6 +707,9 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         cmdList.add(ListWebhookDeliveriesCmd.class);
         cmdList.add(DeleteWebhookDeliveryCmd.class);
         cmdList.add(ExecuteWebhookDeliveryCmd.class);
+        cmdList.add(ListWebhookFiltersCmd.class);
+        cmdList.add(AddWebhookFilterCmd.class);
+        cmdList.add(DeleteWebhookFilterCmd.class);
         return cmdList;
     }
 }

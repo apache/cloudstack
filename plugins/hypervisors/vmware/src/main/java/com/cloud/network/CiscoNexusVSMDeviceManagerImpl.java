@@ -66,9 +66,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
 
     @DB
-    //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
-        public
-        CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vCenterIpaddr, String vCenterDcName) {
+    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vCenterIpaddr, String vCenterDcName) {
 
         // In this function, we associate this VSM with each host
         // in the clusterId specified.
@@ -153,28 +151,6 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         // the host via the agent manager. Thus we inject VSM related information
         // into each host's resource. Also, we first configure each resource's
         // entries in the database to contain this VSM information before the injection.
-
-        //for (HostVO host : hosts) {
-        // Create a host details VO object and write it out for this hostid.
-        //Long hostid = new Long(vsmId);
-        //DetailVO vsmDetail = new DetailVO(host.getId(), "vsmId", hostid.toString());
-        //Transaction tx = Transaction.currentTxn();
-        //try {
-        //tx.start();
-        //_hostDetailDao.persist(vsmDetail);
-        //tx.commit();
-        //} catch (Exception e) {
-        //tx.rollback();
-        //throw new CloudRuntimeException(e.getMessage());
-        //}
-        //}
-        // Reconfigure the resource.
-        //Map hostDetails = new HashMap<String, String>();
-        //hostDetails.put(ApiConstants.ID, vsmId);
-        //hostDetails.put(ApiConstants.IP_ADDRESS, ipaddress);
-        //hostDetails.put(ApiConstants.USERNAME, username);
-        //hostDetails.put(ApiConstants.PASSWORD, password);
-        //_agentMrg.send(host.getId(), )
 
         return VSMObj;
 

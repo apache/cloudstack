@@ -65,6 +65,7 @@ import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
 import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
@@ -249,7 +250,7 @@ public class HypervisorHostHelper {
     }
 
     public static String getSecondaryDatastoreUUID(String storeUrl) {
-        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(storeUrl.getBytes()).toString();
     }
 
     public static DatastoreMO getHyperHostDatastoreMO(VmwareHypervisorHost hyperHost, String datastoreName) throws Exception {
@@ -870,7 +871,7 @@ public class HypervisorHostHelper {
 
     private static boolean areBoolPoliciesDifferent(BoolPolicy currentPolicy, BoolPolicy newPolicy) {
         return eitherObjectNull(currentPolicy, newPolicy) ||
-                (newPolicy != null && newPolicy.isValue() != currentPolicy.isValue());
+                (newPolicy != null && !newPolicy.isValue().equals(currentPolicy.isValue()));
     }
 
     private static boolean areDVSSecurityPoliciesDifferent(DVSSecurityPolicy currentSecurityPolicy, DVSSecurityPolicy newSecurityPolicy) {
@@ -889,9 +890,9 @@ public class HypervisorHostHelper {
     private static boolean areDVSMacManagementPoliciesDifferent(DVSMacManagementPolicy currentMacManagementPolicy, DVSMacManagementPolicy newMacManagementPolicy) {
         return eitherObjectNull(currentMacManagementPolicy, newMacManagementPolicy) ||
                 (newMacManagementPolicy != null &&
-                        (currentMacManagementPolicy.isAllowPromiscuous() != newMacManagementPolicy.isAllowPromiscuous() ||
-                                currentMacManagementPolicy.isForgedTransmits() != newMacManagementPolicy.isForgedTransmits() ||
-                                currentMacManagementPolicy.isMacChanges() != newMacManagementPolicy.isMacChanges() ||
+                        (!currentMacManagementPolicy.isAllowPromiscuous().equals(newMacManagementPolicy.isAllowPromiscuous()) ||
+                                !currentMacManagementPolicy.isForgedTransmits().equals(newMacManagementPolicy.isForgedTransmits()) ||
+                                !currentMacManagementPolicy.isMacChanges().equals(newMacManagementPolicy.isMacChanges()) ||
                                 areDVSMacLearningPoliciesDifferent(currentMacManagementPolicy.getMacLearningPolicy(), newMacManagementPolicy.getMacLearningPolicy())));
     }
 

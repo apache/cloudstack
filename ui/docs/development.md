@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # UI Development
 
 The modern CloudStack UI is role-based progressive app that uses Vue.js and Ant Design.
@@ -13,7 +32,7 @@ The following tree shows the basic UI codebase filesystem:
 
 ```bash
     src
-    ├── assests       # sprites, icons, images
+    ├── assets        # sprites, icons, images
     ├── components    # Shared vue files used to render various generic / widely used components
     ├── config        # Contains the layout details of the various routes / sections available in the UI
     ├── locales       # Custom translation keys for the various supported languages

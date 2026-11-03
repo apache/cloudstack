@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.network;
 
+import com.cloud.consoleproxy.ConsoleProxy;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -24,7 +26,7 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
     private final NioSocketSSLEngineManager sslEngineManager;
 
     public NioSocketTLSOutputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
-        super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
+        super(ConsoleProxy.defaultBufferSize, socket);
         this.sslEngineManager = sslEngineManager;
     }
 
@@ -38,6 +40,7 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
         }
 
         currentPosition = start;
+        sslEngineManager.flush();
     }
 
     protected int writeThroughSSLEngineManager(byte[] data, int startPos, int length) {

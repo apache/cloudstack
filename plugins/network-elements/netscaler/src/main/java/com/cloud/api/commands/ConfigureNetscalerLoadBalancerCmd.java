@@ -39,7 +39,7 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configureNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "configures a netscaler load balancer device",
+@APICommand(name = "configureNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "Configures a netscaler load balancer device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
@@ -60,19 +60,19 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY,
                type = CommandType.LONG,
                required = false,
-               description = "capacity of the device, Capacity will be interpreted as number of networks device can handle")
+               description = "Capacity of the device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
     @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED,
                type = CommandType.BOOLEAN,
                required = false,
-               description = "true if this netscaler device to dedicated for a account, false if the netscaler device will be shared by multiple accounts")
+               description = "True if this netscaler device to dedicated for a account, false if the netscaler device will be shared by multiple accounts")
     private Boolean dedicatedUse;
 
     @Parameter(name = ApiConstants.INLINE,
                type = CommandType.BOOLEAN,
                required = false,
-               description = "true if netscaler load balancer is intended to be used in in-line with firewall, false if netscaler load balancer will side-by-side with firewall")
+               description = "True if netscaler load balancer is intended to be used in in-line with firewall, false if netscaler load balancer will side-by-side with firewall")
     private Boolean inline;
 
     @Parameter(name = ApiConstants.POD_IDS,

@@ -23,7 +23,15 @@ import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -52,6 +60,7 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -100,10 +109,19 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     @Inject
     SnapshotZoneDao snapshotZoneDao;
 
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
+
+    @Inject
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+
     private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.Hidden);
 
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
-        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listBySnapshotIdAndDataStoreRoleAndStateIn(snapshotId, DataStoreRole.Image, State.Ready, State.Hidden);
         for (SnapshotDataStoreVO ref : snaps) {
             if (zoneId == dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
                 return ref;
@@ -131,7 +149,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
                 CreateObjectAnswer createSnapshotAnswer = new CreateObjectAnswer(snapTO);
 
-                snapshotOnImageStore.processEvent(Event.OperationSuccessed, createSnapshotAnswer);
+                snapshotOnImageStore.processEvent(Event.OperationSucceeded, createSnapshotAnswer);
                 SnapshotObject snapObj = castSnapshotInfoToSnapshotObject(snapshot);
                 try {
                     snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
@@ -286,7 +304,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             List<Long> deletedRefs = new ArrayList<>();
             for (SnapshotDataStoreVO ref : storeRefs) {
                 boolean refZoneIdMatch = false;
@@ -610,11 +628,23 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.COPY.equals(op)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (SnapshotOperation.TAKE.equals(op)) {
+            return validateVmSnapshot(snapshot);
+        }
+
         if (SnapshotOperation.REVERT.equals(op)) {
             long volumeId = snapshot.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
 
             if (isSnapshotStoredOnSameZoneStoreForQCOW2Volume(snapshot, volumeVO)) {
+                return StrategyPriority.DEFAULT;
+            }
+
+            if (isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO)) {
                 return StrategyPriority.DEFAULT;
             }
 
@@ -626,6 +656,36 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         return StrategyPriority.DEFAULT;
     }
 
+    private StrategyPriority validateVmSnapshot(Snapshot snapshot) {
+        VolumeVO volumeVO = volumeDao.findById(snapshot.getVolumeId());
+        Long instanceId = volumeVO.getInstanceId();
+        if (instanceId == null) {
+            return StrategyPriority.DEFAULT;
+        }
+
+        VMInstanceVO vm = vmInstanceDao.findById(instanceId);
+        if (vm == null) {
+            return StrategyPriority.DEFAULT;
+        }
+
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
+                logger.warn("VM [{}] already has KVM File-Based storage VM snapshots. These VM snapshots and volume snapshots are not supported " +
+                        "together for KVM. As restoring volume snapshots will erase the VM snapshots and cause data loss.", vm.getUuid());
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(volumeVO.getInstanceId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("DefaultSnapshotStrategy cannot handle snapshot [{}] for volume [{}] as the volume is attached to a VM with disk-and-memory VM snapshots." +
+                    "Restoring the volume snapshot will corrupt any newer disk-and-memory VM snapshots.", snapshot);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        return StrategyPriority.DEFAULT;
+    }
+
     protected boolean isSnapshotStoredOnSameZoneStoreForQCOW2Volume(Snapshot snapshot, VolumeVO volumeVO) {
         if (volumeVO == null || !ImageFormat.QCOW2.equals(volumeVO.getFormat())) {
             return false;
@@ -634,6 +694,34 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         return CollectionUtils.isNotEmpty(snapshotStores) &&
                 snapshotStores.stream().anyMatch(s -> Objects.equals(
                         dataStoreMgr.getStoreZoneId(s.getDataStoreId(), s.getRole()), volumeVO.getDataCenterId()));
+    }
+
+    /**
+     * Checks if a CLVM volume snapshot is stored on secondary storage in the same zone.
+     * CLVM snapshots are backed up to secondary storage and removed from primary storage.
+     */
+    protected boolean isSnapshotStoredOnSecondaryForCLVMVolume(Snapshot snapshot, VolumeVO volumeVO) {
+        if (volumeVO == null) {
+            return false;
+        }
+
+        Long poolId = volumeVO.getPoolId();
+        if (poolId == null) {
+            return false;
+        }
+
+        StoragePool pool = (StoragePool) dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            return false;
+        }
+
+        List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listReadyBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        if (CollectionUtils.isEmpty(snapshotStores)) {
+            return false;
+        }
+
+        return snapshotStores.stream().anyMatch(s -> Objects.equals(
+                dataStoreMgr.getStoreZoneId(s.getDataStoreId(), s.getRole()), volumeVO.getDataCenterId()));
     }
 
 }

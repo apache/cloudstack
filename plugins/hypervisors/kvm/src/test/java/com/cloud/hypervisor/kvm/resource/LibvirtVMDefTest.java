@@ -465,6 +465,21 @@ public class LibvirtVMDefTest extends TestCase {
 
     @Test
     public void memBalloonDefTestVirtio() {
+        LibvirtVMDef.setGlobalQemuVersion(5001000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(6009000L);
+        String expectedXml = "<memballoon model='virtio' autodeflate='on' freePageReporting='on'>\n<stats period='60'/>\n</memballoon>";
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("60");
+
+        String xmlDef = memBalloonDef.toString();
+
+        assertEquals(expectedXml, xmlDef);
+    }
+
+    @Test
+    public void memBalloonDefTestVirtioOld() {
+        LibvirtVMDef.setGlobalQemuVersion(2006000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(9008L);
         String expectedXml = "<memballoon model='virtio'>\n<stats period='60'/>\n</memballoon>";
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("60");
@@ -581,5 +596,26 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals("<tpm model='tpm-tis'>\n" +
                 "<backend type='emulator' version='2.0'/>\n" +
                 "</tpm>\n", tpmDef.toString());
+    }
+
+    @Test
+    public void testIsoDiskDefOnIdeBusForTheIdeCdromSlots() {
+        for (int[] slot : new int[][] {{3, 'c'}, {4, 'd'}}) {
+            DiskDef cdrom = new DiskDef();
+            cdrom.defISODisk(null, slot[0], false, DiskDef.DiskType.FILE);
+
+            assertEquals(DiskDef.DiskBus.IDE, cdrom.getBusType());
+            assertEquals("hd" + (char) slot[1], cdrom.getDiskLabel());
+        }
+    }
+
+    @Test
+    public void testIsoDiskDefBeyondTheIdeCdromSlotsIsOnSataBus() {
+        // e.g. the config drive ISO following the ISOs: IDE only has the hdc and hdd slots for CD-ROMs
+        DiskDef cdrom = new DiskDef();
+        cdrom.defISODisk("/mnt/pool/configdrive/i-2-3-VM.iso", 5, false, DiskDef.DiskType.FILE);
+
+        assertEquals(DiskDef.DiskBus.SATA, cdrom.getBusType());
+        assertEquals("sdf", cdrom.getDiskLabel());
     }
 }

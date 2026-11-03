@@ -44,13 +44,13 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list providers by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List providers by name")
     private String name;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list providers by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List providers by state")
     private String state;
 
     /////////////////////////////////////////////////////

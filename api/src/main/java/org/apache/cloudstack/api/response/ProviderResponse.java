@@ -31,31 +31,31 @@ import com.google.gson.annotations.SerializedName;
 public class ProviderResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the provider name")
+    @Param(description = "The provider name")
     private String name;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network this belongs to")
+    @Param(description = "The physical Network this belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.DEST_PHYSICAL_NETWORK_ID)
-    @Param(description = "the destination physical network")
+    @Param(description = "The destination physical Network")
     private String destinationPhysicalNetworkId;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the network provider")
+    @Param(description = "State of the Network provider")
     private String state;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "uuid of the network provider")
+    @Param(description = "UUID of the Network provider")
     private String id;
 
     @SerializedName(ApiConstants.SERVICE_LIST)
-    @Param(description = "services for this provider")
+    @Param(description = "Services for this provider")
     private List<String> services;
 
     @SerializedName(ApiConstants.CAN_ENABLE_INDIVIDUAL_SERVICE)
-    @Param(description = "true if individual services can be enabled/disabled")
+    @Param(description = "True if individual services can be enabled/disabled")
     private Boolean canEnableIndividualServices;
 
     public void setName(String name) {

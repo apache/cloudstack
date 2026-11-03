@@ -164,7 +164,9 @@ enable_fwding() {
 
 enable_passive_ftp() {
   log_it "cloud: enabling passive FTP for guest VMs"
-  echo "$1" > /proc/sys/net/netfilter/nf_conntrack_helper
+  # Linux 6.0 removed the nf_conntrack_helper sysctl, the ftp helper is
+  # attached by raw table rules for static nat and port forwarding
+  modprobe nf_nat_ftp
 }
 
 disable_rpfilter() {
@@ -683,7 +685,7 @@ getPublicIp() {
 
 setup_ntp() {
     log_it "Setting up NTP"
-    NTP_CONF_FILE="/etc/ntp.conf"
+    NTP_CONF_FILE="/etc/ntpsec/ntp.conf"
     if [ -f $NTP_CONF_FILE ]
     then
         IFS=',' read -a server_list <<< "$NTP_SERVER_LIST"
@@ -692,9 +694,9 @@ setup_ntp() {
         do
             server=$(echo ${server_list[iterator]} | tr -d '\r')
             PATTERN="server $server"
-            sed -i "0,/^#server/s//$PATTERN\n#server/" $NTP_CONF_FILE
+            sed -i "0,/^# server/s//$PATTERN\n# server/" $NTP_CONF_FILE
         done
-        systemctl enable ntp
+        systemctl enable --now --no-block ntp
     else
         log_it "NTP configuration file not found"
     fi
@@ -923,9 +925,6 @@ parse_cmd_line() {
           ;;
         privateMtu)
           export PRIVATEMTU=$VALUE
-          ;;
-        useHttpsToUpload)
-          export USEHTTPS=$VALUE
           ;;
         vncport)
           export VNCPORT=$VALUE

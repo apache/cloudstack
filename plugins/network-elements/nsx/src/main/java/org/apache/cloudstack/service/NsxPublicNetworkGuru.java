@@ -17,7 +17,6 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -31,11 +30,7 @@ import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -56,19 +51,9 @@ import java.util.stream.Collectors;
 public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
     @Inject
-    private VlanDetailsDao vlanDetailsDao;
-    @Inject
-    private VpcDao vpcDao;
-    @Inject
-    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
-    @Inject
     private NsxControllerUtils nsxControllerUtils;
     @Inject
     private NsxService nsxService;
-    @Inject
-    private VpcOfferingDao vpcOfferingDao;
-    @Inject
-    private NetworkOfferingDao offeringDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -78,7 +63,8 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     protected boolean canHandle(NetworkOffering offering) {
-        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && offering.isForNsx();
+        boolean isForNsx = networkModel.isProviderForNetworkOffering(Network.Provider.Nsx, offering.getId());
+        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && isForNsx;
     }
 
     @Override

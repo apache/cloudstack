@@ -25,7 +25,10 @@
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit"
      >
-      <a-form-item name="volumeid" ref="volumeid" :label="$t('label.volume')">
+      <a-form-item name="volumeid" ref="volumeid">
+        <template #label>
+          <tooltip-label :title="$t('label.volume')" :tooltip="apiParams.volumeid?.description"/>
+        </template>
         <a-select
           allowClear
           v-model:value="form.volumeid"
@@ -33,6 +36,7 @@
           v-focus="true"
           showSearch
           optionFilterProp="label"
+          :placeholder="apiParams.volumeid?.description"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
@@ -44,13 +48,17 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item name="virtualmachineid" ref="virtualmachineid" :label="$t('label.vm')">
+      <a-form-item name="virtualmachineid" ref="virtualmachineid">
+        <template #label>
+          <tooltip-label :title="$t('label.vm')" :tooltip="apiParams.virtualmachineid?.description"/>
+        </template>
         <a-select
           allowClear
           v-model:value="form.virtualmachineid"
           :loading="virtualMachineOptions.loading"
           showSearch
           optionFilterProp="value"
+          :placeholder="apiParams.virtualmachineid?.description"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
@@ -58,6 +66,33 @@
             v-for="(opt) in virtualMachineOptions.opts"
             :key="opt.name">
             {{ opt.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item name="quickRestore" ref="quickRestore" >
+        <template #label>
+          <tooltip-label :title="$t('label.quickrestore')" :tooltip="apiParams.quickrestore?.description"/>
+        </template>
+        <a-switch v-model:checked="form.quickRestore" />
+      </a-form-item>
+      <a-form-item name="hostId" ref="hostId" v-if="isAdmin()">
+        <template #label>
+          <tooltip-label :title="$t('label.hostid')" :tooltip="apiParams.hostid?.description"/>
+        </template>
+        <a-select
+          allowClear
+          v-model:value="form.hostId"
+          :loading="hostOptions.loading"
+          showSearch
+          optionFilterProp="value"
+          :placeholder="apiParams.hostid?.description"
+          :filterOption="(input, option) => {
+            return option.value.toLowerCase().includes(input.toLowerCase())
+          }" >
+          <a-select-option
+            v-for="(host) in hostOptions.opts"
+            :key="host.id">
+            {{ host.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -72,9 +107,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
+import { isAdmin } from '@/role'
 
 export default {
   name: 'RestoreAttachBackupVolume',
+  components: { TooltipLabel },
   props: {
     loading: {
       type: Boolean,
@@ -95,8 +133,15 @@ export default {
         loading: false,
         opts: []
       },
+      hostOptions: {
+        loading: false,
+        opts: []
+      },
       actionLoading: false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('restoreVolumeFromBackupAndAttachToVM')
   },
   created () {
     this.initForm()
@@ -104,9 +149,12 @@ export default {
   },
   inject: ['parentFetchData'],
   methods: {
+    isAdmin,
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        quickRestore: false
+      })
       this.rules = reactive({
         volumeid: [{ required: true, message: this.$t('message.error.select') }],
         virtualmachineid: [{ required: true, message: this.$t('message.error.select') }]
@@ -115,6 +163,7 @@ export default {
     fetchData () {
       this.fetchVirtualMachine()
       this.fetchVolumes()
+      this.fetchHosts()
     },
     fetchVirtualMachine () {
       this.virtualMachineOptions.loading = true
@@ -143,6 +192,23 @@ export default {
       })
       this.volumeOptions.loading = false
     },
+    async fetchHosts () {
+      this.hostOptions.loading = true
+      const args = {
+        zoneid: this.resource.zoneid,
+        type: 'routing',
+        resourcestate: 'enabled',
+        state: 'up'
+      }
+      const hosts = (await getAPI('listHosts', args))?.listhostsresponse?.host ?? []
+      this.hostOptions.opts = hosts.map((host) => {
+        return {
+          id: host.id,
+          name: host.name
+        }
+      })
+      this.hostOptions.loading = false
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.actionLoading) return
@@ -153,6 +219,8 @@ export default {
         params.backupid = this.resource.id
         params.volumeid = values.volumeid
         params.virtualmachineid = this.virtualMachineOptions.opts.filter(opt => opt.name === values.virtualmachineid)[0].id || null
+        params.quickrestore = values.quickRestore
+        params.hostid = values.hostId
 
         this.actionLoading = true
         const title = this.$t('label.restore.volume.attach')

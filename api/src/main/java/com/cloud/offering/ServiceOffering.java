@@ -142,4 +142,8 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     Boolean getDiskOfferingStrictness();
 
     void setDiskOfferingStrictness(boolean diskOfferingStrictness);
+
+    Long getVgpuProfileId();
+
+    Integer getGpuCount();
 }

@@ -308,7 +308,7 @@ class TestResizeVolume(cloudstackTestCase):
                 vmid = int(qresultvmuuid[0][0])
                 qresult = self.dbclient.execute(
                     "select rootDiskController from"
-                    " user_vm_details where id = '%s';" % vmid
+                    " vm_instance_details where id = '%s';" % vmid
                 )
                 self.debug("Query result: %s" % qresult)
                 diskcontroller = qresult[0][0]
@@ -577,7 +577,7 @@ class TestResizeVolume(cloudstackTestCase):
 
         # 1. Deploy a VM without any disk offering (only root disk)
         # 2. Perform(resize)  of the root  volume
-        # 3. Perform VM snapshot on VM
+        # 3. Perform Instance Snapshot on Instance
         """
 
         # deploy a vm

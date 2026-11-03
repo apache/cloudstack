@@ -56,7 +56,7 @@ public final class LibvirtRevertToVMSnapshotCommandWrapper extends CommandWrappe
 
             if (dm == null) {
                 return new RevertToVMSnapshotAnswer(cmd, false,
-                        "Revert to VM Snapshot Failed due to can not find vm: " + vmName);
+                        "Revert to Instance Snapshot Failed due to can not find Instance: " + vmName);
             }
 
             DomainSnapshot snapshot = dm.snapshotLookupByName(cmd.getTarget().getSnapshotName());
@@ -77,7 +77,7 @@ public final class LibvirtRevertToVMSnapshotCommandWrapper extends CommandWrappe
 
             return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);
         } catch (LibvirtException e) {
-            String msg = " Revert to VM snapshot failed due to " + e.toString();
+            String msg = " Revert to Instance Snapshot failed due to " + e.toString();
             logger.warn(msg, e);
             return new RevertToVMSnapshotAnswer(cmd, false, msg);
         } finally {

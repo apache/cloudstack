@@ -39,7 +39,7 @@ import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 
-@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Restricted, entityType = {Account.class},
+@APICommand(name = "listAccounts", description = "Lists Accounts and provides detailed Account information for listed Accounts", responseObject = AccountResponse.class, responseView = ResponseView.Restricted, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserCmd {
     private static final String s_name = "listaccountsresponse";
@@ -50,32 +50,32 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
                type = CommandType.INTEGER,
-               description = "list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
+               description = "List Accounts by Account type. Valid Account types are 1 (admin), 2 (domain-admin), and 0 (user).")
     private Integer accountType;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "list account by account ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List Account by Account ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IS_CLEANUP_REQUIRED, type = CommandType.BOOLEAN, description = "list accounts by cleanuprequired attribute (values are true or false)")
+    @Parameter(name = ApiConstants.IS_CLEANUP_REQUIRED, type = CommandType.BOOLEAN, description = "List accounts by cleanuprequired attribute (values are true or false)")
     private Boolean cleanupRequired;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list account by account name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List account by account name")
     private String searchName;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list accounts by state. Valid states are enabled, disabled, and locked.")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List accounts by state. Valid states are enabled, disabled, and locked.")
     private String state;
 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of account details requested, value can be a list of [ all, resource, min]")
+               description = "Comma separated list of account details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "List accounts by the Api key access value", since = "4.20.1.0", authorized = {RoleType.Admin})
     private String apiKeyAccess;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for accounts")
+            description = "Flag to display the resource icon for accounts")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for resource type to return usage", since = "4.20.0")

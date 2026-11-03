@@ -26,47 +26,47 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class ResourceTagResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.KEY)
-    @Param(description = "tag key name")
+    @Param(description = "Tag key name")
     private String key;
 
     @SerializedName(ApiConstants.VALUE)
-    @Param(description = "tag value")
+    @Param(description = "Tag value")
     private String value;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
-    @Param(description = "resource type")
+    @Param(description = "Resource type")
     private String resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Param(description = "id of the resource")
+    @Param(description = "ID of the resource")
     private String resourceId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the tag")
+    @Param(description = "The Account associated with the tag")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id the tag belongs to")
+    @Param(description = "The project ID the tag belongs to")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name where tag belongs to")
+    @Param(description = "The project name where tag belongs to")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the tag")
+    @Param(description = "The ID of the domain associated with the tag")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the tag")
+    @Param(description = "The domain associated with the tag")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain associated with the tag", since = "4.19.2.0")
+    @Param(description = "Path of the Domain associated with the tag", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.CUSTOMER)
-    @Param(description = "customer associated with the tag")
+    @Param(description = "Customer associated with the tag")
     private String customer;
 
     public void setKey(String key) {

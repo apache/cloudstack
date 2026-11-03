@@ -19,19 +19,76 @@
 package com.cloud.template;
 
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.configuration.Resource;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
@@ -60,14 +117,32 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentContext;
+import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmIsoMapVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VmIsoMapDao;
+
+import junit.framework.TestCase;
+
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -75,6 +150,7 @@ import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -90,6 +166,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
@@ -103,110 +180,101 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.test.utils.SpringUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+@RunWith(MockitoJUnitRunner.class)
+public class TemplateManagerImplTest extends TestCase {
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+    @Spy
+    @InjectMocks
+    TemplateManagerImpl templateManager;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-public class TemplateManagerImplTest {
-
-    @Inject
-    TemplateManagerImpl templateManager = new TemplateManagerImpl();
-
-    @Inject
+    @Mock
     DataStoreManager dataStoreManager;
 
-    @Inject
+    @Mock
     VMTemplateDao vmTemplateDao;
 
-    @Inject
+    @Mock
     VMTemplatePoolDao vmTemplatePoolDao;
 
-    @Inject
+    @Mock
     TemplateDataStoreDao templateDataStoreDao;
 
-    @Inject
+    @Mock
     StoragePoolHostDao storagePoolHostDao;
 
-    @Inject
+    @Mock
     PrimaryDataStoreDao primaryDataStoreDao;
 
-    @Inject
+    @Mock
     ResourceLimitService resourceLimitMgr;
 
-    @Inject
+    @Mock
     ImageStoreDao imgStoreDao;
 
-    @Inject
+    @Mock
     GuestOSDao guestOSDao;
 
-    @Inject
-    VMTemplateDao tmpltDao;
-
-    @Inject
+    @Mock
     SnapshotDao snapshotDao;
 
-    @Inject
+    @Mock
+    VolumeDao volumeDao;
+
+    @Mock
     VMTemplateDetailsDao tmpltDetailsDao;
 
-    @Inject
+    @Mock
     StorageStrategyFactory storageStrategyFactory;
 
-    @Inject
+    @Mock
     VMInstanceDao _vmInstanceDao;
 
-    @Inject
-    private VMTemplateDao _tmpltDao;
+    @Mock
+    ReservationDao reservationDao;
 
-    @Inject
+    @Mock
     HypervisorGuruManager _hvGuruMgr;
 
-    @Inject
+    @Mock
     AccountManager _accountMgr;
-    @Inject
-    VnfTemplateManager vnfTemplateManager;
 
-    @Inject
+    @Mock
+    VnfTemplateManager vnfTemplateManager;
+    @Mock
+    SnapshotJoinDao snapshotJoinDao;
+    @Mock
+    TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+
+    @Mock
     HeuristicRuleHelper heuristicRuleHelperMock;
+
+    @Mock
+    UserVmDao _userVmDao;
+
+    @Mock
+    VmIsoMapDao _vmIsoMapDao;
+
+    @Mock
+    HostDao _hostDao;
+
+    @Mock
+    HostDetailsDao _hostDetailsDao;
+    @Mock
+    NicDao _nicDao;
+    @Mock
+    NetworkModel _networkModel;
+    @Mock
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
+
+    @Mock
+    UserVmJoinDao _userVmJoinDao;
+
+    @Mock
+    private UserDataDao userDataDaoMock;
+
+    @Mock
+    private UserDataVO userDataMock;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -235,7 +303,6 @@ public class TemplateManagerImplTest {
 
     @Before
     public void setUp() {
-        ComponentContext.initComponentsLifeCycle();
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
@@ -251,6 +318,7 @@ public class TemplateManagerImplTest {
         templateManager.verifyTemplateId(1L);
     }
 
+    @Ignore
     public void testVerifyTemplateIdOfNonSystemTemplate() {
         templateManager.verifyTemplateId(1L);
     }
@@ -269,7 +337,7 @@ public class TemplateManagerImplTest {
         List<TemplateAdapter> adapters  = new ArrayList<TemplateAdapter>();
         adapters.add(templateAdapter);
         when(cmd.getId()).thenReturn(0L);
-        when(_tmpltDao.findById(cmd.getId())).thenReturn(template);
+        when(vmTemplateDao.findById(cmd.getId())).thenReturn(template);
         when(cmd.getZoneId()).thenReturn(null);
 
         when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
@@ -290,7 +358,6 @@ public class TemplateManagerImplTest {
         //case 2.2: When Force delete flag is 'false' and VM instance VO list is non empty.
         when(cmd.isForced()).thenReturn(false);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
-        when(vmInstanceVO.getInstanceName()).thenReturn("mydDummyVM");
         vmInstanceVOList.add(vmInstanceVO);
         when(_vmInstanceDao.listNonExpungedByTemplate(anyLong())).thenReturn(vmInstanceVOList);
         try {
@@ -305,7 +372,6 @@ public class TemplateManagerImplTest {
         when(mockTemplate.getId()).thenReturn(202l);
 
         StoragePoolVO mockPool = mock(StoragePoolVO.class);
-        when(mockPool.getId()).thenReturn(2l);
 
         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
         when(mockPrimaryDataStore.getId()).thenReturn(2l);
@@ -313,7 +379,6 @@ public class TemplateManagerImplTest {
         VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
         when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
 
-        when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(mockTemplateStore);
 
@@ -329,13 +394,11 @@ public class TemplateManagerImplTest {
         when(mockTemplate.getId()).thenReturn(202l);
 
         StoragePoolVO mockPool = mock(StoragePoolVO.class);
-        when(mockPool.getId()).thenReturn(2l);
 
         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
         when(mockPrimaryDataStore.getId()).thenReturn(2l);
         when(mockPrimaryDataStore.getDataCenterId()).thenReturn(1l);
 
-        when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(null);
         when(templateDataStoreDao.findByTemplateZoneDownloadStatus(202l, 1l, VMTemplateStorageResourceAssoc.Status.DOWNLOADED)).thenReturn(null);
@@ -350,7 +413,6 @@ public class TemplateManagerImplTest {
         when(mockTemplate.getId()).thenReturn(202l);
 
         StoragePoolVO mockPool = mock(StoragePoolVO.class);
-        when(mockPool.getId()).thenReturn(2l);
 
         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
         when(mockPrimaryDataStore.getId()).thenReturn(2l);
@@ -358,7 +420,6 @@ public class TemplateManagerImplTest {
 
         TemplateDataStoreVO mockTemplateDataStore = mock(TemplateDataStoreVO.class);
 
-        when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(null);
         when(templateDataStoreDao.findByTemplateZoneDownloadStatus(202l, 1l, VMTemplateStorageResourceAssoc.Status.DOWNLOADED)).thenReturn(mockTemplateDataStore);
@@ -409,19 +470,9 @@ public class TemplateManagerImplTest {
         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
         VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
 
-        when(mockPrimaryDataStore.getId()).thenReturn(2l);
-        when(mockPool.getId()).thenReturn(2l);
         when(mockPool.getStatus()).thenReturn(StoragePoolStatus.Disabled);
-        when(mockPool.getDataCenterId()).thenReturn(1l);
-        when(mockTemplate.getId()).thenReturn(202l);
-        when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         when(vmTemplateDao.findById(anyLong())).thenReturn(mockTemplate);
-        when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
-        when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
-        when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(mockTemplateStore);
         when(primaryDataStoreDao.findById(anyLong())).thenReturn(mockPool);
-
-        doNothing().when(mockTemplateStore).setMarkedForGC(anyBoolean());
 
         ExecutorService preloadExecutor = new CustomThreadPoolExecutor(8, 8, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue(),
                 new NamedThreadFactory("Template-Preloader"));
@@ -440,15 +491,10 @@ public class TemplateManagerImplTest {
 
         StoragePoolVO mockPool1 = mock(StoragePoolVO.class);
         when(mockPool1.getId()).thenReturn(2l);
-        when(mockPool1.getStatus()).thenReturn(StoragePoolStatus.Up);
         when(mockPool1.getDataCenterId()).thenReturn(1l);
         StoragePoolVO mockPool2 = mock(StoragePoolVO.class);
-        when(mockPool2.getId()).thenReturn(3l);
-        when(mockPool2.getStatus()).thenReturn(StoragePoolStatus.Up);
         when(mockPool2.getDataCenterId()).thenReturn(1l);
         StoragePoolVO mockPool3 = mock(StoragePoolVO.class);
-        when(mockPool3.getId()).thenReturn(4l);
-        when(mockPool3.getStatus()).thenReturn(StoragePoolStatus.Up);
         when(mockPool3.getDataCenterId()).thenReturn(2l);
         pools.add(mockPool1);
         pools.add(mockPool2);
@@ -461,9 +507,6 @@ public class TemplateManagerImplTest {
         when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(mockTemplateStore);
-        when(primaryDataStoreDao.findById(2l)).thenReturn(mockPool1);
-        when(primaryDataStoreDao.findById(3l)).thenReturn(mockPool2);
-        when(primaryDataStoreDao.findById(4l)).thenReturn(mockPool3);
         when(primaryDataStoreDao.listByStatus(StoragePoolStatus.Up)).thenReturn(pools);
 
         doNothing().when(mockTemplateStore).setMarkedForGC(anyBoolean());
@@ -491,7 +534,6 @@ public class TemplateManagerImplTest {
         when(mockCreateCmd.getVolumeId()).thenReturn(null);
         when(mockCreateCmd.getSnapshotId()).thenReturn(1L);
         when(mockCreateCmd.getOsTypeId()).thenReturn(1L);
-        when(mockCreateCmd.getEventDescription()).thenReturn("test");
         when(mockCreateCmd.getDetails()).thenReturn(null);
         when(mockCreateCmd.getZoneId()).thenReturn(null);
 
@@ -504,20 +546,17 @@ public class TemplateManagerImplTest {
         when(mockSnapshot.getState()).thenReturn(Snapshot.State.BackedUp);
         when(mockSnapshot.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
 
-        doNothing().when(resourceLimitMgr).checkResourceLimit(any(Account.class), eq(Resource.ResourceType.template));
-        doNothing().when(resourceLimitMgr).checkResourceLimit(any(Account.class), eq(Resource.ResourceType.secondary_storage), anyLong());
-
         GuestOSVO mockGuestOS = mock(GuestOSVO.class);
         when(guestOSDao.findById(anyLong())).thenReturn(mockGuestOS);
 
-        when(tmpltDao.getNextInSequence(eq(Long.class), eq("id"))).thenReturn(1L);
+        when(vmTemplateDao.getNextInSequence(eq(Long.class), eq("id"))).thenReturn(1L);
 
         List<ImageStoreVO> mockRegionStores = new ArrayList<>();
         ImageStoreVO mockRegionStore = mock(ImageStoreVO.class);
         mockRegionStores.add(mockRegionStore);
         when(imgStoreDao.findRegionImageStores()).thenReturn(mockRegionStores);
 
-        when(tmpltDao.persist(any(VMTemplateVO.class))).thenAnswer(new Answer<VMTemplateVO>() {
+        when(vmTemplateDao.persist(any(VMTemplateVO.class))).thenAnswer(new Answer<VMTemplateVO>() {
             @Override
             public VMTemplateVO answer(InvocationOnMock invocationOnMock) throws Throwable {
                 Object[] args = invocationOnMock.getArguments();
@@ -525,8 +564,10 @@ public class TemplateManagerImplTest {
             }
         });
 
-        VMTemplateVO template = templateManager.createPrivateTemplateRecord(mockCreateCmd, mockTemplateOwner);
-        assertTrue("Template in a region store should have cross zones set", template.isCrossZones());
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            VMTemplateVO template = templateManager.createPrivateTemplateRecord(mockCreateCmd, mockTemplateOwner);
+            assertTrue("Template in a region store should have cross zones set", template.isCrossZones());
+        }
     }
 
     @Test
@@ -538,7 +579,9 @@ public class TemplateManagerImplTest {
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(_tmpltDao.findById(anyLong())).thenReturn(template);
+        when(vmTemplateDao.findById(anyLong())).thenReturn(template);
+
+        when(userDataDaoMock.findById(anyLong())).thenReturn(userDataMock);
 
         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
 
@@ -554,7 +597,6 @@ public class TemplateManagerImplTest {
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(_tmpltDao.findById(1L)).thenReturn(template);
 
         templateManager.linkUserDataToTemplate(cmd);
     }
@@ -568,7 +610,6 @@ public class TemplateManagerImplTest {
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(_tmpltDao.findById(1L)).thenReturn(template);
 
         templateManager.linkUserDataToTemplate(cmd);
     }
@@ -581,7 +622,7 @@ public class TemplateManagerImplTest {
         when(cmd.getUserdataId()).thenReturn(2L);
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
-        when(_tmpltDao.findById(anyLong())).thenReturn(null);
+        when(vmTemplateDao.findById(anyLong())).thenReturn(null);
 
         templateManager.linkUserDataToTemplate(cmd);
     }
@@ -596,7 +637,7 @@ public class TemplateManagerImplTest {
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(template.getId()).thenReturn(1L);
-        when(_tmpltDao.findById(1L)).thenReturn(template);
+        when(vmTemplateDao.findById(1L)).thenReturn(template);
 
         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
 
@@ -627,7 +668,6 @@ public class TemplateManagerImplTest {
         DataStore dataStore = Mockito.mock(DataStore.class);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
 
-        Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
         Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(VolumeVO.class))).thenReturn(null);
         Mockito.when(dataStoreManager.getImageStoreWithFreeCapacity(Mockito.anyLong())).thenReturn(dataStore);
 
@@ -640,25 +680,75 @@ public class TemplateManagerImplTest {
         DataStore dataStore = Mockito.mock(DataStore.class);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
 
-        Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
         Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(VolumeVO.class))).thenReturn(dataStore);
 
         templateManager.getImageStore(null, 1L, volumeVO);
         Mockito.verify(dataStoreManager, Mockito.times(0)).getImageStoreWithFreeCapacity(Mockito.anyLong());
     }
 
+    private HypervisorTemplateAdapter mockHypervisorTemplateAdapter() {
+        HypervisorTemplateAdapter adapter = Mockito.mock(HypervisorTemplateAdapter.class);
+        when(adapter.getName()).thenReturn(TemplateAdapter.TemplateAdapterType.Hypervisor.getName());
+        templateManager.setTemplateAdapters(new ArrayList<>(List.of(adapter)));
+        return adapter;
+    }
+
+    @Test
+    public void testRegisterTemplateValidatesUrlBeforeProbingSize() {
+        RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
+        when(cmd.getTemplateTag()).thenReturn(null);
+        when(cmd.isRoutingType()).thenReturn(null);
+        when(cmd.getUrl()).thenReturn("http://10.0.0.5/template.qcow2");
+        when(cmd.getFormat()).thenReturn("QCOW2");
+        when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+        when(cmd.isDirectDownload()).thenReturn(false);
+        when(cmd.getEntityOwnerId()).thenReturn(1L);
+        when(_accountMgr.getAccount(1L)).thenReturn(Mockito.mock(Account.class));
+
+        mockHypervisorTemplateAdapter();
+
+        try (MockedStatic<UriUtils> uriUtilsMock = Mockito.mockStatic(UriUtils.class)) {
+            uriUtilsMock.when(() -> UriUtils.validateUrl(any(), any(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                    .thenThrow(new IllegalArgumentException("Illegal host specified in URL."));
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> templateManager.registerTemplate(cmd));
+
+            uriUtilsMock.verify(() -> UriUtils.getRemoteSize(any(), any()), Mockito.never());
+        }
+    }
+
+    @Test
+    public void testRegisterIsoValidatesUrlBeforeProbingSize() throws Exception {
+        RegisterIsoCmd cmd = Mockito.mock(RegisterIsoCmd.class);
+        when(cmd.getUrl()).thenReturn("http://10.0.0.5/image.iso");
+        when(cmd.isDirectDownload()).thenReturn(false);
+        when(cmd.getEntityOwnerId()).thenReturn(1L);
+        when(_accountMgr.getAccount(1L)).thenReturn(Mockito.mock(Account.class));
+
+        mockHypervisorTemplateAdapter();
+
+        try (MockedStatic<UriUtils> uriUtilsMock = Mockito.mockStatic(UriUtils.class)) {
+            uriUtilsMock.when(() -> UriUtils.validateUrl(any(), any(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                    .thenThrow(new IllegalArgumentException("Illegal host specified in URL."));
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> templateManager.registerIso(cmd));
+
+            uriUtilsMock.verify(() -> UriUtils.getRemoteSize(any(), any()), Mockito.never());
+        }
+    }
+
     @Test
     public void testRegisterTemplateWithTemplateType() {
         RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.SYSTEM, type);
     }
 
     @Test
     public void testRegisterTemplateWithoutTemplateType() {
         RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.USER, type);
     }
 
@@ -666,21 +756,21 @@ public class TemplateManagerImplTest {
     public void testRegisterTemplateWithSystemTemplateTypeByUser() {
         RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testRegisterVnfTemplateWithTemplateType() {
         RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.VNF, type);
     }
 
     @Test
     public void testRegisterVnfTemplateWithoutTemplateType() {
         RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.VNF, type);
     }
 
@@ -688,14 +778,14 @@ public class TemplateManagerImplTest {
     public void testUpdateTemplateWithTemplateType() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.XenServer);
         Assert.assertEquals(Storage.TemplateType.SYSTEM, type);
     }
 
     @Test
     public void testUpdateTemplateWithoutTemplateType() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
         Assert.assertNull(type);
     }
 
@@ -703,7 +793,7 @@ public class TemplateManagerImplTest {
     public void testUpdateTemplateWithInvalidTemplateType() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn("invalidtype");
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.VMware);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -711,44 +801,280 @@ public class TemplateManagerImplTest {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.USER.toString());
         when(cmd.isRoutingType()).thenReturn(true);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateTemplateWithInvalidCrossZonesForSystem() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, false);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, false, Hypervisor.HypervisorType.KVM);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateTemplateWithSystemTemplateTypeByUser() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.XenServer);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateVnfTemplateWithTemplateType() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.VNF, type);
     }
 
     @Test
     public void testUpdateVnfTemplateWithoutTemplateType() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertNull(type);
     }
 
     @Test
     public void testDeleteTemplateWithTemplateType() {
         DeleteTemplateCmd cmd = new DeleteTemplateCmd();
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.VMware);
         Assert.assertNull(type);
     }
+
+    @Test
+    public void verifyHeuristicRulesForZoneTestTemplateIsISOFormatShouldCheckForISOHeuristicType() {
+        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
+    }
+
+    @Test
+    public void verifyHeuristicRulesForZoneTestTemplateNotISOFormatShouldCheckForTemplateHeuristicType() {
+        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
+    }
+
+    @Test
+    public void highestCdromMapEntryReturnsNullWhenMapIsEmpty() {
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+        Assert.assertNull(templateManager.highestCdromMapEntry(1L));
+    }
+
+    @Test
+    public void highestCdromMapEntryReturnsEntryWithMaxDeviceSeq() {
+        VmIsoMapVO low = new VmIsoMapVO(1L, 100L, 4);
+        VmIsoMapVO high = new VmIsoMapVO(1L, 200L, 5);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(Arrays.asList(low, high));
+        VmIsoMapVO result = templateManager.highestCdromMapEntry(1L);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(5, result.getDeviceSeq());
+    }
+
+    @Test
+    public void attachISOToVMAttachWritesToIsoIdWhenPrimarySlotEmpty() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+        Mockito.when(iso.getId()).thenReturn(42L);
+        Mockito.when(vm.getIsoId()).thenReturn(null);
+
+        boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+
+        Assert.assertTrue(result);
+        Mockito.verify(vm).setIsoId(42L);
+        Mockito.verify(_userVmDao).update(eq(1L), eq(vm));
+        Mockito.verify(_vmIsoMapDao, Mockito.never()).persist(any(VmIsoMapVO.class));
+    }
+
+    @Test
+    public void resolveIsoIdForDetachReturnsPrimaryWhenOnlyPrimaryIsAttached() {
+        Long resolved = templateManager.resolveIsoIdForDetach(99L, new ArrayList<>(), null);
+        Assert.assertEquals(Long.valueOf(99L), resolved);
+    }
+
+    @Test
+    public void resolveIsoIdForDetachReturnsMapEntryWhenOnlyMapHasOne() {
+        VmIsoMapVO row = new VmIsoMapVO(1L, 100L, 4);
+        Long resolved = templateManager.resolveIsoIdForDetach(null, Arrays.asList(row), null);
+        Assert.assertEquals(Long.valueOf(100L), resolved);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenMultipleAttachedAndNoIdGiven() {
+        VmIsoMapVO row = new VmIsoMapVO(1L, 100L, 4);
+        templateManager.resolveIsoIdForDetach(99L, Arrays.asList(row), null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenNothingAttached() {
+        templateManager.resolveIsoIdForDetach(null, new ArrayList<>(), null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenIdNotAttached() {
+        templateManager.resolveIsoIdForDetach(99L, new ArrayList<>(), 42L);
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsTrueWhenPrimaryMatches() {
+        Assert.assertTrue(templateManager.isIsoAlreadyAttached(1L, 42L, 42L));
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsTrueWhenInMap() {
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(new VmIsoMapVO(1L, 42L, 4));
+        Assert.assertTrue(templateManager.isIsoAlreadyAttached(1L, 99L, 42L));
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsFalseWhenNotAttached() {
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(null);
+        Assert.assertFalse(templateManager.isIsoAlreadyAttached(1L, null, 42L));
+    }
+
+    @Test
+    public void attachISOToVMAttachWritesToVmIsoMapWhenPrimarySlotOccupied() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+        Mockito.when(iso.getId()).thenReturn(42L);
+        Mockito.when(vm.getIsoId()).thenReturn(99L);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+
+        boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+
+        Assert.assertTrue(result);
+        Mockito.verify(_vmIsoMapDao).persist(Mockito.argThat(row ->
+                row.getVmId() == 1L && row.getIsoId() == 42L
+                        && row.getDeviceSeq() == TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1));
+        Mockito.verify(vm, Mockito.never()).setIsoId(anyLong());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void enforceCdromAttachLimitsThrowsWhenIsoAlreadyAttachedAtPrimary() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getIsoId()).thenReturn(42L);
+        templateManager.enforceCdromAttachLimits(1L, vm, 42L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void enforceCdromAttachLimitsThrowsWhenIsoAlreadyAttachedInMap() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getIsoId()).thenReturn(99L);
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(new VmIsoMapVO(1L, 42L, 4));
+        templateManager.enforceCdromAttachLimits(1L, vm, 42L);
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsDefaultWhenHostIdNull() {
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.advertisedCdromCap(null));
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsDefaultWhenDetailMissing() {
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(null);
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void advertisedCdromCapReturnsParsedValue() {
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("3");
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        Assert.assertEquals(3, templateManager.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void advertisedCdromCapFallsBackOnInvalidValue() {
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("not-a-number");
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.advertisedCdromCap(7L));
+    }
+
+    @Test
+    public void hostIdForVmReturnsCurrentHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getHostId()).thenReturn(42L);
+        Assert.assertEquals(Long.valueOf(42L), templateManager.hostIdForVm(vm));
+    }
+
+    @Test
+    public void hostIdForVmFallsBackToLastHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(99L);
+        Assert.assertEquals(Long.valueOf(99L), templateManager.hostIdForVm(vm));
+    }
+
+    @Test
+    public void hostIdForVmReturnsNullWhenNoHost() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
+        Assert.assertNull(templateManager.hostIdForVm(vm));
+    }
+
+    @Test
+    public void effectiveMaxCdromsReturnsConfiguredCapWhenWithinHypervisorCap() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("2");
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getClusterId()).thenReturn(5L);
+        Mockito.when(_hostDao.findById(7L)).thenReturn(host);
+        Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        // Configured cap defaults to 1 (no cluster override mocked); hypervisor cap is 2; 1 <= 2 → no throw, returns 1.
+        Assert.assertEquals(1, templateManager.effectiveMaxCdroms(vm, 7L));
+    }
+
+    @Test
+    public void templateIsDeleteableReturnsTrueWhenNoVmsUseIso() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L)).thenReturn(new ArrayList<>());
+        Mockito.when(_vmIsoMapDao.listByIsoId(42L)).thenReturn(new ArrayList<>());
+        Assert.assertTrue(templateManager.templateIsDeleteable(42L));
+    }
+
+    @Test
+    public void templateIsDeleteableReturnsFalseWhenPrimarySlotInUse() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L))
+                .thenReturn(java.util.Collections.singletonList(Mockito.mock(UserVmJoinVO.class)));
+        Assert.assertFalse(templateManager.templateIsDeleteable(42L));
+        // Should not even need to consult vm_iso_map once primary slot in use.
+        Mockito.verify(_vmIsoMapDao, Mockito.never()).listByIsoId(anyLong());
+    }
+
+    @Test
+    public void templateIsDeleteableReturnsFalseWhenAttachedViaVmIsoMapToActiveVm() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L)).thenReturn(new ArrayList<>());
+        Mockito.when(_vmIsoMapDao.listByIsoId(42L))
+                .thenReturn(java.util.Collections.singletonList(new VmIsoMapVO(1L, 42L, 4)));
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getState()).thenReturn(State.Running);
+        Mockito.when(vm.getUuid()).thenReturn("uuid-1");
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Assert.assertFalse(templateManager.templateIsDeleteable(42L));
+    }
+
+    @Test
+    public void templateIsDeleteableIgnoresVmIsoMapForDestroyedVm() {
+        Mockito.when(_userVmJoinDao.listActiveByIsoId(42L)).thenReturn(new ArrayList<>());
+        Mockito.when(_vmIsoMapDao.listByIsoId(42L))
+                .thenReturn(java.util.Collections.singletonList(new VmIsoMapVO(1L, 42L, 4)));
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getState()).thenReturn(State.Expunging);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Assert.assertTrue(templateManager.templateIsDeleteable(42L));
+    }
+
 
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
@@ -957,6 +1283,16 @@ public class TemplateManagerImplTest {
         }
 
         @Bean
+        public TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao() {
+            return Mockito.mock(TemplateDeployAsIsDetailsDao.class);
+        }
+
+        @Bean
+        public ReservationDao reservationDao() {
+            return Mockito.mock(ReservationDao.class);
+        }
+
+        @Bean
         public SnapshotHelper snapshotHelper() {
             return Mockito.mock(SnapshotHelper.class);
         }
@@ -975,6 +1311,15 @@ public class TemplateManagerImplTest {
         public HeuristicRuleHelper heuristicRuleHelper() {
             return Mockito.mock(HeuristicRuleHelper.class);
         }
+        @Bean
+        public SnapshotJoinDao snapshotJoinDao() {
+            return Mockito.mock(SnapshotJoinDao.class);
+        }
+
+        @Bean
+        public BackupOfferingDao backupOfferingDao() {
+            return Mockito.mock(BackupOfferingDao.class);
+        }
 
         public static class Library implements TypeFilter {
             @Override
@@ -983,5 +1328,163 @@ public class TemplateManagerImplTest {
                 return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
             }
         }
+    }
+
+    private java.util.Set<Long> ids(Long... deviceIds) {
+        return new java.util.HashSet<>(Arrays.asList(deviceIds));
+    }
+
+    private UserVmVO mockUserVmOnHostWithCdromCap(Long advertisedCap) {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vm.getHostId()).thenReturn(7L);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        if (advertisedCap != null) {
+            DetailVO detail = Mockito.mock(DetailVO.class);
+            Mockito.when(detail.getValue()).thenReturn(String.valueOf(advertisedCap));
+            Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        }
+        return vm;
+    }
+
+    @Test
+    public void getCdromDeviceIdsReturnsOnlyThePrimaryCdromForSystemVms() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm));
+    }
+
+    @Test
+    public void getCdromDeviceIdsReturnsAllCdromsAdvertisedByHostRegardlessOfConfiguredMaximum() {
+        // vm.iso.max.count defaults to 1, but the host defines all the CD-ROMs it supports
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+
+        Assert.assertEquals(ids(3L, 4L), templateManager.getCdromDeviceIds(vm));
+    }
+
+    @Test
+    public void getCdromDeviceIdsReturnsDefaultWhenHostDoesNotAdvertiseCdromCap() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
+
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm));
+    }
+
+    @Test
+    public void getCdromDeviceIdsCoversAttachedIsosBeyondHostCap() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(Arrays.asList(
+                new VmIsoMapVO(1L, 11L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1),
+                new VmIsoMapVO(1L, 12L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 2)));
+
+        Assert.assertEquals(ids(3L, 4L, 5L), templateManager.getCdromDeviceIds(vm));
+    }
+
+    private void mockVmNetworkProvidesConfigDrive(UserVmVO vm, boolean providesConfigDrive) {
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getNetworkId()).thenReturn(100L);
+        Mockito.when(_nicDao.listByVmId(vm.getId())).thenReturn(java.util.Collections.singletonList(nic));
+        Mockito.lenient().when(_networkModel.isProviderSupportServiceInNetwork(Mockito.eq(100L), Mockito.any(Service.class), Mockito.eq(Provider.ConfigDrive))).thenReturn(providesConfigDrive);
+    }
+
+    private void withConfiguredMaxCdroms(String value, Runnable test) {
+        Object original = org.springframework.test.util.ReflectionTestUtils.getField(TemplateManager.VmIsoMaxCount, "_defaultValue");
+        org.springframework.test.util.ReflectionTestUtils.setField(TemplateManager.VmIsoMaxCount, "_defaultValue", value);
+        try {
+            test.run();
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(TemplateManager.VmIsoMaxCount, "_defaultValue", original);
+        }
+    }
+
+    @Test
+    public void isConfigDriveUsedReturnsTrueWhenNetworkProvidesConfigDriveBeforeFirstStart() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
+        mockVmNetworkProvidesConfigDrive(vm, true);
+
+        Assert.assertTrue(templateManager.isConfigDriveUsed(vm));
+    }
+
+    @Test
+    public void isConfigDriveUsedReturnsTrueWhenConfigDriveLocationDetailExists() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
+        Mockito.when(_vmInstanceDetailsDao.findDetail(1L, VmDetailConstants.CONFIG_DRIVE_LOCATION)).thenReturn(Mockito.mock(VMInstanceDetailVO.class));
+
+        Assert.assertTrue(templateManager.isConfigDriveUsed(vm));
+    }
+
+    @Test
+    public void isConfigDriveUsedReturnsFalseWhenNoNetworkProvidesConfigDrive() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
+        mockVmNetworkProvidesConfigDrive(vm, false);
+
+        Assert.assertFalse(templateManager.isConfigDriveUsed(vm));
+    }
+
+    @Test
+    public void getCdromDeviceIdsAddsTheCdromOfConfigDrive() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+        mockVmNetworkProvidesConfigDrive(vm, true);
+
+        // the config drive ISO is one more CD-ROM than the ones supported for the ISOs
+        Assert.assertEquals(ids(3L, 4L, 5L), templateManager.getCdromDeviceIds(vm));
+        Assert.assertEquals(ids(3L, 4L), templateManager.getCdromDeviceIds(vm, false));
+        Assert.assertEquals(ids(3L, 4L, 5L), templateManager.getCdromDeviceIds(vm, true));
+    }
+
+    @Test
+    public void getIsoDeviceSeqKeepsTheDeviceIdOfConfigDrive() {
+        // without config drive, the CD-ROMs of the ISOs are the ones of the slots
+        Assert.assertEquals(3, templateManager.getIsoDeviceSeq(3, false));
+        Assert.assertEquals(4, templateManager.getIsoDeviceSeq(4, false));
+        Assert.assertEquals(5, templateManager.getIsoDeviceSeq(5, false));
+        // with config drive (device id 4), the slots from it are moved to the next device ids
+        Assert.assertEquals(3, templateManager.getIsoDeviceSeq(3, true));
+        Assert.assertEquals(5, templateManager.getIsoDeviceSeq(4, true));
+        Assert.assertEquals(6, templateManager.getIsoDeviceSeq(5, true));
+    }
+
+    private java.util.List<DiskTO> prepareIsoDisks(UserVmVO vm) {
+        // no ISO is attached to the Instance
+        Mockito.when(vm.getIsoId()).thenReturn(null);
+        VirtualMachineProfile profile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(profile.getId()).thenReturn(1L);
+        DeployDestination dest = Mockito.mock(DeployDestination.class);
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getId()).thenReturn(7L);
+        Mockito.when(dest.getHost()).thenReturn(host);
+        Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
+
+        templateManager.prepareIsoForVmProfile(profile, dest);
+
+        org.mockito.ArgumentCaptor<DiskTO> disks = org.mockito.ArgumentCaptor.forClass(DiskTO.class);
+        Mockito.verify(profile, Mockito.atLeast(0)).addDisk(disks.capture());
+        return disks.getAllValues();
+    }
+
+    @Test
+    public void prepareIsoForVmProfileSkipsTheDeviceIdOfConfigDrive() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+        mockVmNetworkProvidesConfigDrive(vm, true);
+
+        withConfiguredMaxCdroms("2", () -> {
+            java.util.List<DiskTO> disks = prepareIsoDisks(vm);
+
+            // the config drive ISO has the device id 4 (it is added by the config drive element), so the second ISO is at 5
+            Assert.assertEquals(Arrays.asList(3L, 5L), disks.stream().map(DiskTO::getDiskSeq).collect(java.util.stream.Collectors.toList()));
+        });
+    }
+
+    @Test
+    public void prepareIsoForVmProfileUsesConsecutiveDeviceIdsWithoutConfigDrive() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+        mockVmNetworkProvidesConfigDrive(vm, false);
+
+        withConfiguredMaxCdroms("2", () -> {
+            java.util.List<DiskTO> disks = prepareIsoDisks(vm);
+
+            Assert.assertEquals(Arrays.asList(3L, 4L), disks.stream().map(DiskTO::getDiskSeq).collect(java.util.stream.Collectors.toList()));
+        });
     }
 }

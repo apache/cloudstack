@@ -120,12 +120,12 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get(ConsoleProxySslEnabled.key());
-        if (value != null && value.equalsIgnoreCase("true")) {
+        Boolean sslEnabled = ConsoleProxySslEnabled.value();
+        if (Boolean.TRUE.equals(sslEnabled)) {
             _sslEnabled = true;
         }
 
-        _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
+        _consoleProxyUrlDomain = ConsoleProxyUrlDomain.value();
 
         _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr,
                 _agentMgr, _keysMgr, consoleAccessManager));
@@ -166,6 +166,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
                 urlPort = host.getProxyPort().intValue();
             }
 
+            _sslEnabled = ConsoleProxySslEnabled.valueIn(dataCenterId);
+            _consoleProxyUrlDomain = ConsoleProxyUrlDomain.valueIn(dataCenterId);
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
             logger.warn("Host that VM is running is no longer available, console access to VM {} will be temporarily unavailable.", userVm);
@@ -189,7 +191,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public int getVncPort() {
+    public int getVncPort(Long dataCenterId) {
         return _consoleProxyPort;
     }
 

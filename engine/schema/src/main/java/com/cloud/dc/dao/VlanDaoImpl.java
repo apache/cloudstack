@@ -20,12 +20,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanDetailsVO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -67,6 +70,8 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected SearchBuilder<VlanVO> ZoneVlanIp6Search;
     protected SearchBuilder<VlanVO> ZoneIp6Search;
     protected SearchBuilder<VlanVO> ZoneVlansSearch;
+    protected SearchBuilder<VlanVO> ProviderVlanSearch;
+    protected SearchBuilder<VlanDetailsVO> VlanDetailsProviderSearch;
 
     protected SearchBuilder<AccountVlanMapVO> AccountVlanMapSearch;
     protected SearchBuilder<DomainVlanMapVO> DomainVlanMapSearch;
@@ -79,6 +84,8 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected DomainVlanMapDao _domainVlanMapDao;
     @Inject
     protected IPAddressDao _ipAddressDao;
+    @Inject
+    protected VlanDetailsDao vlanDetailsDao;
 
     @Override
     public VlanVO findByZoneAndVlanId(long zoneId, String vlanId) {
@@ -129,7 +136,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneTypeSearch.done();
 
         NetworkVlanSearch = createSearchBuilder();
-        NetworkVlanSearch.and("networkId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkVlanSearch.and("networkId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.IN);
         NetworkVlanSearch.done();
 
         PhysicalNetworkVlanSearch = createSearchBuilder();
@@ -277,6 +284,19 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneVlansSearch.and("zoneId", ZoneVlansSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneVlansSearch.and("vlan", ZoneVlansSearch.entity().getVlanTag(), SearchCriteria.Op.IN);
         ZoneVlansSearch.done();
+
+        ProviderVlanSearch = createSearchBuilder();
+        ProviderVlanSearch.and("removed", ProviderVlanSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        ProviderVlanSearch.and("dataCenterId", ProviderVlanSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        VlanDetailsProviderSearch = vlanDetailsDao.createSearchBuilder();
+        VlanDetailsProviderSearch.and("name", VlanDetailsProviderSearch.entity().getName(), SearchCriteria.Op.EQ);
+        VlanDetailsProviderSearch.and("value", VlanDetailsProviderSearch.entity().getValue(), SearchCriteria.Op.EQ);
+        ProviderVlanSearch.join("VlanDetailsProviderSearch", VlanDetailsProviderSearch, ProviderVlanSearch.entity().getId(),
+                VlanDetailsProviderSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+
+        VlanDetailsProviderSearch.done();
+        ProviderVlanSearch.done();
+
         return result;
     }
 
@@ -374,6 +394,16 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         return listBy(sc);
     }
 
+    @Override
+    public List<VlanVO> listVlansByNetworkIds(List<Long> networkIds) {
+        if (CollectionUtils.isEmpty(networkIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
+        sc.setParameters("networkId", networkIds.toArray());
+        return listBy(sc);
+    }
+
     @Override public List<VlanVO> listVlansByNetworkIdIncludingRemoved(long networkId) {
         SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
         sc.setParameters("networkId", networkId);
@@ -432,6 +462,15 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         sc.setParameters("zoneId", zoneId);
         sc.setParameters("vlan", vlanIds);
         return listBy(sc);
+    }
+
+    @Override
+    public List<VlanVO> listVlansForExternalNetworkProvider(long zoneId, String detailKey) {
+        SearchCriteria<VlanVO> sc = ProviderVlanSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setJoinParameters("VlanDetailsProviderSearch", "name", detailKey);
+        sc.setJoinParameters("VlanDetailsProviderSearch", "value", "true");
+        return search(sc, null);
     }
 
 }

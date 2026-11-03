@@ -51,7 +51,7 @@
 </template>
 
 <script>
-import { postAPI } from '@/api'
+import { getAPI } from '@/api'
 import ActionButton from '@/components/view/ActionButton'
 import ProviderDetail from '@/views/infra/network/providers/ProviderDetail'
 import ProviderListView from '@/views/infra/network/providers/ProviderListView'
@@ -93,7 +93,8 @@ export default {
       currentAction: {},
       page: 1,
       pageSize: 10,
-      itemCount: 0
+      itemCount: 0,
+      pluginEnabled: false
     }
   },
   provide () {
@@ -138,6 +139,19 @@ export default {
         }
         this.provider.lists.map(this.fetchOptions)
       }
+    },
+    async fetchConfiguration (configName) {
+      const params = {
+        name: configName
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.pluginEnabled = config.value
+          }
+        }
+      })
     },
     async fetchOptions (args) {
       if (!args || Object.keys(args).length === 0) {
@@ -185,6 +199,18 @@ export default {
       }
 
       try {
+        const providers = ['tungsten', 'nsx', 'netris']
+        const apiLower = args.api.toLowerCase()
+
+        for (const provider of providers) {
+          if (apiLower.includes(provider)) {
+            await this.fetchConfiguration(`${provider}.plugin.enable`)
+            if (!this.pluginEnabled) {
+              this.listData[args.title].loading = false
+              return
+            }
+          }
+        }
         const listResult = await this.executeApi(args.api, params)
         this.listData[args.title].data = listResult.data
         this.listData[args.title].itemCount = listResult.itemCount
@@ -199,7 +225,7 @@ export default {
     },
     executeApi (apiName, params) {
       return new Promise((resolve, reject) => {
-        postAPI(apiName, params).then(json => {
+        getAPI(apiName, params).then(json => {
           let responseName
           let objectName
           let itemCount = 0

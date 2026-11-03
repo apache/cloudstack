@@ -27,6 +27,8 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
 
+import org.apache.cloudstack.backup.BackupOffering;
+
 /**
  * SecurityChecker checks the ownership and access control to objects within
  */
@@ -145,4 +147,6 @@ public interface SecurityChecker extends Adapter {
     boolean checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException;
 
     boolean checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
+
+    boolean checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
 }

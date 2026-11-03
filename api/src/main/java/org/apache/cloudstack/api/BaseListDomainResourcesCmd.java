@@ -27,10 +27,10 @@ public abstract class BaseListDomainResourcesCmd extends BaseListCmd implements 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "list only resources belonging to the domain specified")
+               description = "List only resources belonging to the domain specified")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN, description = "defaults to false,"
+    @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN, description = "Defaults to false,"
         + " but if true, lists all resources from the parent specified by the domainId till leaves.")
     private Boolean recursive;
 

@@ -164,9 +164,10 @@ class CSConnection(object):
         '''
         try:
             response = requests.post(url,
-                                     params=payload,
+                                     data=payload,
                                      cert=self.certPath,
                                      verify=self.httpsFlag)
+            self.logger.debug("=======Got POST response : %s=======" % response)
             return response
         except Exception as e:
             self.__lastError = e

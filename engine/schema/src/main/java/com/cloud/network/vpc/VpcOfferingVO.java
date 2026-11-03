@@ -60,9 +60,6 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "default")
     boolean isDefault = false;
 
-    @Column(name = "for_nsx")
-    boolean forNsx = false;
-
     @Column(name = "network_mode")
     NetworkOffering.NetworkMode networkMode;
 
@@ -93,6 +90,9 @@ public class VpcOfferingVO implements VpcOffering {
 
     @Column(name = "specify_as_number")
     private Boolean specifyAsNumber = false;
+
+    @Column(name = "conserve_mode")
+    private boolean conserveMode;
 
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -157,14 +157,6 @@ public class VpcOfferingVO implements VpcOffering {
     @Override
     public boolean isDefault() {
         return isDefault;
-    }
-
-    public boolean isForNsx() {
-        return forNsx;
-    }
-
-    public void setForNsx(boolean forNsx) {
-        this.forNsx = forNsx;
     }
 
     public NetworkOffering.NetworkMode getNetworkMode() {
@@ -252,5 +244,14 @@ public class VpcOfferingVO implements VpcOffering {
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {
         this.specifyAsNumber = specifyAsNumber;
+    }
+
+    @Override
+    public boolean isConserveMode() {
+        return conserveMode;
+    }
+
+    public void setConserveMode(boolean conserveMode) {
+        this.conserveMode = conserveMode;
     }
 }
