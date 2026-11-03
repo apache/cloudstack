@@ -18,6 +18,10 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -99,5 +103,33 @@ public class BridgeVifDriverTest {
         nic.setBroadcastUri(new URI(Networks.BroadcastDomainType.Storage.scheme() + "://untagged"));
         String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
         Assert.assertEquals(BRIDGE_NAME, result);
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsTrueForMatchingVlanBridge() {
+        Set<String> labels = new HashSet<>(Arrays.asList("cloudbr0", "brbond0-100"));
+        Assert.assertTrue(driver.isSystemTrafficLabel("brbond0-100", labels));
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsTrueForMatchingVxlanBridge() {
+        Set<String> labels = Collections.singleton("brvx-1000");
+        Assert.assertTrue(driver.isSystemTrafficLabel("brvx-1000", labels));
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsFalseForNonMatchingBridge() {
+        Set<String> labels = Collections.singleton("brbond0-100");
+        Assert.assertFalse(driver.isSystemTrafficLabel("brbond0-200", labels));
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsFalseWhenBridgeOrLabelsAreNullOrBlank() {
+        Set<String> labels = Collections.singleton("brbond0-100");
+        Assert.assertFalse(driver.isSystemTrafficLabel("brbond0-100", null));
+        Assert.assertFalse(driver.isSystemTrafficLabel("brbond0-100", Collections.emptySet()));
+        Assert.assertFalse(driver.isSystemTrafficLabel(null, labels));
+        Assert.assertFalse(driver.isSystemTrafficLabel("", labels));
+        Assert.assertFalse(driver.isSystemTrafficLabel("  ", labels));
     }
 }
