@@ -192,7 +192,7 @@ backup_snapshot() {
   mkdir_ret=$(mkdir -p "$destPath" 2>&1)
   if [ $? -gt 0 ]
   then
-     printf "Failed to create $destPath: $mkdir_ret\n" >&2
+     printf "Failed to create %s: %s\n" "$destPath" "$mkdir_ret" >&2
      return 3
   fi
 
@@ -230,7 +230,7 @@ backup_snapshot() {
 
       if [ $ret_code -gt 0 ]
       then
-        printf "Failed to backup $snapshotname for disk $disk to $destPath: $qemuimg_ret\n" >&2
+        printf "Failed to backup %s for disk %s to %s: %s\n" "$snapshotname" "$disk" "$destPath" "$qemuimg_ret" >&2
         return 2
       fi
     else
@@ -262,7 +262,7 @@ backup_snapshot() {
       fi
 
       if [ $ret_code -gt 0 ]; then
-        printf "Failed to backup $snapshotname for disk $disk to $destPath: $qemuimg_ret\n" >&2
+        printf "Failed to backup %s for disk %s to %s: %s\n" "$snapshotname" "$disk" "$destPath" "$qemuimg_ret" >&2
         return 2
       fi
     fi
