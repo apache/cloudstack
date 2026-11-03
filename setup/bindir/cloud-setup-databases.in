@@ -21,6 +21,7 @@ import os
 import sys
 import subprocess
 import glob
+import shlex
 from random import choice
 import string
 from optparse import OptionParser
@@ -418,8 +419,13 @@ for example:
 
     def processEncryptionStuff(self):
         def encrypt(value):
-            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' +
-                   self.mgmtsecretkey + '"', self.encryptorVersion]
+            # runCmd() joins this list with spaces and runs it through a shell, so each
+            # dynamic value must be shell-escaped with shlex.quote() rather than hand-wrapped
+            # in double quotes: double quotes still let the shell expand "$..." in the value
+            # (e.g. a password of pa$sword is truncated to pa), silently corrupting it.
+            cmd = ['java', '-classpath', shlex.quote(self.encryptionJarPath),
+                   'com.cloud.utils.crypt.EncryptionCLI', '-i', shlex.quote(value),
+                   '-p', shlex.quote(self.mgmtsecretkey), self.encryptorVersion]
             return str(runCmd(cmd)).strip('\r\n')
 
         def saveMgmtServerSecretKey():
