@@ -171,17 +171,31 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     }
 
     private String handleFetchInterfaceAnswer(Answer[] answers, Long hostId) {
-        OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer)answers[0];
+        if (answers == null || answers.length == 0 || answers[0] == null) {
+            logger.warn("No answer returned for OvsFetchInterfaceCommand from host " + hostId);
+            return null;
+        }
+
+        Answer answer = answers[0];
+
+        if (!(answer instanceof OvsFetchInterfaceAnswer)) {
+            logger.warn("Expected OvsFetchInterfaceAnswer from host " + hostId +
+            " but got " + answer.getClass().getSimpleName() +
+            " with details: " + answer.getDetails());
+            return null;
+        }
+
+        OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer) answer;
+
         if (ans.getResult()) {
-            if (ans.getIp() != null && !("".equals(ans.getIp()))) {
+            if (ans.getIp() != null && !ans.getIp().isEmpty()) {
                 OvsTunnelInterfaceVO ti = createInterfaceRecord(ans.getIp(),
-                        ans.getNetmask(), ans.getMac(), hostId, ans.getLabel());
+                    ans.getNetmask(), ans.getMac(), hostId, ans.getLabel());
                 return ti.getIp();
             }
         }
-        // Fetch interface failed!
-        logger.warn("Unable to fetch the IP address for the GRE tunnel endpoint"
-                + ans.getDetails());
+
+        logger.warn("Unable to fetch the IP address for the GRE tunnel endpoint: " + ans.getDetails());
         return null;
     }
 
