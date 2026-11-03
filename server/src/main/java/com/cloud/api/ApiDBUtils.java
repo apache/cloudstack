@@ -986,8 +986,7 @@ public class ApiDBUtils {
         if (domainId == Domain.ROOT_DOMAIN) {
             return Resource.RESOURCE_UNLIMITED;
         }
-        //--If limit doesn't have a value then fetch default limit from the configs
-        return (limit == null) ? s_resourceLimitMgr.findDefaultResourceLimitForDomain(resourceType) : limit;
+        return (limit == null) ? findCorrectResourceLimitForDomain(resourceType, domainId) : limit;
     }
 
     public static long getResourceCount(ResourceType type, long accountId) {
