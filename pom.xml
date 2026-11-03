@@ -877,33 +877,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.cyclonedx</groupId>
-                <artifactId>cyclonedx-maven-plugin</artifactId>
-                <version>2.9.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <inherited>false</inherited>
-                        <goals>
-                            <goal>makeAggregateBom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <projectType>application</projectType>
-                    <schemaVersion>1.6</schemaVersion>
-                    <includeBomSerialNumber>true</includeBomSerialNumber>
-                    <includeCompileScope>true</includeCompileScope>
-                    <includeProvidedScope>true</includeProvidedScope>
-                    <includeRuntimeScope>true</includeRuntimeScope>
-                    <includeSystemScope>true</includeSystemScope>
-                    <includeTestScope>false</includeTestScope>
-                    <includeLicenseText>false</includeLicenseText>
-                    <outputFormat>all</outputFormat>
-                    <outputName>ACS.sbom</outputName>
-                </configuration>
-            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -1315,6 +1288,47 @@
             <modules>
                 <module>systemvm</module>
             </modules>
+        </profile>
+        <profile>
+            <!-- Writes target/ACS.sbom.{json,xml}: mvn -Psbom validate (add -Dnoredist to include those modules).
+                 makeAggregateBom resolves the whole reactor from the root, so no modules need to be built first. -->
+            <id>sbom</id>
+            <activation>
+                <property>
+                    <name>sbom</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.cyclonedx</groupId>
+                        <artifactId>cyclonedx-maven-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <executions>
+                            <execution>
+                                <phase>validate</phase>
+                                <inherited>false</inherited>
+                                <goals>
+                                    <goal>makeAggregateBom</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <projectType>application</projectType>
+                            <schemaVersion>1.6</schemaVersion>
+                            <includeBomSerialNumber>true</includeBomSerialNumber>
+                            <includeCompileScope>true</includeCompileScope>
+                            <includeProvidedScope>true</includeProvidedScope>
+                            <includeRuntimeScope>true</includeRuntimeScope>
+                            <includeSystemScope>true</includeSystemScope>
+                            <includeTestScope>false</includeTestScope>
+                            <includeLicenseText>false</includeLicenseText>
+                            <outputFormat>all</outputFormat>
+                            <outputName>ACS.sbom</outputName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>eclipse</id>
