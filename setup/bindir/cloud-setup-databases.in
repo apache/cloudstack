@@ -563,11 +563,22 @@ for example:
             self.info("Mysql server ip:%s"%self.host, True)
             self.info("Mysql server port:%s"%self.port, True)
 
+        def warnOnPlaceholderSecretKey(value, description):
+            if value is not None and value.lower() in ('password', 'secret', 'changeme'):
+                sys.stderr.write("WARNING: %s is set to the well known value '%s'. Anyone who can read "
+                                 "db.properties can decrypt it. On a new installation pass a random key "
+                                 "instead, for example one generated with: openssl rand -base64 32. On an "
+                                 "existing installation keep the key that was used before - a different key "
+                                 "makes the already encrypted values unreadable.\n" % (description, value))
+                sys.stderr.flush()
+
         def validateParameters():
             if self.options.schemaonly and self.rootuser != None:
                 self.errorAndExit("--schema-only and --deploy-as cannot be passed together\n")
             if self.encryptiontype != 'file' and self.encryptiontype != 'web' and self.encryptiontype != 'env':
                 self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web" or "env"' % self.encryptiontype)
+            warnOnPlaceholderSecretKey(self.mgmtsecretkey, "The management server secret key")
+            warnOnPlaceholderSecretKey(self.dbsecretkey, "The database secret key")
 
     #---------------------- option parsing and command line checks ------------------------
         usage = """%prog user:[password]@mysqlhost:[port] [--deploy-as=rootuser:[rootpassword]] [--auto=/path/to/server-setup.xml] [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [-g ENCRYPTORVERSION] [--debug]
@@ -597,10 +608,11 @@ for example:
         with password 'nonsense', and recreates the databases, creating
         the user alex with password 'founder' as necessary
 
-    %prog alex:founder@1.2.3.4 --deploy-as=root:nonsense -e file -m password -k dbpassword -g V2
-        In addition actions performing in above example, using 'password' as management server encryption key
-        and 'dbpassword' as database encryption key, saving management server encryption key to a file as the
-        encryption type specified by -e is file.
+    %prog alex:founder@1.2.3.4 --deploy-as=root:nonsense -e file -m MGMTSECRETKEY -k DBSECRETKEY -g V2
+        In addition actions performing in above example, using MGMTSECRETKEY as management server encryption key
+        and DBSECRETKEY as database encryption key, saving management server encryption key to a file as the
+        encryption type specified by -e is file. Both keys should be random values, for example generated
+        with 'openssl rand -base64 32', and must be kept for any later re-run of this command.
         The credentials in @MSCONF@/db.properties are encrypted by encryptor V2 (AeadBase64Encryptor).
         The db.cloud.encryptor.version is also set to V2. Sensitive values in cloudstack databases will be
         encrypted by the encryptor V2 using the database encryption key.
@@ -629,9 +641,13 @@ for example:
         self.parser.add_option("-e", "--encrypt-type", action="store", type="string", dest="encryptiontype", default="file",
                           help="Encryption method used for db password encryption. Valid values are file, web and env. Default is file.")
         self.parser.add_option("-m", "--managementserver-secretkey", action="store", type="string", dest="mgmtsecretkey", default="password",
-                          help="Secret key used to encrypt confidential parameters in db.properties. A string, default is password")
+                          help="Secret key used to encrypt confidential parameters in db.properties. A string, defaults to a well-known placeholder. "
+                               "On a new installation pass a random key, for example one generated with: openssl rand -base64 32. "
+                               "On an existing installation keep the key that was used before")
         self.parser.add_option("-k", "--database-secretkey", action="store", type="string", dest="dbsecretkey", default="password",
-                          help="Secret key used to encrypt sensitive database values. A string, default is password")
+                          help="Secret key used to encrypt sensitive database values. A string, defaults to a well-known placeholder. "
+                               "On a new installation pass a random key, for example one generated with: openssl rand -base64 32. "
+                               "On an existing installation keep the key that was used before")
         self.parser.add_option("-i", "--mshost", action="store", type="string", dest="mshostip", default="",
                           help="Cluster management server host IP. A string, by default it will try to detect a local IP")
         self.parser.add_option("-r", "--regionid", action="store", type="string", dest="regionid", default="1",
