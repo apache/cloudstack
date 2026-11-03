@@ -21,8 +21,10 @@ package org.apache.cloudstack.storage.snapshot;
 import com.cloud.agent.api.Answer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -31,7 +33,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -256,5 +260,29 @@ public class SnapshotServiceImplTest {
         Mockito.verify(snapshotDataStoreVoMock).setPhysicalSize(1000L);
 
         Mockito.verify(snapshotDataStoreDaoMock).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void copySnapshotAsyncCallbackTestFailedResultWithoutPayloadCompletesFutureWithAgentError() throws Exception {
+        SnapshotObject srcSnapshot = Mockito.mock(SnapshotObject.class);
+        Mockito.when(srcSnapshot.getPayload()).thenReturn(null);
+        SnapshotInfo destSnapshot = Mockito.mock(SnapshotInfo.class);
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<>();
+        SnapshotServiceImpl.CopySnapshotContext<CommandResult> context = new SnapshotServiceImpl.CopySnapshotContext<>(null, srcSnapshot, destSnapshot, future);
+
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Failed to backup snapshot: qemu-img: Could not create destination: No such file or directory");
+        AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
+        Mockito.when(callback.getResult()).thenReturn(result);
+        Mockito.doNothing().when(snapshotService).cleanupOnSnapshotBackupFailure(srcSnapshot);
+
+        snapshotService.copySnapshotAsyncCallback(callback, context);
+
+        SnapshotResult snapshotResult = future.get();
+        Assert.assertTrue(snapshotResult.isFailed());
+        Assert.assertEquals(result.getResult(), snapshotResult.getResult());
+        Mockito.verify(destSnapshot).processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+        Mockito.verify(snapshotService).cleanupOnSnapshotBackupFailure(srcSnapshot);
     }
 }
