@@ -116,14 +116,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     @Inject
     DataCenterDao dcDao;
 
-
-    ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
-            "image.store.imbalance.threshold",
-            "0.3",
-            "The storage imbalance threshold that is compared with the standard deviation percentage for a storage utilization metric. " +
-                    "The value is a percentage in decimal format.",
-            true, ConfigKey.Scope.Global);
-
     Integer numConcurrentCopyTasksPerSSVM = 2;
 
     private final Map<Long, ThreadPoolExecutor> zoneExecutorMap = new HashMap<>();
