@@ -603,7 +603,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
             }
 
-            if (!supportedProtocols.contains(proto.toLowerCase())) {
+            if (!NetUtils.isProtocolInList(supportedProtocols, proto)) {
                 throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
             } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
                 throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
