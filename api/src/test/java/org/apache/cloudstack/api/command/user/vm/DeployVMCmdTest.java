@@ -33,15 +33,23 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.BootMode;
 import org.apache.cloudstack.api.ApiConstants.BootType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.configuration.Resource;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.NetworkService;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.network.Network;
@@ -81,7 +89,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getBootType();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid bootType INVALID"));
+        assertEquals("vm.deploy.boot.type.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -121,7 +129,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getBootMode();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid bootmode: INVALID specified for VM: null. Valid values are: [LEGACY, SECURE]"));
+        assertEquals("vm.deploy.boot.mode.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -132,7 +140,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getBootMode();
         });
-        assertTrue(thrownException.getMessage().contains("bootmode must be specified for the VM with boot type: UEFI. Valid values are: [LEGACY, SECURE]"));
+        assertEquals("vm.deploy.boot.mode.required.for.uefi", thrownException.getMessageKey());
     }
 
     @Test
@@ -179,7 +187,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getLeaseExpiryAction();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid value configured for leaseexpiryaction"));
+        assertEquals("vm.deploy.lease.expiry.action.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -207,7 +215,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIoDriverPolicy();
         });
-        assertTrue(thrownException.getMessage().contains("Invalid io policy INVALID"));
+        assertEquals("vm.deploy.io.driver.policy.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -247,7 +255,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getNetworkIds();
         });
-        assertTrue(thrownException.getMessage().contains("nicnetworklist can't be specified along with networkids"));
+        assertEquals("vm.deploy.nic.network.list.mutually.exclusive", thrownException.getMessageKey());
     }
 
     @Test
@@ -260,7 +268,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getNetworkIds();
         });
-        assertTrue(thrownException.getMessage().contains("ipToNetworkMap can't be specified along with networkIds or ipAddress"));
+        assertEquals("vm.deploy.ip.to.network.map.mutually.exclusive", thrownException.getMessageKey());
     }
 
     @Test
@@ -271,7 +279,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIpToNetworkMap();
         });
-        assertTrue(thrownException.getMessage().contains("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter"));
+        assertEquals("vm.deploy.network.ids.ip.address.with.ip.to.network.map", thrownException.getMessageKey());
     }
 
     @Test
@@ -282,7 +290,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIpToNetworkMap();
         });
-        assertTrue(thrownException.getMessage().contains("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter"));
+        assertEquals("vm.deploy.network.ids.ip.address.with.ip.to.network.map", thrownException.getMessageKey());
     }
 
     @Test
@@ -381,7 +389,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getIpToNetworkMap();
         });
-        assertTrue(thrownException.getMessage().contains("Mac address is not valid"));
+        assertEquals("vm.deploy.mac.address.invalid", thrownException.getMessageKey());
     }
 
     @Test
@@ -455,7 +463,7 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getDataDiskTemplateToDiskOfferingMap();
         });
-        assertTrue(thrownException.getMessage().contains("diskofferingid parameter can't be specified along with datadisktemplatetodiskofferinglist parameter"));
+        assertEquals("vm.deploy.diskofferingid.with.datadisktemplatetodiskofferinglist", thrownException.getMessageKey());
     }
 
     @Test
@@ -478,6 +486,48 @@ public class DeployVMCmdTest {
         InvalidParameterValueException thrownException = assertThrows(InvalidParameterValueException.class, () -> {
             cmd.getDataDiskTemplateToDiskOfferingMap();
         });
-        assertTrue(thrownException.getMessage().contains("Unable to translate and find entity with datadisktemplateid"));
+        assertEquals("vm.deploy.datadisktemplateid.not.found", thrownException.getMessageKey());
+    }
+
+    @After
+    public void tearDownCallContext() {
+        CallContext.unregisterAll();
+    }
+
+    @Test
+    public void testHandleCreateResourceAllocationExceptionAccountCause() {
+        CallContext.register(mock(User.class), mock(Account.class));
+        CallContext.current().putErrorContextParameter("resourceLimitCause", Resource.ResourceOwnerType.Account);
+        ResourceAllocationException ex = new ResourceAllocationException("limit exceeded", Resource.ResourceType.cpu);
+
+        ServerApiException thrown = assertThrows(ServerApiException.class, () -> cmd.handleCreateResourceAllocationException(ex));
+
+        assertEquals(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, thrown.getErrorCode());
+        assertEquals("vm.deploy.resourcelimit.exceeded.account", thrown.getMessageKey());
+    }
+
+    @Test
+    public void testHandleCreateResourceAllocationExceptionDomainCause() {
+        CallContext.register(mock(User.class), mock(Account.class));
+        CallContext.current().putErrorContextParameter("resourceLimitCause", Resource.ResourceOwnerType.Domain);
+        ResourceAllocationException ex = new ResourceAllocationException("limit exceeded", Resource.ResourceType.cpu);
+
+        ServerApiException thrown = assertThrows(ServerApiException.class, () -> cmd.handleCreateResourceAllocationException(ex));
+
+        assertEquals(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, thrown.getErrorCode());
+        assertEquals("vm.deploy.resourcelimit.exceeded.domain", thrown.getMessageKey());
+    }
+
+    @Test
+    public void testHandleCreateResourceAllocationExceptionNoCauseFallsBackToPlainMessage() {
+        CallContext.register(mock(User.class), mock(Account.class));
+        // no "resourceLimitCause" error context parameter set
+        ResourceAllocationException ex = new ResourceAllocationException("some other allocation failure", Resource.ResourceType.cpu);
+
+        ServerApiException thrown = assertThrows(ServerApiException.class, () -> cmd.handleCreateResourceAllocationException(ex));
+
+        assertEquals(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, thrown.getErrorCode());
+        assertNull(thrown.getMessageKey());
+        assertEquals(ex.getMessage(), thrown.getDescription());
     }
 }

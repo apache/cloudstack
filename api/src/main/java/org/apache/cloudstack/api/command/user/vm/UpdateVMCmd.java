@@ -17,12 +17,10 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
@@ -43,6 +41,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.lang3.EnumUtils;
 
@@ -305,12 +304,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Instance Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
-        UserVm result = null;
-        try {
-            result = _userVmService.updateVirtualMachine(this);
-        } catch (CloudRuntimeException e) {
-            throw new CloudRuntimeException(String.format("Failed to update Instance, due to: %s", e.getLocalizedMessage()), e);
-        }
+        UserVm result = _userVmService.updateVirtualMachine(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
@@ -348,8 +342,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
         }
         VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
         if (action == null) {
-            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
-                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+            throw Exceptions.invalidParameterValueException("vm.update.lease.expiry.action.invalid", Map.of(
+                    "value", leaseExpiryAction,
+                    "validValues", com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values())));
         }
         return action;
     }

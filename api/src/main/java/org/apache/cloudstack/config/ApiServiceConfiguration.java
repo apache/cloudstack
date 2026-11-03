@@ -34,6 +34,16 @@ public class ApiServiceConfiguration implements Configurable {
             "true", "Are the source checks on API calls enabled (true) or not (false)? See api.allowed.source.cidr.list", true, ConfigKey.Scope.Global);
     public static final ConfigKey<String> ApiAllowedSourceCidrList = new ConfigKey<>(String.class, "api.allowed.source.cidr.list", "Advanced",
             "0.0.0.0/0,::/0", "Comma separated list of IPv4/IPv6 CIDRs from which API calls can be performed. Can be set on Global and Account levels.", true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+    public static final ConfigKey<Boolean> ErrorMessageMetadataPreferToString = new ConfigKey<>("Advanced", Boolean.class,
+            "error.message.metadata.prefer.tostring", "false",
+            "When true, structured error message metadata values prefer the object's toString() representation " +
+                    "over reflection-based display-name lookup (getDisplayName/getName/getDisplayText). " +
+                    "Requires a management server restart to take effect.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<Boolean> ErrorMessageMetadataIncludeIdForAdmins = new ConfigKey<>("Advanced", Boolean.class,
+            "error.message.metadata.include.id.for.admins", "true",
+            "When true, root admins additionally see the internal database ID (alongside the UUID) for objects " +
+                    "referenced in structured error message metadata. Requires a management server restart to take effect.",
+            false, ConfigKey.Scope.Global);
 
 
     public static void validateEndpointUrl() {
@@ -55,7 +65,8 @@ public class ApiServiceConfiguration implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ManagementServerAddresses, ApiServletPath, DefaultUIPageSize, ApiSourceCidrChecksEnabled, ApiAllowedSourceCidrList};
+        return new ConfigKey<?>[] {ManagementServerAddresses, ApiServletPath, DefaultUIPageSize, ApiSourceCidrChecksEnabled, ApiAllowedSourceCidrList,
+                ErrorMessageMetadataPreferToString, ErrorMessageMetadataIncludeIdForAdmins};
     }
 
 }
