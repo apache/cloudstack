@@ -1471,14 +1471,6 @@ public enum Config {
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
             null),
-    SecondaryStorageServiceOffering(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "secstorage.service.offering",
-            null,
-            "Uuid of the service offering used by secondary storage; if NULL - system offering will be used",
-            null),
     HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
     ImplicitHostTags(
             "Advanced",

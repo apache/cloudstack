@@ -61,7 +61,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
             true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<String> ConsoleProxyServiceOffering = new ConfigKey<>(String.class, "consoleproxy.service.offering", "Console Proxy", null,
-            "Uuid of the service offering used by console proxy; if NULL - system offering will be used", true, ConfigKey.Scope.Zone, null);
+            "UUID of the system offering used by console proxy VMs. If not found, ACS will create a system offering using the 'console.ram.size' and 'console.cpu.mhz' settings.", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<String> ConsoleProxyCapacityStandby = new ConfigKey<>(String.class, "consoleproxy.capacity.standby", "Console Proxy", String.valueOf(DEFAULT_STANDBY_CAPACITY),
             "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", false, ConfigKey.Scope.Zone, null);
