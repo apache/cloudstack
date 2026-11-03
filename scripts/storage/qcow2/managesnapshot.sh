@@ -189,14 +189,11 @@ backup_snapshot() {
   local destName=$4
   local forceShareFlag="-U"
 
-  if [ ! -d $destPath ]
+  mkdir_ret=$(mkdir -p "$destPath" 2>&1)
+  if [ $? -gt 0 ]
   then
-     mkdir -p $destPath >& /dev/null
-     if [ $? -gt 0 ]
-     then
-        printf "Failed to create $destPath\n" >&2
-        return 3
-     fi
+     printf "Failed to create $destPath: $mkdir_ret\n" >&2
+     return 3
   fi
 
   is_lv ${disk}
@@ -228,12 +225,12 @@ backup_snapshot() {
   elif [ -f ${disk} ]; then
     if [[ $disk == *"/snapshots/"* ]]; then
       #Backup volume snapshot
-      $qemu_img convert $forceShareFlag -f qcow2 -O qcow2 $disk $destPath/$destName >& /dev/null
+      qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 $disk $destPath/$destName 2>&1 > /dev/null)
       ret_code=$?
 
       if [ $ret_code -gt 0 ]
       then
-        printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2
+        printf "Failed to backup $snapshotname for disk $disk to $destPath: $qemuimg_ret\n" >&2
         return 2
       fi
     else
@@ -260,12 +257,12 @@ backup_snapshot() {
       fi
 
       if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"convert: invalid option -- 'l'"* ]]; then
-        $qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+        qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName 2>&1 > /dev/null)
         ret_code=$?
       fi
 
       if [ $ret_code -gt 0 ]; then
-        printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2
+        printf "Failed to backup $snapshotname for disk $disk to $destPath: $qemuimg_ret\n" >&2
         return 2
       fi
     fi
