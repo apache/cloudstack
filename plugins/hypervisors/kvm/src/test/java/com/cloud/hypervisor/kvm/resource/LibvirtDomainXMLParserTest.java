@@ -105,6 +105,19 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<disk type='" + diskType.toString() + "' device='" + deviceType.toString() + "'>" +
                      "<driver name='qemu' type='" + diskFormat.toString() + "' cache='" + diskCache.toString() + "'/>" +
                      "<source file='" + diskPath + "'/>" +
+                     "<backingStore type='file' index='5'>" +
+                     "<format type='qcow2'/>" +
+                     "<source file='/mnt/a66f48f5-13c6-3676-b320-a15d32bbf32f/290e55ef-7ac7-4d2e-9074-d9e863e66fea'/>" +
+                     "<backingStore type='file' index='3'>" +
+                     "<format type='qcow2'/>" +
+                     "<source file='/mnt/a66f48f5-13c6-3676-b320-a15d32bbf32f/46f82aa1-e476-4d60-a840-268f0434d40b'/>" +
+                     "<backingStore type='file' index='4'>" +
+                     "<format type='qcow2'/>" +
+                     "<source file='/mnt/a66f48f5-13c6-3676-b320-a15d32bbf32f/0db52809-9f33-43ac-8151-5452e9dee330'/>" +
+                     "<backingStore/>" +
+                     "</backingStore>" +
+                     "</backingStore>" +
+                     "</backingStore>" +
                      "<target dev='" + diskLabel + "' bus='" + diskBus.toString() + "'/>" +
                      "<alias name='virtio-disk0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>" +
@@ -232,6 +245,8 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(diskType, disks.get(diskId).getDiskType());
         assertEquals(deviceType, disks.get(diskId).getDeviceType());
         assertEquals(diskFormat, disks.get(diskId).getDiskFormatType());
+        Assert.assertEquals(List.of("290e55ef-7ac7-4d2e-9074-d9e863e66fea", "46f82aa1-e476-4d60-a840-268f0434d40b",
+                "0db52809-9f33-43ac-8151-5452e9dee330"), disks.get(diskId).getBackingStoreList());
 
         DiskDef.LibvirtDiskEncryptDetails encryptDetails = disks.get(1).getLibvirtDiskEncryptDetails();
         assertNotNull(encryptDetails);
