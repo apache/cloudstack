@@ -268,6 +268,73 @@ public class DnsProviderManagerImplTest {
         assertNotNull(result);
     }
 
+    private CreateDnsZoneCmd onBehalfCmd(String name) {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn(name);
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(cmd.getAccountName()).thenReturn("tenant1");
+        return cmd;
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testAllocateDnsZoneOnBehalfNonRootDenied() {
+        CreateDnsZoneCmd cmd = onBehalfCmd("customer.com");
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAllocateDnsZoneOnBehalfAccountNotFound() {
+        CreateDnsZoneCmd cmd = onBehalfCmd("customer.com");
+        when(cmd.getDomainId()).thenReturn(DOMAIN_ID);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        when(accountMgr.getActiveAccountByName("tenant1", DOMAIN_ID)).thenReturn(null);
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAllocateDnsZoneOnBehalfAccountDisabled() {
+        CreateDnsZoneCmd cmd = onBehalfCmd("customer.com");
+        when(cmd.getDomainId()).thenReturn(DOMAIN_ID);
+        Account tenant = mock(Account.class);
+        when(tenant.getState()).thenReturn(Account.State.DISABLED);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        when(accountMgr.getActiveAccountByName("tenant1", DOMAIN_ID)).thenReturn(tenant);
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testAllocateDnsZoneOnBehalfServerNotOwnedByCallerDenied() {
+        CreateDnsZoneCmd cmd = onBehalfCmd("customer.com");
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(ACCOUNT_ID + 1).when(serverVO).getAccountId(); // server owned by the target account, not the caller
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test
+    public void testAllocateDnsZoneOnBehalfSuccessNoSuffix() {
+        long tenantId = ACCOUNT_ID + 1;
+        CreateDnsZoneCmd cmd = onBehalfCmd("customer.com");
+        when(cmd.getDomainId()).thenReturn(DOMAIN_ID);
+        when(cmd.getType()).thenReturn(DnsZone.ZoneType.Public);
+        Account tenant = mock(Account.class);
+        when(tenant.getId()).thenReturn(tenantId);
+        when(tenant.getDomainId()).thenReturn(DOMAIN_ID);
+        when(tenant.getState()).thenReturn(Account.State.ENABLED);
+        when(accountMgr.getActiveAccountByName("tenant1", DOMAIN_ID)).thenReturn(tenant);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID).when(serverVO).getAccountId();
+        when(dnsZoneDao.findByNameServerAndType(anyString(), anyLong(), any())).thenReturn(null);
+        when(dnsZoneDao.persist(any(DnsZoneVO.class))).thenAnswer(i -> i.getArgument(0));
+
+        DnsZone result = manager.allocateDnsZone(cmd);
+
+        assertEquals("customer.com", result.getName());
+        assertEquals(tenantId, result.getAccountId());
+    }
+
     @Test(expected = PermissionDeniedException.class)
     public void testAllocateDnsZoneNonOwnerPrivateServer() {
         CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
