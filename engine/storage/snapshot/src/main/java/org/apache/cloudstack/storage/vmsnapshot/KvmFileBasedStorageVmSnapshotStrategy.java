@@ -18,11 +18,13 @@
  */
 package org.apache.cloudstack.storage.vmsnapshot;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.DeleteDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
@@ -76,10 +78,12 @@ import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStrategy {
@@ -137,11 +141,22 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         VMSnapshotVO vmSnapshotBeingDeleted = (VMSnapshotVO) vmSnapshot;
         Long hostId = pickHostForNvramSidecarCleanup(vmSnapshotBeingDeleted, userVm, "delete");
         validateHostSupportsNvramSidecarCleanup(vmSnapshotBeingDeleted, hostId, "delete");
-        long virtualSize = 0;
         boolean isCurrent = vmSnapshotBeingDeleted.getCurrent();
 
         transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.ExpungeRequested);
 
+        try {
+            return deleteVMSnapshotAfterExpungeRequested(vmSnapshotBeingDeleted, userVm, hostId, isCurrent);
+        } catch (RuntimeException ex) {
+            logger.error("Failed to delete VM snapshot [{}]; it will be marked as [{}]. The volumes that were merged before the failure had their metadata updated;" +
+                    " the others were left unchanged on storage, and deleting the VM snapshot again will retry their merge.", vmSnapshot.getUuid(), VMSnapshot.State.Error, ex);
+            transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.OperationFailed);
+            throw ex;
+        }
+    }
+
+    private boolean deleteVMSnapshotAfterExpungeRequested(VMSnapshotVO vmSnapshotBeingDeleted, UserVmVO userVm, Long hostId, boolean isCurrent) {
+        long virtualSize = 0;
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshotBeingDeleted.getVmId());
         List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParentAndStateIn(vmSnapshotBeingDeleted.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
         PrimaryDataStoreTO nvramPrimaryDataStore = getPrimaryDataStoreForNvramCleanup(vmSnapshotBeingDeleted, volumeTOs);
@@ -153,18 +168,21 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         if (isCurrent && numberOfChildren == 0) {
             volumeSnapshotVos = mergeCurrentDeltaOnSnapshot(vmSnapshotBeingDeleted, userVm, hostId, volumeTOs);
         } else if (numberOfChildren == 0) {
-            logger.debug("Deleting VM snapshot [{}] as no snapshots/volumes depend on it.", vmSnapshot.getUuid());
+            logger.debug("Deleting VM snapshot [{}] as no snapshots/volumes depend on it.", vmSnapshotBeingDeleted.getUuid());
             volumeSnapshotVos = deleteSnapshot(vmSnapshotBeingDeleted, hostId);
-            mergeOldSiblingWithOldParentIfOldParentIsDead(vmSnapshotDao.findByIdIncludingRemoved(vmSnapshotBeingDeleted.getParent()), userVm, hostId, volumeTOs);
+            VMSnapshotVO oldParent = vmSnapshotDao.findByIdIncludingRemoved(vmSnapshotBeingDeleted.getParent());
+            try {
+                mergeOldSiblingWithOldParentIfOldParentIsDead(oldParent, userVm, hostId, volumeTOs);
+            } catch (CloudRuntimeException ex) {
+                logger.warn("Deleted VM snapshot [{}], but failed to merge its hidden parent [{}] with its remaining child; the parent will be kept hidden on storage.",
+                        vmSnapshotBeingDeleted.getUuid(), oldParent.getUuid(), ex);
+            }
         } else if (!isCurrent && numberOfChildren == 1) {
             VMSnapshotVO childSnapshot = snapshotChildren.get(0);
             volumeSnapshotVos = mergeSnapshots(vmSnapshotBeingDeleted, childSnapshot, userVm, volumeTOs, hostId);
         }
 
-        for (SnapshotVO snapshotVO : volumeSnapshotVos) {
-            snapshotVO.setState(Snapshot.State.Destroyed);
-            snapshotDao.update(snapshotVO.getId(), snapshotVO);
-        }
+        markVolumeSnapshotsAsDestroyed(volumeSnapshotVos);
 
         for (VolumeObjectTO volumeTo : volumeTOs) {
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshotBeingDeleted, userVm, volumeTo);
@@ -306,10 +324,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             snapshotVos = mergeSnapshots(oldParent, oldSibling, userVm, volumeTOs, hostId);
         }
 
-        for (SnapshotVO snapshotVO : snapshotVos) {
-            snapshotVO.setState(Snapshot.State.Destroyed);
-            snapshotDao.update(snapshotVO.getId(), snapshotVO);
-        }
+        markVolumeSnapshotsAsDestroyed(snapshotVos);
 
         deleteNvramSnapshotIfNeeded(oldParent, hostId, nvramPrimaryDataStore);
 
@@ -436,29 +451,39 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             for (VolumeObjectTO volumeObjectTO : volumeObjectTOS) {
                 snapshotMergeTreeToList.stream().filter(snapshotTree -> Objects.equals(((SnapshotObjectTO) snapshotTree.getParent()).getVolume().getId(), volumeObjectTO.getId()))
                         .findFirst()
-                        .orElseThrow(() -> new CloudRuntimeException(String.format("Failed to find volume snapshot for volume [%s].", volumeObjectTO.getUuid())))
-                        .addGrandChild(volumeObjectTO);
+                        .ifPresentOrElse(snapshotTree -> snapshotTree.addGrandChild(volumeObjectTO),
+                                () -> logger.debug("Volume [{}] has no snapshot left to merge in VM snapshot [{}]; it was merged by a previous attempt.",
+                                        volumeObjectTO.getUuid(), vmSnapshotVO.getUuid()));
             }
         }
 
-        MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVMSnapshotCommand = new MergeDiskOnlyVmSnapshotCommand(snapshotMergeTreeToList, userVm.getState(), userVm.getName());
-        Answer answer = agentMgr.easySend(hostId, mergeDiskOnlyVMSnapshotCommand);
-        if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException(String.format("Failed to merge VM snapshot [%s] due to %s.", vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
-        }
-
-        logger.debug("Updating metadata of VM snapshot [{}] and its child [{}].", vmSnapshotVO.getUuid(), childSnapshot.getUuid());
         List<SnapshotVO> snapshotVOList = new ArrayList<>();
-        for (SnapshotMergeTreeTO snapshotMergeTreeTO : snapshotMergeTreeToList) {
-            SnapshotObjectTO childTO = (SnapshotObjectTO) snapshotMergeTreeTO.getChild();
-            SnapshotObjectTO parentTO = (SnapshotObjectTO) snapshotMergeTreeTO.getParent();
+        if (snapshotMergeTreeToList.isEmpty()) {
+            logger.debug("Every volume of VM snapshot [{}] was merged with its child [{}] by a previous attempt.", vmSnapshotVO.getUuid(), childSnapshot.getUuid());
+        } else {
+            MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVMSnapshotCommand = new MergeDiskOnlyVmSnapshotCommand(snapshotMergeTreeToList, userVm.getState(), userVm.getName());
+            Answer answer = sendMergeCommand(hostId, mergeDiskOnlyVMSnapshotCommand);
+            Set<String> mergedVolumeUuids = getMergedVolumeUuids(answer, snapshotMergeTreeToList);
 
-            SnapshotDataStoreVO childSnapshotDataStoreVO = snapshotDataStoreDao.findBySnapshotIdInAnyState(childTO.getId(), DataStoreRole.Primary);
-            childSnapshotDataStoreVO.setInstallPath(parentTO.getPath());
-            snapshotDataStoreDao.update(childSnapshotDataStoreVO.getId(), childSnapshotDataStoreVO);
+            logger.debug("Updating metadata of VM snapshot [{}] and its child [{}] for the merged volumes [{}].", vmSnapshotVO.getUuid(), childSnapshot.getUuid(),
+                    mergedVolumeUuids);
+            for (SnapshotMergeTreeTO snapshotMergeTreeTO : snapshotMergeTreeToList) {
+                SnapshotObjectTO childTO = (SnapshotObjectTO) snapshotMergeTreeTO.getChild();
+                SnapshotObjectTO parentTO = (SnapshotObjectTO) snapshotMergeTreeTO.getParent();
+                if (!mergedVolumeUuids.contains(parentTO.getVolume().getUuid())) {
+                    continue;
+                }
 
-            snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(parentTO.getId(), childSnapshotDataStoreVO.getDataStoreId(), DataStoreRole.Primary);
-            snapshotVOList.add(snapshotDao.findById(parentTO.getId()));
+                SnapshotDataStoreVO childSnapshotDataStoreVO = snapshotDataStoreDao.findBySnapshotIdInAnyState(childTO.getId(), DataStoreRole.Primary);
+                childSnapshotDataStoreVO.setInstallPath(parentTO.getPath());
+                snapshotDataStoreDao.update(childSnapshotDataStoreVO.getId(), childSnapshotDataStoreVO);
+
+                snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(parentTO.getId(), childSnapshotDataStoreVO.getDataStoreId(), DataStoreRole.Primary);
+                removeVolumeSnapshotFromVmSnapshot(vmSnapshotVO, parentTO.getId());
+                snapshotVOList.add(snapshotDao.findById(parentTO.getId()));
+            }
+
+            failIfNotEveryVolumeWasMerged(vmSnapshotVO, answer, snapshotMergeTreeToList, mergedVolumeUuids, snapshotVOList);
         }
 
         childSnapshot.setParent(vmSnapshotVO.getParent());
@@ -474,31 +499,42 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         for (VolumeObjectTO volumeObjectTO : volumeObjectTOS) {
             SnapshotDataStoreVO volumeParentSnapshot = volumeSnapshots.stream().filter(snapshot -> Objects.equals(snapshot.getVolumeId(), volumeObjectTO.getId()))
-                    .findFirst()
-                    .orElseThrow(() -> new CloudRuntimeException(String.format("Failed to find volume snapshot for volume [%s].", volumeObjectTO.getUuid())));
+                    .findFirst().orElse(null);
+            if (volumeParentSnapshot == null) {
+                logger.debug("Volume [{}] has no snapshot left to merge in VM snapshot [{}]; it was merged by a previous attempt.", volumeObjectTO.getUuid(),
+                        vmSnapshotVo.getUuid());
+                continue;
+            }
             DataTO parentSnapshot = snapshotDataFactory.getSnapshot(volumeParentSnapshot.getSnapshotId(), volumeParentSnapshot.getDataStoreId(), DataStoreRole.Primary).getTO();
             snapshotMergeTreeTOList.add(new SnapshotMergeTreeTO(parentSnapshot, volumeObjectTO, new ArrayList<>()));
         }
 
-        MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVMSnapshotCommand = new MergeDiskOnlyVmSnapshotCommand(snapshotMergeTreeTOList, userVmVO.getState(), userVmVO.getName());
-
-        Answer answer = agentMgr.easySend(hostId, mergeDiskOnlyVMSnapshotCommand);
-        if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException(String.format("Failed to delete VM snapshot [%s] due to %s.", vmSnapshotVo.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
-        }
-
-        logger.debug("Updating metadata of VM snapshot [{}].", vmSnapshotVo.getUuid());
         List<SnapshotVO> snapshotVOList = new ArrayList<>();
-        for (SnapshotMergeTreeTO snapshotMergeTreeTO : snapshotMergeTreeTOList) {
-            VolumeObjectTO volumeObjectTO = (VolumeObjectTO) snapshotMergeTreeTO.getChild();
-            SnapshotObjectTO parentTO = (SnapshotObjectTO) snapshotMergeTreeTO.getParent();
+        if (snapshotMergeTreeTOList.isEmpty()) {
+            logger.debug("Every volume of VM snapshot [{}] was merged with the current delta by a previous attempt.", vmSnapshotVo.getUuid());
+        } else {
+            MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVMSnapshotCommand = new MergeDiskOnlyVmSnapshotCommand(snapshotMergeTreeTOList, userVmVO.getState(), userVmVO.getName());
+            Answer answer = sendMergeCommand(hostId, mergeDiskOnlyVMSnapshotCommand);
+            Set<String> mergedVolumeUuids = getMergedVolumeUuids(answer, snapshotMergeTreeTOList);
 
-            VolumeVO volumeVO = volumeDao.findById(volumeObjectTO.getId());
-            volumeVO.setPath(parentTO.getPath());
-            volumeDao.update(volumeVO.getId(), volumeVO);
+            logger.debug("Updating metadata of VM snapshot [{}] for the merged volumes [{}].", vmSnapshotVo.getUuid(), mergedVolumeUuids);
+            for (SnapshotMergeTreeTO snapshotMergeTreeTO : snapshotMergeTreeTOList) {
+                VolumeObjectTO volumeObjectTO = (VolumeObjectTO) snapshotMergeTreeTO.getChild();
+                SnapshotObjectTO parentTO = (SnapshotObjectTO) snapshotMergeTreeTO.getParent();
+                if (!mergedVolumeUuids.contains(parentTO.getVolume().getUuid())) {
+                    continue;
+                }
 
-            snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(parentTO.getId(), volumeVO.getPoolId(), DataStoreRole.Primary);
-            snapshotVOList.add(snapshotDao.findById(parentTO.getId()));
+                VolumeVO volumeVO = volumeDao.findById(volumeObjectTO.getId());
+                volumeVO.setPath(parentTO.getPath());
+                volumeDao.update(volumeVO.getId(), volumeVO);
+
+                snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(parentTO.getId(), volumeVO.getPoolId(), DataStoreRole.Primary);
+                removeVolumeSnapshotFromVmSnapshot(vmSnapshotVo, parentTO.getId());
+                snapshotVOList.add(snapshotDao.findById(parentTO.getId()));
+            }
+
+            failIfNotEveryVolumeWasMerged(vmSnapshotVo, answer, snapshotMergeTreeTOList, mergedVolumeUuids, snapshotVOList);
         }
 
         vmSnapshotVo.setCurrent(false);
@@ -509,6 +545,66 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         }
 
         return snapshotVOList;
+    }
+
+    /**
+     * Sends the merge command with the wait that the management server will use for it, so that the host aborts the merge before the management server
+     * stops waiting for the answer, instead of finishing it after the management server has already given up.
+     */
+    protected Answer sendMergeCommand(Long hostId, MergeDiskOnlyVmSnapshotCommand mergeDiskOnlyVmSnapshotCommand) {
+        if (mergeDiskOnlyVmSnapshotCommand.getWait() <= 0) {
+            mergeDiskOnlyVmSnapshotCommand.setWait(AgentManager.Wait.value());
+        }
+        return agentMgr.easySend(hostId, mergeDiskOnlyVmSnapshotCommand);
+    }
+
+    /**
+     * Returns the UUIDs of the volumes that the host reports as merged. Hosts that do not report the volumes individually either merged all of them or none.
+     */
+    protected Set<String> getMergedVolumeUuids(Answer answer, List<SnapshotMergeTreeTO> snapshotMergeTreeTOList) {
+        if (answer instanceof MergeDiskOnlyVmSnapshotAnswer) {
+            return new HashSet<>(((MergeDiskOnlyVmSnapshotAnswer) answer).getMergedVolumeUuids());
+        }
+        if (answer != null && answer.getResult()) {
+            return snapshotMergeTreeTOList.stream().map(this::getVolumeUuid).collect(Collectors.toSet());
+        }
+        return new HashSet<>();
+    }
+
+    private void failIfNotEveryVolumeWasMerged(VMSnapshotVO vmSnapshotVO, Answer answer, List<SnapshotMergeTreeTO> snapshotMergeTreeTOList, Set<String> mergedVolumeUuids,
+            List<SnapshotVO> mergedVolumeSnapshots) {
+        List<String> notMergedVolumeUuids = snapshotMergeTreeTOList.stream().map(this::getVolumeUuid)
+                .filter(volumeUuid -> !mergedVolumeUuids.contains(volumeUuid))
+                .collect(Collectors.toList());
+        if (notMergedVolumeUuids.isEmpty()) {
+            return;
+        }
+
+        markVolumeSnapshotsAsDestroyed(mergedVolumeSnapshots);
+        throw new CloudRuntimeException(String.format("Failed to merge volumes [%s] of VM snapshot [%s] due to %s.", StringUtils.join(notMergedVolumeUuids, ", "),
+                vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure"));
+    }
+
+    private String getVolumeUuid(SnapshotMergeTreeTO snapshotMergeTreeTO) {
+        return ((SnapshotObjectTO) snapshotMergeTreeTO.getParent()).getVolume().getUuid();
+    }
+
+    /**
+     * Removes a merged volume snapshot from the VM snapshot, so that a later attempt to delete the VM snapshot only merges the volumes that are left.
+     */
+    private void removeVolumeSnapshotFromVmSnapshot(VMSnapshotVO vmSnapshotVO, long volumeSnapshotId) {
+        for (VMSnapshotDetailsVO vmSnapshotDetailsVO : vmSnapshotDetailsDao.findDetails(vmSnapshotVO.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT)) {
+            if (String.valueOf(volumeSnapshotId).equals(vmSnapshotDetailsVO.getValue())) {
+                vmSnapshotDetailsDao.remove(vmSnapshotDetailsVO.getId());
+            }
+        }
+    }
+
+    private void markVolumeSnapshotsAsDestroyed(List<SnapshotVO> snapshotVOs) {
+        for (SnapshotVO snapshotVO : snapshotVOs) {
+            snapshotVO.setState(Snapshot.State.Destroyed);
+            snapshotDao.update(snapshotVO.getId(), snapshotVO);
+        }
     }
 
     /**
