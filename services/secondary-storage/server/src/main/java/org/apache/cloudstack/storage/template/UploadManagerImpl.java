@@ -276,13 +276,24 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         // Create the directory structure so that its visible under apache server root
         String extractDir = BASE_EXTRACT_PATH;
         extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
+        // Ensure the base extract directory exists and is owned by www-data so that
+        // the www-data user can create the per-entity subdirectory inside it.
+        Script baseDirCommand = new Script("/bin/bash", logger);
+        baseDirCommand.add("-c");
+        baseDirCommand.add("mkdir -p " + BASE_EXTRACT_PATH + " && chown www-data:www-data " + BASE_EXTRACT_PATH);
+        String result = baseDirCommand.execute();
+        if (result != null) {
+            String errorString = "Error in creating base extract directory =" + result;
+            logger.error(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
         Script command = new Script("/bin/su", logger);
         command.add("-s");
         command.add("/bin/bash");
         command.add("-c");
         command.add("mkdir -p " + extractDir);
         command.add("www-data");
-        String result = command.execute();
+        result = command.execute();
         if (result != null) {
             String errorString = "Error in creating directory =" + result;
             logger.error(errorString);
