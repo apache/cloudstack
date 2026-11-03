@@ -658,10 +658,14 @@ public class KVMStorageProcessor implements StorageProcessor {
         final String secondaryStorageUrl = nfsStore.getUrl();
         KVMStoragePool secondaryStoragePool = null;
 
+        boolean srcConnected = false;
         try {
             final String volumeName = UUID.randomUUID().toString();
 
             final String destVolumeName = volumeName + "." + ImageFormat.QCOW2.getFileExtension();
+            // connect: a detached source volume may have no device yet on shared pools
+            srcConnected = storagePoolMgr.connectPhysicalDisk(
+                    primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath, null);
             final KVMPhysicalDisk volume = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
 
@@ -680,6 +684,9 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             srcVol.clearPassphrase();
             destVol.clearPassphrase();
+            if (srcConnected) {
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), srcVolumePath);
+            }
             if (secondaryStoragePool != null) {
                 storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
             }
