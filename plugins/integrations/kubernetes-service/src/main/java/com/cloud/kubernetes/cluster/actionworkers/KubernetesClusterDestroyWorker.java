@@ -141,7 +141,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (network != null && network.getRemoved() == null) {
             Account owner = accountManager.getAccount(network.getAccountId());
             User callerUser = accountManager.getActiveUser(CallContext.current().getCallingUserId());
-            ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+            ReservationContext context = new ReservationContextImpl(null, null, callerUser, CallContext.current().getCallingAccount());
             releaseASNumber(kubernetesCluster.getZoneId(), kubernetesCluster.getNetworkId());
             boolean networkDestroyed = networkMgr.destroyNetwork(kubernetesCluster.getNetworkId(), context, true);
             if (!networkDestroyed) {
