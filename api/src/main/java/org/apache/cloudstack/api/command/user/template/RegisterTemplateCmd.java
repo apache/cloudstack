@@ -136,7 +136,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
@@ -190,7 +190,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     private Long extensionId;
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
-    protected Map externalDetails;
+    protected Map<Integer, Map<String, String>> externalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -282,14 +282,11 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return StringUtils.isBlank(templateTag) ? null : templateTag;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {
             return null;
         }
-
-        Collection paramsCollection = details.values();
-        Map params = (Map)(paramsCollection.toArray())[0];
-        return params;
+        return details.values().iterator().next();
     }
 
     public Boolean isDynamicallyScalable() {

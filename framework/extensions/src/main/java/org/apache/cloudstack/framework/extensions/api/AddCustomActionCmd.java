@@ -101,7 +101,7 @@ public class AddCustomActionCmd extends BaseCmd {
             type = CommandType.MAP,
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. "
                     + "Example: details[0].vendor=xxx&&details[0].version=2.0")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

@@ -70,7 +70,7 @@ public class UpdateAccountCmd extends BaseCmd implements UserCmd {
     private String networkDomain;
 
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for the Account used to store specific parameters")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "Determines if Api key access for this user is enabled, disabled or inherits the value from its parent, the domain level setting api.key.access", since = "4.20.1.0", authorized = {RoleType.Admin})
     private String apiKeyAccess;
@@ -104,14 +104,11 @@ public class UpdateAccountCmd extends BaseCmd implements UserCmd {
         return networkDomain;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {
             return null;
         }
-
-        Collection paramsCollection = details.values();
-        Map params = (Map)(paramsCollection.toArray())[0];
-        return params;
+        return details.values().iterator().next();
     }
 
     public String getApiKeyAccess() {

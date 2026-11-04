@@ -76,7 +76,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     protected Boolean isRoutingType;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
             type = CommandType.BOOLEAN,
@@ -144,13 +144,11 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
         return isRoutingType;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (this.details == null || this.details.isEmpty()) {
             return null;
         }
-
-        Collection paramsCollection = this.details.values();
-        return (Map) (paramsCollection.toArray())[0];
+        return this.details.values().iterator().next();
     }
 
     public boolean isCleanupDetails() {

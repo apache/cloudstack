@@ -91,7 +91,7 @@ public class CreateBgpPeerCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "BGP peer details in key/value pairs.")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -134,8 +134,7 @@ public class CreateBgpPeerCmd extends BaseAsyncCmd {
         if (MapUtils.isEmpty(details)) {
             return null;
         }
-        Collection<String> paramsCollection = this.details.values();
-        return (Map<String, String>) (paramsCollection.toArray())[0];
+        return this.details.values().iterator().next();
     }
 
     @Override

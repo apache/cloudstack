@@ -130,7 +130,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "Details for planner, used to store specific parameters")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.ROOT_DISK_SIZE, type = CommandType.LONG, since = "4.15", description = "The Root disk size in GB.")
     private Long rootDiskSize;
@@ -286,7 +286,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             type = CommandType.MAP,
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
             since = "4.21.0")
-    private Map externalDetails;
+    private Map<Integer, Map<String, String>> externalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

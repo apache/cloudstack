@@ -50,7 +50,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     protected Long zoneId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].copytemplatesfromothersecondarystorages=true")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

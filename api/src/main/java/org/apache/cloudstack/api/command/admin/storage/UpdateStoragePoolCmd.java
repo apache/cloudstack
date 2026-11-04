@@ -68,7 +68,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
                             required = false,
                             description = "the details for the storage pool",
                             since = "4.19.0")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.URL,
                             type = CommandType.STRING,
@@ -131,11 +131,11 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return ApiCommandResourceType.StoragePool;
     }
 
-    public Map<String,String> getDetails() {
+    public Map<Integer, Map<String, String>> getDetails() {
         return details;
     }
 
-    public void setDetails(Map<String,String> details) {
+    public void setDetails(Map<Integer, Map<String, String>> details) {
         this.details = details;
     }
 

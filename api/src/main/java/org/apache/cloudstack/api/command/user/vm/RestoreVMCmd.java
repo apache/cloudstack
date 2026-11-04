@@ -75,7 +75,7 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.19.1",
                description = "used to specify the custom parameters")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.EXPUNGE,
                type = CommandType.BOOLEAN,

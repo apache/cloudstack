@@ -78,7 +78,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     @Override
     public long getEntityOwnerId() {
@@ -121,12 +121,11 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return tokenUrl;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (MapUtils.isEmpty(details)) {
             return null;
         }
-        Collection paramsCollection = this.details.values();
-        return (Map) (paramsCollection.toArray())[0];
+        return this.details.values().iterator().next();
     }
 
     @Inject
