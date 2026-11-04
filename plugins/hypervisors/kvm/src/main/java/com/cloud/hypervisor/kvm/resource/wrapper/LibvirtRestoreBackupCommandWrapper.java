@@ -220,6 +220,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
      * volume's identity themselves (StorPool) nobody else could find and delete it.
      */
     private void cleanupCreatedVolume(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath) {
+        if (volumePath == null) {
+            return;
+        }
         try {
             if (!storagePoolMgr.cleanupCreatedPhysicalDisk(volumePool.getPoolType(), volumePool.getUuid(), volumePath)) {
                 logger.warn("Volume {} created for the failed restore was not cleaned up by the {} storage adaptor; it may need to be deleted manually",
@@ -366,6 +369,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
         Storage.StoragePoolType poolType = volumePool.getPoolType();
         QemuImg qemu;
+        // Path of a volume created here whose identity the storage assigned itself, so a failure
+        // before the copy starts can release it (see cleanupCreatedVolume).
+        String createdVolumePath = null;
         try {
             String volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
             KVMPhysicalDisk disk = null;
@@ -385,6 +391,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                     }
                     if (Storage.StoragePoolType.StorPool.equals(poolType)) {
                         volumePath = disk.getPath();
+                        createdVolumePath = volumePath;
                     }
                     targetReadsAsZero = volumeStoragePool.newVolumeReadsAsZero(volumeUuid);
                 } else {
@@ -408,7 +415,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 logger.debug("Restoring volume: {}", disk.toString());
             }
         } catch (LibvirtException ex) {
+            cleanupCreatedVolume(storagePoolMgr, volumePool, createdVolumePath);
             throw new CloudRuntimeException(String.format("Failed to create qemu-img command to restore %s volume with backup", poolType), ex);
+        } catch (RuntimeException ex) {
+            cleanupCreatedVolume(storagePoolMgr, volumePool, createdVolumePath);
+            throw ex;
         }
 
         QemuImgFile srcBackupFile = null;
