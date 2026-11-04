@@ -169,7 +169,7 @@ export default {
       this.tabLoading = true
       getAPI('listUsageJobs', params).then(json => {
         this.totalCount = json?.listusagejobsresponse?.count || 0
-        this.jobs = json?.listusagejobsresponse?.usagejob || []
+        this.jobs = json?.listusagejobsresponse?.usagejobs || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
