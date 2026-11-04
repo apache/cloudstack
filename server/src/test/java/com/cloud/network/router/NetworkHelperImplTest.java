@@ -32,7 +32,6 @@ import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LoadBalancer;
