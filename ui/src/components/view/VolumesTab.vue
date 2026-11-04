@@ -132,6 +132,7 @@ export default {
       }
     },
     getVolumes () {
+      // Only a project instance sends its project; projectid=-1 would hide other accounts' volumes from a domain admin
       api('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id, projectid: this.vm.projectid }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {

@@ -308,10 +308,11 @@ export default {
       api('listNetworks', {
         listAll: 'true',
         showicon: true,
-        zoneid: this.vm.zoneid
+        zoneid: this.vm.zoneid,
+        projectid: this.vm.projectid
       }).then(response => {
-        this.addNetworkData.allNetworks = response.listnetworksresponse.network.filter(network => !this.vm.nic.map(nic => nic.networkid).includes(network.id))
-        this.addNetworkData.network = this.addNetworkData.allNetworks[0].id
+        this.addNetworkData.allNetworks = (response.listnetworksresponse.network || []).filter(network => !this.vm.nic.map(nic => nic.networkid).includes(network.id))
+        this.addNetworkData.network = this.addNetworkData.allNetworks[0]?.id
       })
     },
     fetchSecondaryIPs (nicId) {
