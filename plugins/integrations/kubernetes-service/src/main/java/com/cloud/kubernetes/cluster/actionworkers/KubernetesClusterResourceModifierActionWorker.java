@@ -80,6 +80,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -543,12 +544,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return rule;
     }
 
+    private boolean isNodeSshFirewallRule(final FirewallRuleVO firewallRule, final long networkId) {
+        Integer startPort = firewallRule.getSourcePortStart();
+        if (Objects.equals(startPort, CLUSTER_NODES_DEFAULT_START_SSH_PORT)) {
+            return true;
+        }
+        if (startPort != null && startPort >= KubernetesClusterService.KubernetesEtcdNodeStartPort.value()) {
+            return false;
+        }
+        PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, startPort, firewallRule.getSourcePortEnd());
+        return Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT;
+    }
+
     protected FirewallRule removeSshFirewallRule(final IpAddress publicIp, final long networkId) {
         FirewallRule rule = null;
         List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO);
         for (FirewallRuleVO firewallRule : firewallRules) {
-            PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, firewallRule.getSourcePortStart(), firewallRule.getSourcePortEnd());
-            if (Objects.equals(firewallRule.getSourcePortStart(), CLUSTER_NODES_DEFAULT_START_SSH_PORT) || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {
+            if (isNodeSshFirewallRule(firewallRule, networkId)) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
                 logger.debug("The SSH firewall rule {} with the id {} was revoked", firewallRule.getName(), firewallRule.getId());

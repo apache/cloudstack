@@ -563,6 +563,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
                 continue;
             }
+            if (!serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0 &&
+                    KubernetesClusterManagerImpl.getNodeCountForType(nodeType, kubernetesCluster) <= 0) {
+                continue;
+            }
 
             ServiceOffering existingServiceOffering = getExistingServiceOfferingForNodeType(nodeType, kubernetesCluster);
             ServiceOffering scalingServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
