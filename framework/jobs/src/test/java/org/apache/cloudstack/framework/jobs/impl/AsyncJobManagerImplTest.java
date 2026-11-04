@@ -88,6 +88,14 @@ public class AsyncJobManagerImplTest {
     NetworkOrchestrationService networkOrchestrationService;
     @Mock
     AsyncJobDao asyncJobDao;
+    @Mock
+    SyncQueueItemDao queueItemDao;
+    @Mock
+    SyncQueueManager queueMgr;
+    @Mock
+    AsyncJobMonitor jobMonitor;
+    @Mock
+    ManagementServerHostDao managementServerHostDao;
 
     private static final long NETWORK_ID = 42L;
     private static final long ACCOUNT_ID = 2L;
@@ -109,21 +117,6 @@ public class AsyncJobManagerImplTest {
         when(networkDao.acquireInLockTable(NETWORK_ID, 0)).thenReturn(locked);
         return locked;
     }
-
-    @Mock
-    AsyncJobDao jobDao;
-
-    @Mock
-    SyncQueueItemDao queueItemDao;
-
-    @Mock
-    SyncQueueManager queueMgr;
-
-    @Mock
-    AsyncJobMonitor jobMonitor;
-
-    @Mock
-    ManagementServerHostDao managementServerHostDao;
 
     @Before
     public void preloadDbProperties() throws Exception {
@@ -404,7 +397,7 @@ public class AsyncJobManagerImplTest {
 
     @Test
     public void testCancelQueuedChildJobsCompletesAndPurgesWaitingChild() {
-        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
         Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.anyString());
@@ -418,7 +411,7 @@ public class AsyncJobManagerImplTest {
 
     @Test
     public void testCancelQueuedChildJobsLeavesDequeuedChildToTheInFlightPath() {
-        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, 1L));
 
@@ -431,7 +424,7 @@ public class AsyncJobManagerImplTest {
 
     @Test
     public void testCancelQueuedChildJobsSkipsFinishedAndUnqueuedChildren() {
-        when(jobDao.listChildJobs(10L)).thenReturn(Arrays.asList(childJob(11L, JobInfo.Status.SUCCEEDED), childJob(12L, JobInfo.Status.IN_PROGRESS)));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Arrays.asList(childJob(11L, JobInfo.Status.SUCCEEDED), childJob(12L, JobInfo.Status.IN_PROGRESS)));
         when(queueItemDao.getQueueItemIdByContentIdAndType(12L, SyncQueueItem.AsyncJobContentType)).thenReturn(null);
 
         asyncJobManager.cancelQueuedChildJobs(10L, "user request");
@@ -447,11 +440,11 @@ public class AsyncJobManagerImplTest {
         parent.setCancelRequested(true);
         parent.setRelated(null);
         parent.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
-        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
-        when(jobDao.findByIdIncludingRemoved(11L)).thenReturn(childJob(11L, JobInfo.Status.IN_PROGRESS));
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
+        when(asyncJobDao.findByIdIncludingRemoved(11L)).thenReturn(childJob(11L, JobInfo.Status.IN_PROGRESS));
         AsyncJobVO other = childJob(12L, JobInfo.Status.IN_PROGRESS);
         other.setRelated("");
-        when(jobDao.findByIdIncludingRemoved(12L)).thenReturn(other);
+        when(asyncJobDao.findByIdIncludingRemoved(12L)).thenReturn(other);
 
         Assert.assertEquals("Cancelled by admin via mgmt2", asyncJobManager.getCancellationReason(10L));
         Assert.assertEquals("Cancelled by admin via mgmt2", asyncJobManager.getCancellationReason(11L));
@@ -464,9 +457,9 @@ public class AsyncJobManagerImplTest {
         parent.setCancelRequested(true);
         parent.setRelated(null);
         parent.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
-        when(jobDao.findById(10L)).thenReturn(parent);
+        when(asyncJobDao.findById(10L)).thenReturn(parent);
         AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
-        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
         Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
 
         asyncJobManager.finalizeCancelledJob(10L);
@@ -481,11 +474,11 @@ public class AsyncJobManagerImplTest {
     public void testParentFailingAfterItsQueuedChildWasCancelledEndsForThatReason() {
         AsyncJobVO parent = childJob(10L, JobInfo.Status.IN_PROGRESS);
         parent.setRelated(null);
-        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
         AsyncJobVO child = childJob(11L, JobInfo.Status.CANCELLED);
         child.setCancelRequested(true);
         child.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt1"));
-        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
 
         Assert.assertEquals("Cancelled by admin via mgmt1", asyncJobManager.getCancellationReason(10L));
     }
@@ -497,10 +490,10 @@ public class AsyncJobManagerImplTest {
         job.setUuid("job-uuid");
         job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
         job.setExecutingMsid(1L);
-        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
 
         AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
-        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
         // taken by a server: its work is under way
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, 1L));
@@ -513,7 +506,7 @@ public class AsyncJobManagerImplTest {
 
         // still waiting in the queue: nothing has started
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
-        Mockito.lenient().when(jobDao.findById(10L)).thenReturn(job);
+        Mockito.lenient().when(asyncJobDao.findById(10L)).thenReturn(job);
         try {
             asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
         } catch (CloudRuntimeException e) {
@@ -529,10 +522,10 @@ public class AsyncJobManagerImplTest {
         job.setUuid("job-uuid");
         job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
         job.setExecutingMsid(1L);
-        when(jobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
-        when(jobDao.findById(10L)).thenReturn(job);
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
+        when(asyncJobDao.findById(10L)).thenReturn(job);
         AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
-        when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
         // queued at the check, taken by a server by the time the flag is written
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null), queueItem(5L, 1L));
