@@ -229,7 +229,8 @@ export default {
     fetchSecurityGroups () {
       this.securitygroups.loading = true
       api('listSecurityGroups', {
-        zoneid: this.resource.zoneid
+        zoneid: this.resource.zoneid,
+        projectid: this.resource.projectid
       }).then(json => {
         const items = json.listsecuritygroupsresponse.securitygroup || []
         if (items && items.length > 0) {
