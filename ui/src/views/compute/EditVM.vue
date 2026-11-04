@@ -287,8 +287,9 @@ export default {
         domainid: this.$store.getters.userInfo.domainid,
         listall: true
       }
-      if (this.$store.getters.project && this.$store.getters.project.id) {
-        params.projectid = this.$store.getters.project.id
+      const projectId = this.resource.projectid || this.$store.getters.project?.id
+      if (projectId) {
+        params.projectid = projectId
       } else {
         params.account = this.$store.getters.userInfo.account
       }
