@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,9 +33,10 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.StartupAnswer;
+import com.cloud.host.Status;
 import com.cloud.resource.ServerResource;
-
-import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DirectAgentAttacheTest {
@@ -35,6 +45,12 @@ public class DirectAgentAttacheTest {
 
     @Mock
     private ServerResource _resource;
+
+    @Mock
+    private ScheduledExecutorService _cronJobPool;
+
+    @Mock
+    private ScheduledFuture<?> _future;
 
     long _id = 0L;
 
@@ -54,5 +70,32 @@ public class DirectAgentAttacheTest {
         Mockito.doReturn(2).when(_agentMgr).getDirectAgentThreadCap();
         pt.runInContext();
         Mockito.verify(_resource, Mockito.times(1)).getCurrentStatus(_id);
+    }
+
+    @Test
+    public void testProcessSchedulesPingWhenConnected() {
+        Mockito.doReturn(_cronJobPool).when(_agentMgr).getCronJobPool();
+        Mockito.doReturn(_future).when(_cronJobPool).scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+
+        directAgentAttache.process(new Answer[] {buildStartupAnswer()});
+
+        Mockito.verify(_cronJobPool, Mockito.times(1)).scheduleWithFixedDelay(any(Runnable.class), eq(60L), eq(60L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testProcessDoesNotSchedulePingAfterDisconnect() {
+        // Once disconnect() has cleared the resource, a late StartupAnswer must not schedule
+        // a PingTask - otherwise the future would never be cancelled (the leak this fix targets).
+        directAgentAttache.disconnect(Status.Disconnected);
+
+        directAgentAttache.process(new Answer[] {buildStartupAnswer()});
+
+        Mockito.verify(_cronJobPool, Mockito.never()).scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+    }
+
+    private StartupAnswer buildStartupAnswer() {
+        StartupAnswer startup = Mockito.mock(StartupAnswer.class);
+        Mockito.doReturn(60).when(startup).getPingInterval();
+        return startup;
     }
 }
