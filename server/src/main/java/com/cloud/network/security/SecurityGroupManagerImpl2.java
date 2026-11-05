@@ -247,8 +247,9 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                         //here, we differ from the superclass: instead of creating N more queries to the
                         //nics table, we use what's already there in the VO since the listBySecurityGroup already
                         //did a join with the nics table
-                        String cidr = ngmapVO.getGuestIpAddress() + "/32";
-                        cidrs.add(cidr);
+                        if (ngmapVO.getGuestIpAddress() != null) {
+                            cidrs.add(ngmapVO.getGuestIpAddress() + "/32");
+                        }
                         if (ngmapVO.getGuestIpv6Address() != null) {
                             cidrs.add(ngmapVO.getGuestIpv6Address() + "/128");
                         }
