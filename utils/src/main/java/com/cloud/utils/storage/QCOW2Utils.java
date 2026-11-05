@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -43,6 +44,7 @@ public final class QCOW2Utils {
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
     private static final int VIRTUALSIZE_HEADER_LENGTH = 8;
     private static final int MAGIC_HEADER_LENGTH = 4;
+    private static final int MAX_REDIRECTS = 10;
 
     /**
      * Private constructor ->  This utility class cannot be instantiated.
@@ -118,10 +120,21 @@ public final class QCOW2Utils {
     public static long getVirtualSizeFromUrl(String urlStr, boolean followRedirects) {
         HttpURLConnection httpConn = null;
         try {
-            URI url = new URI(urlStr);
-            httpConn = (HttpURLConnection)url.toURL().openConnection();
-            httpConn.setRequestProperty(UriUtils.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
-            httpConn.setInstanceFollowRedirects(followRedirects);
+            URL url = new URI(urlStr).toURL();
+            for (int redirects = 0; ; redirects++) {
+                httpConn = (HttpURLConnection)url.openConnection();
+                httpConn.setRequestProperty(UriUtils.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
+                // HttpURLConnection never follows redirects that change the protocol (e.g. http to https), so redirects are followed here
+                httpConn.setInstanceFollowRedirects(false);
+                if (!followRedirects || !isRedirect(httpConn.getResponseCode())) {
+                    break;
+                }
+                if (redirects >= MAX_REDIRECTS) {
+                    throw new IOException("Too many redirects, giving up after " + MAX_REDIRECTS);
+                }
+                url = getRedirectUrl(url, httpConn.getHeaderField("Location"));
+                httpConn.disconnect();
+            }
             return getVirtualSize(httpConn.getInputStream(), UriUtils.isUrlForCompressedFile(urlStr));
         } catch (URISyntaxException e) {
             LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
@@ -134,5 +147,26 @@ public final class QCOW2Utils {
                 httpConn.disconnect();
             }
         }
+    }
+
+    private static boolean isRedirect(int responseCode) {
+        return responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP
+                || responseCode == HttpURLConnection.HTTP_SEE_OTHER || responseCode == 307 || responseCode == 308;
+    }
+
+    /**
+     * Resolves the Location header of a redirect against the current URL.
+     * Only http and https targets are followed, and an https URL is never redirected to http.
+     */
+    static URL getRedirectUrl(URL currentUrl, String location) throws IOException {
+        if (location == null) {
+            throw new IOException("Redirect from " + currentUrl + " has no Location header");
+        }
+        URL redirectUrl = new URL(currentUrl, location);
+        String protocol = redirectUrl.getProtocol();
+        if (!"https".equals(protocol) && !("http".equals(protocol) && "http".equals(currentUrl.getProtocol()))) {
+            throw new IOException("Refusing to follow redirect from " + currentUrl + " to " + redirectUrl);
+        }
+        return redirectUrl;
     }
 }
