@@ -242,11 +242,14 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
 
 -- Set the guest OS of the built-in Debian 13 templates to 'Debian GNU/Linux 12 (64-bit)', which is only added by later upgrade scripts and is not available in templates.sql
 UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
-    WHERE `id` = 4 AND `unique_name` = 'debian13-x86_64-kvm' AND `type` = 'BUILTIN';
+    WHERE `id` = 4 AND `unique_name` = 'debian13-x86_64-kvm' AND `type` = 'BUILTIN'
+    AND EXISTS (SELECT 1 FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL);
 UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
-    WHERE `id` = 5 AND `unique_name` = 'debian13-x86_64-xen' AND `type` = 'BUILTIN';
+    WHERE `id` = 5 AND `unique_name` = 'debian13-x86_64-xen' AND `type` = 'BUILTIN'
+    AND EXISTS (SELECT 1 FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL);
 UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
-    WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN';
+    WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN'
+    AND EXISTS (SELECT 1 FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL);
 
 -- Use the NIC and disk controller of the built-in Debian 13 VMware template image (vmxnet3, pvscsi), as the guest kernel has no driver for the default e1000 NIC
 INSERT INTO `cloud`.`vm_template_details` (`template_id`, `name`, `value`)
