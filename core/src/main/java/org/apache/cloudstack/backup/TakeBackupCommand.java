@@ -32,6 +32,7 @@ public class TakeBackupCommand extends Command {
     private List<String> volumePaths;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+    private boolean executeInSequence = false;
 
     public TakeBackupCommand(String vmName, String backupPath) {
         super();
@@ -89,6 +90,13 @@ public class TakeBackupCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        // Parallel by default: each backup uses its own per-VM on-NAS path, so concurrent
+        // runs do not contend. Operators can force sequential execution per zone via the
+        // backup.nas.parallel.execution.enabled setting.
+        return executeInSequence;
+    }
+
+    public void setExecuteInSequence(boolean executeInSequence) {
+        this.executeInSequence = executeInSequence;
     }
 }
