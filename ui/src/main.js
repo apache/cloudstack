@@ -68,7 +68,6 @@ vueApp.use(backupUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
-// drop stored values that are not valid JSON (e.g. 'undefined'), as reading them throws
 vueProps.$localStorage.keys().forEach(key => {
   try {
     vueProps.$localStorage.get(key)
