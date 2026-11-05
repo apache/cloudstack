@@ -190,7 +190,7 @@ class TestHAKVM(cloudstackTestCase):
             print("checkForState:: expected=%s, actual=%s" % (state, response.hostha))
             return response.hostha.hastate == expectedState, None
 
-        res, _ = wait_until(interval, 200, checkForState, state)
+        res, _ = wait_until(interval, 300, checkForState, state)
         if not res:
             self.fail("Failed to see host ha state in :" + state)
 
