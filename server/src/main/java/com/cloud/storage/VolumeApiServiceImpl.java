@@ -1128,6 +1128,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+        if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(new Pair<>(volume, diskProfile)), storagePool, storagePool.getClusterId())) {
+            throw new InvalidParameterValueException(String.format("Storage pool %s does not have enough space to create volume %s.",
+                    storagePool.getName(), volume.getUuid()));
+        }
+
         DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
         VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
@@ -1185,6 +1192,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             created = false;
             VolumeInfo vol = volFactory.getVolume(volumeId);
             vol.stateTransit(Volume.Event.DestroyRequested);
+            if (e instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException) e;
+            }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
             if (!created) {
@@ -1447,11 +1457,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
                 volumeResizeRequired = true;
             }
-            if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null) {
-                _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
-                volume = _volsDao.findById(volume.getId());
-                updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+            if (!volumeMigrateRequired && !volumeResizeRequired) {
 
+                if (newDiskOffering != null && newDiskOffering.getId() != diskOffering.getId()) {
+                    _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
+                    volume = _volsDao.findById(volume.getId());
+                    updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+                }
                 return volume;
             }
 
