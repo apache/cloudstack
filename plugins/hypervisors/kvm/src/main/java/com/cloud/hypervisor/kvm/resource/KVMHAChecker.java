@@ -40,24 +40,33 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
      */
     @Override
     public Boolean checkingHeartBeat() {
-        boolean validResult = false;
-
         String hostAndPools = String.format("host IP [%s] in pools [%s]", host.getPrivateNetwork().getIp(), storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
 
         logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
 
-        for (HAStoragePool pool : storagePools) {
-            validResult = pool.getPool().checkingHeartBeat(pool, host);
-            if (reportFailureIfOneStorageIsDown && !validResult) {
-                break;
-            }
-        }
+        boolean validResult = checkPoolsHeartBeat();
 
         if (!validResult) {
             logger.warn(String.format("All checks with KVMHAChecker for %s considered it as dead. It may cause a shutdown of the host.", hostAndPools));
         }
 
         return validResult;
+    }
+
+    /*
+     * With reportFailureIfOneStorageIsDown the host is dead as soon as one pool has no heart beat,
+     * otherwise it is dead only when none of the pools has one.
+     */
+    private boolean checkPoolsHeartBeat() {
+        boolean anyPoolHasHeartBeat = false;
+        for (HAStoragePool pool : storagePools) {
+            boolean poolHasHeartBeat = pool.getPool().checkingHeartBeat(pool, host);
+            if (reportFailureIfOneStorageIsDown && !poolHasHeartBeat) {
+                return false;
+            }
+            anyPoolHasHeartBeat = anyPoolHasHeartBeat || poolHasHeartBeat;
+        }
+        return anyPoolHasHeartBeat;
     }
 
     @Override
