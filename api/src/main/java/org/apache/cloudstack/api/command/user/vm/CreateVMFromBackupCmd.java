@@ -42,7 +42,7 @@ import com.cloud.vm.VirtualMachine;
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true,
         since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
