@@ -313,6 +313,11 @@ public class ApiServlet extends HttpServlet {
                         if (!DefaultForgotPasswordAPIAuthenticatorCmd.APINAME.equalsIgnoreCase(command) || StringUtils.isNotBlank(username)) {
                             LOGGER.debug("Authentication failure: {}", e.getMessage());
                         }
+                    } catch (RuntimeException e) {
+                        if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGIN_API) {
+                            invalidateHttpSession(session, "invalidating session after unexpected login failure");
+                        }
+                        throw e;
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
@@ -426,6 +431,11 @@ public class ApiServlet extends HttpServlet {
         } catch (final Exception ex) {
             LOGGER.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
+            if (!resp.isCommitted()) {
+                final String serializedResponseText = apiServer.getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        "Internal error processing the request", params, responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponseText, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, responseType, ApiServer.JSONContentType.value());
+            }
         } finally {
             ACCESSLOGGER.info(auditTrailSb.toString());
             if (LOGGER.isDebugEnabled()) {
