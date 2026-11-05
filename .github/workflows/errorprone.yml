@@ -1,0 +1,122 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: Error Prone Analysis
+
+on:
+  push:
+    branches: [ add-errorprone ]
+  pull_request:
+    branches: [ ghi11438-errorprone-fixes' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  errorprone:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          architecture: x64
+          cache: maven
+
+      - name: Run Error Prone Static Analysis (Strict Mode)
+        id: errorprone
+        run: |
+          echo "::group::Error Prone Analysis"
+          # Temporarily remove -XepAllErrorsAsWarnings to run in strict mode
+          sed -i 's/-Xplugin:ErrorProne -XepAllErrorsAsWarnings/-Xplugin:ErrorProne/g' pom.xml
+
+          set -o pipefail
+
+          # Use -fae (fail-at-end) to build all modules and report failures at the end
+          # Run 'test' phase to compile and test all modules
+          mvn -fae clean test -T$(nproc) 2>&1 | tee errorprone.log
+          MVN_EXIT=${PIPESTATUS[0]}
+
+          echo "mvn_exit=${MVN_EXIT}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+
+          exit 0
+        continue-on-error: true
+
+      - name: Check for Error Prone Issues
+        id: check-errors
+        run: |
+          HAS_ERRORS=false
+
+          if [ "${{ steps.errorprone.outputs.mvn_exit }}" != "0" ]; then
+            HAS_ERRORS=true
+            echo "Maven build exited with code ${{ steps.errorprone.outputs.mvn_exit }}"
+          fi
+
+          if grep -q "error: \[" errorprone.log; then
+            HAS_ERRORS=true
+          fi
+
+          if grep -q "^\[ERROR\]" errorprone.log; then
+            HAS_ERRORS=true
+          fi
+
+          if [ "$HAS_ERRORS" = "true" ]; then
+            echo "has_errors=true" >> $GITHUB_OUTPUT
+            echo "::error::Error Prone and/or compilation issues found in the code"
+            echo ""
+            echo "=== Error Prone Issues ==="
+            grep -n "error: \[" errorprone.log | head -50 || echo "No Error Prone specific issues"
+            echo ""
+            echo "=== Maven [ERROR] Lines ==="
+            grep -n "^\[ERROR\]" errorprone.log | head -50 || echo "No Maven errors"
+            echo ""
+
+            echo "## ⚠️ Error Prone Analysis Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Error Prone static analysis and/or compilation detected issues in this PR." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Error Prone Issues (first 50):" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -n "error: \[" errorprone.log | head -50 >> $GITHUB_STEP_SUMMARY || echo "None" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Maven Compilation Errors (first 50):" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -n "^\[ERROR\]" errorprone.log | head -50 >> $GITHUB_STEP_SUMMARY || echo "None" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "See the [Error Prone documentation](https://errorprone.info/) for details on each bug pattern." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_errors=false" >> $GITHUB_OUTPUT
+            echo "✅ No Error Prone issues found"
+
+            echo "## ✅ Error Prone Analysis Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No issues detected by Error Prone static analysis." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail if errors found
+        if: steps.check-errors.outputs.has_errors == 'true'
+        run: exit 1
