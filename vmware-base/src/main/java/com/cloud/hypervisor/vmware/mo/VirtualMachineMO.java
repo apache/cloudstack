@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URLEncoder;
@@ -1466,7 +1467,11 @@ public class VirtualMachineMO extends BaseMO {
             VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, controllerKey, vmdkDatastorePathChain, morDs, unitNumber, 1, maxIops);
             if (StringUtils.isNotBlank(diskController)) {
                 String vmdkFileName = vmdkDatastorePathChain[0];
-                updateVmdkAdapter(vmdkFileName, diskController);
+                try {
+                    updateVmdkAdapter(vmdkFileName, diskController);
+                } catch (IOException e) {
+                    logger.warn("Unable to verify/update adapter type for VMDK file " + vmdkFileName + " due to a datastore browser I/O failure, proceeding with disk attach: " + e.getMessage(), e);
+                }
             }
             VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
