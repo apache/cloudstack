@@ -68,8 +68,23 @@ vueApp.use(backupUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
+// drop stored values that are not valid JSON (e.g. 'undefined'), as reading them throws
+vueProps.$localStorage.keys().forEach(key => {
+  try {
+    vueProps.$localStorage.get(key)
+  } catch (e) {
+    console.warn('Removing unreadable local storage entry: ' + key)
+    vueProps.$localStorage.remove(key)
+  }
+})
+
+let configLoaded = false
+
 const renderError = (err) => {
   console.error('Fatal error during app initialization: ', err)
+  const details = configLoaded
+    ? 'The application failed to start: ' + err + '. Check the browser console for more information.'
+    : 'Missing or malformed config.json. Please ensure the file is present, accessible, and contains valid JSON. Check the browser console for more information.'
   const ErrorComponent = {
     render: () => h(
       'div',
@@ -81,7 +96,7 @@ const renderError = (err) => {
           h('summary', { style: 'cursor: pointer;' }, 'Technical details'),
           h('pre', {
             style: 'text-align: left; display: inline-block; margin-top: 10px;'
-          }, 'Missing or malformed config.json. Please ensure the file is present, accessible, and contains valid JSON. Check the browser console for more information.')
+          }, details)
         ])
       ]
     )
@@ -97,6 +112,7 @@ fetch('config.json?ts=' + Date.now())
     return response.json()
   })
   .then(async config => {
+    configLoaded = true
     vueProps.$config = config
     let baseUrl = config.apiBase
     if (config.multipleServer) {
