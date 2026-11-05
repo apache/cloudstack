@@ -40,9 +40,12 @@ jobs:
           node-version: 24
 
       - name: Generate UI SBOM
+        # the generator is installed outside the checkout without lifecycle scripts;
         # dev dependencies are build tooling and are not shipped in the UI bundle
         run: |
-          npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --omit dev \
+          npm install --no-save --no-audit --no-fund --ignore-scripts \
+            --prefix "$RUNNER_TEMP/cdx" @cyclonedx/cyclonedx-npm@6.0.1
+          "$RUNNER_TEMP/cdx/node_modules/.bin/cyclonedx-npm" --package-lock-only --omit dev \
             --spec-version 1.6 --output-format JSON --output-file sbom.ui.cdx.json ui/package.json
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
