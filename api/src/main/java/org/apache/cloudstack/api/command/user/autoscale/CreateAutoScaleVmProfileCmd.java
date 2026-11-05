@@ -47,7 +47,7 @@ import com.cloud.network.as.AutoScaleVmProfile;
 @APICommand(name = "createAutoScaleVmProfile",
             description = "Creates a profile that contains information about the Instance which will be provisioned automatically by autoscale feature.",
         responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
-            requestHasSensitiveInfo = false,
+            requestHasSensitiveInfo = true,
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {

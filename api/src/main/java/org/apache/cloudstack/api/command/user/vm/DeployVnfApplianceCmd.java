@@ -37,7 +37,7 @@ import java.util.List;
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.19.0")
 public class DeployVnfApplianceCmd extends DeployVMCmd implements UserCmd {

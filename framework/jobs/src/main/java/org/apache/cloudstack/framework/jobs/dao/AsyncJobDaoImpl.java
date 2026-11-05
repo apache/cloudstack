@@ -106,7 +106,6 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 
         asyncJobTypeSearch = createSearchBuilder(Long.class);
         asyncJobTypeSearch.select(null, SearchCriteria.Func.COUNT, asyncJobTypeSearch.entity().getId());
-        asyncJobTypeSearch.and("job_info", asyncJobTypeSearch.entity().getCmdInfo(),Op.LIKE);
         asyncJobTypeSearch.and("job_cmd", asyncJobTypeSearch.entity().getCmd(), Op.IN);
         asyncJobTypeSearch.and("status", asyncJobTypeSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         asyncJobTypeSearch.done();
@@ -290,12 +289,16 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 
     @Override
     public long countPendingJobs(String havingInfo, String... cmds) {
+        if (havingInfo != null) {
+            // job_cmd_info is encrypted for commands with sensitive requests, so match on the decrypted value
+            SearchCriteria<AsyncJobVO> sc = failureMsidAsyncJobSearch.create();
+            sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+            sc.setParameters("job_cmd", (Object[])cmds);
+            return listBy(sc).stream().filter(job -> StringUtils.contains(job.getCmdInfo(), havingInfo)).count();
+        }
         SearchCriteria<Long> sc = asyncJobTypeSearch.create();
         sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
         sc.setParameters("job_cmd", (Object[])cmds);
-        if (havingInfo != null) {
-            sc.setParameters("job_info", "%" + havingInfo + "%");
-        }
         List<Long> results = customSearch(sc, null);
         return results.get(0);
     }

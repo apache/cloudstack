@@ -260,8 +260,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
         "password", "secretkey", "apikey", "token",
         "sessionkey", "accesskey", "signature",
-        "authorization", "credential", "secret"
+        "authorization", "credential", "secret", "userdata"
     ));
+
+    private static boolean isSensitiveField(final String key) {
+        final String lowerKey = key.toLowerCase();
+        return sensitiveFields.stream().anyMatch(lowerKey::contains);
+    }
 
     private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
@@ -399,7 +404,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         if (info != null) {
             Type type = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
-            cmdInfoObj.putAll(cmdInfo);
+            cmdInfo.forEach((key, value) -> cmdInfoObj.put(key, isSensitiveField(key) ? "******" : value));
             String eventTypeObj = cmdInfo.get("cmdEventType");
             if (eventTypeObj != null) {
                 cmdEventType = eventTypeObj;
@@ -646,12 +651,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         final String keyStr = (String) key;
                         final String[] value = (String[]) params.get(key);
 
-                        String lowerKeyStr = keyStr.toLowerCase();
-                        boolean isSensitive = sensitiveFields.stream()
-                            .anyMatch(lowerKeyStr::contains);
-
                         String logValue;
-                        if (isSensitive) {
+                        if (isSensitiveField(keyStr)) {
                             logValue = "******"; // mask sensitive values
                         } else {
                             logValue = (value == null) ? "'null'" : value[0];
