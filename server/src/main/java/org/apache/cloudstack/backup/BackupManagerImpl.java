@@ -1819,7 +1819,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @DB
-    private Date scheduleNextBackupJob(final BackupScheduleVO backupSchedule) {
+    protected Date scheduleNextBackupJob(final BackupScheduleVO backupSchedule) {
         final Date nextTimestamp = DateUtil.getNextRunTime(backupSchedule.getScheduleType(), backupSchedule.getSchedule(),
                 backupSchedule.getTimezone(), currentTimestamp);
         return Transaction.execute(new TransactionCallback<Date>() {
@@ -1833,13 +1833,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         });
     }
 
-    private void checkStatusOfCurrentlyExecutingBackups() {
+    protected void checkStatusOfCurrentlyExecutingBackups() {
         final SearchCriteria<BackupScheduleVO> sc = backupScheduleDao.createSearchCriteria();
         sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
         final List<BackupScheduleVO> backupSchedules = backupScheduleDao.search(sc, null);
         for (final BackupScheduleVO backupSchedule : backupSchedules) {
             final Long asyncJobId = backupSchedule.getAsyncJobId();
             final AsyncJobVO asyncJob = asyncJobManager.getAsyncJob(asyncJobId);
+            if (asyncJob == null) {
+                logger.debug("The async job [{}] of backup schedule [{}] does not exist anymore. Considering it as finished and scheduling the next backup job.",
+                        asyncJobId, backupSchedule);
+                scheduleNextBackupJob(backupSchedule);
+                continue;
+            }
             switch (asyncJob.getStatus()) {
                 case SUCCEEDED:
                 case FAILED:
