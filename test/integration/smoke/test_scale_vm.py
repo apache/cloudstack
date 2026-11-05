@@ -31,7 +31,6 @@ from marvin.lib.base import (Account,
                              Volume)
 from marvin.lib.common import (get_zone,
                                get_template,
-                               get_test_template,
                                get_domain)
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
@@ -61,34 +60,19 @@ class TestScaleVm(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        if cls.hypervisor.lower() in ['simulator', 'vmware']:
-            cls.template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
-            if cls.template == FAILED:
-                assert False, "get_template() failed to return template\
-                        with description %s" % cls.services["ostype"]
-            cls.template = Template.update(
-                cls.template,
-                cls.apiclient,
-                isdynamicallyscalable='true'
-            )
-        else:
-            cls.template = get_test_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.hypervisor
-            )
-            if cls.template == FAILED:
-                assert False, "get_test_template() failed to return template\
-                        with hypervisor %s" % cls.hypervisor
-            cls.template = Template.update(
-                cls.template,
-                cls.apiclient,
-                isdynamicallyscalable='true'
-            )
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template\
+                    with description %s" % cls.services["ostype"]
+        cls.template = Template.update(
+            cls.template,
+            cls.apiclient,
+            isdynamicallyscalable='true'
+        )
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -101,6 +85,12 @@ class TestScaleVm(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
+
+        Configurations.update(
+            cls.apiclient,
+            name="enable.dynamic.scale.vm",
+            value="true"
+        )
 
         # the Debian 13 built-in template needs more memory than the 256 MiB of the default small offering
         # (with dynamic scaling, the memory hot-add leaves too little for the guest)
@@ -118,12 +108,6 @@ class TestScaleVm(cloudstackTestCase):
             big_offering_data
         )
         cls._cleanup.append(cls.big_offering)
-
-        Configurations.update(
-            cls.apiclient,
-            name="enable.dynamic.scale.vm",
-            value="true"
-        )
 
         cls.small_offering_dynamic_scaling_disabled = ServiceOffering.create(
             cls.apiclient,
@@ -670,41 +654,6 @@ class TestScaleVm(cloudstackTestCase):
         # scale up the VM to serviceoffering3
         # Check disk offering of root volume to be diskoffering3 since setting allow.diskOffering.change.during.scale.vm is true
         template = self.template
-        if self.hypervisor.lower() in ['xenserver']:
-            test_template = get_test_template(self.apiclient, self.zone.id, self.hypervisor)
-            self.services["template_2"]["url"] = test_template["url"]
-            self.services["template_2"]["hypervisor"] = test_template["hypervisor"]
-            self.services["template_2"]["format"] = test_template["format"]
-            self.services["template_2"]["ostype"] = "CentOS 5.6 (64-bit)"
-
-            try:
-                template = Template.register(self.apiclient,
-                                             self.services["template_2"],
-                                             zoneid=self.zone.id,
-                                             account=self.account.name,
-                                             domainid=self.account.domainid,
-                                             hypervisor=self.hypervisor
-                                             )
-
-                template.download(self.apiclient)
-            except Exception as e:
-                self.fail("Failed to register template: %s" % e)
-
-            time.sleep(120)
-
-            template = Template.update(
-                template,
-                self.apiclient,
-                isdynamicallyscalable='true'
-            )
-
-            templates = Template.list(self.apiclient,
-                                      templatefilter= \
-                                          self.services["template_2"]["templatefilter"],
-                                      id=template.id,
-                                      )
-
-            template = templates[0]
 
         disk_offering = self.services["disk_offering"]
         disk_offering["name"] = "Disk Offering 1"
