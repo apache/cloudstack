@@ -90,9 +90,7 @@ public class S3ImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public boolean isScopeSupported(ScopeType scope) {
-        if (scope == ScopeType.REGION)
-            return true;
-        return false;
+        return scope == ScopeType.ZONE || scope == ScopeType.REGION;
     }
 
     @Override
