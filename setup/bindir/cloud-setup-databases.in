@@ -328,8 +328,11 @@ for example:
     def grabSystemInfo(self):
         def getIpAddr():
             try:
-                ip = socket.gethostbyname(socket.gethostname())
-                return ip
+                hostname, aliases, addresses = socket.gethostbyname_ex(socket.gethostname())
+                for address in addresses:
+                    if address != "127.0.0.1" and address != "127.0.1.1":
+                        return address
+                return "127.0.0.1"
             except Exception as e:
                 return "127.0.0.1"
 
