@@ -184,20 +184,6 @@ def main() -> None:
     registry = TransferRegistry()
     handler_cls = make_handler(registry)
 
-    ctrl_thread = threading.Thread(
-        target=_control_listener,
-        args=(registry, args.control_socket),
-        daemon=True,
-    )
-    ctrl_thread.start()
-
-    sweep_thread = threading.Thread(
-        target=_idle_sweep_loop,
-        args=(registry,),
-        daemon=True,
-    )
-    sweep_thread.start()
-
     addr = (args.listen, args.port)
     httpd = ThreadingHTTPServer(addr, handler_cls)
 
@@ -217,6 +203,22 @@ def main() -> None:
 
         httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
         scheme = "https"
+
+    # The agent takes the control socket answering as the server being ready and hands out the
+    # transfer URL right away, so it must only come up once the HTTP socket is listening.
+    ctrl_thread = threading.Thread(
+        target=_control_listener,
+        args=(registry, args.control_socket),
+        daemon=True,
+    )
+    ctrl_thread.start()
+
+    sweep_thread = threading.Thread(
+        target=_idle_sweep_loop,
+        args=(registry,),
+        daemon=True,
+    )
+    sweep_thread.start()
 
     logging.info("listening on %s://%s:%d", scheme, args.listen, args.port)
     httpd.serve_forever()
