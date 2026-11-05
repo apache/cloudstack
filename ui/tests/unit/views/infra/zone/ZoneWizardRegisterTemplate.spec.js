@@ -132,10 +132,23 @@ describe('Views > infra > zone > ZoneWizardRegisterTemplate.vue', () => {
       expect(getAPI).not.toHaveBeenCalledWith('listZones', expect.anything())
     })
 
-    it('shows Skip, then Done once a row is ticked', async () => {
+    it('shows only Skip with no selection, and Register plus Skip once a row is ticked', async () => {
       const { wrapper } = await factory({ zoneid: 'new-zone', arch: 'x86_64', zoneSuperType: 'Core' })
 
+      expect(wrapper.find('.button-back').exists()).toBe(false)
+      expect(wrapper.find('.register-button').text()).toBe('label.skip')
+      wrapper.vm.selectedRowKeys = ['a-x86']
+      await flushPromises()
+      expect(wrapper.find('.register-button').text()).toBe('label.register.template')
       expect(wrapper.find('.button-back').text()).toBe('label.skip')
+    })
+
+    it('shows Done instead of Skip once something has been registered', async () => {
+      const { wrapper } = await factory({ zoneid: 'new-zone', arch: 'x86_64', zoneSuperType: 'Core' })
+      wrapper.vm.registeredAny = true
+
+      await flushPromises()
+      expect(wrapper.find('.register-button').text()).toBe('label.done')
       wrapper.vm.selectedRowKeys = ['a-x86']
       await flushPromises()
       expect(wrapper.find('.button-back').text()).toBe('label.done')
@@ -163,29 +176,29 @@ describe('Views > infra > zone > ZoneWizardRegisterTemplate.vue', () => {
   })
 
   describe('standalone mode', () => {
-    it('renders the zone select, shows Close and disables Register until a row is ticked', async () => {
+    it('renders the zone select, shows Close and only offers Register once a row is ticked', async () => {
       const { wrapper } = await factory()
 
       expect(wrapper.find('.zone-select').exists()).toBe(true)
-      expect(wrapper.find('.button-back').text()).toBe('label.close')
       await selectZone(wrapper, 'core-x86')
-      expect(wrapper.find('.register-button').attributes('disabled')).toBeDefined()
+      expect(wrapper.find('.register-button').text()).toBe('label.close')
+      expect(wrapper.find('.button-back').exists()).toBe(false)
       wrapper.vm.selectedRowKeys = ['a-x86']
       await flushPromises()
+      expect(wrapper.find('.register-button').text()).toBe('label.register.template')
       expect(wrapper.find('.register-button').attributes('disabled')).toBeUndefined()
+      expect(wrapper.find('.button-back').text()).toBe('label.close')
     })
 
-    it('disables the Public and Featured checkboxes while Register is disabled', async () => {
+    it('shows the Public and Featured checkboxes only while rows are ticked', async () => {
       const { wrapper } = await factory()
       await selectZone(wrapper, 'core-x86')
-      const disabled = () => wrapper.findAll('a-checkbox-stub').map(box => box.attributes('disabled') === 'true')
 
-      expect(wrapper.vm.registerDisabled).toBe(true)
-      expect(disabled()).toEqual([true, true])
+      expect(wrapper.findAll('a-checkbox-stub')).toHaveLength(0)
       wrapper.vm.selectedRowKeys = ['a-x86']
       await flushPromises()
       expect(wrapper.vm.registerDisabled).toBe(false)
-      expect(disabled()).toEqual([false, false])
+      expect(wrapper.findAll('a-checkbox-stub').map(box => box.attributes('disabled') === 'true')).toEqual([false, false])
     })
 
     it('disables zones without KVM clusters but keeps zones with no clusters selectable', async () => {

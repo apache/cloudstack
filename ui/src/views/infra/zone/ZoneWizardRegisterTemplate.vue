@@ -52,7 +52,7 @@
         <a-switch size="small" v-model:checked="showOtherArchs" :disabled="submitting" />
         {{ $t('label.show.other.archs') }}
       </span>
-      <span class="switch-item">
+      <span v-if="standalone" class="switch-item">
         <a-switch size="small" v-model:checked="showRegistered" :disabled="submitting" />
         {{ $t('label.show.registered') }}
       </span>
@@ -81,14 +81,14 @@
       </template>
     </a-table>
     <div class="form-action">
-      <a-button v-if="standalone" class="button-back" :disabled="submitting" @click="handleClose">{{ $t('label.close') }}</a-button>
-      <a-button v-else class="button-back" @click="handleDone">{{ selectedRowKeys.length > 0 ? $t('label.done') : $t('label.skip') }}</a-button>
+      <a-button v-if="hasSelection" class="button-back" :disabled="submitting" @click="finish">{{ finishLabel }}</a-button>
       <div class="register-actions">
-        <template v-if="effectiveZoneId">
+        <template v-if="hasSelection && effectiveZoneId">
           <a-checkbox v-model:checked="makePublic" :disabled="registerDisabled">{{ $t('label.ispublic') }}</a-checkbox>
           <a-checkbox v-model:checked="makeFeatured" :disabled="registerDisabled">{{ $t('label.isfeatured') }}</a-checkbox>
         </template>
         <a-button
+          v-if="hasSelection"
           class="register-button"
           type="primary"
           :loading="submitting"
@@ -96,6 +96,13 @@
           @click="handleSubmit"
           ref="submit"
         >{{ $t('label.register.template') }}</a-button>
+        <a-button
+          v-else
+          class="register-button"
+          type="primary"
+          :disabled="submitting"
+          @click="finish"
+        >{{ finishLabel }}</a-button>
       </div>
     </div>
 
@@ -223,6 +230,15 @@ export default {
         return !(template.preRegistered && !this.showRegistered)
       })
     },
+    hasSelection () {
+      return this.selectedRowKeys.length > 0
+    },
+    finishLabel () {
+      if (this.standalone) {
+        return this.$t('label.close')
+      }
+      return this.$t(this.registeredAny ? 'label.done' : 'label.skip')
+    },
     registerDisabled () {
       if (this.submitting || !this.hasImageStore) {
         return true
@@ -272,6 +288,13 @@ export default {
         }
       ]
       this.defaultOsTypeId = await this.fetchOsTypeId('Other Linux (64-bit)')
+    },
+    finish () {
+      if (this.standalone) {
+        this.handleClose()
+      } else {
+        this.handleDone()
+      }
     },
     handleDone () {
       this.$emit('refresh-data')
@@ -549,11 +572,6 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .register-template {
-    width: 80vw;
-    max-width: 1000px;
-  }
-
   .zone-select {
     display: flex;
     align-items: center;
