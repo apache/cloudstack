@@ -19,19 +19,38 @@
 package com.cloud.utils.storage;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 public class QCOW2UtilsTest {
 
     InputStream inputStream;
+
+    byte[] qcow2Bytes;
+
+    HttpServer server;
 
     final Long virtualSize = 21474836480L;
 
@@ -106,7 +125,15 @@ public class QCOW2UtilsTest {
         // Snapshots offset
         byteBuffer.putLong(0L);
 
-        inputStream = new ByteArrayInputStream(byteBuffer.array());
+        qcow2Bytes = byteBuffer.array();
+        inputStream = new ByteArrayInputStream(qcow2Bytes);
+    }
+
+    @After
+    public void tearDown() {
+        if (server != null) {
+            server.stop(0);
+        }
     }
 
     @Test
@@ -117,5 +144,102 @@ public class QCOW2UtilsTest {
     @Test
     public void getVirtualSizeTest() throws IOException {
         assertEquals(virtualSize.longValue(), QCOW2Utils.getVirtualSize(inputStream, false));
+    }
+
+    @Test
+    public void getRedirectUrlResolvesRelativeLocation() throws IOException {
+        URL redirectUrl = QCOW2Utils.getRedirectUrl(new URL("http://example.com/templates/redirect"), "template.qcow2");
+        assertEquals("http://example.com/templates/template.qcow2", redirectUrl.toString());
+    }
+
+    @Test
+    public void getRedirectUrlAllowsHttpToHttps() throws IOException {
+        URL redirectUrl = QCOW2Utils.getRedirectUrl(new URL("http://example.com/template.qcow2"), "https://example.com/template.qcow2");
+        assertEquals("https://example.com/template.qcow2", redirectUrl.toString());
+    }
+
+    @Test
+    public void getRedirectUrlRefusesHttpsToHttp() {
+        assertThrows(IOException.class, () -> QCOW2Utils.getRedirectUrl(new URL("https://example.com/template.qcow2"), "http://example.com/template.qcow2"));
+    }
+
+    @Test
+    public void getRedirectUrlRefusesNonHttpProtocol() {
+        assertThrows(IOException.class, () -> QCOW2Utils.getRedirectUrl(new URL("http://example.com/template.qcow2"), "file:///etc/passwd"));
+    }
+
+    @Test
+    public void getRedirectUrlRefusesMissingLocation() {
+        assertThrows(IOException.class, () -> QCOW2Utils.getRedirectUrl(new URL("http://example.com/template.qcow2"), null));
+    }
+
+    @Test
+    public void getVirtualSizeFromUrlFollowsRelativeRedirect() throws IOException {
+        String baseUrl = startServer(exchange -> {
+            if ("/template.qcow2".equals(exchange.getRequestURI().getPath())) {
+                exchange.sendResponseHeaders(200, qcow2Bytes.length);
+                exchange.getResponseBody().write(qcow2Bytes);
+                exchange.close();
+            } else {
+                sendRedirect(exchange, "template.qcow2");
+            }
+        });
+        assertEquals(virtualSize.longValue(), QCOW2Utils.getVirtualSizeFromUrl(baseUrl + "/redirect", true));
+    }
+
+    @Test
+    public void getVirtualSizeFromUrlDoesNotFollowRedirectWhenDisabled() throws IOException {
+        AtomicInteger requests = new AtomicInteger();
+        String baseUrl = startServer(exchange -> {
+            requests.incrementAndGet();
+            sendRedirect(exchange, "/template.qcow2");
+        });
+        assertThrows(IllegalArgumentException.class, () -> QCOW2Utils.getVirtualSizeFromUrl(baseUrl + "/redirect", false));
+        assertEquals(1, requests.get());
+    }
+
+    @Test
+    public void getVirtualSizeFromUrlStopsAfterTooManyRedirects() throws IOException {
+        AtomicInteger requests = new AtomicInteger();
+        String baseUrl = startServer(exchange -> {
+            requests.incrementAndGet();
+            sendRedirect(exchange, "/redirect");
+        });
+        assertThrows(IllegalArgumentException.class, () -> QCOW2Utils.getVirtualSizeFromUrl(baseUrl + "/redirect", true));
+        assertEquals(11, requests.get());
+    }
+
+    @Test
+    public void getVirtualSizeFromUrlFollowsHttpToHttpsRedirect() throws Exception {
+        // HttpURLConnection does not follow http to https redirects by itself, so check that the https target is contacted
+        try (ServerSocket httpsTarget = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            CountDownLatch httpsConnected = new CountDownLatch(1);
+            Thread acceptor = new Thread(() -> {
+                try (Socket socket = httpsTarget.accept()) {
+                    httpsConnected.countDown();
+                } catch (IOException e) {
+                    // the target socket was closed without a connection
+                }
+            });
+            acceptor.start();
+            String baseUrl = startServer(exchange -> sendRedirect(exchange, "https://127.0.0.1:" + httpsTarget.getLocalPort() + "/template.qcow2"));
+
+            // the TLS handshake fails as the target is not an https server
+            assertThrows(IllegalArgumentException.class, () -> QCOW2Utils.getVirtualSizeFromUrl(baseUrl + "/template.qcow2", true));
+            assertTrue(httpsConnected.await(10, TimeUnit.SECONDS));
+        }
+    }
+
+    private String startServer(HttpHandler handler) throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", handler);
+        server.start();
+        return "http://127.0.0.1:" + server.getAddress().getPort();
+    }
+
+    private static void sendRedirect(HttpExchange exchange, String location) throws IOException {
+        exchange.getResponseHeaders().add("Location", location);
+        exchange.sendResponseHeaders(302, -1);
+        exchange.close();
     }
 }
