@@ -425,6 +425,11 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     @Override
+    public void writeExtents(Map<String, String> source, String file) {
+        ((LinstorStorageAdaptor) _storageAdaptor).writeExtents(this, source, file);
+    }
+
+    @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
         LOGGER.trace(String.format("Linstor.vmActivityCheck: %s, %s", pool.getPoolIp(), host.getPrivateNetwork().getIp()));
         return hasHeartBeat(pool, host);

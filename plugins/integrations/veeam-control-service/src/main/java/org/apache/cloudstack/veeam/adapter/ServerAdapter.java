@@ -1007,6 +1007,31 @@ public class ServerAdapter extends ManagerBase {
         return provisionedSizeInGb;
     }
 
+    /**
+     * Volumes their storage driver exports for backups are QCOW2 disks to Veeam, whatever image format is recorded
+     * for them: Veeam backs up only QCOW2 disks incrementally, and the driver tracks their changes (see
+     * {@link #isIncrementalBackupSupported}). Their data goes through image transfers as raw like for any disk.
+     */
+    protected Storage.ImageFormat getDiskFormat(VolumeJoinVO vo) {
+        if (isExportedByStorageDriver(vo)) {
+            return Storage.ImageFormat.QCOW2;
+        }
+        return vo.getFormat();
+    }
+
+    /**
+     * The storage driver that exports a volume for backups tracks its changes, see
+     * {@code PrimaryDataStoreDriver.startBackupExport}. It backs up a volume in full if it has no changes since
+     * the last backup to rely on.
+     */
+    protected boolean isIncrementalBackupSupported(VolumeJoinVO vo) {
+        return isExportedByStorageDriver(vo);
+    }
+
+    private boolean isExportedByStorageDriver(VolumeJoinVO vo) {
+        return vo.getPoolId() > 0 && isStorageDriverBackupExportSupported(primaryDataStoreDao.findById(vo.getPoolId()));
+    }
+
     protected Long getVolumePhysicalSize(VolumeJoinVO vo) {
         return volumeApiService.getVolumePhysicalSize(vo.getFormat(), vo.getPath(), vo.getChainInfo());
     }
@@ -1029,7 +1054,8 @@ public class ServerAdapter extends ManagerBase {
         }
 
         // Implementation for creating a Disk resource
-        return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findById(volume.getId()), this::getVolumePhysicalSize);
+        return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findById(volume.getId()), this::getVolumePhysicalSize, this::getDiskFormat,
+                this::isIncrementalBackupSupported);
     }
 
     protected List<Nic> listNicsByInstance(final long instanceId, final String instanceUuid) {
@@ -1183,9 +1209,15 @@ public class ServerAdapter extends ManagerBase {
         if (dataCenterVO == null) {
             throw new InvalidParameterValueException("DataCenter with ID " + uuid + " not found");
         }
-        Filter filter = new Filter(StoragePoolJoinVO.class, "id", true, offset, limit);
+        // pools whose storage driver exports their volumes can't be selected by type, so page after filtering
+        Filter filter = new Filter(StoragePoolJoinVO.class, "id", true, null, null);
         List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listAvailableByZoneHypervisorAndType(dataCenterVO.getId(),
-                Hypervisor.HypervisorType.KVM, SUPPORTED_STORAGE_TYPES, filter);
+                Hypervisor.HypervisorType.KVM, null, filter).stream()
+                .filter(pool -> SUPPORTED_STORAGE_TYPES.contains(pool.getPoolType()) ||
+                        isStorageDriverBackupExportSupported(primaryDataStoreDao.findById(pool.getId())))
+                .skip(offset != null ? offset : 0)
+                .limit(limit != null ? limit : Long.MAX_VALUE)
+                .collect(Collectors.toList());
         return StoreVOToStorageDomainConverter.toStorageDomainListFromPools(storagePoolVOS);
     }
 
@@ -1515,7 +1547,8 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = ListVolumesCmd.class)
     protected List<DiskAttachment> listDiskAttachmentsByInstanceId(final long instanceId) {
         List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByInstanceId(instanceId);
-        return VolumeJoinVOToDiskConverter.toDiskAttachmentList(kvmVolumes, this::getVolumePhysicalSize);
+        return VolumeJoinVOToDiskConverter.toDiskAttachmentList(kvmVolumes, this::getVolumePhysicalSize, this::getDiskFormat,
+                this::isIncrementalBackupSupported);
     }
 
     @ApiAccess(command = ListVolumesCmd.class)
@@ -1535,7 +1568,8 @@ public class ServerAdapter extends ManagerBase {
         List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByZonesHypervisorTypeAndOwners(
                 kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM,
                 ownerDetails.first(), ownerDetails.second(), filter);
-        return VolumeJoinVOToDiskConverter.toDiskList(kvmVolumes, this::getVolumePhysicalSize);
+        return VolumeJoinVOToDiskConverter.toDiskList(kvmVolumes, this::getVolumePhysicalSize, this::getDiskFormat,
+                this::isIncrementalBackupSupported);
     }
 
     @ApiAccess(command = ListVolumesCmd.class)
@@ -1545,7 +1579,8 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
-        return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findByUuid(uuid), this::getVolumePhysicalSize);
+        return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findByUuid(uuid), this::getVolumePhysicalSize, this::getDiskFormat,
+                this::isIncrementalBackupSupported);
     }
 
     protected void assignVolumeToAccount(VolumeVO volumeVO, long accountId) {
@@ -1613,7 +1648,8 @@ public class ServerAdapter extends ManagerBase {
         Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, true, false);
         processInstanceRestoreConfigIfNeeded(vmVo, volume);
         VolumeJoinVO attachedVolumeVO = volumeJoinDao.findById(volume.getId());
-        return VolumeJoinVOToDiskConverter.toDiskAttachment(attachedVolumeVO, this::getVolumePhysicalSize);
+        return VolumeJoinVOToDiskConverter.toDiskAttachment(attachedVolumeVO, this::getVolumePhysicalSize, this::getDiskFormat,
+                this::isIncrementalBackupSupported);
     }
 
     @ApiAccess(command = DetachVolumeCmd.class)
@@ -1987,11 +2023,15 @@ public class ServerAdapter extends ManagerBase {
         return BackupVOToBackupConverter.toBackupList(backups, id -> vo, this::getHostById);
     }
 
+    private boolean isStorageDriverBackupExportSupported(StoragePoolVO pool) {
+        return pool != null && kvmBackupExportService.isStorageDriverBackupExportSupported(pool);
+    }
+
     protected void validateInstanceStorage(UserVmVO vm) {
         List<VolumeVO> volumes = volumeDao.findUsableVolumesForInstance(vm.getId());
         List<Long> storageIds = volumes.stream().map(VolumeVO::getPoolId).distinct().collect(Collectors.toList());
         List<StoragePoolVO> pools = primaryDataStoreDao.listByIds(storageIds);
-        pools.stream().filter(p -> !SUPPORTED_STORAGE_TYPES.contains(p.getPoolType()))
+        pools.stream().filter(p -> !SUPPORTED_STORAGE_TYPES.contains(p.getPoolType()) && !isStorageDriverBackupExportSupported(p))
                 .findAny().ifPresent(p -> {
                     throw new InvalidParameterValueException("VM is using storage pool " + p.getName() +
                             " of type " + p.getPoolType() +

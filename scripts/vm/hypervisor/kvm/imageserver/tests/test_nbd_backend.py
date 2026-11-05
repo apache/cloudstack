@@ -314,6 +314,68 @@ class TestExtents(NbdBackendTestCase):
             self.assertIn("dirty", ext)
             self.assertTrue(ext["dirty"])
 
+    def _register_with_extents_file(self, listed):
+        extents_file = os.path.join(get_tmp_dir(), f"{uuid.uuid4().hex[:8]}.extents")
+        with open(extents_file, "w") as f:
+            json.dump(listed, f)
+        self.addCleanup(os.unlink, extents_file)
+        tid = f"nbd-{uuid.uuid4().hex[:8]}"
+        resp = self.ctrl({
+            "action": "register",
+            "transfer_id": tid,
+            "config": {"backend": "nbd", "socket": self._nbd.socket_path, "extents_file": extents_file},
+        })
+        self.assertEqual(resp["status"], "ok")
+        self.addCleanup(self.ctrl, {"action": "unregister", "transfer_id": tid})
+        return self._url.rsplit("/", 1)[0] + "/" + tid
+
+    def _get_extents(self, url, context):
+        resp = http_get(f"{url}/extents?context={context}")
+        self.assertEqual(resp.status, 200)
+        extents = json.loads(resp.read())
+        self.assertEqual(sum(e["length"] for e in extents), IMAGE_SIZE)
+        return extents
+
+    def test_extents_from_extents_file(self):
+        # as listed for an incremental backup, the last extent reaches beyond the end of the image
+        url = self._register_with_extents_file([
+            {"start": 0, "length": 65536, "dirty": False, "zero": True},
+            {"start": 65536, "length": 4096, "dirty": True, "zero": False},
+            {"start": 69632, "length": IMAGE_SIZE - 69632 - 4096, "dirty": False, "zero": True},
+            {"start": IMAGE_SIZE - 4096, "length": 65536, "dirty": True, "zero": False},
+        ])
+
+        dirty = self._get_extents(url, "dirty")
+        self.assertEqual(
+            [(e["start"], e["length"]) for e in dirty if e["dirty"]],
+            [(65536, 4096), (IMAGE_SIZE - 4096, 4096)],
+        )
+        self.assertFalse(any(e["dirty"] and e["zero"] for e in dirty))
+
+        zero = self._get_extents(url, "zero")
+        self.assertNotIn("dirty", zero[0])
+        self.assertEqual(
+            [(e["start"], e["length"], e["zero"]) for e in zero],
+            [
+                (0, 65536, True),
+                (65536, 4096, False),
+                (69632, IMAGE_SIZE - 69632 - 4096, True),
+                (IMAGE_SIZE - 4096, 4096, False),
+            ],
+        )
+
+    def test_extents_from_extents_file_of_full_backup(self):
+        # without dirty flags, as listed for a full backup: everything changed
+        url = self._register_with_extents_file([
+            {"start": 0, "length": 8192, "zero": False},
+            {"start": 8192, "length": IMAGE_SIZE - 8192, "zero": True},
+        ])
+
+        dirty = self._get_extents(url, "dirty")
+        self.assertTrue(all(e["dirty"] for e in dirty))
+        self.assertEqual([(e["start"], e["zero"]) for e in dirty], [(0, False), (8192, True)])
+        self.assertEqual([(e["start"], e["zero"]) for e in self._get_extents(url, "zero")], [(0, False), (8192, True)])
+
     def test_extents_after_write_and_zero(self):
         http_put(self._url, randbytes(95, IMAGE_SIZE))
 

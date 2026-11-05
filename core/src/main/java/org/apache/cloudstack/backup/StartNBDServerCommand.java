@@ -29,6 +29,7 @@ public class StartNBDServerCommand extends Command {
     private String fromCheckpointId;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private byte[] passphrase;
+    private Long blockDeviceSizeBytes;
 
     public StartNBDServerCommand() {
     }
@@ -41,6 +42,14 @@ public class StartNBDServerCommand extends Command {
         this.direction = direction;
         this.fromCheckpointId = fromCheckpointId;
         this.passphrase = passphrase;
+    }
+
+    /**
+     * Exports a raw block device. Only its first sizeBytes are exported, as the device can be larger than the volume.
+     */
+    protected StartNBDServerCommand(String transferId, String exportName, String devicePath, long sizeBytes, String socket, String direction) {
+        this(transferId, exportName, devicePath, socket, direction, null, null);
+        this.blockDeviceSizeBytes = sizeBytes;
     }
 
     public String getExportName() {
@@ -74,5 +83,12 @@ public class StartNBDServerCommand extends Command {
 
     public byte[] getPassphrase() {
         return passphrase;
+    }
+
+    /**
+     * Size to export if the volume path is a raw block device, null if it is an image file.
+     */
+    public Long getBlockDeviceSizeBytes() {
+        return blockDeviceSizeBytes;
     }
 }

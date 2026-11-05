@@ -51,6 +51,33 @@ class TestValidateTransferConfig(unittest.TestCase):
         self.assertEqual(c["idle_timeout_seconds"], 3)
         self.assertEqual(c["backend"], "file")
 
+    def test_nbd_extents_file(self):
+        c = validate_transfer_config(
+            {"backend": "nbd", "socket": "/tmp/s.sock", "extents_file": " /tmp/t.extents "}
+        )
+        self.assertEqual(c["extents_file"], "/tmp/t.extents")
+        self.assertIsNone(
+            validate_transfer_config({"backend": "nbd", "socket": "/tmp/s.sock"})["extents_file"]
+        )
+
+    def test_nbd_extents_file_invalid(self):
+        for value in ("", " ", 1):
+            with self.assertRaises(ValueError):
+                validate_transfer_config(
+                    {"backend": "nbd", "socket": "/tmp/s.sock", "extents_file": value}
+                )
+
+    def test_nbd_extents_file_and_bitmap(self):
+        with self.assertRaises(ValueError):
+            validate_transfer_config(
+                {
+                    "backend": "nbd",
+                    "socket": "/tmp/s.sock",
+                    "export_bitmap": "ckp-1",
+                    "extents_file": "/tmp/t.extents",
+                }
+            )
+
 
 class TestRegistryIdleSweep(unittest.TestCase):
     def test_sweep_unregisters_after_idle(self):

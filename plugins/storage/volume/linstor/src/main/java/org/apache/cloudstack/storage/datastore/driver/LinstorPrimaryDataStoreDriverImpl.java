@@ -22,6 +22,11 @@ import com.linbit.linstor.api.CloneWaiter;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.CbtExtents;
+import com.linbit.linstor.api.model.CbtSession;
+import com.linbit.linstor.api.model.CbtSessionStart;
+import com.linbit.linstor.api.model.CbtSessionVolume;
+import com.linbit.linstor.api.model.CreateMultiSnapshotRequest;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
@@ -38,11 +43,13 @@ import com.linbit.linstor.api.model.VolumeDefinitionModify;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import com.cloud.agent.api.Answer;
@@ -95,6 +102,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeBackupExport;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -120,6 +128,13 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.StandardCharsets;
 
 public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
+    private static final String SNAPSHOT_FLAG_CBT = "CBT";
+    private static final int CBT_SESSION_FINISH_ATTEMPTS = 3;
+    private static final long CBT_SESSION_FINISH_RETRY_MILLIS = 2000L;
+    private static final int HTTP_NOT_FOUND = 404;
+    /** the backup export support is asked for every disk listed to backup software, so cache the controller's answer */
+    private static final long CBT_SUPPORT_CACHE_MILLIS = 60000L;
+
     protected Logger logger = LogManager.getLogger(getClass());
     @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private VolumeDao _volumeDao;
@@ -135,6 +150,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private HostDao _hostDao;
     @Inject private VMTemplateDao _vmTemplateDao;
 
+    private final Map<Long, Pair<Boolean, Long>> cbtSupportCache = new ConcurrentHashMap<>();
     private final Map<String, Long> volumeStatsLastUpdate = new HashMap<>();
     private final Map<String, Pair<Long, Long>> volumeStats = new HashMap<>();
 
@@ -221,7 +237,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return LinstorUtil.RSC_PREFIX + snapshotUuid;
     }
 
-    private DevelopersApi getLinstorAPI(StoragePool pool) {
+    protected DevelopersApi getLinstorAPI(StoragePool pool) {
         return LinstorUtil.getLinstorAPI(pool.getHostAddress(),
                 LinstorConfigurationManager.ApiToken.valueIn(pool.getId()),
                 Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(pool.getId())));
@@ -277,7 +293,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         try
         {
-            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList());
+            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList(), null);
             if (answers.hasError())
             {
                 for (ApiCallRc answer : answers)
@@ -907,6 +923,18 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, StoragePool storagePool, String rscName)
             throws ApiException {
+        Host host = getDiskfulHost(api, storagePool, rscName);
+        if (host != null) {
+            return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
+        }
+        logger.error("Linstor: No diskfull host found.");
+        return Optional.empty();
+    }
+
+    /**
+     * The enabled host with the best suited diskful copy of the resource, null if there is none.
+     */
+    protected Host getDiskfulHost(DevelopersApi api, StoragePool storagePool, String rscName) throws ApiException {
         // Take the first diskful copy whose host can be used: the copies are ordered by how
         // suited they are (in use, then active, then inactive), and for shared storage pools
         // only the active node may be read, so the order must not be broken here.
@@ -914,13 +942,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 : LinstorUtil.getDiskfulStoragePoolsByPreference(api, rscName)) {
             Host host = getEnabledClusterHost(storagePool, Collections.singletonList(linSP.getNodeName()));
             if (host != null) {
-                return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
+                return host;
             }
             logger.debug("Linstor: no usable cloudstack host for diskful node {}, trying next copy",
                     linSP.getNodeName());
         }
-        logger.error("Linstor: No diskfull host found.");
-        return Optional.empty();
+        return null;
     }
 
     private String restoreResourceFromSnapshot(
@@ -1509,5 +1536,244 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public void detachVolumeFromAllStorageNodes(Volume volume) {
+    }
+
+    @Override
+    public boolean canExportVolumesForBackup(StoragePool pool) {
+        Pair<Boolean, Long> cached = cbtSupportCache.get(pool.getId());
+        if (cached != null && System.currentTimeMillis() - cached.second() < CBT_SUPPORT_CACHE_MILLIS) {
+            return cached.first();
+        }
+        String restApiVersion = LinstorUtil.getRestApiVersion(getLinstorAPI(pool));
+        if (restApiVersion == null) {
+            // not cached, so the controller is asked again next time
+            return false;
+        }
+        boolean supported = LinstorUtil.supportsCbt(restApiVersion);
+        cbtSupportCache.put(pool.getId(), new Pair<>(supported, System.currentTimeMillis()));
+        return supported;
+    }
+
+    /**
+     * Takes one multi snapshot of the volumes with changed block tracking (CBT) and starts a CBT session per
+     * volume, which restores the snapshot into a read-only temporary resource on a host.
+     */
+    @Override
+    public List<VolumeBackupExport> startBackupExport(
+            StoragePool pool, String exportName, List<VolumeInfo> volumes, Map<Long, String> changeTrackingIds) {
+        DevelopersApi api = getLinstorAPI(pool);
+        try {
+            CreateMultiSnapshotRequest multiSnapshot = new CreateMultiSnapshotRequest();
+            for (VolumeInfo volume : volumes) {
+                Snapshot snapshot = new Snapshot();
+                snapshot.setName(exportName);
+                snapshot.setResourceName(LinstorUtil.RSC_PREFIX + volume.getPath());
+                snapshot.setFlags(Collections.singletonList(SNAPSHOT_FLAG_CBT));
+                multiSnapshot.addSnapshotsItem(snapshot);
+            }
+            ApiCallRcList answers = api.createMultiSnapshot(multiSnapshot);
+            if (answers.hasError()) {
+                throw new CloudRuntimeException(String.format("Linstor: unable to snapshot the volumes for backup %s: %s",
+                        exportName, LinstorUtil.getBestErrorMessage(answers)));
+            }
+            logger.info("Linstor: took CBT snapshot {} of {} volume(s) on {}", exportName, volumes.size(), pool);
+
+            List<VolumeBackupExport> exports = new ArrayList<>();
+            for (VolumeInfo volume : volumes) {
+                exports.add(startCbtSession(api, pool, exportName, volume, changeTrackingIds.get(volume.getId())));
+            }
+            return exports;
+        } catch (ApiException apiEx) {
+            throw new CloudRuntimeException(String.format("Linstor: unable to export the volumes for backup %s: %s",
+                    exportName, apiEx.getBestMessage()), apiEx);
+        }
+    }
+
+    /**
+     * @param lastCbtId the CBT id of the volume's last backup, null if there is none
+     */
+    private VolumeBackupExport startCbtSession(
+            DevelopersApi api, StoragePool pool, String snapshotName, VolumeInfo volume, String lastCbtId)
+            throws ApiException {
+        final String rscName = LinstorUtil.RSC_PREFIX + volume.getPath();
+        // on a node with a copy of the snapshot the session reads it locally, elsewhere over the network
+        Host host = getDiskfulHost(api, pool, rscName);
+        if (host == null) {
+            host = getEnabledClusterHost(pool, LinstorUtil.getLinstorNodeNames(api));
+        }
+        if (host == null) {
+            throw new CloudRuntimeException("Linstor: no usable host to read the snapshot of " + rscName);
+        }
+
+        CbtSessionStart sessionStart = new CbtSessionStart();
+        sessionStart.setNode(host.getName());
+        CbtSession session = api.snapshotCbtSessionStart(rscName, snapshotName, sessionStart);
+        CbtSessionVolume sessionVolume = session.getVolumes().stream()
+                .filter(vlm -> vlm.getVolumeNumber() == 0)
+                .findFirst()
+                .orElseThrow(() -> new CloudRuntimeException(
+                        String.format("Linstor: CBT session of %s/%s has no volume 0", rscName, snapshotName)));
+        logger.info("Linstor: started CBT session of {}/{} on {}: {}",
+                rscName, snapshotName, host.getName(), sessionVolume.getDevicePath());
+
+        // the device is larger than the volume (DRBD rounds up), only the volume size of it is exported
+        VolumeBackupExport export = new VolumeBackupExport(
+                volume.getId(), host.getId(), sessionVolume.getDevicePath(), volume.getSize());
+        export.setChangeTrackingId(session.getCbtId());
+        if (lastCbtId != null && isCbtSessionIncrementalTo(api, rscName, snapshotName, lastCbtId)) {
+            export.setIncremental(true);
+            export.setExtentsSource(cbtExtentsSource(rscName, snapshotName, LinstorUtil.CBT_EXTENTS_MODE_DIRTY, lastCbtId));
+        } else if (hasCbtZeroExtents(api, rscName, snapshotName)) {
+            export.setExtentsSource(cbtExtentsSource(rscName, snapshotName, LinstorUtil.CBT_EXTENTS_MODE_ZERO, null));
+        }
+        return export;
+    }
+
+    private static Map<String, String> cbtExtentsSource(String rscName, String snapshotName, String mode, String baseCbtId) {
+        Map<String, String> source = new HashMap<>();
+        source.put(LinstorUtil.CBT_EXTENTS_RESOURCE, rscName);
+        source.put(LinstorUtil.CBT_EXTENTS_SNAPSHOT, snapshotName);
+        source.put(LinstorUtil.CBT_EXTENTS_MODE, mode);
+        if (baseCbtId != null) {
+            source.put(LinstorUtil.CBT_EXTENTS_BASE_CBT_ID, baseCbtId);
+        }
+        return source;
+    }
+
+    /**
+     * Whether the CBT session's snapshot tracked the changes since the CBT snapshot {@code lastCbtId}. If DRBD
+     * restarted tracking since, e.g. for a backup that did not succeed, or tracking is not usable (anymore),
+     * the volume has to be backed up in full.
+     */
+    private boolean isCbtSessionIncrementalTo(DevelopersApi api, String rscName, String snapshotName, String lastCbtId) {
+        try {
+            CbtExtents extents = api.snapshotCbtSessionExtents(
+                    rscName, snapshotName, 0, 0L, 1, LinstorUtil.CBT_EXTENTS_MODE_DIRTY);
+            if (lastCbtId.equals(extents.getBaseCbtId())) {
+                return true;
+            }
+            logger.info("Linstor: {}/{} tracked the changes since {}, not since the last backup's {}, backing it up in full",
+                    rscName, snapshotName, extents.getBaseCbtId(), lastCbtId);
+        } catch (ApiException apiEx) {
+            logger.info("Linstor: {}/{} has no changed extents to rely on, backing it up in full: {}",
+                    rscName, snapshotName, apiEx.getBestMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Whether DRBD knows which extents of the CBT session's snapshot were never written, so that a full backup can
+     * skip them. Without, e.g. with drbd-utils older than 9.36.0, the whole volume is read.
+     */
+    private boolean hasCbtZeroExtents(DevelopersApi api, String rscName, String snapshotName) {
+        try {
+            api.snapshotCbtSessionExtents(rscName, snapshotName, 0, 0L, 1, LinstorUtil.CBT_EXTENTS_MODE_ZERO);
+            return true;
+        } catch (ApiException apiEx) {
+            logger.info("Linstor: {}/{} has no record of the never written extents, reading all of it: {}",
+                    rscName, snapshotName, apiEx.getBestMessage());
+        }
+        return false;
+    }
+
+    @Override
+    public void finishBackupExport(StoragePool pool, String exportName, List<VolumeInfo> volumes) {
+        DevelopersApi api = getLinstorAPI(pool);
+        List<String> errors = new ArrayList<>();
+        for (VolumeInfo volume : volumes) {
+            final String rscName = LinstorUtil.RSC_PREFIX + volume.getPath();
+            // the snapshot can only be deleted once its session is finished
+            String error = finishCbtSession(api, rscName, exportName);
+            if (error == null) {
+                error = deleteBackupExportSnapshot(api, rscName, exportName);
+            }
+            if (error != null) {
+                errors.add(error);
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new CloudRuntimeException("Linstor: " + String.join("; ", errors));
+        }
+    }
+
+    /**
+     * @return null if the session is finished or there is none, else the error
+     */
+    private String finishCbtSession(DevelopersApi api, String rscName, String snapshotName) {
+        String error = null;
+        for (int attempt = 1; attempt <= CBT_SESSION_FINISH_ATTEMPTS; attempt++) {
+            try {
+                ApiCallRcList answers = api.snapshotCbtSessionFinish(rscName, snapshotName);
+                if (!answers.hasError()) {
+                    logger.info("Linstor: finished CBT session of {}/{}", rscName, snapshotName);
+                    return null;
+                }
+                error = LinstorUtil.getBestErrorMessage(answers);
+            } catch (ApiException apiEx) {
+                if (apiEx.getCode() == HTTP_NOT_FOUND) {
+                    return null;
+                }
+                error = apiEx.getBestMessage();
+            }
+            // the session's device may still be closing, e.g. while the qemu-nbd reading it exits
+            logger.warn("Linstor: unable to finish CBT session of {}/{} (attempt {}): {}",
+                    rscName, snapshotName, attempt, error);
+            if (attempt < CBT_SESSION_FINISH_ATTEMPTS) {
+                try {
+                    Thread.sleep(CBT_SESSION_FINISH_RETRY_MILLIS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        return String.format("unable to finish the CBT session of %s/%s: %s", rscName, snapshotName, error);
+    }
+
+    /**
+     * @return null if the snapshot is deleted or there is none, else the error
+     */
+    private String deleteBackupExportSnapshot(DevelopersApi api, String rscName, String snapshotName) {
+        try {
+            ApiCallRcList answers = api.resourceSnapshotDelete(rscName, snapshotName, Collections.emptyList(), null);
+            if (!answers.hasError()) {
+                logger.info("Linstor: deleted snapshot {}/{}", rscName, snapshotName);
+                return null;
+            }
+            return String.format("unable to delete snapshot %s/%s: %s",
+                    rscName, snapshotName, LinstorUtil.getBestErrorMessage(answers));
+        } catch (ApiException apiEx) {
+            if (apiEx.getCode() == HTTP_NOT_FOUND) {
+                return null;
+            }
+            return String.format("unable to delete snapshot %s/%s: %s", rscName, snapshotName, apiEx.getBestMessage());
+        }
+    }
+
+    @Override
+    public VolumeBackupExport prepareVolumeForRestore(StoragePool pool, VolumeInfo volume) {
+        DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = LinstorUtil.RSC_PREFIX + volume.getPath();
+        try {
+            // writing on a node with a diskful copy keeps the data off the network once
+            Host host = getDiskfulHost(api, pool, rscName);
+            if (host == null) {
+                host = getEnabledClusterHost(pool, LinstorUtil.getLinstorNodeNames(api));
+                if (host == null) {
+                    throw new CloudRuntimeException("Linstor: no usable host to restore into " + rscName);
+                }
+                ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, host.getName(), new ResourceMakeAvailable());
+                if (answers.hasError()) {
+                    throw new CloudRuntimeException(String.format("Linstor: unable to make %s available on %s: %s",
+                            rscName, host.getName(), LinstorUtil.getBestErrorMessage(answers)));
+                }
+            }
+            logger.info("Linstor: restoring into {} on {}", rscName, host.getName());
+            return new VolumeBackupExport(volume.getId(), host.getId(),
+                    LinstorUtil.getDevicePath(api, rscName), volume.getSize());
+        } catch (ApiException apiEx) {
+            throw new CloudRuntimeException(String.format("Linstor: unable to prepare %s for a restore: %s",
+                    rscName, apiEx.getBestMessage()), apiEx);
+        }
     }
 }

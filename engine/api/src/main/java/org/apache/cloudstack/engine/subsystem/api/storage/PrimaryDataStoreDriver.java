@@ -249,4 +249,42 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      */
     default void volumeManagementChanged(StoragePool pool, Volume volume, boolean imported) {
     }
+
+    /**
+     * Whether the driver serves the volumes of the pool for image based backups (KVM backup export) from
+     * its own storage snapshots, see {@link #startBackupExport}, instead of the hypervisor reading the volume files.
+     */
+    default boolean canExportVolumesForBackup(StoragePool pool) {
+        return false;
+    }
+
+    /**
+     * Takes one crash consistent storage snapshot of the volumes and makes each volume of it readable as a raw
+     * device on a host. {@link #finishBackupExport} has to be called afterwards in any case, also if this fails.
+     *
+     * @param exportName name of the export, unique per backup
+     * @param volumes volumes of one VM, all on this pool
+     * @param changeTrackingIds per volume id, the change tracking id of the last successful backup of the volume
+     *                          (see {@link VolumeBackupExport#getChangeTrackingId()}), missing if there is none
+     * @return per volume where to read it
+     */
+    default List<VolumeBackupExport> startBackupExport(StoragePool pool, String exportName, List<VolumeInfo> volumes,
+            Map<Long, String> changeTrackingIds) {
+        throw new UnsupportedOperationException("The storage driver does not export volumes for backups");
+    }
+
+    /**
+     * Releases everything {@link #startBackupExport} set up for the export (devices, snapshot). Does nothing for
+     * parts that are already released, so it can be called again after a failure.
+     */
+    default void finishBackupExport(StoragePool pool, String exportName, List<VolumeInfo> volumes) {
+        throw new UnsupportedOperationException("The storage driver does not export volumes for backups");
+    }
+
+    /**
+     * Makes the volume writable as a raw device on a host, to restore a backup into it.
+     */
+    default VolumeBackupExport prepareVolumeForRestore(StoragePool pool, VolumeInfo volume) {
+        throw new UnsupportedOperationException("The storage driver does not export volumes for backups");
+    }
 }

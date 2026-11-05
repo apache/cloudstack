@@ -18,6 +18,9 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,15 +28,18 @@ import org.apache.cloudstack.backup.CreateImageTransferAnswer;
 import org.apache.cloudstack.backup.CreateImageTransferCommand;
 import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.storage.resource.IpTablesHelper;
+import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.ImageServerControlSocket;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles = CreateImageTransferCommand.class)
@@ -42,6 +48,23 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
 
     private static final String IMAGE_SERVER_TLS_CERT_FILE = "/etc/cloudstack/agent/cloud.crt";
     private static final String IMAGE_SERVER_TLS_KEY_FILE = "/etc/cloudstack/agent/cloud.key";
+    private static final String IMAGE_TRANSFER_DIR = "/tmp/imagetransfer";
+
+    /**
+     * The file the image server reads the transfer's extents from, if the storage lists them.
+     */
+    static String getExtentsFile(String transferId) {
+        return IMAGE_TRANSFER_DIR + "/" + transferId + ".extents";
+    }
+
+    static void deleteExtentsFile(String transferId) {
+        try {
+            Files.deleteIfExists(Paths.get(getExtentsFile(transferId)));
+        } catch (IOException e) {
+            LogManager.getLogger(LibvirtCreateImageTransferCommandWrapper.class).warn(
+                    "Failed to delete the extents file of transfer {}", transferId, e);
+        }
+    }
 
     private void resetService(String unitName) {
         Script resetScript = new Script("/bin/bash", logger);
@@ -167,7 +190,25 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
             return new CreateImageTransferAnswer(cmd, false, "Failed to start image server.");
         }
 
+        if (MapUtils.isNotEmpty(cmd.getExtentsSource())) {
+            String extentsFile = getExtentsFile(transferId);
+            try {
+                KVMStoragePool pool = resource.getStoragePoolMgr().getStoragePool(
+                        cmd.getExtentsPoolType(), cmd.getExtentsPoolUuid());
+                if (pool == null) {
+                    throw new CloudRuntimeException("storage pool " + cmd.getExtentsPoolUuid() + " not found");
+                }
+                pool.writeExtents(cmd.getExtentsSource(), extentsFile);
+            } catch (CloudRuntimeException e) {
+                logger.error("Failed to list the extents of transfer {}", transferId, e);
+                deleteExtentsFile(transferId);
+                return new CreateImageTransferAnswer(cmd, false, "Failed to list the extents: " + e.getMessage());
+            }
+            payload.put("extents_file", extentsFile);
+        }
+
         if (!ImageServerControlSocket.registerTransfer(transferId, payload)) {
+            deleteExtentsFile(transferId);
             return new CreateImageTransferAnswer(cmd, false, "Failed to register transfer with image server.");
         }
 

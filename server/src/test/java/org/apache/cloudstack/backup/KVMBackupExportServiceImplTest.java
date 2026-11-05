@@ -22,9 +22,11 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,10 +36,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd;
 import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeBackupExport;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -49,6 +57,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -60,8 +69,10 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -90,6 +101,15 @@ public class KVMBackupExportServiceImplTest {
 
     @Mock
     BackupDao backupDao;
+
+    @Mock
+    BackupDetailsDao backupDetailsDao;
+
+    @Mock
+    DataStoreManager dataStoreManager;
+
+    @Mock
+    VolumeDetailsDao volumeDetailsDao;
 
     @Mock
     ImageTransferDao imageTransferDao;
@@ -338,7 +358,6 @@ public class KVMBackupExportServiceImplTest {
         ReflectionTestUtils.setField(transfer, "id", 501L);
         when(imageTransferDao.findById(501L)).thenReturn(transfer);
         when(backupDao.findById(11L)).thenReturn(backup);
-        when(backup.getHostId()).thenReturn(31L);
         when(backup.getVmId()).thenReturn(41L);
         when(vmInstanceDao.findById(41L)).thenReturn(vm);
         when(vm.getState()).thenReturn(State.Stopped);
@@ -463,5 +482,247 @@ public class KVMBackupExportServiceImplTest {
             assertEquals(ImageTransfer.Direction.download, created.getDirection());
             verify(agentManager, times(2)).send(eq(802L), any(Command.class));
         }
+    }
+
+    private StoragePoolVO mockStoragePool(long poolId, Storage.StoragePoolType type, PrimaryDataStoreDriver driver) {
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(poolId);
+        pool.setPoolType(type);
+        pool.setName("pool-" + poolId);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        if (driver != null) {
+            PrimaryDataStore dataStore = mock(PrimaryDataStore.class);
+            when(dataStore.getDriver()).thenReturn(driver);
+            when(dataStoreManager.getPrimaryDataStore(poolId)).thenReturn(dataStore);
+        }
+        return pool;
+    }
+
+    private VolumeVO mockVolume(long volumeId, long poolId) {
+        VolumeVO vol = mock(VolumeVO.class);
+        Mockito.lenient().when(vol.getId()).thenReturn(volumeId);
+        when(vol.getPoolId()).thenReturn(poolId);
+        return vol;
+    }
+
+    private VolumeInfo mockVolumeInfo(long volumeId, long poolId) {
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        Mockito.lenient().when(volumeInfo.getId()).thenReturn(volumeId);
+        when(volumeInfo.getPoolId()).thenReturn(poolId);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(volumeInfo);
+        return volumeInfo;
+    }
+
+    private BackupVO newBackup(long backupId, long vmId) {
+        BackupVO newBackup = new BackupVO();
+        ReflectionTestUtils.setField(newBackup, "id", backupId);
+        newBackup.setVmId(vmId);
+        newBackup.setHostId(42L);
+        newBackup.setToCheckpointId("ckp-1");
+        newBackup.setStatus(Backup.Status.Queued);
+        return newBackup;
+    }
+
+    private StartBackupCmd mockStartCmd(long backupId, long vmId) {
+        StartBackupCmd cmd = mock(StartBackupCmd.class);
+        when(cmd.getEntityId()).thenReturn(backupId);
+        when(cmd.getVmId()).thenReturn(vmId);
+        return cmd;
+    }
+
+    @Test
+    public void isStorageDriverExport_volumesOnExportedAndFilePools_throws() {
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        StoragePoolVO exportedPool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, driver);
+        when(driver.canExportVolumesForBackup(exportedPool)).thenReturn(true);
+        mockStoragePool(8L, Storage.StoragePoolType.NetworkFilesystem, null);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> service.isStorageDriverExport(List.of(mockVolume(3L, 7L), mockVolume(4L, 8L))));
+    }
+
+    @Test
+    public void startBackup_storageDriverExport_exportsVolumesWithoutHypervisorBackupJob() throws Exception {
+        KVMBackupExportServiceImpl spyService = spy(service);
+        doNothing().when(spyService).queueBackupFinalizeWaitWorkJob(any(), any());
+        BackupVO newBackup = newBackup(5L, 1L);
+        when(backupDao.findById(5L)).thenReturn(newBackup);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Running);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        StoragePoolVO pool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, driver);
+        when(driver.canExportVolumesForBackup(pool)).thenReturn(true);
+        VolumeVO vol = mockVolume(3L, 7L);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(vol));
+        VolumeInfo volumeInfo = mockVolumeInfo(3L, 7L);
+        when(driver.startBackupExport(pool, "ckp-1", List.of(volumeInfo), Collections.emptyMap()))
+                .thenReturn(List.of(new VolumeBackupExport(3L, 11L, "/dev/drbd1004", 1073741824L)));
+
+        spyService.startBackup(mockStartCmd(5L, 1L));
+
+        ArgumentCaptor<String> detailValue = ArgumentCaptor.forClass(String.class);
+        verify(backupDetailsDao).addDetail(eq(5L), eq("volume.export.3"), detailValue.capture(), eq(false));
+        assert detailValue.getValue().contains("/dev/drbd1004");
+        assertEquals(Backup.Status.ReadyForImageTransfer, newBackup.getStatus());
+        assertNotNull(newBackup.getCheckpointCreateTime());
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(spyService).queueBackupFinalizeWaitWorkJob(vm, newBackup);
+    }
+
+    @Test
+    public void startBackup_storageDriverExportFails_releasesExportsAndRemovesBackup() {
+        BackupVO newBackup = newBackup(5L, 1L);
+        when(backupDao.findById(5L)).thenReturn(newBackup);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Stopped);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        StoragePoolVO pool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, driver);
+        when(driver.canExportVolumesForBackup(pool)).thenReturn(true);
+        VolumeVO vol = mockVolume(3L, 7L);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(vol));
+        VolumeInfo volumeInfo = mockVolumeInfo(3L, 7L);
+        when(driver.startBackupExport(pool, "ckp-1", List.of(volumeInfo), Collections.emptyMap()))
+                .thenThrow(new CloudRuntimeException("Linstor: no usable host"));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> service.startBackup(mockStartCmd(5L, 1L)));
+
+        assert ex.getMessage().contains("no usable host");
+        verify(driver).finishBackupExport(pool, "ckp-1", List.of(volumeInfo));
+        verify(backupDao).remove(5L);
+        verify(backupDetailsDao, never()).addDetail(any(Long.class), any(), any(), any(Boolean.class));
+    }
+
+    @Test
+    public void finalizeBackup_storageDriverExport_releasesExportsInsteadOfStoppingBackupJob() throws Exception {
+        BackupVO newBackup = newBackup(5L, 1L);
+        newBackup.setCheckpointCreateTime(1700000000L);
+        when(backupDao.findById(5L)).thenReturn(newBackup);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(imageTransferDao.listByBackupId(5L)).thenReturn(Collections.emptyList());
+        when(backupDetailsDao.listDetailsKeyPairs(5L)).thenReturn(Map.of("volume.export.3",
+                "{\"volumeId\":3,\"hostId\":11,\"devicePath\":\"/dev/drbd1004\",\"sizeBytes\":1073741824," +
+                        "\"changeTrackingId\":\"CBT-3\"}"));
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        StoragePoolVO pool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, driver);
+        when(driver.canExportVolumesForBackup(pool)).thenReturn(true);
+        VolumeInfo volumeInfo = mockVolumeInfo(3L, 7L);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(1L)).thenReturn(new HashMap<>());
+        FinalizeBackupCmd cmd = mock(FinalizeBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(1L);
+        when(cmd.getBackupId()).thenReturn(5L);
+
+        service.finalizeBackup(cmd);
+
+        verify(driver).finishBackupExport(pool, "ckp-1", List.of(volumeInfo));
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(vmInstanceDetailsDao).addDetail(1L, VmDetailConstants.ACTIVE_CHECKPOINT_ID, "ckp-1", false);
+        // the next backup is incremental to this one
+        verify(volumeDetailsDao).addDetail(3L, KVMBackupExportServiceImpl.VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID,
+                "ckp-1:CBT-3", false);
+        assertEquals(Backup.Status.BackedUp, newBackup.getStatus());
+    }
+
+    @Test
+    public void saveChangeTrackingIds_volumeWithoutChangeTracking_removesOldId() {
+        service.saveChangeTrackingIds(newBackup(5L, 1L),
+                List.of(new VolumeBackupExport(3L, 11L, "/dev/drbd1004", 1073741824L)));
+
+        verify(volumeDetailsDao).removeDetail(3L, KVMBackupExportServiceImpl.VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID);
+        verify(volumeDetailsDao, never()).addDetail(any(Long.class), any(), any(), any(Boolean.class));
+    }
+
+    @Test
+    public void getChangeTrackingIds_onlyIdsOfBackupAtCheckpoint() {
+        String key = KVMBackupExportServiceImpl.VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID;
+        when(volumeDetailsDao.findDetail(3L, key)).thenReturn(new VolumeDetailVO(3L, key, "ckp-0:CBT-3", false));
+        // e.g. the active checkpoint was deleted, or the volume was backed up with another instance
+        when(volumeDetailsDao.findDetail(4L, key)).thenReturn(new VolumeDetailVO(4L, key, "ckp-9:CBT-4", false));
+        List<VolumeVO> volumes = List.of(mockVolume(3L, 7L), mockVolume(4L, 7L), mockVolume(5L, 7L));
+
+        assertEquals(Map.of(3L, "CBT-3"), service.getChangeTrackingIds(volumes, "ckp-0"));
+        assertEquals(Collections.emptyMap(), service.getChangeTrackingIds(volumes, null));
+    }
+
+    private List<Command> createDownloadTransferOfExport(String exportJson) throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUser()).thenReturn(user);
+
+            when(volumeDao.findById(3L)).thenReturn(volume);
+            when(volume.getId()).thenReturn(3L);
+            when(volume.getUuid()).thenReturn("vol-3");
+            when(volume.getDataCenterId()).thenReturn(1L);
+            when(imageTransferDao.findByVolume(3L)).thenReturn(null);
+
+            BackupVO newBackup = newBackup(5L, 1L);
+            newBackup.setFromCheckpointId("ckp-0");
+            when(backupDao.findById(5L)).thenReturn(newBackup);
+            when(vmInstanceDao.findById(1L)).thenReturn(vm);
+            when(backupDetailsDao.listDetailsKeyPairs(5L)).thenReturn(Map.of("volume.export.3", exportJson));
+            when(hostDao.findById(11L)).thenReturn(hostVO);
+            when(hostVO.getDataCenterId()).thenReturn(1L);
+            ArgumentCaptor<Command> commands = ArgumentCaptor.forClass(Command.class);
+            when(agentManager.send(eq(11L), commands.capture())).thenReturn(
+                    new StartNBDServerAnswer(null, true, null),
+                    new CreateImageTransferAnswer(null, true, null, "ticket-3", "https://transfer/nbd"));
+            when(imageTransferDao.persist(any(ImageTransferVO.class))).thenAnswer(i -> {
+                ImageTransferVO transfer = i.getArgument(0);
+                ReflectionTestUtils.setField(transfer, "id", 903L);
+                return transfer;
+            });
+
+            service.createImageTransfer(3L, 5L, ImageTransfer.Direction.download, ImageTransfer.Format.raw);
+
+            return commands.getAllValues();
+        }
+    }
+
+    @Test
+    public void createImageTransfer_downloadStorageDriverExport_servesDeviceOnExportHost() throws Exception {
+        List<Command> commands = createDownloadTransferOfExport(
+                "{\"volumeId\":3,\"hostId\":11,\"devicePath\":\"/dev/drbd1004\",\"sizeBytes\":1073741824}");
+
+        StartNBDServerCommand nbdCmd = (StartNBDServerCommand) commands.get(0);
+        assertEquals("/dev/drbd1004", nbdCmd.getVolumePath());
+        assertEquals(Long.valueOf(1073741824L), nbdCmd.getBlockDeviceSizeBytes());
+        assertEquals("download", nbdCmd.getDirection());
+        assert nbdCmd.getPassphrase() == null;
+        CreateImageTransferCommand transferCmd = (CreateImageTransferCommand) commands.get(1);
+        // the device has no dirty bitmap, and the storage lists no extents of this export either
+        assert transferCmd.getCheckpointId() == null;
+        assert transferCmd.getExtentsSource() == null;
+        assertEquals(nbdCmd.getSocket(), transferCmd.getSocket());
+    }
+
+    private CreateImageTransferCommand createDownloadTransferOfExportOnPool7(String exportJson) throws Exception {
+        StoragePoolVO pool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, null);
+        pool.setUuid("pool-7");
+        when(volume.getPoolId()).thenReturn(7L);
+        return (CreateImageTransferCommand) createDownloadTransferOfExport(exportJson).get(1);
+    }
+
+    @Test
+    public void createImageTransfer_downloadIncrementalStorageDriverExport_hasStorageListExtents() throws Exception {
+        CreateImageTransferCommand transferCmd = createDownloadTransferOfExportOnPool7(
+                "{\"volumeId\":3,\"hostId\":11,\"devicePath\":\"/dev/drbd1004\",\"sizeBytes\":1073741824," +
+                        "\"incremental\":true,\"extentsSource\":{\"snapshot\":\"ckp-1\",\"mode\":\"dirty\"}}");
+
+        assert transferCmd.getCheckpointId() == null;
+        assertEquals(Map.of("snapshot", "ckp-1", "mode", "dirty"), transferCmd.getExtentsSource());
+        assertEquals(Storage.StoragePoolType.Linstor, transferCmd.getExtentsPoolType());
+        assertEquals("pool-7", transferCmd.getExtentsPoolUuid());
+    }
+
+    @Test
+    public void createImageTransfer_downloadFullStorageDriverExport_hasStorageListExtents() throws Exception {
+        // a full export whose storage knows the extents that read as zeros
+        CreateImageTransferCommand transferCmd = createDownloadTransferOfExportOnPool7(
+                "{\"volumeId\":3,\"hostId\":11,\"devicePath\":\"/dev/drbd1004\",\"sizeBytes\":1073741824," +
+                        "\"extentsSource\":{\"snapshot\":\"ckp-1\",\"mode\":\"zero\"}}");
+
+        assertEquals(Map.of("snapshot", "ckp-1", "mode", "zero"), transferCmd.getExtentsSource());
+        assertEquals("pool-7", transferCmd.getExtentsPoolUuid());
     }
 }

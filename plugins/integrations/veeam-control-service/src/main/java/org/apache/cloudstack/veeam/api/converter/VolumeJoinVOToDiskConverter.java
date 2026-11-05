@@ -20,6 +20,7 @@ package org.apache.cloudstack.veeam.api.converter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.backup.Backup;
@@ -41,6 +42,18 @@ import com.cloud.storage.Volume;
 
 public class VolumeJoinVOToDiskConverter {
     public static Disk toDisk(final VolumeJoinVO vol, final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        return toDisk(vol, physicalSizeResolver, VolumeJoinVO::getFormat, v -> false);
+    }
+
+    /**
+     * @param formatResolver the format the volume's data is read and written in, which is not always the
+     *                       volume's image format (e.g. raw block devices exported by their storage driver)
+     * @param incrementalBackupResolver whether the changes of the volume are tracked, so that Veeam backs it up
+     *                                  incrementally (e.g. by the storage driver that exports it)
+     */
+    public static Disk toDisk(final VolumeJoinVO vol, final Function<VolumeJoinVO, Long> physicalSizeResolver,
+                              final Function<VolumeJoinVO, Storage.ImageFormat> formatResolver,
+                              final Predicate<VolumeJoinVO> incrementalBackupResolver) {
         final Disk disk = new Disk();
         final String basePath = VeeamControlService.ContextPath.value();
         final String apiBasePath = basePath + ApiRouteHandler.BASE_ROUTE;
@@ -72,7 +85,7 @@ public class VolumeJoinVOToDiskConverter {
         }
 
         // Disk format
-        disk.setFormat(mapFormat(vol.getFormat()));
+        disk.setFormat(mapFormat(formatResolver.apply(vol)));
         disk.setQcowVersion("qcow2_v3");
 
         // Content & storage
@@ -85,7 +98,7 @@ public class VolumeJoinVOToDiskConverter {
         disk.setStatus(mapStatus(vol.getState()));
 
         // Backup-related flags (safe defaults)
-        disk.setBackup("none");
+        disk.setBackup(incrementalBackupResolver.test(vol) ? "incremental" : "none");
         disk.setPropagateErrors("false");
         disk.setWipeAfterDelete("false");
 
@@ -116,8 +129,15 @@ public class VolumeJoinVOToDiskConverter {
 
     public static List<Disk> toDiskList(final List<VolumeJoinVO> srcList,
                         final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        return toDiskList(srcList, physicalSizeResolver, VolumeJoinVO::getFormat, v -> false);
+    }
+
+    public static List<Disk> toDiskList(final List<VolumeJoinVO> srcList,
+                        final Function<VolumeJoinVO, Long> physicalSizeResolver,
+                        final Function<VolumeJoinVO, Storage.ImageFormat> formatResolver,
+                        final Predicate<VolumeJoinVO> incrementalBackupResolver) {
         return srcList.stream()
-                .map(vo -> toDisk(vo, physicalSizeResolver))
+                .map(vo -> toDisk(vo, physicalSizeResolver, formatResolver, incrementalBackupResolver))
                 .collect(Collectors.toList());
     }
 
@@ -138,6 +158,13 @@ public class VolumeJoinVOToDiskConverter {
 
     public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol,
                            final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        return toDiskAttachment(vol, physicalSizeResolver, VolumeJoinVO::getFormat, v -> false);
+    }
+
+    public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol,
+                           final Function<VolumeJoinVO, Long> physicalSizeResolver,
+                           final Function<VolumeJoinVO, Storage.ImageFormat> formatResolver,
+                           final Predicate<VolumeJoinVO> incrementalBackupResolver) {
         final DiskAttachment da = new DiskAttachment();
         final String basePath = VeeamControlService.ContextPath.value();
 
@@ -148,7 +175,7 @@ public class VolumeJoinVOToDiskConverter {
         da.setHref(da.getVm().getHref() + "/diskattachments/" + diskAttachmentId);;
 
         // Links
-        da.setDisk(toDisk(vol, physicalSizeResolver));
+        da.setDisk(toDisk(vol, physicalSizeResolver, formatResolver, incrementalBackupResolver));
 
         // Properties
         da.setActive("true");
@@ -165,8 +192,15 @@ public class VolumeJoinVOToDiskConverter {
 
     public static List<DiskAttachment> toDiskAttachmentList(final List<VolumeJoinVO> srcList,
                             final Function<VolumeJoinVO, Long> physicalSizeResolver) {
+        return toDiskAttachmentList(srcList, physicalSizeResolver, VolumeJoinVO::getFormat, v -> false);
+    }
+
+    public static List<DiskAttachment> toDiskAttachmentList(final List<VolumeJoinVO> srcList,
+                            final Function<VolumeJoinVO, Long> physicalSizeResolver,
+                            final Function<VolumeJoinVO, Storage.ImageFormat> formatResolver,
+                            final Predicate<VolumeJoinVO> incrementalBackupResolver) {
         return srcList.stream()
-                .map(vo -> toDiskAttachment(vo, physicalSizeResolver))
+                .map(vo -> toDiskAttachment(vo, physicalSizeResolver, formatResolver, incrementalBackupResolver))
                 .collect(Collectors.toList());
     }
 

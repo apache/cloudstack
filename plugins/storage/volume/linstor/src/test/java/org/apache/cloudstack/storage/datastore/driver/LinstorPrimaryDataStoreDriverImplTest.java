@@ -16,24 +16,38 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
+import com.linbit.linstor.api.model.ApiCallRc;
+import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.CbtExtents;
+import com.linbit.linstor.api.model.CbtSession;
+import com.linbit.linstor.api.model.CbtSessionStart;
+import com.linbit.linstor.api.model.CbtSessionVolume;
+import com.linbit.linstor.api.model.ControllerVersion;
+import com.linbit.linstor.api.model.CreateMultiSnapshotRequest;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.ResourceGroup;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.StoragePool;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeBackupExport;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -47,8 +61,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -285,5 +302,266 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
         Assert.assertFalse("canCopy should return false when destination is Image store",
                 linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+    }
+
+    private LinstorPrimaryDataStoreDriverImpl driverWithApi(StoragePool pool) {
+        LinstorPrimaryDataStoreDriverImpl driver = Mockito.spy(linstorPrimaryDataStoreDriver);
+        Mockito.doReturn(api).when(driver).getLinstorAPI(pool);
+        return driver;
+    }
+
+    @Test
+    public void testCanExportVolumesForBackupCachesOnlyAnsweredVersions() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        when(pool.getId()).thenReturn(1L);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        ControllerVersion version = new ControllerVersion();
+        version.setRestApiVersion("1.30.0");
+        when(api.controllerVersion()).thenThrow(new ApiException(503, "unavailable")).thenReturn(version);
+
+        // a controller that can't be asked isn't cached as not supporting CBT
+        Assert.assertFalse(driver.canExportVolumesForBackup(pool));
+        Assert.assertTrue(driver.canExportVolumesForBackup(pool));
+        Assert.assertTrue(driver.canExportVolumesForBackup(pool));
+        Mockito.verify(api, Mockito.times(2)).controllerVersion();
+    }
+
+    private VolumeInfo mockBackupVolume(long id, String path, long size) {
+        VolumeInfo volume = mock(VolumeInfo.class);
+        Mockito.lenient().when(volume.getId()).thenReturn(id);
+        when(volume.getPath()).thenReturn(path);
+        Mockito.lenient().when(volume.getSize()).thenReturn(size);
+        return volume;
+    }
+
+    private Host mockHost(long id, String name) {
+        Host host = mock(Host.class);
+        Mockito.lenient().when(host.getId()).thenReturn(id);
+        when(host.getName()).thenReturn(name);
+        return host;
+    }
+
+    private static CbtSession cbtSession(String rscName, String node, String devicePath, String cbtId) {
+        CbtSessionVolume volume = new CbtSessionVolume();
+        volume.setVolumeNumber(0);
+        volume.setDevicePath(devicePath);
+        volume.setVolumeSize(1077665792L);
+        CbtSession session = new CbtSession();
+        session.setResourceName(rscName);
+        session.setNode(node);
+        session.setCbtId(cbtId);
+        session.setVolumes(Collections.singletonList(volume));
+        return session;
+    }
+
+    private static ApiCallRcList answers(long retCode, String message) {
+        ApiCallRc rc = new ApiCallRc();
+        rc.setRetCode(retCode);
+        rc.setMessage(message);
+        ApiCallRcList list = new ApiCallRcList();
+        list.add(rc);
+        return list;
+    }
+
+    @Test
+    public void testStartBackupExportTakesCbtMultiSnapshotAndReadsOnDiskfulHosts() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        VolumeInfo data = mockBackupVolume(2L, "vol-b", 2147483648L);
+        Host hostA = mockHost(11L, "node-a");
+        Host hostB = mockHost(12L, "node-b");
+        Mockito.doReturn(hostA).when(driver).getDiskfulHost(api, pool, "cs-vol-a");
+        Mockito.doReturn(hostB).when(driver).getDiskfulHost(api, pool, "cs-vol-b");
+        when(api.createMultiSnapshot(Mockito.any())).thenReturn(answers(ApiConsts.MASK_SUCCESS, "snapshot created"));
+        when(api.snapshotCbtSessionStart(Mockito.eq("cs-vol-a"), Mockito.eq("ckp-1"), Mockito.any()))
+                .thenReturn(cbtSession("cs-vol-a_cbt_1", "node-a", "/dev/drbd1004", "CBT-A"));
+        when(api.snapshotCbtSessionStart(Mockito.eq("cs-vol-b"), Mockito.eq("ckp-1"), Mockito.any()))
+                .thenReturn(cbtSession("cs-vol-b_cbt_1", "node-b", "/dev/drbd1005", "CBT-B"));
+
+        List<VolumeBackupExport> exports = driver.startBackupExport(pool, "ckp-1", Arrays.asList(root, data),
+                Collections.emptyMap());
+
+        ArgumentCaptor<CreateMultiSnapshotRequest> snapshotCaptor = ArgumentCaptor.forClass(CreateMultiSnapshotRequest.class);
+        Mockito.verify(api).createMultiSnapshot(snapshotCaptor.capture());
+        Assert.assertEquals(2, snapshotCaptor.getValue().getSnapshots().size());
+        snapshotCaptor.getValue().getSnapshots().forEach(snap -> {
+            Assert.assertEquals("ckp-1", snap.getName());
+            Assert.assertEquals(Collections.singletonList("CBT"), snap.getFlags());
+        });
+        Assert.assertEquals("cs-vol-a", snapshotCaptor.getValue().getSnapshots().get(0).getResourceName());
+        Assert.assertEquals("cs-vol-b", snapshotCaptor.getValue().getSnapshots().get(1).getResourceName());
+
+        ArgumentCaptor<CbtSessionStart> sessionCaptor = ArgumentCaptor.forClass(CbtSessionStart.class);
+        Mockito.verify(api).snapshotCbtSessionStart(Mockito.eq("cs-vol-a"), Mockito.eq("ckp-1"), sessionCaptor.capture());
+        Assert.assertEquals("node-a", sessionCaptor.getValue().getNode());
+
+        Assert.assertEquals(2, exports.size());
+        VolumeBackupExport rootExport = exports.get(0);
+        Assert.assertEquals(1L, rootExport.getVolumeId());
+        Assert.assertEquals(11L, rootExport.getHostId());
+        Assert.assertEquals("/dev/drbd1004", rootExport.getDevicePath());
+        // clipped to the CloudStack volume size, not the larger DRBD device
+        Assert.assertEquals(1073741824L, rootExport.getSizeBytes());
+        Assert.assertEquals("CBT-A", rootExport.getChangeTrackingId());
+        Assert.assertEquals(12L, exports.get(1).getHostId());
+        Assert.assertEquals("CBT-B", exports.get(1).getChangeTrackingId());
+    }
+
+    private static CbtExtents cbtExtents(String baseCbtId) {
+        CbtExtents extents = new CbtExtents();
+        extents.setBaseCbtId(baseCbtId);
+        extents.setVolumeSize(1077665792L);
+        return extents;
+    }
+
+    private LinstorPrimaryDataStoreDriverImpl driverForSessions(StoragePool pool, String... rscNames) throws ApiException {
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        Host host = mockHost(11L, "node-a");
+        when(api.createMultiSnapshot(Mockito.any())).thenReturn(answers(ApiConsts.MASK_SUCCESS, "snapshot created"));
+        for (String rscName : rscNames) {
+            Mockito.doReturn(host).when(driver).getDiskfulHost(api, pool, rscName);
+            when(api.snapshotCbtSessionStart(Mockito.eq(rscName), Mockito.eq("ckp-2"), Mockito.any()))
+                    .thenReturn(cbtSession(rscName + "_cbt_1", "node-a", "/dev/drbd1004", "CBT-NEW-" + rscName));
+        }
+        return driver;
+    }
+
+    @Test
+    public void testStartBackupExportIncrementalOnlyIfChangesAreSinceLastBackup() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverForSessions(pool, "cs-vol-a", "cs-vol-b");
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        VolumeInfo data = mockBackupVolume(2L, "vol-b", 2147483648L);
+        when(api.snapshotCbtSessionExtents("cs-vol-a", "ckp-2", 0, 0L, 1, "dirty")).thenReturn(cbtExtents("CBT-A"));
+        // tracking restarted since the last backup, e.g. by a failed backup
+        when(api.snapshotCbtSessionExtents("cs-vol-b", "ckp-2", 0, 0L, 1, "dirty")).thenReturn(cbtExtents("CBT-FAILED"));
+        when(api.snapshotCbtSessionExtents("cs-vol-b", "ckp-2", 0, 0L, 1, "zero")).thenReturn(cbtExtents(null));
+        Map<Long, String> lastIds = new HashMap<>();
+        lastIds.put(1L, "CBT-A");
+        lastIds.put(2L, "CBT-B");
+
+        List<VolumeBackupExport> exports = driver.startBackupExport(pool, "ckp-2", Arrays.asList(root, data), lastIds);
+
+        VolumeBackupExport rootExport = exports.get(0);
+        Assert.assertTrue(rootExport.isIncremental());
+        Assert.assertEquals("CBT-NEW-cs-vol-a", rootExport.getChangeTrackingId());
+        Assert.assertEquals("cs-vol-a", rootExport.getExtentsSource().get(LinstorUtil.CBT_EXTENTS_RESOURCE));
+        Assert.assertEquals("ckp-2", rootExport.getExtentsSource().get(LinstorUtil.CBT_EXTENTS_SNAPSHOT));
+        Assert.assertEquals("dirty", rootExport.getExtentsSource().get(LinstorUtil.CBT_EXTENTS_MODE));
+        Assert.assertEquals("CBT-A", rootExport.getExtentsSource().get(LinstorUtil.CBT_EXTENTS_BASE_CBT_ID));
+        VolumeBackupExport dataExport = exports.get(1);
+        Assert.assertFalse(dataExport.isIncremental());
+        Assert.assertEquals("CBT-NEW-cs-vol-b", dataExport.getChangeTrackingId());
+        // a full backup still skips the never written extents
+        Assert.assertEquals("zero", dataExport.getExtentsSource().get(LinstorUtil.CBT_EXTENTS_MODE));
+        Assert.assertNull(dataExport.getExtentsSource().get(LinstorUtil.CBT_EXTENTS_BASE_CBT_ID));
+    }
+
+    @Test
+    public void testStartBackupExportFullWithoutUsableChanges() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverForSessions(pool, "cs-vol-a", "cs-vol-b");
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        VolumeInfo data = mockBackupVolume(2L, "vol-b", 2147483648L);
+        when(api.snapshotCbtSessionExtents("cs-vol-a", "ckp-2", 0, 0L, 1, "dirty"))
+                .thenThrow(new ApiException(500, "The snapshot holds no changes to rely on"));
+        // e.g. drbd-utils without the zero extents
+        when(api.snapshotCbtSessionExtents("cs-vol-a", "ckp-2", 0, 0L, 1, "zero"))
+                .thenThrow(new ApiException(500, "The snapshot holds no record of the never written extents"));
+        when(api.snapshotCbtSessionExtents("cs-vol-b", "ckp-2", 0, 0L, 1, "zero")).thenReturn(cbtExtents(null));
+
+        List<VolumeBackupExport> exports = driver.startBackupExport(pool, "ckp-2", Arrays.asList(root, data),
+                Collections.singletonMap(1L, "CBT-A"));
+
+        Assert.assertFalse(exports.get(0).isIncremental());
+        Assert.assertNull(exports.get(0).getExtentsSource());
+        Assert.assertFalse(exports.get(1).isIncremental());
+        Assert.assertEquals("zero", exports.get(1).getExtentsSource().get(LinstorUtil.CBT_EXTENTS_MODE));
+        // without a last backup there is nothing to compare
+        Mockito.verify(api, Mockito.never()).snapshotCbtSessionExtents("cs-vol-b", "ckp-2", 0, 0L, 1, "dirty");
+    }
+
+    @Test
+    public void testStartBackupExportFailsWithoutSessionsIfSnapshotFails() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        when(api.createMultiSnapshot(Mockito.any()))
+                .thenReturn(answers(ApiConsts.FAIL_CBT_NOT_SUPPORTED, "CBT needs DRBD on LVM, LVM-thin, ZFS or ZFS-thin"));
+
+        CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
+                () -> driver.startBackupExport(pool, "ckp-1", Collections.singletonList(root), Collections.emptyMap()));
+
+        Assert.assertTrue(ex.getMessage().contains("CBT needs DRBD"));
+        Mockito.verify(api, Mockito.never()).snapshotCbtSessionStart(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testFinishBackupExportFinishesSessionsBeforeDeletingSnapshots() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        when(api.snapshotCbtSessionFinish("cs-vol-a", "ckp-1")).thenReturn(answers(ApiConsts.MASK_SUCCESS, "finished"));
+        when(api.resourceSnapshotDelete("cs-vol-a", "ckp-1", Collections.emptyList(), null))
+                .thenReturn(answers(ApiConsts.MASK_SUCCESS, "deleted"));
+
+        driver.finishBackupExport(pool, "ckp-1", Collections.singletonList(root));
+
+        InOrder inOrder = Mockito.inOrder(api);
+        inOrder.verify(api).snapshotCbtSessionFinish("cs-vol-a", "ckp-1");
+        inOrder.verify(api).resourceSnapshotDelete("cs-vol-a", "ckp-1", Collections.emptyList(), null);
+    }
+
+    @Test
+    public void testFinishBackupExportIgnoresAlreadyReleasedParts() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        when(api.snapshotCbtSessionFinish("cs-vol-a", "ckp-1")).thenThrow(new ApiException(404, "not found"));
+        when(api.resourceSnapshotDelete("cs-vol-a", "ckp-1", Collections.emptyList(), null))
+                .thenThrow(new ApiException(404, "not found"));
+
+        driver.finishBackupExport(pool, "ckp-1", Collections.singletonList(root));
+    }
+
+    @Test
+    public void testFinishBackupExportReportsSnapshotDeleteErrorAndContinues() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo root = mockBackupVolume(1L, "vol-a", 1073741824L);
+        VolumeInfo data = mockBackupVolume(2L, "vol-b", 1073741824L);
+        when(api.snapshotCbtSessionFinish(Mockito.anyString(), Mockito.eq("ckp-1")))
+                .thenReturn(answers(ApiConsts.MASK_SUCCESS, "finished"));
+        when(api.resourceSnapshotDelete("cs-vol-a", "ckp-1", Collections.emptyList(), null))
+                .thenReturn(answers(ApiConsts.FAIL_IN_USE, "snapshot in use"));
+        when(api.resourceSnapshotDelete("cs-vol-b", "ckp-1", Collections.emptyList(), null))
+                .thenReturn(answers(ApiConsts.MASK_SUCCESS, "deleted"));
+
+        CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
+                () -> driver.finishBackupExport(pool, "ckp-1", Arrays.asList(root, data)));
+
+        Assert.assertTrue(ex.getMessage().contains("cs-vol-a/ckp-1: snapshot in use"));
+        Mockito.verify(api).resourceSnapshotDelete("cs-vol-b", "ckp-1", Collections.emptyList(), null);
+    }
+
+    @Test
+    public void testPrepareVolumeForRestoreUsesDiskfulHost() throws ApiException {
+        StoragePool pool = mock(StoragePool.class);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo volume = mockBackupVolume(3L, "vol-c", 1073741824L);
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(13L);
+        Mockito.doReturn(host).when(driver).getDiskfulHost(api, pool, "cs-vol-c");
+        try (MockedStatic<LinstorUtil> linstorUtil = Mockito.mockStatic(LinstorUtil.class)) {
+            linstorUtil.when(() -> LinstorUtil.getDevicePath(api, "cs-vol-c")).thenReturn("/dev/drbd/by-res/cs-vol-c/0");
+
+            VolumeBackupExport target = driver.prepareVolumeForRestore(pool, volume);
+
+            Assert.assertEquals(13L, target.getHostId());
+            Assert.assertEquals("/dev/drbd/by-res/cs-vol-c/0", target.getDevicePath());
+            Assert.assertEquals(1073741824L, target.getSizeBytes());
+        }
+        Mockito.verify(api, Mockito.never()).resourceMakeAvailableOnNode(Mockito.any(), Mockito.any(), Mockito.any());
     }
 }
