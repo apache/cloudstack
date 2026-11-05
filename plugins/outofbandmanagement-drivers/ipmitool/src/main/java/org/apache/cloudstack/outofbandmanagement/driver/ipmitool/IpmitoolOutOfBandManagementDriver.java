@@ -120,7 +120,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
 
         final OutOfBandManagementDriverResponse response = IPMITOOL.executeCommands(ipmiToolCommands, cmd.getTimeout());
 
-        String oneLineCommand = StringUtils.join(IPMITOOL.getSanatisedCommandStrings(ipmiToolCommands), " ");
+        String oneLineCommand = StringUtils.join(IPMITOOL.getSanitisedCommandStrings(ipmiToolCommands), " ");
         String result = response.getResult().trim();
 
         if (response.isSuccess()) {
