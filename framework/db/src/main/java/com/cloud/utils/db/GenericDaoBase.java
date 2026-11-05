@@ -33,6 +33,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -1632,10 +1633,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         ID id = null;
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        final boolean nested = txn.dbTxnStarted();
+        Savepoint savepoint = null;
+        boolean committed = false;
         PreparedStatement pstmt = null;
         String sql = null;
         try {
-            txn.start();
+            if (nested) {
+                // Inside the caller's transaction, so a failure must only undo this insert
+                savepoint = txn.setSavepoint();
+            } else {
+                txn.start();
+            }
             for (final Pair<String, Attribute[]> pair : _insertSqls) {
                 sql = pair.first();
                 final Attribute[] attrs = pair.second();
@@ -1681,7 +1690,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
                 insertElementCollection(entity, _idAttributes.get(_table)[0], id, ecAttributes);
             }
-            txn.commit();
+            if (nested) {
+                txn.releaseSavepoint(savepoint);
+            } else {
+                txn.commit();
+            }
+            committed = true;
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             handleEntityExistsException(e);
@@ -1690,6 +1704,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             throw new CloudRuntimeException("Problem with getting the ec attribute ", e);
         } catch (IllegalAccessException e) {
             throw new CloudRuntimeException("Problem with getting the ec attribute ", e);
+        } finally {
+            if (!committed) {
+                if (!nested) {
+                    txn.rollback();
+                } else if (savepoint != null) {
+                    txn.rollback(savepoint);
+                }
+            }
         }
 
         return _idField != null ? findByIdIncludingRemoved(id) : null;
