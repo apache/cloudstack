@@ -56,6 +56,7 @@ import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.logging.log4j.ThreadContext;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -79,7 +80,7 @@ import java.util.stream.Collectors;
 public class BackupReportServiceImpl extends ManagerBase implements Configurable, BackupReportService {
 
     protected ConfigKey<Boolean> backupReportTaskEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "backup.report.task.enabled", "false", "Whether the backup report task should run or not.", true, ConfigKey.Scope.Zone);
+            "backup.report.task.enabled", "false", "Whether the backup report task should run or not.", true, ConfigKey.Scope.Global);
 
     protected ConfigKey<Integer> backupReportPeriod = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "backup.report.period", "1440", "The period of time, in minutes, between two executions of the backup report task. The report will always contain all information" +
@@ -96,7 +97,7 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
 
     private final List<Backup.Status> aliveBackupStates = List.of(Backup.Status.BackedUp, Backup.Status.Restoring);
     private final List<Backup.Status> errorBackupStates = List.of(Backup.Status.Error, Backup.Status.Failed);
-    private final List<Backup.Status> removedBackupStates = List.of(Backup.Status.Removed, Backup.Status.Expunged, Backup.Status.Hidden);
+    private final List<Backup.Status> removedBackupStates = List.of(Backup.Status.Removed, Backup.Status.Expunged);
     private final List<Backup.Status> creatingBackupStates = List.of(Backup.Status.BackingUp, Backup.Status.ReadyForImageTransfer, Backup.Status.FinalizingImageTransfer);
 
     private ScheduledExecutorService scheduledExecutor;
@@ -216,7 +217,7 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         return backupReportResponse;
     }
 
-    private void addReportsOnFutureBackups(Date startDate, Date endDate, Long zoneId, Long domainId, Long accountId, BackupReportResponse backupReportResponse) {
+    protected void addReportsOnFutureBackups(Date startDate, Date endDate, Long zoneId, Long domainId, Long accountId, BackupReportResponse backupReportResponse) {
         Date now = new Date();
         if (endDate.before(now)) {
             logger.debug("End date [{}] is before now [{}], not adding report on future backups.", endDate, now);
@@ -236,7 +237,7 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         }
     }
 
-    private void addReportsOnExistingBackups(Date startDate, Date endDate, Long zoneId, Long domainId, Long accountId, BackupReportResponse backupReportResponse) {
+    protected void addReportsOnExistingBackups(Date startDate, Date endDate, Long zoneId, Long domainId, Long accountId, BackupReportResponse backupReportResponse) {
         List<BackupReportJoinVO> backupInfos = backupReportJoinDao.listByZoneAndDomainAndAccountAndBetweenDates(zoneId, domainId, accountId, startDate,
                 endDate);
         long currentDomainId = -1;
@@ -276,6 +277,9 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         if (creatingBackupStates.contains(backupInfo.getStatus())) {
             return;
         }
+        if (backupInfo.getStatus() == Backup.Status.Hidden) {
+            return;
+        }
         logger.trace("Adding report for backup [{}].", backupInfo.getBackupUuid());
         BackupResponse backupResponse = new BackupResponse();
         backupResponse.setBackupOffering(backupInfo.getOfferingName());
@@ -290,7 +294,7 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         if (removedBackupStates.contains(backupInfo.getStatus()) && backupInfo.getRemoved().before(endDate)) {
             backupResponse.setRemoved(backupInfo.getRemoved());
             currentAccountResponse.addDeletedBackup(backupResponse);
-        } else if (aliveBackupStates.contains(backupInfo.getStatus()) || backupInfo.getFailureReason() == null) {
+        } else if (aliveBackupStates.contains(backupInfo.getStatus())) {
             double backupSizeInGib = backupInfo.getSize() / GIB;
             backupReportResponse.addStorageUsage(backupSizeInGib);
             currentDomainResponse.addStorageUsage(backupSizeInGib);
@@ -390,8 +394,8 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         }
     }
 
-    private boolean isLastTaskRunning(BackupReportVO latestReport) {
-        Calendar timeout = Calendar.getInstance();
+    protected boolean isLastTaskRunning(BackupReportVO latestReport) {
+        Calendar timeout = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         timeout.add(Calendar.MINUTE, -backupReportTimeout.value());
         if (latestReport != null && latestReport.getRemoved() == null) {
             if (latestReport.getCreated().before(timeout.getTime())) {
@@ -405,14 +409,13 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         return false;
     }
 
-    private Calendar getStart(BackupReportVO latestReport, int period) {
+    protected Calendar getStart(BackupReportVO latestReport, int period) {
         Calendar start = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         if (latestReport == null || !latestReport.isTaskEnabled()) {
             logger.info("Last report not found or task was disabled, will get the report from the last [{}] minutes.", period);
             start.add(Calendar.MINUTE, -period);
         } else {
-            Calendar lastReportStart = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-            lastReportStart.setTime(latestReport.getCreated());
+            Calendar lastReportStart = getLastReportStart(latestReport);
             if (ChronoUnit.MINUTES.between(lastReportStart.toInstant(), start.toInstant()) < period) {
                 logger.debug("Last report was less then [{}] minutes ago. Skipping execution.", period);
                 return null;
@@ -422,7 +425,16 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         return start;
     }
 
-    private boolean isTaskDisabled(BackupReportVO latestReport) {
+    /**
+     * Method created to facilitate testing
+     * */
+    protected Calendar getLastReportStart(BackupReportVO latestReport) {
+        Calendar lastReportStart = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        lastReportStart.setTime(latestReport.getCreated());
+        return lastReportStart;
+    }
+
+    protected boolean isTaskDisabled(BackupReportVO latestReport) {
         if (backupReportTaskEnabled.value()) {
             return false;
         }

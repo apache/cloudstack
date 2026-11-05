@@ -46,7 +46,7 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
             "        \n" +
             "\n" +
             "        <#list account.successfulBackups>\n" +
-            "            <p>Successfully created backups for the ${(account.accountName??)?then(\"project\",\"account\")}:</p>\n" +
+            "            <p>Successfully created backups for the ${(account.accountName??)?then(\"account\",\"project\")}:</p>\n" +
             "            <ul>\n" +
             "            <#items as backup>\n" +
             "                <li>Backup ${backup.name!\"without name\"} with ID ${backup.id} of VM ${backup.vmName} with ID ${backup.vmId} was created at ${backup.date?datetime};</li>\n" +
@@ -55,7 +55,7 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
             "        </#list>\n" +
             "\n" +
             "        <#list account.failedBackups>\n" +
-            "            <p>Failed backups for the ${(account.accountName??)?then(\"project\",\"account\")}:</p>\n" +
+            "            <p>Failed backups for the ${(account.accountName??)?then(\"account\",\"project\")}:</p>\n" +
             "            <ul>\n" +
             "\n" +
             "            <#items as backup>\n" +
@@ -77,7 +77,7 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
             "        </#list>\n" +
             "\n" +
             "        <#list account.deletedBackups>\n" +
-            "            <p>Removed backups for the ${(account.accountName??)?then(\"project\",\"account\")}:</p>  \n" +
+            "            <p>Removed backups for the ${(account.accountName??)?then(\"account\",\"project\")}:</p>  \n" +
             "            <ul>\n" +
             "            <#items as backup>\n" +
             "                <li>Backup ${backup.name} with ID ${backup.id} of VM ${backup.vmName} with ID ${backup.vmId} was created at ${(backup.date?datetime)!\"unable to get date\"} and deleted at ${backup.removed?datetime};</li>\n" +
