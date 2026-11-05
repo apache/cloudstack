@@ -156,6 +156,7 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ImageStoreUploadMonitorImpl;
@@ -276,6 +277,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private LaunchPermissionDao _launchPermissionDao;
     @Inject
     private ProjectManager _projectMgr;
+    @Inject
+    private ProjectAccountDao _projectAccountDao;
     @Inject
     private VolumeDataFactory _volFactory;
     @Inject
@@ -1544,6 +1547,24 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return accountNames;
     }
 
+    /**
+     * Checks whether the caller is a Project Admin of the project that owns the template, resolving the project from the
+     * owner account itself rather than from the project of the API call.
+     */
+    protected boolean isAdminOfOwningProject(Account caller, User user, Account owner) {
+        if (owner.getType() != Account.Type.PROJECT) {
+            return false;
+        }
+        Project project = _projectMgr.findByProjectAccountId(owner.getId());
+        if (project == null) {
+            return false;
+        }
+        if (_projectAccountDao.findByProjectIdUserId(project.getId(), caller.getId(), user.getId()) != null) {
+            return _projectAccountDao.canUserModifyProject(project.getId(), caller.getId(), user.getId());
+        }
+        return _projectAccountDao.canModifyProjectAccount(caller.getId(), owner.getId());
+    }
+
     @DB
     @Override
     public boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd) {
@@ -1627,6 +1648,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
         boolean isAdmin = _accountMgr.isAdmin(caller.getId());
+        boolean isProjectTemplateOwnerAdmin = isAdminOfOwningProject(caller, user, owner);
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(template.getAccountId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
@@ -1640,8 +1662,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        //Only admin or owner of the template should be able to change its permissions
-        if (caller.getId() != ownerId && !isAdmin) {
+        //Only admin, owner, or the project admin of a project-owned template should be able to change its permissions
+        if (caller.getId() != ownerId && !isAdmin && !isProjectTemplateOwnerAdmin) {
             throw new InvalidParameterValueException("Unable to grant permission to Account " + caller.getAccountName() + " as it is neither admin nor owner or the Template");
         }
 
@@ -1657,7 +1679,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isExtractable != null) {
             // Only Root admins and owners are allowed to change it for templates
-            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin) {
+            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getId() != ownerId && !isAdmin && !isProjectTemplateOwnerAdmin) {
                 throw new InvalidParameterValueException("Only ROOT admins and Template owners are allowed to modify isExtractable attribute.");
             } else {
                 // For Isos normal user can change it, as their are no derivatives.
