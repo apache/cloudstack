@@ -19,6 +19,7 @@
 for use in the configuration process
 
 """
+import socket
 import subprocess
 import logging
 import sys
@@ -270,3 +271,20 @@ def copy(src, dest):
         logging.error("Could not copy %s to %s" % (src, dest))
     else:
         logging.info("Copied %s to %s" % (src, dest))
+
+
+def send_dhcp_release(device, server_id, ip, mac):
+    """ Sends the DHCPRELEASE that dhcp_release sends, but with the given server identifier.
+    dhcp_release uses the first address of the device, and dnsmasq silently drops a release
+    that does not carry the address it serves on (the gateway on a redundant router). """
+    packet = bytearray(548)
+    packet[0:3] = bytes([1, 1, 6])  # BOOTREQUEST, Ethernet, hlen
+    packet[12:16] = socket.inet_aton(ip)  # ciaddr
+    packet[28:34] = bytes.fromhex(mac.replace(':', ''))  # chaddr
+    packet[236:250] = bytes([99, 130, 83, 99, 53, 1, 7, 54, 4]) + socket.inet_aton(server_id) + bytes([255])
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, device.encode())
+        sock.sendto(bytes(packet), (server_id, 67))
+    finally:
+        sock.close()
