@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVmService;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "assignVirtualMachine",
@@ -126,8 +127,11 @@ public class AssignVMCmd extends BaseCmd  {
             setResponseObject(response);
         } catch (Exception e) {
             ApiErrorCode errorCode = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
-            String msg = String.format("Failed to move Instance due to [%s].", getVmId());
+            String msg = String.format("Failed to move Instance [%s].", getVmId());
             logger.error(msg, e);
+            if (e instanceof InvalidParameterValueException && Boolean.TRUE.equals(UserVmService.AllowExposingVmAssignFailureDetails.value())) {
+                msg = String.format("Failed to move Instance [%s]: %s", getVmId(), e.getMessage());
+            }
             throw new ServerApiException(errorCode, msg);
         }
     }
