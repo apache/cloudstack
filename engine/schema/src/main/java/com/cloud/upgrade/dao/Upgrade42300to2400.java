@@ -16,6 +16,14 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+
 public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     @Override
@@ -26,5 +34,27 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     @Override
     public String getUpgradedVersion() {
         return "24.0.0";
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        encryptUserData(conn, "user_vm");
+        encryptUserData(conn, "user_data");
+        encryptUserData(conn, "autoscale_vmprofiles");
+    }
+
+    private void encryptUserData(Connection conn, String table) {
+        try (PreparedStatement selectStatement = conn.prepareStatement(String.format("SELECT `id`, `user_data` FROM `cloud`.`%s` WHERE `user_data` IS NOT NULL", table));
+             ResultSet resultSet = selectStatement.executeQuery();
+             PreparedStatement updateStatement = conn.prepareStatement(String.format("UPDATE `cloud`.`%s` SET `user_data` = ? WHERE `id` = ?", table))) {
+            while (resultSet.next()) {
+                updateStatement.setString(1, DBEncryptionUtil.encrypt(resultSet.getString(2)));
+                updateStatement.setLong(2, resultSet.getLong(1));
+                updateStatement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(String.format("Failed to encrypt user_data in table %s", table), e);
+        }
+        logger.debug("Encrypted user_data in table {}", table);
     }
 }

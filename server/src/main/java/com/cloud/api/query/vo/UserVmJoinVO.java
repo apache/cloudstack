@@ -45,6 +45,7 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.util.StoragePoolTypeConverter;
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -411,6 +412,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "nic_dns_name")
     private String nicDnsName;
 
+    @Encrypt
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
