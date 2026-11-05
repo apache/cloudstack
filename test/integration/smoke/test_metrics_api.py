@@ -68,6 +68,23 @@ class TestMetrics(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
+        cls.network = None
+        if cls.zone.networktype.lower() == 'advanced':
+            cls.network_offering = NetworkOffering.create(
+                cls.apiclient,
+                cls.services["l2-network_offering"]
+            )
+            cls._cleanup.append(cls.network_offering)
+            cls.network_offering.update(cls.apiclient, state="enabled")
+            cls.network = Network.create(
+                cls.apiclient,
+                cls.services["l2-network"],
+                accountid=cls.account.name,
+                domainid=cls.account.domainid,
+                networkofferingid=cls.network_offering.id,
+                zoneid=cls.zone.id
+            )
+            cls._cleanup.append(cls.network)
         cls.hypervisorNotSupported = True
         if cls.hypervisor.lower() != 'simulator':
             cls.hypervisorNotSupported = False
@@ -207,6 +224,9 @@ class TestMetrics(cloudstackTestCase):
         self.small_virtual_machine = VirtualMachine.create(
             apiclient,
             self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=[self.network.id] if self.network else None,
             serviceofferingid=self.service_offering.id,
             templateid=self.template.id,
             zoneid=self.zone.id
@@ -466,19 +486,19 @@ class TestMetrics(cloudstackTestCase):
         self.small_virtual_machine = VirtualMachine.create(
                                         self.apiclient,
                                         self.services["virtual_machine"],
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
+                                        networkids=[self.network.id] if self.network else None,
                                         serviceofferingid=self.service_offering.id,
                                         templateid=self.template.id,
                                         zoneid=self.zone.id
                                         )
         self.cleanup.append(self.small_virtual_machine)
 
-        # Wait for 2 minutes
-        time.sleep(120)
-
         cmd = listVirtualMachinesUsageHistory.listVirtualMachinesUsageHistoryCmd()
         cmd.id = self.small_virtual_machine.id
 
-        result = self.apiclient.listVirtualMachinesUsageHistory(cmd)[0]
+        result = self.wait_for_stats(lambda: self.apiclient.listVirtualMachinesUsageHistory(cmd))
 
         self.assertEqual(result.id, self.small_virtual_machine.id)
         self.assertTrue(hasattr(result, 'stats'))
@@ -510,6 +530,9 @@ class TestMetrics(cloudstackTestCase):
         self.small_virtual_machine = VirtualMachine.create(
                                         self.apiclient,
                                         self.services["virtual_machine"],
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
+                                        networkids=[self.network.id] if self.network else None,
                                         serviceofferingid=self.service_offering.id,
                                         templateid=self.template.id,
                                         zoneid=self.zone.id
@@ -522,17 +545,15 @@ class TestMetrics(cloudstackTestCase):
             self.skipTest("Skipping test because volume metrics doesn't work on hypervisor\
                             %s, %s" % (currentHost.hypervisor, currentHost.hypervisorversion))
 
-        # Wait for 2 minutes
-        time.sleep(120)
-
         volume = Volume.list(
             self.apiclient,
-            virtualmachineid=self.small_virtual_machine.id)[0]
+            virtualmachineid=self.small_virtual_machine.id,
+            listall=True)[0]
 
         cmd = listVolumesUsageHistory.listVolumesUsageHistoryCmd()
         cmd.id = volume.id
 
-        result = self.apiclient.listVolumesUsageHistory(cmd)[0]
+        result = self.wait_for_stats(lambda: self.apiclient.listVolumesUsageHistory(cmd))
         self.assertEqual(result.id, volume.id)
         self.assertTrue(hasattr(result, 'stats'))
         self.assertTrue(type(result.stats) == list and len(result.stats) > 0)
@@ -546,6 +567,18 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(self.valid_date(stats.timestamp))
 
         return
+
+    def wait_for_stats(self, list_usage_history):
+        def stats_collected():
+            response = list_usage_history()
+            if isinstance(response, list) and len(response) > 0 and \
+                    isinstance(getattr(response[0], 'stats', None), list) and len(response[0].stats) > 0:
+                return True, response[0]
+            return False, None
+
+        collected, result = wait_until(15, 20, stats_collected)
+        self.assertTrue(collected, "No usage history stats were collected within 5 minutes")
+        return result
 
     def validate_vm_stats(self, stats):
         self.assertTrue(hasattr(stats, 'cpuused'))
