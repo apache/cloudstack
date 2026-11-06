@@ -35,15 +35,18 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+
       - name: Generate UI SBOM
-        uses: sbomify/sbomify-action@master
-        env:
-          LOCK_FILE: ui/package-lock.json
-          OUTPUT_FILE: sbom.ui.cdx.json
-          COMPONENT_NAME: cloudstack-ui
-          COMPONENT_VERSION: ${{ github.ref_name }}
-          UPLOAD: false
-          ENRICH: true
+        # the generator is installed outside the checkout without lifecycle scripts;
+        # dev dependencies are build tooling and are not shipped in the UI bundle
+        run: |
+          npm install --no-save --no-audit --no-fund --ignore-scripts \
+            --prefix "$RUNNER_TEMP/cdx" @cyclonedx/cyclonedx-npm@6.0.1
+          "$RUNNER_TEMP/cdx/node_modules/.bin/cyclonedx-npm" --package-lock-only --omit dev \
+            --spec-version 1.6 --output-format JSON --output-file sbom.ui.cdx.json ui/package.json
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -62,7 +65,7 @@ jobs:
         uses: ./.github/actions/setup-env
 
       - name: Generate Java SBOM
-        run: mvn -B -ntp -Dnoredist org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+        run: mvn -B -ntp -Dnoredist -Psbom validate
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -100,17 +103,14 @@ jobs:
           " > marvin-install-requires.txt
           python3 -m venv marvin-venv
           marvin-venv/bin/pip install --quiet -r marvin-install-requires.txt
-          marvin-venv/bin/pip freeze > marvin-requirements.txt
 
       - name: Generate marvin SBOM
-        uses: sbomify/sbomify-action@master
-        env:
-          LOCK_FILE: marvin-requirements.txt
-          OUTPUT_FILE: sbom.marvin.cdx.json
-          COMPONENT_NAME: cloudstack-marvin
-          COMPONENT_VERSION: ${{ github.ref_name }}
-          UPLOAD: false
-          ENRICH: true
+        # the generator gets its own venv so it doesn't end up in marvin's SBOM
+        run: |
+          python3 -m venv sbom-venv
+          sbom-venv/bin/pip install --quiet cyclonedx-bom==7.5.0
+          sbom-venv/bin/cyclonedx-py environment --spec-version 1.6 --output-format JSON \
+            --output-file sbom.marvin.cdx.json marvin-venv/bin/python
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
