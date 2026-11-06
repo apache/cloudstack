@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -45,6 +46,7 @@ import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -128,6 +130,8 @@ public abstract class AgentAttache {
     protected long _nextSequence;
 
     protected AgentManagerImpl _agentMgr;
+    // cancelled because the job was cancelled, as opposed to timed out
+    private final Map<Long, String> _cancelledSequences = new ConcurrentHashMap<>();
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(),
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
@@ -229,6 +233,65 @@ public abstract class AgentAttache {
         if (index >= 0) {
             _requests.remove(index);
         }
+    }
+
+    /** Null when the request's work can be stopped, otherwise why not. Defaults to a refusal: an attache that cannot ask its resource must not claim it. */
+    protected String checkExecutionIsNotCancellable(final long seq) {
+        return "this host does not support cancelling a running command";
+    }
+
+    /** Returns true only when the resource's work was stopped (or nothing was left to stop). */
+    protected boolean cancelRunning(final long seq) {
+        return false;
+    }
+
+    /** Timeout path: best effort, the sender still reports the timeout; a request that cannot be stopped runs to completion as before. */
+    boolean cancelRunningOnTimeout(final long seq, final Request req) {
+        if (_agentMgr == null) {
+            return false;
+        }
+        if (req != null && req.getCommands() != null) {
+            for (final Command cmd : req.getCommands()) {
+                if (cmd instanceof CancelCommand) {
+                    return false;
+                }
+            }
+        }
+        try {
+            final String reason = checkExecutionIsNotCancellable(seq);
+            if (reason != null) {
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Timed out; its hypervisor work is left to complete: " + reason);
+                return false;
+            }
+            final boolean stopped = cancelRunning(seq);
+            logger.info(LOG_SEQ_FORMATTED_STRING, seq, stopped ? "Timed out; its hypervisor work was stopped" : "Timed out; its hypervisor work could not be stopped and is left to complete");
+            return stopped;
+        } catch (final Exception e) {
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Timed out; failed to stop its hypervisor work: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Job-cancel path; distinct from cancel(seq), which only drops the request on this side. */
+    public boolean cancelExecution(final long seq) {
+        return cancelExecution(seq, null);
+    }
+
+    public boolean cancelExecution(final long seq, final String reason) {
+        _cancelledSequences.put(seq, reason != null ? reason : "cancelled");
+        if (!cancelRunning(seq)) {
+            // refused: the command runs on and its sender must see the real answer
+            _cancelledSequences.remove(seq);
+            return false;
+        }
+        cancel(seq);
+        return true;
+    }
+
+    /** The job's reason when the cancel came through cancelExecution; otherwise what the layer that noticed it says. */
+    private OperationCancelledException cancelled(final Request req, final long started, final boolean isActive, final String fallbackReason) {
+        final String reason = _cancelledSequences.getOrDefault(req.getSequence(), fallbackReason);
+        return new OperationCancelledException(req.getCommands(), _id, req.getSequence(), (System.currentTimeMillis() - started) / 1000, isActive, reason);
     }
 
     protected synchronized int findRequest(final Request req) {
@@ -411,13 +474,16 @@ public abstract class AgentAttache {
 
     public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
-
         long seq = req.getSequence();
+        final long started = System.currentTimeMillis();
         send(req, sl);
 
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
+                if (_cancelledSequences.containsKey(seq)) {
+                    throw cancelled(req, started, false, null);
+                }
                 Command[] cmds = req.getCommands();
                 if (cmds != null && cmds.length == 1 && (cmds[0] != null) && cmds[0].isReconcile()
                         && !sl.isDisconnected() && _agentMgr.isReconcileCommandsEnabled(_hypervisorType)) {
@@ -427,12 +493,26 @@ public abstract class AgentAttache {
                     try {
                         answers = sl.waitFor(wait);
                     } catch (final InterruptedException e) {
-                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted");
+                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for the answer");
+                        Thread.currentThread().interrupt();
+                        if (_cancelledSequences.containsKey(seq)) {
+                            throw cancelled(req, started, true, "cancelled while waiting for the answer");
+                        }
                     }
                 }
                 if (answers != null) {
+                    for (Answer answer : answers) {
+                        if (answer != null && answer.isCancelled()) {
+                            throw cancelled(req, started, true, answer.getDetails());
+                        }
+                    }
+
                     new Response(req, answers).logD("Received: ", false);
                     return answers;
+                }
+
+                if (_cancelledSequences.containsKey(seq)) {
+                    throw cancelled(req, started, true, "cancelled while waiting for the answer");
                 }
 
                 answers = sl.getAnswers(); // Try it again.
@@ -457,6 +537,15 @@ public abstract class AgentAttache {
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait * 2, true);
         } catch (OperationTimedoutException e) {
             logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Timed out on " + req.toString());
+            cancelRunningOnTimeout(seq, req);
+            cancel(seq);
+            final Long current = _currentSequence;
+            if (req.executeInSequence() && (current != null && current == seq)) {
+                sendNext(seq);
+            }
+            throw e;
+        } catch (OperationCancelledException e) {
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled: " + req.toString());
             cancel(seq);
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
@@ -473,6 +562,7 @@ public abstract class AgentAttache {
             _agentMgr.updateReconcileCommandsIfNeeded(req.getSequence(), req.getCommands(), Command.State.TIMED_OUT);
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {
+            _cancelledSequences.remove(seq);
             unregisterListener(seq);
         }
     }
@@ -581,6 +671,7 @@ public abstract class AgentAttache {
             try {
                 Listener listener = unregisterListener(_seq);
                 if (listener != null) {
+                    cancelRunningOnTimeout(_seq, null);
                     cancel(_seq);
                     listener.processTimeout(_id, _seq);
                 }

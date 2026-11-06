@@ -1194,6 +1194,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (e instanceof InvalidParameterValueException) {
                 throw (InvalidParameterValueException) e;
             }
+            if (isCurrentJobCancelled()) {
+                expungeCancelledVolume(volumeId);
+            }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
             if (!created) {
@@ -1202,6 +1205,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), display,
                         volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
             }
+        }
+    }
+
+    protected boolean isCurrentJobCancelled() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        return context != null && context.getJob() != null && _jobMgr.getCancellationReason(context.getJob().getId()) != null;
+    }
+
+    protected void expungeCancelledVolume(long volumeId) {
+        final VolumeInfo volume = volFactory.getVolume(volumeId);
+        if (volume == null) {
+            return;
+        }
+        logger.info("Creation of volume {} was cancelled, expunging it", volume);
+        if (volume.getState() == Volume.State.Destroy) {
+            volume.stateTransit(Volume.Event.OperationSucceeded);
+        }
+        try {
+            final VolumeApiResult result = volService.expungeVolumeAsync(volume).get();
+            if (result.isFailed()) {
+                logger.warn("Could not expunge volume {} whose creation was cancelled: {}", volume, result.getResult());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not expunge volume {} whose creation was cancelled", volume, e);
         }
     }
 

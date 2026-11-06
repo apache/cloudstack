@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -63,6 +64,9 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Parameter(name = ApiConstants.START_ID, type = CommandType.UUID, entityType = EventResponse.class, description = "The parent/start ID of the event, when provided this will list all the events with the start/parent ID including the parent event")
     private Long startId;
+
+    @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, description = "the ID of the async job that raised the events", since = "24.0")
+    private Long jobId;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "The ID of the resource associated with the event", since="4.17.0")
     private String resourceId;
@@ -110,6 +114,10 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public Long getStartId() {
         return startId;
+    }
+
+    public Long getJobId() {
+        return jobId;
     }
 
     public String getResourceId() {

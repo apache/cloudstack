@@ -711,6 +711,46 @@
           </template>
         </template>
       </template>
+      <template v-if="column.key === 'cmd'">
+        <router-link :to="{ path: '/jobs/' + record.id }">{{ text ? text.split('.').pop() : record.id }}</router-link>
+        <QuickView
+          style="margin-left: 5px"
+          :actions="actions"
+          :resource="record"
+          :enabled="quickViewEnabled(actions, columns, column.key)"
+          @exec-action="$parent.execAction"
+        />
+      </template>
+      <template v-if="column.key === 'jobstatus'">
+        <a-tag :color="jobStatusColor(jobDisplayStatus(record))">{{ $t(jobStatusLabel(jobDisplayStatus(record))) }}</a-tag>
+      </template>
+      <template v-if="column.key === 'jobinstancename'">
+        <resource-label
+          v-if="record.jobinstanceid"
+          :resourceType="record.jobinstancetype"
+          :resourceId="record.jobinstanceid"
+          :resourceName="record.jobinstancename || record.jobinstanceid"
+        />
+        <span v-else>-</span>
+      </template>
+      <template v-if="column.key === 'jobresult'">
+        <a-popover v-if="jobResultText(text) !== '-'" placement="topLeft" overlayClassName="job-result-popover">
+          <template #content>
+            <div class="job-result-full">
+              <a
+                href="javascript:;"
+                class="job-result-copy"
+                v-clipboard:copy="jobResultPretty(text)"
+                @click="$message.success($t('label.copied.clipboard'))">
+                <copy-outlined /> {{ $t('label.copy') }}
+              </a>
+              <pre>{{ jobResultPretty(text) }}</pre>
+            </div>
+          </template>
+          <span class="job-result">{{ jobResultText(text) }}</span>
+        </a-popover>
+        <span v-else>-</span>
+      </template>
       <template v-if="column.key === 'resource'">
         <resource-label
           :resourceType="record.resourcetype"
@@ -818,7 +858,7 @@
       <template v-if="column.key === 'egressdefaultpolicy'">
         <span> {{ record.egressdefaultpolicy ? 'Allow' : 'Deny' }} </span>
       </template>
-      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
+      <template v-if="['created', 'completed', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
         {{ text && $toLocaleDate(text) }}
       </template>
       <template
@@ -1073,6 +1113,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
 import CopyLabel from '@/components/widgets/CopyLabel'
+import { jobStatusLabel, jobStatusColor, jobDisplayStatus, jobResultText, jobResultPretty } from '@/utils/asyncjob'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
@@ -1205,6 +1246,11 @@ export default {
     }
   },
   methods: {
+    jobStatusLabel,
+    jobStatusColor,
+    jobDisplayStatus,
+    jobResultText,
+    jobResultPretty,
     isTungstenPath () {
       return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
         '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
@@ -1213,7 +1259,7 @@ export default {
     quickViewEnabled (actions, columns, key) {
       return actions.length > 0 &&
         (columns && key === columns[0].dataIndex) &&
-        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/instancebootgroup', '/affinitygroup', '/autoscalevmgroup',
+        new RegExp(['/vm', '/jobs', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/instancebootgroup', '/affinitygroup', '/autoscalevmgroup',
           '/volume', '/snapshot', '/vmsnapshot', '/backup',
           '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
           '/template', '/iso',
@@ -1654,4 +1700,36 @@ export default {
     .icon-monthly:before {
       content: "***";
     }
+</style>
+
+<style lang="less">
+.job-result {
+  display: inline-block;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  cursor: default;
+}
+.job-result-popover .ant-popover-inner-content {
+  padding: 8px 12px;
+}
+.job-result-full {
+  max-width: 640px;
+  max-height: 420px;
+  overflow: auto;
+
+  .job-result-copy {
+    display: inline-block;
+    margin-bottom: 6px;
+  }
+
+  pre {
+    margin: 0;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}
 </style>

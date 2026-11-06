@@ -40,6 +40,18 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
+    /** In-progress jobs with a cancel requested that this server executes, whose in-flight work it has to stop. */
+    List<AsyncJobVO> listCancelRequestedJobsExecutingOn(long msid);
+
+    /** Completes a job whose cancellation was requested as CANCELLED once nothing of it is running any more. */
+    void finalizeCancelledJob(long jobId);
+
+    /** Why the job, or the API job a VM work job runs for, is being or has been cancelled; null when it is not. */
+    String getCancellationReason(long jobId);
+
+    /** True while the job's work jobs exist and all still wait in their sync queue, untaken by any server: nothing of its work has started. */
+    boolean hasOnlyQueuedWork(long jobId);
+
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
