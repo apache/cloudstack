@@ -1524,11 +1524,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
     }
 
-    private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
-        if (!volume.getSize().equals(newSize) && volume.getVolumeType().equals(Volume.Type.ROOT) && !State.Stopped.equals(vmInstanceVO.getState())) {
-            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %s", volume.getName(), vmInstanceVO
+    protected void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
+        if (!volume.getSize().equals(newSize) && volume.getVolumeType().equals(Volume.Type.ROOT) && !State.Stopped.equals(vmInstanceVO.getState())
+                && !isGrowOfVolumeOnRunningKvmVm(newSize, volume, vmInstanceVO)) {
+            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %s. "
+                    + "Only growing the ROOT volume of a Running KVM user VM is allowed without stopping it.", volume.getName(), vmInstanceVO
                     .getInstanceName(), vmInstanceVO.getState()));
         }
+    }
+
+    /**
+     * KVM grows the disk of a running user VM in place (virsh blockresize), and a size-only resizeVolume of a
+     * ROOT volume already does so. Growing it through a new disk offering is the same operation.
+     * Shrinking still requires the VM to be stopped. Only user VMs are let through, since the resize orchestration
+     * (orchestrateResizeVolume) only looks up the running VM and its host for user VMs.
+     */
+    private boolean isGrowOfVolumeOnRunningKvmVm(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
+        return HypervisorType.KVM.equals(vmInstanceVO.getHypervisorType()) && VirtualMachine.Type.User.equals(vmInstanceVO.getType())
+                && State.Running.equals(vmInstanceVO.getState()) && newSize != null && newSize > volume.getSize();
     }
 
     private void validateIops(Long minIops, Long maxIops, Storage.StoragePoolType poolType) {
