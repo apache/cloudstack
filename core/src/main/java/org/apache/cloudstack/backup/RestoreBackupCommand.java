@@ -41,6 +41,22 @@ public class RestoreBackupCommand extends Command  {
     private VirtualMachine.State vmState;
     private Integer mountTimeout;
 
+    /**
+     * On-NAS format of the backup files: {@code qcow2} (default, also when null) or {@code rbddiff}
+     * for Ceph/RBD chains written with {@code rbd export-diff}. Decides both the file extension the
+     * agent looks for and how the volume is reconstructed.
+     */
+    private String backupFormat;
+
+    /**
+     * For {@code rbddiff} backups: every backup directory of the chain from its full anchor up to
+     * and including the backup being restored, ordered root-first. {@code rbd import-diff} streams
+     * have no backing-file metadata, so the chain cannot be self-describing the way rebased qcow2
+     * files are — the agent has to be told which diffs to replay and in which order. Null/empty for
+     * qcow2 backups.
+     */
+    private List<String> backupChainPaths;
+
     protected RestoreBackupCommand() {
         super();
     }
@@ -163,5 +179,21 @@ public class RestoreBackupCommand extends Command  {
 
     public void setMountTimeout(Integer mountTimeout) {
         this.mountTimeout = mountTimeout;
+    }
+
+    public String getBackupFormat() {
+        return backupFormat;
+    }
+
+    public void setBackupFormat(String backupFormat) {
+        this.backupFormat = backupFormat;
+    }
+
+    public List<String> getBackupChainPaths() {
+        return backupChainPaths;
+    }
+
+    public void setBackupChainPaths(List<String> backupChainPaths) {
+        this.backupChainPaths = backupChainPaths;
     }
 }
