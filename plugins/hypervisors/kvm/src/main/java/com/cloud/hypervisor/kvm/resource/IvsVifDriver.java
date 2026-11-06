@@ -279,6 +279,7 @@ public class IvsVifDriver extends VifDriverBase {
             Script.runSimpleBashScript("ip link add " + privBrName + " type bridge; ip link set " + privBrName + " up");
             Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName, _timeout);
         }
+        enableBridgeIpv6LinkLocal(privBrName);
     }
 
     @Override
