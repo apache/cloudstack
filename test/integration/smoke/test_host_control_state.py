@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                list_hosts,
                                list_routers,
                                list_ssvms,
@@ -55,10 +55,10 @@ class TestHostControlState(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.hypervisor
+            hypervisor=cls.hypervisor
         )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

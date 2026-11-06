@@ -31,7 +31,6 @@ from marvin.lib.base import (Account,
                              Volume)
 from marvin.lib.common import (get_zone,
                                get_template,
-                               get_test_template,
                                get_domain)
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
@@ -61,34 +60,19 @@ class TestScaleVm(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        if cls.hypervisor.lower() in ['simulator', 'vmware']:
-            cls.template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
-            if cls.template == FAILED:
-                assert False, "get_template() failed to return template\
-                        with description %s" % cls.services["ostype"]
-            cls.template = Template.update(
-                cls.template,
-                cls.apiclient,
-                isdynamicallyscalable='true'
-            )
-        else:
-            cls.template = get_test_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.hypervisor
-            )
-            if cls.template == FAILED:
-                assert False, "get_test_template() failed to return template\
-                        with hypervisor %s" % cls.hypervisor
-            cls.template = Template.update(
-                cls.template,
-                cls.apiclient,
-                isdynamicallyscalable='true'
-            )
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template\
+                    with description %s" % cls.services["ostype"]
+        cls.template = Template.update(
+            cls.template,
+            cls.apiclient,
+            isdynamicallyscalable='true'
+        )
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -102,33 +86,38 @@ class TestScaleVm(cloudstackTestCase):
         )
         cls._cleanup.append(cls.account)
 
-        cls.small_offering = ServiceOffering.create(
-            cls.apiclient,
-            cls.services["service_offerings"]["small"]
-        )
-        cls._cleanup.append(cls.small_offering)
-
-        cls.big_offering = ServiceOffering.create(
-            cls.apiclient,
-            cls.services["service_offerings"]["big"]
-        )
-        cls._cleanup.append(cls.big_offering)
-
         Configurations.update(
             cls.apiclient,
             name="enable.dynamic.scale.vm",
             value="true"
         )
 
+        # the Debian 13 built-in template needs more memory than the 256 MiB of the default small offering
+        # (with dynamic scaling, the memory hot-add leaves too little for the guest)
+        small_offering_data = dict(cls.services["service_offerings"]["small"], memory=512)
+        big_offering_data = dict(cls.services["service_offerings"]["big"], memory=1024)
+
+        cls.small_offering = ServiceOffering.create(
+            cls.apiclient,
+            small_offering_data
+        )
+        cls._cleanup.append(cls.small_offering)
+
+        cls.big_offering = ServiceOffering.create(
+            cls.apiclient,
+            big_offering_data
+        )
+        cls._cleanup.append(cls.big_offering)
+
         cls.small_offering_dynamic_scaling_disabled = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"],
+            small_offering_data,
             dynamicscalingenabled=False
         )
 
         cls.big_offering_dynamic_scaling_disabled = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"],
+            small_offering_data,
             dynamicscalingenabled=False
         )
 
@@ -159,7 +148,7 @@ class TestScaleVm(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        self.services["disk_offering"]["disksize"] = 2
+        self.services["disk_offering"]["disksize"] = 4
 
         if self.unsupportedHypervisor:
             self.skipTest("Skipping test because unsupported hypervisor\
@@ -219,7 +208,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -353,7 +342,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_with_service_offering_dynamic_scaling_disabled.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -462,7 +451,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_not_dynamically_scalable.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -553,7 +542,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_in_user_account.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
@@ -665,41 +654,6 @@ class TestScaleVm(cloudstackTestCase):
         # scale up the VM to serviceoffering3
         # Check disk offering of root volume to be diskoffering3 since setting allow.diskOffering.change.during.scale.vm is true
         template = self.template
-        if self.hypervisor.lower() in ['xenserver']:
-            test_template = get_test_template(self.apiclient, self.zone.id, self.hypervisor)
-            self.services["template_2"]["url"] = test_template["url"]
-            self.services["template_2"]["hypervisor"] = test_template["hypervisor"]
-            self.services["template_2"]["format"] = test_template["format"]
-            self.services["template_2"]["ostype"] = "CentOS 5.6 (64-bit)"
-
-            try:
-                template = Template.register(self.apiclient,
-                                             self.services["template_2"],
-                                             zoneid=self.zone.id,
-                                             account=self.account.name,
-                                             domainid=self.account.domainid,
-                                             hypervisor=self.hypervisor
-                                             )
-
-                template.download(self.apiclient)
-            except Exception as e:
-                self.fail("Failed to register template: %s" % e)
-
-            time.sleep(120)
-
-            template = Template.update(
-                template,
-                self.apiclient,
-                isdynamicallyscalable='true'
-            )
-
-            templates = Template.list(self.apiclient,
-                                      templatefilter= \
-                                          self.services["template_2"]["templatefilter"],
-                                      id=template.id,
-                                      )
-
-            template = templates[0]
 
         disk_offering = self.services["disk_offering"]
         disk_offering["name"] = "Disk Offering 1"
@@ -737,7 +691,7 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_test.get_ssh_client()
             result = str(
-                sshClient.execute("service vmware-tools status")).lower()
+                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
             self.debug("and result is: %s" % result)
             if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\

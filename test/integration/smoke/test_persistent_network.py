@@ -30,7 +30,7 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              NetworkOffering)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                verifyNetworkState,
                                wait_for_cleanup, list_routers, list_hosts)
 from nose.plugins.attrib import attr
@@ -74,7 +74,7 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             0].__dict__
         # Get Zone and templates
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.api_client,
             cls.zone.id,
             cls.services["ostype"]

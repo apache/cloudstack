@@ -18,7 +18,7 @@
 """
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, ServiceOffering, VirtualMachine, ResourceSchedule
-from marvin.lib.common import get_domain, get_zone, get_template
+from marvin.lib.common import get_domain, get_zone, get_suitable_test_template
 from marvin.lib.utils import cleanup_resources
 
 # Import Local Modules
@@ -96,7 +96,7 @@ class TestVMSchedule(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
-        template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
+        template = get_suitable_test_template(cls.api_client, cls.zone.id, cls.services["ostype"])
 
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id
