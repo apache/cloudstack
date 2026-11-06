@@ -246,6 +246,74 @@ public class FirstFitPlannerTest {
         assertTrue("Reordered cluster list does not have clusters exceeding threshold", (clusterList.containsAll(clustersCrossingThreshold)));
     }
 
+    // VMware HA admission-control parity: with the HA failover reserve threshold set below
+    // 1.0, a cluster reported as crossing that reserve is excluded from a NEW deployment so headroom
+    // stays free for HA restarts. Uses config-key strings (not the new ConfigKey symbol) so the test
+    // fails-before (old code has no HA reserve) and passes-after.
+    @Test
+    public void checkHAFailoverReserveExcludesClusterOnDeploy() throws InsufficientServerCapacityException {
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        ExcludeList avoids = mock(ExcludeList.class);
+        initializeForTest(vmProfile, plan, avoids);
+        List<Long> haReserved = initializeForHAFailoverReserve();
+
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("deployvm", "true");
+        when(vmDetailsDao.listDetailsKeyPairs(vmProfile.getVirtualMachine().getId())).thenReturn(details);
+
+        try {
+            List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
+            assertTrue("HA failover reserve must exclude the reserved cluster from deployment", (!clusterList.containsAll(haReserved)));
+        } finally {
+            // shared Spring mock: don't leak the deployvm detail (keyed by the default vm id) into other tests
+            Mockito.reset(vmDetailsDao);
+        }
+    }
+
+    @Test
+    public void checkHAFailoverReserveDisabledByDefault() throws InsufficientServerCapacityException {
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        ExcludeList avoids = mock(ExcludeList.class);
+        initializeForTest(vmProfile, plan, avoids);
+        // keep the (cached, non-dynamic) threshold flag consistent with the other threshold tests
+        when(configDepot.getConfigStringValue("cluster.threshold.enabled", ConfigKey.Scope.Global, null)).thenReturn(Boolean.FALSE.toString());
+        // no cluster crosses any threshold; HA reserve is off by default (1.0) so cluster 3 is not excluded
+        when(capacityDao.listClustersCrossingThreshold(Mockito.anyShort(), Mockito.anyLong(),
+                Mockito.anyString(), Mockito.anyLong())).thenReturn(new ArrayList<Long>());
+
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("deployvm", "true");
+        when(vmDetailsDao.listDetailsKeyPairs(vmProfile.getVirtualMachine().getId())).thenReturn(details);
+
+        try {
+            List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
+            assertTrue("With HA reserve disabled (default), cluster 3 is not excluded", clusterList.contains(3L));
+        } finally {
+            // shared Spring mock: don't leak the deployvm detail (keyed by the default vm id) into other tests
+            Mockito.reset(vmDetailsDao);
+        }
+    }
+
+    private List<Long> initializeForHAFailoverReserve() {
+        // keep the (cached, non-dynamic) threshold flag consistent with the other threshold tests
+        when(configDepot.getConfigStringValue("cluster.threshold.enabled", ConfigKey.Scope.Global, null)).thenReturn(Boolean.FALSE.toString());
+        // NOTE (regression guard for the per-cluster-scope bug the review caught): deliberately leave
+        // the GLOBAL HA reserve threshold at its 1.0 default and let only the DAO report cluster 3 as
+        // crossing the (per-cluster) reserve. This passes ONLY if the reserve is applied by consulting
+        // the DAO unconditionally (per-cluster aware) rather than gating on the global .value().
+        when(capacityDao.listClustersCrossingThreshold(Mockito.anyShort(), Mockito.anyLong(),
+                Mockito.eq("cluster.cpu.allocated.capacity.disablethreshold"), Mockito.anyLong())).thenReturn(new ArrayList<Long>());
+        when(capacityDao.listClustersCrossingThreshold(Mockito.anyShort(), Mockito.anyLong(),
+                Mockito.eq("cluster.memory.allocated.capacity.disablethreshold"), Mockito.anyLong())).thenReturn(new ArrayList<Long>());
+        List<Long> haReserved = new ArrayList<Long>();
+        haReserved.add(3L);
+        when(capacityDao.listClustersCrossingThreshold(Mockito.anyShort(), Mockito.anyLong(),
+                Mockito.eq("cluster.ha.failover.capacity.reservethreshold"), Mockito.anyLong())).thenReturn(haReserved);
+        return haReserved;
+    }
+
 
     @Test
     public void testGetClusterOrderCapacityType() {
