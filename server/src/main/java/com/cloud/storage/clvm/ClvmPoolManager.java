@@ -21,7 +21,9 @@ package com.cloud.storage.clvm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
@@ -63,6 +65,14 @@ public class ClvmPoolManager implements Configurable {
      * This is used during lightweight lock migration to determine the source host for lock transfer.
      */
     public static final String CLVM_LOCK_HOST_ID = "clvmLockHostId";
+
+    private static final List<String> TRANSIENT_LOCK_REFUSALS = List.of("locked by other host", "lock start in progress");
+
+    public static final ConfigKey<Integer> ClvmLockRecoveryRetryTimeout = new ConfigKey<>("Advanced", Integer.class, "clvm.lock.recovery.retry.timeout", "180",
+            "Maximum time in seconds, counted from the start of the CLVM lock holder lookup, to keep retrying the exclusive activation of a volume that is refused only temporarily: the previous lock holder's lease has not expired yet, or the lockspace of the volume group is still being started on the host. The lease expires 8 x io_timeout + 60 seconds after the holder stops renewing it (140 seconds with the default lvmlockd sanlock io_timeout of 10). If lvmlockd runs with a different --sanlock-timeout, set this to at least that value plus about 40 seconds. 0 disables the retry.", true);
+
+    public static final ConfigKey<Integer> ClvmLockRecoveryRetryInterval = new ConfigKey<>("Advanced", Integer.class, "clvm.lock.recovery.retry.interval", "10",
+            "Time in seconds between retries of the exclusive activation of a CLVM volume that is refused only temporarily (previous lock holder's lease not expired yet, or lockspace still starting).", true);
 
     public static final ConfigKey<Boolean> CLVMSecureZeroFill = new ConfigKey<>("Advanced", Boolean.class, "clvm.secure.zero.fill", "false",
             "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly. Note: This setting is propagated to hosts when they connect to the storage pool. Changing this setting requires disconnecting and reconnecting hosts or restarting the KVM agent for it to take effect.", false, ConfigKey.Scope.StoragePool);
@@ -106,15 +116,26 @@ public class ClvmPoolManager implements Configurable {
      */
     public Long getClvmLockHostId(Long volumeId, String volumeUuid, String volumePath,
                                   StoragePool pool, boolean queryActual) {
+        return getClvmLockHostId(volumeId, volumeUuid, volumePath, pool, queryActual, newLockRecoveryDeadlineMs());
+    }
+
+    /** Same as above, with a retry deadline shared across calls, see {@link #newLockRecoveryDeadlineMs()}. */
+    public Long getClvmLockHostId(Long volumeId, String volumeUuid, String volumePath,
+                                  StoragePool pool, boolean queryActual, long activationDeadlineMs) {
         if (queryActual) {
             if (volumePath == null || pool == null) {
                 logger.warn("Cannot query actual CLVM lock state for volume {} - missing volumePath or pool", volumeUuid);
                 return getClvmLockHostId(volumeId, volumeUuid);
             }
-            return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, true);
+            return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, true, activationDeadlineMs);
         }
 
         return getClvmLockHostId(volumeId, volumeUuid);
+    }
+
+    /** @return the time in milliseconds until which a refused activation is retried, counted from now */
+    public long newLockRecoveryDeadlineMs() {
+        return now() + getRetryTimeoutMillis();
     }
 
     /**
@@ -153,6 +174,12 @@ public class ClvmPoolManager implements Configurable {
      */
     public Long queryCurrentLockHolder(Long volumeId, String volumeUuid, String volumePath,
                                        StoragePool pool, boolean updateDatabase) {
+        return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, updateDatabase, newLockRecoveryDeadlineMs());
+    }
+
+    /** Same as above, retrying a refused recovery activation until {@code activationDeadlineMs}. */
+    public Long queryCurrentLockHolder(Long volumeId, String volumeUuid, String volumePath,
+                                       StoragePool pool, boolean updateDatabase, long activationDeadlineMs) {
         if (pool == null) {
             logger.error("Cannot query CLVM lock for volume {} - pool is null", volumeUuid);
             return null;
@@ -164,6 +191,9 @@ public class ClvmPoolManager implements Configurable {
         }
         String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
 
+        // Hosts that did not answer the lock-state query
+        Set<Long> unreachableHostIds = new HashSet<>();
+
         // Fast path: trust the DB record and verify with a single host query
         Long dbHostId = getClvmLockHostId(volumeId, volumeUuid);
         if (dbHostId != null) {
@@ -174,6 +204,9 @@ public class ClvmPoolManager implements Configurable {
                 if (Boolean.TRUE.equals(active)) {
                     logger.debug("Fast path: volume {} confirmed active on DB host {}", volumeUuid, dbHostId);
                     return dbHostId;
+                }
+                if (active == null) {
+                    unreachableHostIds.add(dbHostId);
                 }
                 logger.info("Fast path miss: volume {} not active on DB host {} - falling back to full fan-out",
                         volumeUuid, dbHostId);
@@ -213,6 +246,8 @@ public class ClvmPoolManager implements Configurable {
             if (Boolean.TRUE.equals(active)) {
                 logger.debug("Volume {} is locally active on host {} (fan-out)", volumeUuid, host.getId());
                 activeHostIds.add(host.getId());
+            } else if (active == null) {
+                unreachableHostIds.add(host.getId());
             }
         }
 
@@ -220,10 +255,10 @@ public class ClvmPoolManager implements Configurable {
             logger.debug("Volume {} is not active on any reachable host — no exclusive lock held", volumeUuid);
 
             // Recovery: attempt exclusive activation on the best available host before giving up.
-            Long targetHostId = selectActivationTargetHost(dbHostId, hosts);
+            Long targetHostId = selectActivationTargetHost(dbHostId, hosts, unreachableHostIds);
             if (targetHostId != null) {
                 Long recoveredHostId = tryActivateExclusivelyOnHost(volumeId, volumeUuid, lvPath,
-                        targetHostId, updateDatabase);
+                        targetHostId, updateDatabase, activationDeadlineMs);
                 if (recoveredHostId != null) {
                     return recoveredHostId;
                 }
@@ -302,12 +337,15 @@ public class ClvmPoolManager implements Configurable {
      *
      * <p>Priority 2: a random UP KVM routing host from the cluster/zone list (fallback).
      *
-     * @param dbHostId last known lock holder host ID from the DB (may be null)
-     * @param hosts    routing hosts in the cluster or zone collected during fan-out
+     * <p>Hosts that did not answer the lock-state query are skipped in both cases.
+     *
+     * @param dbHostId           last known lock holder host ID from the DB (may be null)
+     * @param hosts              routing hosts in the cluster or zone collected during fan-out
+     * @param unreachableHostIds hosts that failed to answer the lock-state query
      * @return host ID to activate on, or null if no eligible host found
      */
-    private Long selectActivationTargetHost(Long dbHostId, List<HostVO> hosts) {
-        if (dbHostId != null) {
+    private Long selectActivationTargetHost(Long dbHostId, List<HostVO> hosts, Set<Long> unreachableHostIds) {
+        if (dbHostId != null && !unreachableHostIds.contains(dbHostId)) {
             HostVO dbHost = _hostDao.findById(dbHostId);
             if (dbHost != null && dbHost.getStatus() == Status.Up
                     && dbHost.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
@@ -319,7 +357,8 @@ public class ClvmPoolManager implements Configurable {
             List<HostVO> eligible = hosts.stream()
                     .filter(h -> h.getStatus() == Status.Up
                             && h.getType() == Host.Type.Routing
-                            && h.getHypervisorType() == Hypervisor.HypervisorType.KVM)
+                            && h.getHypervisorType() == Hypervisor.HypervisorType.KVM
+                            && !unreachableHostIds.contains(h.getId()))
                     .collect(Collectors.toList());
             if (!eligible.isEmpty()) {
                 Collections.shuffle(eligible);
@@ -337,6 +376,9 @@ public class ClvmPoolManager implements Configurable {
      * Sends an {@code ACTIVATE_EXCLUSIVE} command to {@code targetHostId} and optionally
      * persists the new lock host to the database.
      *
+     * <p>A temporarily refused activation (lease not expired yet, lockspace still starting) is retried
+     * on the same host until {@code deadlineMs}. Other failures are not retried.
+     *
      * <p>Activation failure is non-fatal: returns null so the caller can apply its own fallback.
      *
      * @param volumeId       volume DB ID
@@ -344,30 +386,75 @@ public class ClvmPoolManager implements Configurable {
      * @param lvPath         full LV device path, e.g. {@code /dev/vgname/vol-path}
      * @param targetHostId   host to activate on
      * @param updateDatabase if true, persists the new lock host on success
+     * @param deadlineMs     time in milliseconds after which a refused activation is no longer retried
      * @return {@code targetHostId} on success, {@code null} if the command failed or threw
      */
     private Long tryActivateExclusivelyOnHost(Long volumeId, String volumeUuid, String lvPath,
-                                              Long targetHostId, boolean updateDatabase) {
-        try {
-            ClvmLockTransferCommand activateCmd = new ClvmLockTransferCommand(
-                    ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE, lvPath, volumeUuid);
-            Answer activateAnswer = _agentMgr.send(targetHostId, activateCmd);
-            if (activateAnswer != null && activateAnswer.getResult()) {
-                logger.info("Recovery: exclusively activated volume {} on host {} (was inactive on all hosts)",
-                        volumeUuid, targetHostId);
-                if (updateDatabase) {
-                    setClvmLockHostId(volumeId, targetHostId);
+                                              Long targetHostId, boolean updateDatabase, long deadlineMs) {
+        long retryIntervalMs = getRetryIntervalMillis();
+        while (true) {
+            try {
+                ClvmLockTransferCommand activateCmd = new ClvmLockTransferCommand(
+                        ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE, lvPath, volumeUuid);
+                Answer activateAnswer = _agentMgr.send(targetHostId, activateCmd);
+                if (activateAnswer != null && activateAnswer.getResult()) {
+                    logger.info("Recovery: exclusively activated volume {} on host {} (was inactive on all hosts)",
+                            volumeUuid, targetHostId);
+                    if (updateDatabase) {
+                        setClvmLockHostId(volumeId, targetHostId);
+                    }
+                    return targetHostId;
                 }
-                return targetHostId;
+                logger.warn("Recovery activation of volume {} on host {} failed: {}",
+                        volumeUuid, targetHostId,
+                        activateAnswer != null ? activateAnswer.getDetails() : "null answer");
+                if (!isRetryableRefusal(activateAnswer, retryIntervalMs, deadlineMs)) {
+                    return null;
+                }
+                logger.info("Activation of volume {} is refused temporarily, retrying on host {} in {} ms until the previous holder's lease expires or the lockspace is started",
+                        volumeUuid, targetHostId, retryIntervalMs);
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                logger.warn("Recovery activation of volume {} on host {} threw exception: {}",
+                        volumeUuid, targetHostId, e.getMessage());
+                return null;
             }
-            logger.warn("Recovery activation of volume {} on host {} failed: {}",
-                    volumeUuid, targetHostId,
-                    activateAnswer != null ? activateAnswer.getDetails() : "null answer");
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            logger.warn("Recovery activation of volume {} on host {} threw exception: {}",
-                    volumeUuid, targetHostId, e.getMessage());
+            if (!sleep(retryIntervalMs)) {
+                return null;
+            }
         }
-        return null;
+    }
+
+    private boolean isRetryableRefusal(Answer activateAnswer, long retryIntervalMs, long deadlineMs) {
+        return retryIntervalMs > 0
+                && activateAnswer != null
+                && activateAnswer.getDetails() != null
+                && TRANSIENT_LOCK_REFUSALS.stream().anyMatch(activateAnswer.getDetails()::contains)
+                && now() + retryIntervalMs <= deadlineMs;
+    }
+
+    protected long getRetryTimeoutMillis() {
+        return ClvmLockRecoveryRetryTimeout.value() * 1000L;
+    }
+
+    protected long getRetryIntervalMillis() {
+        return ClvmLockRecoveryRetryInterval.value() * 1000L;
+    }
+
+    protected long now() {
+        return System.currentTimeMillis();
+    }
+
+    /**
+     * @return false if the thread was interrupted while waiting
+     */
+    protected boolean sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     /**
@@ -479,7 +566,9 @@ public class ClvmPoolManager implements Configurable {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
-                CLVMSecureZeroFill
+                CLVMSecureZeroFill,
+                ClvmLockRecoveryRetryTimeout,
+                ClvmLockRecoveryRetryInterval
         };
     }
 }

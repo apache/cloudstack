@@ -25,6 +25,7 @@ public class HostTO {
     private NetworkTO storageNetwork1;
     private NetworkTO storageNetwork2;
     private String parent;
+    private Long sanlockHostId;
 
     protected HostTO() {
     }
@@ -44,6 +45,14 @@ public class HostTO {
         if (vo.getParent() != null) {
             parent = vo.getParent();
         }
+    }
+
+    public Long getSanlockHostId() {
+        return sanlockHostId;
+    }
+
+    public void setSanlockHostId(Long sanlockHostId) {
+        this.sanlockHostId = sanlockHostId;
     }
 
     public String getGuid() {

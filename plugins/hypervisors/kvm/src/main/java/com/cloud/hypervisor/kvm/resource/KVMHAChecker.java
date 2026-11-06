@@ -44,19 +44,29 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
                 storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
         logger.debug("Checking heart beat with KVMHAChecker for {}", hostAndPools);
 
-        boolean heartBeatCheckResult = false;
-        for (HAStoragePool pool : storagePools) {
-            heartBeatCheckResult = pool.getPool().hasHeartBeat(pool, host);
-            if (reportIfHeartBeatFailedForOneStoragePool && !heartBeatCheckResult) {
-                break;
-            }
-        }
+        boolean heartBeatCheckResult = checkPoolsHeartBeat();
 
         if (!heartBeatCheckResult) {
             logger.warn("All checks with KVMHAChecker for {} considered it as dead. It may cause a shutdown of the host.", hostAndPools);
         }
 
         return heartBeatCheckResult;
+    }
+
+    /*
+     * With reportIfHeartBeatFailedForOneStoragePool the host is dead as soon as one pool has no heart beat,
+     * otherwise it is dead only when none of the pools has one.
+     */
+    private boolean checkPoolsHeartBeat() {
+        boolean anyPoolHasHeartBeat = false;
+        for (HAStoragePool pool : storagePools) {
+            boolean poolHasHeartBeat = pool.getPool().hasHeartBeat(pool, host);
+            if (reportIfHeartBeatFailedForOneStoragePool && !poolHasHeartBeat) {
+                return false;
+            }
+            anyPoolHasHeartBeat = anyPoolHasHeartBeat || poolHasHeartBeat;
+        }
+        return anyPoolHasHeartBeat;
     }
 
     @Override

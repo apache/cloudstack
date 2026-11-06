@@ -413,7 +413,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         return getPhysicalDiskViaDirectBlockDevice(volumeUuid, pool);
     }
 
-    private String getVgName(String sourceDir) {
+    static String getVgName(String sourceDir) {
         String vgName = sourceDir;
         if (vgName.startsWith("/")) {
             String[] parts = vgName.split("/");
