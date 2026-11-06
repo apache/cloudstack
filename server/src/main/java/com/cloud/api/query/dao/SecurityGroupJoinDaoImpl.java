@@ -37,6 +37,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
@@ -226,11 +227,7 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
     @Override
     public List<SecurityGroupJoinVO> searchByIds(Long... sgIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         List<SecurityGroupJoinVO> uvList = new ArrayList<SecurityGroupJoinVO>();
         // query details by batches

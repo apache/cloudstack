@@ -71,6 +71,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -92,8 +93,11 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -216,10 +220,24 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
             }
 
-            _configDao.update(Config.UseSecondaryStorageVm.key(), Config.UseSecondaryStorageVm.getCategory(), "true");
+            ConfigurationVO useSecondaryStorageVmConfig = _configDao.findByName(SecondaryStorageVmManager.UseSecondaryStorageVm.key());
+            if (useSecondaryStorageVmConfig == null) {
+                ConfigurationVO configVO = new ConfigurationVO(SecondaryStorageVmManager.class.getSimpleName(), SecondaryStorageVmManager.UseSecondaryStorageVm);
+                configVO.setValue("true");
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(SecondaryStorageVmManager.UseSecondaryStorageVm.key(), SecondaryStorageVmManager.UseSecondaryStorageVm.category(), "true");
+            }
             logger.debug("ConfigurationServer made secondary storage vm required.");
 
-            _configDao.update(Config.SecStorageEncryptCopy.key(), Config.SecStorageEncryptCopy.getCategory(), "false");
+            ConfigurationVO secStorageEncryptCopyConfig = _configDao.findByName(SecondaryStorageVmManager.SecStorageEncryptCopy.key());
+            if (secStorageEncryptCopyConfig == null) {
+                ConfigurationVO configVO = new ConfigurationVO(SecondaryStorageVmManager.class.getSimpleName(), SecondaryStorageVmManager.SecStorageEncryptCopy);
+                configVO.setValue("false");
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(SecondaryStorageVmManager.SecStorageEncryptCopy.key(), SecondaryStorageVmManager.SecStorageEncryptCopy.category(), "false");
+            }
             logger.debug("ConfigurationServer made secondary storage copy encrypt set to false.");
 
             _configDao.update("user.password.encoders.exclude", "MD5,LDAP,PLAINTEXT");
@@ -241,7 +259,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // Save the mount parent to the configuration table
             String mountParent = getMountParent();
             if (mountParent != null) {
-                _configDao.update(Config.MountParent.key(), Config.MountParent.getCategory(), mountParent);
+                ConfigurationVO mountParentConfig = _configDao.findByName(SecondaryStorageVmManager.MountParent.key());
+                if (mountParentConfig == null) {
+                    ConfigurationVO configVO = new ConfigurationVO(SecondaryStorageVmManager.class.getSimpleName(), SecondaryStorageVmManager.MountParent);
+                    configVO.setValue(mountParent);
+                    _configDao.persist(configVO);
+                } else {
+                    _configDao.update(SecondaryStorageVmManager.MountParent.key(), SecondaryStorageVmManager.MountParent.category(), mountParent);
+                }
                 logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
             } else {
                 logger.debug("ConfigurationServer could not detect mount.parent.");
@@ -250,9 +275,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             String hostIpAdr = NetUtils.getDefaultHostIp();
             boolean needUpdateHostIp = true;
             if (hostIpAdr != null) {
-                Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+                Boolean devel = ManagementServer.DeveloperMode.value();
                 if (devel) {
-                    String value = _configDao.getValue(ApiServiceConfiguration.ManagementServerAddresses.key());
+                    String value = ApiServiceConfiguration.ManagementServerAddresses.value();
                     if (value != null && !value.equals("localhost")) {
                         needUpdateHostIp = false;
                     }
@@ -369,12 +394,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
-                String pvdriverversion = Config.XenServerPVdriverVersion.getDefaultValue();
+                String pvdriverversion = ManagementServer.XenServerPVdriverVersion.defaultValue();
                 PreparedStatement pstmt = null;
                 ResultSet rs1 = null;
                 ResultSet rs2 = null;
                 try {
-                    String oldValue = _configDao.getValue(Config.XenServerPVdriverVersion.key());
+                    String oldValue = ManagementServer.XenServerPVdriverVersion.value();
                     if (oldValue == null) {
                         String sql = "select resource from host where hypervisor_type='XenServer' and removed is null and status not in ('Error', 'Removed') group by resource";
                         pstmt = txn.prepareAutoCloseStatement(sql);
@@ -392,8 +417,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 break;
                             }
                         }
-                        _configDao.getValueAndInitIfNotExist(Config.XenServerPVdriverVersion.key(), Config.XenServerPVdriverVersion.getCategory(), pvdriverversion,
-                                Config.XenServerPVdriverVersion.getDescription());
+                        _configDao.getValueAndInitIfNotExist(ManagementServer.XenServerPVdriverVersion.key(), ManagementServer.XenServerPVdriverVersion.category(), pvdriverversion,
+                                ManagementServer.XenServerPVdriverVersion.description());
                         sql = "select id from vm_template where hypervisor_type='XenServer'  and format!='ISO' and removed is null";
                         pstmt = txn.prepareAutoCloseStatement(sql);
                         rs2 = pstmt.executeQuery();
@@ -532,10 +557,17 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     protected void updateCloudIdentifier() {
         // Creates and saves a UUID as the cloud identifier
-        String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
+        String currentCloudIdentifier = NetworkModel.CloudIdentifier.value();
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
-            _configDao.update(Config.CloudIdentifier.key(), Config.CloudIdentifier.getCategory(), uuid);
+            ConfigurationVO configInDB = _configDao.findByName(NetworkModel.CloudIdentifier.key());
+            if (configInDB == null) {
+                ConfigurationVO configVO = new ConfigurationVO(NetworkModel.class.getSimpleName(), NetworkModel.CloudIdentifier);
+                configVO.setValue(uuid);
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(NetworkModel.CloudIdentifier.key(), NetworkModel.CloudIdentifier.category(), uuid);
+            }
         }
     }
 
@@ -546,11 +578,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             return;
         }
 
-        if (!Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
+        if (!SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
             return;
         }
 
-        String already = _configDao.getValue("system.vm.password");
+        String already = ManagementServer.SystemVMPassword.value();
         if (already == null) {
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
@@ -574,12 +606,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // Grab the SSH key pair and insert it into the database, if it is not present
 
         String username = System.getProperty("user.name");
-        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+        Boolean devel = ManagementServer.DeveloperMode.value();
         if (!username.equalsIgnoreCase("cloud") && !devel) {
             logger.warn("Systemvm keypairs could not be set. Management server should be run as cloud user, or in development mode.");
             return;
         }
-        String already = _configDao.getValue("ssh.privatekey");
+        String already = ManagementServer.SshPrivateKey.value();
         String homeDir = System.getProperty("user.home");
         if (homeDir == null) {
             throw new CloudRuntimeException("Cannot get home directory for account: " + username);
@@ -724,13 +756,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateKeyPairsOnDisk(String homeDir) {
         File keyDir = new File(homeDir + "/.ssh");
-        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+        Boolean devel = ManagementServer.DeveloperMode.value();
         if (!keyDir.isDirectory()) {
             logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
             keyDir.mkdirs();
         }
-        String pubKey = _configDao.getValue("ssh.publickey");
-        String prvKey = _configDao.getValue("ssh.privatekey");
+        String pubKey = ManagementServer.SshPublicKey.value();
+        String prvKey = ManagementServer.SshPrivateKey.value();
 
         // Using non-default file names (id_rsa.cloud and id_rsa.cloud.pub) in developer mode. This is to prevent SSH keys overwritten for user running management server
         if (devel) {
@@ -790,7 +822,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @DB
     protected void generateSecStorageVmCopyPassword() {
-        String already = _configDao.getValue("secstorage.copy.password");
+        String already = SecondaryStorageVmManager.SecStorageCopyPassword.value();
 
         if (already == null) {
 
@@ -820,7 +852,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateSSOKey() {
         try {
-            _configDao.update(Config.SSOKey.key(), Config.SSOKey.getCategory(), getPrivateKey());
+            String key = getPrivateKey();
+            ConfigurationVO configInDB = _configDao.findByName(AccountManager.SSOKey.key());
+            if (configInDB == null) {
+                ConfigurationVO configVO = new ConfigurationVO(AccountManager.class.getSimpleName(), AccountManager.SSOKey);
+                configVO.setValue(key);
+                _configDao.persist(configVO);
+            } else {
+                _configDao.update(AccountManager.SSOKey.key(), AccountManager.SSOKey.category(), key);
+            }
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating sso key", ex);
         }
@@ -831,15 +871,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
      */
     private void updateSecondaryStorageVMSharedKey() {
         try {
-            ConfigurationVO configInDB = _configDao.findByName(Config.SSVMPSK.key());
+            ConfigurationVO configInDB = _configDao.findByName(TemplateManager.SSVMPSK.key());
             if(configInDB == null) {
-                ConfigurationVO configVO = new ConfigurationVO(Config.SSVMPSK.getCategory(), "DEFAULT", Config.SSVMPSK.getComponent(), Config.SSVMPSK.key(), getPrivateKey(),
-                        Config.SSVMPSK.getDescription());
+                ConfigurationVO configVO = new ConfigurationVO(TemplateManager.class.getSimpleName(), TemplateManager.SSVMPSK);
+                configVO.setValue(getPrivateKey());
                 logger.info("generating a new SSVM PSK. This goes to SSVM on Start");
                 _configDao.persist(configVO);
             } else if (StringUtils.isEmpty(configInDB.getValue())) {
                 logger.info("updating the SSVM PSK with new value. This goes to SSVM on Start");
-                _configDao.update(Config.SSVMPSK.key(), Config.SSVMPSK.getCategory(), getPrivateKey());
+                _configDao.update(TemplateManager.SSVMPSK.key(), TemplateManager.SSVMPSK.category(), getPrivateKey());
             }
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating ssvm psk", ex);
@@ -895,13 +935,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                     }
 
-                    String ipNums = _configDao.getValue("linkLocalIp.nums");
-                    int nums = Integer.parseInt(ipNums);
+                    int nums = ManagementServer.LinkLocalIpNums.value();
                     if (nums > 16 || nums <= 0) {
                         throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
                     }
                     /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(ManagementServer.ControlCidr.value());
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
             });

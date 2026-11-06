@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.quota;
 
-import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.AccountVO;
@@ -109,7 +108,6 @@ public class QuotaServiceImplTest extends TestCase {
         QuotaResponseBuilderField.setAccessible(true);
         QuotaResponseBuilderField.set(quotaServiceImplSpy, respBldr);
 
-        Mockito.when(configDao.getValue(Mockito.eq(Config.UsageAggregationTimezone.toString()))).thenReturn("IST");
         quotaServiceImplSpy.configure("randomName", null);
     }
 

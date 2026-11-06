@@ -24,7 +24,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
@@ -78,7 +77,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         Map<String, String> configs = _configDao.getConfiguration(params);
-        _ipv6RetryMax = NumbersUtil.parseInt(configs.get(Config.NetworkIPv6SearchRetryMax.key()), 10000);
+        _ipv6RetryMax = NumbersUtil.parseInt(configs.get(NetworkModel.NetworkIPv6SearchRetryMax.key()), 10000);
         return true;
     }
 

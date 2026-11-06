@@ -74,6 +74,7 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -122,7 +123,6 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.bgp.BGPService;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -221,6 +221,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
@@ -545,10 +546,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        int routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
+        int routerRamSize = RouterRamSize.value();
         int routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = RouterExtraPublicNics.value();
 
         String value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
@@ -576,12 +577,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         NetworkHelperImpl.setVMInstanceName(instance);
 
-        final String rpValue = configs.get("network.disable.rpfilter");
-        if (rpValue != null && rpValue.equalsIgnoreCase("true")) {
-            _disableRpFilter = true;
-        }
+        _disableRpFilter = NetworkRouterRpFilter.value();
 
-        _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(Config.DnsBasicZoneUpdates.key()));
+        _dnsBasicZoneUpdates = DnsBasicZoneUpdates.value();
 
         logger.info("Router configurations: " + "ramsize=" + routerRamSize);
 
@@ -599,9 +597,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         NetworkHelperImpl.setSystemAccount(_accountMgr.getSystemAccount());
 
-        final String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
-        _usageTimeZone = configs.get("usage.aggregation.timezone");
+        _usageAggregationRange = UsageService.UsageStatsJobAggregationRange.value();
+        _usageTimeZone = UsageService.UsageAggregationTimezone.value();
         if (_usageTimeZone == null) {
             _usageTimeZone = "GMT";
         }
@@ -1920,10 +1917,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
 
-        if (Boolean.parseBoolean(_configDao.getValue("system.vm.random.password"))) {
-            buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        if (SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
+            buf.append(" vmpassword=").append(ManagementServer.SystemVMPassword.value());
         }
-        String msPublicKey = _configDao.getValue("ssh.publickey");
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         NicProfile controlNic = null;
@@ -1977,7 +1974,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     // always add management explicit route, for basic
                     // networking setup, DomR may have two interfaces while both
                     // are on the same subnet
-                    String _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+                    String _mgmtCidr = ManagementServer.ManagementNetwork.value();
                     if (NetUtils.isValidIp4Cidr(_mgmtCidr)) {
                         buf.append(" mgmtcidr=").append(_mgmtCidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -2011,8 +2008,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Didn't start a control port");
         }
 
-        final String rpValue = _configDao.getValue(Config.NetworkRouterRpFilter.key());
-        _disableRpFilter = rpValue != null && rpValue.equalsIgnoreCase("true");
+        _disableRpFilter = NetworkRouterRpFilter.value();
 
         String rpFilter = " ";
         String type;
@@ -2089,7 +2085,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" exposedns=true");
         }
 
-        if (Boolean.parseBoolean(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
+        if (ManagementServer.BaremetalProvisionDoneNotificationEnabled.value()) {
             final QueryBuilder<UserVO> acntq = QueryBuilder.create(UserVO.class);
             acntq.and(acntq.entity().getUsername(), SearchCriteria.Op.EQ, "baremetal-system-account");
             final UserVO user = acntq.find();
@@ -2105,7 +2101,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 buf.append(String.format(" baremetalnotificationsecuritykey=%s", latestKeypair.getSecretKey()));
                 buf.append(String.format(" baremetalnotificationapikey=%s", latestKeypair.getApiKey()));
                 buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
-                buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
+                buf.append(" port=").append(ManagementServer.BaremetalProvisionDoneNotificationPort.value());
             }
         }
 
@@ -2192,7 +2188,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
 
-            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            final int advertInt = RedundantRouterVrrpInterval.value();
             buf.append(" advert_int=").append(advertInt);
         }
 
@@ -2235,7 +2231,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (isRedundant) {
             buf.append(" redundant_router=1");
 
-            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            final int advertInt = RedundantRouterVrrpInterval.value();
             buf.append(" advert_int=").append(advertInt);
 
             final Long vpcId = router.getVpcId();
@@ -2368,8 +2364,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return;
         }
 
-        final String serviceMonitoringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
-        final boolean isMonitoringServicesEnabled = serviceMonitoringSet != null && serviceMonitoringSet.equalsIgnoreCase("true");
+        final boolean isMonitoringServicesEnabled = EnableServiceMonitoring.value();
         final NetworkVO network = _networkDao.findById(networkId);
 
         logger.debug("Creating  monitoring services on " + router + " start...");
@@ -3393,7 +3388,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
                 RemoveControlIpOnStop,
-                VirtualRouterUserData
+                VirtualRouterUserData,
+                NetworkRouterRpFilter,
+                EnableServiceMonitoring,
+                RouterRamSize,
+                RouterCpuMHz,
+                RouterStatsInterval,
+                RouterCheckInterval,
+                RouterCheckPoolSize,
+                RouterExtraPublicNics,
+                DnsBasicZoneUpdates,
+                RedundantRouterVrrpInterval,
+                DirectAttachNetworkEnabled,
+                DirectAttachNetworkExternalAPIURL
         };
     }
 

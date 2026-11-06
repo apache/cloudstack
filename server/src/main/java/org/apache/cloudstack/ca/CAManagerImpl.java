@@ -48,8 +48,8 @@ import javax.net.ssl.X509TrustManager;
 import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.host.HostVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VMInstanceVO;
@@ -102,8 +102,6 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     private VMInstanceDao vmInstanceDao;
     @Inject
     private NetworkOrchestrationService networkOrchestrationService;
-    @Inject
-    private ConfigurationDao configDao;
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -315,7 +313,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             sshConnection = new Connection(hostIp, port);
             sshConnection.connect(null, 60000, 60000);
 
-            String privateKey = configDao.getValue("ssh.privatekey");
+            String privateKey = ManagementServer.SshPrivateKey.value();
             if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
                 if (StringUtils.isEmpty(password) || !sshConnection.authenticateWithPassword(username, password)) {
                     throw new CloudRuntimeException("Failed to authenticate to host via SSH for forced provisioning: " + hostIp);

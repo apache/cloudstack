@@ -47,16 +47,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
 import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.NumbersUtil;
+import com.cloud.storage.StorageManager;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
@@ -64,8 +64,9 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
+public class StorageCacheManagerImpl implements StorageCacheManager, Manager, Configurable {
     protected Logger logger = LogManager.getLogger(getClass());
+
     @Inject
     List<StorageCacheAllocator> storageCacheAllocator;
     @Inject
@@ -76,8 +77,6 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     DataStoreManager dataStoreManager;
     @Inject
     StorageCacheReplacementAlgorithm cacheReplacementAlgorithm;
-    @Inject
-    ConfigurationDao configDao;
     Boolean cacheReplacementEnabled = Boolean.TRUE;
     int workers;
     ScheduledExecutorService executors;
@@ -159,11 +158,21 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        cacheReplacementEnabled = Boolean.parseBoolean(configDao.getValue(Config.StorageCacheReplacementEnabled.key()));
-        cacheReplaceMentInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementInterval.key()), 86400);
-        workers = NumbersUtil.parseInt(configDao.getValue(Config.ExpungeWorkers.key()), 10);
+        cacheReplacementEnabled = StorageCacheReplacementEnabled.value();
+        cacheReplaceMentInterval = StorageCacheReplacementInterval.value();
+        workers = StorageManager.ExpungeWorkers.value();
         executors = Executors.newScheduledThreadPool(workers, new NamedThreadFactory("StorageCacheManager-cache-replacement"));
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return StorageCacheManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {StorageCacheReplacementEnabled, StorageCacheReplacementInterval, StorageCacheReplacementLRUTimeInterval};
     }
 
     protected class CacheReplacementRunner extends ManagedContextRunnable {

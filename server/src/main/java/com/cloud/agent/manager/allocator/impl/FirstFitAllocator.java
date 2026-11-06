@@ -23,7 +23,6 @@ import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispers
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlan;
@@ -288,7 +287,7 @@ public class FirstFitAllocator extends BaseAllocator {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         // Get capacity by which we should reorder
         short capacityType = FirstFitPlanner.getHostCapacityTypeToOrderCluster(
-                _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+                DeploymentClusterPlanner.HostCapacityTypeToOrderClusters.value(), cpuToMemoryWeight);
         logger.debug("CapacityType: {} is used for Host ordering", FirstFitPlanner.getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for CPU or RAM
             return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);

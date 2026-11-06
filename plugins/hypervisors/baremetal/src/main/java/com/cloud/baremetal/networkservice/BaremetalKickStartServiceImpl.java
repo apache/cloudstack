@@ -39,8 +39,8 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
+import com.cloud.baremetal.manager.BaremetalManager;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
@@ -219,7 +219,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException(String.format("Cannot find Management NIC on virtual router[id:%s]", vr.getId()));
         }
 
-        String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
+        String internalServerIp = BaremetalManager.BaremetalInternalStorageServer.value();
         if (internalServerIp == null) {
             throw new CloudRuntimeException(String.format("please specify 'baremetal.internal.storage.server.ip', which is the http server/nfs server storing kickstart files and ISO files, in global setting"));
         }
