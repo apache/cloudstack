@@ -2089,6 +2089,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" exposedns=true");
         }
 
+        final List<String> usageExemptCidrs = NetworkOrchestrationService.parseUsageExemptCidrs(
+                NetworkOrchestrationService.NetworkUsageExemptCidrs.valueIn(dc.getId()));
+        if (!usageExemptCidrs.isEmpty()) {
+            buf.append(" usage_exempt_cidrs=").append(String.join(",", usageExemptCidrs));
+        }
+
         if (Boolean.parseBoolean(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
             final QueryBuilder<UserVO> acntq = QueryBuilder.create(UserVO.class);
             acntq.and(acntq.entity().getUsername(), SearchCriteria.Op.EQ, "baremetal-system-account");
