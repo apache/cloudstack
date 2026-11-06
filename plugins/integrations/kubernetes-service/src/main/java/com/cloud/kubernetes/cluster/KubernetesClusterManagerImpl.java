@@ -2082,7 +2082,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     public static boolean checkIfVmsAssociatedWithBackupOffering(List<VMInstanceVO> vms) {
         for(VMInstanceVO vm : vms) {
-            if (Objects.nonNull(vm.getBackupOfferingId())) {
+            if (Objects.nonNull(vm) && Objects.nonNull(vm.getBackupOfferingId())) {
                return true;
             }
         }
