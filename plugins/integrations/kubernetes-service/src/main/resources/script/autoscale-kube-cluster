@@ -51,7 +51,7 @@ while [ -n "$1" ]; do
             ENABLE="true"
             shift 1
             ;;
-        -d | --enable)
+        -d | --disable)
             ENABLE="false"
             shift 1
             ;;
@@ -69,7 +69,11 @@ while [ -n "$1" ]; do
             ;;
     esac
 done
-if [ $ENABLE == "true" ] ; then
+if [ -z "$ENABLE" ]; then
+    echo "ERROR: one of -e/--enable or -d/--disable is required. -h or --help for help"
+    exit 1
+fi
+if [ "$ENABLE" == "true" ] ; then
     if [ -e /opt/autoscaler/autoscaler_tmpl.yaml ]; then
         sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
         /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
@@ -78,16 +82,16 @@ if [ $ENABLE == "true" ] ; then
         mkdir -p /opt/autoscaler
         AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
         autoscaler_conf_file="/opt/autoscaler/autoscaler_tmpl.yaml"
-        curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
-        if [ $? -ne 0 ]; then
+        trap 'rm -f "$autoscaler_conf_file.tmp.$$"' EXIT
+        if ! curl -fsSL "$AUTOSCALER_URL" -o "$autoscaler_conf_file.tmp.$$"; then
             echo "Unable to connect to the internet to download the autoscaler deployment and image"
             exit 1
-        else
-            sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
-            /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
-            exit 0
         fi
+        mv -f "$autoscaler_conf_file.tmp.$$" "$autoscaler_conf_file"
+        sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
+        /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
+        exit 0
     fi
 else
-    /opt/bin/kubectl delete deployment -n kube-system cluster-autoscaler
+    /opt/bin/kubectl delete deployment -n kube-system cluster-autoscaler --ignore-not-found
 fi
