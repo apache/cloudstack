@@ -658,6 +658,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         networkACLRule.setAction(NetworkACLItem.Action.Allow.toString());
 
+        networkACLRule.setReason(getVpcTierAclRuleReason());
+
         NetworkACLItem aclRule = networkACLService.createNetworkACLItem(networkACLRule);
         networkACLService.moveRuleToTheTopInACLList(aclRule);
         networkACLService.applyNetworkACL(aclRule.getAclId());
@@ -675,9 +677,39 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                                                                networkACLItem.getAction().equals(NetworkACLItem.Action.Allow)))
                 .collect(Collectors.toList());
 
-        for (NetworkACLItemVO aclItem : aclItems) {
+        // Only remove the rules this cluster created, other clusters may use the same ACL list
+        List<NetworkACLItemVO> clusterAclItems = aclItems.stream()
+                .filter(networkACLItem -> getVpcTierAclRuleReason().equals(networkACLItem.getReason()))
+                .collect(Collectors.toList());
+        // Record the cleanup before revoking, so a retried deletion knows this cluster's rule is already gone
+        String cleanupDetail = getVpcTierAclRuleCleanupDetail(startPort, endPort);
+        if (clusterAclItems.isEmpty() && kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), cleanupDetail) == null) {
+            // Rule created before rules were marked with the cluster, claim only one of them
+            NetworkACLItemVO legacyAclItem = aclItems.stream()
+                    .filter(networkACLItem -> StringUtils.isEmpty(networkACLItem.getReason()))
+                    .findFirst().orElse(null);
+            if (legacyAclItem != null) {
+                legacyAclItem.setReason(getVpcTierAclRuleReason());
+                networkACLItemDao.update(legacyAclItem.getId(), legacyAclItem);
+                clusterAclItems = List.of(legacyAclItem);
+            }
+        }
+        if (clusterAclItems.isEmpty()) {
+            return;
+        }
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), cleanupDetail, String.valueOf(true), false);
+
+        for (NetworkACLItemVO aclItem : clusterAclItems) {
             networkACLService.revokeNetworkACLItem(aclItem.getId());
         }
+    }
+
+    protected String getVpcTierAclRuleReason() {
+        return String.format("Kubernetes cluster %s", kubernetesCluster.getUuid());
+    }
+
+    protected String getVpcTierAclRuleCleanupDetail(int startPort, int endPort) {
+        return String.format("vpcTierAclRuleRemoved-%d-%d", startPort, endPort);
     }
 
     protected void provisionLoadBalancerRule(final IpAddress publicIp, final Network network,
