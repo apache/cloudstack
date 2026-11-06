@@ -95,6 +95,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -123,6 +124,7 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -134,6 +136,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
@@ -236,6 +239,7 @@ public class DeploymentPlanningManagerImplTest {
     private static final long hostId = 0L;
     private static final long podId = 2L;
     private static final long clusterId = 3L;
+    private static final long accountId = 7L;
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1L;
     private AutoCloseable closeable;
 
@@ -1353,5 +1357,71 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertTrue(CollectionUtils.isNotEmpty(avoidedClusters));
         Assert.assertEquals(allClusters.size() - 1, avoidedClusters.size());
         Assert.assertFalse(avoidedClusters.contains(allClusters.get(0)));
+    }
+
+    private Optional<StoragePool> runGetPreferredStoragePoolTest(String accountPoolUuid, String clusterPoolUuid, String globalPoolUuid,
+            List<StoragePool> poolList) {
+        Object previousDepot = ReflectionTestUtils.getField(ConfigKey.class, "s_depot");
+        ConfigDepotImpl configDepotImpl = Mockito.mock(ConfigDepotImpl.class);
+        String key = StorageManager.PreferredStoragePool.key();
+        Mockito.when(configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Account, accountId)).thenReturn(accountPoolUuid);
+        Mockito.when(configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Cluster, clusterId)).thenReturn(clusterPoolUuid);
+        Mockito.when(configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null)).thenReturn(globalPoolUuid);
+        ConfigKey.init(configDepotImpl);
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getAccountId()).thenReturn(accountId);
+        try {
+            return _dpm.getPreferredStoragePool(poolList, vm, clusterId);
+        } finally {
+            ConfigKey.init((ConfigDepotImpl) previousDepot);
+        }
+    }
+
+    private StoragePool mockStoragePoolWithUuid(String uuid) {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        Mockito.when(pool.getUuid()).thenReturn(uuid);
+        return pool;
+    }
+
+    @Test
+    public void getPreferredStoragePoolAccountTakesPrecedenceOverCluster() {
+        StoragePool accountPool = mockStoragePoolWithUuid("account-pool");
+        StoragePool clusterPool = mockStoragePoolWithUuid("cluster-pool");
+
+        Optional<StoragePool> result = runGetPreferredStoragePoolTest("account-pool", "cluster-pool", null,
+                List.of(clusterPool, accountPool));
+
+        Assert.assertEquals(Optional.of(accountPool), result);
+    }
+
+    @Test
+    public void getPreferredStoragePoolUsesPlanClusterValueWhenAccountNotSet() {
+        StoragePool clusterPool = mockStoragePoolWithUuid("cluster-pool");
+        StoragePool globalPool = mockStoragePoolWithUuid("global-pool");
+
+        Optional<StoragePool> result = runGetPreferredStoragePoolTest(null, "cluster-pool", "global-pool",
+                List.of(globalPool, clusterPool));
+
+        Assert.assertEquals(Optional.of(clusterPool), result);
+    }
+
+    @Test
+    public void getPreferredStoragePoolFallsBackToGlobalValue() {
+        StoragePool globalPool = mockStoragePoolWithUuid("global-pool");
+
+        Optional<StoragePool> result = runGetPreferredStoragePoolTest(null, null, "global-pool",
+                List.of(globalPool));
+
+        Assert.assertEquals(Optional.of(globalPool), result);
+    }
+
+    @Test
+    public void getPreferredStoragePoolNotInSuitablePools() {
+        StoragePool otherPool = mockStoragePoolWithUuid("other-pool");
+
+        Optional<StoragePool> result = runGetPreferredStoragePoolTest(null, "cluster-pool", null,
+                List.of(otherPool));
+
+        Assert.assertTrue(result.isEmpty());
     }
 }
