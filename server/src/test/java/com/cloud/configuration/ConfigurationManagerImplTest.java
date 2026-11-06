@@ -66,6 +66,7 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -859,6 +860,30 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueRangeTestReturnsNotNullWhenConfigKeyHasRangeAndValueIsInvalid() {
         Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(NetworkModel.MACIdentifier.key(), "-1", Integer.class, null));
+    }
+
+    private String validateUsageExemptCidrs(String value) {
+        return configurationManagerImplSpy.validateValueRange(NetworkOrchestrationService.NetworkUsageExemptCidrs.key(), value, String.class, null);
+    }
+
+    @Test
+    public void validateValueRangeTestAcceptsUsageExemptAddressesAndCidrs() {
+        Assert.assertNull(validateUsageExemptCidrs(""));
+        Assert.assertNull(validateUsageExemptCidrs("192.0.2.5, 198.51.100.70/24,,203.0.113.0/24"));
+        Assert.assertNull(validateUsageExemptCidrs("2001:db8::5,2001:db8:0:1::7/64"));
+    }
+
+    @Test
+    public void validateValueRangeTestRejectsInvalidUsageExemptEntry() {
+        Assert.assertNotNull(validateUsageExemptCidrs("192.0.2.5,bogus"));
+        Assert.assertNotNull(validateUsageExemptCidrs("192.0.2.300"));
+        Assert.assertNotNull(validateUsageExemptCidrs("2001:db8::/129"));
+    }
+
+    @Test
+    public void validateValueRangeTestRejectsUsageExemptMatchAll() {
+        Assert.assertNotNull(validateUsageExemptCidrs("0.0.0.0/0"));
+        Assert.assertNotNull(validateUsageExemptCidrs("::/0"));
     }
 
     @Test

@@ -18,6 +18,7 @@
 
 from .CsDatabag import CsCmdLine, CsGuestNetwork
 from .CsAddress import CsAddress
+import ipaddress
 import logging
 
 
@@ -113,6 +114,29 @@ class CsConfig(object):
 
     def expose_dns(self):
         return self.cmdline().idata().get('exposedns', 'false') == 'true'
+
+    def get_usage_exempt_cidrs(self):
+        """ The IPv4 CIDRs to leave out of network usage, tidied to match how iptables-save prints them.
+        Without that, each run would see the rules as changed and rewrite them.
+        IPv6 entries are skipped, as the router only counts IPv4 traffic. """
+        cidrs = []
+        for value in self.cmdline().idata().get('usage_exempt_cidrs', '').split(','):
+            value = value.strip()
+            if not value:
+                continue
+            try:
+                network = ipaddress.ip_network(value, strict=False)
+            except ValueError:
+                logging.warning("Skipping %s in usage exempt CIDRs: not a valid IP address or CIDR", value)
+                continue
+            if network.version != 4:
+                continue
+            if network.prefixlen == 0:
+                logging.warning("Skipping %s in usage exempt CIDRs: it would exempt all traffic", value)
+                continue
+            if str(network) not in cidrs:
+                cidrs.append(str(network))
+        return cidrs
 
     def use_router_ip_as_resolver(self):
         return self.cl.get_use_router_ip_as_resolver()

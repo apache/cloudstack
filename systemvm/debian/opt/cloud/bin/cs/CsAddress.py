@@ -473,6 +473,22 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
+    def add_usage_stats_jump(self, stats_chain):
+        """ Sends forwarded traffic to the usage counters. If exempt CIDRs are set, traffic passes
+        through <stats_chain>_EXEMPT first, which skips the counters for those addresses.
+        We keep the usage chain exactly as it was, because the agent reads its counters by position. """
+        exempt_cidrs = self.config.get_usage_exempt_cidrs()
+        if not exempt_cidrs:
+            self.fw.append(["", "front", "-A FORWARD -j %s" % stats_chain])
+            return
+        exempt_chain = "%s_EXEMPT" % stats_chain
+        self.fw.append(["", "front", "-A FORWARD -j %s" % exempt_chain])
+        self.fw.append(["", "", "-A %s -j %s" % (exempt_chain, stats_chain)])
+        for cidr in exempt_cidrs:
+            # insert at the top, so a CIDR added later still comes before the jump to the counters
+            self.fw.append(["", "front", "-A %s -d %s -j RETURN" % (exempt_chain, cidr)])
+            self.fw.append(["", "front", "-A %s -s %s -j RETURN" % (exempt_chain, cidr)])
+
     def fw_router(self):
         if self.config.is_vpc() or self.config.is_routed() or self.config.is_dhcp():
             return
@@ -501,8 +517,7 @@ class CsIP:
                             "-I VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
-            self.fw.append(
-                ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+            self.add_usage_stats_jump("NETWORK_STATS_%s" % self.dev)
             self.fw.append(
                 ["", "front", "-A INPUT -j NETWORK_STATS_%s" % self.dev])
             self.fw.append(
@@ -553,7 +568,7 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
 
-        self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
+        self.add_usage_stats_jump("NETWORK_STATS")
         self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A OUTPUT -j NETWORK_STATS'])
         self.fw.append(['', '', '-A NETWORK_STATS -i eth0 -o eth2'])
@@ -688,8 +703,7 @@ class CsIP:
                 ["mangle", "", "-A VPN_STATS_%s -o %s -m mark --mark 0x525/0xffffffff" % (self.dev, self.dev)])
             self.fw.append(
                 ["mangle", "", "-A VPN_STATS_%s -i %s -m mark --mark 0x524/0xffffffff" % (self.dev, self.dev)])
-            self.fw.append(
-                ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+            self.add_usage_stats_jump("NETWORK_STATS_%s" % self.dev)
             self.fw.append(
                 ["", "front", "-A INPUT -j NETWORK_STATS_%s" % self.dev])
             self.fw.append(
