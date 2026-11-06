@@ -63,6 +63,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
                description = "The network name label of the physical device dedicated to this traffic on a Hyperv host")
     private String hypervLabel;
 
+    @Deprecated
     @Parameter(name = ApiConstants.OVM3_NETWORK_LABEL,
                type = CommandType.STRING,
                description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
@@ -88,9 +89,6 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
         return vmwareLabel;
     }
 
-    public String getOvm3Label() {
-        return ovm3Label;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -103,7 +101,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        PhysicalNetworkTrafficType result = _networkService.updatePhysicalNetworkTrafficType(getId(), getXenLabel(), getKvmLabel(), getVmwareLabel(), null, getOvm3Label());
+        PhysicalNetworkTrafficType result = _networkService.updatePhysicalNetworkTrafficType(getId(), getXenLabel(), getKvmLabel(), getVmwareLabel(), null, null);
         if (result != null) {
             TrafficTypeResponse response = _responseGenerator.createTrafficTypeResponse(result);
             response.setResponseName(getCommandName());

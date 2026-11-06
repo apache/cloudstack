@@ -1554,7 +1554,6 @@ public class SystemVmTemplateRegistrationTest {
         assertEquals(10, SystemVmTemplateRegistration.LINUX_12_ID.intValue());
         assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.KVM).intValue());
         assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.LXC).intValue());
-        assertEquals(10, SystemVmTemplateRegistration.hypervisorGuestOsMap.get(Hypervisor.HypervisorType.Ovm3).intValue());
     }
 
     @Test

@@ -56,9 +56,7 @@ function getTemplateVersion() {
 
 function getGenericName() {
   hypervisor=$(echo "$1" | tr "[:upper:]" "[:lower:]")
-  if [[ "$hypervisor" == "ovm3" ]]; then
-    echo "ovm"
-  elif [[ "$hypervisor" == "lxc" ]]; then
+  if [[ "$hypervisor" == "lxc" ]]; then
     echo "kvm"
   elif [[ "$hypervisor" == "xenserver" ]]; then
     echo "xen"
@@ -115,7 +113,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     [vmware]="x86_64-vmware.ova"
     [xenserver]="x86_64-xen.vhd.bz2"
     [lxc]="x86_64-kvm.qcow2.bz2"
-    [ovm3]="x86_64-ovm.raw.bz2"
   )
 
   templates=()
