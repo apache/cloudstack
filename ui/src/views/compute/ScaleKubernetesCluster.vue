@@ -28,7 +28,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-        <a-form-item name="serviceofferingid" ref="serviceofferingid" v-if="!this.resource.workerofferingid && !this.resource.controlofferingid && !this.resource.etcdofferingid">
+        <a-form-item name="serviceofferingid" ref="serviceofferingid" v-if="!isAlert && !this.resource.workerofferingid && !this.resource.controlofferingid && !this.resource.etcdofferingid">
           <template #label>
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
@@ -47,7 +47,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="workerofferingid" ref="workerofferingid">
+        <a-form-item name="workerofferingid" ref="workerofferingid" v-if="!isAlert">
           <template #label>
             <tooltip-label :title="$t('label.service.offering.workernodes')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
@@ -66,7 +66,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="controlofferingid" ref="controlofferingid">
+        <a-form-item name="controlofferingid" ref="controlofferingid" v-if="!isAlert">
           <template #label>
             <tooltip-label :title="$t('label.service.offering.controlnodes')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
@@ -85,7 +85,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="etcdofferingid" ref="etcdofferingid" v-if="this.resource.etcdnodes && this.resource.etcdnodes > 0 && this.resource.etcdofferingid">
+        <a-form-item name="etcdofferingid" ref="etcdofferingid" v-if="!isAlert && this.resource.etcdnodes && this.resource.etcdnodes > 0 && this.resource.etcdofferingid">
           <template #label>
             <tooltip-label :title="$t('label.service.offering.etcdnodes')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
@@ -104,13 +104,13 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="autoscalingenabled" ref="autoscalingenabled" v-if="apiParams.autoscalingenabled">
+        <a-form-item name="autoscalingenabled" ref="autoscalingenabled" v-if="!isAlert && apiParams.autoscalingenabled">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
           </template>
           <a-switch :checked="autoscalingenabled" @change="val => { autoscalingenabled = val }" />
         </a-form-item>
-        <span v-if="autoscalingenabled">
+        <span v-if="!isAlert && autoscalingenabled">
           <a-form-item name="minsize" ref="minsize">
             <template #label>
               <tooltip-label :title="$t('label.cks.cluster.minsize')" :tooltip="apiParams.minsize.description"/>
@@ -129,7 +129,7 @@
           </a-form-item>
         </span>
         <span v-else>
-          <a-form-item name="size" ref="size" v-if="['Created', 'Running'].includes(resource.state)">
+          <a-form-item name="size" ref="size" v-if="isAlert || ['Created', 'Running'].includes(resource.state)">
             <template #label>
               <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
             </template>
@@ -178,7 +178,9 @@ export default {
       maxsize: null,
       controlOfferings: [],
       workerOfferings: [],
-      etcdOfferings: []
+      etcdOfferings: [],
+      // The state the dialog was opened in, kept if the cluster changes state while it is open
+      isAlert: false
     }
   },
   beforeCreate () {
@@ -187,6 +189,7 @@ export default {
   created () {
     this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
     if (!this.isObjectEmpty(this.resource)) {
+      this.isAlert = this.resource.state === 'Alert'
       this.originalSize = this.resource.size
       if (this.apiParams.autoscalingenabled) {
         this.autoscalingenabled = this.resource.autoscalingenabled ? true : null
@@ -212,6 +215,10 @@ export default {
       })
     },
     fetchData () {
+      if (this.isAlert) {
+        // Only the size can be changed in Alert, so the offerings aren't shown
+        return
+      }
       if (this.resource.state === 'Running') {
         this.fetchKubernetesClusterServiceOfferingData(this.resource.serviceofferingid, 'default')
         this.fetchKubernetesClusterServiceOfferingData(this.resource.workerofferingid, 'worker')
@@ -327,11 +334,16 @@ export default {
         const params = {
           id: this.resource.id
         }
-        if (this.autoscalingenabled != null) {
-          params.autoscalingenabled = this.autoscalingenabled
-        }
         if (this.isValidValueForKey(values, 'size') && values.size > 0) {
           params.size = values.size
+        }
+        if (this.isAlert) {
+          // Only the size can be changed while the cluster is in Alert
+          this.scaleCluster(params)
+          return
+        }
+        if (this.autoscalingenabled != null) {
+          params.autoscalingenabled = this.autoscalingenabled
         }
         if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings)) {
           params.serviceofferingid = this.serviceOfferings[values.serviceofferingid].id
@@ -358,24 +370,27 @@ export default {
           params['nodeofferings[' + advancedOfferings + '].offering'] = this.etcdOfferings[values.etcdofferingid].id
           advancedOfferings++
         }
-        postAPI('scaleKubernetesCluster', params).then(json => {
-          const jobId = json.scalekubernetesclusterresponse.jobid
-          this.$pollJob({
-            jobId,
-            title: this.$t('label.kubernetes.cluster.scale'),
-            description: this.resource.name,
-            loadingMessage: `${this.$t('label.kubernetes.cluster.scale')} ${this.resource.name} ${this.$t('label.in.progress')}`,
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`
-          })
-          this.closeAction()
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+        this.scaleCluster(params)
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    scaleCluster (params) {
+      postAPI('scaleKubernetesCluster', params).then(json => {
+        const jobId = json.scalekubernetesclusterresponse.jobid
+        this.$pollJob({
+          jobId,
+          title: this.$t('label.kubernetes.cluster.scale'),
+          description: this.resource.name,
+          loadingMessage: `${this.$t('label.kubernetes.cluster.scale')} ${this.resource.name} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`
+        })
+        this.closeAction()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
       })
     },
     closeAction () {
