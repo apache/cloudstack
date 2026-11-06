@@ -61,6 +61,8 @@
   "label.account.id": "\u5E10\u6237\u6807\u8BC6\u7801",
   "label.account.name": "\u5E10\u6237\u540D\u79F0",
   "label.account.specific": "\u5E10\u6237\u4E13\u7528",
+  "label.account.type.domain.admin": "域管理员",
+  "label.account.type.normal": "普通(用户)",
   "label.accounts": "\u5E10\u6237",
   "label.accounttype": "\u5E10\u53F7\u7C7B\u578B",
 

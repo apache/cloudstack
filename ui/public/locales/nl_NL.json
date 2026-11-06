@@ -12,6 +12,8 @@
 "label.account.id": "Account ID",
 "label.account.name": "Account Naam",
 "label.account.specific": "Account-specifiek",
+"label.account.type.domain.admin": "Domeinbeheerder",
+"label.account.type.normal": "Normaal (Gebruiker)",
 "label.accounts": "Accounts",
 "label.accounttype": "Account type",
 "label.acl.export": "Export ACL rules",
