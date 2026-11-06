@@ -67,6 +67,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
                description = "The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
 
+    @Deprecated
     @Parameter(name = ApiConstants.HYPERV_NETWORK_LABEL,
                type = CommandType.STRING,
                description = "The network name label of the physical device dedicated to this traffic on a Hyperv host")
@@ -106,10 +107,6 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     public String getVmwareLabel() {
         return vmwareLabel;
-    }
-
-    public String getHypervLabel() {
-        return hypervLabel;
     }
 
     public String getSimulatorLabel() {
@@ -163,7 +160,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         PhysicalNetworkTrafficType result =
             _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getIsolationMethod(), getXenLabel(), getKvmLabel(), getVmwareLabel(),
-                getSimulatorLabel(), getVlan(), getHypervLabel(), getOvm3Label());
+                getSimulatorLabel(), getVlan(), null, getOvm3Label());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

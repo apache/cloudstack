@@ -441,11 +441,10 @@ public class ApiResponseHelperTest {
             String kvmLabel = "kvm";
             String vmwareLabel = "vmware";
             String simulatorLabel = "simulator";
-            String hypervLabel = "hyperv";
             String ovmLabel = "ovm";
             String vlan = "vlan";
             String trafficType = "Public";
-            PhysicalNetworkTrafficType pnetTrafficType = new PhysicalNetworkTrafficTypeVO(pnet.getId(), Networks.TrafficType.getTrafficType(trafficType), xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel, ovmLabel);
+            PhysicalNetworkTrafficType pnetTrafficType = new PhysicalNetworkTrafficTypeVO(pnet.getId(), Networks.TrafficType.getTrafficType(trafficType), xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, null, ovmLabel);
 
             TrafficTypeResponse response = apiResponseHelper.createTrafficTypeResponse(pnetTrafficType);
             assertFalse(UUID.fromString(response.getId()).toString().isEmpty());
@@ -454,7 +453,6 @@ public class ApiResponseHelperTest {
             assertEquals(response.getXenLabel(), xenLabel);
             assertEquals(response.getKvmLabel(), kvmLabel);
             assertEquals(response.getVmwareLabel(), vmwareLabel);
-            assertEquals(response.getHypervLabel(), hypervLabel);
             assertEquals(response.getOvm3Label(), ovmLabel);
             assertEquals(response.getVlan(), vlan);
             assertEquals(response.getIsolationMethods(), "VXLAN,STT");

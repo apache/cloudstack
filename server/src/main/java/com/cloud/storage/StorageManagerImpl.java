@@ -445,7 +445,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<>();
 
     private final Set<HypervisorType> zoneWidePoolSupportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
-            HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
+            HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
 
     private static final String NFS_MOUNT_OPTIONS_INCORRECT = "An incorrect mount option was specified";
 
@@ -3446,8 +3446,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return HypervisorType.KVM;
         } else if (format == ImageFormat.RAW) {
             return HypervisorType.Ovm;
-        } else if (format == ImageFormat.VHDX) {
-            return HypervisorType.Hyperv;
         } else {
             return HypervisorType.None;
         }
@@ -3941,8 +3939,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
         } else if (hType.equals(HypervisorType.VMware)) {
             templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
-        } else if (hType.equals(HypervisorType.Hyperv)) {
-            templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
         } else if (hType.equals(HypervisorType.LXC)) {
             templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
         }

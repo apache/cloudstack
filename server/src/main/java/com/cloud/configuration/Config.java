@@ -547,7 +547,7 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "hypervisor.list",
-            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
+            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," +
                     HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
@@ -1055,32 +1055,6 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
-
-    // Hyperv
-    HypervPublicNetwork(
-            "Hidden",
-            ManagementServer.class,
-            String.class,
-            "hyperv.public.network.device",
-            null,
-            "Specify the public virtual switch on host for public network",
-            null),
-    HypervPrivateNetwork(
-            "Hidden",
-            ManagementServer.class,
-            String.class,
-            "hyperv.private.network.device",
-            null,
-            "Specify the virtual switch on host for private network",
-            null),
-    HypervGuestNetwork(
-            "Hidden",
-            ManagementServer.class,
-            String.class,
-            "hyperv.guest.network.device",
-            null,
-            "Specify the virtual switch on host for private network",
-            null),
 
     // Usage
     UsageExecutionTimezone("Usage", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
@@ -1635,15 +1609,6 @@ public enum Config {
             "If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side."
                     + " If set to false, these commands become asynchronous. Default value is false.",
                     null),
-
-    UCSSyncBladeInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "ucs.sync.blade.interval",
-            "3600",
-            "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
-            null),
 
     RedundantRouterVrrpInterval(
             "Advanced",

@@ -239,3 +239,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- UCS and Hyper-V hypervisor plugins are no longer built
+DELETE FROM `cloud`.`configuration` WHERE name = 'ucs.sync.blade.interval';
+DELETE FROM `cloud`.`configuration` WHERE name IN ('hyperv.public.network.device', 'hyperv.private.network.device', 'hyperv.guest.network.device', 'router.template.hyperv');
