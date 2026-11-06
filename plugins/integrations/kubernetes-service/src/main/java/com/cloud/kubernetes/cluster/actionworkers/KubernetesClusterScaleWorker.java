@@ -212,7 +212,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                                                                         final ServiceOffering newServiceOffering,
                                                                         final boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         final ServiceOffering serviceOffering = newServiceOffering == null ?
-                serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
+                getServiceOfferingForNodeTypeOnCluster(nodeType, kubernetesCluster) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
 
         Pair<Long, Long> clusterCountAndCapacity = calculateNewClusterCountAndCapacity(newWorkerSize, nodeType, serviceOffering);
@@ -394,7 +394,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
     }
 
-    private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
+    protected void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
         for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
             logger.info("Removing vm {} from cluster {}", userVM, kubernetesCluster);
@@ -605,7 +605,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         for (KubernetesClusterNodeType nodeType : Arrays.asList(CONTROL, ETCD, WORKER)) {
             boolean isWorkerNode = WORKER == nodeType;
             final long newVMRequired = (!isWorkerNode || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
-            if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
+            if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0
+                    && !(isWorkerNode && autoscalingChanged)) {
                 continue;
             }
 

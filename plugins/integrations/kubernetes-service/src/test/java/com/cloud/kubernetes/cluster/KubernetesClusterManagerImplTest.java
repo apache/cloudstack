@@ -57,7 +57,6 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMa
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.commons.collections.MapUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -408,15 +407,35 @@ public class KubernetesClusterManagerImplTest {
     }
 
     @Test
-    public void testCreateNodeTypeToServiceOfferingMapNullMap() {
-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getServiceOfferingId()).thenReturn(1L);
+    public void testMissingOfferingParametersDoNotRequestGlobalResize() {
+        Assert.assertTrue(kubernetesClusterManager.createNodeTypeToServiceOfferingMap(null, null).isEmpty());
+        Mockito.verifyNoInteractions(serviceOfferingDao);
+    }
+
+    @Test
+    public void testEmptyOfferingParametersDoNotRequestGlobalResize() {
+        Assert.assertTrue(kubernetesClusterManager.createNodeTypeToServiceOfferingMap(new HashMap<>(), null).isEmpty());
+        Mockito.verifyNoInteractions(serviceOfferingDao);
+    }
+
+    @Test
+    public void testExplicitGlobalOfferingStillRequestsGlobalResize() {
         ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(offering);
-        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(new HashMap<>(), null, clusterVO);
-        Assert.assertFalse(MapUtils.isEmpty(mapping));
-        Assert.assertTrue(mapping.containsKey(DEFAULT.name()));
-        Assert.assertEquals(offering, mapping.get(DEFAULT.name()));
+
+        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(null, 1L);
+
+        Assert.assertEquals(Collections.singletonMap(DEFAULT.name(), offering), mapping);
+    }
+
+    @Test
+    public void testExplicitGlobalOfferingWithEmptyNodeMap() {
+        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(offering);
+
+        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(new HashMap<>(), 1L);
+
+        Assert.assertEquals(Collections.singletonMap(DEFAULT.name(), offering), mapping);
     }
 
     @Test
@@ -432,7 +451,7 @@ public class KubernetesClusterManagerImplTest {
         ServiceOfferingVO controlOffering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.when(serviceOfferingDao.findById(controlOfferingId)).thenReturn(controlOffering);
 
-        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(idsMap, null, null);
+        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(idsMap, null);
         Assert.assertEquals(2, mapping.size());
         Assert.assertTrue(mapping.containsKey(WORKER.name()) && mapping.containsKey(CONTROL.name()));
         Assert.assertEquals(workerOffering, mapping.get(WORKER.name()));
