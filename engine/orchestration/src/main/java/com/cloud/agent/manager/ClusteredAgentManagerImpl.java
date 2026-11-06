@@ -824,7 +824,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         final List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up);
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getManagementServerId(), Op.NNULL);
-        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+        sc.and(sc.entity().getType(), Op.IN, (Object[]) AgentLoadBalancerPlanner.REBALANCEABLE_HOST_TYPES);
         final List<HostVO> allManagedAgents = sc.list();
 
         int avLoad;
@@ -1037,6 +1037,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected boolean rebalanceHost(final long hostId, final long currentOwnerId, final long futureOwnerId, final boolean isConnectionTransfer) throws AgentUnavailableException {
         boolean result = true;
         if (currentOwnerId == _nodeId) {
+            final AgentAttache attache = findAttache(hostId);
+            if (attache != null && !(attache instanceof ClusteredDirectAgentAttache)) {
+                // Indirectly connected agents (KVM hosts, SSVM, CPVM) dial in to a management server rather
+                // than being loaded directly by it, so this management server can't hand the host to a
+                // specific future owner the way it can for direct agents. Disconnect it instead: the agent
+                // reconnects on its own using its indirect agent LB configuration (the "host" global setting
+                // and indirect.agent.lb.algorithm), which is what actually determines its next owner.
+                logger.debug("Host id={} ({}) is an indirectly connected agent; disconnecting it so it reconnects and picks a management server " +
+                        "using its own load balancing configuration", hostId, attache);
+                result = handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
+                finishRebalance(hostId, futureOwnerId, result ? Event.RebalanceCompleted : Event.RebalanceFailed);
+                return result;
+            }
+
             if (!startRebalance(hostId)) {
                 logger.debug("Failed to start agent rebalancing");
                 finishRebalance(hostId, futureOwnerId, Event.RebalanceFailed);
@@ -1577,11 +1591,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     if (!_agentLbHappened) {
                         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
                         sc.and(sc.entity().getManagementServerId(), Op.NNULL);
-                        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+                        sc.and(sc.entity().getType(), Op.IN, (Object[]) AgentLoadBalancerPlanner.REBALANCEABLE_HOST_TYPES);
                         final List<HostVO> allManagedRoutingAgents = sc.list();
 
                         sc = QueryBuilder.create(HostVO.class);
-                        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+                        sc.and(sc.entity().getType(), Op.IN, (Object[]) AgentLoadBalancerPlanner.REBALANCEABLE_HOST_TYPES);
                         final List<HostVO> allAgents = sc.list();
                         final double allHostsCount = allAgents.size();
                         final double managedHostsCount = allManagedRoutingAgents.size();

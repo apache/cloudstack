@@ -19,10 +19,18 @@ package com.cloud.cluster.agentlb;
 import java.util.List;
 
 import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.utils.component.Adapter;
 
 public interface AgentLoadBalancerPlanner extends Adapter {
+
+    /**
+     * Host types eligible for agent load balancing between management servers: hypervisor hosts of any
+     * hypervisor (KVM, VMware, XenServer, ...) as well as the system VM agents (SSVM, CPVM) that connect
+     * to a management server the same way a KVM host does.
+     */
+    Host.Type[] REBALANCEABLE_HOST_TYPES = {Host.Type.Routing, Host.Type.ConsoleProxy, Host.Type.SecondaryStorageVM};
 
     List<HostVO> getHostsToRebalance(ManagementServerHostVO ms, int avLoad);
 
