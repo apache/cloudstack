@@ -262,10 +262,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         this.resource = resource;
     }
 
-    protected String getDefaultStorageScriptsDir() {
-        return "scripts/storage/qcow2";
-    }
-
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         storageLayer = new JavaStorageLayer();
         storageLayer.configure("StorageLayer", params);

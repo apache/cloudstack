@@ -139,8 +139,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     public abstract String getName();
 
-    public abstract boolean isStoragePoolTypeSupported(Storage.StoragePoolType type);
-
     public abstract AddressInfo parseAndValidatePath(String path);
 
     @Override
