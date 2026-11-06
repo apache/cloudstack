@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.object.store;
 
+import com.cloud.agent.api.to.BucketCredentialTO;
+import com.cloud.agent.api.to.BucketKeyTO;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import org.apache.cloudstack.storage.object.Bucket;
@@ -35,6 +37,7 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ObjectStoreImpl implements ObjectStoreEntity {
 
@@ -166,6 +169,56 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     @Override
     public boolean createUser(long accountId) {
         return driver.createUser(accountId, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean supportsBucketCredentials() {
+        return driver.supportsBucketCredentials(objectStoreVO.getId());
+    }
+
+    @Override
+    public String bucketCredentialsUnsupportedReason() {
+        return driver.bucketCredentialsUnsupportedReason(objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean accountSupportsBucketCredentials(long accountId) {
+        return driver.accountSupportsBucketCredentials(accountId, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean migrateAccountForBucketCredentials(long accountId) {
+        return driver.migrateAccountForBucketCredentials(accountId, objectStoreVO.getId());
+    }
+
+    @Override
+    public BucketCredentialTO createBucketCredential(BucketTO bucket) {
+        return driver.createBucketCredential(bucket, objectStoreVO.getId());
+    }
+
+    @Override
+    public BucketKeyTO createBucketCredentialKey(BucketTO bucket, Set<String> knownAccessKeys) {
+        return driver.createBucketCredentialKey(bucket, objectStoreVO.getId(), knownAccessKeys);
+    }
+
+    @Override
+    public boolean removeBucketCredentialKey(BucketTO bucket, String accessKey) {
+        return driver.removeBucketCredentialKey(bucket, objectStoreVO.getId(), accessKey);
+    }
+
+    @Override
+    public boolean deleteBucketCredential(BucketTO bucket) {
+        return driver.deleteBucketCredential(bucket, objectStoreVO.getId());
+    }
+
+    @Override
+    public BucketKeyTO rotateAccountKey(long accountId) {
+        return driver.rotateAccountKey(accountId, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean isAccountKeyRotationPending(long accountId) {
+        return driver.isAccountKeyRotationPending(accountId, objectStoreVO.getId());
     }
 
     @Override

@@ -386,8 +386,13 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.admin.storage.MigrateObjectStoreAccountCmd;
+import org.apache.cloudstack.api.command.admin.storage.RotateObjectStoreAccountKeyCmd;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
 import org.apache.cloudstack.api.command.user.bucket.DeleteBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.MigrateBucketCredentialCmd;
+import org.apache.cloudstack.api.command.user.bucket.RevokeBucketKeyCmd;
+import org.apache.cloudstack.api.command.user.bucket.RotateBucketKeyCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
@@ -4437,6 +4442,11 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(CreateBucketCmd.class);
         cmdList.add(UpdateBucketCmd.class);
         cmdList.add(DeleteBucketCmd.class);
+        cmdList.add(RotateBucketKeyCmd.class);
+        cmdList.add(RevokeBucketKeyCmd.class);
+        cmdList.add(MigrateBucketCredentialCmd.class);
+        cmdList.add(MigrateObjectStoreAccountCmd.class);
+        cmdList.add(RotateObjectStoreAccountKeyCmd.class);
         cmdList.add(ListBucketsCmd.class);
 
         return cmdList;

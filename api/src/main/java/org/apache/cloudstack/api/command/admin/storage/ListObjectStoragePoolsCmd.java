@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 
 @APICommand(name = "listObjectStoragePools", description = "Lists object storage pools.", responseObject = ObjectStoreResponse.class, since = "4.19.0",
@@ -43,6 +44,10 @@ public class ListObjectStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ObjectStoreResponse.class, description = "the ID of the storage pool")
     private Long id;
 
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
+            description = "when given, each store also reports the credential state of this account on it: accountcredentialscope and legacybuckets", since = "24.0.0")
+    private Long accountId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,6 +59,10 @@ public class ListObjectStoragePoolsCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getAccountId() {
+        return accountId;
     }
 
     public String getProvider() {
