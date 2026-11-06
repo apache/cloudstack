@@ -32,6 +32,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.bouncycastle.openssl.PKCS8Generator;
@@ -819,6 +820,25 @@ public class CertServiceTest {
 
     }
 
+    @Test
+    public void runListSslCertsUsesCallerAccountWhenNoFilters() {
+        final long callerAccountId = 42L;
+        final CertServiceImpl certService = new CertServiceImpl();
+
+        certService._sslCertDao = Mockito.mock(SslCertDao.class);
+        when(certService._sslCertDao.listByAccountId(anyLong())).thenReturn(new ArrayList<>());
+
+        final AccountVO callerAccount = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
+        callerAccount.setId(callerAccountId);
+        final UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.unregister();
+        CallContext.register(user, callerAccount);
+
+        certService.listSslCerts(new ListSslCertsCmdExtn());
+
+        Mockito.verify(certService._sslCertDao).listByAccountId(callerAccountId);
+    }
+
     public class UploadSslCertCmdExtn extends UploadSslCertCmd {
         @Override
         public long getEntityOwnerId() {
@@ -827,6 +847,13 @@ public class CertServiceTest {
     }
 
     public class DeleteSslCertCmdExtn extends DeleteSslCertCmd {
+        @Override
+        public long getEntityOwnerId() {
+            return 1;
+        }
+    }
+
+    public class ListSslCertsCmdExtn extends ListSslCertsCmd {
         @Override
         public long getEntityOwnerId() {
             return 1;
