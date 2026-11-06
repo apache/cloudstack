@@ -35,6 +35,10 @@ public class BackupAnswer extends Answer {
     // Set when an incremental was requested but the agent had to fall back to a full
     // (e.g. VM was stopped). Provider should record this backup as type=full.
     private Boolean incrementalFallback;
+    // Set when restore provisions a volume on storage that assigns its own path/ID (e.g.
+    // StorPool), so the provider doesn't have to guess it from the CloudStack volume UUID.
+    // Null when the guessed path is already correct (e.g. RBD/Linstor/NFS).
+    private String restoredVolumePath;
 
     public BackupAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -89,6 +93,14 @@ public class BackupAnswer extends Answer {
 
     public void setIncrementalFallback(Boolean incrementalFallback) {
         this.incrementalFallback = incrementalFallback;
+    }
+
+    public String getRestoredVolumePath() {
+        return restoredVolumePath;
+    }
+
+    public void setRestoredVolumePath(String restoredVolumePath) {
+        this.restoredVolumePath = restoredVolumePath;
     }
 
 }
