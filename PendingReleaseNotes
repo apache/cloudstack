@@ -91,3 +91,16 @@ example.ver.1 > example.ver.2:
     no device-mapper multipath configuration is required. A new
     Storage.StoragePoolType.NVMeTCP + MultipathNVMeOFAdapterBase /
     NVMeTCPAdapter on the KVM side back the new pool type.
+
+  * CKS: CloudManaged Kubernetes clusters now have node groups, pools of
+    worker nodes with their own service offering, template, Kubernetes
+    labels and taints and autoscaling settings, managed with the new
+    create, list, update, scale and deleteKubernetesClusterNodeGroup APIs.
+    Every cluster has a default node group holding the worker nodes of the
+    cluster size, created on upgrade for the existing clusters; the
+    scaleKubernetesCluster API applies to it. Nodes can have their own
+    labels and taints on top of the ones of their node group through the
+    new updateKubernetesClusterNode API. Autoscaling node groups other than
+    the default one requires a cluster autoscaler image supporting node
+    groups, set by the new cloud.kubernetes.cluster.autoscaler.image global
+    setting.
