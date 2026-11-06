@@ -53,7 +53,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
         }
 
         if (!heartBeatCheckResult) {
-            logger.warn("All checks with KVMHAChecker for {} considered it as dead. It may cause a shutdown of the host.", hostAndPools);
+            logger.warn("All checks with KVMHAChecker for {} considered it as dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", hostAndPools);
         }
 
         return heartBeatCheckResult;
