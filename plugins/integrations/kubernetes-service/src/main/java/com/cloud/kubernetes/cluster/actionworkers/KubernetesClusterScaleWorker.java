@@ -47,6 +47,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterNodeGroupVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
@@ -73,12 +74,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private Map<String, ServiceOffering> serviceOfferingNodeTypeMap;
     private Long clusterSize;
     private List<Long> nodeIds;
-    private KubernetesCluster.State originalState;
-    private Network network;
+    protected KubernetesCluster.State originalState;
+    protected Network network;
     private Long minSize;
     private Long maxSize;
     private Boolean isAutoscalingEnabled;
-    private long scaleTimeoutTime;
+    protected long scaleTimeoutTime;
 
     protected KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -112,7 +113,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         this.network = networkDao.findById(kubernetesCluster.getNetworkId());
     }
 
-    private void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message, final Exception e) throws CloudRuntimeException {
+    protected void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message, final Exception e) throws CloudRuntimeException {
         KubernetesCluster cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
         if (cluster != null && KubernetesCluster.State.Scaling.equals(cluster.getState())) {
             logTransitStateAndThrow(logLevel, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
@@ -121,7 +122,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message) throws CloudRuntimeException {
+    protected void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message) throws CloudRuntimeException {
         logTransitStateToFailedIfNeededAndThrow(logLevel, message, null);
     }
 
@@ -194,7 +195,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
      * @param clusterVMIds
      * @throws ManagementServerException
      */
-    private void scaleKubernetesClusterNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
+    protected void scaleKubernetesClusterNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
         if (manager.isDirectAccess(network)) {
             if (logger.isDebugEnabled())
                 logger.debug("Network: {} for Kubernetes cluster: {} is not an isolated network " +
@@ -231,11 +232,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     protected Pair<Long, Long> calculateNewClusterCountAndCapacity(Long newWorkerSize, KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering) {
         long cores;
         long memory;
-        long totalClusterSize = newWorkerSize == null ? kubernetesCluster.getTotalNodeCount() : (newWorkerSize + kubernetesCluster.getControlNodeCount() + kubernetesCluster.getEtcdNodeCount());
+        // Node groups have their own service offering, the default offering only applies to the remaining nodes
+        long totalClusterSize = (newWorkerSize == null ? kubernetesCluster.getNodeCount() : newWorkerSize) +
+                kubernetesCluster.getControlNodeCount() + kubernetesCluster.getEtcdNodeCount();
 
         if (nodeType == DEFAULT) {
-            cores = serviceOffering.getCpu() * totalClusterSize;
-            memory = serviceOffering.getRamSize() * totalClusterSize;
+            Pair<Long, Long> nodeGroupsCapacity = calculateNodeGroupsCapacity();
+            cores = serviceOffering.getCpu() * totalClusterSize + nodeGroupsCapacity.first();
+            memory = serviceOffering.getRamSize() * totalClusterSize + nodeGroupsCapacity.second();
         } else {
             long nodeCount = getNodeCountForType(nodeType, kubernetesCluster);
             Long existingOfferingId = getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
@@ -394,7 +398,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
     }
 
-    private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
+    protected void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
         for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
             logger.info("Removing vm {} from cluster {}", userVM, kubernetesCluster);
@@ -445,7 +449,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         List<KubernetesClusterVmMapVO> vmList;
         if (this.nodeIds != null) {
-            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
+            Long defaultNodeGroupId = getDefaultNodeGroupId();
+            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream()
+                    .filter(vm -> !vm.isExternalNode() && !vm.isInNodeGroupOtherThan(defaultNodeGroupId)).collect(Collectors.toList());
         } else {
             vmList = getWorkerNodesToRemove();
             if (vmList.isEmpty()) {
@@ -457,9 +463,18 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         removeNodesFromCluster(vmList);
     }
 
+    /**
+     * @return the ID of the default node group of the cluster, whose nodes are the worker nodes of the cluster size
+     */
+    protected Long getDefaultNodeGroupId() {
+        KubernetesClusterNodeGroupVO defaultNodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(kubernetesCluster.getId());
+        return defaultNodeGroup != null ? defaultNodeGroup.getId() : null;
+    }
+
     public List<KubernetesClusterVmMapVO> getWorkerNodesToRemove() {
+        Long defaultNodeGroupId = getDefaultNodeGroupId();
         List<KubernetesClusterVmMapVO> workerVMsMap = getKubernetesClusterVMMaps().stream()
-                .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
+                .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode() && !vm.isInNodeGroupOtherThan(defaultNodeGroupId))
                 .collect(Collectors.toList());
         int totalWorkerNodes = workerVMsMap.size();
         int desiredWorkerNodes = clusterSize == null ? (int) kubernetesCluster.getNodeCount() : clusterSize.intValue();
@@ -471,7 +486,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         return new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
     }
 
-    private void cleanupNewlyCreatedVms(Set<Long> originalVmIds) {
+    protected void cleanupNewlyCreatedVms(Set<Long> originalVmIds) {
         List<KubernetesClusterVmMapVO> currentVmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         for (KubernetesClusterVmMapVO clusterVmMap : currentVmMaps) {
             if (originalVmIds.contains(clusterVmMap.getVmId())) {

@@ -34,7 +34,15 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetes
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.CreateKubernetesClusterNodeGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.DeleteKubernetesClusterNodeGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.ListKubernetesClusterNodeGroupsCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.ScaleKubernetesClusterNodeGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.UpdateKubernetesClusterNodeCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.UpdateKubernetesClusterNodeGroupCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
+import org.apache.cloudstack.api.response.KubernetesClusterNodeGroupResponse;
+import org.apache.cloudstack.api.response.KubernetesClusterNodeResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
@@ -144,6 +152,17 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             true,
             KubernetesServiceEnabled.key());
 
+    static final ConfigKey<String> KubernetesClusterAutoscalerImage = new ConfigKey<String>("Advanced", String.class,
+            "cloud.kubernetes.cluster.autoscaler.image",
+            "",
+            "Container image of the cluster autoscaler deployed in the Kubernetes clusters with autoscaling enabled, instead of the image " +
+                    "of the autoscaler manifest of the Kubernetes version ISO. The cluster autoscaler gets one --nodes=<min>:<max>:<id> argument " +
+                    "per node group with autoscaling enabled, where <id> is the ID of the cluster for its default node group and the ID of the " +
+                    "node group for the other node groups. The image must support node groups to enable autoscaling for node groups other " +
+                    "than the default one, the upstream image only supports the default node group",
+            true,
+            KubernetesServiceEnabled.key());
+
     KubernetesCluster findById(final Long id);
 
     KubernetesCluster createUnmanagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
@@ -185,4 +204,18 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean isDirectAccess(Network network);
 
     void cleanupForAccount(Account account);
+
+    KubernetesClusterNodeGroup createKubernetesClusterNodeGroup(CreateKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException;
+
+    ListResponse<KubernetesClusterNodeGroupResponse> listKubernetesClusterNodeGroups(ListKubernetesClusterNodeGroupsCmd cmd);
+
+    KubernetesClusterNodeGroup updateKubernetesClusterNodeGroup(UpdateKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException;
+
+    KubernetesClusterNodeGroup scaleKubernetesClusterNodeGroup(ScaleKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException;
+
+    boolean deleteKubernetesClusterNodeGroup(DeleteKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException;
+
+    KubernetesClusterNodeGroupResponse createKubernetesClusterNodeGroupResponse(long nodeGroupId);
+
+    KubernetesClusterNodeResponse updateKubernetesClusterNode(UpdateKubernetesClusterNodeCmd cmd) throws CloudRuntimeException;
 }

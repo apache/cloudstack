@@ -1330,6 +1330,14 @@ public class ApiConstants {
     public static final String WORKER_AFFINITY_GROUP_NAMES = "workeraffinitygroupnames";
     public static final String ETCD_AFFINITY_GROUP_IDS = "etcdaffinitygroupids";
     public static final String ETCD_AFFINITY_GROUP_NAMES = "etcdaffinitygroupnames";
+    public static final String WORKER_NODES = "workernodes";
+    public static final String NODE_GROUP_ID = "nodegroupid";
+    public static final String NODE_GROUP_NAME = "nodegroupname";
+    public static final String NODE_GROUPS = "nodegroups";
+    public static final String NODE_LABELS = "nodelabels";
+    public static final String NODE_TAINTS = "nodetaints";
+    public static final String CLEANUP_NODE_LABELS = "cleanupnodelabels";
+    public static final String CLEANUP_NODE_TAINTS = "cleanupnodetaints";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";

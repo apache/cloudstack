@@ -157,8 +157,12 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     private Long controlNodes;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "The size (worker nodes count) of the Kubernetes cluster")
+    @Param(description = "The size of the Kubernetes cluster: the number of worker nodes of its default node group and of its external nodes")
     private Long clusterSize;
+
+    @SerializedName(ApiConstants.WORKER_NODES)
+    @Param(description = "The total number of worker nodes of the Kubernetes cluster, in all its node groups and external nodes", since = "24.0")
+    private Long workerNodes;
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "The state of the Kubernetes cluster")
@@ -183,6 +187,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @SerializedName(ApiConstants.VIRTUAL_MACHINES)
     @Param(description = "The list of virtualmachines associated with this Kubernetes cluster")
     private List<KubernetesUserVmResponse> virtualMachines;
+
+    @SerializedName(ApiConstants.NODE_GROUPS)
+    @Param(description = "The node groups of the Kubernetes cluster", responseObject = KubernetesClusterNodeGroupResponse.class, since = "24.0")
+    private List<KubernetesClusterNodeGroupResponse> nodeGroups;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "Public IP Address of the cluster")
@@ -400,6 +408,14 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
         this.clusterSize = clusterSize;
     }
 
+    public Long getWorkerNodes() {
+        return workerNodes;
+    }
+
+    public void setWorkerNodes(Long workerNodes) {
+        this.workerNodes = workerNodes;
+    }
+
     public String getCores() {
         return cores;
     }
@@ -506,6 +522,14 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setVirtualMachines(List<KubernetesUserVmResponse> virtualMachines) {
         this.virtualMachines = virtualMachines;
+    }
+
+    public void setNodeGroups(List<KubernetesClusterNodeGroupResponse> nodeGroups) {
+        this.nodeGroups = nodeGroups;
+    }
+
+    public List<KubernetesClusterNodeGroupResponse> getNodeGroups() {
+        return nodeGroups;
     }
 
     public List<KubernetesUserVmResponse> getVirtualMachines() {

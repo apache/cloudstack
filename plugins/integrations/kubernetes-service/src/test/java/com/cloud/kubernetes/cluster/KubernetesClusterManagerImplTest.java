@@ -28,6 +28,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterNodeGroupDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeGroupUtil;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.network.Network;
@@ -38,6 +40,7 @@ import com.cloud.network.vpc.NetworkACL;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -76,6 +79,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
@@ -117,6 +121,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private KubernetesClusterNodeGroupDao kubernetesClusterNodeGroupDao;
 
     @Spy
     @InjectMocks
@@ -914,4 +921,181 @@ public class KubernetesClusterManagerImplTest {
         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
     }
 
+    private VMTemplateVO mockNodeGroupTemplate(long id, boolean forCks, Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.lenient().when(template.getId()).thenReturn(id);
+        Mockito.lenient().when(template.getName()).thenReturn("template-" + id);
+        Mockito.lenient().when(template.isForCks()).thenReturn(forCks);
+        Mockito.lenient().when(template.getHypervisorType()).thenReturn(hypervisorType);
+        Mockito.lenient().when(template.getArch()).thenReturn(arch);
+        Mockito.lenient().when(templateDao.findById(id)).thenReturn(template);
+        return template;
+    }
+
+    private KubernetesClusterVO mockNodeGroupCluster() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.lenient().when(cluster.getName()).thenReturn("cluster");
+        Mockito.lenient().when(cluster.getTemplateId()).thenReturn(1L);
+        Mockito.lenient().when(cluster.getWorkerNodeTemplateId()).thenReturn(2L);
+        Mockito.lenient().when(cluster.getZoneId()).thenReturn(5L);
+        mockNodeGroupTemplate(1L, false, Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64);
+        return cluster;
+    }
+
+    @Test
+    public void testValidateNodeGroupTemplateDefaultsToWorkerTemplate() {
+        KubernetesClusterVO cluster = mockNodeGroupCluster();
+        VMTemplateVO workerTemplate = mockNodeGroupTemplate(2L, true, Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64);
+        Mockito.when(templateJoinDao.newTemplateView(workerTemplate, 5L, true)).thenReturn(List.of(Mockito.mock(TemplateJoinVO.class)));
+        Assert.assertSame(workerTemplate, kubernetesClusterManager.validateNodeGroupTemplate(null, cluster));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateNodeGroupTemplateNotForCks() {
+        KubernetesClusterVO cluster = mockNodeGroupCluster();
+        mockNodeGroupTemplate(3L, false, Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64);
+        kubernetesClusterManager.validateNodeGroupTemplate(3L, cluster);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateNodeGroupTemplateDifferentArch() {
+        KubernetesClusterVO cluster = mockNodeGroupCluster();
+        mockNodeGroupTemplate(3L, true, Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64);
+        kubernetesClusterManager.validateNodeGroupTemplate(3L, cluster);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateNodeGroupTemplateNotReady() {
+        KubernetesClusterVO cluster = mockNodeGroupCluster();
+        VMTemplateVO template = mockNodeGroupTemplate(3L, true, Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64);
+        Mockito.when(templateJoinDao.newTemplateView(template, 5L, true)).thenReturn(Collections.emptyList());
+        kubernetesClusterManager.validateNodeGroupTemplate(3L, cluster);
+    }
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateNodeGroupSizeDefaultNodeGroupEmpty() {
+        kubernetesClusterManager.validateNodeGroupSize(true, false, null, null, 0);
+    }
+
+    @Test
+    public void testValidateNodeGroupSizeEmptyNodeGroup() {
+        kubernetesClusterManager.validateNodeGroupSize(false, false, null, null, 0);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateNodeGroupSizeAboveAutoscalingMaxSize() {
+        kubernetesClusterManager.validateNodeGroupSize(false, true, 1L, 3L, 4);
+    }
+
+    @Test
+    public void testValidateNodeGroupSizeWithinAutoscalingRange() {
+        kubernetesClusterManager.validateNodeGroupSize(false, true, 0L, 3L, 3);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateNodeGroupTaintsDefaultNodeGroupNoSchedule() {
+        kubernetesClusterManager.validateNodeGroupTaints(true, List.of(new KubernetesClusterNodeGroupUtil.Taint("gpu", "true", "NoSchedule")));
+    }
+
+    @Test
+    public void testValidateNodeGroupTaintsDefaultNodeGroupPreferNoSchedule() {
+        kubernetesClusterManager.validateNodeGroupTaints(true, List.of(new KubernetesClusterNodeGroupUtil.Taint("gpu", "true", "PreferNoSchedule")));
+        kubernetesClusterManager.validateNodeGroupTaints(false, List.of(new KubernetesClusterNodeGroupUtil.Taint("gpu", "true", "NoExecute")));
+    }
+
+    private void mockKubernetesClusterLock() {
+        Mockito.doAnswer(invocation -> ((Supplier<?>) invocation.getArgument(2)).get())
+                .when(kubernetesClusterManager).executeWithKubernetesClusterLock(Mockito.anyLong(), Mockito.anyString(), Mockito.any());
+    }
+
+    private KubernetesClusterNodeGroupVO mockNodeGroup(long id, KubernetesClusterNodeGroup.State state) {
+        KubernetesClusterNodeGroupVO nodeGroup = Mockito.mock(KubernetesClusterNodeGroupVO.class);
+        Mockito.lenient().when(nodeGroup.getId()).thenReturn(id);
+        Mockito.lenient().when(nodeGroup.getName()).thenReturn("group-" + id);
+        Mockito.lenient().when(nodeGroup.getState()).thenReturn(state);
+        Mockito.lenient().when(kubernetesClusterNodeGroupDao.findById(id)).thenReturn(nodeGroup);
+        return nodeGroup;
+    }
+
+    private KubernetesClusterVO mockClusterInState(KubernetesCluster.State state) {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.lenient().when(cluster.getName()).thenReturn("cluster");
+        Mockito.lenient().when(cluster.getState()).thenReturn(state);
+        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(cluster);
+        return cluster;
+    }
+
+    @Test
+    public void testStartNodeGroupOperationOnRunningCluster() {
+        mockKubernetesClusterLock();
+        mockClusterInState(KubernetesCluster.State.Running);
+        KubernetesClusterNodeGroupVO nodeGroup = mockNodeGroup(2L, KubernetesClusterNodeGroup.State.Ready);
+        Mockito.when(kubernetesClusterNodeGroupDao.listByClusterId(1L)).thenReturn(List.of(nodeGroup));
+        Mockito.doReturn(true).when(kubernetesClusterManager).stateTransitTo(1L, KubernetesCluster.Event.ScaleUpRequested);
+
+        kubernetesClusterManager.startNodeGroupOperation(1L, nodeGroup, KubernetesClusterNodeGroup.State.Scaling, false);
+
+        Mockito.verify(nodeGroup).setState(KubernetesClusterNodeGroup.State.Scaling);
+        Mockito.verify(kubernetesClusterNodeGroupDao).update(2L, nodeGroup);
+    }
+
+    @Test
+    public void testStartNodeGroupOperationWhileOtherNodeGroupScaling() {
+        mockKubernetesClusterLock();
+        mockClusterInState(KubernetesCluster.State.Scaling);
+        KubernetesClusterNodeGroupVO nodeGroup = mockNodeGroup(2L, KubernetesClusterNodeGroup.State.Ready);
+        KubernetesClusterNodeGroupVO otherNodeGroup = mockNodeGroup(3L, KubernetesClusterNodeGroup.State.Scaling);
+        Mockito.when(kubernetesClusterNodeGroupDao.listByClusterId(1L)).thenReturn(List.of(nodeGroup, otherNodeGroup));
+
+        kubernetesClusterManager.startNodeGroupOperation(1L, nodeGroup, KubernetesClusterNodeGroup.State.Updating, false);
+
+        Mockito.verify(kubernetesClusterManager, Mockito.never()).stateTransitTo(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(nodeGroup).setState(KubernetesClusterNodeGroup.State.Updating);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testStartNodeGroupOperationWhileClusterScaling() {
+        mockKubernetesClusterLock();
+        mockClusterInState(KubernetesCluster.State.Scaling);
+        KubernetesClusterNodeGroupVO nodeGroup = mockNodeGroup(2L, KubernetesClusterNodeGroup.State.Ready);
+        Mockito.when(kubernetesClusterNodeGroupDao.listByClusterId(1L)).thenReturn(List.of(nodeGroup));
+
+        kubernetesClusterManager.startNodeGroupOperation(1L, nodeGroup, KubernetesClusterNodeGroup.State.Scaling, false);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testStartNodeGroupOperationOnBusyNodeGroup() {
+        mockKubernetesClusterLock();
+        mockClusterInState(KubernetesCluster.State.Scaling);
+        KubernetesClusterNodeGroupVO nodeGroup = mockNodeGroup(2L, KubernetesClusterNodeGroup.State.Deleting);
+
+        kubernetesClusterManager.startNodeGroupOperation(1L, nodeGroup, KubernetesClusterNodeGroup.State.Scaling, false);
+    }
+
+    @Test
+    public void testFinishLastNodeGroupOperation() {
+        mockKubernetesClusterLock();
+        mockClusterInState(KubernetesCluster.State.Scaling);
+        KubernetesClusterNodeGroupVO nodeGroup = mockNodeGroup(2L, KubernetesClusterNodeGroup.State.Ready);
+        Mockito.when(kubernetesClusterNodeGroupDao.listByClusterId(1L)).thenReturn(List.of(nodeGroup));
+        Mockito.doReturn(true).when(kubernetesClusterManager).stateTransitTo(1L, KubernetesCluster.Event.OperationSucceeded);
+
+        kubernetesClusterManager.finishNodeGroupOperation(1L, 2L, false);
+
+        Mockito.verify(nodeGroup).setState(KubernetesClusterNodeGroup.State.Error);
+        Mockito.verify(kubernetesClusterManager).stateTransitTo(1L, KubernetesCluster.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void testFinishNodeGroupOperationWhileOtherNodeGroupScaling() {
+        mockKubernetesClusterLock();
+        mockClusterInState(KubernetesCluster.State.Scaling);
+        KubernetesClusterNodeGroupVO nodeGroup = mockNodeGroup(2L, KubernetesClusterNodeGroup.State.Ready);
+        KubernetesClusterNodeGroupVO otherNodeGroup = mockNodeGroup(3L, KubernetesClusterNodeGroup.State.Scaling);
+        Mockito.when(kubernetesClusterNodeGroupDao.listByClusterId(1L)).thenReturn(List.of(nodeGroup, otherNodeGroup));
+
+        kubernetesClusterManager.finishNodeGroupOperation(1L, 2L, true);
+
+        Mockito.verify(nodeGroup).setState(KubernetesClusterNodeGroup.State.Ready);
+        Mockito.verify(kubernetesClusterManager, Mockito.never()).stateTransitTo(Mockito.anyLong(), Mockito.any());
+    }
 }

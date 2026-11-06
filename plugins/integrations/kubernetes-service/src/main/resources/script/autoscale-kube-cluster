@@ -26,10 +26,13 @@ Arguments:
   -d, --disable           Disables autoscaling
   -M, --maxsize number    Maximum size of the cluster
   -m, --minsize number    Minimum size of the cluster
+  -n, --nodes string      Node group to autoscale, as <min>:<max>:<id>. Can be repeated, replaces -i, -M and -m
+  -I, --image string      Container image of the cluster autoscaler, instead of the image of the manifest
 Other arguments:
   -h, --help              Display this help message and exit
 Examples:
-  ./autoscale-kube-cluster -e -M 3 -m 1
+  ./autoscale-kube-cluster -i <cluster-id> -e -M 3 -m 1
+  ./autoscale-kube-cluster -e -n 1:3:<cluster-id> -n 0:5:<node-group-id>
   ./autoscale-kube-cluster -d
 USAGE
     exit 0
@@ -38,6 +41,8 @@ ID=""
 ENABLE=""
 MINSIZE=""
 MAXSIZE=""
+NODES=()
+IMAGE=""
 while [ -n "$1" ]; do
     case "$1" in
         -h | --help)
@@ -51,7 +56,7 @@ while [ -n "$1" ]; do
             ENABLE="true"
             shift 1
             ;;
-        -d | --enable)
+        -d | --disable)
             ENABLE="false"
             shift 1
             ;;
@@ -63,31 +68,67 @@ while [ -n "$1" ]; do
             MINSIZE=$2
             shift 2
             ;;
+        -n | --nodes)
+            NODES+=("$2")
+            shift 2
+            ;;
+        -I | --image)
+            IMAGE=$2
+            shift 2
+            ;;
         -*|*)
             echo "ERROR: no such option $1. -h or --help for help"
             exit 1
             ;;
     esac
 done
-if [ $ENABLE == "true" ] ; then
-    if [ -e /opt/autoscaler/autoscaler_tmpl.yaml ]; then
-        sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
-        /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
-        exit 0
-    else
+
+AUTOSCALER_TEMPLATE="/opt/autoscaler/autoscaler_tmpl.yaml"
+AUTOSCALER_MANIFEST="/opt/autoscaler/autoscaler_now.yaml"
+
+# Writes the autoscaler manifest from the template, with one --nodes argument per node group in place of the
+# --nodes=<min>:<max>:<cluster-id> argument of the template, and the given image if any
+function render_manifest() {
+    awk -v nodes="${NODES[*]}" '
+        /--nodes=<min>:<max>:<cluster-id>/ {
+            match($0, /^[ \t]*-[ \t]*/)
+            indent = substr($0, 1, RLENGTH)
+            count = split(nodes, specs, " ")
+            for (i = 1; i <= count; i++) {
+                print indent "--nodes=" specs[i]
+            }
+            next
+        }
+        { print }
+    ' "${AUTOSCALER_TEMPLATE}" > "${AUTOSCALER_MANIFEST}"
+    if [ -n "${IMAGE}" ]; then
+        sed -i -E "s#^([[:space:]]*-?[[:space:]]*image:[[:space:]]*).*#\1${IMAGE}#" "${AUTOSCALER_MANIFEST}"
+    fi
+}
+
+if [ "$ENABLE" == "true" ] ; then
+    if [ ${#NODES[@]} -eq 0 ]; then
+        if [ -z "$ID" ] || [ -z "$MINSIZE" ] || [ -z "$MAXSIZE" ]; then
+            echo "ERROR: either -n or -i, -m and -M must be passed to enable autoscaling"
+            exit 1
+        fi
+        NODES=("${MINSIZE}:${MAXSIZE}:${ID}")
+    fi
+    if [ ! -e "${AUTOSCALER_TEMPLATE}" ]; then
         mkdir -p /opt/autoscaler
         AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
-        autoscaler_conf_file="/opt/autoscaler/autoscaler_tmpl.yaml"
-        curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
-        if [ $? -ne 0 ]; then
+        if ! curl -sSL ${AUTOSCALER_URL} -o "${AUTOSCALER_TEMPLATE}"; then
+            rm -f "${AUTOSCALER_TEMPLATE}"
             echo "Unable to connect to the internet to download the autoscaler deployment and image"
             exit 1
-        else
-            sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
-            /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
-            exit 0
         fi
     fi
+    render_manifest
+    /opt/bin/kubectl apply -f "${AUTOSCALER_MANIFEST}"
+    exit 0
+elif [ "$ENABLE" == "false" ] ; then
+    /opt/bin/kubectl delete deployment -n kube-system cluster-autoscaler --ignore-not-found
 else
-    /opt/bin/kubectl delete deployment -n kube-system cluster-autoscaler
+    echo "ERROR: either -e or -d must be passed. -h or --help for help"
+    exit 1
 fi
