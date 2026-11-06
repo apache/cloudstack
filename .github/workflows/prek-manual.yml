@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: pre-commit
+name: prek manual
 
 on: [pull_request]
 
@@ -24,32 +24,19 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  pre-commit:
-    name: Run pre-commit
+  prek-manual:
+    name: Run prek manual hooks
     runs-on: ubuntu-24.04
     steps:
-      - name: Check Out
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: 'Checkout ${{ github.ref }} ( ${{ github.sha }} )'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
         with:
-          python-version: '3.11'
-          cache: 'pip'
-      - name: Install
-        run: pip install pre-commit
-      - name: Set PY
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-      - name: Cache pre-commit environments
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Run pre-commit
-        run: pre-commit run --color=always --all-files
-      - name: Run manual pre-commit hooks
-        run: pre-commit run --color=always --all-files --hook-stage manual
+          install-only: true
+      - name: Run manual prek hooks
+        run: prek run --color=always --all-files --hook-stage manual
