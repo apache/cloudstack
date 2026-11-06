@@ -1010,4 +1010,36 @@ public class NetworkOrchestratorTest extends TestCase {
             assertEquals("testtag", nicProfile.getName());
         }
     }
+
+    private NicVO mockNic(long id, long networkId, Nic.State state) {
+        NicVO nic = mock(NicVO.class);
+        Mockito.lenient().when(nic.getId()).thenReturn(id);
+        Mockito.lenient().when(nic.getNetworkId()).thenReturn(networkId);
+        when(nic.getState()).thenReturn(state);
+        return nic;
+    }
+
+    @Test
+    public void reconcileNicsForRunningVmPreparesOnlyAllocatedNicsAndContinuesOnFailure() throws Exception {
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        when(vmProfile.getId()).thenReturn(1L);
+        DeployDestination dest = mock(DeployDestination.class);
+        ReservationContext context = mock(ReservationContext.class);
+        NetworkVO network = mock(NetworkVO.class);
+        NicVO failingNic = mockNic(11L, 101L, Nic.State.Allocated);
+        NicVO unimplementedNic = mockNic(12L, 102L, Nic.State.Allocated);
+        NicVO releasedNic = mockNic(13L, 103L, Nic.State.Allocated);
+        NicVO reservedNic = mockNic(14L, 104L, Nic.State.Reserved);
+        when(testOrchestrator._nicDao.listByVmId(1L)).thenReturn(List.of(failingNic, unimplementedNic, releasedNic, reservedNic));
+        Mockito.doThrow(new CloudRuntimeException("implement failed")).when(testOrchestrator).implementNetwork(101L, dest, context);
+        Mockito.doReturn(new Pair<>(null, null)).when(testOrchestrator).implementNetwork(102L, dest, context);
+        Mockito.doReturn(new Pair<>(guru, network)).when(testOrchestrator).implementNetwork(103L, dest, context);
+        Mockito.doReturn(null).when(testOrchestrator).prepareNic(vmProfile, dest, context, 13L, network);
+
+        testOrchestrator.reconcileNicsForRunningVm(vmProfile, dest, context);
+
+        verify(testOrchestrator).prepareNic(vmProfile, dest, context, 13L, network);
+        verify(testOrchestrator, times(1)).prepareNic(any(), any(), any(), ArgumentMatchers.anyLong(), any());
+        verify(testOrchestrator, never()).implementNetwork(104L, dest, context);
+    }
 }
