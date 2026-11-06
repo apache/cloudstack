@@ -574,6 +574,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-host-tag-affinity</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-api-solidfire-intg-test</artifactId>
             <version>${project.version}</version>
         </dependency>
