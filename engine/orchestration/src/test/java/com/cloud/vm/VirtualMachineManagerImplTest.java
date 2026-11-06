@@ -62,6 +62,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.resource.ResourceManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -281,6 +282,8 @@ public class VirtualMachineManagerImplTest {
     ExtensionDetailsDao extensionDetailsDao;
     @Mock
     NicDao _nicsDao;
+    @Mock
+    NetworkOrchestrationService _networkMgr;
     @Mock
     NetworkService networkService;
     @Mock
@@ -2049,4 +2052,63 @@ public class VirtualMachineManagerImplTest {
         }
     }
 
+
+    private NicVO mockNicInState(Nic.State state) {
+        NicVO nic = mock(NicVO.class);
+        when(nic.getState()).thenReturn(state);
+        return nic;
+    }
+
+    private void mockVmForNicReconciliation(VirtualMachine.Type type, State state, Nic.State... nicStates) {
+        when(vmInstanceDaoMock.findById(vmInstanceVoMockId)).thenReturn(vmInstanceMock);
+        Mockito.lenient().when(vmInstanceMock.getType()).thenReturn(type);
+        Mockito.lenient().when(vmInstanceMock.getState()).thenReturn(state);
+        Mockito.lenient().when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        Mockito.lenient().when(vmInstanceMock.getDataCenterId()).thenReturn(zoneMockId);
+        List<NicVO> nics = new ArrayList<>();
+        for (Nic.State nicState : nicStates) {
+            nics.add(mockNicInState(nicState));
+        }
+        Mockito.lenient().when(_nicsDao.listByVmId(vmInstanceVoMockId)).thenReturn(nics);
+    }
+
+    @Test
+    public void reconcileNicsForRunningVmReReservesReleasedNicsOnTheVmHost() {
+        mockVmForNicReconciliation(VirtualMachine.Type.User, State.Running, Nic.State.Reserved, Nic.State.Allocated);
+
+        ReflectionTestUtils.invokeMethod(virtualMachineManagerImpl, "reconcileNicsForRunningVm", vmInstanceMock);
+
+        ArgumentCaptor<VirtualMachineProfile> profileCaptor = ArgumentCaptor.forClass(VirtualMachineProfile.class);
+        ArgumentCaptor<DeployDestination> destCaptor = ArgumentCaptor.forClass(DeployDestination.class);
+        verify(_networkMgr).reconcileNicsForRunningVm(profileCaptor.capture(), destCaptor.capture(), any());
+        assertEquals(vmInstanceMock, profileCaptor.getValue().getVirtualMachine());
+        assertEquals(hostMock, destCaptor.getValue().getHost());
+    }
+
+    @Test
+    public void reconcileNicsForRunningVmSkipsVmWithoutReleasedNics() {
+        mockVmForNicReconciliation(VirtualMachine.Type.User, State.Running, Nic.State.Reserved);
+
+        ReflectionTestUtils.invokeMethod(virtualMachineManagerImpl, "reconcileNicsForRunningVm", vmInstanceMock);
+
+        verify(_networkMgr, never()).reconcileNicsForRunningVm(any(), any(), any());
+    }
+
+    @Test
+    public void reconcileNicsForRunningVmSkipsSystemVms() {
+        mockVmForNicReconciliation(VirtualMachine.Type.DomainRouter, State.Running, Nic.State.Allocated);
+
+        ReflectionTestUtils.invokeMethod(virtualMachineManagerImpl, "reconcileNicsForRunningVm", vmInstanceMock);
+
+        verify(_networkMgr, never()).reconcileNicsForRunningVm(any(), any(), any());
+    }
+
+    @Test
+    public void reconcileNicsForRunningVmSkipsVmThatDidNotReachRunning() {
+        mockVmForNicReconciliation(VirtualMachine.Type.User, State.Stopped, Nic.State.Allocated);
+
+        ReflectionTestUtils.invokeMethod(virtualMachineManagerImpl, "reconcileNicsForRunningVm", vmInstanceMock);
+
+        verify(_networkMgr, never()).reconcileNicsForRunningVm(any(), any(), any());
+    }
 }
