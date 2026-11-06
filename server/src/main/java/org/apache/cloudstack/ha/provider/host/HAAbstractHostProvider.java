@@ -95,11 +95,11 @@ public abstract class HAAbstractHostProvider extends AdapterBase implements HAPr
         String subject = "HA operation performed for host";
         String body = subject;
         if (HAConfig.HAState.Fencing.equals(nextState)) {
-            subject = String.format("HA Fencing of host id=%d, in dc id=%d performed", host.getId(), host.getDataCenterId());
-            body = String.format("HA Fencing has been performed for host id=%d, uuid=%s in datacenter id=%d", host.getId(), host.getUuid(), host.getDataCenterId());
+            subject = String.format("HA Fencing of host %s performed", host);
+            body = String.format("HA Fencing has been performed for host %s", host);
         } else if (HAConfig.HAState.Recovering.equals(nextState)) {
-            subject = String.format("HA Recovery of host id=%d, in dc id=%d performed", host.getId(), host.getDataCenterId());
-            body = String.format("HA Recovery has been performed for host id=%d, uuid=%s in datacenter id=%d", host.getId(), host.getUuid(), host.getDataCenterId());
+            subject = String.format("HA Recovery of host %s performed", host);
+            body = String.format("HA Recovery has been performed for host %s", host);
         }
         alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_HA_ACTION, host.getDataCenterId(), host.getPodId(), subject, body);
     }
