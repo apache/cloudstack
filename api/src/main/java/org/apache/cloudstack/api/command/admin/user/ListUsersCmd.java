@@ -66,8 +66,17 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd
             description = "Flag to display the resource icon for users")
     private Boolean showIcon;
 
-    @Parameter(name = ApiConstants.USER_SOURCE, type = CommandType.STRING, since = "4.21.0.0",
-            description = "List users by their authentication source. Valid values are: native, ldap, saml2 and saml2disabled.")
+    @Parameter(
+        name = ApiConstants.USER_SOURCE,
+        type = CommandType.STRING,
+        since = "4.21.0.0",
+        description = "List users by their authentication source. Valid values are: native, ldap, saml2 and saml2disabled.",
+        allowedValues = {
+                "native",
+                "ldap",
+                "saml2",
+                "saml2disabled"
+        })
     private String userSource;
 
     /////////////////////////////////////////////////////
