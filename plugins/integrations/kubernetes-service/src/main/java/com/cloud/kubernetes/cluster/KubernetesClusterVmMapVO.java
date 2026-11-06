@@ -54,6 +54,15 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     @Column(name = "kubernetes_node_version")
     String nodeVersion;
 
+    @Column(name = "node_group_id")
+    Long nodeGroupId;
+
+    @Column(name = "labels", length = 4096)
+    String labels;
+
+    @Column(name = "taints", length = 4096)
+    String taints;
+
     public KubernetesClusterVmMapVO() {
     }
 
@@ -126,5 +135,42 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
 
     public void setNodeVersion(String nodeVersion) {
         this.nodeVersion = nodeVersion;
+    }
+
+    public Long getNodeGroupId() {
+        return nodeGroupId;
+    }
+
+    public void setNodeGroupId(Long nodeGroupId) {
+        this.nodeGroupId = nodeGroupId;
+    }
+
+    /**
+     * @return the Kubernetes labels of the node, in addition to the labels of its node group
+     */
+    public String getLabels() {
+        return labels;
+    }
+
+    public void setLabels(String labels) {
+        this.labels = labels;
+    }
+
+    /**
+     * @return the Kubernetes taints of the node, in addition to the taints of its node group
+     */
+    public String getTaints() {
+        return taints;
+    }
+
+    public void setTaints(String taints) {
+        this.taints = taints;
+    }
+
+    /**
+     * @return whether the node is a worker node of a node group other than the given (default) node group
+     */
+    public boolean isInNodeGroupOtherThan(Long nodeGroupId) {
+        return this.nodeGroupId != null && !this.nodeGroupId.equals(nodeGroupId);
     }
 }

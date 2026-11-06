@@ -239,3 +239,38 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- CKS node groups: pools of worker nodes with their own service offering, template, labels, taints and autoscaling settings.
+-- Every CloudManaged cluster has a default node group (is_default = 1) holding the worker nodes of the cluster size,
+-- the node groups of existing clusters are created by the management server on startup.
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_node_group` (
+    `id`                  bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid`                varchar(40)     NOT NULL,
+    `cluster_id`          bigint unsigned NOT NULL COMMENT 'kubernetes cluster id',
+    `name`                varchar(255)    NOT NULL,
+    `is_default`          tinyint(1)      NOT NULL DEFAULT 0 COMMENT 'whether the node group is the default node group of the cluster',
+    `state`               varchar(32)     NOT NULL DEFAULT 'Ready' COMMENT 'state of the node group',
+    `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering of the node group nodes',
+    `template_id`         bigint unsigned NOT NULL COMMENT 'template of the node group nodes',
+    `node_count`          bigint unsigned NOT NULL DEFAULT 0 COMMENT 'number of nodes in the node group',
+    `labels`              varchar(4096)   DEFAULT NULL COMMENT 'comma separated key=value Kubernetes node labels',
+    `taints`              varchar(4096)   DEFAULT NULL COMMENT 'comma separated key[=value]:effect Kubernetes node taints',
+    `autoscaling_enabled` tinyint(1)      NOT NULL DEFAULT 0 COMMENT 'whether the cluster autoscaler manages the size of the node group',
+    `min_size`            bigint unsigned DEFAULT NULL COMMENT 'minimum size of the node group when autoscaling is enabled',
+    `max_size`            bigint unsigned DEFAULT NULL COMMENT 'maximum size of the node group when autoscaling is enabled',
+    `created`             datetime        NOT NULL,
+    `updated`             datetime        DEFAULT NULL COMMENT 'date of the last state change of the node group',
+    `removed`             datetime        DEFAULT NULL COMMENT 'date the node group was removed',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uc_kubernetes_cluster_node_group__uuid` UNIQUE (`uuid`),
+    CONSTRAINT `fk_kubernetes_cluster_node_group__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_cluster_node_group__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_cluster_node_group__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE,
+    INDEX `i_kubernetes_cluster_node_group__cluster_id`(`cluster_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map', 'node_group_id', 'bigint unsigned DEFAULT NULL COMMENT "node group of the worker node, NULL for the control, etcd and external nodes"');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.kubernetes_cluster_vm_map', 'fk_kubernetes_cluster_vm_map__node_group_id', '(node_group_id)', '`kubernetes_cluster_node_group`(`id`)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map', 'labels', 'varchar(4096) DEFAULT NULL COMMENT "comma separated key=value Kubernetes labels of the node, in addition to the labels of its node group"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map', 'taints', 'varchar(4096) DEFAULT NULL COMMENT "comma separated key[=value]:effect Kubernetes taints of the node, in addition to the taints of its node group"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'node_group_node_count', 'bigint unsigned NOT NULL DEFAULT 0 COMMENT "number of worker nodes in the node groups of the cluster other than the default one"');
