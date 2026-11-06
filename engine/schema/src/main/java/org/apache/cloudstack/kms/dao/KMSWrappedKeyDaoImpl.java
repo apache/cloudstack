@@ -38,6 +38,8 @@ public class KMSWrappedKeyDaoImpl extends GenericDaoBase<KMSWrappedKeyVO, Long> 
         allFieldSearch.and("kmsKeyId", allFieldSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("kekVersionId", allFieldSearch.entity().getKekVersionId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("zoneId", allFieldSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("formatCheckPending", allFieldSearch.entity().isFormatCheckPending(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("idAfter", allFieldSearch.entity().getId(), SearchCriteria.Op.GT);
         allFieldSearch.done();
     }
 
@@ -66,5 +68,13 @@ public class KMSWrappedKeyDaoImpl extends GenericDaoBase<KMSWrappedKeyVO, Long> 
         sc.setParameters("kekVersionId", kekVersionId);
         Integer count = getCount(sc);
         return count != null ? count.longValue() : 0L;
+    }
+
+    @Override
+    public List<KMSWrappedKeyVO> listFormatCheckPending(long afterId, int limit) {
+        SearchCriteria<KMSWrappedKeyVO> sc = allFieldSearch.create();
+        sc.setParameters("formatCheckPending", true);
+        sc.setParameters("idAfter", afterId);
+        return listBy(sc, new Filter(KMSWrappedKeyVO.class, "id", true, 0L, (long) limit));
     }
 }

@@ -33,8 +33,10 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -85,11 +87,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -105,6 +111,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     private static final Logger logger = LogManager.getLogger(KMSManagerImpl.class);
     private static final Map<String, KMSProvider> kmsProviderMap = new HashMap<>();
     private static final String DATABASE_PROVIDER_NAME = "database";
+    // Wrap algorithms that detect a wrong KEK or a modified blob.
+    private static final Set<String> AUTHENTICATED_WRAP_ALGORITHMS = Set.of("AES/GCM/NoPadding", "AES/KWP/NoPadding");
+    private static final Set<Integer> VALID_DEK_SIZE_BITS = Set.of(128, 192, 256);
+    // 4.23 migrated the base64 text of the legacy passphrase (64 characters) instead of its 48 raw bytes.
+    private static final int LEGACY_MIGRATED_KEY_LENGTH = 64;
+    private static final int LEGACY_PASSPHRASE_LENGTH = 48;
     private ExecutorService kmsOperationExecutor;
 
     @Inject
@@ -137,8 +149,13 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Inject
     private PassphraseDao passphraseDao;
+    @Inject
+    private SnapshotDao snapshotDao;
     private List<KMSProvider> kmsProviders;
     private ScheduledExecutorService rewrapExecutor;
+    private ScheduledExecutorService keyFormatRepairExecutor;
+    // Id of the last key checked by the key format repair; only used by its single thread
+    private long keyFormatRepairCursor = 0;
 
 
     @Override
@@ -218,24 +235,34 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         Exception lastException = null;
 
-        if (wrappedVO.getKekVersionId() != null) {
-            KMSKekVersionVO version = kmsKekVersionDao.findById(wrappedVO.getKekVersionId());
-            if (version != null && version.getStatus() != KMSKekVersionVO.Status.Archived) {
-                HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
-                if (!hsmProfile.isEnabled()) {
-                    throw KMSException.providerNotInitialized("HSM profile is not enabled for wrapped key: " + version);
-                }
+        KMSKekVersionVO recordedVersion = wrappedVO.getKekVersionId() != null
+                ? kmsKekVersionDao.findById(wrappedVO.getKekVersionId()) : null;
+        if (recordedVersion != null && recordedVersion.getStatus() == KMSKekVersionVO.Status.Archived) {
+            // The rewrap worker deleted its KEK; no other KEK can unwrap the key
+            throw KMSException.kekNotFound(String.format("KEK version %d of wrapped key %s is archived",
+                    recordedVersion.getVersionNumber(), wrappedVO.getUuid()));
+        }
+        if (recordedVersion != null) {
+            HSMProfileVO hsmProfile = getEnabledHsmProfile(recordedVersion);
+            try {
+                return unwrapKeyWithVersion(wrappedVO, kmsKey, recordedVersion, hsmProfile, "");
+            } catch (Exception e) {
+                lastException = e;
+                logger.warn("Failed to unwrap with version {}: {}", recordedVersion.getVersionNumber(), e.getMessage(), e);
+            }
+        }
+
+        // Other versions only for an authenticated algorithm: with CBC another KEK can unwrap the blob to a wrong
+        // key without an error, and a rewrap would then lose the real key for good.
+        if (AUTHENTICATED_WRAP_ALGORITHMS.contains(wrappedVO.getWrapAlgorithm())) {
+            List<KMSKekVersionVO> otherVersions = kmsKekVersionDao.getVersionsForDecryption(kmsKey.getId()).stream()
+                    .filter(version -> recordedVersion == null || !version.getId().equals(recordedVersion.getId()))
+                    .sorted(Comparator.comparing(KMSKekVersionVO::getVersionNumber).reversed())
+                    .collect(Collectors.toList());
+            for (KMSKekVersionVO version : otherVersions) {
+                HSMProfileVO hsmProfile = getEnabledHsmProfile(version);
                 try {
-                    byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version, hsmProfile);
-
-                    CallContext.current().setEventResourceId(kmsKey.getId());
-                    CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
-                    CallContext.current().setEventDetails(String.format(
-                            "Unwrapped %s key (wrapped key uuid: %s) using KMS key: %s (uuid: %s) with KEK version %d",
-                            kmsKey.getPurpose().getName(), wrappedVO.getUuid(), kmsKey.getName(), kmsKey.getUuid(), version.getVersionNumber()));
-
-                    logger.debug("Successfully unwrapped key {} with KEK version {}", wrappedKeyId, version.getVersionNumber());
-                    return dek;
+                    return unwrapKeyWithVersion(wrappedVO, kmsKey, version, hsmProfile, " (fallback)");
                 } catch (Exception e) {
                     lastException = e;
                     logger.warn("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage(), e);
@@ -243,32 +270,34 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             }
         }
 
-        // Fallback: try all available versions for decryption
-        List<KMSKekVersionVO> versions = kmsKekVersionDao.getVersionsForDecryption(kmsKey.getId());
-        for (KMSKekVersionVO version : versions) {
-            HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
-            if (!hsmProfile.isEnabled()) {
-                throw KMSException.providerNotInitialized("HSM profile is not enabled for wrapped key: " + version);
-            }
-            try {
-                byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version, hsmProfile);
-
-                CallContext.current().setEventResourceId(kmsKey.getId());
-                CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
-                CallContext.current().setEventDetails(String.format(
-                        "Unwrapped %s key (wrapped key uuid: %s) using KMS key: %s (uuid: %s) with KEK version %d (fallback)",
-                        kmsKey.getPurpose().getName(), wrappedVO.getUuid(), kmsKey.getName(), kmsKey.getUuid(), version.getVersionNumber()));
-
-                logger.info("Successfully unwrapped key {} with KEK version {} (fallback)",
-                        wrappedKeyId, version.getVersionNumber());
-                return dek;
-            } catch (Exception e) {
-                lastException = e;
-                logger.warn("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage(), e);
-            }
+        if (lastException == null) {
+            // Nothing to try, e.g. the KEK version was archived and its KEK deleted
+            throw KMSException.kekNotFound("No usable KEK version for wrapped key " + wrappedKeyId);
         }
-
         throw KMSException.wrapUnwrapFailed("Failed to unwrap key: no available KEK version for wrapped key " + wrappedKeyId, lastException);
+    }
+
+    private HSMProfileVO getEnabledHsmProfile(KMSKekVersionVO version) {
+        HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
+        if (!hsmProfile.isEnabled()) {
+            throw KMSException.providerNotInitialized("HSM profile is not enabled for wrapped key: " + version);
+        }
+        return hsmProfile;
+    }
+
+    private byte[] unwrapKeyWithVersion(KMSWrappedKeyVO wrappedVO, KMSKeyVO kmsKey, KMSKekVersionVO version,
+                                        HSMProfileVO hsmProfile, String fallback) throws Exception {
+        byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version, hsmProfile);
+
+        CallContext.current().setEventResourceId(kmsKey.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
+        CallContext.current().setEventDetails(String.format(
+                "Unwrapped %s key (wrapped key uuid: %s) using KMS key: %s (uuid: %s) with KEK version %d%s",
+                kmsKey.getPurpose().getName(), wrappedVO.getUuid(), kmsKey.getName(), kmsKey.getUuid(),
+                version.getVersionNumber(), fallback));
+
+        logger.debug("Successfully unwrapped key {} with KEK version {}{}", wrappedVO.getId(), version.getVersionNumber(), fallback);
+        return dek;
     }
 
     private byte[] getUnwrappedKey(KMSWrappedKeyVO wrappedVO, KMSKeyVO kmsKey,
@@ -276,7 +305,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
 
         WrappedKey wrapped = new WrappedKey(wrappedVO.getUuid(), version.getKekLabel(), kmsKey.getPurpose(),
-                kmsKey.getAlgorithm(), wrappedVO.getWrappedBlob(),
+                wrappedVO.getWrapAlgorithm(), wrappedVO.getWrappedBlob(),
                 hsmProfile.getProtocol(), wrappedVO.getCreated(), kmsKey.getZoneId());
         return retryOperation(() -> provider.unwrapKey(wrapped, version.getHsmProfileId()));
     }
@@ -308,6 +337,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
 
         int dekSize = KMSDekSizeBits.value();
+        if (!VALID_DEK_SIZE_BITS.contains(dekSize)) {
+            throw KMSException.invalidParameter(KMSDekSizeBits.key() + " must be 128, 192 or 256: " + dekSize);
+        }
         WrappedKey wrappedKey;
         try {
             wrappedKey = retryOperation(() -> provider.generateAndWrapDek(KeyPurpose.VOLUME_ENCRYPTION,
@@ -315,6 +347,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     activeVersion.getHsmProfileId()));
             KMSWrappedKeyVO wrappedKeyVO = new KMSWrappedKeyVO(kmsKey.getId(), activeVersion.getId(),
                     kmsKey.getZoneId(), wrappedKey.getWrappedKeyMaterial());
+            wrappedKeyVO.setWrapAlgorithm(wrappedKey.getAlgorithm());
             wrappedKeyVO = kmsWrappedKeyDao.persist(wrappedKeyVO);
 
             // Volume creation code looks up by UUID and sets volume.kmsWrappedKeyId
@@ -442,10 +475,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new InvalidParameterValueException("A KMS key with name " + name + " already exists in this account");
         }
 
-        KMSKeyVO kmsKey = new KMSKeyVO(name, description, "", purpose,
-                accountId, domainId, zoneId, "AES/GCM/NoPadding", keyBits);
-
         KMSProvider provider = getKMSProvider(profile.getProtocol());
+        KMSKeyVO kmsKey = new KMSKeyVO(name, description, "", purpose,
+                accountId, domainId, zoneId, provider.getWrapAlgorithm(hsmProfileId), keyBits);
+
         String kekLabel = purpose.generateKekLabel(domainId, accountId, kmsKey.getUuid(), 1);
 
         String providerKekLabel;
@@ -455,6 +488,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         } catch (Exception e) {
             throw handleKmsException(e);
         }
+        verifyKekCanWrap(provider, purpose, providerKekLabel, profile);
 
         kmsKey.setKekLabel(providerKekLabel);
         kmsKey.setHsmProfileId(finalProfileId);
@@ -591,16 +625,33 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             if (CollectionUtils.isNotEmpty(volumes)) {
                 for (VolumeVO volume : volumes) {
                     if (volume.getId() != vol.getId()) {
-                        logger.warn("KMS Wrapped Key {} is still in use by volume {}, cannot delete",
+                        // Normal after a volume migration, the source and the new volume share the key
+                        logger.debug("KMS Wrapped Key {} is still in use by volume {}, cannot delete",
                                 wrappedKey, volume);
                         return false;
                     }
                 }
             }
+            if (isNeededBySnapshots(wrappedKey)) {
+                logger.debug("KMS Wrapped Key {} is still needed by snapshots of volume {} or of another volume "
+                        + "sharing it, keeping it", wrappedKey, vol);
+                return false;
+            }
             logger.info("Deleted KMS Wrapped Key {} for volume {}", wrappedKey, vol);
             return kmsWrappedKeyDao.remove(wrappedKey.getId());
         }
         return true;
+    }
+
+    /**
+     * Whether a snapshot that isn't destroyed exists for any volume (removed volumes included) that uses the
+     * wrapped key. Restoring or deleting such a snapshot needs the key of its volume.
+     */
+    private boolean isNeededBySnapshots(KMSWrappedKeyVO wrappedKey) {
+        List<Long> volumeIds = volumeDao.listIncludingRemovedByKmsWrappedKeyId(wrappedKey.getId()).stream()
+                .map(VolumeVO::getId).collect(Collectors.toList());
+        return snapshotDao.searchByVolumes(volumeIds).stream()
+                .anyMatch(snapshot -> snapshot.getState() != Snapshot.State.Destroyed);
     }
 
     @Override
@@ -638,12 +689,21 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                             kekVersion.getKekLabel(), kekVersion.getVersionNumber(), provider.getProviderName());
                 }
             } catch (Exception e) {
+                if (e instanceof KMSException && ((KMSException) e).getErrorType() == KMSException.ErrorType.KEK_NOT_FOUND) {
+                    // e.g. an archived version whose KEK the rewrap worker already deleted
+                    logger.info("KEK {} (v{}) is already gone from the provider", kekVersion.getKekLabel(),
+                            kekVersion.getVersionNumber());
+                    continue;
+                }
                 logger.warn("Failed to delete KEK {} (v{}) from provider during KMS key deletion: {}",
                         kekVersion.getKekLabel(), kekVersion.getVersionNumber(), e.getMessage());
                 ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
                         key.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_KMS_KEY_DELETE, true,
                         String.format("Failed to delete KEK %s from provider during KMS key deletion", kekVersion.getKekLabel()),
                         key.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
+                // Keep the KMS key so the KEK material isn't left in the HSM without any reference to it
+                throw new CloudRuntimeException(String.format("Failed to delete KEK %s from provider, KMS key %s was "
+                        + "not deleted: %s", kekVersion.getKekLabel(), key.getUuid(), e.getMessage()), e);
             }
         }
 
@@ -726,6 +786,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             final HSMProfileVO finalHSMProfile = newHSMProfile;
             String newKekId = retryOperation(
                     () -> provider.createKek(kmsKey.getPurpose(), finalNewKekLabel, keyBits, newProfileId));
+            verifyKekCanWrap(provider, kmsKey.getPurpose(), newKekId, finalHSMProfile);
+            String newWrapAlgorithm = provider.getWrapAlgorithm(newProfileId);
 
             try {
                 KMSKekVersionVO newVersion = Transaction
@@ -740,6 +802,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                                 logger.info("Updated KMS key {} to use HSM profile {}", kmsKey, finalHSMProfile);
                             }
                             kmsKey.setKekLabel(finalNewKekLabel);
+                            kmsKey.setAlgorithm(newWrapAlgorithm);
                             kmsKeyDao.update(kmsKey.getId(), kmsKey);
                             return version;
                         });
@@ -755,7 +818,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                                 + "{} from provider {}",
                         kmsKey, newKekId, provider.getProviderName());
                 try {
-                    provider.deleteKek(newKekId);
+                    // The version row was rolled back, so the provider can't find the KEK's profile by itself.
+                    provider.deleteKek(newKekId, newProfileId);
                 } catch (KMSException ex) {
                     logger.error("Failed to delete orphaned KEK {} from provider {} after DB failure: {}",
                             newKekId, provider.getProviderName(), ex.getMessage());
@@ -770,6 +834,40 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         } catch (Exception e) {
             logger.error("KEK rotation failed for kmsKey {}: {}", kmsKey, e.getMessage());
             throw handleKmsException(e);
+        }
+    }
+
+    /**
+     * Wraps and unwraps a random key with a newly created KEK, so an HSM that doesn't support the profile's wrap
+     * algorithm (e.g. GCM with a caller-supplied IV in FIPS mode) fails here rather than at the first volume
+     * creation or rewrap. On failure the KEK is deleted again.
+     */
+    private void verifyKekCanWrap(KMSProvider provider, KeyPurpose purpose, String kekLabel, HSMProfileVO profile) {
+        String algorithm = null;
+        byte[] testKey = new byte[32];
+        new SecureRandom().nextBytes(testKey);
+        byte[] unwrapped = null;
+        try {
+            algorithm = provider.getWrapAlgorithm(profile.getId());
+            WrappedKey wrapped = provider.wrapKey(testKey, purpose, kekLabel, profile.getId());
+            unwrapped = provider.unwrapKey(wrapped, profile.getId());
+            if (!Arrays.equals(testKey, unwrapped)) {
+                throw KMSException.wrapUnwrapFailed("unwrapped key does not match the original");
+            }
+        } catch (Exception e) {
+            try {
+                provider.deleteKek(kekLabel, profile.getId());
+            } catch (Exception ex) {
+                logger.warn("Failed to delete KEK {} from HSM profile {} after a failed wrap test: {}", kekLabel,
+                        profile, ex.getMessage());
+            }
+            throw KMSException.wrapUnwrapFailed(String.format("HSM profile %s could not wrap and unwrap a key with %s: %s",
+                    profile.getName(), algorithm, e.getMessage()), e);
+        } finally {
+            Arrays.fill(testKey, (byte) 0);
+            if (unwrapped != null) {
+                Arrays.fill(unwrapped, (byte) 0);
+            }
         }
     }
 
@@ -882,7 +980,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return successCount;
     }
 
-    private boolean migrateVolumeToKmsKey(KMSProvider provider, VolumeVO volume, KMSKey kmsKey,
+    boolean migrateVolumeToKmsKey(KMSProvider provider, VolumeVO volume, KMSKey kmsKey,
                                           KMSKekVersionVO activeVersion) {
         if (volume.getAccountId() != kmsKey.getAccountId()) {
             throw new InvalidParameterValueException(
@@ -897,9 +995,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             return false;
         }
 
-        // PassphraseVO.getPassphrase() returns Base64-encoded bytes matching KVM/QEMU
-        // format
-        byte[] passphraseBytes = passphrase.getPassphrase();
+        // The legacy passphrase is stored as base64 text, and that text is what qemu/libvirt get as the LUKS
+        // passphrase. VolumeObject.getPassphrase() base64-encodes an unwrapped KMS key, so wrap the decoded bytes
+        // for the volume to keep exactly the same passphrase.
+        byte[] passphraseBytes = Base64.getDecoder().decode(passphrase.getPassphraseString());
         try {
             WrappedKey wrappedKey = provider.wrapKey(
                     passphraseBytes,
@@ -907,17 +1006,27 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     activeVersion.getKekLabel(),
                     activeVersion.getHsmProfileId());
 
-            KMSWrappedKeyVO wrappedKeyVO = new KMSWrappedKeyVO(
-                    kmsKey.getId(),
-                    activeVersion.getId(),
-                    volume.getDataCenterId(),
-                    wrappedKey.getWrappedKeyMaterial());
-            wrappedKeyVO = kmsWrappedKeyDao.persist(wrappedKeyVO);
+            Long passphraseId = volume.getPassphraseId();
+            Transaction.execute((TransactionCallbackWithException<Void, KMSException>) status -> {
+                KMSWrappedKeyVO wrappedKeyVO = new KMSWrappedKeyVO(
+                        kmsKey.getId(),
+                        activeVersion.getId(),
+                        volume.getDataCenterId(),
+                        wrappedKey.getWrappedKeyMaterial());
+                wrappedKeyVO.setWrapAlgorithm(wrappedKey.getAlgorithm());
+                wrappedKeyVO = kmsWrappedKeyDao.persist(wrappedKeyVO);
 
-            volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
-            volume.setKmsKeyId(kmsKey.getId());
-            volume.setPassphraseId(null);
-            volumeDao.update(volume.getId(), volume);
+                volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
+                volume.setKmsKeyId(kmsKey.getId());
+                volume.setPassphraseId(null);
+                volumeDao.update(volume.getId(), volume);
+
+                // Don't leave the volume key behind in the passphrase table, unless another volume still uses it
+                if (volumeDao.listIncludingRemovedByPassphraseId(passphraseId).isEmpty()) {
+                    passphraseDao.remove(passphraseId);
+                }
+                return null;
+            });
 
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
                     kmsKey.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, true,
@@ -1059,17 +1168,16 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         profile.setIsPublic(isPublic);
         profile = hsmProfileDao.persist(profile);
 
-        if (cmd.getDetails() != null) {
-            for (Map.Entry<String, String> entry : cmd.getDetails().entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue();
+        // The validated details, which include the defaults the provider filled in (e.g. the wrap algorithm)
+        for (Map.Entry<String, String> entry : details.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
 
-                if (isSensitiveKey(key)) {
-                    value = DBEncryptionUtil.encrypt(value);
-                }
-
-                hsmProfileDetailsDao.persist(profile.getId(), key, value);
+            if (isSensitiveKey(key)) {
+                value = DBEncryptionUtil.encrypt(value);
             }
+
+            hsmProfileDetailsDao.persist(profile.getId(), key, value);
         }
 
         CallContext.current().setEventResourceId(profile.getId());
@@ -1331,9 +1439,17 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         hsmProfileDao.update(profile.getId(), profile);
 
+        String testingOnlyWarning = "";
+        if (Boolean.TRUE.equals(cmd.getEnabled()) && DATABASE_PROVIDER_NAME.equalsIgnoreCase(profile.getProtocol())) {
+            testingOnlyWarning = ". The database provider stores KEKs in the CloudStack database and is meant for "
+                    + "testing only, it is not a substitute for an HSM";
+            logger.warn("HSM profile {} was enabled{}", profile, testingOnlyWarning);
+        }
+
         CallContext.current().setEventResourceId(profile.getId());
         CallContext.current().setEventResourceType(ApiCommandResourceType.HsmProfile);
-        CallContext.current().setEventDetails(String.format("Updated HSM profile: %s (uuid: %s)", profile.getName(), profile.getUuid()));
+        CallContext.current().setEventDetails(String.format("Updated HSM profile: %s (uuid: %s)%s", profile.getName(),
+                profile.getUuid(), testingOnlyWarning));
 
         return profile;
     }
@@ -1610,6 +1726,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         scheduleRewrapWorker();
+        scheduleKeyFormatRepair();
 
         return true;
     }
@@ -1768,6 +1885,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
             wrappedKeyVO.setKekVersionId(newVersion.getId());
             wrappedKeyVO.setWrappedBlob(newWrapped.getWrappedKeyMaterial());
+            wrappedKeyVO.setWrapAlgorithm(newWrapped.getAlgorithm());
             kmsWrappedKeyDao.update(wrappedKeyVO.getId(), wrappedKeyVO);
 
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), kmsKey.getAccountId(),
@@ -1781,11 +1899,173 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
     }
 
+    /**
+     * 4.23 migrated legacy volume passphrases to KMS as their base64 text instead of their raw bytes, so those
+     * volumes got a wrong passphrase. The upgrade flags every wrapped key that existed at that point; this task
+     * checks each one once and rewraps the affected ones with the raw bytes. A key that can't be unwrapped (e.g. the
+     * HSM is down) stays flagged and is retried. The task stops once no flagged key is left.
+     */
+    private void scheduleKeyFormatRepair() {
+        if (kmsWrappedKeyDao.listFormatCheckPending(0, 1).isEmpty()) {
+            return;
+        }
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "KMSKeyFormatRepair");
+            t.setDaemon(true);
+            return t;
+        });
+        keyFormatRepairExecutor = executor;
+        executor.scheduleWithFixedDelay(new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                try {
+                    if (repairKeyFormatBatch()) {
+                        logger.info("All KMS wrapped keys flagged at the upgrade from 4.23 have been checked");
+                        executor.shutdown();
+                    }
+                } catch (final Exception e) {
+                    logger.error("Error while checking the format of KMS wrapped keys", e);
+                }
+            }
+        }, 30, 60, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Checks the next batch of flagged keys. A batch ends at the first key that can't be checked (e.g. its HSM is
+     * down), so the lock shared with the rewrap worker isn't held through retries; the next batch resumes after that
+     * key so it doesn't block the others.
+     *
+     * @return true when no flagged key is left
+     */
+    boolean repairKeyFormatBatch() {
+        GlobalLock lock = GlobalLock.getInternLock("kms.rewrap.worker");
+        try {
+            if (!lock.lock(5)) {
+                return false;
+            }
+            try {
+                List<KMSWrappedKeyVO> keys = kmsWrappedKeyDao.listFormatCheckPending(keyFormatRepairCursor,
+                        KMSRewrapBatchSize.value());
+                if (keys.isEmpty()) {
+                    boolean done = keyFormatRepairCursor == 0;
+                    keyFormatRepairCursor = 0;
+                    return done;
+                }
+                for (KMSWrappedKeyVO key : keys) {
+                    keyFormatRepairCursor = key.getId();
+                    try {
+                        repairKeyFormat(key);
+                    } catch (Exception e) {
+                        logger.warn("Could not check the format of KMS wrapped key {}, will retry: {}", key, e.getMessage());
+                        logger.debug("Failed to check the format of KMS wrapped key {}", key, e);
+                        break;
+                    }
+                }
+                return false;
+            } finally {
+                lock.unlock();
+            }
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
+    private void repairKeyFormat(KMSWrappedKeyVO wrappedKeyVO) {
+        byte[] key;
+        try {
+            key = unwrapKey(wrappedKeyVO.getId());
+        } catch (KMSException e) {
+            if (e.getErrorType() != KMSException.ErrorType.KEK_NOT_FOUND) {
+                throw e;
+            }
+            // Gone for good, e.g. its KMS key or KEK was deleted, so there is nothing to repair
+            logger.warn("KMS wrapped key {} can't be unwrapped anymore, not checking its format: {}", wrappedKeyVO,
+                    e.getMessage());
+            markFormatChecked(wrappedKeyVO);
+            return;
+        }
+        byte[] passphrase = decodeLegacyMigratedKey(key);
+        try {
+            if (passphrase != null) {
+                rewrapLegacyMigratedKey(wrappedKeyVO, passphrase);
+            }
+            markFormatChecked(wrappedKeyVO);
+        } finally {
+            Arrays.fill(key, (byte) 0);
+            if (passphrase != null) {
+                Arrays.fill(passphrase, (byte) 0);
+            }
+        }
+    }
+
+    private void rewrapLegacyMigratedKey(KMSWrappedKeyVO wrappedKeyVO, byte[] passphrase) {
+        List<VolumeVO> volumes = volumeDao.findByKmsWrappedKeyId(wrappedKeyVO.getId());
+        List<VolumeVO> createdAfterMigration = volumes.stream()
+                .filter(volume -> volume.getCreated().after(wrappedKeyVO.getCreated()))
+                .collect(Collectors.toList());
+        if (!createdAfterMigration.isEmpty()) {
+            // e.g. the copy made by a storage migration on 4.23, which was encrypted with the passphrase 4.23 derived
+            // from this key. Repairing the key would make such a volume unreadable, so leave it to the admin.
+            logger.warn("Not repairing KMS wrapped key {}, which 4.23 migrated in a wrong format: volume(s) {} were "
+                    + "created after the migration and may be encrypted with the passphrase 4.23 used. Check these "
+                    + "volumes manually.", wrappedKeyVO, createdAfterMigration);
+            return;
+        }
+
+        KMSKeyVO kmsKey = kmsKeyDao.findById(wrappedKeyVO.getKmsKeyId());
+        KMSKekVersionVO activeVersion = getActiveKekVersion(kmsKey.getId());
+        HSMProfileVO hsmProfile = hsmProfileDao.findById(activeVersion.getHsmProfileId());
+        WrappedKey rewrapped = getKMSProvider(hsmProfile.getProtocol()).wrapKey(passphrase,
+                kmsKey.getPurpose(), activeVersion.getKekLabel(), activeVersion.getHsmProfileId());
+        wrappedKeyVO.setKekVersionId(activeVersion.getId());
+        wrappedKeyVO.setWrappedBlob(rewrapped.getWrappedKeyMaterial());
+        wrappedKeyVO.setWrapAlgorithm(rewrapped.getAlgorithm());
+
+        for (VolumeVO volume : volumes) {
+            logger.info("Repaired the KMS key of volume {}, which was migrated to KMS by 4.23", volume);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                    volume.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, true,
+                    String.format("Repaired the KMS key of the volume, which was migrated to KMS key %s by 4.23",
+                            kmsKey.getUuid()),
+                    volume.getId(), ApiCommandResourceType.Volume.toString(), CallContext.current().getStartEventId());
+        }
+    }
+
+    private void markFormatChecked(KMSWrappedKeyVO wrappedKeyVO) {
+        wrappedKeyVO.setFormatCheckPending(false);
+        kmsWrappedKeyDao.update(wrappedKeyVO.getId(), wrappedKeyVO);
+    }
+
+    /**
+     * @return the raw passphrase if {@code key} is the base64 text of a 48-byte legacy passphrase, as 4.23 migrated
+     * it, otherwise null
+     */
+    static byte[] decodeLegacyMigratedKey(byte[] key) {
+        if (key.length != LEGACY_MIGRATED_KEY_LENGTH) {
+            return null;
+        }
+        byte[] decoded;
+        try {
+            decoded = Base64.getDecoder().decode(key);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        if (decoded.length != LEGACY_PASSPHRASE_LENGTH || !Arrays.equals(Base64.getEncoder().encode(decoded), key)) {
+            Arrays.fill(decoded, (byte) 0);
+            return null;
+        }
+        return decoded;
+    }
+
     @Override
     public boolean stop() {
         if (rewrapExecutor != null) {
             rewrapExecutor.shutdownNow();
             rewrapExecutor = null;
+        }
+        if (keyFormatRepairExecutor != null) {
+            keyFormatRepairExecutor.shutdownNow();
+            keyFormatRepairExecutor = null;
         }
         kmsOperationExecutor.shutdownNow();
         return super.stop();
