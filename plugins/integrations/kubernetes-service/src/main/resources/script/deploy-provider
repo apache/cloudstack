@@ -25,12 +25,12 @@ else
     mkdir -p /opt/provider
     PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
     provider_conf_file="/opt/provider/provider.yaml"
-    curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
-    if [ $? -ne 0 ]; then
+    trap 'rm -f "$provider_conf_file.tmp.$$"' EXIT
+    if ! curl -fsSL "$PROVIDER_URL" -o "$provider_conf_file.tmp.$$"; then
         echo "Unable to connect to the internet to download the provider deployment and image"
         exit 1
-    else
-        /opt/bin/kubectl apply -f /opt/provider/provider.yaml
-        exit 0
     fi
+    mv -f "$provider_conf_file.tmp.$$" "$provider_conf_file"
+    /opt/bin/kubectl apply -f /opt/provider/provider.yaml
+    exit 0
 fi
