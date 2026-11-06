@@ -579,7 +579,8 @@ export default {
       searchFilters: ['name', 'domainid', 'account', 'state'],
       permission: ['listKubernetesClusters'],
       columns: (store) => {
-        var fields = ['name', 'state', 'clustertype', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
+        // The number of worker nodes of all the node groups, the size of the cluster is the size of its default node group
+        var fields = ['name', 'state', 'clustertype', 'workernodes', 'cpunumber', 'memory', 'kubernetesversionname']
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
         }
@@ -596,7 +597,7 @@ export default {
         const filters = ['cloud.managed', 'external.managed']
         return filters
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'csienabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'controlaffinitygroupnames', 'etcdnodes', 'etcdaffinitygroupnames', 'workeraffinitygroupnames', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'csienabled', 'minsize', 'maxsize', 'size', 'workernodes', 'controlnodes', 'controlaffinitygroupnames', 'etcdnodes', 'etcdaffinitygroupnames', 'workeraffinitygroupnames', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
       tabs: [
         {
           name: 'k8s',
