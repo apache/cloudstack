@@ -274,6 +274,8 @@ public class LibvirtDomainXMLParser {
                     def.setSlot(Integer.parseInt(slot, 16));
                 }
 
+                parseVlanTag(nic, def);
+
                 interfaces.add(def);
             }
 
@@ -426,6 +428,33 @@ public class LibvirtDomainXMLParser {
      * @param devices the devices tag.
      * @return the MemBalloonDef.
      */
+    private void parseVlanTag(Element nic, InterfaceDef def) {
+        NodeList vlans = nic.getElementsByTagName("vlan");
+        if (vlans.getLength() == 0) {
+            return;
+        }
+        Element vlan = (Element)vlans.item(0);
+        List<Integer> tags = new ArrayList<>();
+        Integer nativeTag = null;
+        NodeList tagNodes = vlan.getElementsByTagName("tag");
+        for (int j = 0; j < tagNodes.getLength(); j++) {
+            Element tag = (Element)tagNodes.item(j);
+            Integer id = Integer.valueOf(tag.getAttribute("id"));
+            tags.add(id);
+            if ("untagged".equals(tag.getAttribute("nativeMode"))) {
+                nativeTag = id;
+            }
+        }
+        if (tags.isEmpty()) {
+            return;
+        }
+        if ("yes".equals(vlan.getAttribute("trunk"))) {
+            def.setTrunkVlanTags(tags, nativeTag);
+        } else {
+            def.setVlanTag(tags.get(0));
+        }
+    }
+
     private MemBalloonDef parseMemBalloonTag(Element devices) {
         MemBalloonDef def = new MemBalloonDef();
         NodeList memBalloons = devices.getElementsByTagName("memballoon");
