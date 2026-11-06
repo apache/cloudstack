@@ -70,15 +70,32 @@ public class AsyncJobJoinVOToJobConverter {
         return vos.stream().map(AsyncJobJoinVOToJobConverter::toJob).collect(Collectors.toList());
     }
 
-    protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo) {
+    /**
+     * Fills the job link and status of an action. A sync action is only built after its job succeeded, so it
+     * is complete. An async action takes its status from the job, which is usually still pending.
+     */
+    protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo, final boolean async) {
         final String basePath = VeeamControlService.ContextPath.value();
         action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + "/" + vo.getUuid(), vo.getUuid()));
-        action.setStatus("complete");
+        action.setStatus(async ? getActionStatus(vo) : "complete");
     }
 
-    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm) {
+    protected static String getActionStatus(final AsyncJobJoinVO vo) {
+        final JobInfo.Status status = JobInfo.Status.values()[vo.getStatus()];
+        switch (status) {
+            case SUCCEEDED:
+                return "complete";
+            case FAILED:
+            case CANCELLED:
+                return "failed";
+            default:
+                return "pending";
+        }
+    }
+
+    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm, final boolean async) {
         VmAction action = new VmAction();
-        fillAction(action, vo);
+        fillAction(action, vo, async);
         action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null, null, null, null, null, false));
         return action;
     }
@@ -98,9 +115,9 @@ public class AsyncJobJoinVOToJobConverter {
         return action;
     }
 
-    public static ResourceAction toAction(final AsyncJobJoinVO vo) {
+    public static ResourceAction toAction(final AsyncJobJoinVO vo, final boolean async) {
         VmAction action = new VmAction();
-        fillAction(action, vo);
+        fillAction(action, vo, async);
         return action;
     }
 }

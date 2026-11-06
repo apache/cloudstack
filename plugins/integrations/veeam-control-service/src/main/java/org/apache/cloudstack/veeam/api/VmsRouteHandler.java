@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.AsyncJobFailedException;
+import org.apache.cloudstack.veeam.adapter.AsyncJobPendingException;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.converter.AsyncJobJoinVOToJobConverter;
 import org.apache.cloudstack.veeam.api.dto.Backup;
@@ -697,13 +698,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     /**
      * Writes the error for a VM or snapshot action. When the action's async job failed, or waiting for it
      * timed out, responds like oVirt does for a failed blocking action: the action with a "failed" status,
-     * a fault and the job link. Other errors are written as a plain bad request.
+     * a fault and the job link. A timed out wait uses 504 instead of 400, as the job may still be running.
+     * Other errors are written as a plain bad request.
      */
     protected static void handleActionError(final HttpServletResponse resp, final CloudRuntimeException e,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         final AsyncJobFailedException jobFailure = findAsyncJobFailure(e);
         if (jobFailure != null) {
-            io.getWriter().write(resp, HttpServletResponse.SC_BAD_REQUEST,
+            io.getWriter().write(resp, getAsyncJobFailureStatus(jobFailure),
                     AsyncJobJoinVOToJobConverter.toFailedAction(jobFailure.getJobUuid(), e.getMessage()), outFormat);
             return;
         }
@@ -712,16 +714,22 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     /**
      * Writes the error for a DELETE. When its async job failed, or waiting for it timed out, responds like
-     * oVirt does for a failed DELETE: a plain "Operation Failed" fault, without an action. Other errors are
-     * written as a plain bad request.
+     * oVirt does for a failed DELETE: a plain "Operation Failed" fault, without an action. A timed out wait
+     * uses 504 instead of 400, as the job may still be running. Other errors are written as a plain bad request.
      */
     protected static void handleDeleteError(final HttpServletResponse resp, final CloudRuntimeException e,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        if (findAsyncJobFailure(e) != null) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, Fault.OPERATION_FAILED, e.getMessage(), outFormat);
+        final AsyncJobFailedException jobFailure = findAsyncJobFailure(e);
+        if (jobFailure != null) {
+            io.getWriter().writeFault(resp, getAsyncJobFailureStatus(jobFailure), Fault.OPERATION_FAILED, e.getMessage(), outFormat);
             return;
         }
         io.badRequest(resp, e.getMessage(), outFormat);
+    }
+
+    protected static int getAsyncJobFailureStatus(final AsyncJobFailedException jobFailure) {
+        return jobFailure instanceof AsyncJobPendingException ?
+                HttpServletResponse.SC_GATEWAY_TIMEOUT : HttpServletResponse.SC_BAD_REQUEST;
     }
 
     protected static AsyncJobFailedException findAsyncJobFailure(final Throwable e) {

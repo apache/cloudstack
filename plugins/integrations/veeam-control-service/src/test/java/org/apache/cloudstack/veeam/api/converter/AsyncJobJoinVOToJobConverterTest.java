@@ -74,12 +74,35 @@ public class AsyncJobJoinVOToJobConverterTest {
         when(vo.getCreated()).thenReturn(new Date(3000L));
         when(vo.getStatus()).thenReturn(JobInfo.Status.CANCELLED.ordinal());
 
-        final ResourceAction action = AsyncJobJoinVOToJobConverter.toAction(vo);
+        final ResourceAction action = AsyncJobJoinVOToJobConverter.toAction(vo, false);
         assertEquals("complete", action.getStatus());
         assertEquals("job-3", action.getJob().getId());
 
         final List<Job> jobs = AsyncJobJoinVOToJobConverter.toJobList(List.of(vo));
         assertEquals(1, jobs.size());
         assertEquals("aborted", jobs.get(0).getStatus());
+    }
+
+    @Test
+    public void testToAction_AsyncTakesStatusFromJob() {
+        final AsyncJobJoinVO vo = mock(AsyncJobJoinVO.class);
+        when(vo.getUuid()).thenReturn("job-4");
+        final String[] expected = {"pending", "complete", "failed", "failed"};
+        for (JobInfo.Status status : JobInfo.Status.values()) {
+            when(vo.getStatus()).thenReturn(status.ordinal());
+            final ResourceAction action = AsyncJobJoinVOToJobConverter.toAction(vo, true);
+            assertEquals(status.name(), expected[status.ordinal()], action.getStatus());
+            assertEquals("job-4", action.getJob().getId());
+        }
+    }
+
+    @Test
+    public void testToVmAction_AsyncInProgressIsPendingAndSyncIsComplete() {
+        final AsyncJobJoinVO vo = mock(AsyncJobJoinVO.class);
+        when(vo.getUuid()).thenReturn("job-5");
+        when(vo.getStatus()).thenReturn(JobInfo.Status.IN_PROGRESS.ordinal());
+
+        assertEquals("pending", AsyncJobJoinVOToJobConverter.toAction(vo, true).getStatus());
+        assertEquals("complete", AsyncJobJoinVOToJobConverter.toAction(vo, false).getStatus());
     }
 }

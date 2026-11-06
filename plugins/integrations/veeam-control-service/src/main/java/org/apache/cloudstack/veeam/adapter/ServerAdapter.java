@@ -410,7 +410,7 @@ public class ServerAdapter extends ManagerBase {
             }
             if (System.nanoTime() > deadline) {
                 logger.warn("Timed out waiting for {} completion after {}s", job, getElapsedSeconds(start));
-                throw new AsyncJobFailedException(job.getUuid(), String.format(
+                throw new AsyncJobPendingException(job.getUuid(), String.format(
                         "Timed out waiting for job %s to complete after %ds, the job may still be running in the background",
                         job.getUuid(), getElapsedSeconds(start)));
             }
@@ -420,7 +420,7 @@ public class ServerAdapter extends ManagerBase {
                 sleepMillis = Math.min(5000, sleepMillis + 500);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new AsyncJobFailedException(job.getUuid(), String.format(
+                throw new AsyncJobPendingException(job.getUuid(), String.format(
                         "Interrupted while waiting for job %s to complete after %ds, the job may still be running in the background",
                         job.getUuid(), getElapsedSeconds(start)));
             }
@@ -1564,7 +1564,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete VM: " + e.getMessage(), e);
         }
@@ -1590,7 +1590,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to start VM: " + e.getMessage(), e);
         }
@@ -1617,7 +1617,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to stop VM: " + e.getMessage(), e);
         }
@@ -1644,7 +1644,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to shutdown VM: " + e.getMessage(), e);
         }
@@ -1853,7 +1853,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toAction(jobVo);
+            return AsyncJobJoinVOToJobConverter.toAction(jobVo, async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete disk: " + e.getMessage(), e);
         }
@@ -2144,7 +2144,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
+            action = AsyncJobJoinVOToJobConverter.toAction(jobVo, async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete snapshot: " + e.getMessage(), e);
         }
@@ -2173,7 +2173,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
+            action = AsyncJobJoinVOToJobConverter.toAction(jobVo, async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to revert to snapshot: " + e.getMessage(), e);
         }

@@ -106,12 +106,13 @@ public interface RouteHandler extends Adapter {
     }
 
     /**
-     * Writes the response for a successful DELETE the way oVirt does: 202 Accepted without a body for
-     * async requests, otherwise 200 OK with a completed action, linking the job when there is one.
+     * Writes the response for a successful DELETE. Sync requests get 200 OK with a completed action. Async
+     * requests get 202 Accepted with the action and its job status, so the job can be polled, or without a
+     * body when there is no job. Both link the job when there is one.
      */
     static void writeDeleteResponse(final HttpServletResponse resp, final boolean async, final ResourceAction action,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        if (async) {
+        if (async && (action == null || action.getJob() == null)) {
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, null, outFormat);
             return;
         }
@@ -119,7 +120,7 @@ public interface RouteHandler extends Adapter {
         if (action != null) {
             response.setJob(action.getJob());
         }
-        response.setStatus("complete");
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        response.setStatus(async ? action.getStatus() : "complete");
+        io.getWriter().write(resp, async ? HttpServletResponse.SC_ACCEPTED : HttpServletResponse.SC_OK, response, outFormat);
     }
 }

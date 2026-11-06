@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.veeam.adapter.AsyncJobFailedException;
+import org.apache.cloudstack.veeam.adapter.AsyncJobPendingException;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
@@ -126,7 +127,7 @@ public class DisksRouteHandlerTest extends RouteHandlerTestSupport {
     }
 
     @Test
-    public void testHandleDelete_AsyncReturnsAcceptedWithoutBody() throws Exception {
+    public void testHandleDelete_AsyncWithoutJobReturnsAcceptedWithoutBody() throws Exception {
         final DisksRouteHandler handler = new DisksRouteHandler();
         handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
 
@@ -137,6 +138,24 @@ public class DisksRouteHandlerTest extends RouteHandlerTestSupport {
         verify(handler.serverAdapter).deleteDisk("disk-1", true);
         verify(delete.response).setStatus(202);
         assertEquals("", delete.body());
+    }
+
+    @Test
+    public void testHandleDelete_AsyncWithJobReturnsAcceptedWithPendingJob() throws Exception {
+        final DisksRouteHandler handler = new DisksRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        final ResourceAction action = new ResourceAction();
+        action.setJob(Ref.of("/ovirt-engine/api/jobs/job-1", "job-1"));
+        action.setStatus("pending");
+        when(handler.serverAdapter.deleteDisk("disk-1", true)).thenReturn(action);
+
+        final ResponseCapture delete = newResponse();
+        handler.handle(newRequest("DELETE", Map.of("async", "true"), null, null), delete.response, "/api/disks/disk-1",
+                Negotiation.OutFormat.JSON, newServlet());
+
+        verify(delete.response).setStatus(202);
+        assertContains(delete.body(), "\"status\":\"pending\"");
+        assertContains(delete.body(), "\"id\":\"job-1\"");
     }
 
     @Test
@@ -167,6 +186,20 @@ public class DisksRouteHandlerTest extends RouteHandlerTestSupport {
         handler.handle(newRequest("DELETE"), delete.response, "/api/disks/disk-1", Negotiation.OutFormat.JSON, newServlet());
 
         verify(delete.response).setStatus(400);
+        assertContains(delete.body(), "Operation Failed");
+    }
+
+    @Test
+    public void testHandleDelete_JobTimeoutReturnsGatewayTimeoutFault() throws Exception {
+        final DisksRouteHandler handler = new DisksRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        when(handler.serverAdapter.deleteDisk("disk-1", false)).thenThrow(new CloudRuntimeException("Failed to delete disk",
+                new AsyncJobPendingException("job-1", "Timed out waiting for job job-1")));
+
+        final ResponseCapture delete = newResponse();
+        handler.handle(newRequest("DELETE"), delete.response, "/api/disks/disk-1", Negotiation.OutFormat.JSON, newServlet());
+
+        verify(delete.response).setStatus(504);
         assertContains(delete.body(), "Operation Failed");
     }
 }
