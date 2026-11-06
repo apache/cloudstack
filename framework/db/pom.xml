@@ -75,7 +75,17 @@
                 <configuration>
                     <excludes>
                         <exclude>com/cloud/utils/testcase/*TestCase*</exclude>
-                        <exclude>com/cloud/utils/db/*Test*</exclude>
+                        <!-- The test classes below are excluded because they require a live database. The remaining
+                             ones in com/cloud/utils/db are plain unit tests and must run in the build. -->
+                        <exclude>com/cloud/utils/db/DbTest*</exclude>
+                        <exclude>com/cloud/utils/db/ElementCollectionTest*</exclude>
+                        <exclude>com/cloud/utils/db/FilterTest*</exclude>
+                        <exclude>com/cloud/utils/db/GenericDaoBaseTest*</exclude>
+                        <exclude>com/cloud/utils/db/GlobalLockTest*</exclude>
+                        <exclude>com/cloud/utils/db/GroupByTest*</exclude>
+                        <exclude>com/cloud/utils/db/Merovingian2Test*</exclude>
+                        <exclude>com/cloud/utils/db/TestTransaction*</exclude>
+                        <exclude>com/cloud/utils/db/TransactionContextBuilderTest*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
