@@ -407,6 +407,7 @@
 "label.assign": "Atribuir",
 "label.assign.instance.another": "Atribuir inst\u00e2ncia para outra conta",
 "label.assign.vms": "Atribuir VMs",
+"label.assign.volume.another": "Atribuir volume \u00e0 outra conta",
 "label.assigning.vms": "Atribuindo VMs",
 "label.associated.resource": "Recurso associado",
 "label.associatednetwork": "Rede associada",
