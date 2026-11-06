@@ -58,7 +58,7 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     @Param(description = "True if storage motion is supported")
     private boolean isStorageMotionSupported;
 
-    @SerializedName(ApiConstants.VM_SNAPSHOT_ENABELD)
+    @SerializedName(ApiConstants.VM_SNAPSHOT_ENABLED)
     @Param(description = "True if Instance Snapshots are enabled for this hypervisor")
     private boolean isVmSnapshotEnabled;
 
