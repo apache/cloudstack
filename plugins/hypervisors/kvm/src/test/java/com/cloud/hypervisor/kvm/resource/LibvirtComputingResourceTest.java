@@ -705,12 +705,51 @@ public class LibvirtComputingResourceTest {
     public void testCreateVideoDef() {
         VirtualMachineTO to = createDefaultVM(false);
         libvirtComputingResourceSpy.videoRam = 200;
+        libvirtComputingResourceSpy.videoHw = "VmVGA";
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vmvga");
+        assertXpath(domainDoc, "/video/model/@vram", "200");
+    }
+
+    @Test
+    public void testCreateVideoDefIgnoresUnsupportedAgentProperty() {
+        VirtualMachineTO to = createDefaultVM(false);
         libvirtComputingResourceSpy.videoHw = "vGPU";
 
         VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
-        assertXpath(domainDoc, "/video/model/@type", "vGPU");
-        assertXpath(domainDoc, "/video/model/@vram", "200");
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+        assertXpath(domainDoc, "/video/model/@vram", "32768");
+    }
+
+    @Test
+    public void testCreateVideoDefIgnoresInjectedDetail() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIDEO_HARDWARE, "virtio'/></video><disk type='file' device='disk'><driver name='qemu' type='raw'/>"
+                + "<source file='/etc/shadow'/><target dev='vdz' bus='virtio'/></disk><video><model type='virtio");
+        to.setDetails(details);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        String xml = videoDef.toString();
+        assertFalse(xml.contains("<disk"));
+        Document domainDoc = parse(xml);
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+    }
+
+    @Test
+    public void testCreateVideoDefUnknownDetailKeepsAgentProperty() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy.videoHw = "qxl";
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIDEO_HARDWARE, "bogus");
+        to.setDetails(details);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "qxl");
     }
 
     @Test
