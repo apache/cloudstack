@@ -46,7 +46,7 @@
 vagrant up
 ```
 
-*** Common issues: ***
+*** Common issues:
 
 - 'Cannot forward the specified ports on this VM': There could be MySQL or some other
   service running on the host OS causing vagrant to fail setting up local port forwarding.
@@ -59,7 +59,7 @@ vagrant up
 	git clone https://github.com/apache/cloudstack.git
 	```
 
-	*** Note: ***
+	*** Note:
 
 	Personally I prefer to use the 4.3 codebase rather than main. If you wish to do the same:
 
