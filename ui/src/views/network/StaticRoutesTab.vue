@@ -22,7 +22,7 @@
         <a-input v-model:value="newRoute" :placeholder="$t('label.cidr.destination.network')" v-focus="true"></a-input>
       </div>
       <div class="form__label" v-if="this.$route.fullPath.startsWith('/vpc')">
-        <div :span="24" class="form__label">via</div>
+        <div :span="24" class="form__label">&nbsp;via&nbsp;</div>
       </div>
       <div class="form__label" v-if="this.$route.fullPath.startsWith('/vpc')">
         <a-input v-model:value="nexthop" :placeholder="$t('label.nexthop')"></a-input>
