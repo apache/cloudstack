@@ -32,10 +32,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
@@ -68,6 +70,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -602,6 +605,8 @@ public class NetworkOrchestratorTest extends TestCase {
         Assert.assertEquals(expectedUri, resultUri.toString());
     }
 
+    private NicVO preparedNicVO;
+
     private NicProfile prepareMocksAndRunPrepareNic(VirtualMachine.Type vmType, boolean isDefaultNic, boolean isVpcRouter, boolean routerResourceHasCustomDns) {
         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
         Long nicId = 1L;
@@ -609,6 +614,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Long networkId = 1L;
         Integer networkRate = 200;
         Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getId()).thenReturn(networkId);
         Mockito.when(network.getGuruName()).thenReturn(GuestNetworkGuru.class.getSimpleName());
         Mockito.when(network.getDns1()).thenReturn(ip4Dns[0]);
         Mockito.when(network.getDns2()).thenReturn(ip4Dns[1]);
@@ -616,6 +622,7 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(network.getIp6Dns2()).thenReturn(ip6Dns[1]);
         Mockito.when(testOrchestrator._networkModel.getNetworkRate(networkId, vmId)).thenReturn(networkRate);
         NicVO nicVO = Mockito.mock(NicVO.class);
+        preparedNicVO = nicVO;
         Mockito.when(nicVO.isDefaultNic()).thenReturn(isDefaultNic);
         Mockito.when(testOrchestrator._nicDao.findById(nicId)).thenReturn(nicVO);
         Mockito.when(testOrchestrator._nicDao.update(nicId, nicVO)).thenReturn(true);
@@ -678,6 +685,46 @@ public class NetworkOrchestratorTest extends TestCase {
             Assert.fail(String.format("Failure with exception %s", e.getMessage()));
         }
         return profile;
+    }
+
+    @Test
+    public void testPrepareNicStoresNetworkRateOnUserVmNic() {
+        prepareMocksAndRunPrepareNic(Type.User, true, false, false);
+
+        Mockito.verify(preparedNicVO).setNetworkRate(200);
+    }
+
+    @Test
+    public void testPrepareNicStoresNetworkRateOnVpcRouterNic() {
+        prepareMocksAndRunPrepareNic(Type.DomainRouter, true, true, true);
+
+        Mockito.verify(preparedNicVO).setNetworkRate(200);
+    }
+
+    @Test
+    public void testSaveNetworkRateInDetailsStoresOfferingRate() {
+        final NetworkDetailsDao networkDetailsDao = mock(NetworkDetailsDao.class);
+        final ConfigurationManager configMgr = mock(ConfigurationManager.class);
+        testOrchestrator.networkDetailsDao = networkDetailsDao;
+        testOrchestrator._configMgr = configMgr;
+        Mockito.when(configMgr.getNetworkOfferingNetworkRate(networkOfferingId, 7L)).thenReturn(300);
+
+        ReflectionTestUtils.invokeMethod(testOrchestrator, "saveNetworkRateInDetails", 11L, networkOffering, 7L);
+
+        Mockito.verify(networkDetailsDao).addDetail(11L, ApiConstants.NETWORKRATE, "300", true);
+    }
+
+    @Test
+    public void testSaveNetworkRateInDetailsStoresUnlimitedRate() {
+        final NetworkDetailsDao networkDetailsDao = mock(NetworkDetailsDao.class);
+        final ConfigurationManager configMgr = mock(ConfigurationManager.class);
+        testOrchestrator.networkDetailsDao = networkDetailsDao;
+        testOrchestrator._configMgr = configMgr;
+        Mockito.when(configMgr.getNetworkOfferingNetworkRate(networkOfferingId, 7L)).thenReturn(-1);
+
+        ReflectionTestUtils.invokeMethod(testOrchestrator, "saveNetworkRateInDetails", 11L, networkOffering, 7L);
+
+        Mockito.verify(networkDetailsDao).addDetail(11L, ApiConstants.NETWORKRATE, "-1", true);
     }
 
     @Test

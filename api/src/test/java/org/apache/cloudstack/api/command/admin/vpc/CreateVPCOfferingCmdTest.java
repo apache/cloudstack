@@ -71,4 +71,16 @@ public class CreateVPCOfferingCmdTest {
         Assert.assertEquals(cmd.getDisplayText(), netName);
     }
 
+    @Test
+    public void testPublicNetworkRateIsNullWhenNotSpecified() {
+        Assert.assertNull(new CreateVPCOfferingCmd().getPublicNetworkRate());
+    }
+
+    @Test
+    public void testPublicNetworkRateReturnsSpecifiedValue() {
+        CreateVPCOfferingCmd cmd = new CreateVPCOfferingCmd();
+        ReflectionTestUtils.setField(cmd, "publicNetworkRate", 100);
+        Assert.assertEquals(Integer.valueOf(100), cmd.getPublicNetworkRate());
+    }
+
 }

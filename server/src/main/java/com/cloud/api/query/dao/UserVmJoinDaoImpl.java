@@ -447,6 +447,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                         .collect(Collectors.toList());
                 nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
+                Integer nicNetworkRate = userVm.getNicNetworkRate();
+                nicResponse.setNetworkRate(nicNetworkRate != null && nicNetworkRate > 0 ? nicNetworkRate : -1);
                 userVmResponse.addNic(nicResponse);
             }
         }
@@ -744,6 +746,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
                     .collect(Collectors.toList());
             nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
+
+            Integer nicNetworkRate = uvo.getNicNetworkRate();
+            nicResponse.setNetworkRate(nicNetworkRate != null && nicNetworkRate > 0 ? nicNetworkRate : -1);
             userVmData.addNic(nicResponse);
         }
 

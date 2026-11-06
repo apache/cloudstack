@@ -168,5 +168,7 @@ public interface Nic extends Identity, InternalIdentity {
 
     Integer getMtu();
 
+    Integer getNetworkRate();
+
     boolean isEnabled();
 }

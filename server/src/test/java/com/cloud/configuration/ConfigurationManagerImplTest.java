@@ -38,6 +38,7 @@ import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -66,6 +67,7 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -849,6 +851,63 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueRangeTestReturnsNullWhenConfigKeyHasNoRange() {
         Assert.assertNull(configurationManagerImplSpy.validateValueRange("configkey.without.range", "0", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestVpcPublicNetworkThrottlingRateAcceptsUnlimitedAndPositive() {
+        String key = NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.key();
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange(key, "-1", Integer.class, null));
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange(key, "0", Integer.class, null));
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange(key, "1", Integer.class, null));
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange(key, "100", Integer.class, null));
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange(key.toUpperCase(), "100", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestVpcPublicNetworkThrottlingRateRejectsBelowMinusOne() {
+        String key = NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.key();
+        Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(key, "-2", Integer.class, null));
+        Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(key.toUpperCase(), "-2", Integer.class, null));
+        Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(key, "-5", Integer.class, null));
+    }
+
+    private VpcOffering mockVpcOfferingWithRate(Integer rate) {
+        VpcOffering vpcOffering = Mockito.mock(VpcOffering.class);
+        Mockito.when(vpcOffering.getPublicNetworkRate()).thenReturn(rate);
+        Mockito.doReturn(vpcOffering).when(entityManagerMock).findById(VpcOffering.class, 1L);
+        return vpcOffering;
+    }
+
+    @Test
+    public void getVpcOfferingNetworkRateTestReturnsOfferingRateAsIs() {
+        mockVpcOfferingWithRate(200);
+        Assert.assertEquals(Integer.valueOf(200), configurationManagerImplSpy.getVpcOfferingNetworkRate(1L, 1L));
+    }
+
+    @Test
+    public void getVpcOfferingNetworkRateTestKeepsUnlimitedOfferingRate() {
+        mockVpcOfferingWithRate(-1);
+        Assert.assertEquals(Integer.valueOf(-1), configurationManagerImplSpy.getVpcOfferingNetworkRate(1L, 1L));
+    }
+
+    @Test
+    public void getVpcOfferingNetworkRateTestConvertsZeroOfferingRateToUnlimited() {
+        mockVpcOfferingWithRate(0);
+        Assert.assertEquals(Integer.valueOf(-1), configurationManagerImplSpy.getVpcOfferingNetworkRate(1L, 1L));
+    }
+
+    @Test
+    public void getVpcOfferingNetworkRateTestFallsBackToZoneSettingWhenOfferingHasNoRate() {
+        mockVpcOfferingWithRate(null);
+        // no config depot in unit tests, so the zone setting resolves to its default value (-1, unlimited)
+        Assert.assertEquals(NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.valueIn(1L),
+                configurationManagerImplSpy.getVpcOfferingNetworkRate(1L, 1L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getVpcOfferingNetworkRateTestThrowsWhenOfferingDoesNotExist() {
+        Mockito.doReturn(null).when(entityManagerMock).findById(VpcOffering.class, 1L);
+        configurationManagerImplSpy.getVpcOfferingNetworkRate(1L, 1L);
     }
 
     @Test

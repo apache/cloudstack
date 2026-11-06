@@ -202,6 +202,18 @@
           </template>
           <a-switch v-model:checked="form.conservemode" />
         </a-form-item>
+        <a-form-item name="publicnetworkrate" ref="publicnetworkrate">
+          <template #label>
+            <tooltip-label :title="$t('label.publicnetworkrate')" :tooltip="apiParams.publicnetworkrate.description"/>
+          </template>
+          <a-input-number
+            style="width: 100%"
+            v-model:value="form.publicnetworkrate"
+            :min="-1"
+            :max="2147483647"
+            :precision="0"
+            :placeholder="apiParams.publicnetworkrate.description"/>
+        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -740,6 +752,9 @@ export default {
         }
         params.networkmode = values.networkmode
         params.conservemode = values.conservemode
+        if (values.publicnetworkrate) {
+          params.publicnetworkrate = values.publicnetworkrate
+        }
         if (!values.forVpc) {
           params.specifyasnumber = values.specifyasnumber
         }
