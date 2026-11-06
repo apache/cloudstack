@@ -34,6 +34,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerTO;
 import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -119,6 +121,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
@@ -168,6 +171,8 @@ public class CommandSetupHelper {
 
     @Inject
     private DomainDao domainDao;
+    @Inject
+    private FirewallRuleDetailsDao _firewallRuleDetailsDao;
     @Inject
     private NicDao _nicDao;
     @Inject
@@ -352,6 +357,29 @@ public class CommandSetupHelper {
         cmds.addCommand("dnsMasqConfig", dnsMasqConfigCmd);
     }
 
+    /** Optional per rule haproxy settings. Absent means the rule inherits, so nothing is set. */
+    protected void setConnectionSettings(final LoadBalancerTO lb, final long lbRuleId) {
+        final FirewallRuleDetailVO keepAlive = _firewallRuleDetailsDao.findDetail(lbRuleId, LoadBalancer.KEEPALIVE);
+        if (keepAlive != null) {
+            lb.setKeepAlive(Boolean.valueOf(keepAlive.getValue()));
+        }
+        lb.setIdleTimeout(longDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT));
+        lb.setKeepAliveTimeout(longDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT));
+    }
+
+    private Long longDetail(final long lbRuleId, final String key) {
+        final FirewallRuleDetailVO detail = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+        if (detail == null) {
+            return null;
+        }
+        try {
+            return Long.valueOf(detail.getValue());
+        } catch (final NumberFormatException e) {
+            logger.warn("Ignoring lb rule {} detail {}, [{}] is not a number", lbRuleId, key, detail.getValue());
+            return null;
+        }
+    }
+
     public void createApplyLoadBalancingRulesCommands(final List<LoadBalancingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         final LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
         int i = 0;
@@ -375,6 +403,7 @@ public class CommandSetupHelper {
             }
             lb.setLbProtocol(lb_protocol);
             lb.setLbSslCert(rule.getLbSslCert());
+            setConnectionSettings(lb, rule.getId());
             lbs[i++] = lb;
         }
         String routerPublicIp = null;
