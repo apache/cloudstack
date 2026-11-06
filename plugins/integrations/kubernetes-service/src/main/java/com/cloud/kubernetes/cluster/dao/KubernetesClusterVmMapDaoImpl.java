@@ -18,6 +18,9 @@ package com.cloud.kubernetes.cluster.dao;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
+import com.cloud.kubernetes.cluster.KubernetesClusterNodeGroupVO;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import org.springframework.stereotype.Component;
 
@@ -34,8 +37,13 @@ import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClu
 @Component
 public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClusterVmMapVO, Long> implements KubernetesClusterVmMapDao {
 
+    @Inject
+    private KubernetesClusterNodeGroupDao kubernetesClusterNodeGroupDao;
+
     private final SearchBuilder<KubernetesClusterVmMapVO> clusterIdSearch;
     private final SearchBuilder<KubernetesClusterVmMapVO> vmIdSearch;
+    private final SearchBuilder<KubernetesClusterVmMapVO> defaultPoolWorkerSearch;
+    private final SearchBuilder<KubernetesClusterVmMapVO> nodeGroupSearch;
 
     public KubernetesClusterVmMapDaoImpl() {
         clusterIdSearch = createSearchBuilder();
@@ -48,6 +56,19 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
         vmIdSearch = createSearchBuilder();
         vmIdSearch.and("vmId", vmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         vmIdSearch.done();
+
+        defaultPoolWorkerSearch = createSearchBuilder();
+        defaultPoolWorkerSearch.and("clusterId", defaultPoolWorkerSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        defaultPoolWorkerSearch.and("controlNode", defaultPoolWorkerSearch.entity().isControlNode(), SearchCriteria.Op.EQ);
+        defaultPoolWorkerSearch.and("etcdNode", defaultPoolWorkerSearch.entity().isEtcdNode(), SearchCriteria.Op.EQ);
+        defaultPoolWorkerSearch.and().op("noNodeGroup", defaultPoolWorkerSearch.entity().getNodeGroupId(), SearchCriteria.Op.NULL);
+        defaultPoolWorkerSearch.or("defaultNodeGroupId", defaultPoolWorkerSearch.entity().getNodeGroupId(), SearchCriteria.Op.EQ);
+        defaultPoolWorkerSearch.cp();
+        defaultPoolWorkerSearch.done();
+
+        nodeGroupSearch = createSearchBuilder();
+        nodeGroupSearch.and("nodeGroupId", nodeGroupSearch.entity().getNodeGroupId(), SearchCriteria.Op.EQ);
+        nodeGroupSearch.done();
     }
 
     @Override
@@ -99,10 +120,24 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
             sc.setParameters("controlNode", false);
             sc.setParameters("etcdNode", true);
         } else {
+            // The worker nodes of the cluster size are the nodes of the default node group and the external nodes,
+            // the nodes of the other node groups are managed through their node group
+            sc = defaultPoolWorkerSearch.create();
+            sc.setParameters("clusterId", clusterId);
             sc.setParameters("controlNode", false);
             sc.setParameters("etcdNode", false);
+            KubernetesClusterNodeGroupVO defaultNodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(clusterId);
+            sc.setParameters("defaultNodeGroupId", defaultNodeGroup != null ? defaultNodeGroup.getId() : -1L);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public List<KubernetesClusterVmMapVO> listByNodeGroupId(long nodeGroupId) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = nodeGroupSearch.create();
+        sc.setParameters("nodeGroupId", nodeGroupId);
+        Filter filter = new Filter(KubernetesClusterVmMapVO.class, "id", Boolean.TRUE, null, null);
+        return listBy(sc, filter);
     }
 
     @Override

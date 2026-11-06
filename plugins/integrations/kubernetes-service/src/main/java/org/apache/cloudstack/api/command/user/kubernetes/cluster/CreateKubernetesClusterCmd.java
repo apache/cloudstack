@@ -202,6 +202,17 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "Root disk size in GB for each node")
     private Long nodeRootDiskSize;
 
+    @Parameter(name = ApiConstants.NODE_LABELS, type = CommandType.MAP,
+            description = "Kubernetes labels for the nodes of the default node group of a CloudManaged cluster. " +
+                    "Example: nodelabels[0].key=disktype&nodelabels[0].value=ssd", since = "24.0")
+    private Map<String, Map<String, String>> nodeLabels;
+
+    @Parameter(name = ApiConstants.NODE_TAINTS, type = CommandType.MAP,
+            description = "Kubernetes taints for the nodes of the default node group of a CloudManaged cluster. The default node group " +
+                    "has to accept the system pods, so only the PreferNoSchedule effect is allowed. " +
+                    "Example: nodetaints[0].key=dedicated&nodetaints[0].value=system&nodetaints[0].effect=PreferNoSchedule", since = "24.0")
+    private Map<String, Map<String, String>> nodeTaints;
+
     @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "Type of the cluster: CloudManaged, ExternalManaged. The default value is CloudManaged.", since="4.19.0")
     private String clusterType;
 
@@ -315,6 +326,14 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         } else {
             return DEFAULT_NODE_ROOT_DISK_SIZE;
         }
+    }
+
+    public Map<String, Map<String, String>> getNodeLabels() {
+        return nodeLabels;
+    }
+
+    public Map<String, Map<String, String>> getNodeTaints() {
+        return nodeTaints;
     }
 
     public String getClusterType() {

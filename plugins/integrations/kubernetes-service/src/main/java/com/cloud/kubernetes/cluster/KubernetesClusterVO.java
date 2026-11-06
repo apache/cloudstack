@@ -148,6 +148,9 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "csi_enabled")
     private boolean csiEnabled;
 
+    @Column(name = "node_group_node_count")
+    private long nodeGroupNodeCount;
+
     @Override
     public long getId() {
         return id;
@@ -265,9 +268,21 @@ public class KubernetesClusterVO implements KubernetesCluster {
         this.nodeCount = nodeCount;
     }
 
+    /**
+     * @return total number of worker nodes in all the node groups of the cluster.
+     * These nodes are not included in {@link #getNodeCount()}, which only counts the default worker pool
+     */
+    public long getNodeGroupNodeCount() {
+        return nodeGroupNodeCount;
+    }
+
+    public void setNodeGroupNodeCount(long nodeGroupNodeCount) {
+        this.nodeGroupNodeCount = nodeGroupNodeCount;
+    }
+
     @Override
     public long getTotalNodeCount() {
-        return this.controlNodeCount + this.nodeCount + this.getEtcdNodeCount();
+        return this.controlNodeCount + this.nodeCount + this.nodeGroupNodeCount + this.getEtcdNodeCount();
     }
 
     @Override

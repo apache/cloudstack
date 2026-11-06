@@ -33,6 +33,7 @@
     <bean id="kubernetesClusterDetailsDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDaoImpl" />
     <bean id="kubernetesClusterVmMapDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDaoImpl" />
     <bean id="kubernetesClusterAffinityGroupMapDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDaoImpl" />
+    <bean id="kubernetesClusterNodeGroupDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterNodeGroupDaoImpl" />
     <bean id="kubernetesClusterManagerImpl" class="com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl" />
 
     <bean id="kubernetesServiceHelper" class="com.cloud.kubernetes.cluster.KubernetesServiceHelperImpl" >

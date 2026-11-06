@@ -38,6 +38,13 @@ public class KubernetesUserVmResponse extends UserVmResponse {
     @Param(description = "Kubernetes version of the node")
     private String nodeVersion;
 
+    @SerializedName(ApiConstants.NODE_GROUP_ID)
+    @Param(description = "The ID of the node group of the node, if any", since = "24.0")
+    private String nodeGroupId;
+
+    @SerializedName(ApiConstants.NODE_GROUP_NAME)
+    @Param(description = "The name of the node group of the node, if any", since = "24.0")
+    private String nodeGroupName;
 
     public void setExternalNode(boolean externalNode) {
         isExternalNode = externalNode;
@@ -48,4 +55,12 @@ public class KubernetesUserVmResponse extends UserVmResponse {
     }
 
     public void setNodeVersion(String nodeVersion) { this.nodeVersion = nodeVersion;}
+
+    public void setNodeGroupId(String nodeGroupId) {
+        this.nodeGroupId = nodeGroupId;
+    }
+
+    public void setNodeGroupName(String nodeGroupName) {
+        this.nodeGroupName = nodeGroupName;
+    }
 }

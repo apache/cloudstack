@@ -251,6 +251,15 @@ write_files:
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
       fi
+      KUBELET_NODE_ARGS="{{ k8s.kubelet.extra.args }}"
+      if [ -n "${KUBELET_NODE_ARGS}" ] && ! grep -qF -- "${KUBELET_NODE_ARGS}" /etc/default/kubelet 2>/dev/null; then
+        if grep -q "^KUBELET_EXTRA_ARGS=" /etc/default/kubelet 2>/dev/null; then
+          sed -i "s|^KUBELET_EXTRA_ARGS=\(.*\)$|KUBELET_EXTRA_ARGS=\1 ${KUBELET_NODE_ARGS}|" /etc/default/kubelet
+        else
+          echo "KUBELET_EXTRA_ARGS=${KUBELET_NODE_ARGS}" >> /etc/default/kubelet
+        fi
+        systemctl daemon-reload
+      fi
       kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --discovery-token-unsafe-skip-ca-verification
 
       sudo touch /home/cloud/success

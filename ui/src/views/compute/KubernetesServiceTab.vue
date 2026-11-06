@@ -157,6 +157,9 @@
             <template v-if="column.key === 'kubernetesnodeversion'">
               <span> {{ text ? text : '' }} </span>
             </template>
+            <template v-if="column.key === 'nodegroupname'">
+              <span> {{ text ? text : '' }} </span>
+            </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
                 <template #title>
@@ -180,6 +183,12 @@
             </template>
           </template>
         </a-table>
+      </a-tab-pane>
+      <a-tab-pane
+        :tab="$t('label.kubernetes.node.groups')"
+        key="nodegroups"
+        v-if="resource.clustertype === 'CloudManaged' && ('listKubernetesClusterNodeGroups' in $store.getters.apis || resource.nodegroups)">
+        <KubernetesNodeGroupsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.firewall')" key="firewall" v-if="publicIpAddress">
         <FirewallRules :resource="publicIpAddress" :loading="networkLoading" />
@@ -214,6 +223,7 @@ import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import EventsTab from '@/components/view/EventsTab'
+import KubernetesNodeGroupsTab from '@/views/compute/KubernetesNodeGroupsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -224,7 +234,8 @@ export default {
     LoadBalancing,
     Status,
     AnnotationsTab,
-    EventsTab
+    EventsTab,
+    KubernetesNodeGroupsTab
   },
   mixins: [mixinDevice],
   inject: ['parentFetchData'],
@@ -289,6 +300,11 @@ export default {
         key: 'kubernetesnodeversion',
         title: this.$t('label.node.version'),
         dataIndex: 'kubernetesnodeversion'
+      },
+      {
+        key: 'nodegroupname',
+        title: this.$t('label.kubernetes.node.group'),
+        dataIndex: 'nodegroupname'
       },
       {
         title: this.$t('label.zonename'),
@@ -515,12 +531,14 @@ export default {
       }
     },
     deleteNode (node) {
+      // Nodes of a node group are removed by scaling the node group
+      const apiName = node.nodegroupid ? 'scaleKubernetesClusterNodeGroup' : 'scaleKubernetesCluster'
       const params = {
-        id: this.resource.id,
+        id: node.nodegroupid || this.resource.id,
         nodeids: node.id
       }
-      postAPI('scaleKubernetesCluster', params).then(json => {
-        const jobId = json.scalekubernetesclusterresponse.jobid
+      postAPI(apiName, params).then(json => {
+        const jobId = json[apiName.toLowerCase() + 'response'].jobid
         console.log(jobId)
         this.$store.dispatch('AddAsyncJob', {
           title: this.$t('label.action.delete.node'),
