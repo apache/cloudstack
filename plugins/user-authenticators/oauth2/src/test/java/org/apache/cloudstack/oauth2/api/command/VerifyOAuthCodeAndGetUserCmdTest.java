@@ -74,7 +74,7 @@ public class VerifyOAuthCodeAndGetUserCmdTest {
         params.put("provider", providerArray);
 
         when(oauth2mgr.resolveDomainId(any())).thenReturn(null);
-        when(oauth2mgr.verifySecretCodeAndFetchEmail(eq("secretcode"), eq("provider"), any())).thenReturn("test@example.com");
+        when(oauth2mgr.verifySecretCodeAndFetchEmail(eq("secretcode"), eq("provider"), any(), any())).thenReturn("test@example.com");
 
         String response = cmd.authenticate("command", params, session, remoteAddress, responseType, auditTrailSb, req, resp);
 
