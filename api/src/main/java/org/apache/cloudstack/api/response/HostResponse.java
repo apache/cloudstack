@@ -289,7 +289,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Host details in key/value pairs.", since = "4.5")
-    private Map details;
+    private Map<String, String> details;
 
     @SerializedName(ApiConstants.ANNOTATION)
     @Param(description = "The last annotation set on this host by an admin", since = "4.11")
@@ -672,13 +672,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.username = username;
     }
 
-    public void setDetails(Map details, Hypervisor.HypervisorType hypervisorType) {
+    public void setDetails(Map<String, String> details, Hypervisor.HypervisorType hypervisorType) {
 
         if (details == null) {
             return;
         }
 
-        final Map detailsCopy = new HashMap(details);
+        final Map<String, String> detailsCopy = new HashMap<>(details);
 
         // Fix for CVE ID 2015-3251
         // Remove sensitive host credential information from
@@ -687,7 +687,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         detailsCopy.remove("password");
 
         if (detailsCopy.containsKey(Host.HOST_VOLUME_ENCRYPTION)) {
-            this.setEncryptionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_VOLUME_ENCRYPTION)));
+            this.setEncryptionSupported(Boolean.parseBoolean(detailsCopy.get(Host.HOST_VOLUME_ENCRYPTION)));
             detailsCopy.remove(Host.HOST_VOLUME_ENCRYPTION);
         } else {
             this.setEncryptionSupported(new Boolean(false)); // default
@@ -695,7 +695,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
         if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
             if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
-                this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
+                this.setInstanceConversionSupported(Boolean.parseBoolean(detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
                 detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
             } else {
                 this.setInstanceConversionSupported(new Boolean(false)); // default
@@ -705,7 +705,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.details = detailsCopy;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         return details;
     }
 
@@ -972,7 +972,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return hasEnoughCapacity;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
         this.details = details;
     }
 

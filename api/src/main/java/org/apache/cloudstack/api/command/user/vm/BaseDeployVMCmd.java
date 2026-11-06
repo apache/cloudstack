@@ -141,7 +141,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             since = "4.21.0",
             description = "Disk offering details for creating multiple data volumes. Mutually exclusive with diskOfferingId." +
                     " Example: datadisksdetails[0].diskofferingid=a2a73a84-19db-4852-8930-dfddef053341&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200&datadisksdetails[0].kmskeyid=<uuid>")
-    private Map dataDisksDetails;
+    private Map<Integer, Map<String, String>> dataDisksDetails;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
     private String group;
@@ -164,7 +164,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     protected Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
-    private Map userdataDetails;
+    private Map<Integer, Map<String, String>> userdataDetails;
 
     @Deprecated
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
@@ -222,7 +222,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     protected Boolean displayVm;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
@@ -287,7 +287,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             type = CommandType.MAP,
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].server.type=typevalue",
             since = "4.21.0")
-    protected Map externalDetails;
+    protected Map<Integer, Map<String, String>> externalDetails;
 
     private List<VmDiskInfo> dataDiskInfoList;
 

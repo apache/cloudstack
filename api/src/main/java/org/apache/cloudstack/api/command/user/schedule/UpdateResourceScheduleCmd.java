@@ -59,7 +59,7 @@ public class UpdateResourceScheduleCmd extends BaseCmd {
     private Boolean enabled;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs) details for the schedule.")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     public Long getId() {
         return id;

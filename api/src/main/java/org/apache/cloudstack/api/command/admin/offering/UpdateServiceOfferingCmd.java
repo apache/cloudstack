@@ -98,7 +98,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd implements DomainAndZoneId
             type = CommandType.MAP,
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
             since = "4.21.0")
-    private Map externalDetails;
+    private Map<Integer, Map<String, String>> externalDetails;
 
     @Parameter(name = ApiConstants.CLEAN_UP_EXTERNAL_DETAILS,
             type = CommandType.BOOLEAN,

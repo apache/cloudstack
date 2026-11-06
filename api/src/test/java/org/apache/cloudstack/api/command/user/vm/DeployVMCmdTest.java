@@ -602,8 +602,8 @@ public class DeployVMCmdTest {
 
     @Test
     public void testSetDetails() {
-        Map<String, String> details = new HashMap<>();
-        details.put("key", "value");
+        Map<Integer, Map<String, String>> details = new HashMap<>();
+        details.put(0, Map.of("key", "value"));
         cmd.setDetails(details);
         assertEquals(details, ReflectionTestUtils.getField(cmd, "details"));
     }
