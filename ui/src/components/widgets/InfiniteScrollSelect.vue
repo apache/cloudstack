@@ -223,9 +223,27 @@ export default {
   watch: {
     apiParams () {
       this.onSearch()
+    },
+    defaultOption (newOption, oldOption) {
+      if (oldOption) {
+        const oldValue = oldOption[this.optionValueKey]
+        this.options = this.options.filter(option => option[this.optionValueKey] !== oldValue)
+      }
+
+      if (newOption) {
+        this.canSelectFirstOption = true
+        if (!this.options.some(option => option[this.optionValueKey] === newOption[this.optionValueKey])) {
+          this.options.unshift(newOption)
+        }
+      } else {
+        this.canSelectFirstOption = false
+        this.$nextTick(() => {
+          this.autoSelectFirstOptionIfNeeded()
+        })
+      }
     }
   },
-  emits: ['change-option-value', 'change-option'],
+  emits: ['update:value', 'change-option-value', 'change-option'],
   methods: {
     async fetchItems () {
       if (this.successiveFetches === 0 && this.loading) return
@@ -332,8 +350,7 @@ export default {
       if (firstOption) {
         const firstValue = firstOption[this.optionValueKey]
         this.hasAutoSelectedFirst = true
-        this.$emit('change-option-value', firstValue)
-        this.$emit('change-option', firstOption)
+        this.onChange(firstValue)
       }
     },
     onSearchTimed (value) {
@@ -362,6 +379,7 @@ export default {
     },
     onChange (value) {
       this.resetPreselectedOptionValue()
+      this.$emit('update:value', value)
       this.$emit('change-option-value', value)
       if (Array.isArray(value)) {
         return

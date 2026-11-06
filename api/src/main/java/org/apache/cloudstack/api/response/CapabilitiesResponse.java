@@ -163,6 +163,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "Excluded and obsolete VPN customer gateway cryptographic parameters")
     private Map<String, Object> vpnCustomerGatewayParameters;
 
+    @SerializedName(ApiConstants.DISABLE_DEFAULT_VIEW)
+    @Param(description = "Whether the Default view should be disabled for account.", since = "4.20.0.10-scclouds")
+    private Boolean disableDefaultView;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -297,5 +301,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setVpnCustomerGatewayParameters(Map<String, Object> vpnCustomerGatewayParameters) {
         this.vpnCustomerGatewayParameters = vpnCustomerGatewayParameters;
+    }
+
+    public void setDisableDefaultView(Boolean disableDefaultView) {
+        this.disableDefaultView = disableDefaultView;
     }
 }

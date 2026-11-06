@@ -4905,6 +4905,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (exposeCloudStackVersionInApiListCapabilities.value()) {
             capabilities.put("cloudStackVersion", getVersion());
         }
+        final Boolean disableDefaultView = AccountManager.DisableDefaultView.valueIn(caller.getAccountId());
 
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", userPublicTemplateEnabled);
@@ -4931,6 +4932,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME, StatsCollector.vmDiskStatsMaxRetentionTime.value());
         capabilities.put(ApiConstants.INSTANCE_LEASE_ENABLED, VMLeaseManager.InstanceLeaseEnabled.value());
         capabilities.put(ApiConstants.DYNAMIC_SCALING_ENABLED, UserVmManager.EnableDynamicallyScaleVm.value());
+        capabilities.put(ApiConstants.DISABLE_DEFAULT_VIEW, disableDefaultView);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
