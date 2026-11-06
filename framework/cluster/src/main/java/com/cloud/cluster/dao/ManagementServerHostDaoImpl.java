@@ -21,7 +21,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 
 
@@ -35,7 +38,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
@@ -47,7 +49,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
-    protected GenericSearchBuilder<ManagementServerHostVO, String> NonUpStateMsSearch;
 
     @Override
     public void invalidateRunSession(long id, long runid) {
@@ -229,11 +230,6 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
         StateSearch.and("runid", StateSearch.entity().getRunid(), SearchCriteria.Op.GT);
         StateSearch.done();
-
-        NonUpStateMsSearch = createSearchBuilder(String.class);
-        NonUpStateMsSearch.selectFields(NonUpStateMsSearch.entity().getServiceIP());
-        NonUpStateMsSearch.and("state", NonUpStateMsSearch.entity().getState(), SearchCriteria.Op.NLIKE);
-        NonUpStateMsSearch.done();
     }
 
     @Override
@@ -267,11 +263,27 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         return listBy(sc);
     }
 
+    // The saved ID stops future ID changes but leaves old records behind
+    // This method handles duplicate records that already exist
+    // Old Down records must not make agents skip an address that also has an Up record
     @Override
     public List<String> listNonUpStateMsIPs() {
-        SearchCriteria<String> sc = NonUpStateMsSearch.create();
-        sc.addAnd("state", SearchCriteria.Op.NLIKE, State.Up);
-        return customSearch(sc, null);
+        Set<String> upIPs = new HashSet<>();
+        Set<String> nonUpIPs = new LinkedHashSet<>();
+        // Read server records that have not been removed
+        for (ManagementServerHostVO host : listAll()) {
+            if (State.Up.equals(host.getState())) {
+                // Collect addresses marked Up
+                upIPs.add(host.getServiceIP());
+            } else {
+                // Collect addresses in other states
+                nonUpIPs.add(host.getServiceIP());
+            }
+        }
+        // Keep every Up address out of the avoid list
+        nonUpIPs.removeAll(upIPs);
+        // Give agents the remaining addresses to skip
+        return new ArrayList<>(nonUpIPs);
     }
 
     @Override
