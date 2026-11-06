@@ -239,3 +239,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--- Add existing cross zone templates to the missing edge zones
+INSERT INTO cloud.template_zone_ref (zone_id, template_id, created, last_updated)
+SELECT dc.id, vt.id, NOW(), NOW()
+FROM cloud.data_center dc
+JOIN cloud.vm_template vt ON vt.cross_zones = 1 AND vt.removed IS NULL
+WHERE dc.type = 'Edge' AND dc.removed IS NULL
+  AND NOT EXISTS (SELECT 1 FROM cloud.template_zone_ref tzr
+                  WHERE tzr.zone_id = dc.id AND tzr.template_id = vt.id AND tzr.removed IS NULL);
