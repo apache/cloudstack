@@ -43,6 +43,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.DeleteUefiNvramCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
@@ -66,6 +69,8 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -85,6 +90,10 @@ public class KVMGuruTest {
     VMInstanceDao _instanceDao;
     @Mock
     VolumeDao _volumeDao;
+    @Mock
+    AgentManager agentMgr;
+    @Mock
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Spy
     @InjectMocks
@@ -638,5 +647,78 @@ public class KVMGuruTest {
         Mockito.verify(_volumeDao).attachVolume(10L, 42L, 0L);
         // device id 4 is reserved, so the volume gets the next free one
         Mockito.verify(_volumeDao).attachVolume(11L, 42L, 5L);
+    }
+
+    private VirtualMachine mockExpungedVm(VirtualMachine.Type type, boolean uefi, Long lastHostId) {
+        VirtualMachine expungedVm = Mockito.mock(VirtualMachine.class);
+        Mockito.lenient().when(expungedVm.getId()).thenReturn(42L);
+        Mockito.lenient().when(expungedVm.getType()).thenReturn(type);
+        Mockito.lenient().when(expungedVm.getHostId()).thenReturn(null);
+        Mockito.lenient().when(expungedVm.getLastHostId()).thenReturn(lastHostId);
+        Mockito.lenient().when(expungedVm.getUuid()).thenReturn("5f1c3d2e-0b7a-4c55-9f4e-2a6b8d9c1e3f");
+        Mockito.lenient().when(expungedVm.getInstanceName()).thenReturn("i-2-42-VM");
+        Mockito.lenient().when(vmInstanceDetailsDao.findDetail(42L, ApiConstants.BootType.UEFI.toString()))
+                .thenReturn(uefi ? Mockito.mock(VMInstanceDetailVO.class) : null);
+        return expungedVm;
+    }
+
+    @Test
+    public void testFinalizeExpungeDeletesUefiNvramOnLastHostAndReturnsNoCommands() {
+        VirtualMachine expungedVm = mockExpungedVm(VirtualMachine.Type.User, true, 7L);
+        Answer answer = Mockito.mock(Answer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(agentMgr.easySend(Mockito.eq(7L), Mockito.any(DeleteUefiNvramCommand.class))).thenReturn(answer);
+
+        Assert.assertNull(guru.finalizeExpunge(expungedVm));
+
+        Mockito.verify(agentMgr).easySend(Mockito.eq(7L), Mockito.argThat(command -> command instanceof DeleteUefiNvramCommand
+                && "5f1c3d2e-0b7a-4c55-9f4e-2a6b8d9c1e3f".equals(((DeleteUefiNvramCommand) command).getVmUuid())
+                && "i-2-42-VM".equals(((DeleteUefiNvramCommand) command).getVmName())
+                && command.getWait() == KVMGuru.UEFI_NVRAM_CLEANUP_TIMEOUT_SECONDS));
+    }
+
+    @Test
+    public void testDeleteUefiNvramIfNeededSkipsNonUefiVm() {
+        VirtualMachine expungedVm = mockExpungedVm(VirtualMachine.Type.User, false, 7L);
+
+        guru.deleteUefiNvramIfNeeded(expungedVm);
+
+        Mockito.verify(agentMgr, Mockito.never()).easySend(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void testDeleteUefiNvramIfNeededSkipsSystemVm() {
+        VirtualMachine expungedVm = mockExpungedVm(VirtualMachine.Type.DomainRouter, true, 7L);
+
+        guru.deleteUefiNvramIfNeeded(expungedVm);
+
+        Mockito.verify(vmInstanceDetailsDao, Mockito.never()).findDetail(Mockito.anyLong(), Mockito.anyString());
+        Mockito.verify(agentMgr, Mockito.never()).easySend(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void testDeleteUefiNvramIfNeededSkipsVmWithoutHost() {
+        VirtualMachine expungedVm = mockExpungedVm(VirtualMachine.Type.User, true, null);
+
+        guru.deleteUefiNvramIfNeeded(expungedVm);
+
+        Mockito.verify(agentMgr, Mockito.never()).easySend(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void testDeleteUefiNvramIfNeededDoesNotFailWhenHostIsUnavailable() {
+        VirtualMachine expungedVm = mockExpungedVm(VirtualMachine.Type.User, true, 7L);
+        Mockito.when(agentMgr.easySend(Mockito.eq(7L), Mockito.any(DeleteUefiNvramCommand.class))).thenReturn(null);
+
+        Assert.assertNull(guru.finalizeExpunge(expungedVm));
+    }
+
+    @Test
+    public void testDeleteUefiNvramIfNeededDoesNotFailOnUnexpectedError() {
+        VirtualMachine expungedVm = mockExpungedVm(VirtualMachine.Type.User, true, 7L);
+        Mockito.when(vmInstanceDetailsDao.findDetail(42L, ApiConstants.BootType.UEFI.toString())).thenThrow(new RuntimeException("db down"));
+
+        Assert.assertNull(guru.finalizeExpunge(expungedVm));
+        Mockito.verify(agentMgr, Mockito.never()).easySend(Mockito.anyLong(), Mockito.any());
     }
 }
