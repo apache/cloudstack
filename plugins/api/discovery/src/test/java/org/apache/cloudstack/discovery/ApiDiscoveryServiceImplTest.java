@@ -107,6 +107,7 @@ public class ApiDiscoveryServiceImplTest {
         Mockito.when(parameterMock.name()).thenReturn("paramName");
         Mockito.when(parameterMock.since()).thenReturn("");
         Mockito.when(parameterMock.entityType()).thenReturn(new Class[]{Object.class});
+        Mockito.when(parameterMock.allowedValues()).thenReturn(new String[]{});
         Mockito.when(parameterMock.description()).thenReturn("paramDescription");
         Mockito.when(parameterMock.type()).thenReturn(BaseCmd.CommandType.STRING);
         Mockito.when(fieldMock.getAnnotation(Parameter.class)).thenReturn(parameterMock);
