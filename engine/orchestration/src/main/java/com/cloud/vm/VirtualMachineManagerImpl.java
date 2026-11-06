@@ -6850,6 +6850,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
+    public void cleanupAllocatedResources(VirtualMachine vm) {
+        logger.debug("Cleaning up the volumes and NICs allocated for {}", vm);
+        volumeMgr.cleanupVolumes(vm.getId());
+        _networkMgr.cleanupNics(new VirtualMachineProfileImpl(vm));
+    }
+
+    @Override
     public boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template) {
         return KVM_BLANK_VM_TEMPLATE_NAME.equals(template.getUniqueName());
     }

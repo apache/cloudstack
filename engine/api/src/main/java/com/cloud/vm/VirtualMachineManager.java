@@ -316,6 +316,11 @@ public interface VirtualMachineManager extends Manager {
                 ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
             throws InsufficientServerCapacityException;
 
+    /**
+     * Removes the volumes and NICs allocated for a VM, so it can be allocated again with another template.
+     */
+    void cleanupAllocatedResources(VirtualMachine vm);
+
     boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template);
 
     boolean isBlankInstance(VirtualMachineTemplate template);
