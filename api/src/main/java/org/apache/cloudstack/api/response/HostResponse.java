@@ -307,6 +307,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "True if the host has capability to support UEFI boot")
     private Boolean uefiCapability;
 
+    @SerializedName("migrationip")
+    @Param(description = "the IP address the host uses for live migration traffic, set when a dedicated migration network is configured on this host", since = "24.0.0")
+    private String migrationIp;
+
     @SerializedName(ApiConstants.ENCRYPTION_SUPPORTED)
     @Param(description = "True if the host supports encryption", since = "4.18")
     private Boolean encryptionSupported;
@@ -894,6 +898,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setUefiCapability(Boolean hostCapability) {
         this.uefiCapability = hostCapability;
+    }
+
+    public void setMigrationIp(String migrationIp) {
+        this.migrationIp = migrationIp;
+    }
+
+    public String getMigrationIp() {
+        return migrationIp;
     }
 
     public void setEncryptionSupported(Boolean encryptionSupported) {

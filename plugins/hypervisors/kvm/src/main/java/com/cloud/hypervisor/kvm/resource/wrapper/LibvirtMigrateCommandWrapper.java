@@ -21,6 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import com.cloud.utils.script.Script;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -110,6 +115,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
+        }
+
+        // opt-in CPU-compatibility precheck (virsh cpu-compare) run BEFORE any migration setup,
+        // so an incompatible destination fails fast with a clear message and the source domain is never
+        // touched. Fail-open: if the check cannot run it does not block the migration.
+        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MIGRATE_CPU_PRECHECK_ENABLED))) {
+            final String cpuError = precheckDestinationCpu(vmName, destinationUri, libvirtComputingResource);
+            if (cpuError != null) {
+                logger.warn(cpuError);
+                return new MigrateAnswer(command, false, cpuError, null);
+            }
         }
 
         String result = null;
@@ -250,9 +266,32 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING);
 
+            // Encrypt the migration data stream when the effective policy resolves to "Required". A blank or
+            // "Disabled" MS policy defers to the per-host migrate.encryption.policy (the MS ConfigKey default
+            // is "Disabled", not blank), so the per-host setting is never dead code; requires
+            // migrate_tls_x509_* configured in qemu.conf.
+            final String hostEncryptionPolicy = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MIGRATE_ENCRYPTION_POLICY);
+            final boolean encryptMigration = resolveEncryptMigration(command.getMigrationEncryptionPolicy(), hostEncryptionPolicy);
+            final boolean parallelMigration = Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MIGRATE_PARALLEL_ENABLED));
+            // allow libvirt-"unsafe" migrations (e.g. writeback cache on coherent Ceph storage).
+            final boolean allowUnsafeMigration = Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MIGRATE_ALLOW_UNSAFE));
+            // optional migration compression method (xbzrle or mt); blank leaves libvirt's default.
+            final String compressionMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MIGRATE_COMPRESSION_METHOD);
+            final int parallelConnections = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MIGRATE_PARALLEL_CONNECTIONS);
+            // when a dedicated migration network is configured, the management server resolves the destination
+            // host's migration-NIC IP and sets it on the command; route the data stream (URI + listen address)
+            // there instead of the management IP. The libvirt control connection stays on the management IP.
+            final String configuredMigrateIp = command.getMigrateIp();
+            final boolean dedicatedMigrationNetwork = StringUtils.isNotBlank(configuredMigrateIp);
+            final String migrateDataIp = dedicatedMigrationNetwork ? configuredMigrateIp : command.getDestinationIp();
+            if (dedicatedMigrationNetwork) {
+                logger.info("Live migration of VM {} will use dedicated migration address {} for the data stream instead of the management address {}.",
+                        vmName, migrateDataIp, command.getDestinationIp());
+            }
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
-                    command.isAutoConvergence(), vmName, command.getDestinationIp(), migrateDiskLabels);
+                    command.isAutoConvergence(), encryptMigration, parallelMigration, allowUnsafeMigration, compressionMethod, parallelConnections, vmName, migrateDataIp,
+                    dedicatedMigrationNetwork ? configuredMigrateIp : null, migrateDiskLabels);
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -280,7 +319,16 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     }
                 }
                 if (sleeptime % 1000 == 0) {
-                    logger.info("Waiting for migration of " + vmName + " to complete, waited " + sleeptime + "ms");
+                    // surface migration progress (percent of migration data transferred) in the periodic log.
+                    int progressPercent = -1;
+                    try {
+                        final DomainJobInfo job = dm.getJobInfo();
+                        progressPercent = computeMigrationProgressPercent(job.getDataProcessed(), job.getDataRemaining());
+                    } catch (final LibvirtException e) {
+                        logger.trace("Could not read migration job info for progress reporting: {}", e.getMessage());
+                    }
+                    logger.info("Waiting for migration of {} to complete, waited {}ms, progress: {}", vmName, sleeptime,
+                            progressPercent < 0 ? "unknown" : progressPercent + "%");
                 }
 
                 // abort the vm migration if the job is executed more than vm.migrate.wait
@@ -304,7 +352,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             logger.debug(result);
                             break;
                         } catch (final LibvirtException e) {
-                            logger.error(String.format("Failed to abort the VM migration job of VM [%s] due to: [%s].", vmName, e.getMessage()), e);
+                            // Do NOT mark the migration failed here: abortJob throws both when the migration just
+                            // completed (no active job left to abort) and on a transient error while it is still
+                            // running. Log and let the loop continue - a completed migration ends the loop with
+                            // destDomain != null and is reported successful (no split brain), while a still-running
+                            // one is retried on the next pass and ultimately bounded by migrateThread.get below.
+                            logger.warn(String.format("Could not abort the migration job of VM [%s] after the vm.migrate.wait timeout: %s", vmName, e.getMessage()), e);
                         }
                     }
                 }
@@ -337,7 +390,15 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
                 }
-                resumeDomainIfPaused(destDomain, vmName);
+                // The guest is now on the destination and the source domain is about to be undefined, so the
+                // migration (the move) has succeeded. If it could not be brought out of PAUSED we must NOT report
+                // failure - that would make the management server believe the VM is still on the source and could
+                // trigger HA against a host that no longer runs it (split brain). Surface it loudly instead; the
+                // power-state sync and the operator can resume the paused guest on the destination.
+                final String resumeFailure = resumeDomainIfPaused(destDomain, vmName);
+                if (resumeFailure != null) {
+                    logger.warn(String.format("VM [%s] migrated to the destination but is still PAUSED there: [%s]. The migration is reported as successful because the VM now lives on the destination; resume it on the destination host.", vmName, resumeFailure));
+                }
 
                 // For cross-pool CLVM migration, skip deactivation so the source LV stays
                 // active (in shared mode) and deletion can route directly to the source host
@@ -403,16 +464,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
         if (result == null) {
             logger.info("Post-migration cleanup for VM {}: ", vmName);
-            libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
-            for (final InterfaceDef iface : ifaces) {
-                String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
-                // We don't know which "traffic type" is associated with
-                // each interface at this point, so inform all vif drivers
-                final List<VifDriver> allVifDrivers = libvirtComputingResource.getAllVifDrivers();
-                for (final VifDriver vifDriver : allVifDrivers) {
-                    vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
-                }
-            }
+            cleanupSourceNetworkingAfterMigration(conn, vmName, ifaces, vlanToPersistenceMap, libvirtComputingResource);
             commandState = Command.State.COMPLETED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         } else if (commandState == null) {
@@ -422,6 +474,110 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    // cap the CPU precheck so a firewalled/unreachable destination fails fast instead of
+    // hanging virsh forever (the opposite of the "fail fast" the precheck is meant to provide).
+    private static final int CPU_PRECHECK_TIMEOUT_SECONDS = 30;
+    private static final Pattern SAFE_MIGRATION_URI = Pattern.compile("qemu\\+(tcp|tls)://[A-Za-z0-9._:\\[\\]-]+/system");
+
+    /**
+     * effective migration-encryption decision. A non-Disabled MS-central policy wins; a blank or
+     * "Disabled" MS policy defers to the per-host agent property (so the per-host setting is never dead code).
+     */
+    protected boolean resolveEncryptMigration(final String commandPolicy, final String hostPolicy) {
+        String effective = commandPolicy;
+        if (StringUtils.isBlank(effective) || "Disabled".equalsIgnoreCase(effective.trim())) {
+            effective = hostPolicy;
+        }
+        // Only the exact "Required" policy enables TLS; anything else (Disabled, blank or an unrecognised value)
+        // stays plaintext, so a typo never silently turns encryption on. libvirt has no opportunistic/fallback
+        // TLS mode, so Required means TLS or the migration fails - there is no partial state to model here.
+        return effective != null && "Required".equalsIgnoreCase(effective.trim());
+    }
+
+    // matches the domain's top-level <cpu> element (paired or self-closing). \b after "cpu"
+    // excludes <cputune>; non-greedy .*? is safe because <cpu> does not nest another <cpu>.
+    private static final Pattern CPU_ELEMENT_PATTERN = Pattern.compile("<cpu\\b[^>]*/>|<cpu\\b.*?</cpu>", Pattern.DOTALL);
+
+    /**
+     * pull the VM's &lt;cpu&gt; definition out of its domain XML so it can be checked against a
+     * destination host with {@code virsh cpu-compare}. Returns null when the VM has no explicit CPU
+     * model (any host can then run it).
+     */
+    protected String extractCpuElement(final String domainXml) {
+        if (domainXml == null) {
+            return null;
+        }
+        final Matcher matcher = CPU_ELEMENT_PATTERN.matcher(domainXml);
+        return matcher.find() ? matcher.group() : null;
+    }
+
+    /**
+     * interpret {@code virsh cpu-compare} output. libvirt prints "incompatible" / "not a
+     * superset" when the host cannot run the given CPU. Fail-open: blank/unknown output is treated as
+     * compatible, so a check that could not run never blocks a migration.
+     */
+    protected boolean isCpuCompareOutputCompatible(final String virshOutput) {
+        return LibvirtCheckCpuCompatibilityCommandWrapper.isCompatible(virshOutput);
+    }
+
+    protected String runDestinationCpuCompare(final String cpuXml, final String destinationUri) throws IOException {
+        if (destinationUri == null || !SAFE_MIGRATION_URI.matcher(destinationUri).matches()) {
+            throw new IOException("Unexpected destination URI for the CPU precheck: " + destinationUri);
+        }
+        final File tmp = File.createTempFile("cloudstack-cpucheck-", ".xml");
+        try {
+            Files.write(tmp.toPath(), cpuXml.getBytes(StandardCharsets.UTF_8));
+            // full result with a forced zero exit so the complete verdict is parsed, not just virsh's first line.
+            return Script.runSimpleBashScriptWithFullResult(String.format("timeout %d virsh -c %s cpu-compare %s 2>&1 || true",
+                    CPU_PRECHECK_TIMEOUT_SECONDS, destinationUri, tmp.getAbsolutePath()), CPU_PRECHECK_TIMEOUT_SECONDS + 10);
+        } finally {
+            if (!tmp.delete()) {
+                tmp.deleteOnExit();
+            }
+        }
+    }
+
+    /**
+     * opt-in CPU-compatibility precheck, run BEFORE any migration setup so a rejection fails
+     * fast and never touches the source domain. Returns an error message if the destination host CPU
+     * is incompatible, or null if it is compatible / the check could not run (best-effort, fail-open).
+     */
+    protected String precheckDestinationCpu(final String vmName, final String destinationUri, final LibvirtComputingResource libvirtComputingResource) {
+        try {
+            final LibvirtUtilitiesHelper helper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+            final Connect conn = helper.getConnectionByVmName(vmName);
+            final Domain dm = conn.domainLookupByName(vmName);
+            final int xmlFlag = conn.getLibVirVersion() >= 1000000 ? 8 : 1;
+            final String cpuXml = extractCpuElement(dm.getXMLDesc(xmlFlag));
+            if (cpuXml == null) {
+                return null;
+            }
+            final String output = runDestinationCpuCompare(cpuXml, destinationUri);
+            if (!isCpuCompareOutputCompatible(output)) {
+                return String.format("Cannot migrate VM [%s]: the destination host CPU is not compatible with the VM's CPU " +
+                        "(virsh cpu-compare: %s). Choose a destination host with a compatible or superset CPU.",
+                        vmName, output == null ? "no result" : output.trim());
+            }
+            return null;
+        } catch (final Exception e) {
+            logger.warn(String.format("CPU-compatibility precheck for VM [%s] could not run; proceeding with migration: %s", vmName, e.getMessage()));
+            return null;
+        }
+    }
+
+    /**
+     * migration progress as a 0-100 percent of migration data transferred, from libvirt job stats.
+     * Returns -1 when the total is not yet known, so the caller logs "unknown" rather than a
+     * misleading 0%.
+     */
+    protected int computeMigrationProgressPercent(final long dataProcessed, final long dataRemaining) {
+        final long total = dataProcessed + dataRemaining;
+        if (total <= 0) {
+            return -1;
+        }
+        return (int) Math.min(100, (dataProcessed * 100) / total);
     }
 
     private DomainState getDestDomainState(Domain destDomain, String vmName) {
@@ -434,15 +590,51 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return dmState;
     }
 
-    private void resumeDomainIfPaused(Domain destDomain, String vmName) {
+    /**
+     * Resume a destination domain that libvirt left paused after migration. The migration itself has already
+     * succeeded (the guest now lives on the destination), so the caller keeps the result successful; this returns a
+     * message only so the caller can surface the still-paused state as a warning for the operator to resume.
+     *
+     * @return {@code null} if the domain is running (or was never paused); otherwise a message describing the
+     *         still-not-running state on the destination.
+     */
+    protected String resumeDomainIfPaused(Domain destDomain, String vmName) {
         DomainState dmState = getDestDomainState(destDomain, vmName);
-        if (dmState == DomainState.VIR_DOMAIN_PAUSED) {
-            logger.info("Resuming VM " + vmName + " on destination after migration");
-            try {
-                destDomain.resume();
-            } catch (final Exception e) {
-                logger.error("Failed to resume vm " + vmName + " on destination after migration due to : " + e.getMessage());
+        if (dmState != DomainState.VIR_DOMAIN_PAUSED) {
+            return null;
+        }
+        logger.info("Resuming VM " + vmName + " on destination after migration");
+        try {
+            destDomain.resume();
+        } catch (final Exception e) {
+            logger.error("Failed to resume vm " + vmName + " on destination after migration due to : " + e.getMessage());
+        }
+        DomainState afterState = getDestDomainState(destDomain, vmName);
+        if (afterState == DomainState.VIR_DOMAIN_RUNNING) {
+            return null;
+        }
+        return String.format("the guest is on the destination but not running (state: %s); resume it on the destination host", afterState);
+    }
+
+    /**
+     * Tears down source-side networking after a successful migration. The guest is already live on the
+     * destination, so a failure here must not flip a successful migration to FAILED (which would make
+     * orchestration roll back or mark a running VM inconsistent); the error is logged and swallowed.
+     */
+    protected void cleanupSourceNetworkingAfterMigration(Connect conn, String vmName, List<InterfaceDef> ifaces,
+            Map<String, Boolean> vlanToPersistenceMap, LibvirtComputingResource libvirtComputingResource) {
+        try {
+            libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
+            for (final InterfaceDef iface : ifaces) {
+                String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
+                // the traffic type of each interface is unknown here, so inform all vif drivers
+                for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
+                    vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
+                }
             }
+        } catch (final Exception e) {
+            logger.warn("Migration of VM [{}] succeeded, but source-side network cleanup failed: {}. " +
+                    "Keeping the migration result as successful.", vmName, e.getMessage(), e);
         }
     }
 
