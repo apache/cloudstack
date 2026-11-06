@@ -35,6 +35,11 @@ public class ApiServiceConfiguration implements Configurable {
     public static final ConfigKey<String> ApiAllowedSourceCidrList = new ConfigKey<>(String.class, "api.allowed.source.cidr.list", "Advanced",
             "0.0.0.0/0,::/0", "Comma separated list of IPv4/IPv6 CIDRs from which API calls can be performed. Can be set on Global and Account levels.", true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
+    public static final ConfigKey<Boolean> ApiLegacyAlgorithmSupported = new ConfigKey<>("Advanced", Boolean.class, "api.legacy.algorithm.supported",
+            "true", "In older versions, the CloudStack API server used the HmacSHA1 algorithm to sign and validate requests. " +
+            "If this setting is enabled, HmacSHA1 will remain supported (alongside the newer HmacSHA512 algorithm), ensuring compatibility with tools " +
+            "such as CloudMonkey, cloudstack-go, and other third-party projects. " +
+            "If disabled, only the HmacSHA512 algorithm will be supported.", true, ConfigKey.Scope.Global);
 
     public static void validateEndpointUrl() {
         String csUrl = getApiServletPathValue();
@@ -55,7 +60,7 @@ public class ApiServiceConfiguration implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ManagementServerAddresses, ApiServletPath, DefaultUIPageSize, ApiSourceCidrChecksEnabled, ApiAllowedSourceCidrList};
+        return new ConfigKey<?>[] {ManagementServerAddresses, ApiServletPath, DefaultUIPageSize, ApiSourceCidrChecksEnabled, ApiAllowedSourceCidrList, ApiLegacyAlgorithmSupported};
     }
 
 }
