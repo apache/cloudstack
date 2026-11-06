@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import java.util.Collection;
 import java.util.Map;
 
 import javax.inject.Inject;

@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.bootgroup;
 
-import java.util.Collection;
 import java.util.Map;
 
 import javax.inject.Inject;

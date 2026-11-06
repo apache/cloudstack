@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 

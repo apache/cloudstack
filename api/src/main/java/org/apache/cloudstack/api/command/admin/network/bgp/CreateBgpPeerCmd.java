@@ -35,7 +35,6 @@ import org.apache.commons.collections.MapUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-import java.util.Collection;
 import java.util.Map;
 
 @APICommand(name = "createBgpPeer",

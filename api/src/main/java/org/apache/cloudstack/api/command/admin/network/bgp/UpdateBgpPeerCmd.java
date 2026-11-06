@@ -33,7 +33,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.MapUtils;
 
-import java.util.Collection;
 import java.util.Map;
 
 @APICommand(name = "updateBgpPeer",

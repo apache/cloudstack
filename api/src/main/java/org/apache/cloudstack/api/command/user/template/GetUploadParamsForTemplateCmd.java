@@ -19,7 +19,6 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import java.net.MalformedURLException;
-import java.util.Collection;
 import java.util.Map;
 
 import com.cloud.cpu.CPU;

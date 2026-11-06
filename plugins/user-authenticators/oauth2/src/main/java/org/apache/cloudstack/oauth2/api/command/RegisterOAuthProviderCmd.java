@@ -14,7 +14,6 @@
 // limitations under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
-import java.util.Collection;
 import java.util.Map;
 
 import javax.inject.Inject;
