@@ -59,7 +59,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.RouterHealthCheckResultDao;
+import com.cloud.network.dao.RouterHealthCheckResultVO;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Volume;
@@ -70,7 +75,9 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -137,6 +144,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private HostTagsDao _hostTagsDao;
     @Inject
     private CAManager caManager;
+    @Inject
+    private DomainRouterDao domainRouterDao;
+    @Inject
+    private RouterHealthCheckResultDao routerHealthCheckResultDao;
 
     public PrometheusExporterImpl() {
         super();
@@ -501,10 +512,47 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         }
     }
 
+    protected void addVirtualRouterHealthCheckMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid) {
+        List<DomainRouterVO> routers = domainRouterDao.listByDataCenter(dcId);
+        if (routers == null) {
+            return;
+        }
+        // only running virtual routers; results of stopped or destroyed routers are stale
+        Map<Long, DomainRouterVO> runningRouters = routers.stream()
+                .filter(router -> router.getRole() == VirtualRouter.Role.VIRTUAL_ROUTER && router.getState() == State.Running)
+                .collect(Collectors.toMap(DomainRouterVO::getId, router -> router));
+        if (runningRouters.isEmpty()) {
+            return;
+        }
+        // one query for all routers in the zone instead of one per router
+        List<RouterHealthCheckResultVO> checks = routerHealthCheckResultDao.getHealthCheckResults(new ArrayList<>(runningRouters.keySet()));
+        if (checks == null) {
+            return;
+        }
+        for (RouterHealthCheckResultVO check : checks) {
+            DomainRouterVO router = runningRouters.get(check.getRouterId());
+            if (router == null) {
+                continue;
+            }
+            int resultValue = (check.getCheckResult() ==
+                    VirtualNetworkApplianceService.RouterHealthStatus.SUCCESS) ? 1 : 0;
+            metricsList.add(new ItemVRHealthCheckResult(
+                    zoneName, router.getInstanceName(),
+                    check.getCheckName(), check.getCheckType(), resultValue));
+            if (check.getLastUpdateTime() != null) {
+                long epochSeconds = check.getLastUpdateTime().getTime() / 1000L;
+                metricsList.add(new ItemVRHealthCheckLastCheck(
+                        zoneName, router.getInstanceName(),
+                        check.getCheckName(), check.getCheckType(), epochSeconds));
+            }
+        }
+    }
+
     @Override
     public void updateMetrics() {
         final List<Item> latestMetricsItems = new ArrayList<Item>();
         try {
+            final boolean routerHealthChecksEnabled = Boolean.TRUE.equals(VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value());
             for (final DataCenterVO dc : dcDao.listAll()) {
                 final String zoneName = dc.getName();
                 final String zoneUuid = dc.getUuid();
@@ -518,6 +566,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 addDomainMetrics(latestMetricsItems, zoneName, zoneUuid);
                 addAccountMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
                 addVMsBySizeMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
+                if (routerHealthChecksEnabled) {
+                    addVirtualRouterHealthCheckMetrics(latestMetricsItems, dc.getId(), zoneName, zoneUuid);
+                }
             }
             addDomainLimits(latestMetricsItems);
             addDomainResourceCount(latestMetricsItems);
@@ -1178,6 +1229,58 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\"} %d", name, zoneName, hostName, hostIp, expiryTimestamp);
+        }
+    }
+
+    class ItemVRHealthCheckResult extends Item {
+        String zoneName;
+        String routerName;
+        String checkName;
+        String checkType;
+        int result;
+
+        public ItemVRHealthCheckResult(String zn, String rn, String cn, String ct, int res) {
+            super("cloudstack_virtualrouter_healthcheck_result",
+                    "Virtual Router Health Check result (1=success, 0=failure/unknown)",
+                    "gauge");
+            zoneName = zn;
+            routerName = rn;
+            checkName = cn;
+            checkType = ct;
+            result = res;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format(
+                    "%s{checkname=\"%s\",checktype=\"%s\",zone=\"%s\",virtualrouter=\"%s\"} %d",
+                    name, checkName, checkType, zoneName, routerName, result);
+        }
+    }
+
+    class ItemVRHealthCheckLastCheck extends Item {
+        String zoneName;
+        String routerName;
+        String checkName;
+        String checkType;
+        long lastCheckEpochSeconds;
+
+        public ItemVRHealthCheckLastCheck(String zn, String rn, String cn, String ct, long ts) {
+            super("cloudstack_virtualrouter_healthcheck_lastcheck",
+                    "Virtual Router Health Check last check timestamp (Unix seconds)",
+                    "gauge");
+            zoneName = zn;
+            routerName = rn;
+            checkName = cn;
+            checkType = ct;
+            lastCheckEpochSeconds = ts;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format(
+                    "%s{checkname=\"%s\",checktype=\"%s\",zone=\"%s\",virtualrouter=\"%s\"} %d",
+                    name, checkName, checkType, zoneName, routerName, lastCheckEpochSeconds);
         }
     }
 }
