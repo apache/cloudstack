@@ -58,8 +58,9 @@ public class UpdateHostCmd extends BaseCmd {
     private String guestOsRule;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE,
-               type = CommandType.STRING,
-               description = "Change resource state of host, valid values are [Enable, Disable]. Operation may failed if host in states not allowing Enable/Disable")
+                type = CommandType.STRING,
+                allowedValues = {"Enable", "Disable"},
+                description = "Change resource state of host, valid values are [Enable, Disable]. Operation may failed if host in states not allowing Enable/Disable")
     private String allocationState;
 
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "List of tags to be added to the host")
