@@ -33,6 +33,9 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
 
     ConfigKey<Integer> VMSnapshotMax = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.max", "10", "Maximum VM snapshots for a single VM", true, ConfigKey.Scope.Account);
 
+    ConfigKey<Integer> VMSnapshotCreateWait = new ConfigKey<>("Advanced", Integer.class, "vmsnapshot.create.wait", "1800",
+            "Timeout (in seconds) for VM snapshot creation", true);
+
     /**
      * Delete all VM snapshots belonging to one VM
      * @param id, VM id

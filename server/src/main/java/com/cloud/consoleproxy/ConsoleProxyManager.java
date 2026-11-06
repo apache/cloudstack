@@ -97,6 +97,18 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<String> ConsoleProxyManagementLastState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
             "last console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
 
+    ConfigKey<Integer> ConsoleProxyVmRamSize = new ConfigKey<>("Advanced", Integer.class, "console.ram.size", String.valueOf(DEFAULT_PROXY_VM_RAMSIZE),
+            "Console proxy VM default RAM size (in MB)", true);
+
+    ConfigKey<Integer> ConsoleProxyVmCpuMhz = new ConfigKey<>("Advanced", Integer.class, "console.cpu.mhz", String.valueOf(DEFAULT_PROXY_VM_CPUMHZ),
+            "Console proxy VM default CPU speed (in MHz)", true);
+
+    ConfigKey<String> ConsoleProxyStaticPublicIp = new ConfigKey<>("Advanced", String.class, "consoleproxy.static.publicIp", null,
+            "Public IP address for a static console proxy VM. Unset disables static console proxy mode.", true);
+
+    ConfigKey<Integer> ConsoleProxyStaticPort = new ConfigKey<>("Advanced", Integer.class, "consoleproxy.static.port", null,
+            "Port to use for a static console proxy VM. Unset falls back to a caller-determined default.", true);
+
     ConfigKey<String> ConsoleProxyVmUserData = new ConfigKey<>(String.class, "console.proxy.vm.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
             "UUID for user data for console proxy VMs. This works only when systemvm.userdata.enabled is set to true",

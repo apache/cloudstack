@@ -18,7 +18,22 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 public interface StorageCacheManager {
+
+    ConfigKey<Boolean> StorageCacheReplacementEnabled = new ConfigKey<>("Storage", Boolean.class,
+            "storage.cache.replacement.enabled", "true",
+            "enable or disable cache storage replacement algorithm.", true);
+
+    ConfigKey<Integer> StorageCacheReplacementInterval = new ConfigKey<>("Storage", Integer.class,
+            "storage.cache.replacement.interval", "86400",
+            "time interval between cache replacement threads (in seconds).", true);
+
+    ConfigKey<Integer> StorageCacheReplacementLRUTimeInterval = new ConfigKey<>("Storage", Integer.class,
+            "storage.cache.replacement.lru.interval", "30",
+            "time interval for unused data on cache storage (in days).", true);
+
     DataStore getCacheStorage(Scope scope);
 
     DataStore getCacheStorage(DataObject data, Scope scope);

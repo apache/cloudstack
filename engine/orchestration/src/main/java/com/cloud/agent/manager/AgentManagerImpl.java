@@ -2235,7 +2235,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort, InstanceName, XapiWait, MigrateWait,
+                SecStorageVmMTUSize, SecStorageCapacityStandby, SecStorageSessionMax, SecStorageCmdExecutionTimeMax,
+                SecStorageProxy, XenServerMaxNics };
     }
 
     protected class SetHostParamsListener implements Listener {

@@ -33,6 +33,8 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
@@ -91,7 +93,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
 @Component
-public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter {
+public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter, Configurable {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
@@ -560,6 +562,16 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         _hostDao.remove(hostId);
         return new DeleteHostAnswer(false);
 
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NetworkUsageService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {DirectNetworkStatsInterval, TrafficSentinelIncludeZones, TrafficSentinelExcludeZones};
     }
 
 }

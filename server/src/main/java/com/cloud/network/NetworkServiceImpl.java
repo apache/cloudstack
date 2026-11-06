@@ -6313,7 +6313,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu,
+                GuestVlanBits, MaxNumberOfSecondaryIPsPerNIC, XenServerPublicNetwork, XenServerGuestNetwork, XenServerStorageNetwork1, XenServerStorageNetwork2, XenServerPrivateNetwork,
+                NetworkGuestCidrLimit};
     }
 
     public boolean isDefaultAcl(Long aclId) {

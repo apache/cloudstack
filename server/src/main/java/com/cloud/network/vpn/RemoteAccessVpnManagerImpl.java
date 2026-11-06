@@ -865,7 +865,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange};
+        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange, RemoteAccessVpnPskLength, RemoteAccessVpnUserLimit};
     }
 
     public List<RemoteAccessVPNServiceProvider> getVpnServiceProviders() {
