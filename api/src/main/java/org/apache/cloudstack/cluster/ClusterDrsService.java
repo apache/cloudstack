@@ -88,6 +88,46 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             true, ConfigKey.Scope.Cluster, null, "DRS imbalance skip threshold for Condensed algorithm",
             null, null, null);
 
+    ConfigKey<Boolean> ClusterDrsPowerManagementEnabled = new ConfigKey<>(Boolean.class, "drs.power.management.enable",
+            ConfigKey.CATEGORY_ADVANCED, "false",
+            "Enable distributed power management on the cluster. When the cluster is under-utilized, a host that has " +
+                    "been emptied by DRS is powered off through its out-of-band management; when the cluster is over-utilized, " +
+                    "a powered-off host is powered back on. Requires automatic DRS and out-of-band management to be configured.",
+            true, ConfigKey.Scope.Cluster, null, "Enable DRS power management", null, null, null);
+
+    ConfigKey<Float> ClusterDrsPowerManagementLowThreshold = new ConfigKey<>(Float.class, "drs.power.management.low.threshold",
+            ConfigKey.CATEGORY_ADVANCED, "0.3",
+            "Cluster utilization (0.0 to 1.0, on the configured DRS metric) below which an idle host becomes a candidate " +
+                    "to power off, provided the remaining hosts can carry the load without exceeding the high threshold.",
+            true, ConfigKey.Scope.Cluster, null, "DRS power management low threshold", null, null, null);
+
+    ConfigKey<Float> ClusterDrsPowerManagementHighThreshold = new ConfigKey<>(Float.class, "drs.power.management.high.threshold",
+            ConfigKey.CATEGORY_ADVANCED, "0.75",
+            "Cluster utilization (0.0 to 1.0, on the configured DRS metric) above which a powered-off host is powered " +
+                    "back on. Also the ceiling the remaining hosts must stay under before a host is powered off.",
+            true, ConfigKey.Scope.Cluster, null, "DRS power management high threshold", null, null, null);
+
+    ConfigKey<Boolean> ClusterDrsPowerManagementEvacuate = new ConfigKey<>(Boolean.class, "drs.power.management.evacuate.enable",
+            ConfigKey.CATEGORY_ADVANCED, "false",
+            "When DRS power management decides a host can be released but the host still runs VMs, migrate those VMs " +
+                    "onto the remaining hosts (only when every VM can be placed) so the host can then be powered off. " +
+                    "Off by default: power management otherwise waits for DRS to empty a host on its own.",
+            true, ConfigKey.Scope.Cluster, null, "Actively evacuate before power-off", null, null, null);
+
+    ConfigKey<Boolean> ClusterDrsPredictiveEnabled = new ConfigKey<>(Boolean.class, "drs.predictive.enable",
+            ConfigKey.CATEGORY_ADVANCED, "false",
+            "Use the recent trend of cluster utilization, not only the instantaneous value, when deciding power " +
+                    "management actions. A rising trend powers a host back on earlier and holds off powering one off; a falling " +
+                    "trend is ignored for power-off so a brief dip does not churn hosts. Requires DRS power management. The trend " +
+                    "window is kept in memory by the management server that runs the poll, so after a restart or in a multi-management-server " +
+                    "deployment it rebuilds from the samples seen since that server last took the poll.",
+            true, ConfigKey.Scope.Cluster, null, "Enable predictive DRS", null, null, null);
+
+    ConfigKey<Integer> ClusterDrsPredictiveWindow = new ConfigKey<>(Integer.class, "drs.predictive.window",
+            ConfigKey.CATEGORY_ADVANCED, "5",
+            "Number of recent DRS poll samples of cluster utilization used to compute the trend for predictive DRS.",
+            true, ConfigKey.Scope.Cluster, null, "Predictive DRS window", null, null, null);
+
 
     /**
      * Generate a DRS plan for a cluster and save it as per the parameters
