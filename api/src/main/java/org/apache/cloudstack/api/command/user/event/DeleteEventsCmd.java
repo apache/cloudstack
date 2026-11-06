@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.Event;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class, entityType = {Event.class},
@@ -82,6 +81,22 @@ public class DeleteEventsCmd extends BaseCmd {
         return type;
     }
 
+    public void setIds(List<Long> ids) {
+        this.ids = ids;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -97,17 +112,12 @@ public class DeleteEventsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if (ids == null && type == null && endDate == null) {
-            throw new InvalidParameterValueException("either ids, type or enddate must be specified");
-        } else if (startDate != null && endDate == null) {
-            throw new InvalidParameterValueException("enddate must be specified with startdate parameter");
-        }
         boolean result = _mgr.deleteEvents(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete Events, one or more parameters has invalid values");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete any events. One or more parameters have invalid values.");
         }
     }
 }
