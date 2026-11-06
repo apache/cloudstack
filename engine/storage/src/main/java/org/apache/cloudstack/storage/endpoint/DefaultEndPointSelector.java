@@ -603,7 +603,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
             case MIGRATEVOLUME: {
                 VolumeInfo volume = (VolumeInfo) object;
-                if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                if (List.of(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.Hyperv, Hypervisor.HypervisorType.KVM).contains(volume.getHypervisorType())) {
                     VirtualMachine vm = volume.getAttachedVM();
                     if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
                         Long hostId = vm.getHostId();

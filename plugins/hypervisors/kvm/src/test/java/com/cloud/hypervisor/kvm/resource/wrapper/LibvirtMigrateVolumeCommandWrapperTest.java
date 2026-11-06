@@ -23,9 +23,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -228,6 +230,11 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.PowerFlex).when(srcPrimaryDataStore).getPoolType();
 
+        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+        PrimaryDataStoreTO destPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(destPrimaryDataStore).when(destVolumeObjectTO).getDataStore();
+
         MigrateVolumeAnswer powerFlexAnswer = Mockito.mock(MigrateVolumeAnswer.class);
         MigrateVolumeAnswer regularVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
 
@@ -246,7 +253,13 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
 
         PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
         Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
-        Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcPrimaryDataStore).getPoolType();
+        Mockito.doReturn(Storage.StoragePoolType.Filesystem).when(srcPrimaryDataStore).getPoolType();
+
+        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+        PrimaryDataStoreTO destPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(destPrimaryDataStore).when(destVolumeObjectTO).getDataStore();
+        Mockito.doReturn(Storage.StoragePoolType.Filesystem).when(destPrimaryDataStore).getPoolType();
 
         MigrateVolumeAnswer powerFlexAnswer = Mockito.mock(MigrateVolumeAnswer.class);
         MigrateVolumeAnswer regularVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
@@ -257,6 +270,47 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         Answer answer = libvirtMigrateVolumeCommandWrapper.execute(command, libvirtComputingResource);
 
         Assert.assertFalse(answer.getResult());
+    }
+
+    private Answer executeMigrationBetween(Storage.StoragePoolType srcType, Storage.StoragePoolType destType, boolean blockCopy) {
+        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+        PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
+        Mockito.doReturn(srcType).when(srcPrimaryDataStore).getPoolType();
+
+        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+        PrimaryDataStoreTO destPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(destPrimaryDataStore).when(destVolumeObjectTO).getDataStore();
+        Mockito.doReturn(destType).when(destPrimaryDataStore).getPoolType();
+
+        MigrateVolumeAnswer blockCopyAnswer = Mockito.mock(MigrateVolumeAnswer.class);
+        MigrateVolumeAnswer regularVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
+        Mockito.doReturn(blockCopy).when(blockCopyAnswer).getResult();
+        Mockito.doReturn(!blockCopy).when(regularVolumeAnswer).getResult();
+        Mockito.doReturn(blockCopyAnswer).when(libvirtMigrateVolumeCommandWrapper).migrateRBDVolume(command, libvirtComputingResource);
+        Mockito.doReturn(regularVolumeAnswer).when(libvirtMigrateVolumeCommandWrapper).migrateRegularVolume(command, libvirtComputingResource);
+
+        return libvirtMigrateVolumeCommandWrapper.execute(command, libvirtComputingResource);
+    }
+
+    @Test
+    public void testBlockCopyMigrateVolumeMethodBetweenRbdPoolsAndWithFileBasedPools() {
+        Assert.assertTrue("RBD -> RBD", executeMigrationBetween(Storage.StoragePoolType.RBD, Storage.StoragePoolType.RBD, true).getResult());
+        for (Storage.StoragePoolType fileBased : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            Assert.assertTrue("RBD -> " + fileBased, executeMigrationBetween(Storage.StoragePoolType.RBD, fileBased, true).getResult());
+            Assert.assertTrue(fileBased + " -> RBD", executeMigrationBetween(fileBased, Storage.StoragePoolType.RBD, true).getResult());
+        }
+    }
+
+    @Test
+    public void testRegularMigrateVolumeMethodBetweenFileBasedPools() {
+        for (Storage.StoragePoolType src : Storage.KVM_FILE_BASED_POOL_TYPES) {
+            for (Storage.StoragePoolType dest : Storage.KVM_FILE_BASED_POOL_TYPES) {
+                Assert.assertTrue(src + " -> " + dest, executeMigrationBetween(src, dest, false).getResult());
+            }
+        }
     }
 
     @Test
@@ -349,6 +403,97 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         Assert.assertFalse(migrateVolumeAnswer.getResult());
     }
 
+    /**
+     * Domain XML of a running Instance whose ROOT disk was thin-cloned from a template on an NFS pool: the disk
+     * carries the template as its backing file, and libvirt reports the whole chain in the live XML.
+     */
+    private static final String DOMAIN_XML_WITH_BACKING_CHAIN =
+            "<domain type='kvm' id='7'>\n" +
+            "  <name>i-2-428-VM</name>\n" +
+            "  <devices>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/283dfc3f-2ab1-3021-baf4-ecfd97b816a8/5d468388-e71e-4169-805e-0398dbe7274a' index='2'/>\n" +
+            "      <backingStore type='file' index='3'>\n" +
+            "        <format type='qcow2'/>\n" +
+            "        <source file='/mnt/283dfc3f-2ab1-3021-baf4-ecfd97b816a8/9046b2b0-380d-4e8a-a7a3-a6efebaadb0a'/>\n" +
+            "        <backingStore/>\n" +
+            "      </backingStore>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "      <alias name='virtio-disk0'/>\n" +
+            "    </disk>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private Domain domainWithBackingChain() throws LibvirtException {
+        Domain dm = Mockito.mock(Domain.class);
+        Mockito.when(dm.getXMLDesc(0)).thenReturn(DOMAIN_XML_WITH_BACKING_CHAIN);
+        return dm;
+    }
+
+    private KVMStoragePool rbdDestinationPool() {
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        Mockito.when(pool.getSourceHost()).thenReturn("10.0.33.44");
+        Mockito.when(pool.getSourcePort()).thenReturn(0);
+        Mockito.when(pool.getAuthUserName()).thenReturn("admin");
+        Mockito.when(pool.getAuthSecretUUID()).thenReturn("7684f6e5-fd91-3435-b04e-59ae0efb3914");
+        return pool;
+    }
+
+    /**
+     * A ROOT volume cloned from a template keeps that template as its backing file. Migrating it from NFS to Ceph is
+     * a full (non-shallow) block copy that flattens the chain into the destination, so the mirror XML must not carry
+     * a &lt;backingStore&gt; over - libvirt rejects it with "backingStore of mirror without
+     * VIR_DOMAIN_BLOCK_COPY_SHALLOW doesn't make sense" and the migration never starts.
+     */
+    @Test
+    public void testGenerateDestinationDiskXMLForRBDDropsBackingStoreWhenCopyIsNotShallow() throws Exception {
+        String diskXml = libvirtMigrateVolumeCommandWrapper.generateDestinationDiskXMLForRBD(
+                domainWithBackingChain(), "5d468388-e71e-4169-805e-0398dbe7274a",
+                "cloudstack1/aa11bb22-cc33-dd44-ee55-ff6677889900", null, rbdDestinationPool(),
+                Storage.StoragePoolType.RBD, false);
+
+        Assert.assertNotNull(diskXml);
+        Assert.assertFalse("the inherited backing chain must not reach a non-shallow mirror",
+                diskXml.contains("backingStore"));
+        Assert.assertTrue(diskXml.contains("protocol=\"rbd\""));
+        Assert.assertTrue(diskXml.contains("cloudstack1/aa11bb22-cc33-dd44-ee55-ff6677889900"));
+        Assert.assertTrue("an RBD destination is raw", diskXml.contains("type=\"raw\""));
+    }
+
+    /**
+     * An RBD to RBD migration copies only the active layer, so the backing chain stays meaningful and is preserved.
+     */
+    @Test
+    public void testGenerateDestinationDiskXMLForRBDKeepsBackingStoreWhenCopyIsShallow() throws Exception {
+        String diskXml = libvirtMigrateVolumeCommandWrapper.generateDestinationDiskXMLForRBD(
+                domainWithBackingChain(), "5d468388-e71e-4169-805e-0398dbe7274a",
+                "cloudstack1/aa11bb22-cc33-dd44-ee55-ff6677889900", null, rbdDestinationPool(),
+                Storage.StoragePoolType.RBD, true);
+
+        Assert.assertNotNull(diskXml);
+        Assert.assertTrue("a shallow copy keeps the backing chain", diskXml.contains("backingStore"));
+    }
+
+    /**
+     * The same applies migrating the other way: a Ceph to NFS copy is not shallow either, so the destination file
+     * disk must be free of the source's backing chain.
+     */
+    @Test
+    public void testGenerateDestinationDiskXMLForFileDestinationDropsBackingStore() throws Exception {
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+
+        String diskXml = libvirtMigrateVolumeCommandWrapper.generateDestinationDiskXMLForRBD(
+                domainWithBackingChain(), "5d468388-e71e-4169-805e-0398dbe7274a",
+                "/mnt/nfs-pool/aa11bb22-cc33-dd44-ee55-ff6677889900", null, pool,
+                Storage.StoragePoolType.NetworkFilesystem, false);
+
+        Assert.assertNotNull(diskXml);
+        Assert.assertFalse(diskXml.contains("backingStore"));
+        Assert.assertTrue(diskXml.contains("/mnt/nfs-pool/aa11bb22-cc33-dd44-ee55-ff6677889900"));
+        Assert.assertTrue("a file destination is qcow2", diskXml.contains("type=\"qcow2\""));
+    }
+
     @Test
     public void testCheckBlockJobStatus() throws LibvirtException {
         Connect conn = Mockito.mock(Connect.class);
@@ -383,6 +528,102 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, null);
 
         Assert.assertFalse(answer.getResult());
+    }
+
+    /**
+     * Prepares migrateRBDVolume for a block copy which completes and is pivoted, and returns the source and the
+     * destination pool.
+     */
+    private KVMStoragePool[] prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType srcType, Storage.StoragePoolType destType, byte[] passphrase) throws Exception {
+        String vmName = "i-2-27-VM";
+        Mockito.doReturn(vmName).when(command).getAttachedVmName();
+
+        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+        Mockito.doReturn("src-volume").when(srcVolumeObjectTO).getPath();
+        PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
+        Mockito.doReturn(srcType).when(srcPrimaryDataStore).getPoolType();
+        Mockito.doReturn("src-pool").when(srcPrimaryDataStore).getUuid();
+
+        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+        Mockito.doReturn("dest-volume").when(destVolumeObjectTO).getPath();
+        Mockito.doReturn(passphrase).when(destVolumeObjectTO).getPassphrase();
+        PrimaryDataStoreTO destPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(destPrimaryDataStore).when(destVolumeObjectTO).getDataStore();
+        Mockito.doReturn(destType).when(destPrimaryDataStore).getPoolType();
+        Mockito.doReturn("dest-pool").when(destPrimaryDataStore).getUuid();
+
+        Mockito.doReturn(libvirtUtilitiesHelper).when(libvirtComputingResource).getLibvirtUtilitiesHelper();
+        Connect conn = Mockito.mock(Connect.class);
+        Domain dm = Mockito.mock(Domain.class);
+        Mockito.doReturn(conn).when(libvirtUtilitiesHelper).getConnection();
+        Mockito.doReturn(dm).when(libvirtComputingResource).getDomain(conn, vmName);
+        DomainInfo domainInfo = Mockito.mock(DomainInfo.class);
+        domainInfo.state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        Mockito.doReturn(domainInfo).when(dm).getInfo();
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        Mockito.doReturn(storagePoolMgr).when(libvirtComputingResource).getStoragePoolMgr();
+        KVMStoragePool srcKvmPool = Mockito.mock(KVMStoragePool.class);
+        KVMStoragePool destKvmPool = Mockito.mock(KVMStoragePool.class);
+        Mockito.doReturn(srcKvmPool).when(storagePoolMgr).getStoragePool(srcType, "src-pool");
+        Mockito.doReturn(destKvmPool).when(storagePoolMgr).getStoragePool(destType, "dest-pool");
+        Mockito.doReturn(true).when(destKvmPool).connectPhysicalDisk(Mockito.any(), Mockito.any());
+        Mockito.doReturn(Mockito.mock(KVMPhysicalDisk.class)).when(srcKvmPool).getPhysicalDisk(Mockito.any());
+
+        Mockito.doReturn("/path/on/host").when(libvirtMigrateVolumeCommandWrapper).generateVolumePathOnHost(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn("<disk type='file' device='disk'><target dev='vdb' bus='virtio'/></disk>").when(libvirtMigrateVolumeCommandWrapper)
+                .generateDestinationDiskXMLForRBD(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+        Mockito.doNothing().when(libvirtMigrateVolumeCommandWrapper).createEncryptedDestinationVolume(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+        Mockito.doNothing().when(dm).blockCopy(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any(TypedParameter[].class), ArgumentMatchers.anyInt());
+        MigrateVolumeAnswer pivoted = new MigrateVolumeAnswer(command, true, null, "dest-volume");
+        Mockito.doReturn(pivoted).when(libvirtMigrateVolumeCommandWrapper).checkBlockJobStatus(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        return new KVMStoragePool[] {srcKvmPool, destKvmPool};
+    }
+
+    @Test
+    public void testMigrateRBDVolumeIsSuccessfulWhenTheSourceVolumeCanNotBeRemoved() throws Exception {
+        KVMStoragePool[] pools = prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.RBD, Storage.StoragePoolType.RBD, null);
+        Mockito.doThrow(new CloudRuntimeException("failed to remove volume: No such file or directory")).when(pools[0]).deletePhysicalDisk(Mockito.any(), Mockito.any());
+
+        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);
+
+        Assert.assertTrue("the Instance uses the destination volume already", answer.getResult());
+        Assert.assertEquals("dest-volume", answer.getVolumePath());
+        Mockito.verify(pools[0]).deletePhysicalDisk(Mockito.eq("src-volume"), Mockito.any());
+        Mockito.verify(libvirtMigrateVolumeCommandWrapper, Mockito.never()).deleteDestinationVolume(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testMigrateRBDVolumeKeepsTheDestinationOfAnEncryptedVolumeWhichIsPivoted() throws Exception {
+        KVMStoragePool[] pools = prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.RBD, Storage.StoragePoolType.NetworkFilesystem, new byte[] {1, 2, 3});
+        Mockito.doThrow(new CloudRuntimeException("failed to remove volume")).when(pools[0]).deletePhysicalDisk(Mockito.any(), Mockito.any());
+
+        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getResult());
+        // the Instance writes to the destination volume: it must not be removed as the one of a failed migration
+        Mockito.verify(libvirtMigrateVolumeCommandWrapper, Mockito.never()).deleteDestinationVolume(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testCheckBlockJobStatusIsSuccessfulWhenTheSecretOfTheSourceVolumeCanNotBeRemoved() throws LibvirtException {
+        Connect conn = Mockito.mock(Connect.class);
+        Domain dm = Mockito.mock(Domain.class);
+        Mockito.doReturn(60).when(command).getWait();
+        DomainBlockJobInfo blockJobInfo = Mockito.mock(DomainBlockJobInfo.class);
+        Mockito.doReturn(blockJobInfo).when(dm).getBlockJobInfo("vda", 0);
+        blockJobInfo.cur = 100;
+        blockJobInfo.end = 100;
+        Mockito.doThrow(new CloudRuntimeException("no such secret")).when(libvirtComputingResource).removeLibvirtVolumeSecret(conn, "secret-uuid");
+
+        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.checkBlockJobStatus(command, dm, "vda", "src", "dest", libvirtComputingResource, conn, "secret-uuid");
+
+        Assert.assertTrue("the block copy was pivoted", answer.getResult());
+        Mockito.verify(dm).blockJobAbort("vda", Domain.BlockJobAbortFlags.PIVOT);
     }
 
 }
