@@ -239,3 +239,25 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Re-tag NetApp ONTAP iSCSI storage pools to the dedicated 'OntapiSCSI' pool type.
+UPDATE  `cloud`.`storage_pool`
+SET     `pool_type` = 'OntapiSCSI'
+WHERE   `storage_provider_name` = 'NetApp ONTAP'
+  AND   `pool_type`              = 'Iscsi';
+
+-- The denormalized copy on every volume that lives on such a pool.
+UPDATE  `cloud`.`volumes` v
+    JOIN    `cloud`.`storage_pool` sp ON sp.`id` = v.`pool_id`
+    SET     v.`pool_type` = 'OntapiSCSI'
+WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
+  AND   sp.`pool_type`             IN ('Iscsi', 'OntapiSCSI')
+  AND   v.`pool_type`              = 'Iscsi';
+
+-- Volume format realignment.
+UPDATE  `cloud`.`volumes` v
+    JOIN    `cloud`.`storage_pool` sp ON sp.`id` = v.`pool_id`
+    SET     v.`format` = 'RAW'
+WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
+  AND   sp.`pool_type`             IN ('Iscsi', 'OntapiSCSI')
+  AND   (v.`format` IS NULL OR v.`format` <> 'RAW');
