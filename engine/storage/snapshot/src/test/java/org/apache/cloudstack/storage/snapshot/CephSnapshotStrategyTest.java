@@ -65,12 +65,24 @@ public class CephSnapshotStrategyTest {
 
     @Test
     public void canHandleTestReomvedAndSnapshotNotStoredOnRbd() {
-        configureAndVerifyCanHandle(null, false);
+        configureAndVerifyCanHandle(new Date(), false);
     }
 
     @Test
     public void canHandleTestReomvedAndSnapshotStoredOnRbd() {
-        configureAndVerifyCanHandle(null, true);
+        configureAndVerifyCanHandle(new Date(), true);
+    }
+
+    @Test
+    public void canHandleTestVolumeRowMissing() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getVolumeId()).thenReturn(1L);
+        Mockito.when(volumeDao.findByIdIncludingRemoved(1L)).thenReturn(null);
+
+        for (SnapshotOperation op : SnapshotOperation.values()) {
+            Assert.assertEquals(StrategyPriority.CANT_HANDLE, cephSnapshotStrategy.canHandle(snapshot, null, op));
+        }
+        Mockito.verify(cephSnapshotStrategy, Mockito.never()).isSnapshotStoredOnRbdStoragePoolAndOperationForSameZone(Mockito.any(), Mockito.any());
     }
 
     private void configureAndVerifyCanHandle(Date removed, boolean isSnapshotStoredOnRbdStoragePool) {
@@ -85,7 +97,7 @@ public class CephSnapshotStrategyTest {
 
         for (int i = 0; i < snapshotOps.length - 1; i++) {
             StrategyPriority strategyPriority = cephSnapshotStrategy.canHandle(snapshot, null, snapshotOps[i]);
-            if (snapshotOps[i] == SnapshotOperation.REVERT && isSnapshotStoredOnRbdStoragePool) {
+            if (snapshotOps[i] == SnapshotOperation.REVERT && isSnapshotStoredOnRbdStoragePool && removed == null) {
                 Assert.assertEquals(StrategyPriority.HIGHEST, strategyPriority);
             } else {
                 Assert.assertEquals(StrategyPriority.CANT_HANDLE, strategyPriority);

@@ -50,7 +50,7 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
         }
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
-        boolean baseVolumeExists = volumeVO.getRemoved() == null;
+        boolean baseVolumeExists = volumeVO != null && volumeVO.getRemoved() == null;
         if (!baseVolumeExists) {
             return StrategyPriority.CANT_HANDLE;
         }
