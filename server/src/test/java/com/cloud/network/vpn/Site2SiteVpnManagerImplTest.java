@@ -19,10 +19,13 @@
 package com.cloud.network.vpn;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnConnection.State;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
@@ -32,6 +35,10 @@ import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.VpcVirtualRouterElement;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -41,9 +48,13 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
@@ -53,6 +64,7 @@ import org.apache.cloudstack.api.command.user.vpn.DeleteVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.DeleteVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.DeleteVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
@@ -60,10 +72,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -74,13 +88,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -161,10 +178,53 @@ public class Site2SiteVpnManagerImplTest {
         when(customerGateway.getIkeVersion()).thenReturn("ike");
 
         vpnConnection = new Site2SiteVpnConnectionVO(ACCOUNT_ID, DOMAIN_ID, VPN_GATEWAY_ID, CUSTOMER_GATEWAY_ID, false);
+        ReflectionTestUtils.setField(vpnConnection, "id", VPN_CONNECTION_ID);
         vpnConnection.setState(State.Pending);
 
         when(_accountMgr.getAccount(ACCOUNT_ID)).thenReturn(account);
         doNothing().when(_accountMgr).checkAccess(any(Account.class), nullable(SecurityChecker.AccessType.class), anyBoolean(), any());
+        when(_s2sProviders.iterator()).thenReturn(List.<Site2SiteVpnServiceProvider>of().iterator());
+    }
+
+    private Site2SiteVpnServiceProvider mockVpcVirtualRouterProvider() {
+        Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class,
+                Mockito.withSettings().extraInterfaces(NetworkElement.class));
+        when(((NetworkElement) provider).getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+        when(_vpcMgr.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Vpn, Network.Provider.VPCVirtualRouter))
+                .thenReturn(true);
+        when(_s2sProviders.iterator()).thenAnswer(invocation -> List.of(provider).iterator());
+        return provider;
+    }
+
+    private Site2SiteVpnServiceProvider mockNsxProvider() {
+        Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class,
+                Mockito.withSettings().extraInterfaces(NetworkElement.class));
+        when(((NetworkElement) provider).getProvider()).thenReturn(Network.Provider.Nsx);
+        when(_vpcMgr.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Vpn, Network.Provider.Nsx))
+                .thenReturn(true);
+        when(_s2sProviders.iterator()).thenAnswer(invocation -> List.of(provider).iterator());
+        return provider;
+    }
+
+    private VpcVirtualRouterElement legacyProviderWithStoppedRouter() {
+        VpcVirtualRouterElement provider = Mockito.spy(new VpcVirtualRouterElement());
+        VpcVirtualNetworkApplianceManagerImpl routerManager = Mockito.spy(new VpcVirtualNetworkApplianceManagerImpl());
+        DomainRouterVO router = mock(DomainRouterVO.class);
+        when(router.getState()).thenReturn(VirtualMachine.State.Stopped);
+        Mockito.doReturn(List.of(router)).when(routerManager).getVpcRouters(VPC_ID);
+        NetworkModel networkModel = mock(NetworkModel.class);
+        when(networkModel.isProviderEnabledInZone(vpc.getZoneId(), Network.Provider.VPCVirtualRouter.getName())).thenReturn(true);
+        EntityManager entityManager = mock(EntityManager.class);
+        when(entityManager.findById(Vpc.class, VPC_ID)).thenReturn(vpc);
+        when(vpnGateway.getAddrId()).thenReturn(IP_ADDRESS_ID);
+        when(_ipAddressDao.findById(IP_ADDRESS_ID)).thenReturn(ipAddress);
+        ReflectionTestUtils.setField(provider, "_vpnGatewayDao", _vpnGatewayDao);
+        ReflectionTestUtils.setField(provider, "_ipAddressDao", _ipAddressDao);
+        ReflectionTestUtils.setField(provider, "_ntwkModel", networkModel);
+        ReflectionTestUtils.setField(provider, "_entityMgr", entityManager);
+        ReflectionTestUtils.setField(provider, "_vpcRouterMgr", routerManager);
+        site2SiteVpnManager.setS2sProviders(List.of(provider));
+        return provider;
     }
 
     @After
@@ -214,10 +274,12 @@ public class Site2SiteVpnManagerImplTest {
         when(cmd.getVpcId()).thenReturn(VPC_ID);
         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
         when(cmd.isDisplay()).thenReturn(true);
+        when(cmd.getIpAddressId()).thenReturn(null);
 
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
         when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(true);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
+        mockVpcVirtualRouterProvider();
         when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(List.of(ipAddress));
         when(_vpnGatewayDao.persist(any(Site2SiteVpnGatewayVO.class))).thenReturn(vpnGateway);
 
@@ -225,6 +287,48 @@ public class Site2SiteVpnManagerImplTest {
 
         assertNotNull(result);
         verify(_vpnGatewayDao).persist(any(Site2SiteVpnGatewayVO.class));
+    }
+
+    @Test
+    public void testCreateVpnGatewayAcceptsValidProviderOwnedIp() {
+        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
+        when(cmd.getVpcId()).thenReturn(VPC_ID);
+        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+        when(cmd.getIpAddressId()).thenReturn(null);
+        when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.acquireVpnGatewayIp(vpc, null)).thenReturn(ipAddress);
+        when(_ipAddressDao.findById(IP_ADDRESS_ID)).thenReturn(ipAddress);
+        when(ipAddress.getAddress()).thenReturn(new Ip("203.0.113.10"));
+        when(ipAddress.readyToUse()).thenReturn(true);
+        when(_vpnGatewayDao.persist(any(Site2SiteVpnGatewayVO.class))).thenReturn(vpnGateway);
+
+        Site2SiteVpnGateway result = site2SiteVpnManager.createVpnGateway(cmd);
+
+        assertNotNull(result);
+        verify(provider, never()).releaseVpnGatewayIp(any(Site2SiteVpnGateway.class));
+    }
+
+    @Test
+    public void testCreateVpnGatewayRejectsProviderIpOutsideVpcAndCleansUp() {
+        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
+        when(cmd.getVpcId()).thenReturn(VPC_ID);
+        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+        when(cmd.getIpAddressId()).thenReturn(null);
+        when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.acquireVpnGatewayIp(vpc, null)).thenReturn(ipAddress);
+        when(_ipAddressDao.findById(IP_ADDRESS_ID)).thenReturn(ipAddress);
+        when(ipAddress.getAddress()).thenReturn(new Ip("203.0.113.10"));
+        when(ipAddress.readyToUse()).thenReturn(true);
+        when(ipAddress.getVpcId()).thenReturn(99L);
+
+        assertThrows(CloudRuntimeException.class, () -> site2SiteVpnManager.createVpnGateway(cmd));
+
+        verify(provider).releaseVpnGatewayIp(any(Site2SiteVpnGateway.class));
+        verify(_vpnGatewayDao, never()).persist(any(Site2SiteVpnGatewayVO.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -258,6 +362,7 @@ public class Site2SiteVpnManagerImplTest {
 
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
+        mockVpcVirtualRouterProvider();
         when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(new ArrayList<>());
 
         site2SiteVpnManager.createVpnGateway(cmd);
@@ -478,6 +583,7 @@ public class Site2SiteVpnManagerImplTest {
         when(_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(VPN_GATEWAY_ID, CUSTOMER_GATEWAY_ID)).thenReturn(null);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(vpnGateway);
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        mockVpcVirtualRouterProvider();
 
         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
             netUtilsMock.when(() -> NetUtils.isNetworksOverlap("10.0.0.0/16", "10.0.0.0/24")).thenReturn(true);
@@ -498,6 +604,7 @@ public class Site2SiteVpnManagerImplTest {
         when(_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(VPN_GATEWAY_ID, CUSTOMER_GATEWAY_ID)).thenReturn(null);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(vpnGateway);
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        mockVpcVirtualRouterProvider();
 
         List<Site2SiteVpnConnectionVO> existingConns = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -506,6 +613,109 @@ public class Site2SiteVpnManagerImplTest {
         when(_vpnConnectionDao.listByVpnGatewayId(VPN_GATEWAY_ID)).thenReturn(existingConns);
 
         site2SiteVpnManager.createVpnConnection(cmd);
+    }
+
+    @Test
+    public void testCreateVpnConnectionValidatesCustomerGatewayWithOwningProviderBeforePersist() {
+        CreateVpnConnectionCmd cmd = mock(CreateVpnConnectionCmd.class);
+        when(cmd.getVpnGatewayId()).thenReturn(VPN_GATEWAY_ID);
+        when(cmd.getCustomerGatewayId()).thenReturn(CUSTOMER_GATEWAY_ID);
+        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+        when(_customerGatewayDao.findById(CUSTOMER_GATEWAY_ID)).thenReturn(customerGateway);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        when(_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(VPN_GATEWAY_ID, CUSTOMER_GATEWAY_ID)).thenReturn(null);
+        when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.ownsVpnGateway(vpnGateway)).thenReturn(true);
+        Mockito.doThrow(new InvalidParameterValueException("unsupported by provider"))
+                .when(provider).validateSite2SiteVpnCustomerGateway(customerGateway);
+
+        assertThrows(InvalidParameterValueException.class, () -> site2SiteVpnManager.createVpnConnection(cmd));
+
+        verify(_vpnConnectionDao, never()).persist(any(Site2SiteVpnConnectionVO.class));
+    }
+
+    @Test
+    public void testUpdateCustomerGatewayValidatesProposedValuesBeforePersist() {
+        UpdateVpnCustomerGatewayCmd cmd = mock(UpdateVpnCustomerGatewayCmd.class);
+        when(cmd.getId()).thenReturn(CUSTOMER_GATEWAY_ID);
+        when(cmd.getGatewayIp()).thenReturn("203.0.113.10");
+        when(cmd.getGuestCidrList()).thenReturn("192.168.100.0/24");
+        when(cmd.getIpsecPsk()).thenReturn("presharedkey");
+        when(cmd.getIkePolicy()).thenReturn("aes256-sha256;modp2048");
+        when(cmd.getEspPolicy()).thenReturn("aes256-sha256;modp2048");
+        when(cmd.getIkeVersion()).thenReturn("ikev2");
+        when(_customerGatewayDao.findById(CUSTOMER_GATEWAY_ID)).thenReturn(customerGateway);
+        when(_vpnConnectionDao.listByCustomerGatewayId(CUSTOMER_GATEWAY_ID)).thenReturn(List.of(vpnConnection));
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.ownsVpnGateway(vpnGateway)).thenReturn(true);
+        Mockito.doThrow(new InvalidParameterValueException("unsupported by provider"))
+                .when(provider).validateSite2SiteVpnCustomerGateway(any(Site2SiteCustomerGatewayVO.class));
+
+        try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
+            netUtilsMock.when(() -> NetUtils.isValidIp4("203.0.113.10")).thenReturn(true);
+            netUtilsMock.when(() -> NetUtils.isValidCidrList("192.168.100.0/24")).thenReturn(true);
+            netUtilsMock.when(() -> NetUtils.getCleanIp4CidrList("192.168.100.0/24"))
+                    .thenReturn("192.168.100.0/24");
+            netUtilsMock.when(() -> NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048")).thenReturn(true);
+            netUtilsMock.when(() -> NetUtils.isValidS2SVpnPolicy("esp", "aes256-sha256;modp2048")).thenReturn(true);
+
+            assertThrows(InvalidParameterValueException.class,
+                    () -> site2SiteVpnManager.updateCustomerGateway(cmd));
+        }
+
+        verify(_customerGatewayDao, never()).persist(customerGateway);
+    }
+
+    @Test
+    public void testCustomerGatewayUpdateRestartUsesSingleConnectionLock() throws ResourceUnavailableException {
+        vpnConnection.setState(State.Connected);
+        when(_vpnConnectionDao.listByCustomerGatewayId(CUSTOMER_GATEWAY_ID)).thenReturn(List.of(vpnConnection));
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(VPC_ID, false)).thenReturn(true);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
+        when(provider.stopSite2SiteVpn(vpnConnection)).thenReturn(true);
+        when(provider.startSite2SiteVpn(vpnConnection)).thenReturn(true);
+
+        ReflectionTestUtils.invokeMethod(site2SiteVpnManager, "setupVpnConnection", account, CUSTOMER_GATEWAY_ID);
+
+        verify(_vpnConnectionDao, times(1)).acquireInLockTable(VPN_CONNECTION_ID);
+        InOrder lifecycle = inOrder(provider, _vpcMgr, _vpnConnectionDao);
+        lifecycle.verify(provider).stopSite2SiteVpn(vpnConnection);
+        lifecycle.verify(_vpcMgr).applyStaticRouteForVpcVpnIfNeeded(VPC_ID, false);
+        lifecycle.verify(provider).startSite2SiteVpn(vpnConnection);
+        lifecycle.verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testUpdateCustomerGatewayDefinesDatabaseContextForConnectionLock() throws NoSuchMethodException {
+        assertTrue(Site2SiteVpnManagerImpl.class.getMethod("updateCustomerGateway", UpdateVpnCustomerGatewayCmd.class)
+                .isAnnotationPresent(DB.class));
+    }
+
+    @Test
+    public void testCustomerGatewayUpdateLockFailureIsReported() {
+        when(_vpnConnectionDao.listByCustomerGatewayId(CUSTOMER_GATEWAY_ID)).thenReturn(List.of(vpnConnection));
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(null);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> ReflectionTestUtils.invokeMethod(site2SiteVpnManager, "setupVpnConnection", account, CUSTOMER_GATEWAY_ID));
+
+        verify(_vpnConnectionDao, never()).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testCustomerGatewayUpdateDoesNotRestartPendingConnection() {
+        vpnConnection.setState(State.Pending);
+        when(_vpnConnectionDao.listByCustomerGatewayId(CUSTOMER_GATEWAY_ID)).thenReturn(List.of(vpnConnection));
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+
+        ReflectionTestUtils.invokeMethod(site2SiteVpnManager, "setupVpnConnection", account, CUSTOMER_GATEWAY_ID);
+
+        verify(_vpnGatewayDao, never()).findById(anyLong());
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
     }
 
     @Test
@@ -540,11 +750,29 @@ public class Site2SiteVpnManagerImplTest {
 
         when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
         when(_vpnConnectionDao.listByVpnGatewayId(VPN_GATEWAY_ID)).thenReturn(new ArrayList<>());
+        mockVpcVirtualRouterProvider();
 
         boolean result = site2SiteVpnManager.deleteVpnGateway(cmd);
 
         assertTrue(result);
         verify(_vpnGatewayDao).remove(VPN_GATEWAY_ID);
+    }
+
+    @Test
+    public void testDeleteVpnGatewayProviderFailureKeepsGatewayRow() {
+        DeleteVpnGatewayCmd cmd = mock(DeleteVpnGatewayCmd.class);
+        when(cmd.getId()).thenReturn(VPN_GATEWAY_ID);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        when(_vpnConnectionDao.listByVpnGatewayId(VPN_GATEWAY_ID)).thenReturn(new ArrayList<>());
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.ownsVpnGateway(vpnGateway)).thenReturn(true);
+        Mockito.doThrow(new CloudRuntimeException("NSX Tier-1 lookup failed"))
+                .when(provider).releaseVpnGatewayIp(vpnGateway);
+
+        assertThrows(CloudRuntimeException.class, () -> site2SiteVpnManager.deleteVpnGateway(cmd));
+
+        verify(provider).releaseVpnGatewayIp(vpnGateway);
+        verify(_vpnGatewayDao, never()).remove(VPN_GATEWAY_ID);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -559,19 +787,92 @@ public class Site2SiteVpnManagerImplTest {
     }
 
     @Test
-    public void testDeleteVpnConnectionSuccess() throws ResourceUnavailableException {
+    public void testDeletePendingNsxVpnConnectionCallsProviderCleanup() throws ResourceUnavailableException {
         DeleteVpnConnectionCmd cmd = mock(DeleteVpnConnectionCmd.class);
         when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
 
-        when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         vpnConnection.setState(State.Pending);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
         when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
+        Site2SiteVpnServiceProvider provider = mockNsxProvider();
+        when(provider.ownsVpnGateway(vpnGateway)).thenReturn(true);
+        when(provider.deleteSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
 
         boolean result = site2SiteVpnManager.deleteVpnConnection(cmd);
 
         assertTrue(result);
+        assertEquals(State.Removed, vpnConnection.getState());
+        verify(_vpnConnectionDao, times(1)).acquireInLockTable(VPN_CONNECTION_ID);
+        InOrder lifecycle = inOrder(provider, _vpnConnectionDao, _vpcMgr);
+        lifecycle.verify(provider).deleteSite2SiteVpn(vpnConnection);
+        lifecycle.verify(_vpnConnectionDao).update(VPN_CONNECTION_ID, vpnConnection);
+        lifecycle.verify(_vpcMgr).applyStaticRouteForVpcVpnIfNeeded(VPC_ID, false);
+        lifecycle.verify(_vpnConnectionDao).remove(VPN_CONNECTION_ID);
+        lifecycle.verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testDeletePendingLegacyVpnConnectionWithStoppedRouter() throws ResourceUnavailableException {
+        DeleteVpnConnectionCmd cmd = mock(DeleteVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        VpcVirtualRouterElement provider = legacyProviderWithStoppedRouter();
+
+        assertTrue(site2SiteVpnManager.deleteVpnConnection(cmd));
+
+        assertEquals(State.Removed, vpnConnection.getState());
+        verify(provider, never()).stopSite2SiteVpn(any(Site2SiteVpnConnection.class));
         verify(_vpnConnectionDao).remove(VPN_CONNECTION_ID);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testDeleteConnectedLegacyVpnConnectionWithStoppedRouterKeepsRow() throws ResourceUnavailableException {
+        DeleteVpnConnectionCmd cmd = mock(DeleteVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        vpnConnection.setState(State.Connected);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        VpcVirtualRouterElement provider = legacyProviderWithStoppedRouter();
+
+        assertThrows(ResourceUnavailableException.class, () -> site2SiteVpnManager.deleteVpnConnection(cmd));
+
+        assertEquals(State.Error, vpnConnection.getState());
+        verify(provider).stopSite2SiteVpn(vpnConnection);
+        verify(_vpnConnectionDao, never()).remove(VPN_CONNECTION_ID);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testDeleteVpnConnectionProviderFailureKeepsRowAndReleasesLock() throws ResourceUnavailableException {
+        DeleteVpnConnectionCmd cmd = mock(DeleteVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        vpnConnection.setState(State.Connected);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
+        when(provider.deleteSite2SiteVpn(vpnConnection)).thenReturn(false);
+
+        assertThrows(ResourceUnavailableException.class,
+                () -> site2SiteVpnManager.deleteVpnConnection(cmd));
+
+        assertEquals(State.Error, vpnConnection.getState());
+        verify(_vpnConnectionDao, never()).update(VPN_CONNECTION_ID, vpnConnection);
+        verify(_vpnConnectionDao, never()).remove(VPN_CONNECTION_ID);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testDeleteVpnConnectionLockFailureIsNotReportedAsMissing() {
+        DeleteVpnConnectionCmd cmd = mock(DeleteVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(null);
+        when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> site2SiteVpnManager.deleteVpnConnection(cmd));
     }
 
     @Test
@@ -579,9 +880,8 @@ public class Site2SiteVpnManagerImplTest {
         when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         vpnConnection.setState(State.Pending);
         when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
-        Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
         when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
-        when(_s2sProviders.iterator()).thenReturn(List.of(provider).iterator());
         when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(vpnConnection);
         when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 
@@ -589,6 +889,81 @@ public class Site2SiteVpnManagerImplTest {
 
         assertNotNull(result);
         verify(_vpnConnectionDao, org.mockito.Mockito.atLeastOnce()).persist(any(Site2SiteVpnConnectionVO.class));
+    }
+
+    @Test
+    public void testStartVpnConnectionProviderFailureLeavesConnectionInError() throws ResourceUnavailableException {
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        vpnConnection.setState(State.Pending);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
+        when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class)))
+                .thenThrow(new InvalidParameterValueException("unsupported VPN policy"));
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
+
+        assertThrows(InvalidParameterValueException.class,
+                () -> site2SiteVpnManager.startVpnConnection(VPN_CONNECTION_ID));
+
+        assertEquals(State.Error, vpnConnection.getState());
+        verify(_vpnConnectionDao, org.mockito.Mockito.atLeastOnce()).persist(vpnConnection);
+    }
+
+    @Test
+    public void testStartVpnConnectionMissingGatewayLeavesConnectionInError() {
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        vpnConnection.setState(State.Pending);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(null);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> site2SiteVpnManager.startVpnConnection(VPN_CONNECTION_ID));
+
+        assertEquals(State.Error, vpnConnection.getState());
+        verify(_vpnConnectionDao, times(2)).persist(vpnConnection);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testGatewayLifecycleUsesPersistedProviderWhenOfferingChanges() throws ResourceUnavailableException {
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider originalProvider = mockVpcVirtualRouterProvider();
+        Site2SiteVpnServiceProvider replacementProvider = mock(Site2SiteVpnServiceProvider.class,
+                Mockito.withSettings().extraInterfaces(NetworkElement.class));
+        when(((NetworkElement) replacementProvider).getProvider()).thenReturn(Network.Provider.Nsx);
+        when(_vpcMgr.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Vpn, Network.Provider.Nsx))
+                .thenReturn(true);
+        when(originalProvider.ownsVpnGateway(vpnGateway)).thenReturn(true);
+        when(originalProvider.startSite2SiteVpn(vpnConnection)).thenReturn(true);
+        when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(vpnConnection);
+
+        site2SiteVpnManager.startVpnConnection(VPN_CONNECTION_ID);
+
+        verify(originalProvider).startSite2SiteVpn(vpnConnection);
+        verify(replacementProvider, never()).startSite2SiteVpn(any(Site2SiteVpnConnection.class));
+    }
+
+    @Test
+    public void testUnmarkedGatewayUsesLegacyVirtualRouterWhenOfferingNowUsesNsx() throws ResourceUnavailableException {
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider nsxProvider = mock(Site2SiteVpnServiceProvider.class,
+                Mockito.withSettings().extraInterfaces(NetworkElement.class));
+        Site2SiteVpnServiceProvider virtualRouterProvider = mock(Site2SiteVpnServiceProvider.class,
+                Mockito.withSettings().extraInterfaces(NetworkElement.class));
+        when(((NetworkElement) nsxProvider).getProvider()).thenReturn(Network.Provider.Nsx);
+        when(((NetworkElement) virtualRouterProvider).getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+        when(_vpcMgr.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Vpn, Network.Provider.Nsx))
+                .thenReturn(true);
+        when(nsxProvider.ownsVpnGateway(vpnGateway)).thenReturn(false);
+        when(virtualRouterProvider.ownsVpnGateway(vpnGateway)).thenReturn(false);
+        when(_s2sProviders.iterator()).thenAnswer(invocation -> List.of(nsxProvider, virtualRouterProvider).iterator());
+        when(virtualRouterProvider.startSite2SiteVpn(vpnConnection)).thenReturn(true);
+        when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(vpnConnection);
+
+        site2SiteVpnManager.startVpnConnection(VPN_CONNECTION_ID);
+
+        verify(virtualRouterProvider).startSite2SiteVpn(vpnConnection);
+        verify(nsxProvider, never()).startSite2SiteVpn(any(Site2SiteVpnConnection.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -604,20 +979,108 @@ public class Site2SiteVpnManagerImplTest {
         ResetVpnConnectionCmd cmd = mock(ResetVpnConnectionCmd.class);
         when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
 
-        when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         vpnConnection.setState(State.Connected);
         when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
         when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
-        Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
         when(provider.stopSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
         when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
-        when(_s2sProviders.iterator()).thenReturn(List.of(provider).iterator());
         when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(vpnConnection);
         when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 
         Site2SiteVpnConnection result = site2SiteVpnManager.resetVpnConnection(cmd);
 
         assertNotNull(result);
+        assertEquals(State.Connecting, result.getState());
+        verify(_vpnConnectionDao, times(1)).acquireInLockTable(VPN_CONNECTION_ID);
+        InOrder lifecycle = inOrder(provider, _vpnConnectionDao, _vpcMgr);
+        lifecycle.verify(provider).stopSite2SiteVpn(vpnConnection);
+        lifecycle.verify(_vpcMgr).applyStaticRouteForVpcVpnIfNeeded(VPC_ID, false);
+        lifecycle.verify(provider).startSite2SiteVpn(vpnConnection);
+        lifecycle.verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testResetVpnConnectionStartFailureLeavesErrorAndReleasesLock() throws ResourceUnavailableException {
+        ResetVpnConnectionCmd cmd = mock(ResetVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        vpnConnection.setState(State.Connected);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
+        when(provider.stopSite2SiteVpn(vpnConnection)).thenReturn(true);
+        when(provider.startSite2SiteVpn(vpnConnection)).thenReturn(false);
+        when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(VPC_ID, false)).thenReturn(true);
+
+        assertThrows(ResourceUnavailableException.class,
+                () -> site2SiteVpnManager.resetVpnConnection(cmd));
+
+        assertEquals(State.Error, vpnConnection.getState());
+        verify(_vpnConnectionDao, times(1)).acquireInLockTable(VPN_CONNECTION_ID);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testResetVpnConnectionAllowsPendingConnection() throws ResourceUnavailableException {
+        ResetVpnConnectionCmd cmd = mock(ResetVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        vpnConnection.setState(State.Pending);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
+        when(provider.stopSite2SiteVpn(vpnConnection)).thenReturn(true);
+        when(provider.startSite2SiteVpn(vpnConnection)).thenReturn(true);
+
+        Site2SiteVpnConnection result = site2SiteVpnManager.resetVpnConnection(cmd);
+
+        assertEquals(State.Connecting, result.getState());
+        verify(provider).stopSite2SiteVpn(vpnConnection);
+        verify(provider).startSite2SiteVpn(vpnConnection);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testResetVpnConnectionStopFailureDoesNotStartAndReleasesLock() throws ResourceUnavailableException {
+        ResetVpnConnectionCmd cmd = mock(ResetVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        vpnConnection.setState(State.Connected);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
+        when(provider.stopSite2SiteVpn(vpnConnection)).thenReturn(false);
+
+        assertThrows(ResourceUnavailableException.class,
+                () -> site2SiteVpnManager.resetVpnConnection(cmd));
+
+        assertEquals(State.Error, vpnConnection.getState());
+        verify(provider, never()).startSite2SiteVpn(vpnConnection);
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+    }
+
+    @Test
+    public void testResetVpnConnectionAccessDeniedReleasesLock() {
+        ResetVpnConnectionCmd cmd = mock(ResetVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+        Mockito.doThrow(new PermissionDeniedException("denied"))
+                .when(_accountMgr).checkAccess(account, null, false, vpnConnection);
+
+        assertThrows(PermissionDeniedException.class,
+                () -> site2SiteVpnManager.resetVpnConnection(cmd));
+
+        verify(_vpnConnectionDao).releaseFromLockTable(VPN_CONNECTION_ID);
+        verify(_vpnGatewayDao, never()).findById(anyLong());
+    }
+
+    @Test
+    public void testResetVpnConnectionLockFailureIsNotReportedAsMissing() {
+        ResetVpnConnectionCmd cmd = mock(ResetVpnConnectionCmd.class);
+        when(cmd.getId()).thenReturn(VPN_CONNECTION_ID);
+        when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(null);
+        when(_vpnConnectionDao.findById(VPN_CONNECTION_ID)).thenReturn(vpnConnection);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> site2SiteVpnManager.resetVpnConnection(cmd));
     }
 
     @Test
@@ -634,6 +1097,7 @@ public class Site2SiteVpnManagerImplTest {
     public void testCleanupVpnGatewayByVpc() {
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(vpnGateway);
         when(_vpnConnectionDao.listByVpnGatewayId(VPN_GATEWAY_ID)).thenReturn(new ArrayList<>());
+        mockVpcVirtualRouterProvider();
 
         boolean result = site2SiteVpnManager.cleanupVpnGatewayByVpc(VPC_ID);
 
@@ -655,6 +1119,8 @@ public class Site2SiteVpnManagerImplTest {
     public void testGetConnectionsForRouter() {
         DomainRouterVO router = mock(DomainRouterVO.class);
         when(router.getVpcId()).thenReturn(VPC_ID);
+        when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(vpnGateway);
+        mockVpcVirtualRouterProvider();
         when(_vpnConnectionDao.listByVpcId(VPC_ID)).thenReturn(List.of(vpnConnection));
 
         List<Site2SiteVpnConnectionVO> result = site2SiteVpnManager.getConnectionsForRouter(router);
@@ -696,9 +1162,8 @@ public class Site2SiteVpnManagerImplTest {
         when(_customerGatewayDao.findById(CUSTOMER_GATEWAY_ID)).thenReturn(customerGateway);
         when(_vpnConnectionDao.acquireInLockTable(VPN_CONNECTION_ID)).thenReturn(conn);
         when(_vpnGatewayDao.findById(VPN_GATEWAY_ID)).thenReturn(vpnGateway);
-        Site2SiteVpnServiceProvider provider = mock(Site2SiteVpnServiceProvider.class);
+        Site2SiteVpnServiceProvider provider = mockVpcVirtualRouterProvider();
         when(provider.startSite2SiteVpn(any(Site2SiteVpnConnection.class))).thenReturn(true);
-        when(_s2sProviders.iterator()).thenReturn(List.of(provider).iterator());
         when(_vpnConnectionDao.persist(any(Site2SiteVpnConnectionVO.class))).thenReturn(conn);
         when(_vpcMgr.applyStaticRouteForVpcVpnIfNeeded(anyLong(), anyBoolean())).thenReturn(true);
 

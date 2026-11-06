@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.utils.db.GenericDao;
 
 public interface Site2SiteVpnConnectionDao extends GenericDao<Site2SiteVpnConnectionVO, Long> {
@@ -26,6 +27,8 @@ public interface Site2SiteVpnConnectionDao extends GenericDao<Site2SiteVpnConnec
     List<Site2SiteVpnConnectionVO> listByVpnGatewayId(long id);
 
     List<Site2SiteVpnConnectionVO> listByVpcId(long vpcId);
+
+    List<Site2SiteVpnConnectionVO> listByStates(Site2SiteVpnConnection.State... states);
 
     Site2SiteVpnConnectionVO findByVpnGatewayIdAndCustomerGatewayId(long vpnId, long customerId);
 
