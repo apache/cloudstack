@@ -347,6 +347,8 @@
 
     <bean id="DiagnosticsService" class="org.apache.cloudstack.diagnostics.DiagnosticsServiceImpl" />
 
+    <bean id="packetCaptureService" class="org.apache.cloudstack.network.packetcapture.PacketCaptureServiceImpl" />
+
     <bean id="backupManager" class="org.apache.cloudstack.backup.BackupManagerImpl">
         <property name="backupProviders" value="#{backupProvidersRegistry.registered}" />
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
