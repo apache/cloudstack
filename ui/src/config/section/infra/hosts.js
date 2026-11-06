@@ -54,6 +54,11 @@ export default {
     resourceType: 'Host',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/GPUTab.vue')))
   }, {
+    name: 'resourcealerts',
+    resourceType: 'Host',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceAlertsTab.vue'))),
+    show: () => { return 'listResourceAlerts' in store.getters.apis }
+  }, {
     name: 'events',
     resourceType: 'Host',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
