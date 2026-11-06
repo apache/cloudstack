@@ -657,8 +657,15 @@ class TestIpv6Network(cloudstackTestCase):
         cmd.id = fw2.id
         self.userapiclient.deleteIpv6FirewallRule(cmd)
 
+    def isIpv6FirewallRuleListed(self, rules, nft_output):
+        """ rules are the accepted representations of the rule in the nft output, with or without the braces """
+        for rule in rules:
+            if rule in nft_output or rule.replace("{ ", "").replace(" }", "") in nft_output:
+                return True
+        return False
+
     def createAndVerifyIpv6FirewallRule(self, traffic_type, source_cidr, dest_cidr, protocol,
-        start_port, end_port, icmp_type, icmp_code, parsed_rule, delete=False):
+        start_port, end_port, icmp_type, icmp_code, parsed_rule, delete=False, alternative_rules=None):
         self.logger.debug("createAndVerifyIpv6FirewallRule - %s" % parsed_rule)
         fw_rule = self.createIpv6FirewallRuleInNetwork(self.network.id, traffic_type, source_cidr, dest_cidr, protocol,
         start_port, end_port, icmp_type, icmp_code)
@@ -697,16 +704,16 @@ class TestIpv6Network(cloudstackTestCase):
                 "IPv6 firewall rule ICMP code mismatch %d, %d" % (rule.icmpcode, icmp_code))
         routerCmd = "nft list chain ip6 %s %s" % (FIREWALL_TABLE, FIREWALL_CHAINS[traffic_type])
         res = self.getRouterProcessStatus(self.getNetworkRouter(self.network), routerCmd)
-        parsed_rule_new = parsed_rule.replace("{ ", "").replace(" }", "")
-        self.assertTrue(parsed_rule in res or parsed_rule_new in res,
-            "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (parsed_rule, res))
+        accepted_rules = [parsed_rule] + (alternative_rules or [])
+        self.assertTrue(self.isIpv6FirewallRuleListed(accepted_rules, res),
+            "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (accepted_rules, res))
         if delete == True:
             cmd = deleteIpv6FirewallRule.deleteIpv6FirewallRuleCmd()
             cmd.id = fw_rule.id
             self.userapiclient.deleteIpv6FirewallRule(cmd)
             res = self.getRouterProcessStatus(self.getNetworkRouter(self.network), routerCmd)
-            self.assertFalse(parsed_rule in res or parsed_rule_new in res,
-                "Firewall rule present in nft list chain failure despite delete for rule: '%s' is in '%s'" % (parsed_rule, res))
+            self.assertFalse(self.isIpv6FirewallRuleListed(accepted_rules, res),
+                "Firewall rule present in nft list chain failure despite delete for rule: '%s' is in '%s'" % (accepted_rules, res))
 
     def checkIpv6FirewallRule(self):
         traffic_type = "Ingress"
@@ -727,8 +734,10 @@ class TestIpv6Network(cloudstackTestCase):
         icmp_type = choice(list(ICMPV6_TYPE.keys()))
         icmp_code = choice(list(ICMPV6_CODE_TYPE.keys()))
         rule = "ip6 saddr %s ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (source_cidr, CIDR_IPV6_ANY, protocol, ICMPV6_TYPE[icmp_type], protocol, ICMPV6_CODE_TYPE[icmp_code])
+        # nft prints the name of the code only for some ICMPv6 types (depending on its version), else the number
+        rule_with_code_number = "ip6 saddr %s ip6 daddr %s %sv6 type %s %sv6 code %d accept" % (source_cidr, CIDR_IPV6_ANY, protocol, ICMPV6_TYPE[icmp_type], protocol, icmp_code)
         self.createAndVerifyIpv6FirewallRule(traffic_type, source_cidr, None, protocol,
-            None, None, icmp_type, icmp_code, rule)
+            None, None, icmp_type, icmp_code, rule, alternative_rules=[rule_with_code_number])
 
         action = "accept"
         if self.isNetworkEgressDefaultPolicyAllow(self.network):

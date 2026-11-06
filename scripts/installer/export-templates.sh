@@ -26,8 +26,8 @@ TEMPLATE_VERSION=$(awk -F "=" '/version/ {print $2}' ${IMAGE_PATH}${METADATA_FIL
 TEMPLATE_PATH="/usr/share/cloudstack-management/templates/systemvm/"
 TEMPLATE_MAJOR_VERSION="$(cut -d'.' -f1 <<<"$TEMPLATE_VERSION")"
 if [[ "$TEMPLATE_MAJOR_VERSION" -ge "$NEW_VERSIONING_CUTOVER_MAJOR_VERSION" ]]; then
-  # New versioning (major.minor.security): the generated template files use the full version as-is.
-  VERSION="${TEMPLATE_VERSION}"
+  # New versioning (major.minor.security): the template files contain major.minor, without the security component.
+  VERSION="$(cut -d'.' -f1,2 <<<"$TEMPLATE_VERSION")"
 else
   # Legacy versioning drops the trailing security component only for four-component metadata;
   # a valid three-component major.minor.patch value is already the filename version.
