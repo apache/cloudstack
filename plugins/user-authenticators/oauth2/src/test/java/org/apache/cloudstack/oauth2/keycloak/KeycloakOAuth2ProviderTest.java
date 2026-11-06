@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
@@ -216,6 +218,58 @@ public class KeycloakOAuth2ProviderTest {
         boolean result = provider.verifyUser(testEmail, secretCode);
 
         assertTrue("User successfully verified", result);
+    }
+
+    @Test
+    public void testNewCodeIsExchangedAfterFailedLogin() throws IOException {
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
+        CloseableHttpResponse first = tokenResponseFor("first@example.com");
+        CloseableHttpResponse second = tokenResponseFor("second@example.com");
+        when(httpClient.execute(any(HttpPost.class))).thenReturn(first, second);
+
+        // the first login stops after the code exchange, so verifyUser is never called for it
+        assertEquals("first@example.com", provider.verifySecretCodeAndFetchEmail("code-1"));
+        assertEquals("second@example.com", provider.verifySecretCodeAndFetchEmail("code-2"));
+        verify(httpClient, times(2)).execute(any(HttpPost.class));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testNewCodeDoesNotReuseEmailFromEarlierCode() throws IOException {
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
+        CloseableHttpResponse first = tokenResponseFor("first@example.com");
+        CloseableHttpResponse second = tokenResponseFor("second@example.com");
+        when(httpClient.execute(any(HttpPost.class))).thenReturn(first, second);
+
+        provider.verifySecretCodeAndFetchEmail("code-1");
+        provider.verifyUser("first@example.com", "code-2");
+    }
+
+    @Test
+    public void testVerifyUserUsesEmailFetchedForSameCode() throws IOException {
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("keycloak", null)).thenReturn(mockProviderVO);
+        CloseableHttpResponse response = tokenResponseFor("user@example.com");
+        when(httpClient.execute(any(HttpPost.class))).thenReturn(response);
+
+        assertEquals("user@example.com", provider.verifySecretCodeAndFetchEmail("code-1"));
+        assertTrue(provider.verifyUser("user@example.com", "code-1"));
+        verify(httpClient, times(1)).execute(any(HttpPost.class));
+    }
+
+    private CloseableHttpResponse tokenResponseFor(String email) throws IOException {
+        String header = "{\"alg\":\"none\"}";
+        String payload = "{\"aud\":[\"test-client\"],\"email\":\"" + email + "\",\"iss\":\"http://keycloak\",\"sub\":\"12345\"}";
+        String fakeJwt = Base64.getUrlEncoder().withoutPadding().encodeToString(header.getBytes()) + "."
+                + Base64.getUrlEncoder().withoutPadding().encodeToString(payload.getBytes()) + ".not-checked-signature";
+
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        StatusLine statusLine = mock(StatusLine.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(response.getStatusLine()).thenReturn(statusLine);
+        String body = "{\"id_token\":\"" + fakeJwt + "\", \"access_token\":\"acc-123\"}";
+        when(entity.getContent()).thenReturn(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+        when(response.getEntity()).thenReturn(entity);
+        return response;
     }
 
     @Test
