@@ -229,7 +229,7 @@
               v-model:value="form.cidrsize"
               :placeholder="apiParams.cidrsize.description"/>
           </a-form-item>
-          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
+          <a-form-item v-if="selectedNetworkOffering && (selectedNetworkOffering.specifyipranges || form.gateway)" name="startip" ref="startip">
             <template #label>
               <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
             </template>
@@ -237,7 +237,7 @@
               v-model:value="form.startip"
               :placeholder="apiParams.startip.description"/>
           </a-form-item>
-          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="endip" ref="endip">
+          <a-form-item v-if="selectedNetworkOffering && (selectedNetworkOffering.specifyipranges || form.gateway)" name="endip" ref="endip">
             <template #label>
               <tooltip-label :title="$t('label.endip')" :tooltip="apiParams.endip.description"/>
             </template>

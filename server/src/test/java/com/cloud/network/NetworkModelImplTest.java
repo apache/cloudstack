@@ -69,6 +69,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
@@ -451,5 +452,44 @@ public class NetworkModelImplTest {
 
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
+    }
+
+    private NetworkVO networkWithDhcpRange(String cidr, String gateway, String dhcpStart, String dhcpEnd) {
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getCidr()).thenReturn(cidr);
+        when(network.getGateway()).thenReturn(gateway);
+        when(network.getDhcpStartIp()).thenReturn(dhcpStart);
+        when(network.getDhcpEndIp()).thenReturn(dhcpEnd);
+        Mockito.doReturn(new ArrayList<String>()).when(networkModel).getUsedIpsInNetwork(network);
+        return network;
+    }
+
+    @Test
+    public void getAvailableIpsRestrictsToTheDhcpRangeWhenSet() {
+        NetworkVO network = networkWithDhcpRange("10.1.1.0/24", "10.1.1.1", "10.1.1.10", "10.1.1.20");
+
+        Set<Long> ips = networkModel.getAvailableIps(network, null);
+
+        long start = NetUtils.ip2Long("10.1.1.10");
+        long end = NetUtils.ip2Long("10.1.1.20");
+        for (Long ip : ips) {
+            assertTrue(ip >= start && ip <= end);
+        }
+        assertEquals(11, ips.size());
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.10")));
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.20")));
+        assertFalse(ips.contains(NetUtils.ip2Long("10.1.1.9")));
+        assertFalse(ips.contains(NetUtils.ip2Long("10.1.1.21")));
+    }
+
+    @Test
+    public void getAvailableIpsUsesTheWholeCidrWhenNoDhcpRangeIsSet() {
+        NetworkVO network = networkWithDhcpRange("10.1.1.0/24", "10.1.1.1", null, null);
+
+        Set<Long> ips = networkModel.getAvailableIps(network, null);
+
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.10")));
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.250")));
+        assertFalse(ips.contains(NetUtils.ip2Long("10.1.1.1")));
     }
 }
