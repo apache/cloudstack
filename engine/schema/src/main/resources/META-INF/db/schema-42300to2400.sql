@@ -239,3 +239,25 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- @APICommand(authorized=...) alone doesn't grant access under dynamic RBAC (the default).
+-- Backfill the LDAP account APIs for any role that can already create accounts natively.
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'listLdapUsers', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'listLdapUsers');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'ldapCreateAccount', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'ldapCreateAccount');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'linkAccountToLdap', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'linkAccountToLdap');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'importLdapUsers', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'importLdapUsers');
