@@ -2995,6 +2995,21 @@ export default {
       }
       this.fetchAllTemplates(params)
     },
+    isDeployableUserTemplate (template) {
+      // System / routing templates must not appear in Deploy Instance (admins see them via templatefilter=all)
+      return template && template.templatetype !== 'SYSTEM' && template.templatetype !== 'ROUTING'
+    },
+    filterDeployableTemplates (listTemplatesResponse) {
+      if (_.isEmpty(listTemplatesResponse)) {
+        return { count: 0, template: [] }
+      }
+      const templates = (listTemplatesResponse.template || []).filter(this.isDeployableUserTemplate)
+      return {
+        ...listTemplatesResponse,
+        template: templates,
+        count: templates.length
+      }
+    },
     fetchAllTemplates (params) {
       const promises = []
       const templates = {}
@@ -3008,7 +3023,7 @@ export default {
       this.options.templates = templates
       return Promise.all(promises).then((response) => {
         response.forEach((resItem, idx) => {
-          templates[templateFilters[idx]] = _.isEmpty(resItem.listtemplatesresponse) ? { count: 0, template: [] } : resItem.listtemplatesresponse
+          templates[templateFilters[idx]] = this.filterDeployableTemplates(resItem.listtemplatesresponse)
           this.options.templates = { ...templates }
         })
         this.updateSelectedTemplateHypervisor()
