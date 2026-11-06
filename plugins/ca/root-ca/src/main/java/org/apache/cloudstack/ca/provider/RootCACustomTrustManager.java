@@ -18,6 +18,7 @@
 package org.apache.cloudstack.ca.provider;
 
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -89,6 +90,17 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         } else if (primaryClientCertificate == null) {
             logger.info("No certificate was received from client, but continuing since strict auth mode is disabled");
             return;
+        }
+
+        if (authStrictness) {
+            if (caCertificate == null) {
+                throw new CertificateException("Root CA certificate is required to validate client: " + clientAddress);
+            }
+            try {
+                primaryClientCertificate.verify(caCertificate.getPublicKey());
+            } catch (final GeneralSecurityException e) {
+                throw new CertificateException("Client certificate signature verification failed for client: " + clientAddress, e);
+            }
         }
 
         // Revocation check
