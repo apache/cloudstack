@@ -28,10 +28,26 @@ public class NetworkRulesVmSecondaryIpCommand extends Command {
     private String vmSecIp;
     private String vmMac;
     private String action;
+    private boolean directRouted;
+    private boolean applySecurityGroupRules = true;
 
     public NetworkRulesVmSecondaryIpCommand(String vmName, VirtualMachine.Type type) {
         this.vmName = vmName;
         this.type = type;
+    }
+
+    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac, String secondaryIp, boolean action, boolean directRouted, boolean applySecurityGroupRules) {
+        this(vmName, vmMac, secondaryIp, action);
+        this.directRouted = directRouted;
+        this.applySecurityGroupRules = applySecurityGroupRules;
+    }
+
+    public boolean isDirectRouted() {
+        return directRouted;
+    }
+
+    public boolean isApplySecurityGroupRules() {
+        return applySecurityGroupRules;
     }
 
     public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac, String secondaryIp, boolean action) {

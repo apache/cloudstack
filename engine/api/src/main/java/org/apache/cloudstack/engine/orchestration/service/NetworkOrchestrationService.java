@@ -218,6 +218,8 @@ public interface NetworkOrchestrationService {
 
     boolean isSharedNetworkWithoutSpecifyVlan(NetworkOffering offering);
 
+    boolean isL3NetworkWithoutSpecifyVlan(NetworkOffering offering);
+
     boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
     boolean destroyNetwork(long networkId, ReservationContext context, boolean forced);

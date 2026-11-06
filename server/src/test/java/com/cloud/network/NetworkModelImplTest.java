@@ -86,6 +86,8 @@ public class NetworkModelImplTest {
     @Mock
     private VpcDao vpcDao;
     @Mock
+    private com.cloud.network.dao.IPAddressDao _ipAddressDao;
+    @Mock
     private NetworkDao _networksDao;
     @Inject
     private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
@@ -451,5 +453,65 @@ public class NetworkModelImplTest {
 
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
+    }
+
+    private boolean checkSecurityGroupSupportFor(Network.GuestType guestType, boolean sgSupportedInNetwork) {
+        DataCenter zone = mock(DataCenter.class);
+        when(zone.isSecurityGroupEnabled()).thenReturn(false);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(guestType);
+        when(_networksDao.findById(42L)).thenReturn(network);
+        doReturn(sgSupportedInNetwork).when(networkModel).isSecurityGroupSupportedInNetwork(network);
+        return networkModel.checkSecurityGroupSupportForNetwork(mock(com.cloud.user.Account.class), zone, List.of(42L), null);
+    }
+
+    private NetworkVO l3NetworkForDeploy(String cidr) {
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getTrafficType()).thenReturn(com.cloud.network.Networks.TrafficType.Guest);
+        when(network.getGuestType()).thenReturn(Network.GuestType.L3);
+        Mockito.lenient().when(network.getGateway()).thenReturn(null);
+        Mockito.lenient().when(network.getCidr()).thenReturn(cidr);
+        doReturn(List.of(Network.Service.UserData)).when(networkModel).listNetworkOfferingServices(Mockito.anyLong());
+        return network;
+    }
+
+    /**
+     * Regression: an IPv6-only L3 network has no IPv4 cidr, which the Isolated-style branch of
+     * canUseForDeploy() treated as unusable - hiding the network from the deploy wizard. IPv6
+     * needs no free-IP check at all: addresses are EUI-64 computed and never run out.
+     */
+    @Test
+    public void canUseForDeployAcceptsIpv6OnlyL3Network() {
+        assertTrue(networkModel.canUseForDeploy(l3NetworkForDeploy(null)));
+    }
+
+    @Test
+    public void canUseForDeployChecksIpv4PoolOfGatewaylessL3Network() {
+        NetworkVO network = l3NetworkForDeploy("203.0.113.0/24");
+        when(_ipAddressDao.countFreeIPsInNetwork(Mockito.anyLong())).thenReturn(0L);
+        assertFalse(networkModel.canUseForDeploy(network));
+        when(_ipAddressDao.countFreeIPsInNetwork(Mockito.anyLong())).thenReturn(5L);
+        assertTrue(networkModel.canUseForDeploy(network));
+    }
+
+    @Test
+    public void checkSecurityGroupSupportForNetworkAcceptsSharedNetworkWithSecurityGroupService() {
+        assertTrue(checkSecurityGroupSupportFor(Network.GuestType.Shared, true));
+    }
+
+    /**
+     * Regression: deploying with securitygroupids into an L3 (Direct Routed) network failed with
+     * "security group feature is not enabled per zone" because the guest-type check accepted
+     * only Shared, while L3 offerings carry the SecurityGroup service per network.
+     */
+    @Test
+    public void checkSecurityGroupSupportForNetworkAcceptsL3NetworkWithSecurityGroupService() {
+        assertTrue(checkSecurityGroupSupportFor(Network.GuestType.L3, true));
+    }
+
+    @Test
+    public void checkSecurityGroupSupportForNetworkRejectsNetworkWithoutSecurityGroupService() {
+        assertFalse(checkSecurityGroupSupportFor(Network.GuestType.L3, false));
+        assertFalse(checkSecurityGroupSupportFor(Network.GuestType.Isolated, true));
     }
 }
