@@ -98,6 +98,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -274,6 +275,20 @@ public class UserVmManagerTest {
         //Case 3.3:   1->(rootDiskController==scsi)
         vmDetals.put("rootDiskController", "scsi");
         _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
+    }
+
+    @Test
+    public void testValidateRootDiskResizeBlankInstanceDefaultTemplate() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put("rootdisksize", "10");
+        when(_itMgr.isBlankInstanceDefaultTemplate(templateVO)).thenReturn(true);
+
+        _userVmMgr.validateRootDiskResize(HypervisorType.KVM, 10L, templateVO, vm, customParameters);
+
+        assertEquals("10", customParameters.get("rootdisksize"));
+        Mockito.verify(templateVO, Mockito.never()).getSize();
     }
 
     // Test scaleVm on incompatible HV.

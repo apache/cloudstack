@@ -18,16 +18,21 @@
 package org.apache.cloudstack.veeam.api.converter;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.apache.cloudstack.veeam.api.dto.Host;
+import org.apache.cloudstack.veeam.api.dto.Statistic;
 import org.junit.Test;
 
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.host.HostStats;
 import com.cloud.host.Status;
 import com.cloud.resource.ResourceState;
 
@@ -119,5 +124,111 @@ public class HostJoinVOToHostConverterTest {
         assertEquals(2, hosts.size());
         assertEquals("h1", hosts.get(0).getId());
         assertEquals("h2", hosts.get(1).getId());
+    }
+
+    private static HostJoinVO mockHostVO(final Status status) {
+        final HostJoinVO vo = mock(HostJoinVO.class);
+        when(vo.getId()).thenReturn(11L);
+        when(vo.getUuid()).thenReturn("host-1");
+        when(vo.getStatus()).thenReturn(status);
+        when(vo.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(vo.getTotalMemory()).thenReturn(537986068480L);
+        return vo;
+    }
+
+    private static HostStats mockHostStats(final double cpuUtilization) {
+        final HostStats stats = mock(HostStats.class);
+        when(stats.getCpuUtilization()).thenReturn(cpuUtilization);
+        when(stats.getTotalMemoryKBs()).thenReturn(525376042D);
+        when(stats.getFreeMemoryKBs()).thenReturn(511901000D);
+        when(stats.getUsedMemory()).thenReturn((525376042D - 511901000D) * 1024);
+        return stats;
+    }
+
+    private static Statistic findStatistic(final List<Statistic> statistics, final String name) {
+        return statistics.stream().filter(s -> name.equals(s.getName())).findFirst().orElse(null);
+    }
+
+    private static BigDecimal datumOf(final Statistic statistic) {
+        return statistic.getValues().getItems().get(0).getDatum();
+    }
+
+    @Test
+    public void testToHost_AddsStatisticsLink() {
+        final Host host = HostJoinVOToHostConverter.toHost(mockHostVO(Status.Up));
+
+        assertEquals(1, host.getLink().size());
+        assertEquals("statistics", host.getLink().get(0).getRel());
+        assertEquals(host.getHref() + "/statistics", host.getLink().get(0).getHref());
+        assertNull(host.getStatistics());
+    }
+
+    @Test
+    public void testToHost_WithStatsResolver_InlinesStatistics() {
+        final HostStats stats = mockHostStats(3.49);
+
+        final Host host = HostJoinVOToHostConverter.toHost(mockHostVO(Status.Up), id -> id == 11L ? stats : null);
+
+        assertNotNull(host.getStatistics());
+        assertEquals(4, host.getStatistics().getItems().size());
+    }
+
+    @Test
+    public void testToStatistics_UpHostWithStats_MapsVeeamStatistics() {
+        final List<Statistic> statistics = HostJoinVOToHostConverter.toStatistics(mockHostVO(Status.Up), mockHostStats(3.49));
+
+        assertEquals(4, statistics.size());
+
+        final Statistic total = findStatistic(statistics, "memory.total");
+        assertEquals(BigDecimal.valueOf(525376042L * 1024), datumOf(total));
+        assertEquals("integer", total.getType());
+        assertEquals("bytes", total.getUnit());
+        assertEquals("gauge", total.getKind());
+        assertEquals("Total memory", total.getDescription());
+        // Same id as oVirt/OLVM reports for memory.total
+        assertEquals("7816602b-c05c-3db7-a4da-3769f7ad8896", total.getId());
+        assertEquals(total.getHost().getHref() + "/statistics/" + total.getId(), total.getHref());
+        assertEquals("host-1", total.getHost().getId());
+
+        assertEquals(BigDecimal.valueOf((525376042L - 511901000L) * 1024), datumOf(findStatistic(statistics, "memory.used")));
+        assertEquals(BigDecimal.valueOf(511901000L * 1024), datumOf(findStatistic(statistics, "memory.free")));
+
+        final Statistic idle = findStatistic(statistics, "cpu.current.idle");
+        assertEquals(new BigDecimal("96.51"), datumOf(idle));
+        assertEquals("decimal", idle.getType());
+        assertEquals("percent", idle.getUnit());
+    }
+
+    @Test
+    public void testToStatistics_ClampsIdleCpu() {
+        assertEquals(new BigDecimal("0.00"), datumOf(findStatistic(
+                HostJoinVOToHostConverter.toStatistics(mockHostVO(Status.Up), mockHostStats(120)), "cpu.current.idle")));
+        assertEquals(new BigDecimal("100.00"), datumOf(findStatistic(
+                HostJoinVOToHostConverter.toStatistics(mockHostVO(Status.Up), mockHostStats(-5)), "cpu.current.idle")));
+    }
+
+    @Test
+    public void testToStatistics_NonFiniteCpu_SkipsIdleCpu() {
+        final List<Statistic> statistics = HostJoinVOToHostConverter.toStatistics(mockHostVO(Status.Up), mockHostStats(Double.NaN));
+
+        assertEquals(3, statistics.size());
+        assertNull(findStatistic(statistics, "cpu.current.idle"));
+    }
+
+    @Test
+    public void testToStatistics_NoStats_ReturnsOnlyTotalMemoryFromHost() {
+        final List<Statistic> statistics = HostJoinVOToHostConverter.toStatistics(mockHostVO(Status.Up), null);
+
+        assertEquals(1, statistics.size());
+        assertEquals("memory.total", statistics.get(0).getName());
+        assertEquals(BigDecimal.valueOf(537986068480L), datumOf(statistics.get(0)));
+    }
+
+    @Test
+    public void testToStatistics_HostNotUp_IgnoresCachedStats() {
+        final List<Statistic> statistics = HostJoinVOToHostConverter.toStatistics(mockHostVO(Status.Down), mock(HostStats.class));
+
+        assertEquals(1, statistics.size());
+        assertEquals(BigDecimal.valueOf(537986068480L), datumOf(statistics.get(0)));
     }
 }

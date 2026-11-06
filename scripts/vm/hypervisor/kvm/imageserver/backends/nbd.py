@@ -28,7 +28,7 @@ from ..constants import (
     NBD_STATE_HOLE,
     NBD_STATE_ZERO,
 )
-from ..util import coalesce_allocation_extents, merge_dirty_zero_extents
+from ..util import append_coalesced, coalesce_allocation_extents, merge_dirty_zero_extents
 from .base import BackendSession, ImageBackend
 
 
@@ -246,6 +246,10 @@ class NbdConnection:
         """
         Query block status for base:allocation and a dirty bitmap context,
         merge boundaries, and return extents with dirty and zero flags.
+
+        Each block status step is merged as soon as it is received and only the
+        merged, coalesced result is kept, so the raw extents of a very
+        fragmented image are never all in memory at once.
         """
         size = self.size()
         if size == 0:
@@ -296,18 +300,27 @@ class NbdConnection:
         )
         if block_status_fn is None:
             return self._fallback_dirty_zero_extents(size)
+        result: List[Dict[str, Any]] = []
         try:
             while offset < size:
                 count = min(chunk, size - offset)
+                allocation_extents.clear()
+                dirty_extents.clear()
                 try:
                     block_status_fn(count, offset, extent_cb)
                 except TypeError:
                     block_status_fn(offset, count, extent_cb)
+                append_coalesced(
+                    result,
+                    merge_dirty_zero_extents(
+                        allocation_extents, dirty_extents, offset + count, start=offset
+                    ),
+                )
                 offset += count
         except Exception as e:
             logging.warning("get_extents_dirty_and_zero block_status failed: %r", e)
             return self._fallback_dirty_zero_extents(size)
-        return merge_dirty_zero_extents(allocation_extents, dirty_extents, size)
+        return result
 
     @staticmethod
     def _fallback_dirty_zero_extents(size: int) -> List[Dict[str, Any]]:

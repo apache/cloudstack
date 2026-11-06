@@ -56,6 +56,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.DestroyVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.DestroyVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
@@ -82,6 +84,7 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
+import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.backup.BackupVO;
@@ -94,6 +97,7 @@ import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -130,6 +134,7 @@ import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
+import org.apache.cloudstack.veeam.api.dto.Statistic;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -142,6 +147,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
@@ -165,6 +171,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.HostStats;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -181,6 +188,7 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -194,10 +202,12 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
@@ -260,6 +270,9 @@ public class ServerAdapter extends ManagerBase {
     HostJoinDao hostJoinDao;
 
     @Inject
+    StatsCollector statsCollector;
+
+    @Inject
     NetworkDao networkDao;
 
     @Inject
@@ -300,6 +313,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     VMTemplateDao templateDao;
+
+    @Inject
+    VMTemplateZoneDao templateZoneDao;
 
     @Inject
     UserVmManager userVmManager;
@@ -374,21 +390,29 @@ public class ServerAdapter extends ManagerBase {
         return tags;
     }
 
-    protected void waitForJobCompletion(long jobId) {
-        long timeoutNanos = TimeUnit.MINUTES.toNanos(5);
-        final long deadline = System.nanoTime() + timeoutNanos;
+    /**
+     * Waits for the async job to reach a final state and returns it, or null if the job is not found.
+     * Throws if the wait times out or is interrupted. Only the wait is abandoned in that case, the job
+     * itself keeps running in the background and may still complete.
+     */
+    protected AsyncJobVO waitForJobCompletion(long jobId, long timeoutMillis) {
+        final long start = System.nanoTime();
+        final long deadline = start + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         long sleepMillis = 500;
         while (true) {
             AsyncJobVO job = asyncJobDao.findByIdIncludingRemoved(jobId);
             if (job == null) {
                 logger.warn("Async job with ID {} not found", jobId);
-                return;
+                return null;
             }
-            if (job.getStatus() == AsyncJobVO.Status.SUCCEEDED || job.getStatus() == AsyncJobVO.Status.FAILED) {
-                return;
+            if (job.getStatus().done()) {
+                return job;
             }
             if (System.nanoTime() > deadline) {
-                logger.warn("Timed out waiting for {} completion", job);
+                logger.warn("Timed out waiting for {} completion after {}s", job, getElapsedSeconds(start));
+                throw new AsyncJobPendingException(job.getUuid(), String.format(
+                        "Timed out waiting for job %s to complete after %ds, the job may still be running in the background",
+                        job.getUuid(), getElapsedSeconds(start)));
             }
             try {
                 Thread.sleep(sleepMillis);
@@ -396,21 +420,65 @@ public class ServerAdapter extends ManagerBase {
                 sleepMillis = Math.min(5000, sleepMillis + 500);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                logger.warn("Interrupted while waiting for async job completion");
+                throw new AsyncJobPendingException(job.getUuid(), String.format(
+                        "Interrupted while waiting for job %s to complete after %ds, the job may still be running in the background",
+                        job.getUuid(), getElapsedSeconds(start)));
             }
         }
     }
 
-    protected void waitForJobCompletion(AsyncJobJoinVO job) {
-        if (job == null) {
+    /**
+     * Waits for the async job to complete, up to the configured job wait timeout, and throws
+     * {@link AsyncJobFailedException} if it did not succeed.
+     * See {@link #waitForJobCompletion(long, long)} for timeout behaviour.
+     */
+    protected void waitForJobCompletion(AsyncJobJoinVO jobVo) {
+        if (jobVo == null) {
             logger.warn("Async job not found");
             return;
         }
-        if (job.getStatus() == AsyncJobVO.Status.SUCCEEDED.ordinal() ||
-                job.getStatus() == AsyncJobVO.Status.FAILED.ordinal()) {
-            logger.warn("Async job with ID {} already completed with status {}", job.getId(), job.getStatus());
+        final long start = System.nanoTime();
+        AsyncJobVO job = waitForJobCompletion(jobVo.getId(),
+                getJobWaitTimeoutMillis(VeeamControlService.JobWaitTimeout.value()));
+        if (job == null || job.getStatus() == JobInfo.Status.SUCCEEDED) {
+            return;
         }
-        waitForJobCompletion(job.getId());
+        throw new AsyncJobFailedException(jobVo.getUuid(), String.format("Job %s %s after %ds: %s", jobVo.getUuid(),
+                job.getStatus().name().toLowerCase(), getElapsedSeconds(start), getJobErrorText(job)));
+    }
+
+    /**
+     * Converts the configured job wait timeout to milliseconds, falling back to the config's default
+     * when the configured value is not positive.
+     */
+    protected long getJobWaitTimeoutMillis(Integer configuredSeconds) {
+        if (configuredSeconds == null || configuredSeconds <= 0) {
+            final int defaultSeconds = Integer.parseInt(VeeamControlService.JobWaitTimeout.defaultValue());
+            logger.warn("Invalid value {} for {}, using default of {}s", configuredSeconds,
+                    VeeamControlService.JobWaitTimeout.key(), defaultSeconds);
+            return TimeUnit.SECONDS.toMillis(defaultSeconds);
+        }
+        return TimeUnit.SECONDS.toMillis(configuredSeconds);
+    }
+
+    protected static long getElapsedSeconds(long startNanos) {
+        return TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startNanos);
+    }
+
+    protected static String getJobErrorText(AsyncJobVO job) {
+        String result = job.getResult();
+        if (StringUtils.isBlank(result)) {
+            return "no error details available";
+        }
+        try {
+            Object resultObject = ApiSerializerHelper.fromSerializedString(result);
+            if (resultObject instanceof ExceptionResponse) {
+                return ((ExceptionResponse) resultObject).getErrorText();
+            }
+        } catch (Exception e) {
+            // fall back to the raw result
+        }
+        return result;
     }
 
     protected ApiServerService.AsyncCmdResult processAsyncCmdWithContext(BaseAsyncCmd cmd, Map<String, String> params)
@@ -598,17 +666,51 @@ public class ServerAdapter extends ManagerBase {
         return os;
     }
 
-    protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid, GuestOS guestOs) {
+    /**
+     * Returns the template to create the Instance with, or null when the template is missing or not usable,
+     * in which case the Instance is created with the blank KVM template
+     * ({@link com.cloud.vm.VirtualMachineManager#KVM_BLANK_VM_TEMPLATE_NAME}).
+     */
+    protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid, GuestOS guestOs,
+                  com.cloud.dc.DataCenter zone, Account owner) {
         if (StringUtils.isBlank(templateUuid)) {
             return null;
         }
         VMTemplateVO template = templateDao.findByUuid(templateUuid);
         if (template == null) {
-            logger.warn("Template with ID {} not found, guest OS: {}, VM will be created with default template",
-                    guestOs, templateUuid);
+            logger.warn("Template with ID {} not found, VM will be created with the blank template and guest OS: {}",
+                    templateUuid, guestOs);
+            return null;
+        }
+        if (!isTemplateUsableForInstanceCreation(template, zone, owner)) {
+            logger.warn("{} is not usable, VM will be created with the blank template and guest OS: {}",
+                    template, guestOs);
             return null;
         }
         return template;
+    }
+
+    /**
+     * Checks whether the template can be used to create an Instance for the owner in the zone: the template must
+     * be active, available in the zone and the owner must have permission to use it.
+     */
+    protected boolean isTemplateUsableForInstanceCreation(VMTemplateVO template, com.cloud.dc.DataCenter zone,
+                  Account owner) {
+        if (!VirtualMachineTemplate.State.Active.equals(template.getState())) {
+            logger.warn("{} is not active, current state: {}", template, template.getState());
+            return false;
+        }
+        if (CollectionUtils.isEmpty(templateZoneDao.listByZoneTemplate(zone.getId(), template.getId()))) {
+            logger.warn("{} is not available in zone {}", template, zone);
+            return false;
+        }
+        try {
+            accountService.checkAccess(owner, SecurityChecker.AccessType.UseEntry, false, template);
+        } catch (PermissionDeniedException e) {
+            logger.warn("{} is not accessible for the account {}: {}", template, owner, e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     protected List<String> getValidatedSshKeyPairNames(String sshKeyPairNames, Account owner) {
@@ -795,7 +897,7 @@ public class ServerAdapter extends ManagerBase {
         if (bootMode != null) {
             cmd.setBootMode(bootMode.toString());
         }
-        VMTemplateVO template = getTemplateForInstanceCreation(templateUuid, guestOs);
+        VMTemplateVO template = getTemplateForInstanceCreation(templateUuid, guestOs, zone, account);
         if (template != null) {
             cmd.setTemplateId(template.getId());
         } else if (guestOs != null) {
@@ -1178,15 +1280,39 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = ListStoragePoolsCmd.class)
-    public List<StorageDomain> listStorageDomainsByDcId(final String uuid, final Long offset, final Long limit) {
+    public List<StorageDomain> listStorageDomainsByDcId(final String uuid, final String nameLikePattern, final Long offset,
+            final Long limit) {
         final DataCenterVO dataCenterVO = dataCenterDao.findByUuid(uuid);
         if (dataCenterVO == null) {
             throw new InvalidParameterValueException("DataCenter with ID " + uuid + " not found");
         }
+        return listStorageDomainsByDcIds(List.of(dataCenterVO.getId()), nameLikePattern, offset, limit);
+    }
+
+    @ApiAccess(command = ListStoragePoolsCmd.class)
+    public List<StorageDomain> listAllStorageDomains(final String nameLikePattern, final Long offset, final Long limit) {
+        return listStorageDomainsByDcIds(kvmBackupExportService.listCompatibleDataCenterIds(), nameLikePattern, offset, limit);
+    }
+
+    protected List<StorageDomain> listStorageDomainsByDcIds(final List<Long> dcIds, final String nameLikePattern,
+            final Long offset, final Long limit) {
         Filter filter = new Filter(StoragePoolJoinVO.class, "id", true, offset, limit);
-        List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listAvailableByZoneHypervisorAndType(dataCenterVO.getId(),
-                Hypervisor.HypervisorType.KVM, SUPPORTED_STORAGE_TYPES, filter);
+        List<StoragePoolJoinVO> storagePoolVOS = storagePoolJoinDao.listAvailableByZonesHypervisorAndType(dcIds,
+                Hypervisor.HypervisorType.KVM, SUPPORTED_STORAGE_TYPES, nameLikePattern, filter);
         return StoreVOToStorageDomainConverter.toStorageDomainListFromPools(storagePoolVOS);
+    }
+
+    @ApiAccess(command = ListStoragePoolsCmd.class)
+    public StorageDomain getStorageDomain(final String uuid) {
+        final StoragePoolVO pool = primaryDataStoreDao.findByUuid(uuid);
+        if (pool == null) {
+            throw new InvalidParameterValueException("Storage domain with ID " + uuid + " not found");
+        }
+        final List<StoragePoolJoinVO> poolViews = storagePoolJoinDao.newStoragePoolView(pool);
+        if (CollectionUtils.isEmpty(poolViews)) {
+            throw new InvalidParameterValueException("Storage domain with ID " + uuid + " not found");
+        }
+        return StoreVOToStorageDomainConverter.toStorageDomain(poolViews.get(0));
     }
 
     @ApiAccess(command = ListNetworksCmd.class)
@@ -1218,20 +1344,35 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = ListHostsCmd.class)
-    public List<Host> listAllHosts(Long offset, Long limit) {
+    public List<Host> listAllHosts(boolean includeStatistics, Long offset, Long limit) {
         Filter filter = new Filter(HostJoinVO.class, "id", true, offset, limit);
         final List<HostJoinVO> hosts = hostJoinDao.listAvailableRoutingByZonesAndHypervisor(
                 kvmBackupExportService.listCompatibleDataCenterIds(), Hypervisor.HypervisorType.KVM, filter);
-        return HostJoinVOToHostConverter.toHostList(hosts);
+        return HostJoinVOToHostConverter.toHostList(hosts, includeStatistics ? this::getHostStats : null);
     }
 
     @ApiAccess(command = ListHostsCmd.class)
-    public Host getHost(String uuid) {
+    public Host getHost(String uuid, boolean includeStatistics) {
+        final HostJoinVO vo = getHostJoinVOByUuid(uuid);
+        return HostJoinVOToHostConverter.toHost(vo, includeStatistics ? this::getHostStats : null);
+    }
+
+    @ApiAccess(command = ListHostsCmd.class)
+    public List<Statistic> listHostStatistics(String uuid) {
+        final HostJoinVO vo = getHostJoinVOByUuid(uuid);
+        return HostJoinVOToHostConverter.toStatistics(vo, getHostStats(vo.getId()));
+    }
+
+    protected HostJoinVO getHostJoinVOByUuid(String uuid) {
         final HostJoinVO vo = hostJoinDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("Host with ID " + uuid + " not found");
         }
-        return HostJoinVOToHostConverter.toHost(vo);
+        return vo;
+    }
+
+    protected HostStats getHostStats(Long hostId) {
+        return statsCollector.getHostStats(hostId);
     }
 
     @ApiAccess(command = ListNetworksCmd.class)
@@ -1290,6 +1431,10 @@ public class ServerAdapter extends ManagerBase {
                 allContent ? this::getSharedFSForInstance: null,
                 allContent ? this::getSecurityGroupsForInstance: null,
                 allContent);
+    }
+
+    public boolean instanceExists(String uuid) {
+        return userVmDao.findByUuid(uuid) != null;
     }
 
     @ApiAccess(command = ListVMsCmd.class)
@@ -1419,7 +1564,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete VM: " + e.getMessage(), e);
         }
@@ -1445,7 +1590,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to start VM: " + e.getMessage(), e);
         }
@@ -1472,7 +1617,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to stop VM: " + e.getMessage(), e);
         }
@@ -1499,7 +1644,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()), async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to shutdown VM: " + e.getMessage(), e);
         }
@@ -1687,16 +1832,31 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = DestroyVolumeCmd.class)
-    public void deleteDisk(String uuid) {
+    public ResourceAction deleteDisk(String uuid, boolean async) {
         VolumeVO vo = volumeDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
         }
-        CallContext context = CallContext.current();
-        context.setEventDetails("Volume Id: " + vo.getUuid());
-        context.setEventResourceType(ApiCommandResourceType.Volume);
-        context.setEventResourceId(vo.getId());
-        volumeApiService.destroyVolume(vo.getId(), CallContext.current().getCallingAccount(), true, false, null);
+        boolean isAdmin = accountService.isRootAdmin(CallContext.current().getCallingAccountId());
+        try {
+            DestroyVolumeCmd cmd = isAdmin ? new DestroyVolumeCmdByAdmin() : new DestroyVolumeCmd();
+            cmd.setHttpMethod(BaseCmd.HTTPMethod.POST.name());
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.ID, vo.getUuid());
+            params.put(ApiConstants.EXPUNGE, Boolean.TRUE.toString());
+            ApiServerService.AsyncCmdResult result = processAsyncCmdWithContext(cmd, params);
+            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+            if (jobVo == null) {
+                throw new CloudRuntimeException("Failed to find job for disk deletion");
+            }
+            if (!async) {
+                waitForJobCompletion(jobVo);
+            }
+            return AsyncJobJoinVOToJobConverter.toAction(jobVo, async);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to delete disk: " + e.getMessage(), e);
+        }
     }
 
     @ApiAccess(command = UpdateVolumeCmd.class)
@@ -1781,6 +1941,49 @@ public class ServerAdapter extends ManagerBase {
         }
         updateInstanceSecurityGroupsIfNeeded(vmVo, restoreConfig, networkVO);
         return NicVOToNicConverter.toNic(nic, vmUuid, this::getNetworkById);
+    }
+
+    @ApiAccess(command = ListNicsCmd.class)
+    public Nic getInstanceNic(final String vmUuid, final String nicUuid) {
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vmVo);
+        NicVO nic = getInstanceNicVO(vmVo, nicUuid);
+        return NicVOToNicConverter.toNic(nic, vmUuid, this::getNetworkById);
+    }
+
+    @ApiAccess(command = RemoveNicFromVMCmd.class)
+    public void detachInstanceNic(final String vmUuid, final String nicUuid) {
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
+                false, vmVo);
+        NicVO nic = getInstanceNicVO(vmVo, nicUuid);
+        CallContext context = CallContext.current();
+        context.setEventResourceType(ApiCommandResourceType.VirtualMachine);
+        context.setEventResourceId(vmVo.getId());
+        context.setEventDetails("Vm Id: " + vmVo.getUuid() + " Nic Id: " + nic.getUuid());
+        RemoveNicFromVMCmd cmd = new RemoveNicFromVMCmd();
+        ComponentContext.inject(cmd);
+        cmd.setVmId(vmVo.getId());
+        cmd.setNicId(nic.getId());
+        try {
+            userVmManager.removeNicFromVirtualMachine(cmd);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to remove NIC: " + e.getMessage(), e);
+        }
+    }
+
+    protected NicVO getInstanceNicVO(final UserVmVO vmVo, final String nicUuid) {
+        NicVO nic = nicDao.findByUuid(nicUuid);
+        if (nic == null || nic.getInstanceId() != vmVo.getId()) {
+            throw new InvalidParameterValueException("NIC with ID " + nicUuid + " not found for VM with ID " + vmVo.getUuid());
+        }
+        return nic;
     }
 
     @ApiAccess(command = ListImageTransfersCmd.class)
@@ -1941,7 +2144,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
+            action = AsyncJobJoinVOToJobConverter.toAction(jobVo, async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete snapshot: " + e.getMessage(), e);
         }
@@ -1970,7 +2173,7 @@ public class ServerAdapter extends ManagerBase {
             if (!async) {
                 waitForJobCompletion(jobVo);
             }
-            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
+            action = AsyncJobJoinVOToJobConverter.toAction(jobVo, async);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to revert to snapshot: " + e.getMessage(), e);
         }

@@ -23,6 +23,7 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 
 import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -211,5 +212,34 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         Mockito.when(hostDetailsDao.findDetail(7L, com.cloud.host.Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
         // Configured cap defaults to 1 (no cluster override mocked); host advertises 2; clamps to 1.
         Assert.assertEquals(1, _userVmJoinDaoImpl.effectiveCdromMaxCount(userVm));
+    }
+
+    private UserVmJoinVO mockVmRow(long id) {
+        UserVmJoinVO row = Mockito.mock(UserVmJoinVO.class);
+        Mockito.when(row.getId()).thenReturn(id);
+        return row;
+    }
+
+    @Test
+    public void testListOneRowPerVmReturnsSingleRowPerVmInIdOrder() {
+        UserVmJoinDaoImpl dao = Mockito.spy(_userVmJoinDaoImpl);
+        UserVmJoinVO vm1Disk1 = mockVmRow(1L);
+        UserVmJoinVO vm1Disk2 = mockVmRow(1L);
+        UserVmJoinVO vm2 = mockVmRow(2L);
+        UserVmJoinVO vm3Nic1 = mockVmRow(3L);
+        UserVmJoinVO vm3Nic2 = mockVmRow(3L);
+        Mockito.doReturn(Arrays.asList(vm1Disk1, vm3Nic1, vm1Disk2, vm2, vm3Nic2)).when(dao).searchByIds(3L, 1L, 2L, 4L);
+
+        List<UserVmJoinVO> result = dao.listOneRowPerVm(Arrays.asList(3L, 1L, 2L, 4L));
+
+        Assert.assertEquals(Arrays.asList(vm3Nic1, vm1Disk1, vm2), result);
+    }
+
+    @Test
+    public void testListOneRowPerVmEmptyIdsReturnsEmptyList() {
+        UserVmJoinDaoImpl dao = Mockito.spy(_userVmJoinDaoImpl);
+
+        Assert.assertTrue(dao.listOneRowPerVm(Collections.emptyList()).isEmpty());
+        Mockito.verify(dao, Mockito.never()).searchByIds(Mockito.any());
     }
 }

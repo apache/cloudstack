@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.JobsRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.Fault;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
@@ -69,22 +70,54 @@ public class AsyncJobJoinVOToJobConverter {
         return vos.stream().map(AsyncJobJoinVOToJobConverter::toJob).collect(Collectors.toList());
     }
 
-    protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo) {
+    /**
+     * Fills the job link and status of an action. A sync action is only built after its job succeeded, so it
+     * is complete. An async action takes its status from the job, which is usually still pending.
+     */
+    protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo, final boolean async) {
         final String basePath = VeeamControlService.ContextPath.value();
         action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + "/" + vo.getUuid(), vo.getUuid()));
-        action.setStatus("complete");
+        action.setStatus(async ? getActionStatus(vo) : "complete");
     }
 
-    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm) {
+    protected static String getActionStatus(final AsyncJobJoinVO vo) {
+        final JobInfo.Status status = JobInfo.Status.values()[vo.getStatus()];
+        switch (status) {
+            case SUCCEEDED:
+                return "complete";
+            case FAILED:
+            case CANCELLED:
+                return "failed";
+            default:
+                return "pending";
+        }
+    }
+
+    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm, final boolean async) {
         VmAction action = new VmAction();
-        fillAction(action, vo);
+        fillAction(action, vo, async);
         action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null, null, null, null, null, false));
         return action;
     }
 
-    public static ResourceAction toAction(final AsyncJobJoinVO vo) {
+    /**
+     * Builds a failed action, similar to oVirt's response for a blocking action that did not complete,
+     * still linking the job so that it can be tracked.
+     */
+    public static ResourceAction toFailedAction(final String jobUuid, final String detail) {
+        ResourceAction action = new ResourceAction();
+        if (jobUuid != null) {
+            final String basePath = VeeamControlService.ContextPath.value();
+            action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + "/" + jobUuid, jobUuid));
+        }
+        action.setStatus("failed");
+        action.setFault(new Fault(Fault.OPERATION_FAILED, detail));
+        return action;
+    }
+
+    public static ResourceAction toAction(final AsyncJobJoinVO vo, final boolean async) {
         VmAction action = new VmAction();
-        fillAction(action, vo);
+        fillAction(action, vo, async);
         return action;
     }
 }
