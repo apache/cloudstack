@@ -124,7 +124,7 @@ export default {
         this.hypervisorSupportsQuiesceVm = true
       }
 
-      api('listVolumes', { virtualMachineId: this.resource.id, listall: true })
+      api('listVolumes', { virtualMachineId: this.resource.id, projectid: this.resource.projectid, listall: true })
         .then(json => {
           this.listVolumes = json.listvolumesresponse.volume || []
         })

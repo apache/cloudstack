@@ -106,6 +106,7 @@
       @cancel="closeModals">
       <security-group-selection
         :zoneId="this.vm.zoneid"
+        :projectId="this.vm.projectid"
         :value="securitygroupids"
         :loading="false"
         :preFillContent="dataPreFill"
