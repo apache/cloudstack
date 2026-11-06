@@ -21,7 +21,10 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,6 +42,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
 
@@ -53,6 +57,9 @@ public class PrimaryDataStoreHelperTest {
 
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
+
+    @Mock
+    private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Spy
     @InjectMocks
@@ -110,5 +117,36 @@ public class PrimaryDataStoreHelperTest {
         Assert.assertEquals(pool.getClusterId(), CLUSTER_ID);
         Assert.assertEquals(capacity.getPodId(), POD_ID);
         Assert.assertEquals(capacity.getClusterId(), CLUSTER_ID);
+    }
+
+    private StoragePoolVO cancelMaintainForPoolWithRecordedStatus(StoragePoolDetailVO statusBeforeMaintenance) {
+        StoragePoolVO pool = new StoragePoolVO(POOL_ID, null, null, Storage.StoragePoolType.NetworkFilesystem, ZONE_ID, POD_ID, 0L, 0L, null, 0, null);
+        pool.setStatus(StoragePoolStatus.Maintenance);
+        Mockito.when(dataStoreDao.findById(POOL_ID)).thenReturn(pool);
+        Mockito.when(storagePoolDetailsDao.findDetail(POOL_ID, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE)).thenReturn(statusBeforeMaintenance);
+        DataStore storeMock = Mockito.mock(DataStore.class);
+        Mockito.when(storeMock.getId()).thenReturn(POOL_ID);
+
+        dataStoreHelper.cancelMaintain(storeMock);
+
+        Mockito.verify(dataStoreDao).update(POOL_ID, pool);
+        Mockito.verify(storagePoolDetailsDao).removeDetail(POOL_ID, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE);
+        return pool;
+    }
+
+    @Test
+    public void cancelMaintainRestoresDisabledStatus() {
+        StoragePoolDetailVO detail = new StoragePoolDetailVO(POOL_ID, PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE, StoragePoolStatus.Disabled.name(), false);
+
+        StoragePoolVO pool = cancelMaintainForPoolWithRecordedStatus(detail);
+
+        Assert.assertEquals(StoragePoolStatus.Disabled, pool.getStatus());
+    }
+
+    @Test
+    public void cancelMaintainSetsUpWhenNoStatusWasRecorded() {
+        StoragePoolVO pool = cancelMaintainForPoolWithRecordedStatus(null);
+
+        Assert.assertEquals(StoragePoolStatus.Up, pool.getStatus());
     }
 }
