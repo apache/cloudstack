@@ -25,7 +25,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -196,11 +195,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
@@ -827,7 +824,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
+    public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws  IllegalArgumentException {
         jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.IS_TAG_A_RULE, Boolean.TRUE.equals(cmd.isTagARule()));
 
         String providerName = cmd.getStorageProviderName();
@@ -2365,8 +2362,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE,
             eventDescription = "preparing storage pool for maintenance", async = true)
-    public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException {
-        StoragePoolVO primaryStorage = null;
+    public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) {
+        StoragePoolVO primaryStorage;
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
 
         if (primaryStorage == null) {
@@ -3744,7 +3741,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return templateName;
     }
     @Override
-    public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map<String, String> details) throws IllegalArgumentException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
