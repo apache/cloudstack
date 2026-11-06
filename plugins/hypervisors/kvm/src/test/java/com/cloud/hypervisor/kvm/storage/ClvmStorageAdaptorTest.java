@@ -40,6 +40,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
+import org.libvirt.Error;
+import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -107,8 +109,94 @@ public class ClvmStorageAdaptorTest {
             clvmStorageAdaptor, mockConn, uuid, host, vgName);
 
         assertNotNull("Storage pool should be created", result);
-        Mockito.verify(mockStoragePool).setAutostart(1);
+        Mockito.verify(mockStoragePool, never()).setAutostart(anyInt());
         Mockito.verify(mockConn).storagePoolDefineXML(anyString(), eq(0));
+    }
+
+    private Connect mockLibvirtConnection() throws Exception {
+        Connect mockConn = Mockito.mock(Connect.class);
+        libvirtConnectionMockedStatic.when(LibvirtConnection::getConnection).thenReturn(mockConn);
+        return mockConn;
+    }
+
+    private LibvirtException mockLibvirtException(Error.ErrorNumber errorNumber) {
+        Error error = Mockito.mock(Error.class);
+        when(error.getCode()).thenReturn(errorNumber);
+        LibvirtException exception = Mockito.mock(LibvirtException.class);
+        when(exception.getError()).thenReturn(error);
+        return exception;
+    }
+
+    @Test
+    public void testDeleteStoragePool_InactivePersistentPoolIsUndefinedWithoutDestroy() throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        Connect mockConn = mockLibvirtConnection();
+        StoragePool mockStoragePool = Mockito.mock(StoragePool.class);
+        when(mockConn.storagePoolLookupByUUIDString(uuid)).thenReturn(mockStoragePool);
+        when(mockStoragePool.isActive()).thenReturn(0);
+        when(mockStoragePool.isPersistent()).thenReturn(1);
+
+        assertTrue(clvmStorageAdaptor.deleteStoragePool(uuid));
+
+        Mockito.verify(mockStoragePool, never()).destroy();
+        Mockito.verify(mockStoragePool).undefine();
+        Mockito.verify(mockStoragePool).free();
+    }
+
+    @Test
+    public void testDeleteStoragePool_ActivePoolIsDestroyedThenUndefined() throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        Connect mockConn = mockLibvirtConnection();
+        StoragePool mockStoragePool = Mockito.mock(StoragePool.class);
+        when(mockConn.storagePoolLookupByUUIDString(uuid)).thenReturn(mockStoragePool);
+        when(mockStoragePool.isActive()).thenReturn(1);
+        when(mockStoragePool.isPersistent()).thenReturn(1);
+
+        assertTrue(clvmStorageAdaptor.deleteStoragePool(uuid));
+
+        org.mockito.InOrder inOrder = Mockito.inOrder(mockStoragePool);
+        inOrder.verify(mockStoragePool).destroy();
+        inOrder.verify(mockStoragePool).undefine();
+        inOrder.verify(mockStoragePool).free();
+    }
+
+    @Test
+    public void testDeleteStoragePool_MissingPoolIsTreatedAsRemoved() throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        Connect mockConn = mockLibvirtConnection();
+        LibvirtException lookupError = mockLibvirtException(Error.ErrorNumber.VIR_ERR_NO_STORAGE_POOL);
+        when(mockConn.storagePoolLookupByUUIDString(uuid)).thenThrow(lookupError);
+
+        assertTrue(clvmStorageAdaptor.deleteStoragePool(uuid));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeleteStoragePool_OtherLookupErrorIsNotSwallowed() throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        Connect mockConn = mockLibvirtConnection();
+        LibvirtException lookupError = mockLibvirtException(Error.ErrorNumber.VIR_ERR_INTERNAL_ERROR);
+        when(mockConn.storagePoolLookupByUUIDString(uuid)).thenThrow(lookupError);
+
+        clvmStorageAdaptor.deleteStoragePool(uuid);
+    }
+
+    @Test
+    public void testDeleteStoragePool_PoolIsFreedWhenUndefineFails() throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        Connect mockConn = mockLibvirtConnection();
+        StoragePool mockStoragePool = Mockito.mock(StoragePool.class);
+        when(mockConn.storagePoolLookupByUUIDString(uuid)).thenReturn(mockStoragePool);
+        when(mockStoragePool.isActive()).thenReturn(0);
+        when(mockStoragePool.isPersistent()).thenReturn(1);
+        LibvirtException undefineError = mockLibvirtException(Error.ErrorNumber.VIR_ERR_INTERNAL_ERROR);
+        Mockito.doThrow(undefineError).when(mockStoragePool).undefine();
+
+        try {
+            clvmStorageAdaptor.deleteStoragePool(uuid);
+            org.junit.Assert.fail("Expected CloudRuntimeException");
+        } catch (CloudRuntimeException expected) {
+            Mockito.verify(mockStoragePool).free();
+        }
     }
 
     @Test
