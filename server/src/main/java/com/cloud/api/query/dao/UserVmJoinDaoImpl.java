@@ -55,6 +55,7 @@ import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -69,6 +70,8 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.kubernetes.cluster.KubernetesCluster;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -92,6 +95,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -232,6 +236,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setLastUpdated(userVm.getLastUpdated());
         userVmResponse.setDisplayVm(userVm.isDisplayVm());
         userVmResponse.setVmType(userVm.getUserVmType());
+        populateKubernetesClusterType(userVm.getId(), userVmResponse);
 
         if (userVm.getState() != null) {
             userVmResponse.setState(userVm.getState().toString());
@@ -578,6 +583,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         return ChronoUnit.DAYS.between(createdDate, expiryDate);
+    }
+
+    void populateKubernetesClusterType(long vmId, UserVmResponse response) {
+        try {
+            KubernetesServiceHelper helper = ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            Object cluster = helper.findByVmId(vmId);
+            if (cluster instanceof KubernetesCluster) {
+                KubernetesCluster.ClusterType type = ((KubernetesCluster) cluster).getClusterType();
+                if (type != null) {
+                    response.setKubernetesClusterType(type.name());
+                }
+            }
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No KubernetesClusterHelper bean found");
+        }
     }
 
     int effectiveCdromMaxCount(UserVmJoinVO userVm) {

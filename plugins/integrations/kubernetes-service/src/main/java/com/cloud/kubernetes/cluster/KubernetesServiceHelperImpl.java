@@ -151,6 +151,24 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
     }
 
     @Override
+    public void checkVmServiceOfferingCanBeChanged(UserVm userVm) {
+        // Adopted CloudManaged nodes need not have the cksnode VM type.
+        KubernetesClusterVmMapVO vmMap = kubernetesClusterVmMapDao.findByVmId(userVm.getId());
+        if (vmMap == null) {
+            return;
+        }
+        KubernetesCluster cluster = kubernetesClusterDao.findById(vmMap.getClusterId());
+        if (cluster != null && KubernetesCluster.ClusterType.ExternalManaged.equals(cluster.getClusterType())) {
+            return;
+        }
+        String message = "Compute offering cannot be changed for an instance belonging to a Kubernetes cluster";
+        if (cluster != null) {
+            message += String.format(": %s", cluster.getName());
+        }
+        throw new CloudRuntimeException(message + ". Use the Kubernetes cluster scale operation instead.");
+    }
+
+    @Override
     public boolean isValidNodeType(String nodeType) {
         if (StringUtils.isBlank(nodeType)) {
             return false;
