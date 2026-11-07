@@ -978,8 +978,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
             return false;
         }
-        // mark the cluster to be running
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested);
+        // mark the cluster to be running, unless it has left Alert meanwhile, for example to retry an upgrade
+        if (!stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested)) {
+            return false;
+        }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
     }

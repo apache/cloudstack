@@ -46,6 +46,14 @@ public class KubernetesClusterUtilTest {
 
         executeAndTestVersionMatch(true, v1233WorkerNodeOutput, false);
 
+        executeAndTestVersionMatch(true, "v1.24.0\n", true);
+
+        executeAndTestVersionMatch(true, "v1.24.01", false);
+
+        executeAndTestVersionMatch(true, "sudo: unable to resolve host node-1\nv1.24.0\n", true);
+
+        executeAndTestVersionMatch(true, "v1.24.0+vendor.1", true);
+
         executeAndTestVersionMatch(false, v1240WorkerNodeOutput, false);
 
         executeAndTestVersionMatch(false, v1233WorkerNodeOutput, false);

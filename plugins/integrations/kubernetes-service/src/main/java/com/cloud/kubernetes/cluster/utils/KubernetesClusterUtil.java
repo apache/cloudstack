@@ -368,11 +368,29 @@ public class KubernetesClusterUtil {
         return false;
     }
 
-    protected static Pair<Boolean, String> clusterNodeVersionMatches(final Pair<Boolean, String> result, final String version) {
+    /**
+     * Compares a node version, as recorded for a cluster VM or as printed by kubectl (with a leading "v"), with a
+     * semantic version. The SSH output also holds whatever the command wrote to stderr, such as a warning from sudo,
+     * so any line of it that is exactly the version, ignoring build metadata such as "+vendor.1", matches.
+     */
+    public static boolean isSameNodeVersion(final String nodeVersion, final String version) {
+        if (StringUtils.isBlank(nodeVersion) || StringUtils.isBlank(version)) {
+            return false;
+        }
+        final String expected = withoutBuildMetadata(StringUtils.removeStart(version.trim(), "v"));
+        return nodeVersion.lines().anyMatch(line -> withoutBuildMetadata(StringUtils.removeStart(line.trim(), "v")).equals(expected));
+    }
+
+    /** Semantic versions that only differ in their build metadata, after a "+", are the same version. */
+    private static String withoutBuildMetadata(final String version) {
+        return StringUtils.substringBefore(version, "+");
+    }
+
+    public static Pair<Boolean, String> clusterNodeVersionMatches(final Pair<Boolean, String> result, final String version) {
         if (result == null || Boolean.FALSE.equals(result.first()) || StringUtils.isBlank(result.second())) {
             return new Pair<>(false, null);
         }
         String response = result.second();
-        return new Pair<>(response.contains(String.format("v%s", version)), response);
+        return new Pair<>(isSameNodeVersion(response, version), response);
     }
 }
