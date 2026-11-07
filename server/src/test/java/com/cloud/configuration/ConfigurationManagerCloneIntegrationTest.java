@@ -206,6 +206,7 @@ public class ConfigurationManagerCloneIntegrationTest {
 
         ServiceOfferingVO sourceOffering = mock(ServiceOfferingVO.class);
         when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getCategoryId()).thenReturn(42L);
         when(sourceOffering.getName()).thenReturn("source-offering");
         when(sourceOffering.getDisplayText()).thenReturn("Source Display Text");
         when(sourceOffering.getCpu()).thenReturn(2);
@@ -278,6 +279,7 @@ public class ConfigurationManagerCloneIntegrationTest {
 
         ServiceOfferingVO sourceOffering = mock(ServiceOfferingVO.class);
         when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getCategoryId()).thenReturn(42L);
         when(sourceOffering.getName()).thenReturn("source-offering");
         when(sourceOffering.getDisplayText()).thenReturn("Source Display Text");
         when(sourceOffering.getCpu()).thenReturn(2);
@@ -529,6 +531,7 @@ public class ConfigurationManagerCloneIntegrationTest {
 
         ServiceOfferingVO sourceOffering = mock(ServiceOfferingVO.class);
         when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getCategoryId()).thenReturn(42L);
         when(sourceOffering.getCpu()).thenReturn(2);
         when(sourceOffering.getSpeed()).thenReturn(1000);
         when(sourceOffering.getRamSize()).thenReturn(2048);

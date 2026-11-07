@@ -31,17 +31,29 @@ import com.cloud.utils.db.DB;
 public class ServiceOfferingCategoryDaoImpl extends GenericDaoBase<ServiceOfferingCategoryVO, Long> implements ServiceOfferingCategoryDao {
 
     protected final SearchBuilder<ServiceOfferingCategoryVO> NameSearch;
+    protected final SearchBuilder<ServiceOfferingCategoryVO> DefaultSearch;
 
     protected ServiceOfferingCategoryDaoImpl() {
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
+
+        DefaultSearch = createSearchBuilder();
+        DefaultSearch.and("isDefault", DefaultSearch.entity().isDefault(), SearchCriteria.Op.EQ);
+        DefaultSearch.done();
     }
 
     @Override
     public ServiceOfferingCategoryVO findByName(String name) {
         SearchCriteria<ServiceOfferingCategoryVO> sc = NameSearch.create();
         sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ServiceOfferingCategoryVO findDefault() {
+        SearchCriteria<ServiceOfferingCategoryVO> sc = DefaultSearch.create();
+        sc.setParameters("isDefault", true);
         return findOneBy(sc);
     }
 

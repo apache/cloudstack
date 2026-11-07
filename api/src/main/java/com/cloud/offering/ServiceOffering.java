@@ -147,5 +147,5 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
 
     Integer getGpuCount();
 
-    long getCategoryId();
+    Long getCategoryId();
 }

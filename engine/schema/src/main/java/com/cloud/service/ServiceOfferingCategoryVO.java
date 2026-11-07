@@ -45,6 +45,9 @@ public class ServiceOfferingCategoryVO implements ServiceOfferingCategory {
     @Column(name = "sort_key")
     private int sortKey;
 
+    @Column(name = "is_default")
+    private boolean isDefault;
+
     public ServiceOfferingCategoryVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -67,6 +70,15 @@ public class ServiceOfferingCategoryVO implements ServiceOfferingCategory {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    @Override
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
     }
 
     @Override

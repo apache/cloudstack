@@ -9632,9 +9632,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find service offering category with id " + categoryId);
         }
 
-        // Check if any service offering is using this category
-        // For now we'll just check if it's the default category (id=1)
-        if (categoryId == 1L) {
+        if (category.isDefault()) {
             throw new InvalidParameterValueException("Cannot delete the default service offering category");
         }
 

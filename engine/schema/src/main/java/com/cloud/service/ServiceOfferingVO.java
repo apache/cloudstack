@@ -134,7 +134,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     private Boolean gpuDisplay;
 
     @Column(name = "category_id")
-    private long categoryId = 1L;  // Default category
+    private Long categoryId;
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -212,6 +212,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         diskOfferingStrictness = offering.diskOfferingStrictness;
         vgpuProfileId = offering.vgpuProfileId;
         gpuCount = offering.gpuCount;
+        categoryId = offering.categoryId;
     }
 
     @Override
@@ -487,7 +488,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public long getCategoryId() {
+    public Long getCategoryId() {
         return categoryId;
     }
 

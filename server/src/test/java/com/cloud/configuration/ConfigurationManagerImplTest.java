@@ -1462,8 +1462,10 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testDeleteDefaultServiceOfferingCategoryThrowsException() {
         DeleteServiceOfferingCategoryCmd cmd = mock(DeleteServiceOfferingCategoryCmd.class);
-        when(cmd.getId()).thenReturn(1L);
-        when(serviceOfferingCategoryDaoMock.findById(1L)).thenReturn(new ServiceOfferingCategoryVO("Default"));
+        when(cmd.getId()).thenReturn(42L);
+        ServiceOfferingCategoryVO category = new ServiceOfferingCategoryVO("Renamed");
+        category.setDefault(true);
+        when(serviceOfferingCategoryDaoMock.findById(42L)).thenReturn(category);
 
         Assert.assertThrows(InvalidParameterValueException.class, () ->
                 configurationManagerImplSpy.deleteServiceOfferingCategory(cmd));
@@ -1483,10 +1485,10 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testDeleteUnusedServiceOfferingCategorySucceeds() {
         DeleteServiceOfferingCategoryCmd cmd = mock(DeleteServiceOfferingCategoryCmd.class);
-        when(cmd.getId()).thenReturn(2L);
-        when(serviceOfferingCategoryDaoMock.findById(2L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
-        when(serviceOfferingDaoMock.listByCategoryId(2L)).thenReturn(Collections.emptyList());
-        when(serviceOfferingCategoryDaoMock.remove(2L)).thenReturn(true);
+        when(cmd.getId()).thenReturn(1L);
+        when(serviceOfferingCategoryDaoMock.findById(1L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
+        when(serviceOfferingDaoMock.listByCategoryId(1L)).thenReturn(Collections.emptyList());
+        when(serviceOfferingCategoryDaoMock.remove(1L)).thenReturn(true);
 
         CallContext callContext = mock(CallContext.class);
         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {

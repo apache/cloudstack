@@ -29,6 +29,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.UsageEventVO;
+import com.cloud.service.ServiceOfferingCategoryVO;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
@@ -51,6 +52,8 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private ServiceOfferingCategoryDao serviceOfferingCategoryDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
@@ -91,6 +94,22 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         SearchCriteria<ServiceOfferingVO> sc = CategoryIdSearch.create();
         sc.setParameters("category_id", categoryId);
         return listBy(sc);
+    }
+
+    @Override
+    public ServiceOfferingVO persist(ServiceOfferingVO offering) {
+        assignDefaultCategory(offering);
+        return super.persist(offering);
+    }
+
+    void assignDefaultCategory(ServiceOfferingVO offering) {
+        if (offering.getCategoryId() == null) {
+            ServiceOfferingCategoryVO category = serviceOfferingCategoryDao.findDefault();
+            if (category == null) {
+                throw new CloudRuntimeException("Default service offering category not found");
+            }
+            offering.setCategoryId(category.getId());
+        }
     }
 
     @Override

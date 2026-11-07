@@ -52,4 +52,10 @@ public class ServiceOfferingVOTest {
         Assert.assertTrue(!offering.isDynamic());
     }
 
+    @Test
+    public void copyPreservesCategory() {
+        offering.setCategoryId(42L);
+        Assert.assertEquals(Long.valueOf(42L), new ServiceOfferingVO(offering).getCategoryId());
+    }
+
 }

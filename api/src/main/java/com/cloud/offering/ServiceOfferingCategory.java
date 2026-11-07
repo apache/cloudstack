@@ -21,6 +21,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ServiceOfferingCategory extends Identity, InternalIdentity {
 
+    boolean isDefault();
+
     String getName();
 
     void setName(String name);

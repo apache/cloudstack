@@ -25,5 +25,7 @@ public interface ServiceOfferingCategoryDao extends GenericDao<ServiceOfferingCa
 
     ServiceOfferingCategoryVO findByName(String name);
 
+    ServiceOfferingCategoryVO findDefault();
+
     List<ServiceOfferingCategoryVO> listAll();
 }
