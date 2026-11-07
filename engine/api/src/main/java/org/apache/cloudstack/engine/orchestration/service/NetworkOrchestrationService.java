@@ -145,9 +145,10 @@ public interface NetworkOrchestrationService {
             "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<String> NetworkUsageExemptCidrs = new ConfigKey<>(String.class, "network.usage.exempt.cidrs", "Usage", "",
-            "Comma-separated IPv4 or IPv6 addresses or CIDRs. Traffic between guest networks and these addresses doesn't count " +
-            "towards virtual router network usage. Virtual routers only count IPv4 traffic, so they ignore IPv6 entries. " +
-            "Routers pick up a change the next time they start or restart.",
+            "Comma-separated IPv4 or IPv6 addresses or CIDRs. Traffic between guest VMs and these addresses doesn't count " +
+            "towards network usage. Virtual routers only count IPv4 traffic, so they ignore IPv6 entries, and pick up a change " +
+            "the next time they start or restart. On shared networks, KVM hosts exempt both IPv4 and IPv6 and pick up a change " +
+            "straight away.",
             true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     /**

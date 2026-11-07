@@ -114,6 +114,7 @@ Requires: ethtool
 Requires: (net-tools or net-tools-deprecated)
 Requires: iproute
 Requires: ipset
+Requires: nftables
 Requires: perl
 Requires: rsync
 Requires: cifs-utils
