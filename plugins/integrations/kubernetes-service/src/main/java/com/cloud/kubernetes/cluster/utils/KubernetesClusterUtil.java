@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -283,21 +284,37 @@ public class KubernetesClusterUtil {
                                                                    final String ipAddress, final int port,
                                                                    final String user, final File sshKeyFile,
                                                                    final long timeoutTime, final long waitDuration) {
+        return validateKubernetesClusterReadyNodesCount(kubernetesCluster, ipAddress, port, user, sshKeyFile,
+                kubernetesCluster::getTotalNodeCount, timeoutTime, waitDuration);
+    }
+
+    /**
+     * Waits until the cluster has the expected number of ready nodes, for when some of the
+     * cluster's nodes can't be ready (their VMs are down). The expected count is read again on
+     * every check, as such a VM may be started, or another one stopped, while this waits.
+     */
+    public static boolean validateKubernetesClusterReadyNodesCount(final KubernetesCluster kubernetesCluster,
+                                                                   final String ipAddress, final int port,
+                                                                   final String user, final File sshKeyFile,
+                                                                   final LongSupplier expectedReadyNodesCountSupplier,
+                                                                   final long timeoutTime, final long waitDuration) {
         while (System.currentTimeMillis() < timeoutTime) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Checking ready nodes for the Kubernetes cluster %s with total %d provisioned nodes", kubernetesCluster, kubernetesCluster.getTotalNodeCount()));
-            }
             try {
+                long expectedReadyNodesCount = expectedReadyNodesCountSupplier.getAsLong();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(String.format("Checking ready nodes for the Kubernetes cluster %s with total %d provisioned nodes, %d expected to be ready",
+                            kubernetesCluster, kubernetesCluster.getTotalNodeCount(), expectedReadyNodesCount));
+                }
                 int nodesCount = KubernetesClusterUtil.getKubernetesClusterReadyNodesCount(kubernetesCluster, ipAddress, port,
                         user, sshKeyFile);
-                if (nodesCount == kubernetesCluster.getTotalNodeCount()) {
+                if (nodesCount == expectedReadyNodesCount) {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Kubernetes cluster %s has %d ready nodes now", kubernetesCluster, kubernetesCluster.getTotalNodeCount()));
+                        LOGGER.info(String.format("Kubernetes cluster %s has %d ready nodes now", kubernetesCluster, expectedReadyNodesCount));
                     }
                     return true;
                 } else {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(String.format("Kubernetes cluster %s has total %d provisioned nodes while %d ready now", kubernetesCluster, kubernetesCluster.getTotalNodeCount(), nodesCount));
+                        LOGGER.debug(String.format("Kubernetes cluster %s has %d nodes expected to be ready while %d ready now", kubernetesCluster, expectedReadyNodesCount, nodesCount));
                     }
                 }
             } catch (Exception e) {

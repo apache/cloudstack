@@ -45,6 +45,7 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
@@ -440,5 +441,169 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
+    }
+
+    private KubernetesClusterVO mockClusterForScaleState(KubernetesCluster.State state, VirtualMachine.State controlVmState) {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getState()).thenReturn(state);
+        Mockito.lenient().when(cluster.getId()).thenReturn(1L);
+        Mockito.lenient().when(cluster.getServiceOfferingId()).thenReturn(1L);
+        Mockito.lenient().when(cluster.getWorkerNodeServiceOfferingId()).thenReturn(2L);
+        Mockito.lenient().when(cluster.getNodeCount()).thenReturn(2L);
+        Mockito.lenient().when(cluster.getTotalNodeCount()).thenReturn(2L);
+        Mockito.lenient().when(cluster.getAutoscalingEnabled()).thenReturn(false);
+        KubernetesClusterVmMapVO controlVmMap = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.lenient().when(controlVmMap.getVmId()).thenReturn(100L);
+        Mockito.lenient().when(controlVmMap.isControlNode()).thenReturn(true);
+        KubernetesClusterVmMapVO workerVmMap = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.lenient().when(workerVmMap.getVmId()).thenReturn(10L);
+        Mockito.lenient().when(kubernetesClusterVmMapDao.listByClusterId(1L)).thenReturn(List.of(controlVmMap, workerVmMap));
+        VMInstanceVO controlVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.lenient().when(controlVm.getState()).thenReturn(controlVmState);
+        Mockito.lenient().when(vmInstanceDao.findById(100L)).thenReturn(controlVm);
+        // The usual reason for Alert: a worker VM is stopped
+        VMInstanceVO workerVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.lenient().when(workerVm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        Mockito.lenient().when(vmInstanceDao.findById(10L)).thenReturn(workerVm);
+        return cluster;
+    }
+
+    private KubernetesClusterVO mockClusterForScaleState(KubernetesCluster.State state) {
+        return mockClusterForScaleState(state, VirtualMachine.State.Running);
+    }
+
+    @Test
+    public void testValidateKubernetesClusterStateForScaleAlertSize() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test
+    public void testValidateKubernetesClusterStateForScaleAlertNodeIds() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, null, List.of(10L), null, null, null, null, null);
+    }
+
+    @Test
+    public void testValidateKubernetesClusterStateForScaleAlertSizeWithCurrentSettings() {
+        // The offerings and autoscaling setting the cluster already has may be sent along with the new size
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, 1L, Map.of(WORKER.name(), 2L), false, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertOfferingChange() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, 5L, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertNodeOfferingChange() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, Map.of(WORKER.name(), 5L), null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertAutoscaling() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, null, null, null, null, true, null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertNothingToDo() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, null, null, 1L, null, null, null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertSameSize() {
+        // Would do nothing, then move the cluster from Alert to Running
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 2L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertControlNodeDown() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert, VirtualMachine.State.Stopped);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertAutoscalingSizeChange() {
+        // Autoscaling stays disabled, but minsize/maxsize differ: the worker treats it as an autoscaling change
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, false, 1L, 3L);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertExtraVms() {
+        // For example a worker VM left by a failed scale-up
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        Mockito.when(cluster.getTotalNodeCount()).thenReturn(1L);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertAllVmsRunning() {
+        // In Alert for another reason, such as a failed upgrade
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        VMInstanceVO workerVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(workerVm.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(vmInstanceDao.findById(10L)).thenReturn(workerVm);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertNoVmDown() {
+        // A VM on a disconnected host may still be running: the worker can't work around it
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        VMInstanceVO workerVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(workerVm.getState()).thenReturn(VirtualMachine.State.Unknown);
+        Mockito.when(vmInstanceDao.findById(10L)).thenReturn(workerVm);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertEtcdVmDown() {
+        // etcd may have lost quorum, so new nodes can't join
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        Mockito.when(cluster.getTotalNodeCount()).thenReturn(3L);
+        KubernetesClusterVmMapVO etcdVmMap = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(etcdVmMap.getVmId()).thenReturn(200L);
+        Mockito.when(etcdVmMap.isEtcdNode()).thenReturn(true);
+        List<KubernetesClusterVmMapVO> vmMaps = new ArrayList<>(kubernetesClusterVmMapDao.listByClusterId(1L));
+        vmMaps.add(etcdVmMap);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(1L)).thenReturn(vmMaps);
+        VMInstanceVO etcdVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(etcdVm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        Mockito.when(vmInstanceDao.findById(200L)).thenReturn(etcdVm);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertOnlyExternalNodeDown() {
+        // Scaling never acts on external nodes, so it can't work around one that is down
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        KubernetesClusterVmMapVO workerVmMap = kubernetesClusterVmMapDao.listByClusterId(1L).get(1);
+        Mockito.when(workerVmMap.isExternalNode()).thenReturn(true);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleAlertRemoveControlNode() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Alert);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, null, List.of(100L), null, null, null, null, null);
+    }
+
+    @Test
+    public void testValidateKubernetesClusterStateForScaleRunningOfferingChange() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Running);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, null, null, 5L, null, null, null, null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateKubernetesClusterStateForScaleUpgrading() {
+        KubernetesClusterVO cluster = mockClusterForScaleState(KubernetesCluster.State.Upgrading);
+        kubernetesClusterManager.validateKubernetesClusterStateForScale(cluster, 3L, null, null, null, null, null, null);
     }
 }
