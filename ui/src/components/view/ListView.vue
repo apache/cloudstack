@@ -1058,6 +1058,12 @@
       <template v-if="column.key === 'vgpuActions'">
         <slot name="actionButtons" :record="record" :actions="actions"></slot>
       </template>
+      <template v-if="column.key === 'category'">
+        <span v-if="('listServiceOfferingCategories' in $store.getters.apis) && record.categoryid">
+          <router-link :to="{ path: '/serviceofferingcategory/' + record.categoryid }">{{ text }}</router-link>
+        </span>
+        <span v-else>{{ text }}</span>
+      </template>
     </template>
     <template #footer>
       <span v-if="hasSelected">
@@ -1334,6 +1340,9 @@ export default {
           break
         case 'guestoscategory':
           apiCommand = 'updateOsCategory'
+          break
+        case 'serviceofferingcategory':
+          apiCommand = 'updateServiceOfferingCategory'
           break
       }
       return apiCommand

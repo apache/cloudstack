@@ -59,5 +59,7 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
 
     List<Long> listIdsByHostTag(String tag);
 
+    List<ServiceOfferingVO> listByCategoryId(Long categoryId);
+
     void addCheckForGpuEnabled(SearchBuilder<ServiceOfferingVO> serviceOfferingSearch, Boolean gpuEnabled);
 }

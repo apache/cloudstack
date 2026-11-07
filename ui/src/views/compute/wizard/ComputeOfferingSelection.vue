@@ -17,6 +17,32 @@
 
 <template>
   <div>
+    <a-form-item
+      :label="$t('label.category')"
+      name="serviceofferingcategoryid"
+      ref="serviceofferingcategoryid"
+      v-if="serviceOfferingCategories && serviceOfferingCategories.length > 0"
+      style="margin-bottom: 16px;">
+      <block-radio-group-select
+        :maxBlocks="16"
+        :items="serviceOfferingCategories"
+        :selectedValue="selectedServiceOfferingCategoryId"
+        :horizontalGutter="6"
+        :verticalGutter="6"
+        blockSize="medium"
+        @change="handleServiceOfferingCategoryChange">
+        <template #radio-option="{ item }">
+          <div class="radio-option">
+            <a-tooltip placement="top" :title="item.name">
+              <div class="ellipsis">{{ item.name }}</div>
+            </a-tooltip>
+          </div>
+        </template>
+        <template #select-option="{ item }">
+          {{ item.name }}
+        </template>
+      </block-radio-group-select>
+    </a-form-item>
     <div style="margin-bottom: 16px; display: flex; justify-content: right; align-items: center;">
       <div v-if="showGpuFilter" style="display: flex; align-items: center; margin-right: 16px;">
         <span>{{ $t('label.show.only.gpu.enabled.offerings') }}</span>
@@ -96,8 +122,13 @@
 </template>
 
 <script>
+import BlockRadioGroupSelect from '@/components/widgets/BlockRadioGroupSelect.vue'
+
 export default {
   name: 'ComputeOfferingSelection',
+  components: {
+    BlockRadioGroupSelect
+  },
   props: {
     computeItems: {
       type: Array,
@@ -152,6 +183,14 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    serviceOfferingCategories: {
+      type: Array,
+      default: () => []
+    },
+    selectedServiceOfferingCategoryId: {
+      type: String,
+      default: '-1'
     }
   },
   data () {
@@ -335,6 +374,9 @@ export default {
     }
   },
   methods: {
+    handleServiceOfferingCategoryChange (categoryId) {
+      this.$emit('service-offering-category-change', categoryId)
+    },
     onSelectRow (value) {
       this.selectedRowKeys = value
       this.$emit('select-compute-item', value[0])
@@ -401,5 +443,22 @@ export default {
 
   :deep(.ant-table-tbody) > tr > td {
     cursor: pointer;
+  }
+
+  .radio-option {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+
+    .ellipsis {
+      width: 100%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 </style>

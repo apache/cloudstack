@@ -239,3 +239,32 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
+ `id` bigint unsigned NOT NULL auto_increment,
+ `name` varchar(255) NOT NULL,
+ `uuid` varchar(40) NOT NULL,
+ `sort_key` int NOT NULL DEFAULT 0,
+ `is_default` tinyint(1) NOT NULL DEFAULT 0,
+ PRIMARY KEY  (`id`),
+ CONSTRAINT `uc_service_offering_category__uuid` UNIQUE (`uuid`),
+ CONSTRAINT `uc_service_offering_category__name` UNIQUE (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering_category', 'is_default', 'tinyint(1) NOT NULL DEFAULT 0');
+-- The previous implementation reserved ID 1 for the default, even if it was renamed.
+UPDATE `cloud`.`service_offering_category` AS `legacy`
+LEFT JOIN (SELECT `id` FROM `cloud`.`service_offering_category` WHERE `is_default` = 1 LIMIT 1) AS `current_default` ON 1 = 1
+SET `legacy`.`is_default` = 1
+WHERE `legacy`.`id` = 1 AND `current_default`.`id` IS NULL;
+INSERT INTO `cloud`.`service_offering_category` (name, uuid, is_default)
+SELECT 'Default', UUID(), 1
+WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`service_offering_category` WHERE `is_default` = 1)
+ON DUPLICATE KEY UPDATE `is_default` = 1;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'category_id', 'bigint unsigned DEFAULT NULL');
+UPDATE `cloud`.`service_offering` SET `category_id` = (SELECT `id` FROM `cloud`.`service_offering_category` WHERE `is_default` = 1)
+WHERE `category_id` IS NULL;
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__category_id');
+ALTER TABLE `cloud`.`service_offering` MODIFY COLUMN `category_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__category_id` FOREIGN KEY (`category_id`) REFERENCES `cloud`.`service_offering_category` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
