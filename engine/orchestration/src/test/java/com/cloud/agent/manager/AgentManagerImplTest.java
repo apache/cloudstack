@@ -20,6 +20,7 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.SetHostParamsCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.ConnectionException;
@@ -37,7 +38,10 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AgentManagerImplTest {
@@ -171,5 +175,34 @@ public class AgentManagerImplTest {
         Mockito.when(host.getDetail(Host.HOST_SSH_PORT)).thenReturn(String.valueOf(3922));
         int hostSshPort = mgr.getHostSshPort(host);
         Assert.assertEquals(3922, hostSshPort);
+    }
+
+    private void mockUsageExemptPush() {
+        Map<Long, List<Long>> hostsPerZone = new HashMap<>();
+        hostsPerZone.put(1L, Arrays.asList(11L, 12L));
+        hostsPerZone.put(2L, Collections.singletonList(21L));
+        Mockito.doReturn(hostsPerZone).when(mgr).getHostsPerZone();
+        Mockito.doReturn("192.0.2.5/32").when(mgr).getUsageExemptCidrsParam(Mockito.anyLong());
+        Answer answer = Mockito.mock(Answer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.doReturn(answer).when(mgr).easySend(Mockito.anyLong(), Mockito.any(SetHostParamsCommand.class));
+    }
+
+    @Test
+    public void propagateUsageExemptCidrsToAgentsTestOneZone() {
+        mockUsageExemptPush();
+        mgr.propagateUsageExemptCidrsToAgents(1L);
+        Mockito.verify(mgr).easySend(Mockito.eq(11L), Mockito.any(SetHostParamsCommand.class));
+        Mockito.verify(mgr).easySend(Mockito.eq(12L), Mockito.any(SetHostParamsCommand.class));
+        Mockito.verify(mgr, Mockito.never()).easySend(Mockito.eq(21L), Mockito.any(SetHostParamsCommand.class));
+    }
+
+    @Test
+    public void propagateUsageExemptCidrsToAgentsTestAllZones() {
+        mockUsageExemptPush();
+        mgr.propagateUsageExemptCidrsToAgents(null);
+        Mockito.verify(mgr, Mockito.times(3)).easySend(Mockito.anyLong(), Mockito.any(SetHostParamsCommand.class));
+        Mockito.verify(mgr).getUsageExemptCidrsParam(1L);
+        Mockito.verify(mgr).getUsageExemptCidrsParam(2L);
     }
 }

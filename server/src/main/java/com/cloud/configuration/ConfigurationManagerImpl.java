@@ -692,6 +692,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
+                } else if (settingNameUpdated.equals(NetworkOrchestrationService.NetworkUsageExemptCidrs.key())) {
+                    _agentManager.propagateUsageExemptCidrsToAgents(settingUpdated.second() == ConfigKey.Scope.Zone ? settingUpdated.third() : null);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
                     ConfigKey.Scope scope = settingUpdated.second();
                     if (scope == ConfigKey.Scope.Global) {
@@ -1347,6 +1349,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 encryptEventValueIfConfigIsEncrypted(config, newValue), scope);
 
         _configDepot.invalidateConfigCache(name, scope, id);
+
+        // Resetting doesn't publish the change event that updateConfiguration does, so tell the hosts here.
+        if (NetworkOrchestrationService.NetworkUsageExemptCidrs.key().equals(name)) {
+            _agentManager.propagateUsageExemptCidrsToAgents(scope == ConfigKey.Scope.Zone ? id : null);
+        }
 
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<>(_configDao.findByName(name), newValue);
