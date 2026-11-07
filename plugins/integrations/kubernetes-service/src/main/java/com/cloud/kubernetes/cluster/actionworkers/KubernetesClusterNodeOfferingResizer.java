@@ -275,7 +275,6 @@ public class KubernetesClusterNodeOfferingResizer {
     }
 
     private void reconcile(UserVm vm, ServiceOffering targetOffering, NodeAccess access, String nodeUid, long deadline) {
-        reconciler.onlineGuestResources(access);
         GuestResources guest = reconciler.waitForGuestResources(vm, targetOffering, access, deadline);
         if (!reconciler.isKubernetesNodeAlreadyResized(reconciler.readNode(vm, access), guest) || !reconciler.isKubeletActive(access)) {
             reconciler.restartKubelet(vm, access, deadline);

@@ -431,6 +431,52 @@ public class KubernetesClusterNodeCapacityReconcilerTest {
     }
 
     @Test
+    public void testCpuAppearingAfterTheFirstOnlineAttemptIsBroughtOnline() {
+        FakeReconciler fake = new FakeReconciler() {
+            private int presentCpus = 2;
+            private int onlineCpus = 2;
+
+            @Override
+            protected String executeNode(NodeAccess nodeAccess, String command) {
+                String output = super.executeNode(nodeAccess, command);
+                if (ONLINE_HOTPLUGGED_RESOURCES.equals(command)) {
+                    onlineCpus = presentCpus;
+                    // The new CPU appears only after this scan; a later scan must online it.
+                    presentCpus = 3;
+                }
+                return GUEST_RESOURCES_COMMAND.equals(command) ? onlineCpus + "\n2995924\n8000000\n24\n" : output;
+            }
+        };
+
+        GuestResources guest = fake.waitForGuestResources(vm, offering(3, 3072), access, 12000L);
+
+        Assert.assertEquals(3L, guest.getOnlineCpus());
+        Assert.assertEquals(List.of(5000L, 5000L), fake.sleeps);
+    }
+
+    @Test
+    public void testGuestAlreadyAtTargetDoesNotOnlineResourcesOrWait() {
+        FakeReconciler fake = new FakeReconciler();
+
+        GuestResources guest = fake.waitForGuestResources(vm, offering(2, 2048), access, 60000L);
+
+        Assert.assertEquals(2L, guest.getOnlineCpus());
+        Assert.assertEquals(List.of(KubernetesClusterNodeCapacityReconciler.GUEST_RESOURCES_COMMAND), fake.nodeCommands);
+        Assert.assertTrue(fake.sleeps.isEmpty());
+    }
+
+    @Test
+    public void testExpiredGuestDeadlineDoesNotOnlineResources() {
+        FakeReconciler fake = new FakeReconciler();
+        fake.now = 1000L;
+
+        assertPhaseFailure("GUEST_VERIFY", () -> fake.waitForGuestResources(vm, offering(3, 2048), access, 1000L));
+
+        Assert.assertEquals(List.of(KubernetesClusterNodeCapacityReconciler.GUEST_RESOURCES_COMMAND), fake.nodeCommands);
+        Assert.assertTrue(fake.sleeps.isEmpty());
+    }
+
+    @Test
     public void testGuestAboveTheTargetFailsAtOnce() {
         FakeReconciler fake = new FakeReconciler();
         fake.guestOutput = "4\n8152860\n8000000\n64\n";
@@ -438,6 +484,7 @@ public class KubernetesClusterNodeCapacityReconcilerTest {
 
         assertPhaseFailure("GUEST_VERIFY", () -> fake.waitForGuestResources(vm, target, access, 60000L));
 
+        Assert.assertEquals(List.of(KubernetesClusterNodeCapacityReconciler.GUEST_RESOURCES_COMMAND), fake.nodeCommands);
         Assert.assertTrue(fake.sleeps.isEmpty());
     }
 
@@ -449,7 +496,8 @@ public class KubernetesClusterNodeCapacityReconcilerTest {
         assertPhaseFailure("GUEST_VERIFY", () -> fake.waitForGuestResources(vm, target, access, 12000L));
 
         Assert.assertEquals(List.of(5000L, 5000L, 2000L), fake.sleeps);
-        Assert.assertEquals(4, fake.nodeCommands.size());
+        Assert.assertEquals(4L, fake.nodeCommands.stream().filter(KubernetesClusterNodeCapacityReconciler.GUEST_RESOURCES_COMMAND::equals).count());
+        Assert.assertEquals(3L, fake.nodeCommands.stream().filter(KubernetesClusterNodeCapacityReconciler.ONLINE_HOTPLUGGED_RESOURCES::equals).count());
     }
 
     @Test

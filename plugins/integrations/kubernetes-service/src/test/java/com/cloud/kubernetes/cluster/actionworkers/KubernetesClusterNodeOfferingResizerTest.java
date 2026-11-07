@@ -104,7 +104,6 @@ public class KubernetesClusterNodeOfferingResizerTest {
         order.verify(vmManager).upgradeVirtualMachine(eq(1L), eq(20L), any(), any(Runnable.class));
         order.verify(reconciler).startResize(cluster, vm, access, "uid-1");
         Assert.assertEquals(1, liveResizeAttempts);
-        order.verify(reconciler).onlineGuestResources(access);
         order.verify(reconciler).waitForGuestResources(resizedVm, target, access, DEADLINE);
         order.verify(reconciler).restartKubelet(resizedVm, access, DEADLINE);
         order.verify(reconciler).waitForKubernetesResources(resizedVm, resizedGuest, access, DEADLINE);
@@ -226,7 +225,6 @@ public class KubernetesClusterNodeOfferingResizerTest {
 
         resize(WORKER);
 
-        Mockito.verify(reconciler).onlineGuestResources(access);
         Mockito.verify(reconciler).waitForGuestResources(resizedVm, target, access, DEADLINE);
         Mockito.verify(reconciler).finishResize(cluster, resizedVm, access, "uid-1");
         Mockito.verify(reconciler, Mockito.never()).startResize(any(), any(), any(), any());

@@ -207,7 +207,7 @@ public class KubernetesClusterNodeCapacityReconciler {
         });
     }
 
-    /** Waits until the guest has the target resources online; fails at once if it has more than the target. */
+    /** Brings hotplugged resources online until the guest matches the target; fails at once if it is above the target. */
     public GuestResources waitForGuestResources(UserVm vm, ServiceOffering target, NodeAccess access, long deadline) {
         return poll("GUEST_VERIFY", vm, deadline, "guest CPU or memory did not reach the target offering", () -> {
             GuestResources guest = readGuest(vm, access);
@@ -215,7 +215,14 @@ public class KubernetesClusterNodeCapacityReconciler {
                 throw failure("GUEST_VERIFY", vm, String.format("the guest has %d CPUs and %d MiB of memory online, more than the target offering",
                         guest.getOnlineCpus(), guest.getOnlineMemoryBytes() / ByteScaleUtils.MiB));
             }
-            return guestMatchesTarget(guest, target) ? guest : null;
+            if (guestMatchesTarget(guest, target)) {
+                return guest;
+            }
+            // Hotplugged devices may appear after an earlier scan, so retry onlining while time remains.
+            if (currentTimeMillis() < deadline) {
+                onlineGuestResources(access);
+            }
+            return null;
         });
     }
 
