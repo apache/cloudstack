@@ -165,7 +165,8 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
         if (cluster != null) {
             message += String.format(": %s", cluster.getName());
         }
-        throw new CloudRuntimeException(message + ". Use the Kubernetes cluster scale operation instead.");
+        // A parameter error, so the API also shows the reason to non-admin callers.
+        throw new InvalidParameterValueException(message + ". Use the Kubernetes cluster scale operation instead.");
     }
 
     @Override

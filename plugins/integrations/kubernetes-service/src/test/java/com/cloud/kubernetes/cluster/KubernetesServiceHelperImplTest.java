@@ -132,14 +132,14 @@ public class KubernetesServiceHelperImplTest {
         return vm;
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testOfferingChangeBlockedForCloudManagedNode() {
         UserVm vm = mappedVm(KubernetesCluster.ClusterType.CloudManaged);
         // The VM type is deliberately not consulted: membership is authoritative.
         kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(vm);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testOfferingChangeBlockedForAdoptedCloudManagedNode() {
         kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(mappedVm(KubernetesCluster.ClusterType.CloudManaged));
     }
@@ -149,7 +149,7 @@ public class KubernetesServiceHelperImplTest {
         kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(mappedVm(KubernetesCluster.ClusterType.ExternalManaged));
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testOfferingChangeBlockedForMissingMappedCluster() {
         kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(mappedVm(null));
     }
