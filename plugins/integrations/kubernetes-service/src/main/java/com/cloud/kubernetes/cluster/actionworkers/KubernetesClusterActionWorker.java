@@ -164,6 +164,10 @@ public class KubernetesClusterActionWorker {
     protected final static List<KubernetesClusterNodeType> CLUSTER_NODES_TYPES_LIST = Arrays.asList(WORKER, CONTROL, ETCD);
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
+    // whether this worker has started its operation with transitToOperationState, and the state the operation moved
+    // the cluster to and has not moved it out of yet
+    private boolean operationStarted = false;
+    private KubernetesCluster.State ownedState;
 
     @Inject
     protected CAManager caManager;
@@ -770,15 +774,94 @@ public class KubernetesClusterActionWorker {
         }
     }
 
+    /**
+     * Moves the cluster on with the given event. Once this worker has started its operation with
+     * {@link #transitToOperationState}, it only moves the cluster out of the state that the operation last moved it
+     * to: a cluster it never moved, or that has moved on since, may be held by another operation by now.
+     */
     protected boolean stateTransitTo(long kubernetesClusterId, KubernetesCluster.Event e) {
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
+        if (kubernetesCluster == null) {
+            logger.warn("Unable to find Kubernetes cluster with ID {} to apply event {}", kubernetesClusterId, e);
+            return false;
+        }
+        if (operationStarted) {
+            if (ownedState == null || kubernetesCluster.getState() != ownedState) {
+                logger.debug("Not applying event {} to Kubernetes cluster {} in state {}, which its operation does not hold", e, kubernetesCluster, kubernetesCluster.getState());
+                return false;
+            }
+        }
         try {
-            return _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
+            boolean transitioned = _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
+            if (operationStarted) {
+                // the operation holds the state it moved the cluster to, until another operation moves it on; on a
+                // miss, another operation already has
+                ownedState = transitioned ? kubernetesCluster.getState() : null;
+            }
+            return transitioned;
         } catch (NoTransitionException nte) {
             logger.warn(String.format("Failed to transition state of the Kubernetes cluster : %s in state %s on event %s",
                 kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
+    }
+
+    /**
+     * Moves the cluster into the state of the operation that is starting, failing if another operation got there first.
+     * The state is compared and set in one update, so of two operations started on the cluster at once only one gets
+     * past this point. The other fails without changing the state, and without undoing anything that the operation in
+     * progress may still need.
+     * <p>
+     * From then on the worker only moves the cluster out of that state, see {@link #stateTransitTo}.
+     *
+     * @param statesToGoOnWithout the states with no transition for the event in which the operation still goes on,
+     *                            without a state change, as it did before; in any other such state it fails. Going on
+     *                            this way, the operation holds no state, and does not move the cluster when it ends.
+     * @return whether the cluster was moved to the operation's state
+     */
+    protected boolean transitToOperationState(final KubernetesCluster.Event event, final KubernetesCluster.State... statesToGoOnWithout) throws CloudRuntimeException {
+        operationStarted = true;
+        KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+        if (cluster == null) {
+            throw new CloudRuntimeException(String.format("Unable to find Kubernetes cluster %s", kubernetesCluster.getName()));
+        }
+        final KubernetesCluster.State state = cluster.getState();
+        boolean transitioned;
+        try {
+            transitioned = _stateMachine.transitTo(cluster, event, null, kubernetesClusterDao);
+        } catch (NoTransitionException e) {
+            if (Arrays.asList(statesToGoOnWithout).contains(state)) {
+                return false;
+            }
+            String message = String.format("Kubernetes cluster %s is in state %s, which does not allow %s", kubernetesCluster.getName(), state, event);
+            logger.warn(message);
+            throw new CloudRuntimeException(message);
+        }
+        if (!transitioned) {
+            KubernetesClusterVO current = kubernetesClusterDao.findById(cluster.getId());
+            throw operationRaced(state, current == null ? null : current.getState(), event);
+        }
+        ownedState = cluster.getState();
+        return true;
+    }
+
+    /**
+     * Makes the operation hold a state it went on in without moving the cluster, so that it moves the cluster out of
+     * it when it ends: a retried destroy completes the Destroying state.
+     */
+    protected void holdOperationState(final KubernetesCluster.State state) {
+        ownedState = state;
+    }
+
+    protected boolean isOperationStarted() {
+        return operationStarted;
+    }
+
+    protected CloudRuntimeException operationRaced(final KubernetesCluster.State from, final KubernetesCluster.State to, final KubernetesCluster.Event event) {
+        String message = String.format("Kubernetes cluster %s changed from state %s to %s before %s could start; another operation may be in progress, please retry once it has finished",
+                kubernetesCluster.getName(), from, to, event);
+        logger.warn(message);
+        return new CloudRuntimeException(message);
     }
 
     protected boolean createCloudStackSecret(String[] keys) {

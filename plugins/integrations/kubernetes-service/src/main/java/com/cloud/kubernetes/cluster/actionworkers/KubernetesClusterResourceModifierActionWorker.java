@@ -121,6 +121,9 @@ import org.apache.logging.log4j.Level;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
 
+    private final KubernetesCluster.State initialState;
+    private boolean scalingStateEntered = false;
+
     @Inject
     protected CapacityManager capacityManager;
     @Inject
@@ -166,6 +169,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
+        this.initialState = kubernetesCluster.getState();
     }
 
     protected void init() {
@@ -953,10 +957,34 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return kubernetesClusterVO;
     }
 
-    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+    /**
+     * Moves the cluster into its scaling state the first time a scaling step needs it, failing if another operation
+     * moved the cluster first. Later steps of the same operation find the cluster already in that state.
+     */
+    protected void enterScalingState(KubernetesCluster.Event event) throws CloudRuntimeException {
+        if (scalingStateEntered) {
+            return;
         }
+        // a cluster which was never started has no scaling states: only its stored settings change. Created has no
+        // transition to compare and set, so this only checks that no start has taken the cluster since the request
+        // was accepted, which leaves a narrow window open.
+        if (KubernetesCluster.State.Created.equals(initialState)) {
+            KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+            if (cluster == null || !KubernetesCluster.State.Created.equals(cluster.getState())) {
+                throw operationRaced(initialState, cluster == null ? null : cluster.getState(), event);
+            }
+            return;
+        }
+        transitToOperationState(event);
+        scalingStateEntered = true;
+    }
+
+    protected boolean isScalingStateEntered() {
+        return scalingStateEntered;
+    }
+
+    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
+        enterScalingState(KubernetesCluster.Event.AutoscaleRequested);
 
         File pkFile = getManagementServerSshPublicKeyFile();
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
@@ -1001,10 +1029,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             return true;
         } catch (Exception e) {
             String msg = String.format("Failed to autoscale Kubernetes cluster: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            // fail the scaling state this operation entered; a cluster never started holds none
+            if (isScalingStateEntered()) {
+                logTransitStateAndThrow(Level.ERROR, msg, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
             logAndThrow(Level.ERROR, msg);
             return false;
         } finally {
-            // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
             updateLoginUserDetails(null);
         }
     }

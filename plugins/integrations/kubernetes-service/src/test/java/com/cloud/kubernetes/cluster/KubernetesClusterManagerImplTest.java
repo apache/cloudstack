@@ -51,12 +51,15 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.commons.collections.MapUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -117,6 +120,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private AsyncJobDao asyncJobDao;
 
     @Spy
     @InjectMocks
@@ -912,6 +918,108 @@ public class KubernetesClusterManagerImplTest {
         kubernetesClusterManager.validateNodeAffinityGroups(Arrays.asList(newNodeId), cluster);
 
         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
+    }
+
+    private static final String CLUSTER_TYPE = ApiCommandResourceType.KubernetesCluster.toString();
+
+    private KubernetesClusterVO mockClusterInState(long id, KubernetesCluster.State state) {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.lenient().when(cluster.getId()).thenReturn(id);
+        Mockito.lenient().when(cluster.getState()).thenReturn(state);
+        Mockito.lenient().when(cluster.getUuid()).thenReturn("uuid-" + id);
+        Mockito.lenient().when(kubernetesClusterDao.findById(id)).thenReturn(cluster);
+        return cluster;
+    }
+
+    private AsyncJobVO mockPendingJob(Long instanceId) {
+        AsyncJobVO job = Mockito.mock(AsyncJobVO.class);
+        Mockito.when(job.getInstanceId()).thenReturn(instanceId);
+        return job;
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesFailsOnlyOperationsWithoutJob() {
+        KubernetesClusterVO orphaned = mockClusterInState(1L, KubernetesCluster.State.Upgrading);
+        KubernetesClusterVO busy = mockClusterInState(2L, KubernetesCluster.State.Scaling);
+        Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInStates(KubernetesClusterManagerImpl.OPERATION_STATES)).thenReturn(List.of(orphaned, busy));
+        AsyncJobVO job = mockPendingJob(2L);
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJobs(CLUSTER_TYPE, null)).thenReturn(List.of(job));
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJob(CLUSTER_TYPE, 2L)).thenReturn(job);
+        Mockito.when(kubernetesClusterDao.updateState(KubernetesCluster.State.Upgrading, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, orphaned, null)).thenReturn(true);
+
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verify(kubernetesClusterDao, Mockito.times(1)).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesLeavesClusterNamedByJobOfOlderManagementServer() {
+        KubernetesClusterVO named = mockClusterInState(1L, KubernetesCluster.State.Starting);
+        KubernetesClusterVO orphaned = mockClusterInState(2L, KubernetesCluster.State.Upgrading);
+        Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInStates(KubernetesClusterManagerImpl.OPERATION_STATES)).thenReturn(List.of(named, orphaned));
+        AsyncJobVO job = mockPendingJob(null);
+        Mockito.when(job.getCmdInfo()).thenReturn("{\"id\":\"uuid-1\"}");
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJobs(CLUSTER_TYPE, null)).thenReturn(List.of(job));
+        Mockito.when(kubernetesClusterDao.updateState(KubernetesCluster.State.Upgrading, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, orphaned, null)).thenReturn(true);
+
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verify(kubernetesClusterDao, Mockito.times(1)).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(kubernetesClusterDao).updateState(KubernetesCluster.State.Upgrading, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, orphaned, null);
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesLeavesEveryClusterForJobOfOlderManagementServerWithoutParameters() {
+        KubernetesClusterVO cluster = mockClusterInState(1L, KubernetesCluster.State.Starting);
+        Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInStates(KubernetesClusterManagerImpl.OPERATION_STATES)).thenReturn(List.of(cluster));
+        AsyncJobVO job = mockPendingJob(null);
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJobs(CLUSTER_TYPE, null)).thenReturn(List.of(job));
+
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesSkipsJobLookupWithoutClusters() {
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verifyNoInteractions(asyncJobDao);
+    }
+
+    @Test
+    public void recoverOrphanedOperationStateLeavesClusterWhoseOperationEnded() throws Exception {
+        mockClusterInState(1L, KubernetesCluster.State.Running);
+
+        kubernetesClusterManager.recoverOrphanedOperationState(1L);
+
+        Mockito.verifyNoInteractions(asyncJobDao);
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStateLeavesClusterWithJobStartedSinceTheScan() throws Exception {
+        mockClusterInState(1L, KubernetesCluster.State.Scaling);
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJob(CLUSTER_TYPE, 1L)).thenReturn(Mockito.mock(AsyncJobVO.class));
+
+        kubernetesClusterManager.recoverOrphanedOperationState(1L);
+
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStateFailsStart() throws Exception {
+        KubernetesClusterVO cluster = mockClusterInState(1L, KubernetesCluster.State.Starting);
+        Mockito.when(kubernetesClusterDao.updateState(KubernetesCluster.State.Starting, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, cluster, null)).thenReturn(true);
+
+        kubernetesClusterManager.recoverOrphanedOperationState(1L);
+
+        Mockito.verify(kubernetesClusterDao).updateState(KubernetesCluster.State.Starting, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, cluster, null);
     }
 
 }
