@@ -385,7 +385,8 @@ public class KubernetesClusterNodeOfferingResizerTest {
         resizer().reconcilePending(vmMap, WORKER, target, DEADLINE);
         Mockito.when(reconciler.readNode(vm, access)).thenReturn(node(true, CLUSTER_UUID, null));
 
-        Assert.assertThrows(CloudRuntimeException.class, () -> resizer().reconcilePending(vmMap, WORKER, target, DEADLINE));
+        KubernetesClusterNodeOfferingResizer retryResizer = resizer();
+        Assert.assertThrows(CloudRuntimeException.class, () -> retryResizer.reconcilePending(vmMap, WORKER, target, DEADLINE));
 
         Mockito.verify(reconciler, Mockito.times(2)).readNode(vm, access);
         Mockito.verifyNoMoreInteractions(reconciler);

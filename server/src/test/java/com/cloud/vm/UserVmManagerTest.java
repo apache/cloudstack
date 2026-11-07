@@ -124,6 +124,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -488,7 +489,7 @@ public class UserVmManagerTest {
             CallContext.register(_userMock, _accountMock);
             assertFalse(_userVmMgr.upgradeVirtualMachine(1L, 3L, Map.of(), prepare));
             Mockito.verifyNoInteractions(prepare);
-            verify(_itMgr, Mockito.never()).reConfigureVm(any(), any(), any(), any(), anyBoolean());
+            verify(_itMgr, never()).reConfigureVm(any(), any(), any(), any(), anyBoolean());
 
             assertTrue(_userVmMgr.upgradeVirtualMachine(1L, 3L, Map.of(), prepare));
             InOrder order = Mockito.inOrder(prepare, _itMgr);
