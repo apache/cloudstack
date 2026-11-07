@@ -23,6 +23,7 @@ import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -2275,6 +2276,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                 params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
                 params.put(ReconcileCommandService.ReconcileCommandsEnabled.key(), String.valueOf(_reconcileCommandsEnabled));
+                params.put(NetworkOrchestrationService.NetworkUsageExemptCidrs.key(), getUsageExemptCidrsParam(host.getDataCenterId()));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
@@ -2351,6 +2353,31 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
         }
+    }
+
+    @Override
+    public void propagateUsageExemptCidrsToAgents(Long zoneId) {
+        final Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
+        if (hostsPerZone == null) {
+            return;
+        }
+        logger.debug("Sending {} to the agents", NetworkOrchestrationService.NetworkUsageExemptCidrs.key());
+        for (Map.Entry<Long, List<Long>> zone : hostsPerZone.entrySet()) {
+            if (zoneId != null && !zoneId.equals(zone.getKey())) {
+                continue;
+            }
+            final Map<String, String> params = new HashMap<>();
+            params.put(NetworkOrchestrationService.NetworkUsageExemptCidrs.key(), getUsageExemptCidrsParam(zone.getKey()));
+            sendCommandToAgents(Collections.singletonMap(zone.getKey(), zone.getValue()), params);
+        }
+    }
+
+    /**
+     * The zone's exempt list, tidied and joined with commas. An empty string tells the host the list is empty.
+     */
+    protected String getUsageExemptCidrsParam(long zoneId) {
+        return String.join(",", NetworkOrchestrationService.parseUsageExemptCidrs(
+                NetworkOrchestrationService.NetworkUsageExemptCidrs.valueIn(zoneId)));
     }
 
     @Override
