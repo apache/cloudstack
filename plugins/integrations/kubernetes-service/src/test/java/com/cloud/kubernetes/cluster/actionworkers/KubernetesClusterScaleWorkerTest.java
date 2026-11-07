@@ -24,6 +24,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import org.junit.Assert;
@@ -186,5 +187,149 @@ public class KubernetesClusterScaleWorkerTest {
         List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
 
         Assert.assertTrue(toRemove.isEmpty());
+    }
+
+    private UserVmVO mockNodeVm(String hostName) {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getHostName()).thenReturn(hostName);
+        return vm;
+    }
+
+    @Test
+    public void testDrainNodesToRemoveFailureLeavesClusterUnchanged() throws Exception {
+        Mockito.when(kubernetesCluster.getId()).thenReturn(10L);
+        worker.publicIpAddress = "10.0.0.1";
+        worker.sshPort = 2222;
+        worker.scaleTimeoutTime = Long.MAX_VALUE;
+        KubernetesClusterScaleWorker spy = Mockito.spy(worker);
+        UserVmVO node1 = mockNodeVm("node-1");
+        UserVmVO node2 = mockNodeVm("node-2");
+        Mockito.doReturn(new Pair<>(true, "")).when(spy).executeSshCommand(Mockito.eq("10.0.0.1"), Mockito.eq(2222),
+                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(new Pair<>(true, "drained")).when(spy).drainKubernetesClusterNode(Mockito.eq("10.0.0.1"), Mockito.eq(2222),
+                Mockito.eq(node1), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(new Pair<>(false, "Cannot evict pod")).when(spy).drainKubernetesClusterNode(Mockito.eq("10.0.0.1"), Mockito.eq(2222),
+                Mockito.eq(node2), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(true).when(spy).uncordonKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any());
+        Mockito.doReturn(true).when(spy).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        try {
+            spy.drainNodesToRemove(Arrays.asList(node1, node2));
+            Assert.fail("Expected the scale-down to stop");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("node-2"));
+            Assert.assertTrue(e.getMessage().contains("Cannot evict pod"));
+        }
+        Mockito.verify(spy).uncordonKubernetesClusterNode("10.0.0.1", 2222, node1);
+        Mockito.verify(spy).uncordonKubernetesClusterNode("10.0.0.1", 2222, node2);
+        Mockito.verify(spy).stateTransitTo(10L, KubernetesCluster.Event.OperationSucceeded);
+        Mockito.verify(spy, Mockito.never()).stateTransitTo(10L, KubernetesCluster.Event.OperationFailed);
+    }
+
+    @Test
+    public void testDrainNodesToRemoveCordonsAllBeforeDraining() throws Exception {
+        worker.publicIpAddress = "10.0.0.1";
+        worker.sshPort = 2222;
+        worker.scaleTimeoutTime = Long.MAX_VALUE;
+        KubernetesClusterScaleWorker spy = Mockito.spy(worker);
+        UserVmVO node1 = mockNodeVm("node-1");
+        UserVmVO node2 = mockNodeVm("node-2");
+        Mockito.doReturn(new Pair<>(true, "")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(new Pair<>(true, "drained")).when(spy).drainKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+
+        spy.drainNodesToRemove(Arrays.asList(node1, node2));
+
+        org.mockito.InOrder inOrder = Mockito.inOrder(spy);
+        inOrder.verify(spy).executeSshCommand("10.0.0.1", 2222, "sudo /opt/bin/kubectl cordon node-1", 10000, 10000, 30000);
+        inOrder.verify(spy).executeSshCommand("10.0.0.1", 2222, "sudo /opt/bin/kubectl cordon node-2", 10000, 10000, 30000);
+        inOrder.verify(spy).drainKubernetesClusterNode(Mockito.eq("10.0.0.1"), Mockito.eq(2222), Mockito.eq(node1), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        inOrder.verify(spy).drainKubernetesClusterNode(Mockito.eq("10.0.0.1"), Mockito.eq(2222), Mockito.eq(node2), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(spy, Mockito.never()).uncordonKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any());
+        Mockito.verify(spy, Mockito.never()).stateTransitTo(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void testDrainNodesToRemoveFailureKeepsAlertCluster() throws Exception {
+        Mockito.when(kubernetesCluster.getId()).thenReturn(10L);
+        Mockito.when(kubernetesCluster.getState()).thenReturn(KubernetesCluster.State.Alert);
+        KubernetesClusterScaleWorker alertWorker = new KubernetesClusterScaleWorker(kubernetesCluster, null, 1L, null, null, null, null, clusterManager);
+        alertWorker.publicIpAddress = "10.0.0.1";
+        alertWorker.sshPort = 2222;
+        KubernetesClusterScaleWorker spy = Mockito.spy(alertWorker);
+        UserVmVO node1 = mockNodeVm("node-1");
+        Mockito.doReturn(new Pair<>(false, "connection refused")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(true).when(spy).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, () -> spy.drainNodesToRemove(List.of(node1)));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("unable to cordon Kubernetes node: node-1"));
+        Mockito.verify(spy).stateTransitTo(10L, KubernetesCluster.Event.OperationFailed);
+        Mockito.verify(spy, Mockito.never()).uncordonKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any());
+    }
+
+    @Test
+    public void testDrainNodesToRemoveStopsAtDeadline() throws Exception {
+        Mockito.when(kubernetesCluster.getId()).thenReturn(10L);
+        worker.publicIpAddress = "10.0.0.1";
+        worker.sshPort = 2222;
+        worker.scaleTimeoutTime = System.currentTimeMillis() - 1;
+        KubernetesClusterScaleWorker spy = Mockito.spy(worker);
+        UserVmVO node1 = mockNodeVm("node-1");
+        Mockito.doReturn(new Pair<>(true, "")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(true).when(spy).uncordonKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any());
+        Mockito.doReturn(true).when(spy).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, () -> spy.drainNodesToRemove(List.of(node1)));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("timed out"));
+        Mockito.verify(spy, Mockito.never()).drainKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(spy).uncordonKubernetesClusterNode("10.0.0.1", 2222, node1);
+        Mockito.verify(spy).stateTransitTo(10L, KubernetesCluster.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void testDrainNodesToRemoveKeepsNodeCordonedBeforehand() throws Exception {
+        Mockito.when(kubernetesCluster.getId()).thenReturn(10L);
+        worker.publicIpAddress = "10.0.0.1";
+        worker.sshPort = 2222;
+        worker.scaleTimeoutTime = Long.MAX_VALUE;
+        KubernetesClusterScaleWorker spy = Mockito.spy(worker);
+        UserVmVO node1 = mockNodeVm("node-1");
+        UserVmVO node2 = mockNodeVm("node-2");
+        Mockito.doReturn(new Pair<>(true, "")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(new Pair<>(true, "sudo: unable to resolve host node-1\ntrue")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.eq("sudo /opt/bin/kubectl get node node-1 -o jsonpath='{.spec.unschedulable}'"), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(new Pair<>(false, "Cannot evict pod")).when(spy).drainKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(true).when(spy).uncordonKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any());
+        Mockito.doReturn(true).when(spy).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> spy.drainNodesToRemove(Arrays.asList(node1, node2)));
+        Mockito.verify(spy, Mockito.never()).uncordonKubernetesClusterNode("10.0.0.1", 2222, node1);
+        Mockito.verify(spy).uncordonKubernetesClusterNode("10.0.0.1", 2222, node2);
+    }
+
+    @Test
+    public void testDrainNodesToRemoveTakesUnknownCordonAsCordoned() throws Exception {
+        Mockito.when(kubernetesCluster.getId()).thenReturn(10L);
+        worker.publicIpAddress = "10.0.0.1";
+        worker.sshPort = 2222;
+        worker.scaleTimeoutTime = Long.MAX_VALUE;
+        KubernetesClusterScaleWorker spy = Mockito.spy(worker);
+        UserVmVO node1 = mockNodeVm("node-1");
+        Mockito.doReturn(new Pair<>(true, "")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doThrow(new RuntimeException("timed out")).when(spy).executeSshCommand(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.startsWith("sudo /opt/bin/kubectl get node"), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.doReturn(new Pair<>(false, "Cannot evict pod")).when(spy).drainKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(true).when(spy).stateTransitTo(Mockito.anyLong(), Mockito.any());
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> spy.drainNodesToRemove(List.of(node1)));
+        Mockito.verify(spy).executeSshCommand("10.0.0.1", 2222, "sudo /opt/bin/kubectl cordon node-1", 10000, 10000, 30000);
+        Mockito.verify(spy, Mockito.never()).uncordonKubernetesClusterNode(Mockito.anyString(), Mockito.anyInt(), Mockito.any());
     }
 }
