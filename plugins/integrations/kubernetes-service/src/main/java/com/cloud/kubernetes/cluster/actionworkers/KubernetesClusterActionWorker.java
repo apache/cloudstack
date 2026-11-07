@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -154,6 +155,12 @@ public class KubernetesClusterActionWorker {
     public static final int ETCD_NODE_CLIENT_REQUEST_PORT = 2379;
     public static final int ETCD_NODE_PEER_COMM_PORT = 2380;
     public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = DEFAULT_SSH_PORT;
+    /** How long to wait before retrying a failed drain of a node, in milliseconds. */
+    protected static final long DRAIN_RETRY_WAIT = 30000;
+    /** How much of the output of a failed drain to put in the error, in characters. */
+    protected static final int MAX_DRAIN_OUTPUT_IN_ERROR = 2000;
+    /** How much longer than kubectl drain's own timeout the SSH call waits, in seconds. */
+    protected static final long DRAIN_SSH_MARGIN = 60;
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
     public static final String CKS_SECURITY_GROUP_DESCRIPTION = "Security group for CKS nodes";
@@ -372,8 +379,9 @@ public class KubernetesClusterActionWorker {
     protected void logTransitStateDetachIsoAndThrow(final Level logLevel, final String message, final KubernetesCluster kubernetesCluster,
                                                     final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
-        stateTransitTo(kubernetesCluster.getId(), event);
+        // Detach first: once the cluster is in Alert, a retry of the upgrade may attach the ISO again
         detachIsoKubernetesVMs(clusterVMs);
+        stateTransitTo(kubernetesCluster.getId(), event);
         if (e == null) {
             throw new CloudRuntimeException(message);
         }
@@ -774,6 +782,146 @@ public class KubernetesClusterActionWorker {
         }
     }
 
+    /** Runs a command on a cluster node over SSH, as the cluster's login user with the management server's key. */
+    protected Pair<Boolean, String> executeSshCommand(final String ipAddress, final int port, final String command,
+                                                      final int connectTimeout, final int kexTimeout, final int waitTimeout) throws Exception {
+        return SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(), getManagementServerSshPublicKeyFile(), null,
+                command, connectTimeout, kexTimeout, waitTimeout);
+    }
+
+    /** Waits before a retry. Returns false if the thread was interrupted, in which case the caller should stop retrying. */
+    protected boolean sleepBeforeRetry(final long millis) {
+        try {
+            Thread.sleep(millis);
+            return true;
+        } catch (InterruptedException ie) {
+            logger.warn("Interrupted while waiting to retry an operation on Kubernetes cluster: {}", kubernetesCluster, ie);
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    protected static String getNodeName(final UserVm vm) {
+        String hostName = vm.getHostName();
+        return StringUtils.isNotEmpty(hostName) ? hostName.toLowerCase() : hostName;
+    }
+
+    /**
+     * Drains a Kubernetes node through the cluster's API endpoint, so that it can be removed or upgraded.
+     * Each attempt runs "kubectl drain" with the timeout of the cloud.kubernetes.cluster.node.drain.timeout setting,
+     * and the SSH call waits a little longer than that. A failed attempt, whether the command fails or the SSH call
+     * does, is retried after waiting, until the attempts are used up or the deadline has passed. No attempt runs
+     * past the deadline. A failed drain leaves the node cordoned: the caller uncordons it if it cordoned it, as only
+     * the caller knows whether the node was cordoned before.
+     *
+     * @return whether the node was drained, and the output of the last attempt, which explains a failure
+     */
+    protected Pair<Boolean, String> drainKubernetesClusterNode(final String ipAddress, final int port, final UserVm vm,
+                                                              final int attempts, final long retryWait, final long deadline) {
+        final String nodeName = getNodeName(vm);
+        Long configuredTimeout = KubernetesClusterService.KubernetesClusterNodeDrainTimeout.value();
+        final long drainTimeout = configuredTimeout != null && configuredTimeout >= 1 ? configuredTimeout :
+                Long.parseLong(KubernetesClusterService.KubernetesClusterNodeDrainTimeout.defaultValue());
+        String output = "no time was left to drain the node before the operation timed out";
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            if (attempt > 1) {
+                // Only wait if there will still be time for an attempt afterwards
+                if (System.currentTimeMillis() + retryWait + (DRAIN_SSH_MARGIN + 1) * 1000 > deadline || !sleepBeforeRetry(retryWait)) {
+                    break;
+                }
+            }
+            // Don't let an attempt run past the deadline of the operation, which would evict pods for nothing
+            final long secondsLeft = (deadline - System.currentTimeMillis()) / 1000 - DRAIN_SSH_MARGIN;
+            if (secondsLeft < 1) {
+                break;
+            }
+            final long timeout = Math.min(drainTimeout, secondsLeft);
+            final String command = String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-emptydir-data --timeout=%ds",
+                    nodeName, timeout);
+            final int sshWaitTimeout = (int) Math.min(Integer.MAX_VALUE, (timeout + DRAIN_SSH_MARGIN) * 1000);
+            try {
+                Pair<Boolean, String> result = executeSshCommand(ipAddress, port, command, 10000, 10000, sshWaitTimeout);
+                output = result.second();
+                if (Boolean.TRUE.equals(result.first())) {
+                    return new Pair<>(true, output);
+                }
+                logger.warn("Draining node: {} on VM: {} in Kubernetes cluster: {} failed (attempt {} of {}): {}",
+                        nodeName, vm, kubernetesCluster, attempt, attempts, output);
+            } catch (Exception e) {
+                output = e.getMessage();
+                logger.warn("Draining node: {} on VM: {} in Kubernetes cluster: {} failed (attempt {} of {})",
+                        nodeName, vm, kubernetesCluster, attempt, attempts, e);
+            }
+        }
+        // A drain blocked by a PodDisruptionBudget logs every retry of every eviction; the end is what explains it
+        return new Pair<>(false, StringUtils.right(output, MAX_DRAIN_OUTPUT_IN_ERROR));
+    }
+
+    /**
+     * Tells whether a node is cordoned already. If that can't be found out, it is taken as cordoned, so that a
+     * rollback doesn't uncordon a node that someone else may have cordoned.
+     */
+    protected boolean isNodeCordoned(final UserVm vm) {
+        try {
+            Pair<Boolean, String> result = executeSshCommand(publicIpAddress, sshPort,
+                    String.format("sudo /opt/bin/kubectl get node %s -o jsonpath='{.spec.unschedulable}'", getNodeName(vm)), 10000, 10000, 30000);
+            if (!Boolean.TRUE.equals(result.first()) || result.second() == null) {
+                logger.warn("Unable to find out whether node: {} on VM: {} in Kubernetes cluster: {} is cordoned, taking it as cordoned: {}",
+                        getNodeName(vm), vm, kubernetesCluster, result.second());
+                return true;
+            }
+            // The output also holds anything written to stderr, such as a warning from sudo
+            return result.second().lines().anyMatch(line -> "true".equals(line.trim()));
+        } catch (Exception e) {
+            logger.warn("Unable to find out whether node: {} on VM: {} in Kubernetes cluster: {} is cordoned, taking it as cordoned", getNodeName(vm), vm, kubernetesCluster, e);
+            return true;
+        }
+    }
+
+    /** Uncordons nodes, only logging a warning for the ones that can't be uncordoned. */
+    protected void uncordonNodes(final List<? extends UserVm> vms) {
+        for (UserVm vm : vms) {
+            if (!uncordonKubernetesClusterNode(publicIpAddress, sshPort, vm)) {
+                logger.warn("Unable to uncordon node: {} on VM: {} in Kubernetes cluster: {}", getNodeName(vm), vm, kubernetesCluster);
+            }
+        }
+    }
+
+    /** Uncordons a node, trying for up to a minute. */
+    protected boolean uncordonKubernetesClusterNode(final String ipAddress, final int port, final UserVm vm) {
+        return KubernetesClusterUtil.uncordonKubernetesClusterNode(kubernetesCluster, ipAddress, port, getControlNodeLoginUser(),
+                getManagementServerSshPublicKeyFile(), vm, System.currentTimeMillis() + 60000, 10000);
+    }
+
+    /**
+     * Returns the address and port to reach a node over SSH. On a network with port forwarding, the port is the
+     * one the node's port-forwarding rule actually uses. The rules are not always in the order of the cluster's VMs:
+     * external nodes and nodes left out of an operation, such as manual-upgrade nodes, shift the order. When the node
+     * has no such rule, the port is derived from its position in the list of nodes, as before.
+     */
+    protected Pair<String, Integer> getNodeSshAddress(final UserVm vm, final int index) {
+        if (sshPort == DEFAULT_SSH_PORT) {
+            return new Pair<>(index > 0 ? vm.getPrivateIpAddress() : publicIpAddress, DEFAULT_SSH_PORT);
+        }
+        List<PortForwardingRuleVO> rules = portForwardingRulesDao.listByVm(vm.getId());
+        if (rules != null) {
+            Optional<PortForwardingRuleVO> rule = rules.stream()
+                    .filter(r -> !FirewallRule.State.Revoke.equals(r.getState()))
+                    .filter(r -> r.getDestinationPortStart() == DEFAULT_SSH_PORT && r.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT)
+                    .filter(r -> isRuleOnAddress(r, publicIpAddress))
+                    .findFirst();
+            if (rule.isPresent()) {
+                return new Pair<>(publicIpAddress, rule.get().getSourcePortStart());
+            }
+        }
+        return new Pair<>(publicIpAddress, sshPort + index);
+    }
+
+    private boolean isRuleOnAddress(final PortForwardingRuleVO rule, final String address) {
+        IPAddressVO ip = ipAddressDao.findById(rule.getSourceIpAddressId());
+        return ip != null && ip.getAddress() != null && ip.getAddress().addr().equals(address);
+    }
+
     /**
      * Moves the cluster on with the given event. Once this worker has started its operation with
      * {@link #transitToOperationState}, it only moves the cluster out of the state that the operation last moved it
@@ -797,6 +945,11 @@ public class KubernetesClusterActionWorker {
                 // the operation holds the state it moved the cluster to, until another operation moves it on; on a
                 // miss, another operation already has
                 ownedState = transitioned ? kubernetesCluster.getState() : null;
+            }
+            if (transitioned && (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) ||
+                    KubernetesCluster.State.Stopped.equals(kubernetesCluster.getState()))) {
+                // A cluster that is Running or Stopped again is no longer in Alert because of a failed upgrade
+                kubernetesClusterDetailsDao.removeDetail(kubernetesClusterId, KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL);
             }
             return transitioned;
         } catch (NoTransitionException nte) {

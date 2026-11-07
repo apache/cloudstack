@@ -131,6 +131,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Level;
 
 import com.cloud.api.ApiDBUtils;
@@ -175,6 +176,7 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStopWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -1570,6 +1572,40 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return map.values().stream().anyMatch(Objects::isNull);
     }
 
+    /**
+     * Tells whether upgrading a cluster in Alert state to a version retries an upgrade to that version that failed.
+     * An upgrade records the version it is upgrading to as a detail of the cluster, which is removed once the cluster
+     * is Running again.
+     * For an upgrade that failed before that detail was recorded, the nodes' versions are used: the version of the cluster is only changed once every node has been upgraded, while the version recorded for
+     * each node is changed as soon as that node has been upgraded. So, a cluster that is still at an older version
+     * but has nodes at the target version is one whose upgrade to that version stopped part way. Nodes that are
+     * upgraded manually are left out, as they may be at any version.
+     */
+    protected boolean isRetryOfFailedUpgrade(KubernetesCluster kubernetesCluster, KubernetesSupportedVersion upgradeVersion) {
+        if (Objects.equals(upgradeVersion.getId(), kubernetesCluster.getKubernetesVersionId())) {
+            return false;
+        }
+        // Another version with the same semantic version as the cluster's is not an upgrade either
+        KubernetesSupportedVersionVO clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        if (clusterVersion == null || KubernetesClusterUtil.isSameNodeVersion(clusterVersion.getSemanticVersion(), upgradeVersion.getSemanticVersion())) {
+            return false;
+        }
+        KubernetesClusterDetailsVO upgradeDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL);
+        if (upgradeDetail != null) {
+            if (String.valueOf(upgradeVersion.getId()).equals(upgradeDetail.getValue())) {
+                return true;
+            }
+            // Another version with the same semantic version, for example one registered with a fixed ISO
+            KubernetesSupportedVersionVO failedVersion = NumberUtils.isDigits(upgradeDetail.getValue()) ?
+                    kubernetesSupportedVersionDao.findByIdIncludingRemoved(Long.parseLong(upgradeDetail.getValue())) : null;
+            return failedVersion != null && KubernetesClusterUtil.isSameNodeVersion(failedVersion.getSemanticVersion(), upgradeVersion.getSemanticVersion());
+        }
+        List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+        return vmMaps != null && vmMaps.stream()
+                .filter(vmMap -> !vmMap.isManualUpgrade())
+                .anyMatch(vmMap -> KubernetesClusterUtil.isSameNodeVersion(vmMap.getNodeVersion(), upgradeVersion.getSemanticVersion()));
+    }
+
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
         // Validate parameters
         ApiServiceConfiguration.validateEndpointUrl();
@@ -1590,7 +1626,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Upgrade kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
-        if (!KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
+        boolean inAlert = KubernetesCluster.State.Alert.equals(kubernetesCluster.getState());
+        if (!inAlert && !KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is not in running state", kubernetesCluster.getName()));
         }
         final DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -1603,6 +1640,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         if (!KubernetesSupportedVersion.State.Enabled.equals(upgradeVersion.getState())) {
             throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s for upgrade is in %s state", upgradeVersion.getUuid(), upgradeVersion.getState()));
+        }
+        if (inAlert) {
+            if (!isRetryOfFailedUpgrade(kubernetesCluster, upgradeVersion)) {
+                throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is in Alert state. It can be upgraded in that state only " +
+                        "to retry an upgrade that failed, to the same Kubernetes version as that upgrade", kubernetesCluster.getName()));
+            }
+            if (!isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Running)) {
+                throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is in Alert state and not all of its VMs are running. " +
+                        "Start them before retrying the upgrade", kubernetesCluster.getName()));
+            }
         }
         KubernetesSupportedVersionVO clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (clusterVersion == null || clusterVersion.getRemoved() != null) {
@@ -1640,7 +1687,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected boolean stateTransitTo(long kubernetesClusterId, KubernetesCluster.Event e) {
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
         try {
-            return _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
+            boolean transited = _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
+            if (transited && (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) ||
+                    KubernetesCluster.State.Stopped.equals(kubernetesCluster.getState()))) {
+                // As in KubernetesClusterActionWorker.stateTransitTo: no longer in Alert because of a failed upgrade
+                kubernetesClusterDetailsDao.removeDetail(kubernetesClusterId, KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL);
+            }
+            return transited;
         } catch (NoTransitionException nte) {
             logger.warn("Failed to transition state of the Kubernetes cluster: {} in state {} on event {}", kubernetesCluster, kubernetesCluster.getState().toString(), e.toString(), nte);
             return false;
@@ -3135,6 +3188,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterScaleTimeout,
             KubernetesClusterUpgradeTimeout,
             KubernetesClusterUpgradeRetries,
+            KubernetesClusterNodeDrainTimeout,
             KubernetesClusterAddNodeTimeout,
             KubernetesClusterRemoveNodeTimeout,
             KubernetesClusterExperimentalFeaturesEnabled,
