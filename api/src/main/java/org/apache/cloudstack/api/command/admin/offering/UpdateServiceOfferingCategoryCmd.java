@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,7 +34,8 @@ import com.cloud.user.Account;
         responseObject = ServiceOfferingCategoryResponse.class,
         since = "24.0",
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin})
 public class UpdateServiceOfferingCategoryCmd extends BaseCmd {
 
     /////////////////////////////////////////////////////
@@ -91,5 +94,15 @@ public class UpdateServiceOfferingCategoryCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update service offering category");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.ServiceOfferingCategory;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 }

@@ -9618,6 +9618,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         category = _serviceOfferingCategoryDao.persist(category);
+        CallContext.current().setEventResourceId(category.getId());
         CallContext.current().setEventDetails("Service offering category id=" + category.getId());
         return category;
     }

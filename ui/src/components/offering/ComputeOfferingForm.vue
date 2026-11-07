@@ -39,7 +39,7 @@
         v-model:value="form.displaytext"
         :placeholder="$t('label.displaytext')"/>
     </a-form-item>
-    <a-form-item name="categoryid" ref="categoryid" v-if="!isSystem">
+    <a-form-item name="categoryid" ref="categoryid" v-if="!isSystem && 'listServiceOfferingCategories' in $store.getters.apis">
       <template #label>
         <tooltip-label :title="$t('label.category')" :tooltip="apiParams.categoryid ? apiParams.categoryid.description : $t('label.category')"/>
       </template>
@@ -732,9 +732,14 @@ export default {
       })
     },
     fetchCategories () {
+      if (!('listServiceOfferingCategories' in this.$store.getters.apis)) {
+        return
+      }
       this.categoryLoading = true
       getAPI('listServiceOfferingCategories', {}).then(json => {
         this.categories = json.listserviceofferingcategoriesresponse.serviceofferingcategory || []
+      }).catch(() => {
+        this.categories = []
       }).finally(() => {
         this.categoryLoading = false
       })

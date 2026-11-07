@@ -1446,6 +1446,7 @@ public class ConfigurationManagerImplTest {
             Assert.assertEquals(persisted, result);
             Assert.assertEquals("Production", result.getName());
             Assert.assertEquals(5, result.getSortKey());
+            Mockito.verify(callContext).setEventResourceId(persisted.getId());
         }
     }
 

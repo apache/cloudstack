@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,7 +34,8 @@ import com.cloud.user.Account;
         responseObject = SuccessResponse.class,
         since = "24.0",
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin})
 public class DeleteServiceOfferingCategoryCmd extends BaseCmd {
 
     /////////////////////////////////////////////////////
@@ -72,5 +75,15 @@ public class DeleteServiceOfferingCategoryCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.ServiceOfferingCategory;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 }

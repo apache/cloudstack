@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -28,7 +29,8 @@ import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
         responseObject = ServiceOfferingCategoryResponse.class,
         since = "24.0",
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListServiceOfferingCategoriesCmd extends BaseListCmd {
 
     /////////////////////////////////////////////////////

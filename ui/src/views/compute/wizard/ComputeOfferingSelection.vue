@@ -32,7 +32,14 @@
         blockSize="medium"
         @change="handleServiceOfferingCategoryChange">
         <template #radio-option="{ item }">
-              {{ item.name }}
+          <div class="radio-option">
+            <a-tooltip placement="top" :title="item.name">
+              <div class="ellipsis">{{ item.name }}</div>
+            </a-tooltip>
+          </div>
+        </template>
+        <template #select-option="{ item }">
+          {{ item.name }}
         </template>
       </block-radio-group-select>
     </a-form-item>
@@ -445,11 +452,6 @@ export default {
     align-items: center;
     width: 100%;
     height: 100%;
-
-    .radio-option__icon {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
 
     .ellipsis {
       width: 100%;

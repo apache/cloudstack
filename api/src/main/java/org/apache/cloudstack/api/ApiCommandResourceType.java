@@ -72,6 +72,7 @@ public enum ApiCommandResourceType {
     Domain(com.cloud.domain.Domain.class),
     DiskOffering(com.cloud.offering.DiskOffering.class),
     ServiceOffering(com.cloud.offering.ServiceOffering.class),
+    ServiceOfferingCategory(com.cloud.offering.ServiceOfferingCategory.class),
     NetworkOffering(com.cloud.offering.NetworkOffering.class),
     VpcOffering(com.cloud.network.vpc.VpcOffering.class),
     BackupOffering(org.apache.cloudstack.backup.BackupOffering.class),
