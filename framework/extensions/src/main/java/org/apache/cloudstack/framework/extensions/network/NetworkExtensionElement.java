@@ -2014,7 +2014,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         // Query all active User-VM NICs on this network
-        List<NicVO> nics = nicDao.listByNetworkIdAndType(network.getId(), VirtualMachine.Type.User);
+        List<NicVO> nics = nicDao.listNonPlaceholderNicsByNetworkIdAndType(network.getId(), VirtualMachine.Type.User);
         if (CollectionUtils.isEmpty(nics)) {
             logger.debug("completeAggregatedExecution: no user VM NICs on network={}, skipping", network);
             return true;

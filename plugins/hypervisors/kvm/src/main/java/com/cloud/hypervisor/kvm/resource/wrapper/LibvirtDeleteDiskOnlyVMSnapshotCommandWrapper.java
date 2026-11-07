@@ -27,11 +27,15 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
+import com.cloud.storage.Volume;
 
 @ResourceWrapper(handles = DeleteDiskOnlyVmSnapshotCommand.class)
 public class LibvirtDeleteDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper<DeleteDiskOnlyVmSnapshotCommand, Answer, LibvirtComputingResource> {
@@ -53,6 +57,40 @@ public class LibvirtDeleteDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
                 return new Answer(command, e);
             }
         }
+
+        deleteNvramSnapshotIfNeeded(command, resource, storagePoolMgr, snapshotsToDelete);
         return new Answer(command, true, null);
+    }
+
+    protected void deleteNvramSnapshotIfNeeded(DeleteDiskOnlyVmSnapshotCommand command, LibvirtComputingResource resource, KVMStoragePoolManager storagePoolMgr,
+            List<DataTO> snapshotsToDelete) {
+        if (StringUtils.isBlank(command.getNvramSnapshotPath())) {
+            return;
+        }
+
+        try {
+            KVMStoragePool storagePool;
+            if (command.getPrimaryDataStore() != null) {
+                PrimaryDataStoreTO dataStore = command.getPrimaryDataStore();
+                storagePool = storagePoolMgr.getStoragePool(dataStore.getPoolType(), dataStore.getUuid());
+            } else {
+                SnapshotObjectTO rootVolumeSnapshot = snapshotsToDelete.stream()
+                        .map(SnapshotObjectTO.class::cast)
+                        .filter(snapshotObjectTO -> Volume.Type.ROOT.equals(snapshotObjectTO.getVolume().getVolumeType()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (rootVolumeSnapshot == null) {
+                    logger.warn("Unable to locate the root volume snapshot while deleting NVRAM snapshot [{}].", command.getNvramSnapshotPath());
+                    return;
+                }
+
+                storagePool = resource.getLibvirtUtilitiesHelper().getPrimaryPoolFromDataTo(rootVolumeSnapshot, storagePoolMgr);
+            }
+
+            Files.deleteIfExists(Path.of(storagePool.getLocalPathFor(command.getNvramSnapshotPath())));
+        } catch (Exception e) {
+            logger.warn("Failed to delete the UEFI NVRAM snapshot [{}]. It will be left behind on storage.", command.getNvramSnapshotPath(), e);
+        }
     }
 }

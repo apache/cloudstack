@@ -3460,7 +3460,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } catch (NullPointerException e) {
-            logger.warn("Unable to identify request API key due to: {}.", e);
+            logger.trace("Unable to identify request API key due to: {}.", e.getMessage());
         }
 
         logger.info("Request's signature or API key were not identified; assuming it has been authenticated via session.");

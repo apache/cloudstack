@@ -100,10 +100,12 @@ public class NetrisResourceObjectUtilsTest {
     @Test
     public void testStaticNatName() {
         long vmId = 1234L;
+        String publicIp = "203.0.113.5";
         CreateOrUpdateNetrisNatCommand cmd = new CreateOrUpdateNetrisNatCommand(zoneId, accountId, domainId, vpcName, vpcId, null, null, true, vpcCidr);
-        String[] suffixes = NetrisServiceImpl.getStaticNatResourceSuffixes(vpcId, null, true, vmId);
+        String[] suffixes = NetrisServiceImpl.getStaticNatResourceSuffixes(vpcId, null, true, vmId, publicIp);
         String staticNatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
-        String expectedName = String.format("D%s-A%s-Z%s-V%s-VM%s-STATICNAT", domainId, accountId, zoneId, vpcId, vmId);
+        // Public IP always appended for uniqueness; legacy rules without IP are handled via fallback on delete
+        String expectedName = String.format("D%s-A%s-Z%s-V%s-VM%s-STATICNAT-%s", domainId, accountId, zoneId, vpcId, vmId, publicIp);
         Assert.assertEquals(expectedName, staticNatRuleName);
     }
 }

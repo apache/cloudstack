@@ -26,17 +26,28 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CreateDiskOnlyVmSnapshotCommand extends VMSnapshotBaseCommand {
 
     protected VirtualMachine.State vmState;
+    private final String vmUuid;
+    private final boolean uefiEnabled;
 
     List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths;
 
     public CreateDiskOnlyVmSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String guestOSType, VirtualMachine.State vmState) {
-        super(vmName, snapshot, null, guestOSType);
+        this(vmName, null, snapshot, volumeTosAndNewPaths, guestOSType, vmState, false);
+    }
+
+    public CreateDiskOnlyVmSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String guestOSType,
+            VirtualMachine.State vmState, boolean uefiEnabled) {
+        super(vmName, snapshot, volumeTosAndNewPaths == null ? null : volumeTosAndNewPaths.stream()
+                .map(Pair::first).collect(Collectors.toList()), guestOSType);
+        this.vmUuid = vmUuid;
         this.vmState = vmState;
         this.volumeTosAndNewPaths = volumeTosAndNewPaths;
+        this.uefiEnabled = uefiEnabled;
     }
 
     public VirtualMachine.State getVmState() {
@@ -45,5 +56,13 @@ public class CreateDiskOnlyVmSnapshotCommand extends VMSnapshotBaseCommand {
 
     public List<Pair<VolumeObjectTO, String>> getVolumeTosAndNewPaths() {
         return volumeTosAndNewPaths;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public boolean isUefiEnabled() {
+        return uefiEnabled;
     }
 }

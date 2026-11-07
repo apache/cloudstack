@@ -109,12 +109,13 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         return deleteStoragePool(pool.getUuid());
     }
 
-    private static long getDeviceSize(final String devPath) {
+    private static long getDeviceSize(String devPath) {
         SP_LOG("StorPoolStorageAdaptor.getDeviceSize: path=%s", devPath);
 
         if (getVolumeNameFromPath(devPath, true) == null) {
             return 0;
         }
+        devPath = devPath.trim();
         File file = new File(devPath);
         if (!file.exists()) {
             return 0;
