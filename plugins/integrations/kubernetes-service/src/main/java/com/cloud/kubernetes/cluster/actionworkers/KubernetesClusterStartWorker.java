@@ -774,7 +774,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logger.info("Starting Kubernetes cluster: {}", kubernetesCluster);
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
+        transitToOperationState(KubernetesCluster.Event.StartRequested);
         DeployDestination dest = null;
         try {
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
@@ -907,7 +907,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logger.info("Starting Kubernetes cluster: {}", kubernetesCluster);
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
+        // a cluster in Error, whose create failed, is started without taking a state, so that it stays in Error if the
+        // start fails too, rather than going to Alert where it could be marked Running without being set up
+        transitToOperationState(KubernetesCluster.Event.StartRequested, KubernetesCluster.State.Error);
         startKubernetesClusterVMs(domainId, accountId);
         try {
             InetAddress address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
@@ -978,8 +980,11 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
             return false;
         }
-        // mark the cluster to be running
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested);
+        // mark the cluster to be running, unless an operation started on it while the checks above ran: the
+        // operation now owns the cluster's state, and completing it here would end that state early
+        if (!stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested)) {
+            return false;
+        }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
     }
