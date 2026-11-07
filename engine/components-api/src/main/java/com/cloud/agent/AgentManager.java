@@ -175,6 +175,12 @@ public interface AgentManager {
 
     void propagateChangeToAgents(Map<String, String> params);
 
+    /**
+     * Sends network.usage.exempt.cidrs to the KVM hosts in one zone, or in every zone when zoneId is null,
+     * using the value for each host's zone.
+     */
+    void propagateUsageExemptCidrsToAgents(Long zoneId);
+
     boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 
     int getHostSshPort(HostVO host);
