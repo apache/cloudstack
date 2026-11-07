@@ -87,6 +87,13 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "The number of retries if fail to upgrade kubernetes cluster due to some reasons (e.g. drain node, etcdserver leader changed)",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterNodeDrainTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.node.drain.timeout",
+            "300",
+            "Timeout interval (in seconds) for draining a Kubernetes node before it is removed from a cluster or upgraded. " +
+                    "A drain that does not finish in time, for example because a PodDisruptionBudget does not allow an eviction, is retried, and the node is uncordoned if it still fails. Must be at least 1, smaller values use the default",
+            true,
+            KubernetesServiceEnabled.key());
     static final ConfigKey<Long> KubernetesClusterAddNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
             "cloud.kubernetes.cluster.add.node.timeout",
             "3600",
