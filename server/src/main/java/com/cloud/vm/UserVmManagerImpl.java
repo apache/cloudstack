@@ -2145,7 +2145,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        return upgradeVirtualMachine(vmId, newServiceOfferingId, customParameters, null);
+    }
 
+    @Override
+    public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters, Runnable beforeLiveResize)
+            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
         Account caller = CallContext.current().getCallingAccount();
@@ -2156,6 +2161,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (State.Stopped.equals(vmInstance.getState())) {
+            if (beforeLiveResize != null) {
+                return false;
+            }
             upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
             return true;
         }
@@ -2174,11 +2182,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return false;
             }
         }
-        return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
+        return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters, beforeLiveResize);
     }
 
-    private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
-    ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+    private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters, Runnable beforeLiveResize)
+            throws ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
@@ -2212,6 +2220,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
         ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        validateLiveScaleOfferings(vmHypervisorType, currentServiceOffering, newServiceOffering);
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            _resourceLimitMgr.checkVmResourceLimitsForServiceOfferingChange(owner, vmInstance.isDisplay(),
+                    (long) currentServiceOffering.getCpu(), (long) newServiceOffering.getCpu(),
+                    (long) currentServiceOffering.getRamSize(), (long) newServiceOffering.getRamSize(),
+                    currentServiceOffering, newServiceOffering, template, reservations);
+            if (vmInstance.getState().equals(State.Running)) {
+                return scaleRunningVmWithRetries(vmInstance, newServiceOfferingId, currentServiceOffering,
+                        newServiceOffering, customParameters, template, beforeLiveResize);
+            }
+            return false;
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    private void validateLiveScaleOfferings(HypervisorType vmHypervisorType, ServiceOfferingVO currentServiceOffering,
+                                           ServiceOfferingVO newServiceOffering) {
         if (newServiceOffering.isDynamicScalingEnabled() != currentServiceOffering.isDynamicScalingEnabled()) {
             throw new InvalidParameterValueException("Unable to Scale VM: since dynamic scaling enabled flag is not same for new service offering and old service offering");
         }
@@ -2226,9 +2255,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentMemory = currentServiceOffering.getRamSize();
         int currentSpeed = currentServiceOffering.getSpeed();
         boolean cpuCapEnabledForTheCurrentOffering = currentServiceOffering.getLimitCpuUse();
-        int memoryDiff = newMemory - currentMemory;
-        int cpuDiff = newCpu * newSpeed - currentCpu * currentSpeed;
-
         boolean scalingDown = newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu;
         if (scalingDown) {
             throw new InvalidParameterValueException(String.format("Scaling down is not supported while the VM is running. The new service offering attributes " +
@@ -2255,99 +2281,92 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(String.format("Dynamic scaling of vGPU type is not supported. VM has vGPU Type: [%s].", currentVgpuType));
         }
 
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+    }
 
-        List<Reserver> reservations = new ArrayList<>();
-        try {
-        // Check resource limits
-        _resourceLimitMgr.checkVmResourceLimitsForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
-                (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template, reservations);
-
-        // Dynamically upgrade the running vms
+    private boolean scaleRunningVmWithRetries(VMInstanceVO vmInstance, Long newServiceOfferingId, ServiceOfferingVO currentServiceOffering,
+                                              ServiceOfferingVO newServiceOffering, Map<String, String> customParameters,
+                                              VMTemplateVO template, Runnable beforeLiveResize) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+        long vmId = vmInstance.getId();
+        int currentCpu = currentServiceOffering.getCpu();
+        int currentMemory = currentServiceOffering.getRamSize();
+        int newCpu = newServiceOffering.getCpu();
+        int newMemory = newServiceOffering.getRamSize();
+        int memoryDiff = newMemory - currentMemory;
+        int cpuDiff = newCpu * newServiceOffering.getSpeed() - currentCpu * currentServiceOffering.getSpeed();
+        int retry = _scaleRetry;
+        ExcludeList excludes = new ExcludeList();
+        HostVO host = validateLiveScaleCapacity(vmInstance, cpuDiff, memoryDiff);
         boolean success = false;
-        if (vmInstance.getState().equals(State.Running)) {
-            int retry = _scaleRetry;
-            ExcludeList excludes = new ExcludeList();
-
-            // Check zone wide flag
-            boolean enableDynamicallyScaleVm = EnableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId());
-            if (!enableDynamicallyScaleVm) {
-                throw new PermissionDeniedException("Dynamically scaling Instances is disabled for this zone, please contact your admin.");
-            }
-
-            // Check vm flag
-            if (!vmInstance.isDynamicallyScalable()) {
-                throw new CloudRuntimeException(String.format("Unable to scale %s as it does not have tools to support dynamic scaling.", vmInstance));
-            }
-
-            // Check disable threshold for cluster is not crossed
-            HostVO host = _hostDao.findById(vmInstance.getHostId());
-            _hostDao.loadDetails(host);
-            if (_capacityMgr.checkIfClusterCrossesThreshold(host.getClusterId(), cpuDiff, memoryDiff)) {
-                throw new CloudRuntimeException(String.format("Unable to scale %s due to insufficient resources.", vmInstance));
-            }
-
-            while (retry-- != 0) { // It's != so that it can match -1.
-                try {
-                    boolean existingHostHasCapacity = false;
-
-                    // Increment CPU and Memory count accordingly.
+        while (retry-- != 0) { // It's != so that it can match -1.
+            try {
+                _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
+                        (long) currentCpu, (long) newCpu, (long) currentMemory, (long) newMemory,
+                        currentServiceOffering, newServiceOffering, template);
+                boolean existingHostHasCapacity = hasCapacityForLiveScale(vmInstance, host, newServiceOffering, cpuDiff, memoryDiff, excludes);
+                boolean autoMigrateVmToASuitableHost = AutoMigrateVmOnLiveScaleInsufficientCapacity.valueIn(host.getClusterId());
+                if (!existingHostHasCapacity && !autoMigrateVmToASuitableHost) {
+                    logger.error("Unable to scale the VM [{}] because the host [{}] in which it is currently allocated does not " +
+                            "have enough compute capacity to scale the instance and the VM should not be automatically migrated to another host " +
+                            "([{}] setting is [false]).", vmInstance.getInstanceName(), host.getName(), AutoMigrateVmOnLiveScaleInsufficientCapacity.key());
+                    return false;
+                }
+                if (!existingHostHasCapacity) {
+                    logger.info("Host [{}] does not have enough compute capacity to scale the instance [{}]. Since the [{}] setting is " +
+                                    "[true], the VM will be migrated to a suitable host and, if succeeded, the VM will be live scaled to the requested " +
+                                    "compute offering.", host.getName(), vmInstance.getInstanceName(), AutoMigrateVmOnLiveScaleInsufficientCapacity.key());
+                    _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId, customParameters, excludes);
+                }
+                DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
+                changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
+                vmInstance = _vmInstanceDao.findById(vmId);
+                if (beforeLiveResize != null) {
+                    beforeLiveResize.run();
+                    beforeLiveResize = null;
+                }
+                _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
+                success = true;
+                return success;
+            } catch (InsufficientCapacityException | ResourceUnavailableException | ConcurrentOperationException e) {
+                logger.error(String.format("Unable to scale %s due to [%s].", vmInstance, e.getMessage()), e);
+            } finally {
+                if (!success) {
                     _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
-                            (long) currentCpu, (long) newCpu, (long) currentMemory, (long) newMemory,
-                            currentServiceOffering, newServiceOffering, template);
-
-                    // #1 Check existing host has capacity & and the correct tags
-                    if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
-                        existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(host, newCpu, newSpeed)
-                                && _capacityMgr.checkIfHostHasCapacity(host, cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
-                                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
-                                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false)
-                                && checkEnforceStrictHostTagCheck(vmInstance, host);
-                        excludes.addHost(vmInstance.getHostId());
-                    }
-
-                    boolean autoMigrateVmToASuitableHost = AutoMigrateVmOnLiveScaleInsufficientCapacity.valueIn(host.getClusterId());
-                    if (!existingHostHasCapacity && !autoMigrateVmToASuitableHost) {
-                        logger.error("Unable to scale the VM [{}] because the host [{}] in which it is currently allocated does not " +
-                                "have enough compute capacity to scale the instance and the VM should not be automatically migrated to another host " +
-                                "([{}] setting is [false]).", vmInstance.getInstanceName(), host.getName(), AutoMigrateVmOnLiveScaleInsufficientCapacity.key());
-                        return false;
-                    }
-
-                    // #2 migrate the vm if host doesn't have capacity or is in avoid set
-                    if (!existingHostHasCapacity) {
-                        logger.info("Host [{}] does not have enough compute capacity to scale the instance [{}]. Since the [{}] setting is " +
-                                        "[true], the VM will be migrated to a suitable host and, if succeeded, the VM will be live scaled to the requested " +
-                                        "compute offering.", host.getName(), vmInstance.getInstanceName(), AutoMigrateVmOnLiveScaleInsufficientCapacity.key());
-                        _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId, customParameters, excludes);
-                    }
-
-                    // #3 resize or migrate the root volume if required
-                    DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-                    changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
-
-                    // #4 scale the vm now
-                    vmInstance = _vmInstanceDao.findById(vmId);
-                    _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
-                    success = true;
-                    return success;
-                } catch (InsufficientCapacityException | ResourceUnavailableException | ConcurrentOperationException e) {
-                    logger.error(String.format("Unable to scale %s due to [%s].", vmInstance, e.getMessage()), e);
-                } finally {
-                    if (!success) {
-                        // Decrement CPU and Memory count accordingly.
-                        _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
-                                (long) newCpu, (long) currentCpu, (long) newMemory, (long) currentMemory,
-                                newServiceOffering, currentServiceOffering, template);
-                    }
+                            (long) newCpu, (long) currentCpu, (long) newMemory, (long) currentMemory,
+                            newServiceOffering, currentServiceOffering, template);
                 }
             }
         }
         return success;
+    }
 
-        } finally {
-            ReservationHelper.closeAll(reservations);
+    private HostVO validateLiveScaleCapacity(VMInstanceVO vmInstance, int cpuDiff, int memoryDiff) {
+        if (!EnableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId())) {
+            throw new PermissionDeniedException("Dynamically scaling Instances is disabled for this zone, please contact your admin.");
         }
+        if (!vmInstance.isDynamicallyScalable()) {
+            throw new CloudRuntimeException(String.format("Unable to scale %s as it does not have tools to support dynamic scaling.", vmInstance));
+        }
+        HostVO host = _hostDao.findById(vmInstance.getHostId());
+        _hostDao.loadDetails(host);
+        if (_capacityMgr.checkIfClusterCrossesThreshold(host.getClusterId(), cpuDiff, memoryDiff)) {
+            throw new CloudRuntimeException(String.format("Unable to scale %s due to insufficient resources.", vmInstance));
+        }
+        return host;
+    }
+
+    private boolean hasCapacityForLiveScale(VMInstanceVO vmInstance, HostVO host, ServiceOfferingVO newServiceOffering,
+                                           int cpuDiff, int memoryDiff, ExcludeList excludes) {
+        if (excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
+            return false;
+        }
+        boolean hasCapacity = _capacityMgr.checkIfHostHasCpuCapability(host, newServiceOffering.getCpu(), newServiceOffering.getSpeed())
+                && _capacityMgr.checkIfHostHasCapacity(host, cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
+                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
+                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false)
+                && checkEnforceStrictHostTagCheck(vmInstance, host);
+        excludes.addHost(vmInstance.getHostId());
+        return hasCapacity;
     }
 
     protected void validateDiskOfferingChecks(ServiceOfferingVO currentServiceOffering, ServiceOfferingVO newServiceOffering) {

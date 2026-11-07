@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.kubernetes.cluster.utils;
 
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -51,5 +53,21 @@ public class KubernetesClusterUtilTest {
         executeAndTestVersionMatch(false, v1233WorkerNodeOutput, false);
 
         executeThrowAndTestVersionMatch();
+    }
+
+    @Test
+    public void testKubernetesNodeNameIsTheLowercaseHostName() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getHostName()).thenReturn("Worker-1");
+        Assert.assertEquals("worker-1", KubernetesClusterUtil.getKubernetesNodeName(vm));
+        Mockito.when(vm.getHostName()).thenReturn(null);
+        Assert.assertNull(KubernetesClusterUtil.getKubernetesNodeName(vm));
+    }
+
+    @Test
+    public void testNodePatchCommandAppliesOneMergePatch() {
+        Assert.assertEquals("sudo /opt/bin/kubectl patch node worker-1 --type merge --request-timeout=20s -p '{\"spec\":{\"unschedulable\":true}}'",
+                KubernetesClusterUtil.getKubernetesNodePatchCommand("worker-1", "{\"spec\":{\"unschedulable\":true}}"));
+        Assert.assertThrows(IllegalArgumentException.class, () -> KubernetesClusterUtil.getKubernetesNodePatchCommand("worker-1", "{\"a\":\"'\"}"));
     }
 }

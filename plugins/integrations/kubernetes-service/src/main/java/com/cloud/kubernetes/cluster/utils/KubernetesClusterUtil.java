@@ -50,6 +50,25 @@ public class KubernetesClusterUtil {
 
     public static final String CLUSTER_NODE_READY_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'";
     public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\") print $5}'";
+    public static final String CLUSTER_NODE_PATCH_COMMAND = "sudo /opt/bin/kubectl patch node %s --type merge --request-timeout=20s -p '%s'";
+
+    /**
+     * The Kubernetes node name of a CKS cluster VM, which is its host name in lowercase.
+     */
+    public static String getKubernetesNodeName(final UserVm userVm) {
+        return StringUtils.lowerCase(userVm.getHostName());
+    }
+
+    /**
+     * Command that applies a JSON merge patch to a node. Annotations and spec.unschedulable in one patch
+     * change in a single API update, so a failure can't leave the node with only some of them changed.
+     */
+    public static String getKubernetesNodePatchCommand(final String nodeName, final String mergePatch) {
+        if (StringUtils.contains(mergePatch, '\'')) {
+            throw new IllegalArgumentException("A node patch must not contain single quotes");
+        }
+        return String.format(CLUSTER_NODE_PATCH_COMMAND, nodeName, mergePatch);
+    }
 
     public static boolean isKubernetesClusterNodeReady(final KubernetesCluster kubernetesCluster, String ipAddress, int port,
                                                        String user, File sshKeyFile, String nodeName) throws Exception {
@@ -108,10 +127,7 @@ public class KubernetesClusterUtil {
                                                         final String user, final File sshKeyFile,
                                                         final UserVm userVm, final long timeoutTime,
                                                         final int waitDuration) {
-        String hostName = userVm.getHostName();
-        if (StringUtils.isNotEmpty(hostName)) {
-            hostName = hostName.toLowerCase();
-        }
+        String hostName = getKubernetesNodeName(userVm);
         while (System.currentTimeMillis() < timeoutTime) {
             Pair<Boolean, String> result = null;
             try {
