@@ -23,8 +23,11 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.DrbdVolume;
+import com.linbit.linstor.api.model.LUKSVolume;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Node;
+import com.linbit.linstor.api.model.OneOfVolumeLayerData;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
@@ -34,6 +37,7 @@ import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
+import com.linbit.linstor.api.model.StorageVolume;
 import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
 import com.linbit.linstor.api.model.VolumeDefinitionModify;
@@ -72,6 +76,8 @@ public class LinstorUtil {
     public static final String RSC_PREFIX = "cs-";
     public static final String RSC_GROUP = "resourceGroup";
     public static final String CS_TEMPLATE_FOR_PREFIX = "_cs-template-for-";
+    // the DRBD device has exactly the size of the volume definition
+    public static final String PROP_DRBD_EXACT_SIZE = ApiConsts.NAMESPC_DRBD_OPTIONS + "/ExactSize";
 
     public static final String LIN_PROP_DRBDOPT_EXACT_SIZE = "DrbdOptions/ExactSize";
 
@@ -543,6 +549,63 @@ public class LinstorUtil {
 
     public static boolean isRscDiskless(ResourceWithVolumes rsc) {
         return rsc.getFlags() != null && rsc.getFlags().contains(ApiConsts.FLAG_DISKLESS);
+    }
+
+    /**
+     * The usable size of the topmost layer of a volume, the size of its block device on that node.
+     */
+    private static Long getTopLayerUsableSizeKib(Volume vlm) {
+        if (CollectionUtils.isNotEmpty(vlm.getLayerDataList())) {
+            OneOfVolumeLayerData data = vlm.getLayerDataList().get(0).getData();
+            if (data instanceof DrbdVolume) {
+                return ((DrbdVolume) data).getUsableSizeKib();
+            } else if (data instanceof LUKSVolume) {
+                return ((LUKSVolume) data).getUsableSizeKib();
+            } else if (data instanceof StorageVolume) {
+                return ((StorageVolume) data).getUsableSizeKib();
+            }
+        }
+        return vlm.getUsableSizeKib();
+    }
+
+    /**
+     * The size of the block device of a resource's (only) volume in bytes, the size a VM sees. Linstor rounds the
+     * storage of a volume up, e.g. to the LVM extent size, and DRBD makes all of it usable, so the device is usually
+     * a few MiB larger than the volume definition. A DRBD device has the smallest usable size of its diskful
+     * resources; diskless resources only report the size of the volume definition. With the property
+     * DrbdOptions/ExactSize the device has exactly the size of the volume definition.
+     * @return the device size, never less than the size of the volume definition, 0 if the resource definition
+     *     has no volume
+     */
+    public static long getVolumeDeviceSize(DevelopersApi api, String rscName) throws ApiException {
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(
+                Collections.singletonList(rscName), true, null, null, null);
+        if (rscDfns.isEmpty() || CollectionUtils.isEmpty(rscDfns.get(0).getVolumeDefinitions())) {
+            return 0;
+        }
+        ResourceDefinition rscDfn = rscDfns.get(0);
+        final long definedSize = rscDfn.getVolumeDefinitions().get(0).getSizeKib() * 1024;
+        if (rscDfn.getProps() != null && Boolean.parseBoolean(rscDfn.getProps().get(PROP_DRBD_EXACT_SIZE))) {
+            return definedSize;
+        }
+
+        List<ResourceWithVolumes> resources = api.viewResources(
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                Collections.emptyList(),
+                null,
+                null,
+                null);
+        Long deviceKib = null;
+        for (ResourceWithVolumes rsc : resources) {
+            if (!isRscDiskless(rsc) && !rsc.getVolumes().isEmpty()) {
+                Long usableKib = getTopLayerUsableSizeKib(rsc.getVolumes().get(0));
+                if (usableKib != null && usableKib > 0 && (deviceKib == null || usableKib < deviceKib)) {
+                    deviceKib = usableKib;
+                }
+            }
+        }
+        return deviceKib != null ? Math.max(definedSize, deviceKib * 1024) : definedSize;
     }
 
     /**
