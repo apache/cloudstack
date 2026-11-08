@@ -239,3 +239,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- CKS: root disk size per node type. When not set, the cluster wide node_root_disk_size is used, as before.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'control_node_root_disk_size', 'bigint unsigned DEFAULT NULL COMMENT "root disk size in GB of the control nodes, node_root_disk_size when not set"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'worker_node_root_disk_size', 'bigint unsigned DEFAULT NULL COMMENT "root disk size in GB of the worker nodes, node_root_disk_size when not set"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'etcd_node_root_disk_size', 'bigint unsigned DEFAULT NULL COMMENT "root disk size in GB of the etcd nodes, the size of the template when not set"');

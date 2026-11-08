@@ -47,6 +47,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         AddNodeRequested,
         RemoveNodeRequested,
         UpgradeRequested,
+        UpdateRequested,
         OperationSucceeded,
         OperationFailed,
         CreateFailed,
@@ -62,6 +63,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         Scaling("Transient state in which resources are either getting scaled up/down"),
         ScalingStoppedCluster("Transient state in which the service offerings of stopped clusters are getting scaled"),
         Upgrading("Transient state in which cluster is getting upgraded"),
+        Updating("Transient state in which the nodes of the cluster are restarted with their stored settings, a few at a time"),
         Importing("Transient state in which additional nodes are added as worker nodes to a cluster"),
         RemovingNodes("Transient state in which additional nodes are removed from a cluster"),
         Alert("State to represent Kubernetes clusters which are not in expected desired state (operationally in active control place, stopped cluster VM's etc)."),
@@ -107,6 +109,12 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Alert, Event.UpgradeRequested, State.Upgrading);
             s_fsm.addTransition(State.Upgrading, Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Upgrading, Event.OperationFailed, State.Alert);
+
+            // a rollout ends in Running if the cluster is healthy, and in Alert otherwise
+            s_fsm.addTransition(State.Running, Event.UpdateRequested, State.Updating);
+            s_fsm.addTransition(State.Alert, Event.UpdateRequested, State.Updating);
+            s_fsm.addTransition(State.Updating, Event.OperationSucceeded, State.Running);
+            s_fsm.addTransition(State.Updating, Event.OperationFailed, State.Alert);
 
             s_fsm.addTransition(State.Running, Event.AddNodeRequested, State.Importing);
             s_fsm.addTransition(State.Alert, Event.AddNodeRequested, State.Importing);
@@ -155,6 +163,9 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     long getCores();
     long getMemory();
     long getNodeRootDiskSize();
+    Long getControlNodeRootDiskSize();
+    Long getWorkerNodeRootDiskSize();
+    Long getEtcdNodeRootDiskSize();
     String getEndpoint();
     boolean isCheckForGc();
     @Override

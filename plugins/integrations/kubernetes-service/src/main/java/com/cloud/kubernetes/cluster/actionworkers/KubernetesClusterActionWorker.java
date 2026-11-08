@@ -175,6 +175,8 @@ public class KubernetesClusterActionWorker {
     // the cluster to and has not moved it out of yet
     private boolean operationStarted = false;
     private KubernetesCluster.State ownedState;
+    // the state transitToOperationState moved the cluster from
+    private KubernetesCluster.State operationStartState;
 
     @Inject
     protected CAManager caManager;
@@ -995,7 +997,12 @@ public class KubernetesClusterActionWorker {
             throw operationRaced(state, current == null ? null : current.getState(), event);
         }
         ownedState = cluster.getState();
+        operationStartState = state;
         return true;
+    }
+
+    protected KubernetesCluster.State getOperationStartState() {
+        return operationStartState;
     }
 
     /**

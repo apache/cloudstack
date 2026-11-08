@@ -1324,6 +1324,16 @@ public class ApiConstants {
     public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
     public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
     public static final String NODE_TYPE_AFFINITY_GROUP_MAP = "nodeaffinitygroups";
+    public static final String NODE_TYPE_ROOT_DISK_SIZE_MAP = "noderootdisksizes";
+    public static final String CONTROL_ROOT_DISK_SIZE = "controlrootdisksize";
+    public static final String WORKER_ROOT_DISK_SIZE = "workerrootdisksize";
+    public static final String ETCD_ROOT_DISK_SIZE = "etcdrootdisksize";
+    public static final String CONTROL_NODES_OUT_OF_DATE = "controlnodesoutofdate";
+    public static final String WORKER_NODES_OUT_OF_DATE = "workernodesoutofdate";
+    public static final String ETCD_NODES_OUT_OF_DATE = "etcdnodesoutofdate";
+    public static final String ROLLOUT = "rollout";
+    public static final String CANCEL_ROLLOUT = "cancelrollout";
+    public static final String MAX_UNAVAILABLE = "maxunavailable";
     public static final String CONTROL_AFFINITY_GROUP_IDS = "controlaffinitygroupids";
     public static final String CONTROL_AFFINITY_GROUP_NAMES = "controlaffinitygroupnames";
     public static final String WORKER_AFFINITY_GROUP_IDS = "workeraffinitygroupids";

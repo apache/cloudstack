@@ -80,6 +80,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -341,15 +342,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return destinationMap;
     }
 
-    protected void resizeNodeVolume(final UserVm vm) throws ManagementServerException {
+    protected void resizeNodeVolume(final UserVm vm, final KubernetesClusterNodeType nodeType) throws ManagementServerException {
         try {
             if (vm.getHypervisorType() == Hypervisor.HypervisorType.VMware && templateDao.findById(vm.getTemplateId()).isDeployAsIs()) {
                 List<VolumeVO> vmVols = volumeDao.findByInstance(vm.getId());
                 for (VolumeVO volumeVO : vmVols) {
                     if (volumeVO.getVolumeType() == Volume.Type.ROOT) {
+                        // etcd nodes without a size of their own are resized to the cluster wide size here, as before
+                        long size = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, nodeType);
+                        size = size > 0 ? size : kubernetesCluster.getNodeRootDiskSize();
+                        if (volumeVO.getSize() != null && volumeVO.getSize() > size * 1024L * 1024L * 1024L) {
+                            // the size of the node type may have been set lower than that of an existing node, which is not shrunk
+                            logger.debug("Not resizing the root volume {} of VM {} down to {} GB", volumeVO, vm, size);
+                            continue;
+                        }
                         ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd();
                         resizeVolumeCmd = ComponentContext.inject(resizeVolumeCmd);
-                        resizeVolumeCmd.setSize(kubernetesCluster.getNodeRootDiskSize());
+                        resizeVolumeCmd.setSize(size);
                         resizeVolumeCmd.setId(volumeVO.getId());
 
                         volumeService.resizeVolume(resizeVolumeCmd);
@@ -412,8 +421,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 UserVm vm = createKubernetesNode(controlIpAddress, domainId, accountId);
                 vmContext.setEventResourceId(vm.getId());
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, false, false);
-                if (kubernetesCluster.getNodeRootDiskSize() > 0) {
-                    resizeNodeVolume(vm);
+                if (KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, WORKER) > 0) {
+                    resizeNodeVolume(vm, WORKER);
                 }
                 startKubernetesVM(vm, domainId, accountId, WORKER);
                 vm = userVmDao.findById(vm.getId());
@@ -443,7 +452,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
-        long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
+        long rootDiskSize = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, WORKER);
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));

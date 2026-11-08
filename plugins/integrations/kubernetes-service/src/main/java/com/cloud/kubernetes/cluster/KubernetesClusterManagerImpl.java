@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -89,6 +90,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetes
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
@@ -171,6 +173,7 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterDestroyWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRollingUpdateWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterScaleWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStopWorker;
@@ -223,8 +226,13 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -362,6 +370,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected UserDao userDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
+    @Inject
+    protected VolumeDao volumeDao;
+    @Inject
+    protected DiskOfferingDao diskOfferingDao;
     @Inject
     protected AsyncJobDao asyncJobDao;
     @Inject
@@ -876,6 +888,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         setNodeTypeServiceOfferingResponse(response, WORKER, kubernetesCluster.getWorkerNodeServiceOfferingId());
         setNodeTypeServiceOfferingResponse(response, CONTROL, kubernetesCluster.getControlNodeServiceOfferingId());
         setNodeTypeServiceOfferingResponse(response, ETCD, kubernetesCluster.getEtcdNodeServiceOfferingId());
+        response.setControlNodeRootDiskSize(kubernetesCluster.getControlNodeRootDiskSize());
+        response.setWorkerNodeRootDiskSize(kubernetesCluster.getWorkerNodeRootDiskSize());
+        response.setEtcdNodeRootDiskSize(kubernetesCluster.getEtcdNodeRootDiskSize());
+        if (KubernetesCluster.ClusterType.CloudManaged.equals(kubernetesCluster.getClusterType())) {
+            Map<KubernetesClusterNodeType, Integer> outOfDate = countOutOfDateNodes(kubernetesCluster);
+            response.setControlNodesOutOfDate(outOfDate.get(CONTROL));
+            response.setWorkerNodesOutOfDate(outOfDate.get(WORKER));
+            response.setEtcdNodesOutOfDate(outOfDate.get(ETCD));
+            KubernetesClusterDetailsVO lastError = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ROLLOUT_LAST_ERROR_DETAIL);
+            response.setLastError(lastError == null ? null : lastError.getValue());
+        }
 
         if (kubernetesCluster.getEtcdNodeCount() != null) {
             response.setEtcdNodes(kubernetesCluster.getEtcdNodeCount());
@@ -1084,7 +1107,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         BaseCmd.getCommandNameByClass(StopKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(AddNodesToKubernetesClusterCmd.class),
-                        BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class)
+                        BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(UpdateKubernetesClusterCmd.class)
                 ).contains(cmdName);
             case ExternalManaged:
                 return Arrays.asList(
@@ -2485,6 +2509,410 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return WORKER.name();
     }
 
+    public static final String ROLLOUT_CANCEL_DETAIL = "rollout.cancel";
+    public static final String ROLLOUT_LAST_ERROR_DETAIL = "rollout.lasterror";
+    protected static final long MIN_NODE_ROOT_DISK_SIZE = 1L;
+    /** The largest size in GB whose size in bytes fits in a long */
+    protected static final long MAX_NODE_ROOT_DISK_SIZE = Long.MAX_VALUE >> 30;
+    protected static final String EXPLICIT_DEDICATION_AFFINITY_TYPE = "ExplicitDedication";
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_UPDATE,
+            eventDescription = "updating Kubernetes cluster", async = true)
+    public boolean updateKubernetesCluster(UpdateKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
+        if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
+            throw new InvalidParameterValueException(String.format("Update of Kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
+        }
+        if (cmd.isCancelRollout()) {
+            return cancelRollout(cmd, kubernetesCluster);
+        }
+        validateKubernetesClusterUpdateParameters(cmd, kubernetesCluster);
+        if (cmd.isRollout() && !KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && !KubernetesCluster.State.Alert.equals(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format("The nodes of Kubernetes cluster %s can only be restarted while it is Running or Alert, it is %s. " +
+                    "Use rollout=false to only store the new settings", kubernetesCluster.getName(), kubernetesCluster.getState()));
+        }
+        // a rollout first takes the cluster to Updating, so that no other operation works from the settings it stores
+        final KubernetesClusterRollingUpdateWorker worker = cmd.isRollout()
+                ? createRollingUpdateWorker(kubernetesCluster, cmd.getMaxUnavailable() == null ? 1 : cmd.getMaxUnavailable()) : null;
+        if (worker != null) {
+            worker.begin();
+        }
+        try {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    KubernetesClusterVO cluster = kubernetesClusterDao.lockRow(kubernetesCluster.getId(), true);
+                    // other operations create nodes from the settings
+                    if (worker == null && (OPERATION_STATES.contains(cluster.getState()) || KubernetesCluster.State.Destroying.equals(cluster.getState())
+                            || KubernetesCluster.State.Destroyed.equals(cluster.getState()))) {
+                        throw new InvalidParameterValueException(String.format("The node settings of Kubernetes cluster %s can not be changed while it is %s",
+                                cluster.getName(), cluster.getState()));
+                    }
+                    Set<KubernetesClusterNodeType> unrollable = worker == null ? Set.of() : getUnrollableNodeTypes(cluster);
+                    Set<Long> outOfDateBefore = unrollable.isEmpty() ? Set.of() : getOutOfDateNodeIds(cluster, unrollable);
+                    convertToNodeTypeSettings(cluster);
+                    storeNodeTypeSettings(cluster, cmd);
+                    if (!unrollable.isEmpty()) {
+                        checkUnrollableNodeTypes(cluster, unrollable, outOfDateBefore);
+                    }
+                }
+            });
+        } catch (RuntimeException e) {
+            if (worker != null) {
+                try {
+                    worker.abort();
+                } catch (RuntimeException releaseError) {
+                    e.addSuppressed(releaseError);
+                }
+            }
+            throw e;
+        }
+        if (worker == null) {
+            logger.info("Stored the node settings of Kubernetes cluster {}, without restarting its nodes", kubernetesCluster);
+            return true;
+        }
+        return worker.rollout();
+    }
+
+    protected KubernetesClusterRollingUpdateWorker createRollingUpdateWorker(KubernetesCluster cluster, int maxUnavailable) {
+        KubernetesClusterRollingUpdateWorker worker = new KubernetesClusterRollingUpdateWorker(cluster, maxUnavailable, this);
+        return ComponentContext.inject(worker);
+    }
+
+    /** Asks the rollout in progress to stop between two batches of nodes */
+    protected boolean cancelRollout(UpdateKubernetesClusterCmd cmd, KubernetesClusterVO cluster) {
+        if (cmd.isRollout() || cmd.getMaxUnavailable() != null || MapUtils.isNotEmpty(cmd.getServiceOfferingNodeTypeMap())
+                || MapUtils.isNotEmpty(cmd.getRootDiskSizeNodeTypeMap()) || MapUtils.isNotEmpty(cmd.getAffinityGroupNodeTypeMap())) {
+            throw new InvalidParameterValueException(String.format("%s takes no other parameter", ApiConstants.CANCEL_ROLLOUT));
+        }
+        if (!KubernetesCluster.State.Updating.equals(cluster.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s has no rollout in progress, it is %s", cluster.getName(), cluster.getState()));
+        }
+        kubernetesClusterDetailsDao.addDetail(cluster.getId(), ROLLOUT_CANCEL_DETAIL, "true", false);
+        logger.info("Asked the rollout of Kubernetes cluster {} to stop", cluster);
+        return true;
+    }
+
+    protected void validateKubernetesClusterUpdateParameters(UpdateKubernetesClusterCmd cmd, KubernetesClusterVO kubernetesCluster) {
+        final Map<String, Long> offerings = cmd.getServiceOfferingNodeTypeMap();
+        final Map<String, Long> rootDiskSizes = cmd.getRootDiskSizeNodeTypeMap();
+        final Map<String, List<Long>> affinityGroups = cmd.getAffinityGroupNodeTypeMap();
+        if (!cmd.isRollout() && MapUtils.isEmpty(offerings) && MapUtils.isEmpty(rootDiskSizes) && MapUtils.isEmpty(affinityGroups)) {
+            throw new InvalidParameterValueException(String.format("Nothing to update for Kubernetes cluster %s: pass %s, %s, %s or %s=true", kubernetesCluster.getName(),
+                    ApiConstants.NODE_TYPE_OFFERING_MAP, ApiConstants.NODE_TYPE_ROOT_DISK_SIZE_MAP, ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP, ApiConstants.ROLLOUT));
+        }
+        final List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+        if (cmd.getMaxUnavailable() != null) {
+            if (!cmd.isRollout()) {
+                throw new InvalidParameterValueException(String.format("%s can only be passed with %s=true", ApiConstants.MAX_UNAVAILABLE, ApiConstants.ROLLOUT));
+            }
+            long workers = KubernetesClusterUtil.countManagedNodes(vmMaps, WORKER);
+            if (cmd.getMaxUnavailable() < 1 || cmd.getMaxUnavailable() > 1 && cmd.getMaxUnavailable() >= workers) {
+                throw new InvalidParameterValueException(String.format("%s must be 1, or more and less than the %d worker nodes of Kubernetes cluster %s, " +
+                        "for some to keep running the workloads", ApiConstants.MAX_UNAVAILABLE, workers, kubernetesCluster.getName()));
+            }
+        }
+        final boolean hasEtcdNodes = kubernetesCluster.getEtcdNodeCount() != null && kubernetesCluster.getEtcdNodeCount() > 0;
+        if (MapUtils.isNotEmpty(offerings)) {
+            final KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+            if (clusterVersion == null) {
+                throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster : %s", kubernetesCluster.getName()));
+            }
+            for (Map.Entry<String, Long> entry : offerings.entrySet()) {
+                checkUpdatableNodeType(entry.getKey(), hasEtcdNodes, ApiConstants.NODE_TYPE_OFFERING_MAP);
+                ServiceOffering offering = serviceOfferingDao.findById(entry.getValue());
+                if (offering == null) {
+                    throw new InvalidParameterValueException("Unable to find the service offering with ID " + entry.getValue());
+                }
+                checkServiceOfferingForNodesScale(offering, kubernetesCluster, clusterVersion);
+            }
+        }
+        for (Map.Entry<String, Long> entry : Objects.requireNonNullElse(rootDiskSizes, Map.<String, Long>of()).entrySet()) {
+            KubernetesClusterNodeType nodeType = checkUpdatableNodeType(entry.getKey(), hasEtcdNodes, ApiConstants.NODE_TYPE_ROOT_DISK_SIZE_MAP);
+            if (entry.getValue() == null || entry.getValue() < MIN_NODE_ROOT_DISK_SIZE || entry.getValue() > MAX_NODE_ROOT_DISK_SIZE) {
+                throw new InvalidParameterValueException(String.format("The root disk size of the %s nodes must be from %d to %d GB", nodeType.name().toLowerCase(),
+                        MIN_NODE_ROOT_DISK_SIZE, MAX_NODE_ROOT_DISK_SIZE));
+            }
+            if (cmd.isRollout()) {
+                checkRootDiskSizeRollout(vmMaps, nodeType, entry.getValue());
+            }
+        }
+        if (MapUtils.isNotEmpty(affinityGroups)) {
+            validateNodeAffinityGroups(affinityGroups, kubernetesCluster.getAccountId());
+            for (Map.Entry<String, List<Long>> entry : affinityGroups.entrySet()) {
+                checkUpdatableNodeType(entry.getKey(), hasEtcdNodes, ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP);
+                if (!filterAffinityGroupIds(entry.getValue(), true).isEmpty()) {
+                    throw new InvalidParameterValueException(String.format("%s takes no explicit dedication group: CKS gives the nodes of a dedicated domain " +
+                            "or account theirs", ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP));
+                }
+            }
+        }
+    }
+
+    /** The control and etcd node types with too few nodes to restart one at a time */
+    protected Set<KubernetesClusterNodeType> getUnrollableNodeTypes(KubernetesClusterVO cluster) {
+        List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(cluster.getId());
+        boolean hasEtcdNodes = cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0;
+        Set<KubernetesClusterNodeType> types = new HashSet<>();
+        for (KubernetesClusterNodeType nodeType : List.of(CONTROL, ETCD)) {
+            int members = KubernetesClusterUtil.countManagedNodes(vmMaps, nodeType);
+            if (members > 0 && !KubernetesClusterRollingUpdateWorker.canRestartOneAtATime(nodeType, members, hasEtcdNodes)) {
+                types.add(nodeType);
+            }
+        }
+        return types;
+    }
+
+    /**
+     * Refuses settings that make a node of a type that can not be restarted one at a time differ from them, as a
+     * rollout would have to restart it for them. Run once the settings are stored, before they are committed. A node
+     * that differed already, or whose VM is not running, is left to the rollout, which skips its type and reports it.
+     */
+    protected void checkUnrollableNodeTypes(KubernetesClusterVO cluster, Set<KubernetesClusterNodeType> unrollable, Set<Long> outOfDateBefore) {
+        List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(cluster.getId());
+        for (KubernetesClusterNodeType nodeType : unrollable) {
+            int members = KubernetesClusterUtil.countManagedNodes(vmMaps, nodeType);
+            for (KubernetesClusterVmMapVO vmMap : vmMaps) {
+                VMInstanceVO vm = vmMap.isExternalNode() || KubernetesClusterUtil.getNodeType(vmMap) != nodeType ? null : vmInstanceDao.findById(vmMap.getVmId());
+                if (vm != null && VirtualMachine.State.Running.equals(vm.getState()) && !outOfDateBefore.contains(vm.getId())
+                        && getNodeOutOfDateReason(cluster, vmMap, vm) != null) {
+                    throw new InvalidParameterValueException(String.format("The %d %s node(s) of Kubernetes cluster %s can not be restarted one at a time, as the " +
+                            "cluster can not keep running without one, so a rollout can not change their settings. Use rollout=false to store them " +
+                            "without restarting the nodes", members, nodeType.name().toLowerCase(), cluster.getName()));
+                }
+            }
+        }
+    }
+
+    protected Set<Long> getOutOfDateNodeIds(KubernetesClusterVO cluster, Set<KubernetesClusterNodeType> nodeTypes) {
+        Set<Long> ids = new HashSet<>();
+        for (KubernetesClusterVmMapVO vmMap : kubernetesClusterVmMapDao.listByClusterId(cluster.getId())) {
+            VMInstanceVO vm = vmMap.isExternalNode() || !nodeTypes.contains(KubernetesClusterUtil.getNodeType(vmMap)) ? null : vmInstanceDao.findById(vmMap.getVmId());
+            if (vm != null && getNodeOutOfDateReason(cluster, vmMap, vm) != null) {
+                ids.add(vm.getId());
+            }
+        }
+        return ids;
+    }
+
+    protected KubernetesClusterNodeType checkUpdatableNodeType(String nodeTypeName, boolean hasEtcdNodes, String parameter) {
+        KubernetesClusterNodeType nodeType = KubernetesClusterNodeType.valueOf(nodeTypeName.toUpperCase());
+        if (DEFAULT.equals(nodeType)) {
+            throw new InvalidParameterValueException(String.format("%s takes the node types control, worker and etcd", parameter));
+        }
+        if (ETCD.equals(nodeType) && !hasEtcdNodes) {
+            throw new InvalidParameterValueException(String.format("%s: the cluster has no etcd nodes", parameter));
+        }
+        return nodeType;
+    }
+
+    /** Refuses a rollout of a root disk size that would shrink the root disk of a node, or that its disk offering does not allow */
+    protected void checkRootDiskSizeRollout(List<KubernetesClusterVmMapVO> vmMaps, KubernetesClusterNodeType nodeType, long sizeGb) {
+        for (KubernetesClusterVmMapVO vmMap : vmMaps) {
+            if (vmMap.isExternalNode() || KubernetesClusterUtil.getNodeType(vmMap) != nodeType) {
+                continue;
+            }
+            List<VolumeVO> roots = volumeDao.findByInstanceAndType(vmMap.getVmId(), Volume.Type.ROOT);
+            if (CollectionUtils.isEmpty(roots) || roots.get(0).getSize() == null) {
+                continue;
+            }
+            VMInstanceVO vm = vmInstanceDao.findById(vmMap.getVmId());
+            String name = vm == null ? String.valueOf(vmMap.getVmId()) : vm.getHostName();
+            if (roots.get(0).getSize() > (sizeGb << 30)) {
+                throw new InvalidParameterValueException(String.format("The root disk of node %s is larger than %d GB, and a rollout only grows root disks. " +
+                        "Use rollout=false to only store the size for new nodes", name, sizeGb));
+            }
+            DiskOfferingVO diskOffering = roots.get(0).getSize() < (sizeGb << 30) ? diskOfferingDao.findById(roots.get(0).getDiskOfferingId()) : null;
+            if (diskOffering != null && diskOffering.getDiskSizeStrictness()) {
+                throw new InvalidParameterValueException(String.format("The root disk of node %s can not be grown, as the size of its disk offering %s is strictly fixed",
+                        name, diskOffering.getName()));
+            }
+        }
+    }
+
+    protected void storeNodeTypeSettings(KubernetesClusterVO cluster, UpdateKubernetesClusterCmd cmd) {
+        for (Map.Entry<String, Long> entry : Objects.requireNonNullElse(cmd.getServiceOfferingNodeTypeMap(), Map.<String, Long>of()).entrySet()) {
+            setNodeTypeServiceOfferingId(cluster, KubernetesClusterNodeType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
+        }
+        for (Map.Entry<String, Long> entry : Objects.requireNonNullElse(cmd.getRootDiskSizeNodeTypeMap(), Map.<String, Long>of()).entrySet()) {
+            setNodeTypeRootDiskSize(cluster, KubernetesClusterNodeType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
+        }
+        for (Map.Entry<String, List<Long>> entry : Objects.requireNonNullElse(cmd.getAffinityGroupNodeTypeMap(), Map.<String, List<Long>>of()).entrySet()) {
+            String nodeType = entry.getKey().toUpperCase();
+            kubernetesClusterAffinityGroupMapDao.removeByClusterIdAndNodeType(cluster.getId(), nodeType);
+            persistAffinityGroupMappings(cluster.getId(), Map.of(nodeType, new ArrayList<>(new LinkedHashSet<>(entry.getValue()))));
+        }
+        kubernetesClusterDao.update(cluster.getId(), cluster);
+    }
+
+    protected void setNodeTypeServiceOfferingId(KubernetesClusterVO cluster, KubernetesClusterNodeType nodeType, Long serviceOfferingId) {
+        if (CONTROL == nodeType) {
+            cluster.setControlNodeServiceOfferingId(serviceOfferingId);
+        } else if (WORKER == nodeType) {
+            cluster.setWorkerNodeServiceOfferingId(serviceOfferingId);
+        } else if (ETCD == nodeType) {
+            cluster.setEtcdNodeServiceOfferingId(serviceOfferingId);
+        }
+    }
+
+    protected void setNodeTypeRootDiskSize(KubernetesClusterVO cluster, KubernetesClusterNodeType nodeType, Long rootDiskSize) {
+        if (CONTROL == nodeType) {
+            cluster.setControlNodeRootDiskSize(rootDiskSize);
+        } else if (WORKER == nodeType) {
+            cluster.setWorkerNodeRootDiskSize(rootDiskSize);
+        } else if (ETCD == nodeType) {
+            cluster.setEtcdNodeRootDiskSize(rootDiskSize);
+        }
+    }
+
+    /**
+     * A cluster created before its node types had settings of their own has a service offering only for the whole
+     * cluster. It is copied to the node types, so that a change to one node type keeps the others as they are. The
+     * template is left as it is, as this API does not change templates. A node type with no affinity groups of its
+     * own gets those its nodes all have, if any, so that a rollout does not take them away. Nothing changes for node
+     * types that have their settings already.
+     */
+    protected void convertToNodeTypeSettings(KubernetesClusterVO cluster) {
+        boolean hasEtcdNodes = cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0;
+        for (KubernetesClusterNodeType nodeType : hasEtcdNodes ? List.of(CONTROL, WORKER, ETCD) : List.of(CONTROL, WORKER)) {
+            if (getNodeTypeServiceOfferingIdIfSet(cluster, nodeType) == null) {
+                setNodeTypeServiceOfferingId(cluster, nodeType, cluster.getServiceOfferingId());
+                logger.info("Copied the service offering of Kubernetes cluster {} to its {} nodes", cluster, nodeType.name().toLowerCase());
+            }
+            if (CollectionUtils.isNotEmpty(getNodeTypeAffinityGroupIds(cluster.getId(), nodeType))) {
+                continue;
+            }
+            Set<Long> common = null;
+            for (KubernetesClusterVmMapVO vmMap : kubernetesClusterVmMapDao.listByClusterId(cluster.getId())) {
+                if (vmMap.isExternalNode() || KubernetesClusterUtil.getNodeType(vmMap) != nodeType) {
+                    continue;
+                }
+                Set<Long> groups = getVmAffinityGroupIds(vmMap.getVmId(), false);
+                if (common != null && !common.equals(groups)) {
+                    common = null;
+                    break;
+                }
+                common = groups;
+            }
+            if (CollectionUtils.isNotEmpty(common)) {
+                persistAffinityGroupMappings(cluster.getId(), Map.of(nodeType.name(), new ArrayList<>(common)));
+                logger.info("Recorded the affinity groups {} of the {} nodes of Kubernetes cluster {} as those of their type", common, nodeType.name().toLowerCase(), cluster);
+            }
+        }
+        kubernetesClusterDao.update(cluster.getId(), cluster);
+    }
+
+    protected Long getNodeTypeServiceOfferingIdIfSet(KubernetesCluster cluster, KubernetesClusterNodeType nodeType) {
+        if (CONTROL == nodeType) {
+            return cluster.getControlNodeServiceOfferingId();
+        }
+        return WORKER == nodeType ? cluster.getWorkerNodeServiceOfferingId() : cluster.getEtcdNodeServiceOfferingId();
+    }
+
+    /** The service offering the nodes of a type get: their own, or else the one of the cluster */
+    public Long getNodeTypeServiceOfferingId(KubernetesCluster cluster, KubernetesClusterNodeType nodeType) {
+        Long offeringId = getNodeTypeServiceOfferingIdIfSet(cluster, nodeType);
+        return offeringId != null ? offeringId : cluster.getServiceOfferingId();
+    }
+
+    public List<Long> getNodeTypeAffinityGroupIds(long clusterId, KubernetesClusterNodeType nodeType) {
+        return new ArrayList<>(Objects.requireNonNullElse(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, nodeType.name()),
+                List.of()));
+    }
+
+    /**
+     * The affinity groups, other than explicit dedication, that the nodes of a type are to have, or null if the type
+     * has none of those recorded, in which case the nodes keep theirs: its nodes may have differed when it got its
+     * settings. CKS gives the nodes their explicit dedication group on its own.
+     */
+    public Set<Long> getNodeTypeWantedAffinityGroupIds(long clusterId, KubernetesClusterNodeType nodeType) {
+        Set<Long> groupIds = filterAffinityGroupIds(getNodeTypeAffinityGroupIds(clusterId, nodeType), false);
+        return groupIds.isEmpty() ? null : groupIds;
+    }
+
+    /**
+     * The affinity groups of a VM: either the explicit dedication groups, which CKS gives the nodes of a dedicated
+     * domain or account on its own, or the others
+     */
+    public Set<Long> getVmAffinityGroupIds(long vmId, boolean explicitDedication) {
+        return filterAffinityGroupIds(affinityGroupVMMapDao.listAffinityGroupIdsByVmId(vmId), explicitDedication);
+    }
+
+    protected Set<Long> filterAffinityGroupIds(List<Long> ids, boolean explicitDedication) {
+        Set<Long> groupIds = new LinkedHashSet<>();
+        for (Long groupId : Objects.requireNonNullElse(ids, List.<Long>of())) {
+            AffinityGroupVO group = affinityGroupDao.findById(groupId);
+            if (group != null && EXPLICIT_DEDICATION_AFFINITY_TYPE.equals(group.getType()) == explicitDedication) {
+                groupIds.add(groupId);
+            }
+        }
+        return groupIds;
+    }
+
+    /**
+     * Why a node differs from the settings of its node type, or null if it does not: its service offering, a root disk
+     * smaller than the size of the type (a rollout only grows disks), or its affinity groups
+     */
+    public String getNodeOutOfDateReason(KubernetesCluster cluster, KubernetesClusterVmMapVO vmMap, VMInstanceVO vm) {
+        KubernetesClusterNodeType nodeType = KubernetesClusterUtil.getNodeType(vmMap);
+        Long offeringId = getNodeTypeServiceOfferingId(cluster, nodeType);
+        if (offeringId != null && offeringId != vm.getServiceOfferingId()) {
+            return "its service offering differs";
+        }
+        long sizeGb = KubernetesClusterUtil.getNodeRootDiskSize(cluster, nodeType);
+        if (sizeGb > 0) {
+            List<VolumeVO> roots = volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+            if (CollectionUtils.isNotEmpty(roots) && roots.get(0).getSize() != null && roots.get(0).getSize() < (sizeGb << 30)) {
+                return String.format("its root disk is smaller than %d GB", sizeGb);
+            }
+        }
+        Set<Long> wanted = getNodeTypeWantedAffinityGroupIds(cluster.getId(), nodeType);
+        if (wanted != null && !wanted.equals(getVmAffinityGroupIds(vm.getId(), false))) {
+            return "its affinity groups differ";
+        }
+        return null;
+    }
+
+    protected Map<KubernetesClusterNodeType, Integer> countOutOfDateNodes(KubernetesCluster cluster) {
+        Map<KubernetesClusterNodeType, Integer> counts = new HashMap<>(Map.of(CONTROL, 0, WORKER, 0));
+        if (cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0) {
+            counts.put(ETCD, 0);
+        }
+        for (KubernetesClusterVmMapVO vmMap : kubernetesClusterVmMapDao.listByClusterId(cluster.getId())) {
+            VMInstanceVO vm = vmMap.isExternalNode() ? null : vmInstanceDao.findById(vmMap.getVmId());
+            if (vm != null && getNodeOutOfDateReason(cluster, vmMap, vm) != null) {
+                counts.merge(KubernetesClusterUtil.getNodeType(vmMap), 1, Integer::sum);
+            }
+        }
+        return counts;
+    }
+
+    /** Counts the CPU cores and memory of a cluster from the service offerings its VMs have */
+    public void updateKubernetesClusterCapacity(long clusterId) {
+        long cores = 0;
+        long memory = 0;
+        for (KubernetesClusterVmMapVO vmMap : kubernetesClusterVmMapDao.listByClusterId(clusterId)) {
+            VMInstanceVO vm = vmInstanceDao.findById(vmMap.getVmId());
+            ServiceOffering offering = vm == null ? null : serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+            if (offering != null) {
+                cores += Objects.requireNonNullElse(offering.getCpu(), 0);
+                memory += Objects.requireNonNullElse(offering.getRamSize(), 0);
+            }
+        }
+        KubernetesClusterVO update = kubernetesClusterDao.createForUpdate(clusterId);
+        update.setCores(cores);
+        update.setMemory(memory);
+        kubernetesClusterDao.update(clusterId, update);
+    }
+
     private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
         List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
@@ -2841,6 +3269,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(AddNodesToKubernetesClusterCmd.class);
         cmdList.add(RemoveNodesFromKubernetesClusterCmd.class);
         cmdList.add(UpdateKubernetesClusterAffinityGroupCmd.class);
+        cmdList.add(UpdateKubernetesClusterCmd.class);
         return cmdList;
     }
 
@@ -3011,7 +3440,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected static final List<KubernetesCluster.State> OPERATION_STATES = List.of(KubernetesCluster.State.Starting,
             KubernetesCluster.State.Stopping, KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster,
             KubernetesCluster.State.Upgrading, KubernetesCluster.State.Importing, KubernetesCluster.State.RemovingNodes,
-            KubernetesCluster.State.Recovering);
+            KubernetesCluster.State.Recovering, KubernetesCluster.State.Updating);
 
     /**
      * Fails the operation of each cluster in an operation's state which has no job in progress on any management
@@ -3061,6 +3490,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final KubernetesCluster.State state = cluster.getState();
         if (_stateMachine.transitTo(cluster, KubernetesCluster.Event.OperationFailed, null, kubernetesClusterDao)) {
             logger.warn("Kubernetes cluster {} was in state {} with no operation in progress, as its operation ended without moving it on, for example because the management server running it stopped; marked the operation as failed", cluster, state);
+            if (KubernetesCluster.State.Updating.equals(state)) {
+                // a rollout may have changed the offering of some nodes. Its nodes are left as they are: the next
+                // rollout takes up the ones it stopped or cordoned first
+                updateKubernetesClusterCapacity(clusterId);
+            }
         }
     }
 
@@ -3191,6 +3625,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterNodeDrainTimeout,
             KubernetesClusterAddNodeTimeout,
             KubernetesClusterRemoveNodeTimeout,
+            KubernetesClusterUpdateNodeTimeout,
             KubernetesClusterExperimentalFeaturesEnabled,
             KubernetesMaxClusterSize,
             KubernetesControlNodeInstallAttemptWait,

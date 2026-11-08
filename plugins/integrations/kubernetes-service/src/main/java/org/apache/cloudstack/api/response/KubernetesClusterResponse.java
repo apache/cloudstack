@@ -220,6 +220,34 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "The date when this Kubernetes cluster was created")
     private Date created;
 
+    @SerializedName(ApiConstants.CONTROL_ROOT_DISK_SIZE)
+    @Param(description = "The root disk size in GB of the control nodes, if set for the node type", since = "24.0.0")
+    private Long controlNodeRootDiskSize;
+
+    @SerializedName(ApiConstants.WORKER_ROOT_DISK_SIZE)
+    @Param(description = "The root disk size in GB of the worker nodes, if set for the node type", since = "24.0.0")
+    private Long workerNodeRootDiskSize;
+
+    @SerializedName(ApiConstants.ETCD_ROOT_DISK_SIZE)
+    @Param(description = "The root disk size in GB of the etcd nodes, if set for the node type", since = "24.0.0")
+    private Long etcdNodeRootDiskSize;
+
+    @SerializedName(ApiConstants.CONTROL_NODES_OUT_OF_DATE)
+    @Param(description = "The number of control nodes whose service offering, root disk size or affinity groups differ from those set for the node type", since = "24.0.0")
+    private Integer controlNodesOutOfDate;
+
+    @SerializedName(ApiConstants.WORKER_NODES_OUT_OF_DATE)
+    @Param(description = "The number of worker nodes whose service offering, root disk size or affinity groups differ from those set for the node type", since = "24.0.0")
+    private Integer workerNodesOutOfDate;
+
+    @SerializedName(ApiConstants.ETCD_NODES_OUT_OF_DATE)
+    @Param(description = "The number of etcd nodes whose service offering, root disk size or affinity groups differ from those set for the node type", since = "24.0.0")
+    private Integer etcdNodesOutOfDate;
+
+    @SerializedName(ApiConstants.LAST_ERROR)
+    @Param(description = "Why the last rollout of updateKubernetesCluster failed or was cancelled, or how many control or etcd nodes it could not restart, as their cluster can not keep running without one", since = "24.0.0")
+    private String lastError;
+
     @SerializedName(ApiConstants.CONTROL_AFFINITY_GROUP_IDS)
     @Param(description = "The IDs of affinity groups associated with control nodes", since = "4.23.0")
     private String controlAffinityGroupIds;
@@ -582,5 +610,33 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setEtcdAffinityGroupNames(String etcdAffinityGroupNames) {
         this.etcdAffinityGroupNames = etcdAffinityGroupNames;
+    }
+
+    public void setControlNodeRootDiskSize(Long controlNodeRootDiskSize) {
+        this.controlNodeRootDiskSize = controlNodeRootDiskSize;
+    }
+
+    public void setWorkerNodeRootDiskSize(Long workerNodeRootDiskSize) {
+        this.workerNodeRootDiskSize = workerNodeRootDiskSize;
+    }
+
+    public void setEtcdNodeRootDiskSize(Long etcdNodeRootDiskSize) {
+        this.etcdNodeRootDiskSize = etcdNodeRootDiskSize;
+    }
+
+    public void setControlNodesOutOfDate(Integer controlNodesOutOfDate) {
+        this.controlNodesOutOfDate = controlNodesOutOfDate;
+    }
+
+    public void setWorkerNodesOutOfDate(Integer workerNodesOutOfDate) {
+        this.workerNodesOutOfDate = workerNodesOutOfDate;
+    }
+
+    public void setEtcdNodesOutOfDate(Integer etcdNodesOutOfDate) {
+        this.etcdNodesOutOfDate = etcdNodesOutOfDate;
+    }
+
+    public void setLastError(String lastError) {
+        this.lastError = lastError;
     }
 }

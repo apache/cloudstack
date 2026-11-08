@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -39,6 +40,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.nio.TrustAllManager;
@@ -47,6 +49,39 @@ import com.cloud.utils.ssh.SshHelper;
 public class KubernetesClusterUtil {
 
     protected static Logger LOGGER = LogManager.getLogger(KubernetesClusterUtil.class);
+
+    /**
+     * Returns the root disk size, in GB, that new nodes of a type get: the size stored for the type if there is one,
+     * otherwise the cluster wide size for control and worker nodes. Etcd nodes never got the cluster wide size, so
+     * without a size of their own they keep the size of the template. 0 stands for the size of the template.
+     */
+    public static long getNodeRootDiskSize(final KubernetesCluster kubernetesCluster, final KubernetesClusterNodeType nodeType) {
+        Long size = null;
+        if (KubernetesClusterNodeType.CONTROL == nodeType) {
+            size = kubernetesCluster.getControlNodeRootDiskSize();
+        } else if (KubernetesClusterNodeType.WORKER == nodeType) {
+            size = kubernetesCluster.getWorkerNodeRootDiskSize();
+        } else if (KubernetesClusterNodeType.ETCD == nodeType) {
+            size = kubernetesCluster.getEtcdNodeRootDiskSize();
+        }
+        if (size != null && size > 0) {
+            return size;
+        }
+        return KubernetesClusterNodeType.ETCD == nodeType ? 0 : kubernetesCluster.getNodeRootDiskSize();
+    }
+
+    /** The node type of a VM of a cluster */
+    public static KubernetesClusterNodeType getNodeType(final KubernetesClusterVmMapVO vmMap) {
+        if (vmMap.isControlNode()) {
+            return KubernetesClusterNodeType.CONTROL;
+        }
+        return vmMap.isEtcdNode() ? KubernetesClusterNodeType.ETCD : KubernetesClusterNodeType.WORKER;
+    }
+
+    /** The number of nodes of a type that CKS manages, external nodes left out */
+    public static int countManagedNodes(final List<KubernetesClusterVmMapVO> vmMaps, final KubernetesClusterNodeType type) {
+        return (int) vmMaps.stream().filter(vmMap -> !vmMap.isExternalNode() && getNodeType(vmMap) == type).count();
+    }
 
     public static final String CLUSTER_NODE_READY_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'";
     public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\") print $5}'";
