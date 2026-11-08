@@ -25,7 +25,9 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.DetailVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -46,6 +48,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -69,6 +74,9 @@ public class ClvmPoolManagerTest {
     @Mock
     private HostDao hostDao;
 
+    @Mock
+    private HostDetailsDao hostDetailsDao;
+
     @InjectMocks
     private ClvmPoolManager clvmPoolManager;
 
@@ -81,7 +89,7 @@ public class ClvmPoolManagerTest {
 
     @Before
     public void setUp() {
-        Mockito.reset(volsDetailsDao, agentMgr, hostDao);
+        Mockito.reset(volsDetailsDao, agentMgr, hostDao, hostDetailsDao);
     }
 
     @Test
@@ -305,7 +313,7 @@ public class ClvmPoolManagerTest {
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
-        verify(agentMgr, times(1)).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
         verify(hostDao, never()).findByName(any());
     }
 
@@ -484,7 +492,6 @@ public class ClvmPoolManagerTest {
         // Fast path succeeded - no DB write needed, no fan-out
         verify(volsDetailsDao, never()).update(anyLong(), any());
         verify(volsDetailsDao, never()).addDetail(anyLong(), any(), any(), Mockito.anyBoolean());
-        verify(hostDao, never()).findByClusterId(anyLong(), any());
     }
 
     @Test
@@ -601,8 +608,8 @@ public class ClvmPoolManagerTest {
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
-        verify(agentMgr, never()).send(eq(10L), any(ClvmLockTransferCommand.class));
-        verify(agentMgr, times(1)).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, never()).send(eq(10L), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
     }
 
     @Test
@@ -624,8 +631,8 @@ public class ClvmPoolManagerTest {
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
-        verify(agentMgr, never()).send(eq(10L), any(ClvmLockTransferCommand.class));
-        verify(agentMgr, times(1)).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, never()).send(eq(10L), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
     }
 
     @Test
@@ -670,10 +677,8 @@ public class ClvmPoolManagerTest {
         Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
-        // Only one agent call, no cluster host lookup, no fan-out
-        verify(agentMgr, times(1)).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
-        verify(hostDao, never()).findByClusterId(anyLong(), any());
-        verify(hostDao, never()).findByDataCenterId(anyLong());
+        // Lease unreadable: one lock-state query on the DB host, no fan-out
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
     }
 
     /**
@@ -706,8 +711,8 @@ public class ClvmPoolManagerTest {
 
         Assert.assertEquals(HOST_ID_2, result);
         // HOST_ID_1 queried once (fast path only), HOST_ID_2 queried once (fan-out)
-        verify(agentMgr, times(1)).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
-        verify(agentMgr, times(1)).send(eq(HOST_ID_2), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
     }
 
     /**
@@ -735,8 +740,8 @@ public class ClvmPoolManagerTest {
 
         Assert.assertEquals(HOST_ID_2, result);
         // No query to the down host at all
-        verify(agentMgr, never()).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
-        verify(agentMgr, times(1)).send(eq(HOST_ID_2), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, never()).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
     }
 
 
@@ -1037,6 +1042,7 @@ public class ClvmPoolManagerTest {
         ReflectionTestUtils.setField(manager, "_volsDetailsDao", volsDetailsDao);
         ReflectionTestUtils.setField(manager, "_agentMgr", agentMgr);
         ReflectionTestUtils.setField(manager, "_hostDao", hostDao);
+        ReflectionTestUtils.setField(manager, "_hostDetailsDao", hostDetailsDao);
         return manager;
     }
 
@@ -1192,10 +1198,10 @@ public class ClvmPoolManagerTest {
         StoragePoolVO pool = prepareRecoveryOnHost2();
         when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
                 .thenReturn(lockedByOtherHost());
-        long deadlineMs = manager.newLockRecoveryDeadlineMs();
+        ClvmPoolManager.LockLookup lookup = manager.newLockLookup();
 
-        Assert.assertNull(manager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, deadlineMs));
-        Assert.assertNull(manager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, deadlineMs));
+        Assert.assertNull(manager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, lookup));
+        Assert.assertNull(manager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, lookup));
 
         Assert.assertEquals(18, manager.sleeps.size());
         Assert.assertEquals(180_000L, manager.clock.get());
@@ -1208,13 +1214,299 @@ public class ClvmPoolManagerTest {
         StoragePoolVO pool = prepareRecoveryOnHost2();
         when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
                 .thenReturn(lockedByOtherHost(), lockedByOtherHost(), new Answer(null, true, null), new Answer(null, true, null));
-        long deadlineMs = manager.newLockRecoveryDeadlineMs();
+        ClvmPoolManager.LockLookup lookup = manager.newLockLookup();
 
-        Assert.assertEquals(HOST_ID_2, manager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, deadlineMs));
-        Assert.assertEquals(HOST_ID_2, manager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, deadlineMs));
+        Assert.assertEquals(HOST_ID_2, manager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, lookup));
+        Assert.assertEquals(HOST_ID_2, manager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, lookup));
 
         Assert.assertEquals(Arrays.asList(10_000L, 10_000L), manager.sleeps);
         verify(agentMgr, times(4)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testFanOut_UnreachableHostQueriedOnceForAllVolumesOfOneLookup() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareRecoveryOnHost2();
+        Long host3 = 3L;
+        HostVO downHost = hostDao.findById(HOST_ID_1);
+        HostVO upHost2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO upHost3 = createMockHost(host3, "host3", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(downHost, upHost2, upHost3));
+        when(agentMgr.send(eq(host3), any(ClvmLockTransferCommand.class)))
+                .thenThrow(new OperationTimedoutException(null, host3, 0, 0, false));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+        ClvmPoolManager.LockLookup lookup = clvmPoolManager.newLockLookup();
+
+        Assert.assertEquals(HOST_ID_2, clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true, lookup));
+        Assert.assertEquals(HOST_ID_2, clvmPoolManager.getClvmLockHostId(VOLUME_ID + 1, "second-volume-uuid", "second-volume-path", pool, true, lookup));
+
+        verify(agentMgr, times(1)).send(eq(host3), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, times(2)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+    }
+
+    @Test
+    public void testFanOut_HostsQueriedInParallel() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = mockClusterPool();
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+        HostVO upHost1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO upHost2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(upHost1, upHost2));
+
+        // Each query answers only once both queries are in flight
+        CountDownLatch bothInFlight = new CountDownLatch(2);
+        AtomicBoolean sequential = new AtomicBoolean();
+        when(agentMgr.send(anyLong(), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenAnswer(invocation -> {
+                    bothInFlight.countDown();
+                    if (!bothInFlight.await(5, TimeUnit.SECONDS)) {
+                        sequential.set(true);
+                    }
+                    boolean active = HOST_ID_2.equals(invocation.getArgument(0));
+                    return new ClvmLockTransferAnswer(null, true, null, null, active, active, null);
+                });
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertFalse("hosts were queried one after another", sequential.get());
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, never()).send(anyLong(), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    /** Two Up hosts in the cluster reporting sanlock ids 1 and 2; DB says HOST_ID_1 holds the lock. */
+    private StoragePoolVO prepareLeaseLookup() {
+        StoragePoolVO pool = mockClusterPool();
+        VolumeDetailVO detail = new VolumeDetailVO();
+        detail.setValue(String.valueOf(HOST_ID_1));
+        lenient().when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO host2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        lenient().when(hostDao.findById(HOST_ID_1)).thenReturn(host1);
+        lenient().when(hostDao.findById(HOST_ID_2)).thenReturn(host2);
+        when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Arrays.asList(host1, host2));
+        stubSanlockId(HOST_ID_1, "1");
+        stubSanlockId(HOST_ID_2, "2");
+        stubLockState(HOST_ID_1, false);
+        return pool;
+    }
+
+    private void stubLockState(Long hostId, boolean active) {
+        try {
+            lenient().when(agentMgr.send(eq(hostId), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                    .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, active, active, null));
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void stubSanlockId(Long hostId, String sanlockId) {
+        lenient().when(hostDetailsDao.findDetail(hostId, Host.HOST_SANLOCK_ID)).thenReturn(new DetailVO(hostId, Host.HOST_SANLOCK_ID, sanlockId));
+    }
+
+    private void stubLease(ClvmLockTransferAnswer lease) throws AgentUnavailableException, OperationTimedoutException {
+        when(agentMgr.send(anyLong(), operation(ClvmLockTransferCommand.Operation.QUERY_LEASE_OWNER))).thenReturn(lease);
+    }
+
+    @Test
+    public void testLease_ExclusiveOwnerMappedToHost_NoFanOut() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 2L, true, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, true, true, null));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(1)).send(anyLong(), operation(ClvmLockTransferCommand.Operation.QUERY_LEASE_OWNER));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(volsDetailsDao).update(anyLong(), any(VolumeDetailVO.class));
+    }
+
+    @Test
+    public void testLease_HolderRestarted_LvInactiveThere_ActivatedOnPreferredHost() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 2L, true, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, false, false, null));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true,
+                clvmPoolManager.newLockLookup(HOST_ID_2));
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+    }
+
+    @Test
+    public void testLease_Free_ActivatedOnPreferredHost() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.FREE, null, false, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true,
+                clvmPoolManager.newLockLookup(HOST_ID_2));
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LEASE_OWNER));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, never()).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, never()).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testLease_OwnerDead_TreatedAsFree() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 1L, false, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true,
+                clvmPoolManager.newLockLookup(HOST_ID_2));
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+        verify(agentMgr, never()).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+    }
+
+    @Test
+    public void testLease_SanlockIdOnTwoHosts_FallsBackToFanOut() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubSanlockId(HOST_ID_1, "2");
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 2L, true, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, false, false, null));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenReturn(new ClvmLockTransferAnswer(null, true, null, null, true, true, null));
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+    }
+
+    @Test
+    public void testLease_UnreadableOnTwoHosts_FallsBackToFanOut() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(new ClvmLockTransferAnswer(null, false, "No sanlock lock args"));
+        stubLockState(HOST_ID_2, true);
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(2)).send(anyLong(), operation(ClvmLockTransferCommand.Operation.QUERY_LEASE_OWNER));
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+    }
+
+    @Test
+    public void testLease_NamesDbHostFoundInactive_NoSecondQuery() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 1L, true, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true,
+                clvmPoolManager.newLockLookup(HOST_ID_2));
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, times(1)).send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE));
+    }
+
+    @Test
+    public void testLease_HolderUnreachableNotRenewing_ActivatedOnPreferredHost() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 2L, true, false, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenThrow(new OperationTimedoutException(null, HOST_ID_2, 0, 0, false));
+        when(agentMgr.send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(new Answer(null, true, null));
+
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true,
+                clvmPoolManager.newLockLookup(HOST_ID_1));
+
+        Assert.assertEquals(HOST_ID_1, result);
+        verify(agentMgr, never()).send(anyLong(), operation(ClvmLockTransferCommand.Operation.DEACTIVATE));
+    }
+
+    @Test
+    public void testLease_HolderUnreachableButRenewing_KeptAsHolder() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE, 2L, true, true, Collections.emptyList()));
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE)))
+                .thenThrow(new OperationTimedoutException(null, HOST_ID_2, 0, 0, false));
+
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true,
+                clvmPoolManager.newLockLookup(HOST_ID_1));
+
+        Assert.assertEquals(HOST_ID_2, result);
+        verify(agentMgr, never()).send(anyLong(), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    /** Source HOST_ID_1 is Up and deactivates; the destination is HOST_ID_2. */
+    private StoragePoolVO prepareTransfer() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getPath()).thenReturn(VG_NAME);
+        HostVO source = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID_1)).thenReturn(source);
+        when(agentMgr.send(eq(HOST_ID_1), operation(ClvmLockTransferCommand.Operation.DEACTIVATE)))
+                .thenReturn(new Answer(null, true, null));
+        return pool;
+    }
+
+    @Test
+    public void testTransfer_DestinationLockStartInProgress_Retried() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareTransfer();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockStartInProgress(), new Answer(null, true, null));
+
+        Assert.assertTrue(manager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID, VOLUME_PATH, pool, HOST_ID_1, HOST_ID_2));
+
+        Assert.assertEquals(Collections.singletonList(10_000L), manager.sleeps);
+        verify(agentMgr, times(2)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testTransfer_LockedByOtherHost_FailsFast() throws AgentUnavailableException, OperationTimedoutException {
+        RetryTestClvmPoolManager manager = newRetryManager();
+        StoragePoolVO pool = prepareTransfer();
+        when(agentMgr.send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE)))
+                .thenReturn(lockedByOtherHost());
+
+        Assert.assertFalse(manager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID, VOLUME_PATH, pool, HOST_ID_1, HOST_ID_2));
+
+        Assert.assertTrue(manager.sleeps.isEmpty());
+        verify(agentMgr, times(1)).send(eq(HOST_ID_2), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testFastPathHit_NoLeaseRead() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLockState(HOST_ID_1, true);
+
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+
+        Assert.assertEquals(HOST_ID_1, result);
+        verify(agentMgr, times(1)).send(anyLong(), any(ClvmLockTransferCommand.class));
+    }
+
+    @Test
+    public void testLease_SharedByTwoHosts_NoTransfer() throws AgentUnavailableException, OperationTimedoutException {
+        StoragePoolVO pool = prepareLeaseLookup();
+        stubLease(ClvmLockTransferAnswer.leaseOwner(null, ClvmLockTransferAnswer.LeaseMode.SHARED, null, false, Arrays.asList(1L, 2L)));
+
+        Assert.assertNull(clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false));
+        verify(agentMgr, never()).send(anyLong(), operation(ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE));
+    }
+
+    @Test
+    public void testFindHostsSharingSanlockId() {
+        StoragePoolVO pool = prepareLeaseLookup();
+        Assert.assertTrue(clvmPoolManager.findHostsSharingSanlockId(pool, HOST_ID_1).isEmpty());
+
+        stubSanlockId(HOST_ID_2, "1");
+        Assert.assertEquals(Collections.singletonList(HOST_ID_2), clvmPoolManager.findHostsSharingSanlockId(pool, HOST_ID_1));
     }
 
     private StoragePoolVO mockClusterPool() {

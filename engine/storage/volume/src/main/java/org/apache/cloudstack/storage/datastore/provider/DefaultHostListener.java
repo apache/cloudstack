@@ -30,6 +30,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.StorageConflictException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
@@ -100,6 +101,8 @@ public class DefaultHostListener implements HypervisorHostListener {
     ConfigurationManager configManager;
     @Inject
     NetworkDao networkDao;
+    @Inject
+    ClvmPoolManager clvmPoolManager;
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -193,9 +196,25 @@ public class DefaultHostListener implements HypervisorHostListener {
 
         storageService.updateStorageCapabilities(poolId, false);
 
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            alertOnSharedSanlockId(pool, host);
+        }
+
         logger.info("Connection established between storage pool {} and host {}", pool, host);
 
         return createPersistentNetworkResourcesOnHost(hostId);
+    }
+
+    /** CLVM lock holder lookups map a sanlock host id to exactly one host of the pool. */
+    private void alertOnSharedSanlockId(StoragePool pool, HostVO host) {
+        List<Long> otherHostIds = clvmPoolManager.findHostsSharingSanlockId(pool, host.getId());
+        if (otherHostIds.isEmpty()) {
+            return;
+        }
+        String msg = String.format("Host %s reports the same %s as hosts %s of CLVM storage pool %s. Set a unique host_id in lvmlocal.conf on each host.",
+                host, Host.HOST_SANLOCK_ID, otherHostIds, pool);
+        logger.error(msg);
+        alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
     }
 
     private void updateStoragePoolHostVOAndDetails(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {

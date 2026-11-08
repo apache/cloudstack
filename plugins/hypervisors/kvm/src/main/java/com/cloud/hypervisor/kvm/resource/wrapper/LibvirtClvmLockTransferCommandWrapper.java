@@ -17,7 +17,12 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
+
 import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.kvm.storage.ClvmSanlockLeaseReader;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer.LeaseMode;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -43,6 +48,9 @@ public class LibvirtClvmLockTransferCommandWrapper
 
             if (operation == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE) {
                 return handleQueryLockState(cmd, lvPath, volumeUuid);
+            }
+            if (operation == ClvmLockTransferCommand.Operation.QUERY_LEASE_OWNER) {
+                return handleQueryLeaseOwner(cmd, lvPath, volumeUuid);
             }
 
             String lvchangeOpt;
@@ -87,6 +95,24 @@ public class LibvirtClvmLockTransferCommandWrapper
             logger.error("Exception during CLVM lock transfer for volume {}: {}",
                     volumeUuid, e.getMessage(), e);
             return new ClvmLockTransferAnswer(cmd, false, "Exception: " + e.getMessage());
+        }
+    }
+
+    /** Reads the sanlock lease of the LV, which names the holder from any host in the lockspace. */
+    private Answer handleQueryLeaseOwner(ClvmLockTransferCommand cmd, String lvPath, String volumeUuid) {
+        File lv = new File(lvPath);
+        String vgName = lv.getParentFile().getName();
+        try {
+            ClvmSanlockLeaseReader.Lease lease = ClvmSanlockLeaseReader.readLease(vgName, lv.getName());
+            ClvmSanlockLeaseReader.OwnerLiveness owner = lease.getMode() == LeaseMode.EXCLUSIVE
+                    ? ClvmSanlockLeaseReader.readOwnerLiveness(vgName, lease) : new ClvmSanlockLeaseReader.OwnerLiveness(false, false);
+            logger.info("Lease of volume {}: {}, owner={}, alive={}, renewing={}, shared={}",
+                    volumeUuid, lease.getMode(), lease.getOwnerId(), owner.isAlive(), owner.isRenewing(), lease.getSharedOwnerIds());
+            return ClvmLockTransferAnswer.leaseOwner(cmd, lease.getMode(), lease.getOwnerId(), owner.isAlive(), owner.isRenewing(),
+                    lease.getSharedOwnerIds());
+        } catch (CloudRuntimeException | NumberFormatException e) {
+            logger.warn("Failed to read the sanlock lease of volume {}: {}", volumeUuid, e.getMessage());
+            return new ClvmLockTransferAnswer(cmd, false, "Failed to read sanlock lease: " + e.getMessage());
         }
     }
 

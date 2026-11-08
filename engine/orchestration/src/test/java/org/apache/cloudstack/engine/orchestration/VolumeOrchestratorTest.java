@@ -135,7 +135,7 @@ public class VolumeOrchestratorTest {
                 accountPSResourceCount += increment;
             }
             return null;
-        }).when(resourceLimitMgr).incrementResourceCount(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyBoolean(), Mockito.anyLong());
+        }).when(resourceLimitMgr).incrementResourceCount(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyBoolean(), Mockito.any());
         Mockito.doAnswer((Answer<Void>) invocation -> {
             Resource.ResourceType type = (Resource.ResourceType)invocation.getArguments()[1];
             Long decrement = (Long)invocation.getArguments()[3];
@@ -143,7 +143,7 @@ public class VolumeOrchestratorTest {
                 accountPSResourceCount -= decrement;
             }
             return null;
-        }).when(resourceLimitMgr).decrementResourceCount(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyBoolean(), Mockito.anyLong());
+        }).when(resourceLimitMgr).decrementResourceCount(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyBoolean(), Mockito.any());
     }
 
     private void runCheckAndUpdateVolumeAccountResourceCountTest(Long originalSize, Long newSize) {
@@ -696,9 +696,9 @@ public class VolumeOrchestratorTest {
 
         ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
-                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.anyLong())).thenReturn(currentHostId);
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.any())).thenReturn(currentHostId);
         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(102L), Mockito.anyString(),
-                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.anyLong())).thenReturn(currentHostId);
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.any())).thenReturn(currentHostId);
         Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
 
@@ -768,7 +768,7 @@ public class VolumeOrchestratorTest {
 
         ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
-                ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true), Mockito.anyLong())).thenReturn(destHostId);
+                ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true), Mockito.any())).thenReturn(destHostId);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
@@ -801,7 +801,7 @@ public class VolumeOrchestratorTest {
         method.invoke(volumeOrchestrator, new ArrayList<VolumeVO>(), destHostId, vmInstance);
 
         Mockito.verify(clvmPoolManager, Mockito.never()).getClvmLockHostId(Mockito.anyLong(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyLong());
+                Mockito.anyString(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
     }
 
     @Test
@@ -842,7 +842,7 @@ public class VolumeOrchestratorTest {
 
         ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
-                ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true), Mockito.anyLong())).thenReturn(null);
+                ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true), Mockito.any())).thenReturn(null);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
@@ -888,7 +888,7 @@ public class VolumeOrchestratorTest {
 
         ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
-                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.anyLong())).thenReturn(currentHostId);
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.any())).thenReturn(currentHostId);
         Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
 
@@ -929,7 +929,7 @@ public class VolumeOrchestratorTest {
 
         ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
-                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.anyLong())).thenReturn(currentHostId);
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true), Mockito.any())).thenReturn(currentHostId);
         Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(false);
 

@@ -21,9 +21,18 @@ package com.cloud.storage.clvm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
@@ -34,15 +43,19 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.DetailVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
 import org.apache.logging.log4j.LogManager;
@@ -57,6 +70,8 @@ public class ClvmPoolManager implements Configurable {
     private AgentManager _agentMgr;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao _hostDetailsDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -66,7 +81,8 @@ public class ClvmPoolManager implements Configurable {
      */
     public static final String CLVM_LOCK_HOST_ID = "clvmLockHostId";
 
-    private static final List<String> TRANSIENT_LOCK_REFUSALS = List.of("locked by other host", "lock start in progress");
+    private static final String LOCK_START_IN_PROGRESS = "lock start in progress";
+    private static final List<String> TRANSIENT_LOCK_REFUSALS = List.of("locked by other host", LOCK_START_IN_PROGRESS);
 
     public static final ConfigKey<Integer> ClvmLockRecoveryRetryTimeout = new ConfigKey<>("Advanced", Integer.class, "clvm.lock.recovery.retry.timeout", "180",
             "Maximum time in seconds, counted from the start of the CLVM lock holder lookup, to keep retrying the exclusive activation of a volume that is refused only temporarily: the previous lock holder's lease has not expired yet, or the lockspace of the volume group is still being started on the host. The lease expires 8 x io_timeout + 60 seconds after the holder stops renewing it (140 seconds with the default lvmlockd sanlock io_timeout of 10). If lvmlockd runs with a different --sanlock-timeout, set this to at least that value plus about 40 seconds. 0 disables the retry.", true);
@@ -76,6 +92,34 @@ public class ClvmPoolManager implements Configurable {
 
     public static final ConfigKey<Boolean> CLVMSecureZeroFill = new ConfigKey<>("Advanced", Boolean.class, "clvm.secure.zero.fill", "false",
             "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly. Note: This setting is propagated to hosts when they connect to the storage pool. Changing this setting requires disconnecting and reconnecting hosts or restarting the KVM agent for it to take effect.", false, ConfigKey.Scope.StoragePool);
+
+    private static final int LOCK_QUERY_THREADS = 16;
+    private static final int MAX_LEASE_READERS = 2;
+
+    private final ExecutorService lockQueryExecutor = newLockQueryExecutor();
+
+    /** State shared by the lock lookups of all volumes of one operation. */
+    public static class LockLookup {
+        private final long activationDeadlineMs;
+        private final Long preferredHostId;
+        private final Set<Long> unreachableHostIds = ConcurrentHashMap.newKeySet();
+
+        LockLookup(long activationDeadlineMs, Long preferredHostId) {
+            this.activationDeadlineMs = activationDeadlineMs;
+            this.preferredHostId = preferredHostId;
+        }
+
+        boolean isUnreachable(Long hostId) {
+            return unreachableHostIds.contains(hostId);
+        }
+    }
+
+    private static ExecutorService newLockQueryExecutor() {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(LOCK_QUERY_THREADS, LOCK_QUERY_THREADS, 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(), new NamedThreadFactory("ClvmLockQuery"));
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
 
     public static boolean isClvmPoolType(Storage.StoragePoolType poolType) {
         return Arrays.asList(Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM_NG).contains(poolType);
@@ -116,26 +160,31 @@ public class ClvmPoolManager implements Configurable {
      */
     public Long getClvmLockHostId(Long volumeId, String volumeUuid, String volumePath,
                                   StoragePool pool, boolean queryActual) {
-        return getClvmLockHostId(volumeId, volumeUuid, volumePath, pool, queryActual, newLockRecoveryDeadlineMs());
+        return getClvmLockHostId(volumeId, volumeUuid, volumePath, pool, queryActual, newLockLookup());
     }
 
-    /** Same as above, with a retry deadline shared across calls, see {@link #newLockRecoveryDeadlineMs()}. */
+    /** Same as above, sharing {@code lookup} with the other volumes of the same operation, see {@link #newLockLookup()}. */
     public Long getClvmLockHostId(Long volumeId, String volumeUuid, String volumePath,
-                                  StoragePool pool, boolean queryActual, long activationDeadlineMs) {
+                                  StoragePool pool, boolean queryActual, LockLookup lookup) {
         if (queryActual) {
             if (volumePath == null || pool == null) {
                 logger.warn("Cannot query actual CLVM lock state for volume {} - missing volumePath or pool", volumeUuid);
                 return getClvmLockHostId(volumeId, volumeUuid);
             }
-            return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, true, activationDeadlineMs);
+            return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, true, lookup);
         }
 
         return getClvmLockHostId(volumeId, volumeUuid);
     }
 
-    /** @return the time in milliseconds until which a refused activation is retried, counted from now */
-    public long newLockRecoveryDeadlineMs() {
-        return now() + getRetryTimeoutMillis();
+    /** @return lookup state for one operation; its activation retry deadline is counted from now */
+    public LockLookup newLockLookup() {
+        return newLockLookup(null);
+    }
+
+    /** Same as above; a volume no host holds is activated on {@code preferredHostId} when possible. */
+    public LockLookup newLockLookup(Long preferredHostId) {
+        return new LockLookup(now() + getRetryTimeoutMillis(), preferredHostId);
     }
 
     /**
@@ -174,12 +223,12 @@ public class ClvmPoolManager implements Configurable {
      */
     public Long queryCurrentLockHolder(Long volumeId, String volumeUuid, String volumePath,
                                        StoragePool pool, boolean updateDatabase) {
-        return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, updateDatabase, newLockRecoveryDeadlineMs());
+        return queryCurrentLockHolder(volumeId, volumeUuid, volumePath, pool, updateDatabase, newLockLookup());
     }
 
-    /** Same as above, retrying a refused recovery activation until {@code activationDeadlineMs}. */
+    /** Same as above, sharing the retry deadline and the unreachable hosts in {@code lookup}. */
     public Long queryCurrentLockHolder(Long volumeId, String volumeUuid, String volumePath,
-                                       StoragePool pool, boolean updateDatabase, long activationDeadlineMs) {
+                                       StoragePool pool, boolean updateDatabase, LockLookup lookup) {
         if (pool == null) {
             logger.error("Cannot query CLVM lock for volume {} - pool is null", volumeUuid);
             return null;
@@ -190,88 +239,98 @@ public class ClvmPoolManager implements Configurable {
             vgName = vgName.substring(1);
         }
         String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
-
-        // Hosts that did not answer the lock-state query
-        Set<Long> unreachableHostIds = new HashSet<>();
-
-        // Fast path: trust the DB record and verify with a single host query
         Long dbHostId = getClvmLockHostId(volumeId, volumeUuid);
-        if (dbHostId != null) {
-            HostVO dbHost = _hostDao.findById(dbHostId);
-            if (dbHost != null && dbHost.getStatus() == Status.Up
-                    && dbHost.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
-                Boolean active = querySingleHostLockState(dbHostId, lvPath, volumeUuid);
-                if (Boolean.TRUE.equals(active)) {
-                    logger.debug("Fast path: volume {} confirmed active on DB host {}", volumeUuid, dbHostId);
-                    return dbHostId;
+        // Hosts that did not answer the lock-state query for this volume
+        Set<Long> noAnswerHostIds = new HashSet<>();
+
+        Boolean dbHostActive = queryDbHostLockState(dbHostId, lvPath, volumeUuid, noAnswerHostIds, lookup);
+        if (Boolean.TRUE.equals(dbHostActive)) {
+            logger.debug("Fast path: volume {} confirmed active on DB host {}", volumeUuid, dbHostId);
+            return dbHostId;
+        }
+
+        List<HostVO> hosts = findPoolHosts(pool);
+
+        ClvmLockTransferAnswer lease = hosts.isEmpty() ? null : readLease(lvPath, volumeUuid, dbHostId, hosts, lookup);
+        if (lease != null) {
+            if (isLeaseFree(lease, volumeUuid)) {
+                return recoverInactiveVolume(volumeId, volumeUuid, lvPath, dbHostId, hosts, noAnswerHostIds, updateDatabase, lookup);
+            }
+            List<Long> holderSanlockIds = getLeaseHolderIds(lease);
+            if (holderSanlockIds.size() > 1) {
+                logger.warn("Volume {} is held in shared mode by sanlock hosts {}. Skipping exclusive lock transfer.",
+                        volumeUuid, holderSanlockIds);
+                return null;
+            }
+            Long lockHostId = findHostBySanlockId(hosts, holderSanlockIds.get(0));
+            if (lockHostId != null) {
+                if (isLeaseHolderInUse(lockHostId, dbHostId, dbHostActive, lease.isLeaseOwnerRenewing(), lvPath, volumeUuid, lookup)) {
+                    logger.info("Volume {} is held by host {} (sanlock lease, DB had {})", volumeUuid, lockHostId, dbHostId);
+                    return recordLockHolder(volumeId, volumeUuid, dbHostId, lockHostId, updateDatabase);
                 }
-                if (active == null) {
-                    unreachableHostIds.add(dbHostId);
-                }
-                logger.info("Fast path miss: volume {} not active on DB host {} - falling back to full fan-out",
-                        volumeUuid, dbHostId);
-            } else {
-                logger.info("Fast path skip: DB host {} for volume {} is down/missing — falling back to full fan-out",
-                        dbHostId, volumeUuid);
+                return recoverInactiveVolume(volumeId, volumeUuid, lvPath, dbHostId, hosts, noAnswerHostIds, updateDatabase, lookup);
             }
         }
+        return findLockHolderByFanOut(volumeId, volumeUuid, lvPath, pool, dbHostId, hosts, noAnswerHostIds, updateDatabase, lookup);
+    }
 
-        List<HostVO> hosts = null;
-        Long clusterId = pool.getClusterId();
-        if (clusterId != null) {
-            hosts = _hostDao.findByClusterId(clusterId, Host.Type.Routing);
-        } else if (pool.getDataCenterId() > 0) {
-            hosts = _hostDao.findByDataCenterId(pool.getDataCenterId());
+    /**
+     * Fast path: asks the host recorded in the DB, as an LV is only active on the host holding its lock.
+     *
+     * @return the lock state on the DB host, or null when it was not asked or did not answer
+     */
+    private Boolean queryDbHostLockState(Long dbHostId, String lvPath, String volumeUuid, Set<Long> noAnswerHostIds, LockLookup lookup) {
+        if (dbHostId == null) {
+            return null;
         }
-        if (hosts == null || hosts.isEmpty()) {
+        if (lookup.isUnreachable(dbHostId)) {
+            logger.info("Fast path skip: DB host {} for volume {} did not answer an earlier query", dbHostId, volumeUuid);
+            return null;
+        }
+        if (!isUpKvmRoutingHost(_hostDao.findById(dbHostId))) {
+            logger.info("Fast path skip: DB host {} for volume {} is down/missing", dbHostId, volumeUuid);
+            return null;
+        }
+        Boolean active = querySingleHostLockState(dbHostId, lvPath, volumeUuid, lookup);
+        if (active == null) {
+            noAnswerHostIds.add(dbHostId);
+        } else if (!active) {
+            logger.info("Fast path miss: volume {} not active on DB host {}", volumeUuid, dbHostId);
+        }
+        return active;
+    }
+
+    /** Asks every host whether the volume is active there; used when the sanlock lease cannot name the holder. */
+    private Long findLockHolderByFanOut(Long volumeId, String volumeUuid, String lvPath, StoragePool pool, Long dbHostId,
+                                        List<HostVO> hosts, Set<Long> noAnswerHostIds, boolean updateDatabase, LockLookup lookup) {
+        if (hosts.isEmpty()) {
             logger.warn("No KVM routing hosts found to query CLVM lock state for volume {} (pool: {}, cluster: {}, zone: {})",
-                    volumeUuid, pool.getName(), clusterId, pool.getDataCenterId());
+                    volumeUuid, pool.getName(), pool.getClusterId(), pool.getDataCenterId());
             return null;
         }
 
+        // The DB host was already queried in the fast path
+        List<Long> hostIdsToQuery = hosts.stream()
+                .filter(this::isUpKvmRoutingHost)
+                .map(HostVO::getId)
+                .filter(id -> !id.equals(dbHostId) && !lookup.isUnreachable(id))
+                .collect(Collectors.toList());
+        Map<Long, Boolean> lockStates = queryHostsLockState(hostIdsToQuery, lvPath, volumeUuid, lookup);
+
         List<Long> activeHostIds = new ArrayList<>();
-
-        for (HostVO host : hosts) {
-            if (host.getStatus() != Status.Up ||
-                host.getType() != Host.Type.Routing ||
-                host.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
-                continue;
-            }
-            // Skip the DB host, already confirmed inactive in the fast path above
-            if (dbHostId != null && host.getId() == dbHostId) {
-                continue;
-            }
-
-            Boolean active = querySingleHostLockState(host.getId(), lvPath, volumeUuid);
+        for (Long hostId : hostIdsToQuery) {
+            Boolean active = lockStates.get(hostId);
             if (Boolean.TRUE.equals(active)) {
-                logger.debug("Volume {} is locally active on host {} (fan-out)", volumeUuid, host.getId());
-                activeHostIds.add(host.getId());
+                logger.debug("Volume {} is locally active on host {} (fan-out)", volumeUuid, hostId);
+                activeHostIds.add(hostId);
             } else if (active == null) {
-                unreachableHostIds.add(host.getId());
+                noAnswerHostIds.add(hostId);
             }
         }
 
         if (activeHostIds.isEmpty()) {
             logger.debug("Volume {} is not active on any reachable host — no exclusive lock held", volumeUuid);
-
-            // Recovery: attempt exclusive activation on the best available host before giving up.
-            Long targetHostId = selectActivationTargetHost(dbHostId, hosts, unreachableHostIds);
-            if (targetHostId != null) {
-                Long recoveredHostId = tryActivateExclusivelyOnHost(volumeId, volumeUuid, lvPath,
-                        targetHostId, updateDatabase, activationDeadlineMs);
-                if (recoveredHostId != null) {
-                    return recoveredHostId;
-                }
-            }
-
-            // Activation failed or no eligible host - clean up stale DB record and give up
-            if (updateDatabase && dbHostId != null) {
-                VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
-                if (detail != null && String.valueOf(dbHostId).equals(detail.getValue())) {
-                    _volsDetailsDao.remove(detail.getId());
-                }
-            }
-            return null;
+            return recoverInactiveVolume(volumeId, volumeUuid, lvPath, dbHostId, hosts, noAnswerHostIds, updateDatabase, lookup);
         }
 
         if (activeHostIds.size() > 1) {
@@ -284,26 +343,237 @@ public class ClvmPoolManager implements Configurable {
         Long lockHostId = activeHostIds.get(0);
         logger.info("Volume {} is exclusively active on host {} (found via fan-out, DB had {})",
                 volumeUuid, lockHostId, dbHostId);
+        return recordLockHolder(volumeId, volumeUuid, dbHostId, lockHostId, updateDatabase);
+    }
 
-        if (updateDatabase) {
-            if (dbHostId == null || !dbHostId.equals(lockHostId)) {
-                logger.info("Correcting database: volume {} lock host: {} -> {} (actual)",
-                        volumeUuid, dbHostId, lockHostId);
-                setClvmLockHostId(volumeId, lockHostId);
-            }
+    private Long recordLockHolder(Long volumeId, String volumeUuid, Long dbHostId, Long lockHostId, boolean updateDatabase) {
+        if (updateDatabase && !lockHostId.equals(dbHostId)) {
+            logger.info("Correcting database: volume {} lock host: {} -> {} (actual)",
+                    volumeUuid, dbHostId, lockHostId);
+            setClvmLockHostId(volumeId, lockHostId);
         }
-
         return lockHostId;
     }
 
     /**
+     * Reads the sanlock lease of the volume on one host; any host in the lockspace sees every lease.
+     * Tries a second host if the first does not answer.
+     *
+     * @return the lease, or null when no host could read it
+     */
+    private ClvmLockTransferAnswer readLease(String lvPath, String volumeUuid, Long dbHostId, List<HostVO> hosts, LockLookup lookup) {
+        for (Long hostId : selectLeaseReaders(dbHostId, hosts, lookup)) {
+            try {
+                Answer answer = _agentMgr.send(hostId, new ClvmLockTransferCommand(
+                        ClvmLockTransferCommand.Operation.QUERY_LEASE_OWNER, lvPath, volumeUuid));
+                if (answer instanceof ClvmLockTransferAnswer && answer.getResult()
+                        && ((ClvmLockTransferAnswer) answer).getLeaseMode() != null) {
+                    return (ClvmLockTransferAnswer) answer;
+                }
+                logger.debug("Host {} could not read the sanlock lease of volume {}: {}",
+                        hostId, volumeUuid, answer != null ? answer.getDetails() : "null answer");
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                logger.debug("Could not query host {} for the sanlock lease of volume {}: {}", hostId, volumeUuid, e.getMessage());
+                lookup.unreachableHostIds.add(hostId);
+            }
+        }
+        return null;
+    }
+
+    /** Up hosts that can read the lease, the preferred host and then the DB host first. */
+    private List<Long> selectLeaseReaders(Long dbHostId, List<HostVO> hosts, LockLookup lookup) {
+        List<Long> hostIds = hosts.stream()
+                .filter(this::isUpKvmRoutingHost)
+                .map(HostVO::getId)
+                .filter(id -> !lookup.isUnreachable(id))
+                .collect(Collectors.toList());
+        Collections.shuffle(hostIds);
+        for (Long firstHostId : Arrays.asList(dbHostId, lookup.preferredHostId)) {
+            if (firstHostId != null && hostIds.remove(firstHostId)) {
+                hostIds.add(0, firstHostId);
+            }
+        }
+        return hostIds.subList(0, Math.min(MAX_LEASE_READERS, hostIds.size()));
+    }
+
+    /**
+     * Whether the host named by a live lease still uses the volume. A host that restarted keeps its old lease until it
+     * rejoins the lockspace or the lease expires, and the LV is then not active there. When the host cannot be asked,
+     * a lease that is still renewed means the host is alive, otherwise it is down and its lease will expire.
+     */
+    private boolean isLeaseHolderInUse(Long lockHostId, Long dbHostId, Boolean dbHostActive, boolean ownerRenewing,
+                                       String lvPath, String volumeUuid, LockLookup lookup) {
+        Boolean active;
+        if (lockHostId.equals(dbHostId)) {
+            active = dbHostActive;
+        } else {
+            active = isUpKvmRoutingHost(_hostDao.findById(lockHostId)) ? querySingleHostLockState(lockHostId, lvPath, volumeUuid, lookup) : null;
+        }
+        if (Boolean.TRUE.equals(active)) {
+            return true;
+        }
+        if (Boolean.FALSE.equals(active)) {
+            logger.info("Volume {} is not active on host {} although its sanlock lease names it, the host restarted; treating the lease as free",
+                    volumeUuid, lockHostId);
+            return false;
+        }
+        if (ownerRenewing) {
+            logger.warn("Host {} holding volume {} cannot be reached but still renews its sanlock lease; it is alive, so its lock is kept",
+                    lockHostId, volumeUuid);
+            return true;
+        }
+        logger.info("Host {} holding volume {} cannot be reached and no longer renews its sanlock lease; activating elsewhere once the lease expires",
+                lockHostId, volumeUuid);
+        return false;
+    }
+
+    /** A lease that is not held, or held by a host that died or restarted since, is free to take. */
+    private boolean isLeaseFree(ClvmLockTransferAnswer lease, String volumeUuid) {
+        if (lease.getLeaseMode() == ClvmLockTransferAnswer.LeaseMode.FREE) {
+            logger.debug("Volume {} is not held by any host (sanlock lease)", volumeUuid);
+            return true;
+        }
+        if (lease.getLeaseMode() == ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE && !lease.isLeaseOwnerAlive()) {
+            logger.info("Volume {} is held by sanlock host {}, which is dead or restarted since; treating the lease as free",
+                    volumeUuid, lease.getLeaseOwnerId());
+            return true;
+        }
+        return false;
+    }
+
+    private List<Long> getLeaseHolderIds(ClvmLockTransferAnswer lease) {
+        if (lease.getLeaseMode() == ClvmLockTransferAnswer.LeaseMode.EXCLUSIVE) {
+            return List.of(lease.getLeaseOwnerId());
+        }
+        return lease.getSharedOwnerIds();
+    }
+
+    /** @return the only host of the pool reporting this sanlock host id, or null when none or several do */
+    private Long findHostBySanlockId(List<HostVO> hosts, Long sanlockId) {
+        List<Long> hostIds = findHostIdsBySanlockId(hosts, String.valueOf(sanlockId));
+        if (hostIds.size() == 1) {
+            return hostIds.get(0);
+        }
+        logger.warn("Sanlock host id {} matches hosts {} of the pool, expected exactly one. Querying all hosts instead.",
+                sanlockId, hostIds);
+        return null;
+    }
+
+    private List<Long> findHostIdsBySanlockId(List<HostVO> hosts, String sanlockId) {
+        return hosts.stream()
+                .filter(h -> h.getType() == Host.Type.Routing && h.getHypervisorType() == Hypervisor.HypervisorType.KVM)
+                .map(HostVO::getId)
+                .filter(id -> sanlockId.equals(getSanlockId(id)))
+                .collect(Collectors.toList());
+    }
+
+    private String getSanlockId(long hostId) {
+        DetailVO detail = _hostDetailsDao.findDetail(hostId, Host.HOST_SANLOCK_ID);
+        return detail != null ? detail.getValue() : null;
+    }
+
+    /**
+     * Checks that the host's sanlock host id identifies it among the hosts of the pool, which the lease based
+     * lock holder lookup relies on.
+     *
+     * @return the other hosts of the pool reporting the same sanlock host id
+     */
+    public List<Long> findHostsSharingSanlockId(StoragePool pool, long hostId) {
+        String sanlockId = getSanlockId(hostId);
+        if (sanlockId == null) {
+            logger.warn("Host {} reports no {}, so CLVM lock holder lookups in pool {} query every host",
+                    hostId, Host.HOST_SANLOCK_ID, pool.getName());
+            return Collections.emptyList();
+        }
+        List<Long> hostIds = new ArrayList<>(findHostIdsBySanlockId(findPoolHosts(pool), sanlockId));
+        hostIds.remove(Long.valueOf(hostId));
+        return hostIds;
+    }
+
+    private boolean isUpKvmRoutingHost(HostVO host) {
+        return host != null
+                && host.getStatus() == Status.Up
+                && host.getType() == Host.Type.Routing
+                && host.getHypervisorType() == Hypervisor.HypervisorType.KVM;
+    }
+
+    private List<HostVO> findPoolHosts(StoragePool pool) {
+        List<HostVO> hosts = null;
+        if (pool.getClusterId() != null) {
+            hosts = _hostDao.findByClusterId(pool.getClusterId(), Host.Type.Routing);
+        } else if (pool.getDataCenterId() > 0) {
+            hosts = _hostDao.findByDataCenterId(pool.getDataCenterId());
+        }
+        return hosts != null ? hosts : Collections.emptyList();
+    }
+
+    /**
+     * Attempts an exclusive activation on the best available host when no host holds the volume.
+     * Removes the stale DB record if that fails.
+     */
+    private Long recoverInactiveVolume(Long volumeId, String volumeUuid, String lvPath, Long dbHostId, List<HostVO> hosts,
+                                      Set<Long> noAnswerHostIds, boolean updateDatabase, LockLookup lookup) {
+        Set<Long> skipHostIds = new HashSet<>(noAnswerHostIds);
+        skipHostIds.addAll(lookup.unreachableHostIds);
+        Long targetHostId = selectActivationTargetHost(lookup.preferredHostId, dbHostId, hosts, skipHostIds);
+        if (targetHostId != null) {
+            Long recoveredHostId = tryActivateExclusivelyOnHost(volumeId, volumeUuid, lvPath,
+                    targetHostId, updateDatabase, lookup, TRANSIENT_LOCK_REFUSALS);
+            if (recoveredHostId != null) {
+                return recoveredHostId;
+            }
+        }
+
+        if (updateDatabase && dbHostId != null) {
+            VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
+            if (detail != null && String.valueOf(dbHostId).equals(detail.getValue())) {
+                _volsDetailsDao.remove(detail.getId());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Queries the hosts in parallel, so one slow host does not delay the others.
+     *
+     * @return lock state per host that answered; hosts that did not answer are absent
+     */
+    private Map<Long, Boolean> queryHostsLockState(List<Long> hostIds, String lvPath, String volumeUuid, LockLookup lookup) {
+        Map<Long, Boolean> states = new ConcurrentHashMap<>();
+        List<Future<?>> futures = new ArrayList<>();
+        for (Long hostId : hostIds) {
+            futures.add(lockQueryExecutor.submit(new ManagedContextRunnable() {
+                @Override
+                protected void runInContext() {
+                    Boolean active = querySingleHostLockState(hostId, lvPath, volumeUuid, lookup);
+                    if (active != null) {
+                        states.put(hostId, active);
+                    }
+                }
+            }));
+        }
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ExecutionException e) {
+                logger.warn("Lock state query for volume {} failed: {}", volumeUuid, e.getMessage());
+            }
+        }
+        return new HashMap<>(states);
+    }
+
+    /**
      * Queries a single host for the CLVM LV activation state.
+     * A host that cannot be reached is remembered in {@code lookup}.
      *
      * @return {@code Boolean.TRUE} if the LV is active on that host,
      *         {@code Boolean.FALSE} if reachable but inactive,
      *         {@code null} if the host is unreachable or returned an error
      */
-    private Boolean querySingleHostLockState(Long hostId, String lvPath, String volumeUuid) {
+    private Boolean querySingleHostLockState(Long hostId, String lvPath, String volumeUuid, LockLookup lookup) {
         try {
             ClvmLockTransferCommand queryCmd = new ClvmLockTransferCommand(
                     ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE, lvPath, volumeUuid);
@@ -325,12 +595,15 @@ public class ClvmPoolManager implements Configurable {
             return queryAnswer.isActive();
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.debug("Could not query host {} for lock state: {}", hostId, e.getMessage());
+            lookup.unreachableHostIds.add(hostId);
             return null;
         }
     }
 
     /**
      * Selects the best host on which to exclusively activate an inactive CLVM volume.
+     *
+     * <p>Priority 0: the preferred host of the lookup, e.g. the host a VM starts on.
      *
      * <p>Priority 1: the last known lock holder ({@code clvmLockHostId} from DB), if that host
      * is UP and KVM.
@@ -339,26 +612,27 @@ public class ClvmPoolManager implements Configurable {
      *
      * <p>Hosts that did not answer the lock-state query are skipped in both cases.
      *
+     * @param preferredHostId    host to use first, may be null
      * @param dbHostId           last known lock holder host ID from the DB (may be null)
      * @param hosts              routing hosts in the cluster or zone collected during fan-out
-     * @param unreachableHostIds hosts that failed to answer the lock-state query
+     * @param unreachableHostIds hosts that failed to answer the lock-state query or are unreachable
      * @return host ID to activate on, or null if no eligible host found
      */
-    private Long selectActivationTargetHost(Long dbHostId, List<HostVO> hosts, Set<Long> unreachableHostIds) {
+    private Long selectActivationTargetHost(Long preferredHostId, Long dbHostId, List<HostVO> hosts, Set<Long> unreachableHostIds) {
+        if (preferredHostId != null && !unreachableHostIds.contains(preferredHostId)
+                && isUpKvmRoutingHost(_hostDao.findById(preferredHostId))) {
+            logger.debug("selectActivationTargetHost: using preferred host {}", preferredHostId);
+            return preferredHostId;
+        }
         if (dbHostId != null && !unreachableHostIds.contains(dbHostId)) {
-            HostVO dbHost = _hostDao.findById(dbHostId);
-            if (dbHost != null && dbHost.getStatus() == Status.Up
-                    && dbHost.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+            if (isUpKvmRoutingHost(_hostDao.findById(dbHostId))) {
                 logger.debug("selectActivationTargetHost: preferring DB host {} (last known lock holder)", dbHostId);
                 return dbHostId;
             }
         }
         if (hosts != null) {
             List<HostVO> eligible = hosts.stream()
-                    .filter(h -> h.getStatus() == Status.Up
-                            && h.getType() == Host.Type.Routing
-                            && h.getHypervisorType() == Hypervisor.HypervisorType.KVM
-                            && !unreachableHostIds.contains(h.getId()))
+                    .filter(h -> isUpKvmRoutingHost(h) && !unreachableHostIds.contains(h.getId()))
                     .collect(Collectors.toList());
             if (!eligible.isEmpty()) {
                 Collections.shuffle(eligible);
@@ -377,7 +651,7 @@ public class ClvmPoolManager implements Configurable {
      * persists the new lock host to the database.
      *
      * <p>A temporarily refused activation (lease not expired yet, lockspace still starting) is retried
-     * on the same host until {@code deadlineMs}. Other failures are not retried.
+     * on the same host until the deadline of {@code lookup}. Other failures are not retried.
      *
      * <p>Activation failure is non-fatal: returns null so the caller can apply its own fallback.
      *
@@ -386,11 +660,12 @@ public class ClvmPoolManager implements Configurable {
      * @param lvPath         full LV device path, e.g. {@code /dev/vgname/vol-path}
      * @param targetHostId   host to activate on
      * @param updateDatabase if true, persists the new lock host on success
-     * @param deadlineMs     time in milliseconds after which a refused activation is no longer retried
+     * @param lookup         lookup state of the operation: retry deadline and unreachable hosts
      * @return {@code targetHostId} on success, {@code null} if the command failed or threw
      */
     private Long tryActivateExclusivelyOnHost(Long volumeId, String volumeUuid, String lvPath,
-                                              Long targetHostId, boolean updateDatabase, long deadlineMs) {
+                                              Long targetHostId, boolean updateDatabase, LockLookup lookup,
+                                              List<String> retryableRefusals) {
         long retryIntervalMs = getRetryIntervalMillis();
         while (true) {
             try {
@@ -398,24 +673,24 @@ public class ClvmPoolManager implements Configurable {
                         ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE, lvPath, volumeUuid);
                 Answer activateAnswer = _agentMgr.send(targetHostId, activateCmd);
                 if (activateAnswer != null && activateAnswer.getResult()) {
-                    logger.info("Recovery: exclusively activated volume {} on host {} (was inactive on all hosts)",
-                            volumeUuid, targetHostId);
+                    logger.info("Exclusively activated volume {} on host {}", volumeUuid, targetHostId);
                     if (updateDatabase) {
                         setClvmLockHostId(volumeId, targetHostId);
                     }
                     return targetHostId;
                 }
-                logger.warn("Recovery activation of volume {} on host {} failed: {}",
+                logger.warn("Exclusive activation of volume {} on host {} failed: {}",
                         volumeUuid, targetHostId,
                         activateAnswer != null ? activateAnswer.getDetails() : "null answer");
-                if (!isRetryableRefusal(activateAnswer, retryIntervalMs, deadlineMs)) {
+                if (!isRetryableRefusal(activateAnswer, retryableRefusals, retryIntervalMs, lookup.activationDeadlineMs)) {
                     return null;
                 }
                 logger.info("Activation of volume {} is refused temporarily, retrying on host {} in {} ms until the previous holder's lease expires or the lockspace is started",
                         volumeUuid, targetHostId, retryIntervalMs);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
-                logger.warn("Recovery activation of volume {} on host {} threw exception: {}",
+                logger.warn("Exclusive activation of volume {} on host {} threw exception: {}",
                         volumeUuid, targetHostId, e.getMessage());
+                lookup.unreachableHostIds.add(targetHostId);
                 return null;
             }
             if (!sleep(retryIntervalMs)) {
@@ -424,11 +699,11 @@ public class ClvmPoolManager implements Configurable {
         }
     }
 
-    private boolean isRetryableRefusal(Answer activateAnswer, long retryIntervalMs, long deadlineMs) {
+    private boolean isRetryableRefusal(Answer activateAnswer, List<String> retryableRefusals, long retryIntervalMs, long deadlineMs) {
         return retryIntervalMs > 0
                 && activateAnswer != null
                 && activateAnswer.getDetails() != null
-                && TRANSIENT_LOCK_REFUSALS.stream().anyMatch(activateAnswer.getDetails()::contains)
+                && retryableRefusals.stream().anyMatch(activateAnswer.getDetails()::contains)
                 && now() + retryIntervalMs <= deadlineMs;
     }
 
@@ -530,22 +805,12 @@ public class ClvmPoolManager implements Configurable {
                 logger.debug("Volume {} has no active lock holder, will directly activate on destination", volumeUuid);
             }
 
-            ClvmLockTransferCommand activateCmd = new ClvmLockTransferCommand(
-                    ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE,
-                    lvPath,
-                    volumeUuid
-            );
-
-            Answer activateAnswer = _agentMgr.send(destHostId, activateCmd);
-
-            if (activateAnswer == null || !activateAnswer.getResult()) {
-                String error = activateAnswer != null ? activateAnswer.getDetails() : "null answer";
-                logger.error("Failed to activate CLVM volume {} exclusively on dest host {}: {}",
-                        volumeUuid, destHostId, error);
+            // A live source refuses with "locked by other host": fail fast. Only wait for the destination's lockspace to start.
+            if (tryActivateExclusivelyOnHost(volumeId, volumeUuid, lvPath, destHostId, true,
+                    newLockLookup(destHostId), List.of(LOCK_START_IN_PROGRESS)) == null) {
+                logger.error("Failed to activate CLVM volume {} exclusively on dest host {}", volumeUuid, destHostId);
                 return false;
             }
-
-            setClvmLockHostId(volumeId, destHostId);
 
             logger.info("Successfully transferred CLVM lock for volume {} from host {} to host {}",
                     volumeUuid, sourceHostId != null ? sourceHostId : "none", destHostId);

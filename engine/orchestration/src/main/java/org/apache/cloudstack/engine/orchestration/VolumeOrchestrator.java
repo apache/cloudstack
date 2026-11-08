@@ -881,7 +881,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return null;
         }
 
-        long recoveryDeadlineMs = clvmPoolManager.newLockRecoveryDeadlineMs();
+        ClvmPoolManager.LockLookup lockLookup = clvmPoolManager.newLockLookup();
         for (VolumeVO volume : vmVolumes) {
             if (volume.getPoolId() == null) {
                 continue;
@@ -897,7 +897,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     volume.getPath(),
                     pool,
                     true,
-                    recoveryDeadlineMs
+                    lockLookup
             );
             if (lockHostId != null) {
                 logger.debug("Found actual CLVM lock host {} from volume {} of VM {} via LVM query",
@@ -914,7 +914,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return;
         }
 
-        long recoveryDeadlineMs = clvmPoolManager.newLockRecoveryDeadlineMs();
+        ClvmPoolManager.LockLookup lockLookup = clvmPoolManager.newLockLookup(destHostId);
         for (VolumeVO volume : volumes) {
             if (volume.getPoolId() == null) {
                 continue;
@@ -931,7 +931,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     volume.getPath(),
                     pool,
                     true,
-                    recoveryDeadlineMs
+                    lockLookup
             );
 
             if (currentLockHost == null) {

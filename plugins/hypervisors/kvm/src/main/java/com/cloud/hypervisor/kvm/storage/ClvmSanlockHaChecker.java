@@ -47,11 +47,13 @@ public class ClvmSanlockHaChecker {
         final long lastCheck;
         final long lastLive;
         final long ioTimeout;
+        final Long generation;
 
-        LeaseState(long lastCheck, long lastLive, long ioTimeout) {
+        LeaseState(long lastCheck, long lastLive, long ioTimeout, Long generation) {
             this.lastCheck = lastCheck;
             this.lastLive = lastLive;
             this.ioTimeout = ioTimeout;
+            this.generation = generation;
         }
     }
 
@@ -100,7 +102,7 @@ public class ClvmSanlockHaChecker {
         return isLeaseAlive(state);
     }
 
-    private static String readHostStatus(String vgName) {
+    static String readHostStatus(String vgName) {
         Script cmd = new Script("sanlock", CHECK_TIMEOUT_MS, LOGGER);
         cmd.add("client", "host_status", "-s", LOCKSPACE_PREFIX + vgName, "-D");
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
@@ -126,6 +128,7 @@ public class ClvmSanlockHaChecker {
         Long lastCheck = null;
         Long lastLive = null;
         Long ioTimeout = null;
+        Long generation = null;
         for (String line : output.split("\\r?\\n")) {
             Matcher entry = HOST_ENTRY.matcher(line);
             if (entry.matches()) {
@@ -137,12 +140,13 @@ public class ClvmSanlockHaChecker {
                 lastCheck = valueOrCurrent(line, "last_check", lastCheck);
                 lastLive = valueOrCurrent(line, "last_live", lastLive);
                 ioTimeout = valueOrCurrent(line, "io_timeout", ioTimeout);
+                generation = valueOrCurrent(line, "owner_generation", generation);
             }
         }
         if (lastCheck == null || lastLive == null || ioTimeout == null) {
             return null;
         }
-        return new LeaseState(lastCheck, lastLive, ioTimeout);
+        return new LeaseState(lastCheck, lastLive, ioTimeout, generation);
     }
 
     private static Long valueOrCurrent(String line, String key, Long current) {

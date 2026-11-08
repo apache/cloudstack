@@ -68,8 +68,8 @@ public class ClvmSanlockHaCheckerTest {
 
     @Test
     public void testLeaseStillAliveBeforeWatchdogGuarantee() {
-        assertTrue(ClvmSanlockHaChecker.isLeaseAlive(new ClvmSanlockHaChecker.LeaseState(1139, 1000, 10)));
-        assertFalse(ClvmSanlockHaChecker.isLeaseAlive(new ClvmSanlockHaChecker.LeaseState(1140, 1000, 10)));
+        assertTrue(ClvmSanlockHaChecker.isLeaseAlive(new ClvmSanlockHaChecker.LeaseState(1139, 1000, 10, 1L)));
+        assertFalse(ClvmSanlockHaChecker.isLeaseAlive(new ClvmSanlockHaChecker.LeaseState(1140, 1000, 10, 1L)));
     }
 
     @Test
