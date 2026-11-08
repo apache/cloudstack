@@ -6555,60 +6555,56 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals(newStats.getDiskWriteKBs() - oldStats.getDiskWriteKBs(), metrics.getDiskWriteKBs(), 0);
     }
 
-    @Test
-    public void createLinstorVdb() throws LibvirtException, InternalErrorException, URISyntaxException {
-        final Connect connect = Mockito.mock(Connect.class);
-
-        final int id = random.nextInt(65534);
-        final String name = "test-instance-1";
-
+    private VirtualMachineTO prepareVmForCreateVbd(StoragePoolType poolType, PhysicalDiskFormat diskFormat, String volumePath) {
         final int cpus = 2;
-        final int speed = 1024;
-        final int minRam = 256 * 1024;
-        final int maxRam = 512 * 1024;
-        final String os = "Ubuntu";
-        final String vncPassword = "mySuperSecretPassword";
-
-        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam,
-                maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        final VirtualMachineTO to = new VirtualMachineTO(random.nextInt(65534), "test-instance-1", VirtualMachine.Type.User,
+                cpus, 1024, 256 * 1024, 512 * 1024, BootloaderType.HVM, "Ubuntu", false, false, "mySuperSecretPassword");
         to.setVncAddr("");
         to.setArch("x86_64");
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
         to.setVcpuMaxLimit(cpus + 1);
-        final HashMap<String, String> vmToDetails = new HashMap<>();
-        to.setDetails(vmToDetails);
+        to.setDetails(new HashMap<>());
 
-        String diskLinPath = "9ebe53c1-3d35-46e5-b7aa-6fc223ba0fcf";
+        final String diskPath = "9ebe53c1-3d35-46e5-b7aa-6fc223ba0fcf";
         final DiskTO diskTO = new DiskTO();
         diskTO.setDiskSeq(1L);
         diskTO.setType(Volume.Type.ROOT);
         diskTO.setDetails(new HashMap<>());
-        diskTO.setPath(diskLinPath);
+        diskTO.setPath(diskPath);
 
+        final String poolUuid = "9ebe53c1-3d35-46e5-b7aa-6fc223ac4fcf";
         final PrimaryDataStoreTO primaryDataStoreTO = Mockito.mock(PrimaryDataStoreTO.class);
-        String pDSTOUUID = "9ebe53c1-3d35-46e5-b7aa-6fc223ac4fcf";
-        when(primaryDataStoreTO.getPoolType()).thenReturn(StoragePoolType.Linstor);
-        when(primaryDataStoreTO.getUuid()).thenReturn(pDSTOUUID);
+        when(primaryDataStoreTO.getPoolType()).thenReturn(poolType);
+        when(primaryDataStoreTO.getUuid()).thenReturn(poolUuid);
 
-        VolumeObjectTO dataTO = new VolumeObjectTO();
-
+        final VolumeObjectTO dataTO = new VolumeObjectTO();
         dataTO.setUuid("12be53c1-3d35-46e5-b7aa-6fc223ba0f34");
-        dataTO.setPath(diskTO.getPath());
+        dataTO.setPath(diskPath);
         dataTO.setDataStore(primaryDataStoreTO);
         diskTO.setData(dataTO);
         to.setDisks(new DiskTO[]{diskTO});
 
-        String path = "/dev/drbd1020";
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
 
         when(libvirtComputingResourceSpy.getStoragePoolMgr()).thenReturn(storagePoolMgr);
-        when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
-        when(storagePoolMgr.getPhysicalDisk(StoragePoolType.Linstor, pDSTOUUID, diskLinPath)).thenReturn(vol);
-        when(vol.getPath()).thenReturn(path);
+        when(storagePool.getType()).thenReturn(poolType);
+        when(storagePoolMgr.getPhysicalDisk(poolType, poolUuid, diskPath)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(volumePath);
         when(vol.getPool()).thenReturn(storagePool);
-        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+        when(vol.getFormat()).thenReturn(diskFormat);
+
+        return to;
+    }
+
+    @Test
+    public void createLinstorVdb() throws LibvirtException, InternalErrorException, URISyntaxException {
+        final Connect connect = Mockito.mock(Connect.class);
+
+        final VirtualMachineTO to = prepareVmForCreateVbd(StoragePoolType.Linstor, PhysicalDiskFormat.RAW, "/dev/drbd1020");
+        final String name = to.getName();
+        final Map<String, String> vmToDetails = to.getDetails();
 
         // 1. test Bus: IDE and broken qemu version -> NO discard
         when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(6000000L);
@@ -6664,6 +6660,49 @@ public class LibvirtComputingResourceTest {
             assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
         }
     }
+
+    @Test
+    public void createNfsVbdDiscard() throws LibvirtException, InternalErrorException, URISyntaxException {
+        final Connect connect = Mockito.mock(Connect.class);
+
+        final VirtualMachineTO to = prepareVmForCreateVbd(StoragePoolType.NetworkFilesystem, PhysicalDiskFormat.QCOW2,
+                "/mnt/02e0e152-5462-31a9-b8c6-35e3760dc6b4/9ebe53c1-3d35-46e5-b7aa-6fc223ba0fcf");
+        final String name = to.getName();
+        final Map<String, String> vmToDetails = to.getDetails();
+        Mockito.doNothing().when(libvirtComputingResourceSpy).setBackingFileFormat(Mockito.anyString());
+
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.VIRTIO.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
+
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.IDE.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskBus.IDE, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.IGNORE, rootDisk.getDiscard());
+        }
+    }
+
+    @Test
+    public void testDiskBusSupportsDiscard() {
+        assertTrue(libvirtComputingResourceSpy.diskBusSupportsDiscard(DiskDef.DiskBus.SCSI));
+        assertTrue(libvirtComputingResourceSpy.diskBusSupportsDiscard(DiskDef.DiskBus.VIRTIO));
+        assertTrue(libvirtComputingResourceSpy.diskBusSupportsDiscard(DiskDef.DiskBus.VIRTIOBLK));
+        assertFalse(libvirtComputingResourceSpy.diskBusSupportsDiscard(DiskDef.DiskBus.IDE));
+        assertFalse(libvirtComputingResourceSpy.diskBusSupportsDiscard(DiskDef.DiskBus.SATA));
+    }
+
 
     @Test
     public void testGetDiskModelFromVMDetailVirtioBlk() {
