@@ -3655,7 +3655,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         VirtualMachineMO workerVm = null;
         try {
-            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", null);
+            try {
+                hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", null);
+            } catch (Exception e) {
+                removeLeftoversOfFailedImport(hyperHost, primaryDsMo, newVolumeName);
+                throw e;
+            }
             workerVm = hyperHost.findVmOnHyperHost(newVolumeName);
             if (workerVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
@@ -3672,6 +3677,26 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (workerVm != null) {
                 workerVm.detachAllDisksAndDestroy();
             }
+        }
+    }
+
+    protected void removeLeftoversOfFailedImport(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) {
+        try {
+            VirtualMachineMO leftover = hyperHost.findVmOnHyperHost(vmName);
+            if (leftover == null) {
+                leftover = hyperHost.findVmOnPeerHyperHost(vmName);
+            }
+            if (leftover != null) {
+                logger.info("Destroying VM {} left behind by the failed import", vmName);
+                leftover.destroy();
+            }
+            String dsName = dsMo.getName();
+            if (dsMo.folderExists(String.format("[%s]", dsName), vmName)) {
+                logger.info("Deleting folder {} left on datastore {} by the failed import", vmName, dsName);
+                dsMo.deleteFolder(String.format("[%s] %s", dsName, vmName), dsMo.getOwnerDatacenter().first().getMor());
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to clean up after the failed import of {}: {}", vmName, e.getMessage());
         }
     }
 
