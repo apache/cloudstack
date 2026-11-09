@@ -62,6 +62,7 @@ remove_usage_rules () {
 
 get_usage () {
   iptables -L NETWORK_STATS_$ethDev -n -v -x 2> /dev/null | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  get_ipv6_usage $ethDev
   return 0
 }
 
@@ -75,6 +76,7 @@ get_vpn_usage () {
 }
 
 reset_usage () {
+  reset_ipv6_usage $ethDev
   iptables -Z NETWORK_STATS_$ethDev > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then

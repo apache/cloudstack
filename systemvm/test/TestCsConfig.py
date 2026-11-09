@@ -52,6 +52,13 @@ class TestCsConfig(unittest.TestCase):
         cidrs = self.usage_exempt_cidrs({"usage_exempt_cidrs": "2001:db8::5/128,192.0.2.5/32,2001:db8:0:1::/64"})
         self.assertEqual(cidrs, ["192.0.2.5/32"])
 
+    def test_usage_exempt_cidrs_for_ipv6(self):
+        cl = mock.Mock()
+        cl.idata.return_value = {"usage_exempt_cidrs": "2001:db8::5,192.0.2.5/32,2001:db8:0:1::7/64,::/0"}
+        with mock.patch.object(CsConfig, "cmdline", return_value=cl):
+            cidrs = CsConfig().get_usage_exempt_cidrs(version=6)
+        self.assertEqual(cidrs, ["2001:db8::5/128", "2001:db8:0:1::/64"])
+
 
 if __name__ == '__main__':
     unittest.main()
