@@ -1190,7 +1190,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeMockId);
         Mockito.doThrow(new CloudRuntimeException("CopyCommand to host 3 not sent: job-7 was cancelled")).when(volumeApiServiceImpl).createVolumeFromSnapshot(volumeVoMock, 9L, null);
         Mockito.doReturn(true).when(volumeApiServiceImpl).isCurrentJobCancelled();
-        Mockito.doNothing().when(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId);
+        Mockito.doNothing().when(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId, false);
 
         try {
             volumeApiServiceImpl.createVolume(volumeMockId, null, 9L, null, true);
@@ -1199,7 +1199,8 @@ public class VolumeApiServiceImplTest {
         }
 
         Mockito.verify(volumeInfo).stateTransit(Volume.Event.DestroyRequested);
-        Mockito.verify(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId);
+        // from a snapshot: VOLUME.CREATE is published only on success, so there is no usage record to close
+        Mockito.verify(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId, false);
     }
 
     @Test
@@ -1211,9 +1212,23 @@ public class VolumeApiServiceImplTest {
         future.complete(new VolumeApiResult(volumeInfo));
         Mockito.doReturn(future).when(volumeServiceMock).expungeVolumeAsync(volumeInfo);
 
-        volumeApiServiceImpl.expungeCancelledVolume(volumeMockId);
+        volumeApiServiceImpl.expungeCancelledVolume(volumeMockId, true);
 
         Mockito.verify(volumeInfo).stateTransit(Volume.Event.OperationSucceeded);
+        Mockito.verify(volumeServiceMock).expungeVolumeAsync(volumeInfo);
+    }
+
+    @Test
+    public void testExpungeCancelledVolumeWithoutAUsageRecordPublishesNoDelete() throws Exception {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        Mockito.doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeMockId);
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
+        future.complete(new VolumeApiResult(volumeInfo));
+        Mockito.doReturn(future).when(volumeServiceMock).expungeVolumeAsync(volumeInfo);
+
+        volumeApiServiceImpl.expungeCancelledVolume(volumeMockId, false);
+
+        Mockito.verify(volumeInfo, Mockito.never()).stateTransit(Mockito.any());
         Mockito.verify(volumeServiceMock).expungeVolumeAsync(volumeInfo);
     }
 
@@ -1232,7 +1247,7 @@ public class VolumeApiServiceImplTest {
         }
 
         Mockito.verify(volumeInfo).stateTransit(Volume.Event.DestroyRequested);
-        Mockito.verify(volumeApiServiceImpl, Mockito.never()).expungeCancelledVolume(Mockito.anyLong());
+        Mockito.verify(volumeApiServiceImpl, Mockito.never()).expungeCancelledVolume(Mockito.anyLong(), Mockito.anyBoolean());
     }
 
     @Test
