@@ -900,7 +900,7 @@ public class KubernetesClusterActionWorker {
         return new Pair<>(publicIpAddress, sshPort + index);
     }
 
-    private boolean isRuleOnAddress(final PortForwardingRuleVO rule, final String address) {
+    protected boolean isRuleOnAddress(final PortForwardingRuleVO rule, final String address) {
         IPAddressVO ip = ipAddressDao.findById(rule.getSourceIpAddressId());
         return ip != null && ip.getAddress() != null && ip.getAddress().addr().equals(address);
     }
