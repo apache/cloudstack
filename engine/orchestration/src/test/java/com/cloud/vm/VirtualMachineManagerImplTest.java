@@ -100,6 +100,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.exception.OperationCancelledException;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartCommand;
@@ -2412,5 +2415,30 @@ public class VirtualMachineManagerImplTest {
 
         verify(volumeOrchestrationServiceMock).cleanupVolumes(1L);
         verify(networkOrchestrationServiceMock).cleanupNics(Mockito.argThat(profile -> profile.getVirtualMachine() == vmInstanceMock));
+    }
+
+    @Test
+    public void isVmRunningOnReportsAPoweredOnVmOnTheHost() throws Exception {
+        when(vmInstanceMock.getInstanceName()).thenReturn("i-2-3-VM");
+        when(agentManagerMock.send(eq(2L), any(CheckVirtualMachineCommand.class)))
+                .thenReturn(new CheckVirtualMachineAnswer(new CheckVirtualMachineCommand("i-2-3-VM"), VirtualMachine.PowerState.PowerOn, 1));
+        assertTrue(virtualMachineManagerImpl.isVmRunningOn(vmInstanceMock, 2L));
+
+        when(agentManagerMock.send(eq(2L), any(CheckVirtualMachineCommand.class)))
+                .thenReturn(new CheckVirtualMachineAnswer(new CheckVirtualMachineCommand("i-2-3-VM"), VirtualMachine.PowerState.PowerOff, 0));
+        assertFalse(virtualMachineManagerImpl.isVmRunningOn(vmInstanceMock, 2L));
+
+        when(agentManagerMock.send(eq(2L), any(CheckVirtualMachineCommand.class))).thenThrow(new AgentUnavailableException(2L));
+        assertFalse(virtualMachineManagerImpl.isVmRunningOn(vmInstanceMock, 2L));
+    }
+
+    @Test
+    public void checkVmOnHostAfterMigrationRepeatsTheCheckRefusedByALateCancel() throws Exception {
+        // the cancel's one refused command landed on the post-migration check: the VM has moved, the check is asked again
+        doThrow(OperationCancelledException.updateCmdsNotSent(new Command[] {new CheckVirtualMachineCommand("i-2-3-VM")}, 2L, 42L))
+                .doReturn(true).when(virtualMachineManagerImpl).checkVmOnHost(vmInstanceMock, 2L);
+
+        assertTrue(virtualMachineManagerImpl.checkVmOnHostAfterMigration(vmInstanceMock, 2L));
+        verify(virtualMachineManagerImpl, times(2)).checkVmOnHost(vmInstanceMock, 2L);
     }
 }

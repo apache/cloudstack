@@ -2831,6 +2831,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return true;
     }
 
+    protected boolean checkVmOnHostAfterMigration(final VirtualMachine vm, final long hostId) throws AgentUnavailableException, OperationTimedoutException {
+        try {
+            return checkVmOnHost(vm, hostId);
+        } catch (final OperationCancelledException e) {
+            logger.info("Cancellation of the migration of {} arrived after it moved to host {}; the migration completes: {}", vm, hostId, e.getMessage());
+            return checkVmOnHost(vm, hostId);
+        }
+    }
+
+    protected boolean isVmRunningOn(final VirtualMachine vm, final long hostId) {
+        try {
+            final Answer answer = _agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName()));
+            return answer instanceof CheckVirtualMachineAnswer && answer.getResult()
+                    && PowerState.PowerOn.equals(((CheckVirtualMachineAnswer)answer).getState());
+        } catch (final Exception e) {
+            logger.warn("Unable to check whether {} runs on host {}: {}", vm, hostId, e.getMessage());
+            return false;
+        }
+    }
+
     @Override
     public void storageMigration(final String vmUuid, final Map<Long, Long> volumeToPool) {
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -3289,6 +3309,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new CloudRuntimeException(details);
                 }
                 logger.info("Migration command successful for VM {}", vm.getInstanceName());
+            } catch (final OperationCancelledException e) {
+                if (!isVmRunningOn(vm, dstHostId)) {
+                    throw e;
+                }
+                logger.info("Cancellation of the migration of {} arrived after it moved to host {}; completing the migration: {}", vm, dstHostId, e.getMessage());
             } catch (OperationTimedoutException e) {
                 boolean success = false;
                 if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
@@ -3328,7 +3353,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             try {
-                if (!checkVmOnHost(vm, dstHostId)) {
+                if (!checkVmOnHostAfterMigration(vm, dstHostId)) {
                     logger.error("Migration verification failed for VM {} : VM not found on destination host {} ", vm.getInstanceName(), dstHostId);
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm, dpdkInterfaceMapping)), null);
@@ -3848,7 +3873,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             moveVmOutofMigratingStateOnSuccess(vm, destHost.getId(), work);
 
             try {
-                if (!checkVmOnHost(vm, destHostId)) {
+                if (!checkVmOnHostAfterMigration(vm, destHostId)) {
                     logger.error("Vm not found on destination host. Unable to complete migration for {}", vm);
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
@@ -5105,6 +5130,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
+            } catch (final OperationCancelledException e) {
+                if (!isVmRunningOn(vm, dstHostId)) {
+                    throw e;
+                }
+                logger.info("Cancellation of the migration of {} arrived after it moved to host {}; completing the migration: {}", vm, dstHostId, e.getMessage());
             } catch (final OperationTimedoutException e) {
                 if (e.isActive()) {
                     logger.warn("Active migration command so scheduling a restart for {}", vm, e);
@@ -5125,7 +5155,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             try {
-                if (!checkVmOnHost(vm, dstHostId)) {
+                if (!checkVmOnHostAfterMigration(vm, dstHostId)) {
                     logger.error("Unable to complete migration for {}", vm);
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
