@@ -58,10 +58,13 @@ import com.vmware.vim25.FolderFileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
+import com.vmware.vim25.VirtualController;
+import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
@@ -246,7 +249,6 @@ import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
-import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
@@ -374,7 +376,6 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineToolsStatus;
 import com.vmware.vim25.VirtualMachineVideoCard;
-import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
@@ -417,7 +418,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     protected boolean _instanceNameFlag = false;
 
     protected boolean _recycleHungWorker = false;
-    protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
     protected final static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<>();
@@ -1973,61 +1973,160 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return new ScaleVmAnswer(cmd, true, null);
     }
 
-    protected void ensureDiskControllers(VirtualMachineMO vmMo, Pair<String, String> controllerInfo) throws Exception {
-        if (vmMo == null) {
+    /**
+     * Validates whether the instance has the required disk controllers, and creates them if it does not.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively.
+     * @throws CloudRuntimeException if the instance does not have the required controllers, but this method is unable to create them.
+     */
+    protected void ensureDiskControllers(VirtualMachineMO vmMo, Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                         boolean isSystemVm, int numberOfDisks) throws Exception {
+        Pair<DiskControllerType, DiskControllerType> chosenDiskControllers = VmwareHelper.chooseDiskControllers(controllerInfo, vmMo, null, null);
+        Set<DiskControllerType> requiredDiskControllers = VmwareHelper.getRequiredDiskControllers(chosenDiskControllers, isSystemVm);
+
+        if (vmHasRequiredControllers(vmMo, requiredDiskControllers) && vmHasEnoughDiskControllerCapacity(vmMo, chosenDiskControllers, numberOfDisks, isSystemVm)) {
             return;
         }
 
-        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, vmMo, null, null);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
-        if (scsiDiskController == null) {
-            return;
-        }
+        validateRequiredVirtualHardwareVersionForNewDiskControllers(vmMo, requiredDiskControllers);
+        validateNewDiskControllersSupportExistingDisks(vmMo, chosenDiskControllers, numberOfDisks, isSystemVm);
+        teardownAllDiskControllers(vmMo);
 
-        vmMo.getScsiDeviceControllerKeyNoException();
-        // This VM needs SCSI controllers.
-        // Get count of existing scsi controllers. Helps not to attempt to create more than the maximum allowed 4
-        // Get maximum among the bus numbers in use by scsi controllers. Safe to pick maximum, because we always go sequential allocating bus numbers.
-        Ternary<Integer, Integer, DiskControllerType> scsiControllerInfo = vmMo.getScsiControllerInfo();
-        int requiredNumScsiControllers = VmwareHelper.MAX_SCSI_CONTROLLER_COUNT - scsiControllerInfo.first();
-        int availableBusNum = scsiControllerInfo.second() + 1; // method returned current max. bus number
-
-        if (DiskControllerType.getType(scsiDiskController) != scsiControllerInfo.third()) {
-            logger.debug(String.format("Change controller type from: %s to: %s", scsiControllerInfo.third().toString(),
-                    scsiDiskController));
-            vmMo.tearDownDevices(new Class<?>[]{VirtualSCSIController.class});
-            vmMo.addScsiDeviceControllers(DiskControllerType.getType(scsiDiskController));
-            return;
+        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        VmwareHelper.addDiskControllersToVmConfigSpec(vmConfigSpec, requiredDiskControllers, isSystemVm);
+        if (!vmMo.configureVm(vmConfigSpec)) {
+            throw new CloudRuntimeException("Unable to configure virtual machine's disk controllers.");
         }
-
-        if (requiredNumScsiControllers == 0) {
-            return;
-        }
-        if (scsiControllerInfo.first() > 0) {
-            // For VMs which already have a SCSI controller, do NOT attempt to add any more SCSI controllers & return the sub type.
-            // For Legacy VMs would have only 1 LsiLogic Parallel SCSI controller, and doesn't require more.
-            // For VMs created post device ordering support, 4 SCSI subtype controllers are ensured during deployment itself. No need to add more.
-            // For fresh VM deployment only, all required controllers should be ensured.
-            return;
-        }
-        ensureScsiDiskControllers(vmMo, scsiDiskController, requiredNumScsiControllers, availableBusNum);
+        logger.info("Successfully added virtual machine [{}]'s required disk controllers [{}].", vmMo, requiredDiskControllers);
     }
 
-    private void ensureScsiDiskControllers(VirtualMachineMO vmMo, String scsiDiskController, int requiredNumScsiControllers, int availableBusNum) throws Exception {
-        // Pick the sub type of scsi
-        if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.pvscsi) {
-            if (!vmMo.isPvScsiSupported()) {
-                String msg = "This VM doesn't support Vmware Paravirtual SCSI controller for virtual disks, because the virtual hardware version is less than 7.";
-                throw new Exception(msg);
-            }
-            vmMo.ensurePvScsiDeviceController(requiredNumScsiControllers, availableBusNum);
-        } else if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.lsisas1068) {
-            vmMo.ensureLsiLogicSasDeviceControllers(requiredNumScsiControllers, availableBusNum);
-        } else if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.buslogic) {
-            vmMo.ensureBusLogicDeviceControllers(requiredNumScsiControllers, availableBusNum);
-        } else if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.lsilogic) {
-            vmMo.ensureLsiLogicDeviceControllers(requiredNumScsiControllers, availableBusNum);
+    protected boolean vmHasRequiredControllers(VirtualMachineMO vmMo, Set<DiskControllerType> requiredDiskControllers) throws Exception {
+        Set<String> requiredDiskControllerClasspaths = requiredDiskControllers.stream()
+                .map(DiskControllerType::getControllerReference)
+                .collect(Collectors.toSet());
+
+        List<VirtualController> existingControllers = vmMo.getControllers();
+        for (VirtualController controller : existingControllers) {
+            String classpath = controller.getClass().getName();
+            requiredDiskControllerClasspaths.remove(classpath);
         }
+
+        if (requiredDiskControllerClasspaths.isEmpty()) {
+            logger.debug("Virtual machine [{}] has all the required controllers [{}].", vmMo, requiredDiskControllers);
+            return true;
+        }
+        logger.debug("Virtual machine [{}] does not have the following required controllers: [{}].", vmMo, requiredDiskControllerClasspaths);
+        return false;
+    }
+
+    /***
+     * Validates if the provided <code>VirtualMachineMO</code>'s virtual hardware version supports the required disk controllers.
+     * @throws CloudRuntimeException if one of the disk controllers requires a version greater than the instance's virtual
+     * hardware version.
+     */
+    protected void validateRequiredVirtualHardwareVersionForNewDiskControllers(VirtualMachineMO vmMo, Set<DiskControllerType> requiredDiskControllers) throws Exception {
+        VmwareHelper.validateDiskControllersHardwareVersion(requiredDiskControllers, vmMo.getVirtualHardwareVersion());
+    }
+
+    /**
+     * Returns the number of devices that each disk controller type must support for the instance's disks. The CDROM
+     * device is also accounted for when the instance uses an IDE controller.
+     */
+    protected Map<DiskControllerType, Integer> getRequiredDevicesPerDiskControllerType(Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                                                                      int numberOfDisks, boolean isSystemVm) {
+        Map<DiskControllerType, Integer> requiredDevices = new HashMap<>();
+        requiredDevices.merge(controllerInfo.first(), 1, Integer::sum);
+        if (!isSystemVm) {
+            requiredDevices.merge(controllerInfo.second(), Math.max(0, numberOfDisks - 1), Integer::sum);
+        }
+        if (requiredDevices.containsKey(DiskControllerType.ide)) {
+            requiredDevices.merge(DiskControllerType.ide, 1, Integer::sum);
+        }
+        return requiredDevices;
+    }
+
+    /**
+     * Returns true if the instance's existing disk controllers have enough device nodes to support all the disks that
+     * will be attached.
+     */
+    protected boolean vmHasEnoughDiskControllerCapacity(VirtualMachineMO vmMo, Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                                        int numberOfDisks, boolean isSystemVm) throws Exception {
+        Map<DiskControllerType, Integer> requiredDevices = getRequiredDevicesPerDiskControllerType(controllerInfo, numberOfDisks, isSystemVm);
+        Map<String, Integer> existingControllerCounts = new HashMap<>();
+        for (VirtualController controller : vmMo.getControllers()) {
+            existingControllerCounts.merge(controller.getClass().getName(), 1, Integer::sum);
+        }
+
+        for (Map.Entry<DiskControllerType, Integer> requiredDevice : requiredDevices.entrySet()) {
+            DiskControllerType controllerType = requiredDevice.getKey();
+            int existingControllerCount = Math.min(existingControllerCounts.getOrDefault(controllerType.getControllerReference(), 0),
+                    controllerType.getMaxControllerCount());
+            if (getMaxSupportedDevicesInBus(controllerType, existingControllerCount) < requiredDevice.getValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /***
+     * Validates if the provided disk controllers have enough device nodes to support all the disks that will be attached.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively.
+     * @param numberOfDisks number of disks that will be attached to the instance.
+     * @throws CloudRuntimeException if the instance has more disks than the amount supported by the controllers.
+     */
+    protected void validateNewDiskControllersSupportExistingDisks(VirtualMachineMO vmMo, Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                                                  int numberOfDisks, boolean isSystemVm) throws Exception {
+        Map<DiskControllerType, Integer> requiredDevices = getRequiredDevicesPerDiskControllerType(controllerInfo, numberOfDisks, isSystemVm);
+        for (Map.Entry<DiskControllerType, Integer> requiredDevice : requiredDevices.entrySet()) {
+            DiskControllerType controllerType = requiredDevice.getKey();
+            int controllerCount = isSystemVm ? 1 : controllerType.getMaxControllerCount();
+            int maxDevicesInBus = getMaxSupportedDevicesInBus(controllerType, controllerCount);
+            if (maxDevicesInBus < requiredDevice.getValue()) {
+                throw new CloudRuntimeException(String.format("Virtual machine [%s] requires [%s] devices of disk controller type [%s], " +
+                                "but the new disk controllers only support [%s] devices.", vmMo.getName(), requiredDevice.getValue(),
+                        controllerType.getName(), maxDevicesInBus));
+            }
+        }
+    }
+
+    /**
+     * Returns the total amount of disks that the instance can have using the provided disk controller type, considering
+     * that the instance has the maximum amount of that disk controller type created.
+     */
+    protected int getMaxSupportedDevicesInBus(DiskControllerType controllerType) {
+        return getMaxSupportedDevicesInBus(controllerType, controllerType.getMaxControllerCount());
+    }
+
+    /**
+     * Returns the total amount of disks that the instance can have using the provided disk controller type and the
+     * provided amount of controllers of that type.
+     */
+    protected int getMaxSupportedDevicesInBus(DiskControllerType controllerType, int controllerCount) {
+        int devicesPerController = controllerType.getMaxDeviceCount();
+        if (VmwareHelper.isControllerScsi(controllerType)) {
+            devicesPerController--;
+        }
+        return devicesPerController * controllerCount;
+    }
+
+    /**
+     * Removes all disk controllers from the virtual machine.
+     */
+    protected void teardownAllDiskControllers(VirtualMachineMO vmMo) throws Exception {
+        List<DiskControllerType> allControllerTypes = VmwareHelper.getAllSupportedDiskControllerTypesExceptOsDefault();
+        Set<Class<?>> classesToTeardown = new HashSet<>();
+
+        for (DiskControllerType controllerType : allControllerTypes) {
+            try {
+                Class<?> diskControllerClass = Class.forName(controllerType.getControllerReference());
+                if (diskControllerClass != VirtualIDEController.class) {
+                    classesToTeardown.add(diskControllerClass);
+                }
+            } catch (ClassNotFoundException e) {
+                logger.debug("Could not find class for controller reference [{}]; ignoring it on teardown.", controllerType.getControllerReference());
+            }
+        }
+
+        vmMo.tearDownDevices(classesToTeardown.toArray(new Class<?>[0]));
     }
 
     protected StartAnswer execute(StartCommand cmd) {
@@ -2051,7 +2150,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String vmNameOnVcenter = names.second();
         DiskTO rootDiskTO = null;
         String bootMode = getBootModeFromVmSpec(vmSpec, deployAsIs);
-        Pair<String, String> controllerInfo = getControllerInfoFromVmSpec(vmSpec);
+        Pair<DiskControllerType, DiskControllerType> controllerInfo = getControllerInfoFromVmSpec(vmSpec);
 
         Boolean systemVm = vmSpec.getType().isUsedBySystem();
         // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
@@ -2077,6 +2176,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
+            int numberOfDisks = (int) Arrays.stream(disks).filter(disk -> disk.getType() != Volume.Type.ISO).count();
 
             HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails = inferDatastoreDetailsFromDiskInfo(hyperHost, context, disks, cmd);
             if ((dataStoresDetails == null) || (dataStoresDetails.isEmpty())) {
@@ -2087,9 +2187,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
-            DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
-            int firstScsiControllerBusNum = 0;
-            int numScsiControllerForSystemVm = 1;
             boolean hasSnapshot = false;
 
             List<Pair<Integer, ManagedObjectReference>> diskDatastores = null;
@@ -2104,8 +2201,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 hasSnapshot = vmMo.hasSnapshot();
 
                 tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
-                ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
-                        numScsiControllerForSystemVm, firstScsiControllerBusNum, deployAsIs);
+                if (!hasSnapshot) {
+                    ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, deployAsIs, numberOfDisks);
+                }
             } else {
                 ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
                 assert (morDc != null);
@@ -2128,8 +2226,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         diskDatastores = vmMo.getAllDiskDatastores();
 
                         tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
-                        ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
-                                numScsiControllerForSystemVm, firstScsiControllerBusNum, deployAsIs);
+                        if (!hasSnapshot) {
+                            ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, deployAsIs, numberOfDisks);
+                        }
                     }
                 } else {
                     // If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
@@ -2187,6 +2286,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                                 }
                             }
                             tearDownVm(vmMo);
+                            if (vmMo != null && !vmMo.hasSnapshot()) {
+                                ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, deployAsIs, numberOfDisks);
+                            }
                         } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
                                 vmSpec.isLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
                                 controllerInfo, systemVm)) {
@@ -2225,10 +2327,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
 
             int i = 0;
-            int ideUnitNumber = !deployAsIs ? 0 : vmMo.getNextIDEDeviceNumber();
-            int scsiUnitNumber = !deployAsIs ? 0 : vmMo.getNextScsiDiskDeviceNumber();
-            int ideControllerKey = vmMo.getIDEDeviceControllerKey();
-            int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
@@ -2270,8 +2368,17 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             //
             // Setup ISO device
             //
+            Pair<DiskControllerType, DiskControllerType> chosenDiskControllers = VmwareHelper.chooseDiskControllers(controllerInfo, vmMo, null, null);
+            Map<String, Integer> diskControllerCurrentUnitNumbers = createDiskControllerUnitNumberMap(vmMo, chosenDiskControllers, deployAsIs);
 
             // prepare systemvm patch ISO
+            String ideClasspath = VirtualIDEController.class.getName();
+            Integer ideUnitNumberValue = diskControllerCurrentUnitNumbers.get(ideClasspath);
+            boolean requiresIdeDevice = vmSpec.getType() != VirtualMachine.Type.User || !deployAsIs || volIso != null;
+            if (requiresIdeDevice && ideUnitNumberValue == null) {
+                throw new CloudRuntimeException("Unable to find an available IDE disk controller.");
+            }
+            int ideUnitNumber = ideUnitNumberValue != null ? ideUnitNumberValue : 0;
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 // attach ISO (for patching of system VM)
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
@@ -2290,8 +2397,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 DatastoreMO secDsMo = new DatastoreMO(hyperHost.getContext(), morSecDs);
 
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo,
-                        null, secDsMo.getMor(), true, true, ideUnitNumber++, i + 1);
+                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, secDsMo.getMor(),
+                        true, true, ideUnitNumber, i + 1);
+                if (isoInfo.second()) {
+                    ideUnitNumber++;
+                }
+                diskControllerCurrentUnitNumbers.replace(ideClasspath, ideUnitNumber);
                 deviceConfigSpecArray[i].setDevice(isoInfo.first());
                 if (isoInfo.second()) {
                     if (logger.isDebugEnabled())
@@ -2308,13 +2419,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (volIso != null) {
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ISO) {
-                            configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
+                            if (configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber, i)) {
+                                ideUnitNumber++;
+                            }
+                            diskControllerCurrentUnitNumbers.replace(ideClasspath, ideUnitNumber);
                             i++;
                         }
                     }
                 } else {
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                    Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, i + 1);
+                    Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber, i + 1);
+                    if (isoInfo.second()) {
+                        ideUnitNumber++;
+                    }
+                    diskControllerCurrentUnitNumbers.replace(ideClasspath, ideUnitNumber);
                     deviceConfigSpecArray[i].setDevice(isoInfo.first());
                     if (isoInfo.second()) {
                         if (logger.isDebugEnabled())
@@ -2331,9 +2449,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
             }
 
-            int controllerKey;
-            Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo,vmMo, null, null);
-
             //
             // Setup ROOT/DATA disk devices
             //
@@ -2344,7 +2459,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             for (DiskTO vol : sortedDisks) {
                 if (vol.getType() == Volume.Type.ISO) {
                     if (deployAsIs) {
-                        configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
+                        if (configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber, i)) {
+                            ideUnitNumber++;
+                        }
+                        diskControllerCurrentUnitNumbers.replace(ideClasspath, ideUnitNumber);
                         i++;
                     }
                     continue;
@@ -2360,48 +2478,27 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     continue;
                 }
 
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, chosenDiskControllers, deployAsIs);
-                if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
-                    controllerKey = vmMo.getIDEControllerKey(ideUnitNumber);
-                    if (vol.getType() == Volume.Type.DATADISK) {
-                        // Could be result of flip due to user configured setting or "osdefault" for data disks
-                        // Ensure maximum of 2 data volumes over IDE controller, 3 includeing root volume
-                        if (vmMo.getNumberOfVirtualDisks() > 3) {
-                            throw new CloudRuntimeException("Found more than 3 virtual disks attached to this VM [" + vmMo.getVmName() + "]. Unable to implement the disks over "
-                                    + diskController + " controller, as maximum number of devices supported over IDE controller is 4 including CDROM device.");
-                        }
-                    }
-                } else {
-                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber)) {
-                        scsiUnitNumber++;
-                    }
-
-                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumber);
-                    if (controllerKey == -1) {
-                        // This may happen for ROOT legacy VMs which doesn't have recommended disk controller when global configuration parameter 'vmware.root.disk.controller' is set to "osdefault"
-                        // Retrieve existing controller and use.
-                        Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
-                        DiskControllerType existingControllerType = vmScsiControllerInfo.third();
-                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumber);
-                    }
-                }
                 if (!hasSnapshot) {
+                    DiskControllerType diskController = getControllerForDisk(vmMo, matchingExistingDisk, vol, chosenDiskControllers, deployAsIs);
+                    Integer currentUnitNumber = diskControllerCurrentUnitNumbers.get(diskController.getControllerReference());
+                    if (currentUnitNumber == null) {
+                        throw new CloudRuntimeException(String.format("Unable to find an available disk controller of the required type: [%s].", diskController.getName()));
+                    }
+                    int unitNumber = currentUnitNumber;
+
+                    int diskControllerNumber = unitNumber / diskController.getMaxDeviceCount();
+                    VirtualController diskControllerDevice = (VirtualController) vmMo.getNthDevice(diskController.getControllerReference(), diskControllerNumber);
+                    vmMo.validateDiskControllerIsAvailable(diskControllerDevice, diskController); // This may be unnecessary, as a validation of whether the controllers support all disks was already performed.
+                    int deviceNumber = unitNumber % diskController.getMaxDeviceCount();
+
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
 
                     String[] diskChain = syncDiskChain(dcMo, vmMo, vol, matchingExistingDisk, volumeDsDetails.second());
 
-                    int deviceNumber;
-                    if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
-                        deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
-                        ideUnitNumber++;
-                    } else {
-                        deviceNumber = scsiUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
-                        scsiUnitNumber++;
-                    }
-
                     VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
                     Long maxIops = volumeTO.getIopsWriteRate() + volumeTO.getIopsReadRate();
-                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1, maxIops);
+                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, diskControllerDevice.getKey(), diskChain,
+                            volumeDsDetails.first(), deviceNumber, i + 1, maxIops);
                     logger.debug(LogUtils.logGsonWithoutException("The following definitions will be used to start the VM: virtual device [%s], volume [%s].", device, volumeTO));
 
                     diskStoragePolicyId = volumeTO.getvSphereStoragePolicyId();
@@ -2425,11 +2522,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         logger.debug("Prepare volume at new device " + _gson.toJson(device));
 
                     i++;
-                } else {
-                    if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber))
-                        ideUnitNumber++;
-                    else
-                        scsiUnitNumber++;
+
+                    Integer nextUnitNumber = vmMo.getNextAvailableDeviceNumberForType(diskController, unitNumber + 1);
+                    diskControllerCurrentUnitNumbers.replace(diskController.getControllerReference(), nextUnitNumber);
                 }
             }
 
@@ -2673,6 +2768,34 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
+    /**
+     * Returns a hash-map with keys being the classpath of existing disk controllers, and values representing the next available
+     * unit number for the disk controller type. This hash-map is used in the virtual machine start workflow to associate
+     * the disks with their respective controller.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively. Ignored for deploy-as-is templates.
+     */
+    protected Map<String, Integer> createDiskControllerUnitNumberMap(VirtualMachineMO vmMo, Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                                                     boolean deployAsIs) throws Exception {
+        Set<DiskControllerType> diskControllers = new HashSet<>();
+        if (deployAsIs) {
+            diskControllers.addAll(vmMo.getExistingDiskControllerTypes());
+        } else {
+            diskControllers.add(controllerInfo.first());
+            diskControllers.add(controllerInfo.second());
+        }
+        diskControllers.add(VmwareHelper.getDiskControllerType(null, VirtualIDEController.class.getName()));
+
+        Map<String, Integer> currentUnitNumberMap = new HashMap<>();
+        for (DiskControllerType diskController : diskControllers) {
+            String classpath = diskController.getControllerReference();
+            Integer nextAvailableDeviceNumber = vmMo.getNextAvailableDeviceNumberForType(diskController);
+            if (nextAvailableDeviceNumber != null) {
+                currentUnitNumberMap.put(classpath, nextAvailableDeviceNumber);
+            }
+        }
+        return currentUnitNumberMap;
+    }
+
     private Pair<ManagedObjectReference, DatastoreMO> getVolumeDatastoreDetails(DiskTO vol, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails) throws Exception {
         boolean managed = false;
         String iScsiName = null;
@@ -2767,7 +2890,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 vol.getPath().contains(ConfigDrive.CONFIGDRIVEDIR))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
     }
 
-    private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
+    private boolean configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
                               VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
         TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
 
@@ -2796,7 +2919,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
                 deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
             }
+            return isoInfo.second();
         }
+        return false;
     }
 
     private String mapAdapterType(String adapterStringFromOVF) {
@@ -2839,15 +2964,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     }
 
-    private void ensureDiskControllersInternal(VirtualMachineMO vmMo, Boolean systemVm,
-                                               Pair<String, String> controllerInfo,
-                                               DiskControllerType systemVmScsiControllerType,
-                                               int numScsiControllerForSystemVm,
-                                               int firstScsiControllerBusNum, boolean deployAsIs) throws Exception {
-        if (systemVm) {
-            ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
-        } else if (!deployAsIs) {
-            ensureDiskControllers(vmMo, controllerInfo);
+    protected void ensureDiskControllersInternal(VirtualMachineMO vmMo, Boolean systemVm, Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                                 boolean deployAsIs, int numberOfDisks) throws Exception {
+        if (systemVm || !deployAsIs) {
+            ensureDiskControllers(vmMo, controllerInfo, systemVm, numberOfDisks);
         }
     }
 
@@ -2871,11 +2991,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
     }
 
-    private Pair<String, String> getControllerInfoFromVmSpec(VirtualMachineTO vmSpec) throws CloudRuntimeException {
+    protected Pair<DiskControllerType, DiskControllerType> getControllerInfoFromVmSpec(VirtualMachineTO vmSpec) throws CloudRuntimeException {
+        boolean isSystemVm = vmSpec.getType().isUsedBySystem();
         String rootDiskControllerDetail = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         String dataDiskControllerDetail = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
-        return new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail);
+        return VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail, isSystemVm);
     }
 
     private String getBootModeFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
@@ -3114,11 +3234,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             boolean resizingSupported = false;
             String deviceBusName = diskInfo.getDiskDeviceBusName();
-            if (deviceBusName != null && (deviceBusName.toLowerCase().contains("scsi") || deviceBusName.toLowerCase().contains("lsi"))) {
+            String busName = deviceBusName == null ? "" : deviceBusName.toLowerCase();
+            if (busName.contains("scsi") || busName.contains("lsi") || busName.contains("sata") || busName.contains("nvme")) {
                 resizingSupported = true;
             }
             if (!resizingSupported) {
-                logger.warn("Resizing of root disk is only support for scsi device/bus, the provide VM's disk device bus name is " + diskInfo.getDiskDeviceBusName());
+                logger.warn("Resizing of root disk is only supported for SCSI, SATA and NVMe device/bus, the provided VM's disk device bus name is " + diskInfo.getDiskDeviceBusName());
                 throw new CloudRuntimeException("Unsupported VM root disk device bus: " + diskInfo.getDiskDeviceBusName());
             }
 
@@ -3655,23 +3776,30 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volume.getPath(), chainInfo, isManaged, iScsiName, datastoreUUID, hyperHost, context);
     }
 
-    private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo, boolean deployAsIs) throws Exception {
-        DiskControllerType controllerType = DiskControllerType.none;
-        if (deployAsIs && matchingExistingDisk != null) {
-            String currentBusName = matchingExistingDisk.getDiskDeviceBusName();
+    /**
+     * Returns the disk controller type that should be used for the disk. If the instance uses a deploy-as-is template,
+     * tries to choose based on the current bus name first, but chooses any available existing disk controller if unable
+     * to choose a type based on the bus name; if the instance does not use a deploy-as-is template, chooses based on
+     * <code>controllerInfo</code>.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively. Ignored if the instance uses a deploy-as-is template.
+     * @throws CloudRuntimeException if the instance uses a deploy-as-is template, but no disk controller is available.
+     */
+    protected DiskControllerType getControllerForDisk(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk,
+                                                           DiskTO vol, Pair<DiskControllerType, DiskControllerType> controllerInfo,
+                                                           boolean deployAsIs) throws Exception {
+        if (deployAsIs) {
+            String currentBusName = matchingExistingDisk != null ? matchingExistingDisk.getDiskDeviceBusName() : null;
             if (currentBusName != null) {
-                logger.info("Chose disk controller based on existing information: " + currentBusName);
-                if (currentBusName.startsWith("ide")) {
-                    controllerType = DiskControllerType.ide;
-                } else if (currentBusName.startsWith("scsi")) {
-                    controllerType = DiskControllerType.scsi;
+                DiskControllerType controllerType = vmMo.getDiskControllerTypeByBusName(currentBusName);
+                if (controllerType != null) {
+                    logger.debug("Choosing disk controller [{}] for virtual machine [{}] based on current bus name [{}].", controllerType.getName(), vmMo, currentBusName);
+                    return controllerType;
                 }
             }
-            if (controllerType == DiskControllerType.scsi || controllerType == DiskControllerType.none) {
-                Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
-                controllerType = vmScsiControllerInfo.third();
-            }
-            return controllerType.toString();
+            DiskControllerType existingAvailableDiskController = vmMo.getAnyExistingAvailableDiskController();
+            logger.debug("Falling back to existing disk controller [{}] for virtual machine [{}] as no matching controller was found based on the current bus name [{}].",
+                    existingAvailableDiskController, vmMo, currentBusName);
+            return existingAvailableDiskController;
         }
 
         return VmwareHelper.getControllerBasedOnDiskType(controllerInfo, vol);
@@ -6978,14 +7106,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             String value = (String) params.get("vmware.recycle.hung.wokervm");
             if (value != null && value.equalsIgnoreCase("true"))
                 _recycleHungWorker = true;
-
-            value = (String) params.get("vmware.root.disk.controller");
-            if (value != null && value.equalsIgnoreCase("scsi"))
-                _rootDiskController = DiskControllerType.scsi;
-            else if (value != null && value.equalsIgnoreCase("ide"))
-                _rootDiskController = DiskControllerType.ide;
-            else
-                _rootDiskController = DiskControllerType.osdefault;
 
             Integer intObj = (Integer) params.get("ports.per.dvportgroup");
             if (intObj != null)

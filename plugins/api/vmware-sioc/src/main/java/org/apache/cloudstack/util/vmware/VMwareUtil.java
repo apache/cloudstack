@@ -63,12 +63,14 @@ import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.UpdateSet;
 import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VimService;
+import com.vmware.vim25.VirtualAHCIController;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualNVMEController;
 import com.vmware.vim25.VirtualSCSIController;
 
 public class VMwareUtil {
@@ -294,6 +296,10 @@ public class VMwareUtil {
                     return String.format("ide%d:%d", ((VirtualIDEController)device).getBusNumber(), disk.getUnitNumber());
                 } else if (device instanceof VirtualSCSIController) {
                     return String.format("scsi%d:%d", ((VirtualSCSIController)device).getBusNumber(), disk.getUnitNumber());
+                } else if (device instanceof VirtualAHCIController) {
+                    return String.format("sata%d:%d", ((VirtualAHCIController)device).getBusNumber(), disk.getUnitNumber());
+                } else if (device instanceof VirtualNVMEController) {
+                    return String.format("nvme%d:%d", ((VirtualNVMEController)device).getBusNumber(), disk.getUnitNumber());
                 } else {
                     throw new Exception("The device controller is not supported.");
                 }

@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
@@ -76,7 +77,6 @@ import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
-import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
@@ -2102,18 +2102,19 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
+                // Let's first find which disk controller should be used for the volume being attached.
+                //
+                // If `VmDetailConstants.ROOT_DISK_CONTROLLER` or `VmDetailConstants.DATA_DISK_CONTROLLER` are not present
+                // in `controllerInfo`, use the legacy defaults to preserve compatibility with older instances.
                 String rootDiskControllerDetail = DiskControllerType.ide.toString();
-                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER))) {
-                    rootDiskControllerDetail = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+                String dataDiskControllerDetail = DiskControllerType.lsilogic.toString();
+                if (controllerInfo != null) {
+                    rootDiskControllerDetail = StringUtils.defaultIfEmpty(controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER), rootDiskControllerDetail);
+                    dataDiskControllerDetail = StringUtils.defaultIfEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER), dataDiskControllerDetail);
                 }
-                String dataDiskControllerDetail = getLegacyVmDataDiskController();
-                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
-                    dataDiskControllerDetail = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
-                }
-
-                VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
-                Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail), vmMo, null, null);
-                String diskController = VmwareHelper.getControllerBasedOnDiskType(chosenDiskControllers, disk);
+                Pair<DiskControllerType, DiskControllerType> specifiedDiskControllers = VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail, false);
+                Pair<DiskControllerType, DiskControllerType> chosenDiskControllers = VmwareHelper.chooseDiskControllers(specifiedDiskControllers, vmMo, null, null);
+                DiskControllerType diskController = VmwareHelper.getControllerBasedOnDiskType(chosenDiskControllers, disk);
 
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
@@ -3749,10 +3750,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
-    }
-
-    private String getLegacyVmDataDiskController() throws Exception {
-        return DiskControllerType.lsilogic.toString();
     }
 
     void setNfsVersion(String nfsVersion){

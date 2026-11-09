@@ -5296,11 +5296,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER) == null) {
                 String finalRootDiskController = vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER);
-                // Set the data disk controller detail same as the final scsi root disk controller if VM doesn't have data disk controller detail
-                // This is to ensure the disk controller is available for the data disks, as all the SCSI controllers are created with same controller type
-                String scsiControllerPattern = "(?i)\\b(scsi|lsilogic|lsilogicsas|lsisas1068|buslogic|pvscsi)\\b";
-                if (finalRootDiskController.matches(scsiControllerPattern)) {
-                    logger.info(String.format("Data disk controller was not defined, but root disk is using SCSI controller [%s]." +
+                // Set the data disk controller detail same as the root disk controller when the root controller can also
+                // host data disks on the same bus. This ensures the controllers required by the data disks already exist.
+                String diskControllerPattern = "(?i)\\b(scsi|lsilogic|lsilogicsas|lsisas1068|buslogic|pvscsi|ahci|sata|nvme)\\b";
+                if (finalRootDiskController.matches(diskControllerPattern)) {
+                    logger.info(String.format("Data disk controller was not defined, but root disk is using controller [%s]." +
                             "To ensure disk controllers are available for the data disks, the data disk controller is updated to match the root disk controller.", finalRootDiskController));
                     vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, finalRootDiskController);
                 } else {
