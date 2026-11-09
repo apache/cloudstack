@@ -646,8 +646,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         boolean isRecursive = cmd.isRecursive();
         String accountName = cmd.getAccountName();
         boolean listAll = cmd.listAll();
-        long startIndex = cmd.getStartIndex();
-        long pageSizeVal = cmd.getPageSizeVal();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSizeVal = cmd.getPageSizeVal();
         String keyword = cmd.getKeyword();
 
         Account caller = CallContext.current().getCallingAccount();
@@ -691,8 +691,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         boolean isRecursive = cmd.isRecursive();
         String accountName = cmd.getAccountName();
         boolean listAll = cmd.listAll();
-        long startIndex = cmd.getStartIndex();
-        long pageSizeVal = cmd.getPageSizeVal();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSizeVal = cmd.getPageSizeVal();
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<>();
@@ -740,8 +740,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         boolean isRecursive = cmd.isRecursive();
         String accountName = cmd.getAccountName();
         boolean listAll = cmd.listAll();
-        long startIndex = cmd.getStartIndex();
-        long pageSizeVal = cmd.getPageSizeVal();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSizeVal = cmd.getPageSizeVal();
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<>();

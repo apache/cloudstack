@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
@@ -68,6 +69,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -151,6 +153,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -687,6 +690,30 @@ public class AutoScaleManagerImplTest {
         Assert.assertEquals(asScaleUpPolicyMock, policy);
         Mockito.verify(asPolicyDao).persist(Mockito.any(AutoScalePolicyVO.class));
         Mockito.verify(autoScalePolicyConditionMapDao).persist(Mockito.any(AutoScalePolicyConditionMapVO.class));
+    }
+
+    @Test
+    public void testListConditionsWithUnlimitedPageSize() {
+        ListConditionsCmd cmd = Mockito.mock(ListConditionsCmd.class);
+        when(cmd.getId()).thenReturn(null);
+        when(cmd.getCounterId()).thenReturn(null);
+        when(cmd.getPolicyId()).thenReturn(null);
+        when(cmd.getStartIndex()).thenReturn(null);
+        when(cmd.getPageSizeVal()).thenReturn(null);
+
+        SearchBuilder<ConditionVO> searchBuilderMock = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<ConditionVO> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
+        Mockito.doReturn(searchBuilderMock).when(conditionDao).createSearchBuilder();
+        when(searchBuilderMock.entity()).thenReturn(conditionMock);
+        Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
+        ArgumentCaptor<Filter> filterCaptor = ArgumentCaptor.forClass(Filter.class);
+        Mockito.doReturn(Arrays.asList(conditionMock)).when(conditionDao).search(Mockito.eq(searchCriteriaMock), filterCaptor.capture());
+
+        List<? extends Condition> conditions = autoScaleManagerImplSpy.listConditions(cmd);
+
+        Assert.assertEquals(1, conditions.size());
+        Assert.assertNull(filterCaptor.getValue().getOffset());
+        Assert.assertNull(filterCaptor.getValue().getLimit());
     }
 
     @Test(expected = InvalidParameterValueException.class)
