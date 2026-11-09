@@ -92,6 +92,7 @@ import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
+import org.libvirt.Error.ErrorNumber;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
@@ -101,6 +102,7 @@ import org.libvirt.VcpuInfo;
 import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.ArgumentCaptor;
 import org.mockito.BDDMockito;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -175,6 +177,7 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -4828,6 +4831,161 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    private static final String RBD_RESIZE_PATH = "cloudstack/0d3c2bd6-cb39-4c8b-a1d9-0e7fbd3b8a5b";
+
+    private static LibvirtException libvirtException(final ErrorNumber code) {
+        final org.libvirt.Error error = Mockito.mock(org.libvirt.Error.class);
+        when(error.getCode()).thenReturn(code);
+        final LibvirtException e = Mockito.mock(LibvirtException.class);
+        when(e.getError()).thenReturn(error);
+        return e;
+    }
+
+    /**
+     * Sets up a resize of a RAW volume at {@code path} on a pool of type {@code poolType}, up to
+     * the point where the wrapper looks the volume up through {@code conn}.
+     */
+    private ResizeVolumeCommand prepareResizeLookup(final StoragePoolType poolType, final String path, final KVMStoragePool storagePool,
+            final KVMPhysicalDisk vol, final Connect conn) throws LibvirtException {
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(pool.getType()).thenReturn(poolType);
+        when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+        when(storagePool.getType()).thenReturn(poolType);
+        when(vol.getPath()).thenReturn(path);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+        when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.getConnection()).thenReturn(conn);
+        // Only reached when the resize gets as far as telling the VM about the new size.
+        Mockito.lenient().when(libvirtUtilitiesHelper.getConnectionByVmName("Test")).thenReturn(conn);
+
+        return new ResizeVolumeCommand(path, pool, 100L, 200L, false, "Test", null);
+    }
+
+    /**
+     * An RBD volume created through librbd is not in libvirt's cache of the pool until the pool is
+     * refreshed, so the first lookup by path misses. The resize must refresh the pool, find the
+     * volume and resize it, then tell the running VM about the new size.
+     */
+    @Test
+    public void testResizeVolumeCommandRbdVolumeNotInLibvirtPoolCache() throws LibvirtException {
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final StorageVol v = Mockito.mock(StorageVol.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        info.state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+
+        final ResizeVolumeCommand command = prepareResizeLookup(StoragePoolType.RBD, RBD_RESIZE_PATH, storagePool, vol, conn);
+        final LibvirtException notFound = libvirtException(ErrorNumber.VIR_ERR_NO_STORAGE_VOL);
+        when(conn.storageVolLookupByPath(RBD_RESIZE_PATH)).thenThrow(notFound).thenReturn(v);
+        when(storagePool.refresh()).thenReturn(true);
+        when(conn.getLibVirVersion()).thenReturn(10010L);
+        when(conn.domainLookupByName("Test")).thenReturn(vm);
+        when(vm.getInfo()).thenReturn(info);
+        when(vol.getVirtualSize()).thenReturn(200L);
+
+        // The resize script succeeds (a mocked Script.execute() returns null), so the answer comes from the size read back after the resize.
+        try (MockedConstruction<Script> scripts = Mockito.mockConstruction(Script.class)) {
+            final Answer answer = LibvirtRequestWrapper.getInstance().execute(command, libvirtComputingResourceMock);
+            assertTrue(answer.getResult());
+            assertEquals("success", answer.getDetails());
+            assertEquals(200L, ((ResizeVolumeAnswer) answer).getNewSize());
+
+            assertEquals(1, scripts.constructed().size());
+            final Script script = scripts.constructed().get(0);
+            final InOrder inOrder = Mockito.inOrder(conn, storagePool, v, script);
+            inOrder.verify(conn).storageVolLookupByPath(RBD_RESIZE_PATH);
+            inOrder.verify(storagePool).refresh();
+            inOrder.verify(conn).storageVolLookupByPath(RBD_RESIZE_PATH);
+            inOrder.verify(v).resize(200L, 0);
+            inOrder.verify(script).add("-t", LibvirtComputingResource.RESIZE_NOTIFY_ONLY);
+            inOrder.verify(script).execute();
+        }
+    }
+
+    /**
+     * If the RBD volume is still missing after the pool is refreshed, the resize fails as before,
+     * after a single refresh and a single retry.
+     */
+    @Test
+    public void testResizeVolumeCommandRbdVolumeNotFoundAfterRefresh() throws LibvirtException {
+        assertRbdLookupRetriedOnce(true);
+    }
+
+    /**
+     * A refresh that fails does not stop the retry.
+     */
+    @Test
+    public void testResizeVolumeCommandRbdVolumeRetriedAfterFailedRefresh() throws LibvirtException {
+        assertRbdLookupRetriedOnce(false);
+    }
+
+    private void assertRbdLookupRetriedOnce(final boolean refreshSucceeds) throws LibvirtException {
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final Connect conn = Mockito.mock(Connect.class);
+
+        final ResizeVolumeCommand command = prepareResizeLookup(StoragePoolType.RBD, RBD_RESIZE_PATH, storagePool, vol, conn);
+        final LibvirtException notFound = libvirtException(ErrorNumber.VIR_ERR_NO_STORAGE_VOL);
+        when(conn.storageVolLookupByPath(RBD_RESIZE_PATH)).thenThrow(notFound);
+        when(storagePool.refresh()).thenReturn(refreshSucceeds);
+
+        final Answer answer = LibvirtRequestWrapper.getInstance().execute(command, libvirtComputingResourceMock);
+        assertFalse(answer.getResult());
+
+        verify(conn, times(2)).storageVolLookupByPath(RBD_RESIZE_PATH);
+        verify(storagePool, times(1)).refresh();
+    }
+
+    /**
+     * A lookup on an RBD pool that fails for another reason than the volume not being found
+     * fails the resize without refreshing the pool, as before.
+     */
+    @Test
+    public void testResizeVolumeCommandRbdOtherLookupErrorDoesNotRefresh() throws LibvirtException {
+        assertLookupFailsWithoutRefresh(StoragePoolType.RBD, RBD_RESIZE_PATH, libvirtException(ErrorNumber.VIR_ERR_INVALID_CONN));
+    }
+
+    /**
+     * A LibvirtException without an error attached is not taken for a missing volume.
+     */
+    @Test
+    public void testResizeVolumeCommandRbdLookupErrorWithoutCodeDoesNotRefresh() throws LibvirtException {
+        assertLookupFailsWithoutRefresh(StoragePoolType.RBD, RBD_RESIZE_PATH, Mockito.mock(LibvirtException.class));
+    }
+
+    /**
+     * A missing volume on a pool that is not RBD fails the resize without refreshing the pool, as before.
+     */
+    @Test
+    public void testResizeVolumeCommandNonRbdVolumeNotFoundDoesNotRefresh() throws LibvirtException {
+        when(libvirtComputingResourceMock.getResizeScriptType(any(KVMStoragePool.class), any(KVMPhysicalDisk.class))).thenReturn("FILE");
+        assertLookupFailsWithoutRefresh(StoragePoolType.NetworkFilesystem, "/mnt/0d3c2bd6-cb39-4c8b-a1d9-0e7fbd3b8a5b/volume",
+                libvirtException(ErrorNumber.VIR_ERR_NO_STORAGE_VOL));
+    }
+
+    private void assertLookupFailsWithoutRefresh(final StoragePoolType poolType, final String path, final LibvirtException lookupError)
+            throws LibvirtException {
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final Connect conn = Mockito.mock(Connect.class);
+
+        final ResizeVolumeCommand command = prepareResizeLookup(poolType, path, storagePool, vol, conn);
+        when(conn.storageVolLookupByPath(path)).thenThrow(lookupError);
+
+        final Answer answer = LibvirtRequestWrapper.getInstance().execute(command, libvirtComputingResourceMock);
+        assertFalse(answer.getResult());
+
+        verify(conn, times(1)).storageVolLookupByPath(path);
+        verify(storagePool, never()).refresh();
     }
 
     @Test
