@@ -70,6 +70,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
@@ -469,5 +470,22 @@ public class VMSnapshotManagerTest {
         assertTrue(appliedNames.contains(VmDetailConstants.CPU_NUMBER));
         assertTrue(appliedNames.contains(VmDetailConstants.MEMORY));
         assertFalse("UEFI must not be applied from snapshot so that existing UEFI setting is preserved", appliedNames.contains("UEFI"));
+    }
+
+    @Test
+    public void testVMSnapshotCancelledBeforeItsWorkRanIsRemoved() {
+        VMSnapshotVO allocated = Mockito.mock(VMSnapshotVO.class);
+        when(allocated.getState()).thenReturn(VMSnapshot.State.Allocated);
+        when(_vmSnapshotDao.findById(21L)).thenReturn(allocated);
+        doReturn(true).when(_vmSnapshotMgr).isCurrentJobCancelled();
+        doNothing().when(_vmSnapshotMgr).removeCancelledVMSnapshot(allocated);
+
+        _vmSnapshotMgr.removeVMSnapshotIfCancelledBeforeItRan(21L);
+        Mockito.verify(_vmSnapshotMgr).removeCancelledVMSnapshot(allocated);
+
+        // a snapshot whose work started is undone by that work, not here
+        when(allocated.getState()).thenReturn(VMSnapshot.State.Creating);
+        _vmSnapshotMgr.removeVMSnapshotIfCancelledBeforeItRan(21L);
+        Mockito.verify(_vmSnapshotMgr, Mockito.times(1)).removeCancelledVMSnapshot(allocated);
     }
 }

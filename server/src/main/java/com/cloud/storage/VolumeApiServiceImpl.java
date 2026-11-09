@@ -1213,6 +1213,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return context != null && context.getJob() != null && _jobMgr.getCancellationReason(context.getJob().getId()) != null;
     }
 
+    protected void removeSnapshotIfCancelledBeforeItRan(final long snapshotId) {
+        if (isCurrentJobCancelled()) {
+            logger.info("Snapshot {} was cancelled before its work started, removing it", snapshotId);
+            _snapshotMgr.removeAllocatedSnapshot(snapshotId);
+        }
+    }
+
     protected void expungeCancelledVolume(long volumeId) {
         final VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
@@ -4342,6 +4349,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
                 if (jobResult != null) {
+                    removeSnapshotIfCancelledBeforeItRan(snapshotId);
                     if (jobResult instanceof ConcurrentOperationException) {
                         throw (ConcurrentOperationException)jobResult;
                     } else if (jobResult instanceof ResourceAllocationException) {

@@ -3132,4 +3132,15 @@ public class VolumeApiServiceImplTest {
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm, false));
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm, true));
     }
+
+    @Test
+    public void testSnapshotCancelledBeforeItsWorkRanIsRemoved() {
+        Mockito.doReturn(true).when(volumeApiServiceImpl).isCurrentJobCancelled();
+        volumeApiServiceImpl.removeSnapshotIfCancelledBeforeItRan(21L);
+        Mockito.verify(snapshotManagerMock).removeAllocatedSnapshot(21L);
+
+        Mockito.doReturn(false).when(volumeApiServiceImpl).isCurrentJobCancelled();
+        volumeApiServiceImpl.removeSnapshotIfCancelledBeforeItRan(22L);
+        Mockito.verify(snapshotManagerMock, Mockito.never()).removeAllocatedSnapshot(22L);
+    }
 }
