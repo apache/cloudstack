@@ -113,16 +113,46 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
     public void prepare(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Map<Long, HostLoad> hostLoadMap) {
         long clusterId = cluster.getId();
+        double cpuUsedWeight = weight(HostScoringWeights.CpuUsedWeight, clusterId);
+        double memoryUsedWeight = weight(HostScoringWeights.MemoryUsedWeight, clusterId);
+        boolean everyHostMeasured = hostLoadMap != null && !hostLoadMap.isEmpty()
+                && hostLoadMap.values().stream().allMatch(HostLoad::isUsable);
+        if (hostLoadMap != null && !everyHostMeasured && cpuUsedWeight + memoryUsedWeight > 0) {
+            logUnmeasured(cluster, hostLoadMap);
+        }
         context.set(new PlanContext(
                 overcommitRatio(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO),
                 overcommitRatio(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO),
                 weight(HostScoringWeights.CpuAllocatedWeight, clusterId),
                 weight(HostScoringWeights.MemoryAllocatedWeight, clusterId),
-                weight(HostScoringWeights.CpuUsedWeight, clusterId),
-                weight(HostScoringWeights.MemoryUsedWeight, clusterId),
+                cpuUsedWeight,
+                memoryUsedWeight,
                 hostLoadMap == null ? new HashMap<>() : hostLoadMap,
-                hostLoadMap != null && !hostLoadMap.isEmpty()
-                        && hostLoadMap.values().stream().allMatch(HostLoad::isUsable)));
+                everyHostMeasured));
+    }
+
+    /**
+     * Says why the utilisation terms are being dropped. Without this a cluster balancing on
+     * allocation only looks the same in the log as a measured one, apart from the size of the
+     * imbalance. prepare runs once per plan, so this is once per plan.
+     */
+    private void logUnmeasured(Cluster cluster, Map<Long, HostLoad> hostLoadMap) {
+        long unmeasured = hostLoadMap.values().stream().filter(load -> !load.isUsable()).count();
+        if (unmeasured == 0) {
+            // no hosts at all; nothing to balance and nothing worth saying
+            return;
+        }
+        if (unmeasured == hostLoadMap.size()) {
+            LOGGER.warn("No host in cluster {} has current load samples, so DRS algorithm {} is balancing "
+                    + "on allocation only and ignoring {} and {}. Hosts are sampled every "
+                    + "host.load.sample.interval seconds, so there are none yet just after a management server "
+                    + "starts or this algorithm is first selected; otherwise no host is Up and reporting stats.", cluster, getName(),
+                    HostScoringWeights.CpuUsedWeight.key(), HostScoringWeights.MemoryUsedWeight.key());
+        } else {
+            LOGGER.info("{} of {} hosts in cluster {} have no current load samples (not yet sampled, not Up, "
+                    + "or older than host.load.stale.after), so DRS algorithm {} is balancing every host on "
+                    + "allocation only for this plan.", unmeasured, hostLoadMap.size(), cluster, getName());
+        }
     }
 
     /**

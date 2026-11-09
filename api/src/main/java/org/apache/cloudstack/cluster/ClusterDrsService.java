@@ -51,7 +51,7 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             true, ConfigKey.Scope.Cluster, null, "Maximum number of migrations for DRS", null, null, null);
 
     ConfigKey<String> ClusterDrsAlgorithm = new ConfigKey<>(String.class, "drs.algorithm",
-            ConfigKey.CATEGORY_ADVANCED, "balanced", "The DRS algorithm to be executed on the cluster. Possible values are condensed, balanced, weighted. 'weighted' balances CPU and memory together, and on measured load as well as allocation, tuned with the drs.weighted.* settings.",
+            ConfigKey.CATEGORY_ADVANCED, "balanced", "The DRS algorithm to be executed on the cluster. Possible values are condensed, balanced, weighted. 'weighted' balances CPU and memory together, and on measured load as well as allocation, tuned with the host.weighted.{cpu,memory}.{allocated,used}.weight settings it shares with the 'balancedweighted' allocation algorithm and with drs.weighted.storage.motion.cost. Hosts are sampled for load while any cluster uses it, whatever vm.allocation.algorithm is.",
             true, ConfigKey.Scope.Cluster, null, "DRS algorithm", null, null,
             null, ConfigKey.Kind.Select, "condensed,balanced,weighted");
 

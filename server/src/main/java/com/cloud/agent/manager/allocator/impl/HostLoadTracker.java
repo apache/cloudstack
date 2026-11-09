@@ -24,10 +24,14 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostLoad;
 import com.cloud.host.HostLoadService;
 import com.cloud.host.HostStats;
@@ -52,6 +56,9 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  * host, so all of them converge on the same picture, and a restarted server simply reports nothing
  * usable until it has sampled - callers then fall back to allocation figures.
  *
+ * Two things read these figures: the 'balancedweighted' allocation algorithm and the 'weighted' DRS
+ * algorithm. Hosts are sampled while either is configured, and not otherwise.
+ *
  * What getCpuUtilization means depends on the hypervisor, and only KVM reports what this class
  * assumes:
  *
@@ -69,8 +76,9 @@ public class HostLoadTracker extends ManagerBase implements HostLoadService, Con
 
     public static final ConfigKey<Integer> HostLoadSampleInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             Integer.class, "host.load.sample.interval", "60",
-            "Seconds between samples of host CPU and memory utilisation, for placement algorithms that " +
-                    "consider actual load. Should not be shorter than host.stats.interval.",
+            "Seconds between samples of host CPU and memory utilisation, for the 'balancedweighted' allocation " +
+                    "algorithm and the 'weighted' DRS algorithm. Hosts are only sampled while one of them is " +
+                    "configured. Should not be shorter than host.stats.interval.",
             false, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Integer> HostLoadStaleAfter = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
@@ -86,11 +94,23 @@ public class HostLoadTracker extends ManagerBase implements HostLoadService, Con
                     "slowly and are less affected by short spikes or by guests periodically releasing memory.",
             true, ConfigKey.Scope.Global);
 
+    /**
+     * The name the 'weighted' DRS algorithm registers under. It lives in a plugin, which this module
+     * cannot depend on.
+     */
+    private static final String WEIGHTED_DRS_ALGORITHM = "weighted";
+
     @Inject
     private HostDao hostDao;
 
     @Inject
     private StatsCollector statsCollector;
+
+    @Inject
+    private ClusterDetailsDao clusterDetailsDao;
+
+    @Inject
+    private ClusterDao clusterDao;
 
     private final Map<Long, Sample> samples = new ConcurrentHashMap<>();
 
@@ -139,11 +159,32 @@ public class HostLoadTracker extends ManagerBase implements HostLoadService, Con
     }
 
     /**
-     * Only the placement algorithms that read these figures pay for collecting them.
+     * Only pay for collecting these figures while something reads them: the 'balancedweighted'
+     * allocator, or the 'weighted' DRS algorithm on any cluster. The DRS algorithm is chosen per
+     * cluster and independently of the allocator, so the allocator alone is not enough to decide.
+     * Without samples, 'weighted' DRS would balance on allocation only.
      */
     protected boolean isInUse() {
-        return AllocationAlgorithm.balancedweighted.toString()
-                .equals(DeploymentClusterPlanner.VmAllocationAlgorithm.value());
+        if (AllocationAlgorithm.balancedweighted.toString()
+                .equals(DeploymentClusterPlanner.VmAllocationAlgorithm.value())) {
+            return true;
+        }
+        // a cluster without its own value inherits the global one. Asked of cluster_details
+        // directly rather than per cluster: the config cache expires sooner than the sample
+        // interval, so a per-cluster loop would cost a query per cluster every time. If every
+        // cluster overrides a global 'weighted' away, hosts are sampled for nothing, which is
+        // harmless.
+        if (WEIGHTED_DRS_ALGORITHM.equals(ClusterDrsService.ClusterDrsAlgorithm.value())) {
+            return true;
+        }
+        for (ClusterDetailsVO detail : clusterDetailsDao.findDetails(ClusterDrsService.ClusterDrsAlgorithm.key(),
+                WEIGHTED_DRS_ALGORITHM, null)) {
+            // deleting a cluster only marks it removed and leaves its details behind
+            if (clusterDao.findById(detail.getResourceId()) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected void record(long hostId, HostStats stats) {

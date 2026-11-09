@@ -16,11 +16,19 @@
 // under the License.
 package org.apache.cloudstack.cluster;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -279,5 +287,63 @@ public class WeightedTest {
                 plain.third() > plain.second());
         assertFalse("the same small gain is not worth moving storage for",
                 withStorage.third() > withStorage.second());
+    }
+
+    /** Runs prepare and returns what Weighted logged at INFO or above while doing so. */
+    private List<LogEvent> logsFromPrepare() {
+        List<LogEvent> events = new ArrayList<>();
+        AbstractAppender appender = new AbstractAppender("WeightedTest", null, null, true, Property.EMPTY_ARRAY) {
+            @Override
+            public void append(LogEvent event) {
+                if (event.getLevel().isMoreSpecificThan(Level.INFO)) {
+                    events.add(event.toImmutable());
+                }
+            }
+        };
+        Logger logger = (Logger) LogManager.getLogger(Weighted.class);
+        Level level = logger.getLevel();
+        appender.start();
+        logger.addAppender(appender);
+        logger.setLevel(Level.INFO);
+        try {
+            weighted.prepare(cluster, cpu, memory, load);
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(level);
+            appender.stop();
+        }
+        return events;
+    }
+
+    @Test
+    public void testFallingBackBecauseNoHostIsMeasuredIsAWarning() {
+        host(1L, 0.20, 0.20, HostLoad.UNKNOWN);
+        host(2L, 0.60, 0.60, HostLoad.UNKNOWN);
+
+        List<LogEvent> events = logsFromPrepare();
+
+        assertEquals(1, events.size());
+        assertEquals(Level.WARN, events.get(0).getLevel());
+        assertTrue(events.get(0).getMessage().getFormattedMessage().contains("allocation only"));
+    }
+
+    @Test
+    public void testFallingBackBecauseSomeHostsAreUnmeasuredIsLoggedOnce() {
+        host(1L, 0.20, 0.20, new HostLoad(0.2, 0.2, 10));
+        host(2L, 0.60, 0.60, HostLoad.UNKNOWN);
+
+        List<LogEvent> events = logsFromPrepare();
+
+        assertEquals(1, events.size());
+        assertEquals(Level.INFO, events.get(0).getLevel());
+        assertTrue(events.get(0).getMessage().getFormattedMessage().startsWith("1 of 2 hosts"));
+    }
+
+    @Test
+    public void testNothingIsLoggedWhenEveryHostIsMeasured() {
+        host(1L, 0.20, 0.20, new HostLoad(0.2, 0.2, 10));
+        host(2L, 0.60, 0.60, new HostLoad(0.6, 0.6, 10));
+
+        assertTrue(logsFromPrepare().isEmpty());
     }
 }

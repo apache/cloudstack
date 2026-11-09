@@ -16,16 +16,32 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.junit.After;
 import org.junit.Before;
 import com.cloud.host.HostLoad;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.server.StatsCollector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,6 +53,21 @@ public class HostLoadTrackerTest {
     private static final long HOST_ID = 1L;
     private static final long HALF_LIFE_MS = 300 * 1000L;
 
+    @Mock
+    private ClusterDetailsDao clusterDetailsDao;
+
+    @Mock
+    private ClusterDao clusterDao;
+
+    @Mock
+    private HostDao hostDao;
+
+    @Mock
+    private StatsCollector statsCollector;
+
+    @Mock
+    private ConfigDepotImpl configDepot;
+
     @InjectMocks
     private HostLoadTracker tracker = new HostLoadTracker();
 
@@ -46,6 +77,17 @@ public class HostLoadTrackerTest {
     public void setUp() {
         tracker.clear();
         now = 1_000_000L;
+        // unstubbed settings read as null, i.e. their defaults
+        ConfigKey.init(configDepot);
+    }
+
+    @After
+    public void tearDown() {
+        ConfigKey.init(null);
+    }
+
+    private void setting(String name, ConfigKey.Scope scope, Long scopeId, String value) {
+        Mockito.lenient().when(configDepot.getConfigStringValue(name, scope, scopeId)).thenReturn(value);
     }
 
     private HostStats stats(double cpuPercent, double usedMemoryFraction) {
@@ -180,5 +222,79 @@ public class HostLoadTrackerTest {
         HostLoad load = load();
         assertEquals(1.0, load.getCpuUtilisation(), 1e-6);
         assertEquals(1.0, load.getMemoryUtilisation(), 1e-6);
+    }
+
+    private void clustersWithWeightedDrs(long... clusterIds) {
+        List<ClusterDetailsVO> details = new ArrayList<>();
+        for (long clusterId : clusterIds) {
+            details.add(new ClusterDetailsVO(clusterId, "drs.algorithm", "weighted"));
+            Mockito.lenient().when(clusterDao.findById(clusterId)).thenReturn(Mockito.mock(ClusterVO.class));
+        }
+        Mockito.when(clusterDetailsDao.findDetails("drs.algorithm", "weighted", null)).thenReturn(details);
+    }
+
+    @Test
+    public void testInUseWhenAClusterUsesWeightedDrsWithTheAllocatorAtItsDefault() {
+        clustersWithWeightedDrs(8L);
+
+        assertTrue(tracker.isInUse());
+    }
+
+    @Test
+    public void testNotInUseWhenOnlyARemovedClusterUsedWeightedDrs() {
+        Mockito.when(clusterDetailsDao.findDetails("drs.algorithm", "weighted", null))
+                .thenReturn(List.of(new ClusterDetailsVO(9L, "drs.algorithm", "weighted")));
+        // findById does not return removed clusters
+
+        assertFalse(tracker.isInUse());
+    }
+
+    @Test
+    public void testInUseWhenWeightedDrsIsTheGlobalDefaultWithTheAllocatorAtItsDefault() {
+        setting("drs.algorithm", ConfigKey.Scope.Global, null, "weighted");
+
+        assertTrue(tracker.isInUse());
+        Mockito.verifyNoInteractions(clusterDetailsDao);
+    }
+
+    @Test
+    public void testNotInUseWhenNeitherTheAllocatorNorAnyClusterReadsTheFigures() {
+        clustersWithWeightedDrs();
+
+        assertFalse(tracker.isInUse());
+    }
+
+    @Test
+    public void testInUseWhenTheAllocatorReadsTheFiguresWithoutLookingAtClusters() {
+        setting("vm.allocation.algorithm", ConfigKey.Scope.Global, null, "balancedweighted");
+
+        assertTrue(tracker.isInUse());
+        Mockito.verifyNoInteractions(clusterDetailsDao);
+    }
+
+    @Test
+    public void testHostsAreSampledForWeightedDrsWithTheAllocatorAtItsDefault() {
+        clustersWithWeightedDrs(7L);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(HOST_ID);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.listByType(Host.Type.Routing)).thenReturn(List.of(host));
+        HostStats reading = stats(40, 0.5);
+        Mockito.when(statsCollector.getHostStats(HOST_ID)).thenReturn(reading);
+
+        tracker.sampleAllHosts();
+
+        assertTrue(tracker.getLoad(HOST_ID).isUsable());
+    }
+
+    @Test
+    public void testSamplesAreDroppedOnceNothingReadsThem() {
+        sample(40, 0.5, 0);
+        clustersWithWeightedDrs();
+
+        tracker.sampleAllHosts();
+
+        assertFalse(load().isUsable());
+        Mockito.verifyNoInteractions(hostDao);
     }
 }
