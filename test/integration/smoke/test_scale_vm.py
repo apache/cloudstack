@@ -181,7 +181,7 @@ class TestScaleVm(cloudstackTestCase):
         host = Host.list(
             self.apiclient,
             zoneid=self.zone.id,
-            hostid=vm_info.hostid,
+            id=vm_info.hostid,
             type='Routing'
         )[0]
         ssh_client = self.get_ssh_client(host.ipaddress,
