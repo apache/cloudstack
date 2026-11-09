@@ -102,6 +102,7 @@ export default {
             this.$notification.destroy()
             this.$store.commit('SET_COUNT_NOTIFY', 0)
             this.$store.commit('SET_LOGIN_FLAG', true)
+            this.$store.dispatch('Clear2FACookies')
             this.$router.push({ path: '/dashboard' }).catch(() => {})
 
             this.$message.success({

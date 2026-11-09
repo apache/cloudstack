@@ -57,6 +57,20 @@ function setLoginCookies (result) {
   Cookies.set('username', result.username)
 }
 
+// Cookies may be set by the UI (host only, path '/') or by the server on SAML login (domain and '/client' path)
+function removeCookie (cookieName) {
+  const paths = ['/', '/client']
+  const hostname = window.location.hostname
+  const domains = [undefined, hostname, `.${hostname}`]
+  paths.forEach(path => {
+    domains.forEach(domain => {
+      const options = { path }
+      if (domain) options.domain = domain
+      Cookies.remove(cookieName, options)
+    })
+  })
+}
+
 function processLoginResponse (commit, response) {
   const result = response.loginresponse || {}
   setLoginCookies(result)
@@ -446,18 +460,7 @@ const user = {
         }).catch(() => {
           resolve()
         }).finally(() => {
-          const paths = ['/', '/client']
-          const hostname = window.location.hostname
-          const domains = [undefined, hostname, `.${hostname}`]
-          Object.keys(Cookies.get()).forEach(cookieName => {
-            paths.forEach(path => {
-              domains.forEach(domain => {
-                const options = { path }
-                if (domain) options.domain = domain
-                Cookies.remove(cookieName, options)
-              })
-            })
-          })
+          Object.keys(Cookies.get()).forEach(cookieName => removeCookie(cookieName))
         })
       })
     },
@@ -570,6 +573,11 @@ const user = {
     },
     SetLoginFlag ({ commit }, loggedIn) {
       commit('SET_LOGIN_FLAG', loggedIn)
+    },
+    Clear2FACookies () {
+      // SAML login reports the 2FA state in cookies; once verified, a page reload must not ask for 2FA again
+      removeCookie('twoFaEnabled')
+      removeCookie('twoFaProvider')
     },
     SetCustomHypervisorName ({ commit }, name) {
       commit('SET_CUSTOM_HYPERVISOR_NAME', name)
