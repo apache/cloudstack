@@ -34,6 +34,15 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
@@ -1096,5 +1105,113 @@ public class NetworkOrchestratorTest extends TestCase {
 
         verify(testOrchestrator._nicDao, never()).persist(any(NicVO.class));
         verify(testOrchestrator._vmDao, never()).lockRow(anyLong(), anyBoolean());
+    }
+
+    private DomainRouterVO routerOnHost(final VirtualMachine.State state, final Status hostStatus) {
+        final long hostId = 7L;
+        final DomainRouterVO router = mock(DomainRouterVO.class);
+        when(router.getId()).thenReturn(5L);
+        when(router.getUuid()).thenReturn("router-uuid");
+        when(router.getInstanceName()).thenReturn("r-5-VM");
+        when(router.getState()).thenReturn(state);
+        when(router.getHostId()).thenReturn(hostId);
+        final HostVO host = mock(HostVO.class);
+        when(host.getId()).thenReturn(hostId);
+        when(host.getStatus()).thenReturn(hostStatus);
+        when(testOrchestrator._hostDao.findById(hostId)).thenReturn(host);
+        return router;
+    }
+
+    @Test
+    public void checkRoutersCanBeReplacedRefusesARouterOnAHostThatMayStillRunIt() throws Exception {
+        testOrchestrator._hostDao = mock(HostDao.class);
+        for (final Status status : Status.values()) {
+            final DomainRouterVO router = routerOnHost(VirtualMachine.State.Running, status);
+            final boolean safe = status == Status.Up || status == Status.Down || status == Status.Removed;
+            try {
+                testOrchestrator.checkRoutersCanBeReplaced(List.of(router));
+                assertTrue("refused on a " + status + " host", safe);
+            } catch (final ResourceUnavailableException e) {
+                assertFalse("accepted on a " + status + " host", safe);
+                assertTrue(e.getMessage().contains("r-5-VM"));
+            }
+        }
+    }
+
+    @Test
+    public void checkRoutersCanBeReplacedIgnoresRoutersThatAreNotOnAHost() throws Exception {
+        testOrchestrator._hostDao = mock(HostDao.class);
+        final DomainRouterVO stopped = routerOnHost(VirtualMachine.State.Stopped, Status.Disconnected);
+        final DomainRouterVO noHost = routerOnHost(VirtualMachine.State.Starting, Status.Disconnected);
+        when(noHost.getHostId()).thenReturn(null);
+        final DomainRouterVO hostRecordGone = routerOnHost(VirtualMachine.State.Running, Status.Disconnected);
+        when(testOrchestrator._hostDao.findById(7L)).thenReturn(null);
+
+        testOrchestrator.checkRoutersCanBeReplaced(List.of(stopped, noHost, hostRecordGone));
+    }
+
+    @Test
+    public void checkRoutersCanBeReplacedRefusesAMigratingRouter() {
+        testOrchestrator._hostDao = mock(HostDao.class);
+        final DomainRouterVO router = routerOnHost(VirtualMachine.State.Migrating, Status.Up);
+
+        Assert.assertThrows(ResourceUnavailableException.class, () -> testOrchestrator.checkRoutersCanBeReplaced(List.of(router)));
+    }
+
+    @Test
+    public void destroyReplacedRoutersStopsWithoutReleasingWhileTheHostMayRunTheRouter() throws Exception {
+        testOrchestrator._itMgr = mock(VirtualMachineManager.class);
+        testOrchestrator._routerService = mock(VpcVirtualNetworkApplianceService.class);
+        final DomainRouterVO router = mock(DomainRouterVO.class);
+        when(router.getId()).thenReturn(5L);
+        when(router.getUuid()).thenReturn("router-uuid");
+        final ReservationContext context = mock(ReservationContext.class);
+        final Account account = mock(Account.class);
+        final User caller = mock(User.class);
+        when(caller.getId()).thenReturn(2L);
+        when(context.getAccount()).thenReturn(account);
+        when(context.getCaller()).thenReturn(caller);
+
+        testOrchestrator.destroyReplacedRouters(List.of(router), context);
+
+        final InOrder inOrder = Mockito.inOrder(testOrchestrator._itMgr, testOrchestrator._routerService);
+        inOrder.verify(testOrchestrator._itMgr).advanceStop("router-uuid", true, true);
+        inOrder.verify(testOrchestrator._routerService).destroyRouter(5L, account, 2L);
+        verify(testOrchestrator._routerService, never()).stopRouter(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    public void destroyReplacedRoutersDoesNotDestroyARouterThatDidNotStop() throws Exception {
+        testOrchestrator._itMgr = mock(VirtualMachineManager.class);
+        testOrchestrator._routerService = mock(VpcVirtualNetworkApplianceService.class);
+        final DomainRouterVO router = mock(DomainRouterVO.class);
+        when(router.getUuid()).thenReturn("router-uuid");
+        Mockito.doThrow(new CloudRuntimeException("host did not confirm")).when(testOrchestrator._itMgr).advanceStop("router-uuid", true, true);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> testOrchestrator.destroyReplacedRouters(List.of(router), mock(ReservationContext.class)));
+
+        Mockito.verifyNoInteractions(testOrchestrator._routerService);
+    }
+
+    @Test
+    public void rollingRestartIsRefusedBeforeTheNewRouterIsDeployed() throws Exception {
+        testOrchestrator._hostDao = mock(HostDao.class);
+        testOrchestrator._itMgr = mock(VirtualMachineManager.class);
+        testOrchestrator._routerService = mock(VpcVirtualNetworkApplianceService.class);
+        testOrchestrator._networkOfferingDao = mock(NetworkOfferingDao.class);
+        testOrchestrator._dcDao = mock(DataCenterDao.class);
+        final NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(3L);
+        when(testOrchestrator._networksDao.findById(3L)).thenReturn(network);
+        final DomainRouterVO router = routerOnHost(VirtualMachine.State.Running, Status.Disconnected);
+        when(testOrchestrator.routerDao.findByNetwork(3L)).thenReturn(List.of(router));
+
+        Assert.assertThrows(ResourceUnavailableException.class,
+                () -> testOrchestrator.restartNetwork(3L, mock(Account.class), mock(User.class), true, false));
+
+        verify(testOrchestrator, never()).destroyExpendableRouters(ArgumentMatchers.anyList(), any());
+        verify(testOrchestrator, never()).destroyReplacedRouters(ArgumentMatchers.anyList(), any());
+        verify(testOrchestrator._ntwkSrvcDao, never()).getDistinctProviders(3L);
+        Mockito.verifyNoInteractions(testOrchestrator._itMgr, testOrchestrator._routerService);
     }
 }
