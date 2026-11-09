@@ -36,7 +36,6 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
-import org.libvirt.Error.ErrorNumber;
 import org.libvirt.LibvirtException;
 import org.libvirt.StorageVol;
 
@@ -121,7 +120,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                     final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
                     final Connect conn = libvirtUtilitiesHelper.getConnection();
-                    final StorageVol v = lookupVolumeByPath(conn, pool, path);
+                    final StorageVol v = libvirtUtilitiesHelper.getStorageVolumeByPath(conn, pool, path);
                     int flags = 0;
 
                     if (conn.getLibVirVersion() > 1001000 && vol.getFormat() == PhysicalDiskFormat.RAW && pool.getType() != StoragePoolType.RBD) {
@@ -179,33 +178,6 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             return new ResizeVolumeAnswer(command, false, error);
         } finally {
             command.clearPassphrase();
-        }
-    }
-
-    /**
-     * Looks a volume up through libvirt by its path.
-     *
-     * An RBD volume is created through librbd, and KVMStoragePool.getPhysicalDisk() looks RBD
-     * volumes up through librbd too, so nothing may have made libvirt refresh the pool since the
-     * volume was created, and the volume may be missing from libvirt's cache of the pool on this
-     * host. For an RBD pool, a lookup that fails because the volume is not found refreshes the
-     * pool and looks the volume up once more. Any other failure, and any other pool type, is
-     * returned to the caller as before.
-     */
-    private StorageVol lookupVolumeByPath(final Connect conn, final KVMStoragePool pool, final String path) throws LibvirtException {
-        try {
-            return conn.storageVolLookupByPath(path);
-        } catch (final LibvirtException e) {
-            if (pool.getType() != StoragePoolType.RBD || e.getError() == null
-                    || e.getError().getCode() != ErrorNumber.VIR_ERR_NO_STORAGE_VOL) {
-                throw e;
-            }
-            logger.info("Volume " + path + " is not in libvirt's cache of RBD pool " + pool.getUuid() + " (" + e.getMessage()
-                    + "). Refreshing the pool and looking the volume up again.");
-            if (!pool.refresh()) {
-                logger.warn("Failed to refresh RBD pool " + pool.getUuid() + ". Looking volume " + path + " up again anyway.");
-            }
-            return conn.storageVolLookupByPath(path);
         }
     }
 
