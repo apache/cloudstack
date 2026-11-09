@@ -77,6 +77,27 @@ class cloudstackTestCase(unittest.case.TestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    def setupDummyOOBM(self):
+        try:
+            from apache.cloudstack.api.command.admin import outOfBandManagement
+        except ImportError:
+            self.debug("OOBM module not available, skipping dummy setup.")
+            return
+
+        conf_cls = outOfBandManagement.configureOutOfBandManagementForHost
+        oobm_cmd = conf_cls.configureOutOfBandManagementForHostCmd()
+        oobm_cmd.hostid = self.host.id
+        oobm_cmd.address = "10.1.1.1"
+        oobm_cmd.driver = "ipmitool"
+        oobm_cmd.username = "admin"
+        oobm_cmd.password = "password"
+        self.apiclient.configureOutOfBandManagementForHost(oobm_cmd)
+
+        en_cls = outOfBandManagement.enableOutOfBandManagementForHost
+        enable_oobm_cmd = en_cls.enableOutOfBandManagementForHostCmd()
+        enable_oobm_cmd.hostid = self.host.id
+        self.apiclient.enableOutOfBandManagementForHost(enable_oobm_cmd)
+
     def tearDown(self):
         self.debug("Cleaning up the resources")
         try:
