@@ -260,3 +260,15 @@ INSERT INTO `cloud`.`vm_template_details` (`template_id`, `name`, `value`)
     SELECT `id`, 'rootDiskController', 'pvscsi' FROM `cloud`.`vm_template`
     WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN'
     AND NOT EXISTS (SELECT 1 FROM `cloud`.`vm_template_details` WHERE `template_id` = 7 AND `name` = 'rootDiskController');
+
+-- Debian 12 (64-bit) XenServer dynamic memory defaults: min 1 GiB, max 1.5 TiB
+INSERT INTO `cloud`.`guest_os_details` (`guest_os_id`, `name`, `value`, `display`)
+    SELECT `id`, 'xenserver.dynamicMin', '1073741824', 0 FROM `cloud`.`guest_os`
+    WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)'
+    AND NOT EXISTS (SELECT 1 FROM `cloud`.`guest_os_details` d JOIN `cloud`.`guest_os` g ON d.`guest_os_id` = g.`id`
+        WHERE g.`display_name` = 'Debian GNU/Linux 12 (64-bit)' AND d.`name` = 'xenserver.dynamicMin');
+INSERT INTO `cloud`.`guest_os_details` (`guest_os_id`, `name`, `value`, `display`)
+    SELECT `id`, 'xenserver.dynamicMax', '1649267441664', 0 FROM `cloud`.`guest_os`
+    WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)'
+    AND NOT EXISTS (SELECT 1 FROM `cloud`.`guest_os_details` d JOIN `cloud`.`guest_os` g ON d.`guest_os_id` = g.`id`
+        WHERE g.`display_name` = 'Debian GNU/Linux 12 (64-bit)' AND d.`name` = 'xenserver.dynamicMax');
