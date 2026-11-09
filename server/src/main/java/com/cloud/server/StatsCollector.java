@@ -1220,6 +1220,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void runInContext() {
             try {
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+                sc.addAnd("managementServerId", SearchCriteria.Op.EQ, managementServerNodeId);
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
                 logger.debug(String.format("VmStatsCollector is running to process VMs across %d UP hosts", hosts.size()));
