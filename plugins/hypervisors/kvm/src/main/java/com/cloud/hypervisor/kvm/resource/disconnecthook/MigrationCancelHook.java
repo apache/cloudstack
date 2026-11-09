@@ -40,11 +40,17 @@ public class MigrationCancelHook extends DisconnectHook {
     public void run() {
         LOGGER.info("Interrupted migration of " + _vmName);
         try {
-            if (_migratingDomain.abortJob() == 0) {
-                LOGGER.warn("Aborted migration job for " + _vmName);
+            final boolean aborted = _migratingDomain.abortJob() == 0;
+            setStoppedTheWork(aborted);
+            if (aborted) {
+                LOGGER.info("Aborted migration job for " + _vmName);
+            } else {
+                LOGGER.info("Could not abort the migration job for " + _vmName + ", it has most likely finished");
             }
         } catch (LibvirtException ex) {
-            LOGGER.warn("Failed to abort migration job for " + _vmName, ex);
+            // "Domain not found" once the migration completed and the source domain is gone
+            setStoppedTheWork(false);
+            LOGGER.info("Could not abort the migration job for " + _vmName + ", it has most likely finished: " + ex.getMessage());
         }
     }
 }

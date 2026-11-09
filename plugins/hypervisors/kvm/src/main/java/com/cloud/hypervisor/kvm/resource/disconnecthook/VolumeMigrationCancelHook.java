@@ -44,9 +44,11 @@ public class VolumeMigrationCancelHook extends DisconnectHook {
         if (_migratingDomain != null && _destDiskLabel != null) {
             try {
                 _migratingDomain.blockJobAbort(_destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
-                LOGGER.warn(String.format("Aborted block job for vm %s and volume: %s", _vmName, _destDiskLabel));
+                setStoppedTheWork(true);
+                LOGGER.info(String.format("Aborted block job for vm %s and volume: %s", _vmName, _destDiskLabel));
             } catch (LibvirtException ex) {
-                LOGGER.error(String.format("Failed to abort block job for vm %s and volume: %s due to %s", _vmName, _destDiskLabel, ex.getMessage()));
+                setStoppedTheWork(false);
+                LOGGER.info(String.format("Could not abort the block job for vm %s and volume %s, it has most likely finished: %s", _vmName, _destDiskLabel, ex.getMessage()));
             }
         }
     }
