@@ -26,8 +26,10 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
@@ -62,7 +64,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "Error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "The traffic type for the ACL, can be Ingress or Egress, defaulted to Ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "The traffic type for the ACL, can be Ingress or Egress. Required when partialupgrade is false")
     private String trafficType;
 
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The Network of the Instance the ACL will be created for")
@@ -78,7 +80,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ACL_REASON, type = CommandType.STRING, description = "A description indicating why the ACL rule is required.")
     private String reason;
 
-    @Parameter(name = ApiConstants.ACL_RULE_PARTIAL_UPGRADE, type = CommandType.BOOLEAN, required = false, description = "Indicates if the ACL rule is to be updated partially (merging the parameters sent with current configuration) or completely (disconsidering all of the current configurations). The default value is 'true'.")
+    @Parameter(name = ApiConstants.ACL_RULE_PARTIAL_UPGRADE, type = CommandType.BOOLEAN, required = false, description = "Indicates if the ACL rule is to be updated partially (merging the parameters sent with current configuration) or completely (disconsidering all of the current configurations). The default value is 'true'. When it is 'false', protocol, cidrlist and traffictype are required.")
     private boolean partialUpgrade = true;
 
     // ///////////////////////////////////////////////////
@@ -111,14 +113,15 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     }
 
     public NetworkACLItem.TrafficType getTrafficType() {
-        if (trafficType != null) {
-            for (NetworkACLItem.TrafficType type : NetworkACLItem.TrafficType.values()) {
-                if (type.toString().equalsIgnoreCase(trafficType)) {
-                    return type;
-                }
+        if (StringUtils.isBlank(trafficType)) {
+            return null;
+        }
+        for (NetworkACLItem.TrafficType type : NetworkACLItem.TrafficType.values()) {
+            if (type.toString().equalsIgnoreCase(trafficType.trim())) {
+                return type;
             }
         }
-        return null;
+        throw new InvalidParameterValueException("Invalid traffic type " + trafficType);
     }
 
     // ///////////////////////////////////////////////////
