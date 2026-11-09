@@ -467,8 +467,12 @@ public class KVMStoragePoolManager {
         boolean deleteStatus;
         if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type)) {
             _haMonitor.unregisterStoragePool(uuid);
+        }
+        if (type == StoragePoolType.NetworkFilesystem) {
             deleteStatus = adaptor.deleteStoragePool(uuid);
         } else {
+            // the other pool types, also RBD and SharedMountPoint, keep the delete which takes the details: it does not
+            // destroy the libvirt pool of a pool which is still used by the VMs, e.g. in maintenance of the pool
             deleteStatus = adaptor.deleteStoragePool(uuid, details);
         }
         synchronized (_storagePools) {
