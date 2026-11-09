@@ -708,15 +708,19 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     /**
-     * On update the ports a rule already carries are only checked when the protocol is given too, so
-     * that a rule stored with ports on another protocol number can still be edited otherwise, while a
-     * protocol change cannot leave them on it.
+     * On update the ports passed in the command are checked first. The ports a rule already carries are
+     * only used for any not passed, and only when the protocol is given too, so that a rule stored with
+     * ports on another protocol number can still be edited otherwise, while a protocol change cannot
+     * leave them on it.
      */
     protected void validatePortsAreUsableWithProtocolOnUpdate(UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo) {
-        boolean protocolGiven = StringUtils.isNotBlank(updateNetworkACLItemCmd.getProtocol());
-        validatePortsAreUsableWithProtocol(networkACLItemVo.getProtocol(),
-                protocolGiven ? networkACLItemVo.getSourcePortStart() : updateNetworkACLItemCmd.getSourcePortStart(),
-                protocolGiven ? networkACLItemVo.getSourcePortEnd() : updateNetworkACLItemCmd.getSourcePortEnd());
+        Integer sourcePortStart = updateNetworkACLItemCmd.getSourcePortStart();
+        Integer sourcePortEnd = updateNetworkACLItemCmd.getSourcePortEnd();
+        if (StringUtils.isNotBlank(updateNetworkACLItemCmd.getProtocol())) {
+            sourcePortStart = ObjectUtils.defaultIfNull(sourcePortStart, networkACLItemVo.getSourcePortStart());
+            sourcePortEnd = ObjectUtils.defaultIfNull(sourcePortEnd, networkACLItemVo.getSourcePortEnd());
+        }
+        validatePortsAreUsableWithProtocol(networkACLItemVo.getProtocol(), sourcePortStart, sourcePortEnd);
     }
 
     @Override

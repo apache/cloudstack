@@ -584,6 +584,16 @@ public class NetworkACLServiceImplTest {
         networkAclServiceImpl.validatePortsAreUsableWithProtocolOnUpdate(updateNetworkACLItemCmdMock, networkAclItemVoMock);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePortsAreUsableWithProtocolOnUpdateTestPortsPassedWithProtocol() {
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn("47");
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(22);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(22);
+        Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("47");
+
+        networkAclServiceImpl.validatePortsAreUsableWithProtocolOnUpdate(updateNetworkACLItemCmdMock, networkAclItemVoMock);
+    }
+
     @Test
     public void validateSourceCidrListTestEmptySourceCirdList() {
         Mockito.when(networkAclItemVoMock.getSourceCidrList()).thenReturn(new ArrayList<>());
