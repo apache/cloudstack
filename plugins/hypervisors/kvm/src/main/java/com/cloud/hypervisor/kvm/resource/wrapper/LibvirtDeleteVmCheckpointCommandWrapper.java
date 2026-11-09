@@ -53,6 +53,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = DeleteVmCheckpointCommand.class)
 public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<DeleteVmCheckpointCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
+    private static final Logger LOGGER = LogManager.getLogger(LibvirtDeleteVmCheckpointCommandWrapper.class);
 
     @Override
     public Answer execute(DeleteVmCheckpointCommand cmd, LibvirtComputingResource resource) {
@@ -62,8 +63,8 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         return deleteDomainCheckpoint(cmd, resource);
     }
 
-    // Running VM: libvirt's delete removes the bitmap from every layer of the listed disks. It fails on a forgotten
-    // checkpoint and touches nothing on one redefined without disks, so qemu is asked afterwards what is left.
+    // Running VM: libvirt's delete removes the bitmap from every layer of the listed disks. When it fails (forgotten
+    // checkpoint, a listed disk lost its bitmap) qemu is asked which disks still carry it and libvirt is told again.
     private Answer deleteDomainCheckpoint(DeleteVmCheckpointCommand cmd, LibvirtComputingResource resource) {
         String vmName = cmd.getVmName();
         String checkpointId = cmd.getCheckpointId();
@@ -105,13 +106,14 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         return new Answer(cmd, true, "Checkpoint deleted, bitmap removed from disks " + disksWithBitmap);
     }
 
-    private String virsh(String... args) {
-        Script script = new Script("virsh", logger);
+    private static String virsh(String... args) {
+        Script script = new Script("virsh", LOGGER);
         script.add(args);
         return script.execute();
     }
 
-    private String redefineCheckpoint(String vmName, String checkpointId, Long createTime, Map<String, Boolean> diskHasBitmap) {
+    // Redefines the checkpoint in libvirt with the disks that carry its bitmap; a listed disk without it is refused.
+    static String redefineCheckpoint(String vmName, String checkpointId, Long createTime, Map<String, Boolean> diskHasBitmap) {
         StringBuilder xml = new StringBuilder("<domaincheckpoint>\n");
         xml.append("  <name>").append(checkpointId).append("</name>\n");
         // libvirt requires a creation time on a redefine but does not check it.
@@ -139,7 +141,7 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
 
     // Whether each disk of the running domain has the bitmap in any layer of its chain. Asked through QMP, since
     // qemu-img info on an image a running qemu holds shows stale bitmap metadata.
-    Map<String, Boolean> findDisksWithBitmap(LibvirtComputingResource resource, String vmName, String bitmapName) throws LibvirtException {
+    static Map<String, Boolean> findDisksWithBitmap(LibvirtComputingResource resource, String vmName, String bitmapName) throws LibvirtException {
         Map<String, String> diskPathLabelMap = resource.getDiskPathLabelMap(vmName);
         Domain vm = resource.getDomain(resource.getLibvirtUtilitiesHelper().getConnection(), vmName);
         try {
