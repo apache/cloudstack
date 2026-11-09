@@ -97,9 +97,7 @@ public interface KVMBackupExportService extends Configurable, PluggableService {
     // Checkpoints recorded for the VM, oldest first. The newest is marked active.
     List<CheckpointResponse> listVmCheckpoints(long vmId);
 
-    /**
-     * Delete a VM checkpoint (no-op for normal flow, kept for API parity)
-     */
+    // Delete a VM checkpoint: its libvirt checkpoint or dirty bitmaps on the host, then its record.
     boolean deleteVmCheckpoint(DeleteVmCheckpointCmd cmd);
 
     /**

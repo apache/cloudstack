@@ -99,6 +99,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService, VmWorkJobHandler {
     public static final String VM_WORK_JOB_HANDLER = KVMBackupExportServiceImpl.class.getSimpleName();
     private static final long BACKUP_FINALIZE_WAIT_CHECK_INTERVAL = 15 * 1000L;
+    // States of a backup that still holds the VM: a libvirt backup job, an NBD export, or the work queue.
+    private static final Set<Backup.Status> IN_PROGRESS_STATUSES = Set.of(Backup.Status.Queued, Backup.Status.BackingUp,
+            Backup.Status.ReadyForImageTransfer, Backup.Status.FinalizingImageTransfer);
     private static Set<String> COMPATIBLE_BACKUP_PROVIDERS = Set.of("veeam", "dummy");
 
     @Inject
@@ -194,9 +197,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("Instance must be running or stopped to start Backup");
         }
 
-        Backup existingBackup = backupDao.findByVmId(vmId);
-        if (existingBackup != null && existingBackup.getStatus() == Backup.Status.BackingUp) {
-            throw new CloudRuntimeException("Backup already in progress for Instance: " + vm.getUuid());
+        // An export backup keeps its row only until it is finalized or fails; libvirt runs one backup job per
+        // domain, so a second one would fail on the host with a less helpful error.
+        for (Backup existingBackup : backupDao.listByVmId(null, vmId)) {
+            if (IN_PROGRESS_STATUSES.contains(existingBackup.getStatus())) {
+                throw new CloudRuntimeException(String.format("Backup %s is already in progress for Instance %s", existingBackup.getUuid(), vm.getUuid()));
+            }
         }
 
         validateVmVolumesForBackup(vm);
@@ -242,14 +248,14 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (StringUtils.isBlank(requestedCheckpointId)) {
             return null;
         }
-        if (vmCheckpointDao.findByVmIdAndCheckpointId(vm.getId(), requestedCheckpointId) == null) {
-            logger.warn("Rejecting backup of Instance {} from checkpoint {}: the Instance has checkpoints {}",
-                    vm.getUuid(), requestedCheckpointId,
-                    vmCheckpointDao.listByVmId(vm.getId()).stream().map(VmCheckpointVO::getCheckpointId).collect(Collectors.toList()));
+        VmCheckpointVO checkpoint = vmCheckpointDao.findByVmIdAndCheckpointId(vm.getId(), requestedCheckpointId);
+        if (checkpoint == null) {
+            logger.warn("Rejecting backup of Instance {} from checkpoint {}: the Instance has {} checkpoints and none by that id",
+                    vm.getUuid(), requestedCheckpointId, vmCheckpointDao.listByVmId(vm.getId()).size());
             throw new CloudRuntimeException(String.format("Checkpoint %s doesn't exist for Instance %s",
                     requestedCheckpointId, vm.getUuid()));
         }
-        return requestedCheckpointId;
+        return checkpoint.getCheckpointId();
     }
 
     protected void removeFailedBackup(BackupVO backup) {

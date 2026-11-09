@@ -196,7 +196,6 @@ public class KVMBackupExportServiceImplTest {
         when(vmInstance.getDataCenterId()).thenReturn(10L);
         when(vmInstance.getAccountId()).thenReturn(100L);
         when(vmInstance.getDomainId()).thenReturn(200L);
-        when(backupDao.findByVmId(vmId)).thenReturn(null);
         when(volumeDao.findByInstanceAndNotStates(vmId, Volume.State.Ready)).thenReturn(Collections.emptyList());
         when(virtualMachineManager.findClusterAndHostIdForVm(vmInstance, false))
                 .thenReturn(new Pair<>(5L, hostId));
@@ -222,15 +221,23 @@ public class KVMBackupExportServiceImplTest {
 
     @Test
     public void createBackup_backupAlreadyInProgress_throws() {
+        // An export backup waiting for its download, next to an older finished NAS backup of the same VM.
         when(vmInstanceDao.findById(1L)).thenReturn(vm);
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(10L);
-        BackupVO existing = mock(BackupVO.class);
-        when(existing.getStatus()).thenReturn(Backup.Status.BackingUp);
-        when(backupDao.findByVmId(1L)).thenReturn(existing);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        BackupVO finished = mock(BackupVO.class);
+        when(finished.getStatus()).thenReturn(Backup.Status.BackedUp);
+        BackupVO exporting = mock(BackupVO.class);
+        when(exporting.getStatus()).thenReturn(Backup.Status.ReadyForImageTransfer);
+        when(exporting.getUuid()).thenReturn("backup-uuid");
+        when(backupDao.listByVmId(null, 1L)).thenReturn(List.of(finished, exporting));
 
-        assertThrows(CloudRuntimeException.class,
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
                 () -> service.createBackup(mockCmd(1L, "backup", null)));
+
+        assertEquals("Backup backup-uuid is already in progress for Instance vm-uuid", ex.getMessage());
+        verify(backupDao, never()).persist(any(BackupVO.class));
     }
 
     @Test
@@ -281,7 +288,7 @@ public class KVMBackupExportServiceImplTest {
         when(vm.getDomainId()).thenReturn(200L);
         BackupVO existing = mock(BackupVO.class);
         when(existing.getStatus()).thenReturn(Backup.Status.BackedUp);
-        when(backupDao.findByVmId(1L)).thenReturn(existing);
+        when(backupDao.listByVmId(null, 1L)).thenReturn(List.of(existing));
         when(volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready)).thenReturn(Collections.emptyList());
         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(5L, 42L));
         when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
@@ -319,6 +326,20 @@ public class KVMBackupExportServiceImplTest {
         when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
 
         service.createBackup(mockCmd(1L, "backup", null, "ckp-a1"));
+
+        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
+        verify(backupDao).persist(captor.capture());
+        assertEquals("ckp-a1", captor.getValue().getFromCheckpointId());
+    }
+
+    @Test
+    public void createBackup_requestedCheckpointMatchedLoosely_usesTheRecordedId() {
+        // MySQL matches regardless of case and trailing spaces; the host knows the bitmap by the recorded name only.
+        stubVmRunningWithHost(1L, vm, 42L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "CKP-A1 ")).thenReturn(checkpoint(1L, 1L, "ckp-a1", 100L));
+        when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
+
+        service.createBackup(mockCmd(1L, "backup", null, "CKP-A1 "));
 
         ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
         verify(backupDao).persist(captor.capture());

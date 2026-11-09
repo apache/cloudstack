@@ -152,6 +152,7 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         }
     }
 
+    // Only qcow2 nodes are looked at: the protocol node of the same file has neither bitmaps nor a backing chain.
     static Map<String, Boolean> findDisksWithBitmap(String namedBlockNodes, Map<String, String> diskPathLabelMap, String bitmapName) {
         JSONArray nodes = new JSONObject(namedBlockNodes).optJSONArray("return");
         Set<String> filesWithBitmap = new HashSet<>();
@@ -159,11 +160,11 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         for (int i = 0; nodes != null && i < nodes.length(); i++) {
             JSONObject node = nodes.getJSONObject(i);
             String file = node.optString("file", null);
-            if (file == null) {
+            if (file == null || !"qcow2".equals(node.optString("drv"))) {
                 continue;
             }
             JSONObject image = node.optJSONObject("image");
-            if (image != null && !imageByFile.containsKey(file)) {
+            if (image != null) {
                 imageByFile.put(file, image);
             }
             JSONArray bitmaps = node.optJSONArray("dirty-bitmaps");
@@ -238,7 +239,12 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
 
     static List<String> findChainLayersWithBitmap(String backingChainInfo, String bitmapName) {
         List<String> layers = new ArrayList<>();
-        JSONArray chain = new JSONArray(backingChainInfo);
+        // Script merges stderr into stdout, so a qemu-img warning may precede the JSON.
+        int start = backingChainInfo.indexOf('[');
+        if (start < 0) {
+            throw new CloudRuntimeException("qemu-img info returned no JSON: " + backingChainInfo);
+        }
+        JSONArray chain = new JSONArray(backingChainInfo.substring(start));
         for (int i = 0; i < chain.length(); i++) {
             JSONObject image = chain.getJSONObject(i);
             JSONObject specific = image.optJSONObject("format-specific");

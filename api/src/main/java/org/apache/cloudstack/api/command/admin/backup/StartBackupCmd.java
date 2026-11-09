@@ -69,7 +69,7 @@ import com.cloud.event.EventTypes;
     @Parameter(name = ApiConstants.FROM_CHECKPOINT_ID,
             type = CommandType.STRING,
             description = "ID of the checkpoint the incremental backup starts from. It must be a checkpoint of the VM "
-                    + "that is still present on the host. When omitted a full backup is taken.")
+                    + "known to CloudStack (see listVmCheckpoints). When omitted a full backup is taken.")
     private String fromCheckpointId;
 
     public Long getVmId() {

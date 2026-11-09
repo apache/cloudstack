@@ -215,23 +215,24 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             script.add("bitmap");
             script.add("--add");
 
+            String result;
             if (passphrase != null && passphrase.length > 0) {
-                KeyFile srcKey;
-                try {
-                    srcKey = new KeyFile(passphrase);
+                // The key file holds the plaintext passphrase, so it only lives for the duration of the call.
+                try (KeyFile srcKey = new KeyFile(passphrase)) {
+                    script.add("--object");
+                    script.add(String.format("secret,id=sec0,file=%s", srcKey));
+                    script.add("--image-opts");
+                    script.add(String.format("driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", diskPath));
+                    script.add(toCheckpointId);
+                    result = script.execute();
                 } catch (IOException ex) {
                     return new StartBackupAnswer(cmd, false, "Failed to create KeyFile while adding bitmap " + toCheckpointId + " to disk " + diskPath);
                 }
-                script.add("--object");
-                script.add(String.format("secret,id=sec0,file=%s", srcKey));
-                script.add("--image-opts");
-                script.add(String.format("driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", diskPath));
             } else {
                 script.add(diskPath);
+                script.add(toCheckpointId);
+                result = script.execute();
             }
-
-            script.add(toCheckpointId);
-            String result = script.execute();
             if (result != null) {
                 return new StartBackupAnswer(cmd, false,
                     "Failed to add bitmap " + toCheckpointId + " to disk " + diskPath + ": " + result);

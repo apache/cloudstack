@@ -42,6 +42,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
@@ -150,9 +151,30 @@ public class LibvirtDeleteVmCheckpointCommandWrapperTest {
     }
 
     @Test
+    public void testFindDisksWithBitmapDoesNotDependOnTheNodeOrder() {
+        // The protocol (file) node of vda listed before its qcow2 node: the chain must still be read from the qcow2 node.
+        String storageFirst = NAMED_NODES.replace(
+                "{\"node-name\": \"libvirt-2-format\"", "{\"node-name\": \"libvirt-2-storage\", \"file\": \"/p/vda.qcow2\", \"drv\": \"file\", \"ro\": false, \"image\": {\"filename\": \"/p/vda.qcow2\"}},"
+                        + "{\"node-name\": \"libvirt-2-format\"");
+        Assert.assertEquals(Map.of("vda", true, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(storageFirst, DISK_LABELS, "cp-4"));
+    }
+
+    @Test
     public void testFindChainLayersWithBitmap() {
         Assert.assertEquals(List.of("/p/old.qcow2"), LibvirtDeleteVmCheckpointCommandWrapper.findChainLayersWithBitmap(CHAIN_INFO, "cp-2"));
         Assert.assertTrue(LibvirtDeleteVmCheckpointCommandWrapper.findChainLayersWithBitmap(CHAIN_INFO, "cp-9").isEmpty());
+    }
+
+    @Test
+    public void testFindChainLayersWithBitmapSkipsWarningsBeforeTheJson() {
+        String withWarning = "qemu-img: warning: Image /p/vol.qcow2 is in use by another process\n" + CHAIN_INFO;
+        Assert.assertEquals(List.of("/p/old.qcow2"), LibvirtDeleteVmCheckpointCommandWrapper.findChainLayersWithBitmap(withWarning, "cp-2"));
+        try {
+            LibvirtDeleteVmCheckpointCommandWrapper.findChainLayersWithBitmap("qemu-img: Could not open '/p/vol.qcow2'", "cp-2");
+            Assert.fail("no JSON must be an error");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().startsWith("qemu-img info returned no JSON"));
+        }
     }
 
     @Test
