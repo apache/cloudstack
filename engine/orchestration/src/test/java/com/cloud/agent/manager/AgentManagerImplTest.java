@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -213,6 +214,8 @@ public class AgentManagerImplTest {
 
         Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
         Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        // the refusal is retried once its interval has passed
+        mgr._cancelledJobs.get(42L).retryAfter = 0;
         mgr.new CancelledJobsCheckTask().runInContext();
         Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
     }
@@ -325,6 +328,60 @@ public class AgentManagerImplTest {
         Mockito.when(asyncJobManager.isJobCancelDelivered(42L)).thenReturn(true);
         Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
         Mockito.verify(attache, Mockito.never()).checkExecutionIsNotCancellable(12L);
+    }
+
+    @Test
+    public void testAnAnsweredRequestStillInTheMapDoesNotBlockTheCancel() throws Exception {
+        deliveryNotYetClaimed();
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        // the destination's PrepareForMigration has answered, the source's MigrateCommand is running
+        Mockito.when(attache.isExecutionFinished(10L)).thenReturn(true);
+        Mockito.when(attache.isExecutionFinished(11L)).thenReturn(false);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Arrays.asList(new Pair<>(1L, 10L), new Pair<>(1L, 11L))));
+
+        Assert.assertNull(mgr.checkJobCannotBeCancelled(42L));
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        Mockito.verify(attache, Mockito.never()).checkExecutionIsNotCancellable(10L);
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.eq(10L), Mockito.anyString());
+        Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
+    }
+
+    @Test
+    public void testARefusedCancelIsRetriedAfterTheIntervalNotOnEveryCheck() throws Exception {
+        final AsyncJobManager asyncJobManager = cancelledJobOnThisServer(42L);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("vCenter reports task RelocateVM_Task(task-1) as not cancelable");
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+        mgr.new CancelledJobsCheckTask().runInContext();
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(attache, Mockito.times(1)).checkExecutionIsNotCancellable(11L);
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+
+        mgr._cancelledJobs.get(42L).retryAfter = 0;
+        mgr.new CancelledJobsCheckTask().runInContext();
+        Mockito.verify(attache, Mockito.times(2)).checkExecutionIsNotCancellable(11L);
+    }
+
+    @Test
+    public void testTheCheckDoesNotCancelWhileTheApiThreadIsAlreadyAtIt() throws Exception {
+        final AsyncJobManager asyncJobManager = cancelledJobOnThisServer(42L);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+        mgr._cancelledJobs.computeIfAbsent(42L, id -> new AgentManagerImpl.CancelledJob()).attempting.set(true);
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(attache, Mockito.never()).checkExecutionIsNotCancellable(Mockito.anyLong());
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
     }
 
     @Test
