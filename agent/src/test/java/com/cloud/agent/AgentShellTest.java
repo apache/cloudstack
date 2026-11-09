@@ -369,4 +369,49 @@ public class AgentShellTest {
         agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.SSL_HANDSHAKE_TIMEOUT))).thenReturn(expected);
         Assert.assertEquals(expected, agentShellSpy.getSslHandshakeTimeout());
     }
+
+    private void mockLastSetupCompletedHost(String value) {
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.LAST_SETUP_COMPLETED_HOST))).thenReturn(value);
+    }
+
+    @Test
+    public void getHostsTestAppendsLastSetupCompletedHostAsFallback() {
+        mockLastSetupCompletedHost("30.3.3.3");
+        agentShellSpy.setHosts("10.1.1.1,20.2.2.2");
+
+        Assert.assertArrayEquals(new String[] {"10.1.1.1", "20.2.2.2", "30.3.3.3"}, agentShellSpy.getHosts());
+    }
+
+    @Test
+    public void getHostsTestSubstringHostDoesNotSuppressFallback() {
+        // 10.0.0.1 is a substring of 10.0.0.10 but not the same host, so it must still be appended.
+        mockLastSetupCompletedHost("10.0.0.1");
+        agentShellSpy.setHosts("10.0.0.10");
+
+        Assert.assertArrayEquals(new String[] {"10.0.0.10", "10.0.0.1"}, agentShellSpy.getHosts());
+    }
+
+    @Test
+    public void getHostsTestExactMatchIsNotDuplicated() {
+        mockLastSetupCompletedHost("20.2.2.2");
+        agentShellSpy.setHosts("10.1.1.1,20.2.2.2");
+
+        Assert.assertArrayEquals(new String[] {"10.1.1.1", "20.2.2.2"}, agentShellSpy.getHosts());
+    }
+
+    @Test
+    public void getHostsTestMatchIsCaseInsensitiveAndTrimmed() {
+        mockLastSetupCompletedHost("  HOSTA.EXAMPLE.COM  ");
+        agentShellSpy.setHosts("hosta.example.com,hostb.example.com");
+
+        Assert.assertArrayEquals(new String[] {"hosta.example.com", "hostb.example.com"}, agentShellSpy.getHosts());
+    }
+
+    @Test
+    public void getHostsTestBlankLastSetupCompletedHostReturnsConfiguredHostsOnly() {
+        mockLastSetupCompletedHost("  ");
+        agentShellSpy.setHosts("10.1.1.1,20.2.2.2");
+
+        Assert.assertArrayEquals(new String[] {"10.1.1.1", "20.2.2.2"}, agentShellSpy.getHosts());
+    }
 }
