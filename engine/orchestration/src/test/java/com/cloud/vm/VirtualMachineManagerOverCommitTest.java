@@ -23,6 +23,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
@@ -38,9 +40,13 @@ public class VirtualMachineManagerOverCommitTest {
 
     private static final long VM_ID = 1L;
     private static final long OFFERING_ID = 5L;
+    private static final long CLUSTER_ID = 7L;
     private static final String CPU = VmDetailConstants.CPU_OVER_COMMIT_RATIO;
     private static final String MEMORY = VmDetailConstants.MEMORY_OVER_COMMIT_RATIO;
     private static final String RECLAIM = VmDetailConstants.MEMORY_RECLAIM_DISABLED;
+
+    @Mock
+    private ClusterDetailsDao clusterDetailsDao;
 
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
@@ -49,7 +55,7 @@ public class VirtualMachineManagerOverCommitTest {
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     @InjectMocks
-    private VirtualMachineManagerImpl vmManager = new VirtualMachineManagerImpl();
+    private VirtualMachineManagerOverCommit overCommit = new VirtualMachineManagerOverCommit();
 
     private VirtualMachineProfile profile() {
         VirtualMachineProfile profile = Mockito.mock(VirtualMachineProfile.class);
@@ -70,30 +76,57 @@ public class VirtualMachineManagerOverCommitTest {
         Mockito.lenient().when(vmInstanceDetailsDao.findDetail(VM_ID, key)).thenReturn(detail);
     }
 
+    private void clusterSays(String key, String value) {
+        ClusterDetailsVO detail = Mockito.mock(ClusterDetailsVO.class);
+        Mockito.when(detail.getValue()).thenReturn(value);
+        Mockito.when(clusterDetailsDao.findDetail(CLUSTER_ID, key)).thenReturn(detail);
+    }
+
+    // --- putting it together ---
+
+    @Test
+    public void testAnExemptOfferingOverridesItsClusterOnTheProfile() {
+        clusterSays(CPU, "4.0");
+        clusterSays(MEMORY, "2.0");
+        offeringSays(MEMORY, "1");
+        vmDetailIs(CPU, null);
+        vmDetailIs(MEMORY, null);
+        vmDetailIs(RECLAIM, null);
+        VirtualMachineProfile profile = profile();
+
+        overCommit.updateOverCommitRatioForVmProfile(profile, CLUSTER_ID);
+
+        Mockito.verify(profile).setCpuOvercommitRatio(4.0f);
+        Mockito.verify(profile).setMemoryOvercommitRatio(1.0f);
+        Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, CPU, "4.0", true);
+        Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, MEMORY, "1.0", true);
+        Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, RECLAIM, "true", true);
+    }
+
     // --- what the offering asks for ---
 
     @Test
     public void testOfferingWithNoDetailInheritsTheCluster() {
         offeringSays(CPU, null);
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
+        assertNull(overCommit.offeringOverCommitRatio(profile(), CPU, 10.0f));
     }
 
     @Test
     public void testOfferingRatioIsUsed() {
         offeringSays(CPU, "1");
-        assertEquals(1.0f, vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f), 1e-6);
+        assertEquals(1.0f, overCommit.offeringOverCommitRatio(profile(), CPU, 10.0f), 1e-6);
     }
 
     @Test
     public void testNonsenseOfferingRatioInheritsTheCluster() {
         offeringSays(CPU, "not a number");
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
+        assertNull(overCommit.offeringOverCommitRatio(profile(), CPU, 10.0f));
     }
 
     @Test
     public void testNonPositiveOfferingRatioInheritsTheCluster() {
         offeringSays(CPU, "0");
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
+        assertNull(overCommit.offeringOverCommitRatio(profile(), CPU, 10.0f));
     }
 
     @Test
@@ -101,7 +134,7 @@ public class VirtualMachineManagerOverCommitTest {
         // below 1 would reserve more than the VM asked for. That is a different feature, and this
         // is how a mistyped "1" would otherwise land
         offeringSays(CPU, "0.1");
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
+        assertNull(overCommit.offeringOverCommitRatio(profile(), CPU, 10.0f));
     }
 
     @Test
@@ -109,7 +142,7 @@ public class VirtualMachineManagerOverCommitTest {
         // the value is absolute - "this offering is oversubscribed 20 times" - so it does not have
         // to sit below whatever the cluster happens to be set to
         offeringSays(CPU, "20");
-        assertEquals(20.0f, vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f), 1e-6);
+        assertEquals(20.0f, overCommit.offeringOverCommitRatio(profile(), CPU, 10.0f), 1e-6);
     }
 
     // --- what gets recorded on the VM ---
@@ -120,7 +153,7 @@ public class VirtualMachineManagerOverCommitTest {
         // a tenth of what it actually holds
         vmDetailIs(MEMORY, null);
 
-        vmManager.persistOverCommitRatio(VM_ID, MEMORY, 1.0f, 10.0f);
+        overCommit.persistOverCommitRatio(VM_ID, MEMORY, 1.0f, 10.0f);
 
         Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, MEMORY, "1.0", true);
     }
@@ -129,7 +162,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testAnOvercommittedClusterRecordsItsRatio() {
         vmDetailIs(CPU, null);
 
-        vmManager.persistOverCommitRatio(VM_ID, CPU, 10.0f, 10.0f);
+        overCommit.persistOverCommitRatio(VM_ID, CPU, 10.0f, 10.0f);
 
         Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, CPU, "10.0", true);
     }
@@ -138,7 +171,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testNothingIsRecordedWhenNobodyOvercommits() {
         vmDetailIs(CPU, null);
 
-        vmManager.persistOverCommitRatio(VM_ID, CPU, 1.0f, 1.0f);
+        overCommit.persistOverCommitRatio(VM_ID, CPU, 1.0f, 1.0f);
 
         Mockito.verify(vmInstanceDetailsDao, Mockito.never())
                 .addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
@@ -148,7 +181,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testAStaleRatioIsRewritten() {
         vmDetailIs(CPU, "4.0");
 
-        vmManager.persistOverCommitRatio(VM_ID, CPU, 10.0f, 10.0f);
+        overCommit.persistOverCommitRatio(VM_ID, CPU, 10.0f, 10.0f);
 
         Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, CPU, "10.0", true);
     }
@@ -157,7 +190,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testAnUnreadableStoredRatioIsRewritten() {
         vmDetailIs(CPU, "rubbish");
 
-        vmManager.persistOverCommitRatio(VM_ID, CPU, 10.0f, 10.0f);
+        overCommit.persistOverCommitRatio(VM_ID, CPU, 10.0f, 10.0f);
 
         Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, CPU, "10.0", true);
     }
@@ -168,7 +201,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testReclaimIsDisabledOnlyWhenTheOfferingAsksForIt() {
         vmDetailIs(RECLAIM, null);
 
-        vmManager.persistMemoryReclaimFlag(VM_ID, 1.0f);
+        overCommit.persistMemoryReclaimFlag(VM_ID, 1.0f);
 
         Mockito.verify(vmInstanceDetailsDao).addDetail(VM_ID, RECLAIM, "true", true);
     }
@@ -180,7 +213,7 @@ public class VirtualMachineManagerOverCommitTest {
         // opted into nothing at all
         vmDetailIs(RECLAIM, null);
 
-        vmManager.persistMemoryReclaimFlag(VM_ID, null);
+        overCommit.persistMemoryReclaimFlag(VM_ID, null);
 
         Mockito.verify(vmInstanceDetailsDao, Mockito.never())
                 .addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
@@ -190,7 +223,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testReclaimStaysOnForAnOfferingThatStillOvercommits() {
         vmDetailIs(RECLAIM, null);
 
-        vmManager.persistMemoryReclaimFlag(VM_ID, 4.0f);
+        overCommit.persistMemoryReclaimFlag(VM_ID, 4.0f);
 
         Mockito.verify(vmInstanceDetailsDao, Mockito.never())
                 .addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
@@ -200,7 +233,7 @@ public class VirtualMachineManagerOverCommitTest {
     public void testReclaimIsRestoredWhenAnOfferingStopsExemptingItself() {
         vmDetailIs(RECLAIM, "true");
 
-        vmManager.persistMemoryReclaimFlag(VM_ID, null);
+        overCommit.persistMemoryReclaimFlag(VM_ID, null);
 
         Mockito.verify(vmInstanceDetailsDao).removeDetail(VM_ID, RECLAIM);
     }
