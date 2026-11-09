@@ -369,7 +369,8 @@ class User:
         return apiclient.login(cmd)
 
 
-# cloud-init userdata to allow ssh login with password (root/password) on the built-in templates
+# cloud-init userdata to allow ssh login with password (root/password) on the built-in templates,
+# it is passed to the VMs only if no userdata is linked to the template
 BUILTIN_TEMPLATE_USERDATA = """#cloud-config
 ssh_pwauth: true
 disable_root: false
@@ -564,7 +565,8 @@ class VirtualMachine:
 
     @classmethod
     def needs_default_userdata(cls, apiclient, templateid):
-        """Check if the template is a built-in template of a hypervisor, other than the simulator"""
+        """Check if the template is a built-in template of a hypervisor, other than the simulator,
+        without a userdata linked to it"""
         cmd = listTemplates.listTemplatesCmd()
         cmd.id = templateid
         cmd.templatefilter = "executable"
@@ -574,6 +576,9 @@ class VirtualMachine:
             # not a template (an ISO), or not visible to the user
             return False
         if not templates or templates[0].templatetype != "BUILTIN":
+            return False
+        # the VMs use the userdata linked to the template
+        if getattr(templates[0], "userdataid", None):
             return False
         # there is no guest to apply the userdata on the simulator
         return str(getattr(templates[0], "hypervisor", "")).lower() != "simulator"
