@@ -2269,6 +2269,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(poolManager);
         when(poolManager.getStoragePool(vol.getPoolType(), vol.getPoolUuid())).thenReturn(primary);
+        when(primary.deletePhysicalDisk(vol.getPath(), null)).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2278,6 +2279,22 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResourceMock, times(1)).getStoragePoolMgr();
         verify(poolManager, times(1)).getStoragePool(vol.getPoolType(), vol.getPoolUuid());
+    }
+
+    @Test
+    public void testDestroyCommandDeleteFailed() {
+        final DestroyCommand command = new DestroyCommand(Mockito.mock(StoragePool.class), Mockito.mock(Volume.class), "Test");
+        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+        final VolumeTO vol = command.getVolume();
+
+        when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(poolManager);
+        when(poolManager.getStoragePool(vol.getPoolType(), vol.getPoolUuid())).thenReturn(primary);
+        when(primary.deletePhysicalDisk(vol.getPath(), null)).thenReturn(false);
+
+        final Answer answer = LibvirtRequestWrapper.getInstance().execute(command, libvirtComputingResourceMock);
+
+        assertFalse(answer.getResult());
     }
 
     @SuppressWarnings("unchecked")

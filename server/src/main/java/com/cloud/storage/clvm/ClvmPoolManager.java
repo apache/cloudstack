@@ -23,8 +23,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
@@ -58,6 +61,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -72,6 +77,8 @@ public class ClvmPoolManager implements Configurable {
     private HostDao _hostDao;
     @Inject
     private HostDetailsDao _hostDetailsDao;
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -93,10 +100,12 @@ public class ClvmPoolManager implements Configurable {
     public static final ConfigKey<Boolean> CLVMSecureZeroFill = new ConfigKey<>("Advanced", Boolean.class, "clvm.secure.zero.fill", "false",
             "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly. Note: This setting is propagated to hosts when they connect to the storage pool. Changing this setting requires disconnecting and reconnecting hosts or restarting the KVM agent for it to take effect.", false, ConfigKey.Scope.StoragePool);
 
-    private static final int LOCK_QUERY_THREADS = 16;
+    public static final ConfigKey<Integer> ClvmLockQueryThreads = new ConfigKey<>("Advanced", Integer.class, "clvm.lock.query.threads", "5",
+            "Number of threads a management server uses to send CLVM lock commands to several hosts in parallel: the fallback lock holder lookup that asks every host, and the deactivation of a template LV on all hosts before it is removed. Requires a management server restart.", false);
+
     private static final int MAX_LEASE_READERS = 2;
 
-    private final ExecutorService lockQueryExecutor = newLockQueryExecutor();
+    private ExecutorService lockQueryExecutor;
 
     /** State shared by the lock lookups of all volumes of one operation. */
     public static class LockLookup {
@@ -114,15 +123,84 @@ public class ClvmPoolManager implements Configurable {
         }
     }
 
-    private static ExecutorService newLockQueryExecutor() {
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(LOCK_QUERY_THREADS, LOCK_QUERY_THREADS, 60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(), new NamedThreadFactory("ClvmLockQuery"));
-        executor.allowCoreThreadTimeOut(true);
-        return executor;
+    /** Created on first use, as the config value is not available when the bean is constructed. */
+    private synchronized ExecutorService getLockQueryExecutor() {
+        if (lockQueryExecutor == null) {
+            int threads = Math.max(1, ClvmLockQueryThreads.value());
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(threads, threads, 60L, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(), new NamedThreadFactory("ClvmLockQuery"));
+            executor.allowCoreThreadTimeOut(true);
+            lockQueryExecutor = executor;
+        }
+        return lockQueryExecutor;
     }
 
     public static boolean isClvmPoolType(Storage.StoragePoolType poolType) {
         return Arrays.asList(Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM_NG).contains(poolType);
+    }
+
+    private static String getVgName(StoragePool pool) {
+        String vgName = pool.getPath();
+        return vgName.startsWith("/") ? vgName.substring(1) : vgName;
+    }
+
+    private static String getLvPath(StoragePool pool, String lvName) {
+        return String.format("/dev/%s/%s", getVgName(pool), lvName);
+    }
+
+    /**
+     * Pools of the same zone backed by the same VG share its LVs, e.g. one template LV used as backing file by volumes of all of them.
+     *
+     * @return ids of the pools sharing the VG of {@code pool}, including {@code pool}
+     */
+    public Set<Long> findPoolIdsSharingVg(StoragePool pool) {
+        String vgName = getVgName(pool);
+        Set<Long> poolIds = _storagePoolDao.findPoolsByStorageTypeAndZone(pool.getPoolType(), pool.getDataCenterId()).stream()
+                .filter(p -> vgName.equals(getVgName(p)))
+                .map(StoragePoolVO::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+        poolIds.add(pool.getId());
+        return poolIds;
+    }
+
+    /**
+     * Deactivates an LV on every Up host of the pools sharing its VG, releasing their shared locks so it can be removed.
+     * Best effort: a host still using the LV refuses, and removing it then fails on the lock.
+     */
+    public void deactivateOnAllHosts(StoragePool pool, String lvName) {
+        String lvPath = getLvPath(pool, lvName);
+        Map<Long, HostVO> hosts = new LinkedHashMap<>();
+        findPoolIdsSharingVg(pool).stream()
+                .map(_storagePoolDao::findById)
+                .filter(Objects::nonNull)
+                .flatMap(p -> findPoolHosts(p).stream())
+                .filter(h -> h.getHypervisorType() == Hypervisor.HypervisorType.KVM)
+                .forEach(h -> hosts.putIfAbsent(h.getId(), h));
+        List<Long> upHostIds = hosts.values().stream().filter(this::isUpKvmRoutingHost).map(HostVO::getId).collect(Collectors.toList());
+        Map<Long, Boolean> results = callOnHosts(upHostIds, lvName, hostId -> deactivateOnHost(hosts.get(hostId), lvPath, lvName));
+        List<String> notDeactivated = hosts.values().stream()
+                .filter(h -> !Boolean.TRUE.equals(results.get(h.getId())))
+                .map(h -> String.format("%s (%s, %s)", h.getName(), h.getUuid(), h.getStatus()))
+                .collect(Collectors.toList());
+        if (notDeactivated.isEmpty()) {
+            logger.info("Deactivated {} on all hosts {}", lvPath, hosts.values().stream().map(HostVO::getName).collect(Collectors.toList()));
+            return;
+        }
+        logger.warn("{} could not be deactivated on hosts {}. It cannot be removed while active there; deactivate it on those hosts with 'lvchange -an {}'.",
+                lvPath, notDeactivated, lvPath);
+    }
+
+    private Boolean deactivateOnHost(HostVO host, String lvPath, String lvName) {
+        try {
+            Answer answer = _agentMgr.send(host.getId(), new ClvmLockTransferCommand(ClvmLockTransferCommand.Operation.DEACTIVATE, lvPath, lvName));
+            if (answer != null && answer.getResult()) {
+                return true;
+            }
+            logger.warn("Failed to deactivate {} on host {}: {}", lvPath, host.getName(), answer != null ? answer.getDetails() : "null answer");
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Could not deactivate {} on host {}: {}", lvPath, host.getName(), e.getMessage());
+        }
+        return false;
     }
 
     /**
@@ -234,11 +312,7 @@ public class ClvmPoolManager implements Configurable {
             return null;
         }
 
-        String vgName = pool.getPath();
-        if (vgName.startsWith("/")) {
-            vgName = vgName.substring(1);
-        }
-        String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
+        String lvPath = getLvPath(pool, volumePath);
         Long dbHostId = getClvmLockHostId(volumeId, volumeUuid);
         // Hosts that did not answer the lock-state query for this volume
         Set<Long> noAnswerHostIds = new HashSet<>();
@@ -533,21 +607,26 @@ public class ClvmPoolManager implements Configurable {
         return null;
     }
 
-    /**
-     * Queries the hosts in parallel, so one slow host does not delay the others.
-     *
-     * @return lock state per host that answered; hosts that did not answer are absent
-     */
+    /** @return lock state per host that answered; hosts that did not answer are absent */
     private Map<Long, Boolean> queryHostsLockState(List<Long> hostIds, String lvPath, String volumeUuid, LockLookup lookup) {
-        Map<Long, Boolean> states = new ConcurrentHashMap<>();
+        return callOnHosts(hostIds, volumeUuid, hostId -> querySingleHostLockState(hostId, lvPath, volumeUuid, lookup));
+    }
+
+    /**
+     * Calls the hosts in parallel, so one slow host does not delay the others.
+     *
+     * @return result per host; hosts whose call returned null are absent
+     */
+    private <T> Map<Long, T> callOnHosts(List<Long> hostIds, String volumeUuid, Function<Long, T> call) {
+        Map<Long, T> results = new ConcurrentHashMap<>();
         List<Future<?>> futures = new ArrayList<>();
         for (Long hostId : hostIds) {
-            futures.add(lockQueryExecutor.submit(new ManagedContextRunnable() {
+            futures.add(getLockQueryExecutor().submit(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
-                    Boolean active = querySingleHostLockState(hostId, lvPath, volumeUuid, lookup);
-                    if (active != null) {
-                        states.put(hostId, active);
+                    T result = call.apply(hostId);
+                    if (result != null) {
+                        results.put(hostId, result);
                     }
                 }
             }));
@@ -559,10 +638,10 @@ public class ClvmPoolManager implements Configurable {
                 Thread.currentThread().interrupt();
                 break;
             } catch (ExecutionException e) {
-                logger.warn("Lock state query for volume {} failed: {}", volumeUuid, e.getMessage());
+                logger.warn("Host call for volume {} failed: {}", volumeUuid, e.getMessage());
             }
         }
-        return new HashMap<>(states);
+        return new HashMap<>(results);
     }
 
     /**
@@ -769,12 +848,7 @@ public class ClvmPoolManager implements Configurable {
             return false;
         }
 
-        String vgName = pool.getPath();
-        if (vgName.startsWith("/")) {
-            vgName = vgName.substring(1);
-        }
-
-        String lvPath = String.format("/dev/%s/%s", vgName, volumePath);
+        String lvPath = getLvPath(pool, volumePath);
 
         try {
             // sourceHostId is trusted as pre-validated by the caller
@@ -833,7 +907,8 @@ public class ClvmPoolManager implements Configurable {
         return new ConfigKey<?>[] {
                 CLVMSecureZeroFill,
                 ClvmLockRecoveryRetryTimeout,
-                ClvmLockRecoveryRetryInterval
+                ClvmLockRecoveryRetryInterval,
+                ClvmLockQueryThreads
         };
     }
 }

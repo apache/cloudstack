@@ -40,7 +40,9 @@ public final class LibvirtDestroyCommandWrapper extends CommandWrapper<DestroyCo
         try {
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             final KVMStoragePool pool = storagePoolMgr.getStoragePool(vol.getPoolType(), vol.getPoolUuid());
-            pool.deletePhysicalDisk(vol.getPath(), null);
+            if (!pool.deletePhysicalDisk(vol.getPath(), null)) {
+                return new Answer(command, false, "Failed to delete " + vol.getPath());
+            }
             return new Answer(command, true, "Success");
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to delete volume: " + e.toString());

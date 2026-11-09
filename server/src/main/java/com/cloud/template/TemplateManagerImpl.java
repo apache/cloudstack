@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -187,6 +188,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -257,6 +259,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private PrimaryDataStoreDao _poolDao;
+    @Inject
+    private ClvmPoolManager clvmPoolManager;
     @Inject
     private StoragePoolHostDao _poolHostDao;
     @Inject
@@ -1237,10 +1241,35 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return false;
         }
 
-        if (template.getFormat() == ImageFormat.ISO || _volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(template.getId(), templatePoolVO.getPoolId())) {
+        if (template.getFormat() == ImageFormat.ISO || isTemplateUsedByVolumes(template.getId(), templatePoolVO.getPoolId())) {
             return false;
         }
         return true;
+    }
+
+    /** CLVM pools on the same VG share one template LV, used as backing file by CLVM_NG volumes of any of them. */
+    private boolean isTemplateUsedByVolumes(long templateId, long poolId) {
+        return getPoolIdsSharingTemplate(poolId).stream()
+                .anyMatch(id -> _volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(templateId, id));
+    }
+
+    private Set<Long> getPoolIdsSharingTemplate(long poolId) {
+        StoragePoolVO pool = _poolDao.findById(poolId);
+        if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            return Set.of(poolId);
+        }
+        return clvmPoolManager.findPoolIdsSharingVg(pool);
+    }
+
+    /** @return true when another pool on the same VG still references the template LV, so only this pool's record may go */
+    private boolean isTemplateLvReferencedByOtherPool(VMTemplateStoragePoolVO templatePoolVO) {
+        Set<Long> otherPoolIds = new HashSet<>(getPoolIdsSharingTemplate(templatePoolVO.getPoolId()));
+        otherPoolIds.remove(templatePoolVO.getPoolId());
+        if (otherPoolIds.isEmpty()) {
+            return false;
+        }
+        return _tmpltPoolDao.listByTemplateId(templatePoolVO.getTemplateId(), new ArrayList<>(otherPoolIds)).stream()
+                .anyMatch(ref -> Objects.equals(ref.getInstallPath(), templatePoolVO.getInstallPath()));
     }
 
     @Override
@@ -1305,7 +1334,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         logger.debug("Successfully evicted Template {} from storage pool {}", template, pool);
                     }
                 }
+            } else if (ClvmPoolManager.isClvmPoolType(pool.getPoolType()) && isTemplateLvReferencedByOtherPool(templatePoolVO)) {
+                if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
+                    logger.debug("Evicted Template {} from storage pool {}, keeping its LV for the other pools on the same VG", template, pool);
+                }
             } else {
+                if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                    clvmPoolManager.deactivateOnAllHosts(pool, templatePoolVO.getInstallPath());
+                }
                 DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
                 Answer answer = _storageMgr.sendToPool(pool, cmd);
 

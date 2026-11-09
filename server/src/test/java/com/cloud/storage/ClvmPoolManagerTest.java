@@ -33,11 +33,13 @@ import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,6 +79,9 @@ public class ClvmPoolManagerTest {
 
     @Mock
     private HostDetailsDao hostDetailsDao;
+
+    @Mock
+    private PrimaryDataStoreDao storagePoolDao;
 
     @InjectMocks
     private ClvmPoolManager clvmPoolManager;
@@ -1531,5 +1537,49 @@ public class ClvmPoolManagerTest {
         Mockito.lenient().when(host.getType()).thenReturn(Host.Type.Routing);
         Mockito.lenient().when(host.getHypervisorType()).thenReturn(hypervisor);
         return host;
+    }
+
+    private StoragePoolVO mockVgPool(long id, String path, long clusterId) {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        lenient().when(pool.getId()).thenReturn(id);
+        lenient().when(pool.getPath()).thenReturn(path);
+        lenient().when(pool.getClusterId()).thenReturn(clusterId);
+        lenient().when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        lenient().when(pool.getDataCenterId()).thenReturn(1L);
+        return pool;
+    }
+
+    @Test
+    public void testFindPoolIdsSharingVg_MatchesVgNameOnly() {
+        StoragePoolVO pool = mockVgPool(8L, "sharedvg", 1L);
+        List<StoragePoolVO> zonePools = List.of(pool, mockVgPool(9L, "/sharedvg", 2L), mockVgPool(4L, "sharedvg2", 2L));
+        when(storagePoolDao.findPoolsByStorageTypeAndZone(Storage.StoragePoolType.CLVM_NG, 1L)).thenReturn(zonePools);
+
+        Assert.assertEquals(Set.of(8L, 9L), clvmPoolManager.findPoolIdsSharingVg(pool));
+    }
+
+    @Test
+    public void testDeactivateOnAllHosts_UpHostsOfPoolsSharingVg() throws Exception {
+        StoragePoolVO pool = mockVgPool(8L, "sharedvg", 1L);
+        StoragePoolVO otherPool = mockVgPool(9L, "sharedvg", 2L);
+        when(storagePoolDao.findPoolsByStorageTypeAndZone(Storage.StoragePoolType.CLVM_NG, 1L)).thenReturn(List.of(pool, otherPool));
+        when(storagePoolDao.findById(8L)).thenReturn(pool);
+        when(storagePoolDao.findById(9L)).thenReturn(otherPool);
+        HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+        HostVO downHost = createMockHost(3L, "host3", Status.Down, Hypervisor.HypervisorType.KVM);
+        HostVO host2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+        when(hostDao.findByClusterId(1L, Host.Type.Routing)).thenReturn(List.of(host1, downHost));
+        when(hostDao.findByClusterId(2L, Host.Type.Routing)).thenReturn(List.of(host2));
+        Answer ok = new Answer(null, true, "ok");
+        when(agentMgr.send(anyLong(), any(ClvmLockTransferCommand.class))).thenReturn(ok);
+
+        clvmPoolManager.deactivateOnAllHosts(pool, "template-abc");
+
+        ArgumentCaptor<ClvmLockTransferCommand> cmd = ArgumentCaptor.forClass(ClvmLockTransferCommand.class);
+        verify(agentMgr).send(eq(HOST_ID_1), cmd.capture());
+        verify(agentMgr).send(eq(HOST_ID_2), any(ClvmLockTransferCommand.class));
+        verify(agentMgr, never()).send(eq(3L), any(Command.class));
+        Assert.assertEquals(ClvmLockTransferCommand.Operation.DEACTIVATE, cmd.getValue().getOperation());
+        Assert.assertEquals("/dev/sharedvg/template-abc", cmd.getValue().getLvPath());
     }
 }
