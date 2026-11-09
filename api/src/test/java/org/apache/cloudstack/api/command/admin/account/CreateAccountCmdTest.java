@@ -20,7 +20,10 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +40,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 
 public class CreateAccountCmdTest {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -45,6 +49,8 @@ public class CreateAccountCmdTest {
     private AccountService accountService;
     @Mock
     private RoleService roleService;
+    @Mock
+    private ResponseGenerator responseGenerator;
 
     @InjectMocks
     private CreateAccountCmd createAccountCmd = new CreateAccountCmd();
@@ -83,9 +89,12 @@ public class CreateAccountCmdTest {
     @Test
     public void testExecuteWithNullPasswordGeneratesOne() {
         ReflectionTestUtils.setField(createAccountCmd, "password", null);
-        // the mock accountService createUserAccount returns null, so execute fails after validation
-        ServerApiException e = Assert.assertThrows(ServerApiException.class, () -> createAccountCmd.execute());
-        Assert.assertEquals(ApiErrorCode.INTERNAL_ERROR, e.getErrorCode());
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Mockito.when(accountService.createUserAccount(createAccountCmd)).thenReturn(userAccount);
+        Mockito.when(responseGenerator.createUserAccountResponse(ResponseView.Full, userAccount)).thenReturn(Mockito.mock(AccountResponse.class));
+
+        createAccountCmd.execute();
+
         Assert.assertEquals("a password should be generated for accounts that authenticate externally",
                 12, createAccountCmd.getPassword().length());
         Mockito.verify(accountService, Mockito.times(1)).createUserAccount(createAccountCmd);
