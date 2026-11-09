@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -133,6 +134,7 @@ public class ResourceAlertManagerImplTest {
     public void setUp() throws Exception {
         // stub out the AlertGenerator static call (needs Spring context in real env)
         doNothing().when(manager).publishAlertEvent(anyLong(), anyString(), anyString());
+        lenient().doReturn(true).when(manager).isStillActive(any());
         // owners and resources exist unless a test says otherwise
         AccountVO defaultOwner = mock(AccountVO.class);
         lenient().when(defaultOwner.getId()).thenReturn(1L);
@@ -1220,6 +1222,35 @@ public class ResourceAlertManagerImplTest {
         when(hostDao.findById(HOST_ID)).thenReturn(host);
 
         assertEquals(2500.0, manager.toHostNetworkRate(HOST_ID, "read", 2500.0), 0.001);
+    }
+
+    @Test
+    public void testNoAlertWhenRuleDeletedDuringRun() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        VmStats stats = mock(VmStats.class);
+        when(stats.getCPUUtilization()).thenReturn(95.0);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
+        doReturn(false).when(manager).isStillActive(any());
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testIsStillActiveRereadsRule() {
+        doCallRealMethod().when(manager).isStillActive(any());
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        ResourceAlertRuleVO disabled = vmCpuRule(VM_ID);
+        disabled.setState(ResourceAlertRule.State.Disabled);
+
+        when(ruleDao.findById(anyLong())).thenReturn(null);
+        assertFalse(manager.isStillActive(rule));
+        when(ruleDao.findById(anyLong())).thenReturn(disabled);
+        assertFalse(manager.isStillActive(rule));
+        when(ruleDao.findById(anyLong())).thenReturn(vmCpuRule(VM_ID));
+        assertTrue(manager.isStillActive(rule));
     }
 
     @Test

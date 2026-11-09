@@ -370,8 +370,46 @@ public class ResourceAlertServiceImplTest {
 
         service.deleteResourceAlertRule(cmd);
 
-        verify(alertDao).removeByAlertRuleId(1L);
-        verify(ruleDao).remove(1L);
+        InOrder order = inOrder(ruleDao, alertDao);
+        order.verify(ruleDao).remove(1L);
+        order.verify(alertDao).removeByAlertRuleId(1L);
+    }
+
+    private ResourceAlertRuleVO stubRuleOwnedBy42(UpdateResourceAlertRuleCmd cmd) {
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(rule.getAccountId()).thenReturn(42L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        return rule;
+    }
+
+    @Test
+    public void testRenameValidatesAndSavesUnderOwnerLock() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getName()).thenReturn("renamed");
+        stubRuleOwnedBy42(cmd);
+
+        service.updateResourceAlertRule(cmd);
+
+        InOrder order = inOrder(ownerLock, ruleDao);
+        order.verify(ownerLock).lock(ResourceAlertServiceImpl.OWNER_LOCK_WAIT_SECONDS);
+        order.verify(ruleDao).update(eq(1L), any(ResourceAlertRuleVO.class));
+        order.verify(ownerLock).unlock();
+        verify(service).getOwnerLock(42L);
+    }
+
+    @Test
+    public void testUpdateWithoutRenameDoesNotTakeOwnerLock() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        stubRuleOwnedBy42(cmd);
+
+        service.updateResourceAlertRule(cmd);
+
+        verify(service, never()).getOwnerLock(anyLong());
     }
 
     @Test(expected = InvalidParameterValueException.class)

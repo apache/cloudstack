@@ -597,7 +597,16 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         return millisSinceLast >= TimeUnit.SECONDS.toMillis(resetInterval) - COOLDOWN_TOLERANCE_MILLIS;
     }
 
+    // The rule can be deleted or disabled while a run is in progress.
+    boolean isStillActive(ResourceAlertRuleVO rule) {
+        ResourceAlertRuleVO current = ruleDao.findById(rule.getId());
+        return current != null && !ResourceAlertRule.State.Disabled.equals(current.getState());
+    }
+
     private void fireAlert(ResourceAlertRuleVO rule, Long resourceId, double value) {
+        if (!isStillActive(rule)) {
+            return;
+        }
         ResourceAlertVO alert = new ResourceAlertVO(
                 rule.getId(), resourceId, rule.getMetric(), value, rule.getSeverity(),
                 rule.getMessage(), new Date());

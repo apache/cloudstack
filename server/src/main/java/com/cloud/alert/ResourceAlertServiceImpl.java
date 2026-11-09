@@ -213,6 +213,25 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         ResourceAlertRuleVO rule = findRuleForCaller(cmd.getId());
         checkEmailAccess(CallContext.current().getCallingAccount(), Boolean.TRUE.equals(cmd.getEmail()));
 
+        // Same lock as create, so a rename can't reuse a name taken at the same time.
+        GlobalLock lock = null;
+        if (cmd.getName() != null) {
+            lock = getOwnerLock(rule.getAccountId());
+            if (!lock.lock(OWNER_LOCK_WAIT_SECONDS)) {
+                throw new CloudRuntimeException("Unable to rename the resource alert rule as another rule is being changed for the account, please try again");
+            }
+        }
+        try {
+            return applyRuleUpdate(rule, cmd);
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+                lock.releaseRef();
+            }
+        }
+    }
+
+    private ResourceAlertRuleResponse applyRuleUpdate(ResourceAlertRuleVO rule, UpdateResourceAlertRuleCmd cmd) {
         if (cmd.getName() != null) rule.setName(validateName(rule.getAccountId(), cmd.getName(), rule.getId()));
         if (StringUtils.isNotBlank(cmd.getCondition())) rule.setCondition(parseCondition(cmd.getCondition()));
         if (cmd.getThreshold() != null) {
@@ -243,8 +262,10 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ALERT_RULE_DELETE, eventDescription = "deleting resource alert rule")
     public boolean deleteResourceAlertRule(DeleteResourceAlertRuleCmd cmd) {
         findRuleForCaller(cmd.getId());
+        // Rule first, so an alert fired by a run in progress is cleared with the history.
+        boolean removed = ruleDao.remove(cmd.getId());
         alertDao.removeByAlertRuleId(cmd.getId());
-        return ruleDao.remove(cmd.getId());
+        return removed;
     }
 
     @Override
