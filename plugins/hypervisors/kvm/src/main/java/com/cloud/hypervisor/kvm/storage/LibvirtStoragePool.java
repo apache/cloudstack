@@ -47,6 +47,8 @@ import com.cloud.utils.script.Script;
 public class LibvirtStoragePool implements KVMStoragePool {
     /** The environment variable which gives the Ceph key to the RBD heartbeat and VM-activity scripts. */
     protected static final String RBD_KEY_ENVIRONMENT_VARIABLE = "CEPH_KEY";
+    /** The time the RBD heartbeat script has to tell whether the Python bindings of librados and librbd are installed. */
+    protected static final long BINDINGS_CHECK_TIMEOUT_IN_MS = 30000;
 
     protected Logger logger = LogManager.getLogger(getClass());
     protected String uuid;
@@ -404,7 +406,11 @@ public class LibvirtStoragePool implements KVMStoragePool {
         if (hasUser != hasSecret) {
             throw new CloudRuntimeException(String.format("The Ceph user and key must be either both set or both unset for the storage pool %s", uuid));
         }
-        cmd.add("-s", RbdUtils.getRbdMonitors(sourceHost, sourcePort));
+        String monitors = StringUtils.isBlank(sourceHost) ? "" : RbdUtils.getRbdMonitors(sourceHost, sourcePort);
+        if (monitors.isEmpty()) {
+            throw new CloudRuntimeException(String.format("The storage pool %s has no Ceph monitors", uuid));
+        }
+        cmd.add("-s", monitors);
         cmd.add("-o", sourceDir);
         if (hasUser) {
             cmd.add("-n", authUsername);
@@ -479,14 +485,50 @@ public class LibvirtStoragePool implements KVMStoragePool {
      * The heartbeat of a host on an RBD pool is named by the GUID of the host, which stays the same if the host
      * gets a new IP address. On the other pool types it is named by the private IP address of the host.
      */
-    protected String getHeartBeatHostId(HostTO host) {
+    @Override
+    public String getHeartBeatHostId(String hostPrivateIp, String hostGuid) {
         if (!StoragePoolType.RBD.equals(type)) {
-            return host.getPrivateNetwork().getIp();
+            return hostPrivateIp;
         }
-        if (StringUtils.isBlank(host.getGuid())) {
-            throw new CloudRuntimeException(String.format("The host %s has no GUID, which names its heartbeat on the RBD storage pool %s", host.getPrivateNetwork().getIp(), uuid));
+        if (StringUtils.isBlank(hostGuid)) {
+            throw new CloudRuntimeException(String.format("The host %s has no GUID, which names its heartbeat on the RBD storage pool %s", hostPrivateIp, uuid));
         }
-        return host.getGuid();
+        return hostGuid;
+    }
+
+    protected String getHeartBeatHostId(HostTO host) {
+        return getHeartBeatHostId(host.getPrivateNetwork().getIp(), host.getGuid());
+    }
+
+    /**
+     * A RBD pool has no shared mount point to look at, so its script checks the watchers of the volumes, instead of the
+     * files of the volumes as the script of the other pools.
+     */
+    @Override
+    public String getVmActivityCheckPath(String defaultVmActivityCheckPath) {
+        if (StoragePoolType.RBD.equals(type)) {
+            return Script.findScript(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR), "kvmvmactivity_rbd.py");
+        }
+        return defaultVmActivityCheckPath;
+    }
+
+    /**
+     * The RBD scripts need the Python bindings of librados and librbd, which the agent packages only suggest: a host
+     * without them can neither write its heartbeat (and would be fenced because of that), nor check the one of another host.
+     */
+    @Override
+    public String getHeartBeatPrerequisiteError() {
+        if (!StoragePoolType.RBD.equals(type)) {
+            return null;
+        }
+        try {
+            Script cmd = new Script(getHearthBeatPath(), BINDINGS_CHECK_TIMEOUT_IN_MS, logger);
+            cmd.add("--check-bindings");
+            // a result of the script is the error, which is its output
+            return cmd.execute(new OutputInterpreter.OutputLogger(logger));
+        } catch (CloudRuntimeException e) {
+            return e.getMessage();
+        }
     }
 
     @Override
@@ -519,6 +561,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
         addPoolConnectionArgs(cmd, pool);
         cmd.add("-h", heartBeatHostId);
         File volumeListFile = addVolumeListArgs(cmd, volumeUUIDListString);
+        if (StoragePoolType.RBD.equals(type)) {
+            // the age up to which a heartbeat counts as fresh depends on how often it is written
+            cmd.add("-i", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
+        }
         cmd.add("-t", String.valueOf(System.currentTimeMillis() / 1000));
         cmd.add("-d", String.valueOf(duration));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();

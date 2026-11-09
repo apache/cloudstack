@@ -45,7 +45,10 @@ import re
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, check_bindings, CephError, WatchersError, KEY_ENV, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, check_bindings, CephError, WatchersError, KEY_ENV, heartbeat_max_age, silence_standard_error
+
+# the interval at which the agents write their heartbeat, if it is not given with -i
+DEFAULT_HEARTBEAT_INTERVAL = 60
 
 
 class Parser(argparse.ArgumentParser):
@@ -76,6 +79,8 @@ def main():
     parser.add_argument("-t", dest="time", default="",
                         help="current time in seconds (accepted for compatibility with kvmvmactivity.sh, not used)")
     parser.add_argument("-d", dest="suspect_time", default="", help="suspect time")
+    parser.add_argument("-i", dest="interval", default="",
+                        help="interval in seconds at which the agents write their heartbeat, default %d" % DEFAULT_HEARTBEAT_INTERVAL)
     parser.add_argument("--help", action="help")
     args = parser.parse_args()
 
@@ -96,6 +101,9 @@ def main():
     if not re.fullmatch(r"[0-9]+", args.suspect_time):
         sys.exit(2)
     suspect_time = int(args.suspect_time)
+    if args.interval and not re.fullmatch(r"[0-9]+", args.interval):
+        sys.exit(2)
+    interval = int(args.interval) if args.interval else DEFAULT_HEARTBEAT_INTERVAL
     volumes = args.images
     if args.images_file:
         try:
@@ -107,12 +115,12 @@ def main():
     silence_standard_error()
     ceph = Ceph(args.mon_hosts, args.pool, args.user, key, watchers=True)
     try:
-        check(ceph, args.pool, args.host, volumes, suspect_time)
+        check(ceph, args.pool, args.host, volumes, suspect_time, interval)
     finally:
         ceph.close()
 
 
-def check(ceph, pool, host, volumes, suspect_time):
+def check(ceph, pool, host, volumes, suspect_time, interval):
     heartbeat_object = "KVMHA-hb-" + host
     activity_object = "KVMHA-ac-" + host
 
@@ -131,7 +139,7 @@ def check(ceph, pool, host, volumes, suspect_time):
             heartbeat_note = " The RADOS object [%s] does not hold a heartbeat." % heartbeat_object
         else:
             age = now - int(heartbeat)
-            if age < 61:
+            if age <= heartbeat_max_age(interval):
                 alive()
             heartbeat_note = " The heartbeat in RADOS object [%s] is [%d] seconds old." % (heartbeat_object, age)
     except CephError:

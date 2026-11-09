@@ -429,8 +429,14 @@ public class KVMStoragePoolManager {
 
         // LibvirtStorageAdaptor-specific statement
         if (pool.isPoolSupportHA() && primaryStorage) {
-            KVMHABase.HAStoragePool storagePool = new KVMHABase.HAStoragePool(pool, host, path, PoolType.PrimaryStorage);
-            _haMonitor.addStoragePool(storagePool);
+            String heartBeatPrerequisiteError = pool.getHeartBeatPrerequisiteError();
+            if (heartBeatPrerequisiteError == null) {
+                KVMHABase.HAStoragePool storagePool = new KVMHABase.HAStoragePool(pool, host, path, PoolType.PrimaryStorage);
+                _haMonitor.addStoragePool(storagePool);
+            } else {
+                // without the heartbeat the host would fail to write it at each cycle, and would be fenced
+                logger.error("The storage pool {} is not monitored for HA on this host, as its heartbeat can not be used: {}", pool.getUuid(), heartBeatPrerequisiteError);
+            }
         }
         StoragePoolInformation info = new StoragePoolInformation(name, host, port, path, userInfo, type, details, primaryStorage);
         addStoragePool(pool.getUuid(), info);

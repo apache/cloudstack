@@ -27,6 +27,10 @@
 # The object is written and read with the Python bindings of librados
 # (python3-rados), see kvmha_rbd.py. The cephx key is not an argument, as it would be visible in the process list: it is
 # read from the environment variable CEPH_KEY.
+#
+# A host is only reported as DEAD when its heartbeat is there and stale. If there is none (the agent of the host is not
+# upgraded yet, or has no bindings, or the first heartbeat is not written yet), or if it can not be read, the state of the
+# host is not known and the exit status is 2, as for a Ceph cluster which can not be reached.
 
 import argparse
 import os
@@ -35,7 +39,7 @@ import subprocess
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, ObjectNotFoundError, check_bindings, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, ObjectNotFoundError, check_bindings, heartbeat_max_age, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
@@ -52,9 +56,20 @@ def main():
     parser.add_argument("-h", dest="host", default="", help="host")
     parser.add_argument("-r", dest="check", action="store_true", help="read the heartbeat, instead of writing it")
     parser.add_argument("-c", dest="cleanup", action="store_true", help="cleanup: reboot the host")
-    parser.add_argument("-t", dest="interval", default="", help="maximum age of the heartbeat in seconds, when it is read")
+    parser.add_argument("-t", dest="interval", default="", help="interval in seconds at which the heartbeat is written, when it is read")
+    parser.add_argument("--check-bindings", dest="check_bindings", action="store_true",
+                        help="only check that the Python bindings of librados and librbd are installed")
     parser.add_argument("--help", action="help")
     args = parser.parse_args()
+
+    if args.check_bindings:
+        # asked by the agent when it registers a storage pool for HA, the RBD scripts need both bindings
+        try:
+            check_bindings(watchers=True)
+        except BindingsError as error:
+            print("=====> The Python bindings of Ceph are missing, %s <======" % error)
+            sys.exit(1)
+        return
 
     # first of all: the Python bindings are only suggested by the agent packages. The self-fencing (-c) does not
     # need them, as it does not use Ceph
@@ -104,22 +119,26 @@ def check(ceph, heartbeat_object, pool, interval):
     try:
         heartbeat = ceph.read(heartbeat_object).strip()
     except ObjectNotFoundError:
-        heartbeat = ""
+        # the host never wrote a heartbeat: its agent is not upgraded, or has no bindings, or the GUID is another one,
+        # or it is the first cycle. That is not a proof that the host is dead
+        print("=====> Unable to tell whether the host is alive, the RADOS object [%s] in pool [%s] does not exist <======"
+              % (heartbeat_object, pool))
+        sys.exit(2)
     except CephError:
         # Ceph can not be reached from this host, which says nothing about the host which is checked, as for the
         # VM activity check
         print("=====> Unable to read the RADOS object [%s] in pool [%s] <======" % (heartbeat_object, pool))
         sys.exit(2)
     if not re.fullmatch(r"[0-9]+", heartbeat):
-        # Either the RADOS object doesn't exist (host never wrote a heartbeat) or it doesn't hold one.
-        # We can't confirm the host is alive, so fail safe and report it as DEAD.
-        print("=====> Considering host as DEAD because RADOS object [%s] in pool [%s] could not be read <======"
+        print("=====> Unable to tell whether the host is alive, the RADOS object [%s] in pool [%s] does not hold a heartbeat <======"
               % (heartbeat_object, pool))
-        return
+        sys.exit(2)
     age = now - int(heartbeat)
-    if age > interval:
+    max_age = heartbeat_max_age(interval)
+    if age > max_age:
         print("=====> Considering host as DEAD because last write to RADOS object [%s] in pool [%s] was [%d] seconds ago, "
-              "but the max interval is [%d] <======" % (heartbeat_object, pool, age, interval))
+              "but the max age is [%d] (the interval of [%d] and the time which a write can take) <======"
+              % (heartbeat_object, pool, age, max_age, interval))
     else:
         print("=====> ALIVE <=====")
 

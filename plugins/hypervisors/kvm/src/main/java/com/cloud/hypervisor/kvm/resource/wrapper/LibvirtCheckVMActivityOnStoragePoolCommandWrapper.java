@@ -22,8 +22,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -32,8 +30,6 @@ import com.cloud.hypervisor.kvm.resource.KVMHAVMActivityChecker;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.script.Script;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -54,7 +50,11 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
 
         if (primaryPool.isPoolSupportHA()) {
             final HAStoragePool haPool = monitor.getStoragePool(pool.getUuid());
-            final String vmActivityCheckPath = getVmActivityCheckPath(pool.getType(), libvirtComputingResource);
+            if (haPool == null) {
+                // e.g. the heartbeat of the pool can not be used on this host, so the pool is not monitored for HA: it is not known whether the host is alive
+                return new Answer(command, false, "CheckVMActivityOnStoragePoolCommand: the storage pool " + pool.getUuid() + " is not monitored for HA on this host");
+            }
+            final String vmActivityCheckPath = primaryPool.getVmActivityCheckPath(libvirtComputingResource.getVmActivityCheckPath());
             if (vmActivityCheckPath == null) {
                 return new Answer(command, false, "CheckVMActivityOnStoragePoolCommand: unable to find the script which checks the VM activity on a storage pool of type " + pool.getType());
             }
@@ -74,17 +74,5 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
             }
         }
         return new Answer(command, false, "Unsupported Storage");
-    }
-
-    /**
-     * The script which checks the VM activity depends on the type of the storage pool: a RBD pool has no shared mount point to look at,
-     * so its script checks the watchers of the volumes, instead of the files of the volumes as the script of the other pools.
-     */
-    private String getVmActivityCheckPath(final StoragePoolType poolType, final LibvirtComputingResource libvirtComputingResource) {
-        if (StoragePoolType.RBD.equals(poolType)) {
-            final String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            return Script.findScript(kvmScriptsDir, "kvmvmactivity_rbd.py");
-        }
-        return libvirtComputingResource.getVmActivityCheckPath();
     }
 }

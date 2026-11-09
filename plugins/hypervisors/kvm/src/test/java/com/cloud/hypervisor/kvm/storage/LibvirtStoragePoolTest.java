@@ -23,12 +23,15 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.StoragePool;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 import junit.framework.TestCase;
@@ -320,5 +323,107 @@ public class LibvirtStoragePoolTest extends TestCase {
     @Test
     public void testHeartBeatHostIdOfOtherPoolsDoesNotNeedAGuid() {
         assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId(getHost("10.0.0.5", null)));
+    }
+
+    @Test
+    public void testPoolNamesTheHeartBeatOfTheHostWithItsGuidOrItsIp() {
+        String guid = "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource";
+        assertEquals(guid, getPool(StoragePoolType.RBD).getHeartBeatHostId("10.0.0.5", guid));
+        assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId("10.0.0.5", guid));
+        assertEquals("10.0.0.5", getPool(StoragePoolType.SharedMountPoint).getHeartBeatHostId("10.0.0.5", null));
+    }
+
+    @Test
+    public void testPoolCanNotNameTheHeartBeatOfARbdHostWithoutGuid() {
+        for (String guid : new String[] {null, "", " "}) {
+            try {
+                getPool(StoragePoolType.RBD).getHeartBeatHostId("10.0.0.5", guid);
+                fail("Expected a CloudRuntimeException for the GUID [" + guid + "]");
+            } catch (CloudRuntimeException expected) {
+                assertTrue(expected.getMessage().contains("has no GUID"));
+            }
+        }
+    }
+
+    @Test
+    public void testVmActivityCheckPathOfOtherPoolsIsTheOneGiven() {
+        assertEquals("/scripts/kvmvmactivity.sh", getPool(StoragePoolType.NetworkFilesystem).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        assertEquals("/scripts/kvmvmactivity.sh", getPool(StoragePoolType.SharedMountPoint).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        assertNull(getPool(StoragePoolType.NetworkFilesystem).getVmActivityCheckPath(null));
+    }
+
+    @Test
+    public void testVmActivityCheckPathOfRbdIsItsOwnScript() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq("kvmvmactivity_rbd.py"))).thenReturn("/scripts/kvmvmactivity_rbd.py");
+            assertEquals("/scripts/kvmvmactivity_rbd.py", getPool(StoragePoolType.RBD).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        }
+    }
+
+    @Test
+    public void testVmActivityCheckPathOfRbdIsNullIfTheScriptIsMissing() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.anyString())).thenReturn(null);
+            assertNull(getPool(StoragePoolType.RBD).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        }
+    }
+
+    @Test
+    public void testHeartBeatOfOtherPoolsHasNoPrerequisites() {
+        assertNull(getPool(StoragePoolType.NetworkFilesystem).getHeartBeatPrerequisiteError());
+        assertNull(getPool(StoragePoolType.SharedMountPoint).getHeartBeatPrerequisiteError());
+    }
+
+    @Test
+    public void testHeartBeatPrerequisiteOfRbdIsMetIfTheScriptFindsTheBindings() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> construction = Mockito.mockConstruction(Script.class,
+                     (cmd, context) -> Mockito.when(cmd.execute(Mockito.any(OutputInterpreter.class))).thenReturn(null))) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq("kvmheartbeat_rbd.py"))).thenReturn("/scripts/kvmheartbeat_rbd.py");
+
+            assertNull(getPool(StoragePoolType.RBD).getHeartBeatPrerequisiteError());
+
+            Mockito.verify(construction.constructed().get(0)).add("--check-bindings");
+        }
+    }
+
+    @Test
+    public void testHeartBeatPrerequisiteOfRbdIsNotMetIfTheScriptDoesNotFindTheBindings() {
+        String error = "=====> The Python bindings of Ceph are missing, the package python3-rados is not installed <======";
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class,
+                     (cmd, context) -> Mockito.when(cmd.execute(Mockito.any(OutputInterpreter.class))).thenReturn(error))) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq("kvmheartbeat_rbd.py"))).thenReturn("/scripts/kvmheartbeat_rbd.py");
+
+            assertEquals(error, getPool(StoragePoolType.RBD).getHeartBeatPrerequisiteError());
+        }
+    }
+
+    @Test
+    public void testHeartBeatPrerequisiteOfRbdIsNotMetIfTheScriptIsMissing() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.anyString())).thenReturn(null);
+
+            String error = getPool(StoragePoolType.RBD).getHeartBeatPrerequisiteError();
+
+            assertNotNull(error);
+            assertTrue(error.contains("kvmheartbeat_rbd.py"));
+        }
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithoutMonitors() {
+        for (String monitors : new String[] {null, "", " ", " , "}) {
+            Script cmd = Mockito.mock(Script.class);
+            LibvirtStoragePool pool = getRbdPool("cephuser", "cephkey");
+            pool.setSourceHost(monitors);
+            try {
+                pool.addRbdConnectionArgs(cmd);
+                fail("Expected a CloudRuntimeException for the monitors [" + monitors + "]");
+            } catch (CloudRuntimeException expected) {
+                assertTrue(expected.getMessage().contains("no Ceph monitors"));
+                Mockito.verifyNoInteractions(cmd);
+            }
+        }
     }
 }

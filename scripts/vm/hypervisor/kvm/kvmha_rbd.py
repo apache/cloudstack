@@ -46,6 +46,14 @@ except ImportError:
 KEY_ENV = "CEPH_KEY"
 TIMEOUT = 30
 MAX_OBJECT_SIZE = 1024 * 1024
+# A heartbeat is written every <interval> seconds, but a write which starts on time can end up to TIMEOUT seconds
+# later when Ceph is slow, so the heartbeat of a host which is alive can be older than the interval.
+HEARTBEAT_SLACK = TIMEOUT
+
+
+def heartbeat_max_age(interval):
+    """The age in seconds up to which a heartbeat, which is written every interval seconds, is not stale."""
+    return interval + HEARTBEAT_SLACK
 
 
 def silence_standard_error():

@@ -19,7 +19,6 @@ package com.cloud.hypervisor.kvm.resource;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
@@ -106,7 +105,11 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
                 if (result != null && rebootHostAndAlertManagementOnHeartbeatTimeout) {
                     logger.warn("Write heartbeat for pool [{}] failed: {}; stopping cloudstack-agent.", uuid, result);
-                    primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, null, false);;
+                    try {
+                        primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, null, false);
+                    } catch (RuntimeException e) {
+                        logger.error("Unable to stop the host after the failed heartbeat of pool [{}]", uuid, e);
+                    }
                 }
             }
             if (!removedPools.isEmpty()) {
@@ -119,8 +122,15 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private String executePoolHeartBeatCommand(String uuid, HAStoragePool primaryStoragePool, String result) {
         for (int attempt = 1; attempt <= _heartBeatUpdateMaxTries; attempt++) {
-            String heartBeatHostId = StoragePoolType.RBD.equals(primaryStoragePool.getPool().getType()) ? hostGuid : hostPrivateIp;
-            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, heartBeatHostId, true);
+            try {
+                String heartBeatHostId = primaryStoragePool.getPool().getHeartBeatHostId(hostPrivateIp, hostGuid);
+                result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, heartBeatHostId, true);
+            } catch (RuntimeException e) {
+                // the heartbeat can not even be started, e.g. the pool is not configured completely or its script is missing:
+                // it is a failure of this pool only, which must not stop the heartbeats of the other pools, and trying again would not help
+                logger.error("Unable to run the heartbeat for pool [{}]: {}", uuid, e.toString(), e);
+                return "unable to run the heartbeat: " + e;
+            }
             if (result == null) {
                 break;
             }
@@ -165,7 +175,12 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public void run() {
         while (true) {
 
-            runHeartBeat();
+            try {
+                runHeartBeat();
+            } catch (RuntimeException e) {
+                // the thread must go on: if it stopped, the heartbeats of all the pools would stop and the host would look dead
+                logger.error("Unexpected error while writing the heartbeats", e);
+            }
 
             try {
                 Thread.sleep(_heartBeatUpdateFreqInMs);

@@ -1,16 +1,21 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
@@ -29,7 +34,6 @@ import static org.mockito.Mockito.when;
 import org.joda.time.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -43,7 +47,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtCheckVMActivityOnStoragePoolCommandWrapperTest {
@@ -84,19 +87,18 @@ public class LibvirtCheckVMActivityOnStoragePoolCommandWrapperTest {
     }
 
     @Test
-    public void testRbdPoolIsCheckedWithTheScriptOfRbd() {
+    public void testRbdPoolIsCheckedWithTheScriptOfTheRbdPool() {
         setUp(StoragePoolType.RBD, true);
         KVMHABase.HAStoragePool haPool = addHaPool();
         expectActivityCheck("volume-1,volume-2", 123L, false);
+        when(resource.getVmActivityCheckPath()).thenReturn(SCRIPT);
+        // the pool owns which script checks it, whatever the script of the agent is
+        when(pool.getVmActivityCheckPath(SCRIPT)).thenReturn(RBD_SCRIPT);
 
-        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
-            script.when(() -> Script.findScript(anyString(), eq("kvmvmactivity_rbd.py"))).thenReturn(RBD_SCRIPT);
-            Answer answer = wrapper.execute(command, resource);
+        Answer answer = wrapper.execute(command, resource);
 
-            assertTrue(answer.getResult());
-        }
+        assertTrue(answer.getResult());
         verify(pool).hasVmActivity(eq(haPool), any(HostTO.class), any(Duration.class), eq("volume-1,volume-2"), eq(RBD_SCRIPT), eq(123L));
-        verify(resource, never()).getVmActivityCheckPath();
     }
 
     @Test
@@ -107,6 +109,7 @@ public class LibvirtCheckVMActivityOnStoragePoolCommandWrapperTest {
             KVMHABase.HAStoragePool haPool = addHaPool();
             expectActivityCheck("volume-1", 5L, false);
             when(resource.getVmActivityCheckPath()).thenReturn(SCRIPT);
+            when(pool.getVmActivityCheckPath(SCRIPT)).thenReturn(SCRIPT);
 
             Answer answer = wrapper.execute(command, resource);
 
@@ -121,6 +124,7 @@ public class LibvirtCheckVMActivityOnStoragePoolCommandWrapperTest {
         addHaPool();
         expectActivityCheck("volume-1", 5L, true);
         when(resource.getVmActivityCheckPath()).thenReturn(SCRIPT);
+        when(pool.getVmActivityCheckPath(SCRIPT)).thenReturn(SCRIPT);
 
         Answer answer = wrapper.execute(command, resource);
 
@@ -129,17 +133,31 @@ public class LibvirtCheckVMActivityOnStoragePoolCommandWrapperTest {
     }
 
     @Test
-    public void testMissingScriptOfRbdIsAnError() {
+    public void testMissingScriptOfThePoolIsAnError() {
         setUp(StoragePoolType.RBD, true);
         addHaPool();
+        when(pool.getVmActivityCheckPath(any())).thenReturn(null);
 
-        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
-            script.when(() -> Script.findScript(anyString(), anyString())).thenReturn(null);
-            Answer answer = wrapper.execute(command, resource);
+        Answer answer = wrapper.execute(command, resource);
 
-            assertFalse(answer.getResult());
-            assertTrue(answer.getDetails().contains("unable to find the script"));
-        }
+        assertFalse(answer.getResult());
+        assertTrue(answer.getDetails().contains("unable to find the script"));
+        verify(pool, never()).hasVmActivity(any(), any(), any(), any(), any(), anyLong());
+    }
+
+    @Test
+    public void testPoolWhichIsNotMonitoredForHaOnTheHostIsNotChecked() {
+        setUp(StoragePoolType.RBD, true);
+        // e.g. the Python bindings of Ceph are not installed, so the pool was not registered with the HA monitor
+        KVMHAMonitor monitor = mock(KVMHAMonitor.class);
+        when(monitor.getStoragePool(POOL_UUID)).thenReturn(null);
+        when(resource.getMonitor()).thenReturn(monitor);
+
+        Answer answer = wrapper.execute(command, resource);
+
+        // not a answer which says that the host has no activity
+        assertFalse(answer.getResult());
+        assertTrue(answer.getDetails().contains("is not monitored for HA on this host"));
         verify(pool, never()).hasVmActivity(any(), any(), any(), any(), any(), anyLong());
     }
 
@@ -152,6 +170,6 @@ public class LibvirtCheckVMActivityOnStoragePoolCommandWrapperTest {
 
         assertFalse(answer.getResult());
         assertEquals("Unsupported Storage", answer.getDetails());
-        verify(resource, never()).getVmActivityCheckPath();
+        verify(pool, never()).hasVmActivity(any(), any(), any(), any(), any(), anyLong());
     }
 }
