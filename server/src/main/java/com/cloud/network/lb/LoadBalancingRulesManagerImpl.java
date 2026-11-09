@@ -2440,7 +2440,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
                 applyLoadBalancerConfig(lbRuleId);
-                if (!lb.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+                // lb_protocol is null for a rule created through the API without a protocol
+                if (!NetUtils.SSL_PROTO.equals(lb.getLbProtocol())) {
                     removeCertMapIfExists(lb);
                 }
             } catch (ResourceUnavailableException e) {

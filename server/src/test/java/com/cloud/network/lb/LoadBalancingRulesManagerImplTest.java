@@ -304,6 +304,23 @@ public class LoadBalancingRulesManagerImplTest{
         Mockito.verify(_lbCertMapDao, never()).remove(anyLong());
     }
 
+    @Test
+    public void testUpdateLoadBalancerRuleWithoutProtocol() throws Exception {
+        setupUpdateLoadBalancerRule();
+
+        // A rule created through the API without a protocol has a null lb_protocol
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "algorithm", "roundrobin");
+        when(loadBalancerMock.getAlgorithm()).thenReturn("source");
+        when(loadBalancerMock.getLbProtocol()).thenReturn(null);
+
+        lbr.updateLoadBalancerRule(cmd);
+
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
+        Mockito.verify(_lbCertMapDao, times(1)).remove(anyLong());
+    }
+
     @Test(expected = CloudRuntimeException.class)
     public void testUpdateLoadBalancerRule5() throws Exception {
         setupUpdateLoadBalancerRule();
