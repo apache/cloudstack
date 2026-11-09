@@ -2052,6 +2052,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    public void removeAllocatedSnapshot(final long snapshotId) {
+        final SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if (snapshot == null || snapshot.getState() != Snapshot.State.Allocated) {
+            return;
+        }
+        final ResourceType storeResourceType = !isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId()) || Snapshot.LocationType.PRIMARY.equals(snapshot.getLocationType())
+                ? ResourceType.primary_storage : ResourceType.secondary_storage;
+        _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+        _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), storeResourceType, snapshot.getSize());
+        _snapshotDao.remove(snapshotId);
+    }
+
+    @Override
     public void cleanupSnapshotsByVolume(Long volumeId) {
         List<SnapshotInfo> infos = snapshotFactory.getSnapshotsForVolumeAndStoreRole(volumeId, DataStoreRole.Primary);
         for (SnapshotInfo info : infos) {

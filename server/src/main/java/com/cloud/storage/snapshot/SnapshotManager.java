@@ -106,4 +106,6 @@ public interface SnapshotManager extends Configurable {
     void copySnapshotPoliciesBetweenVolumes(VolumeVO srcVolume, VolumeVO destVolume);
 
     void endSnapshotChainForVolume(long volumeId, Hypervisor.HypervisorType hypervisorType);
+
+    void removeAllocatedSnapshot(long snapshotId);
 }

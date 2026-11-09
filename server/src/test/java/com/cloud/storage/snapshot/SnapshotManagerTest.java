@@ -670,4 +670,45 @@ public class SnapshotManagerTest {
         Mockito.verify(snapshotSrv).syncVolumeSnapshotsToRegionStore(TEST_VOLUME_ID, imageStoreEntityMock);
         Mockito.verify(snapshotStoreDao).update(TEST_SNAPSHOTDATASTORE_ID, snapshotStoreMock);
     }
+
+    @Test
+    public void removeAllocatedSnapshotUndoesTheAllocationCounts() {
+        SnapshotManagerImpl mgr = Mockito.spy(_snapshotMgr);
+        doReturn(true).when(mgr).isBackupSnapshotToSecondaryForZone(anyLong());
+        when(snapshotMock.getState()).thenReturn(Snapshot.State.Allocated);
+        when(snapshotMock.getAccountId()).thenReturn(7L);
+        when(snapshotMock.getSize()).thenReturn(1024L);
+        when(snapshotMock.getLocationType()).thenReturn(null);
+
+        mgr.removeAllocatedSnapshot(TEST_SNAPSHOT_ID);
+
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, ResourceType.snapshot);
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, ResourceType.secondary_storage, 1024L);
+        Mockito.verify(_snapshotDao).remove(TEST_SNAPSHOT_ID);
+    }
+
+    @Test
+    public void removeAllocatedSnapshotCountsPrimaryStorageWhenTheSnapshotStaysOnPrimary() {
+        SnapshotManagerImpl mgr = Mockito.spy(_snapshotMgr);
+        doReturn(true).when(mgr).isBackupSnapshotToSecondaryForZone(anyLong());
+        when(snapshotMock.getState()).thenReturn(Snapshot.State.Allocated);
+        when(snapshotMock.getAccountId()).thenReturn(7L);
+        when(snapshotMock.getSize()).thenReturn(1024L);
+        when(snapshotMock.getLocationType()).thenReturn(Snapshot.LocationType.PRIMARY);
+
+        mgr.removeAllocatedSnapshot(TEST_SNAPSHOT_ID);
+
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, ResourceType.primary_storage, 1024L);
+        Mockito.verify(_snapshotDao).remove(TEST_SNAPSHOT_ID);
+    }
+
+    @Test
+    public void removeAllocatedSnapshotLeavesASnapshotWhoseWorkStarted() {
+        when(snapshotMock.getState()).thenReturn(Snapshot.State.Creating);
+
+        _snapshotMgr.removeAllocatedSnapshot(TEST_SNAPSHOT_ID);
+
+        Mockito.verify(_resourceLimitMgr, Mockito.never()).decrementResourceCount(anyLong(), any(ResourceType.class));
+        Mockito.verify(_snapshotDao, Mockito.never()).remove(anyLong());
+    }
 }
