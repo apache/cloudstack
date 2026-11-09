@@ -657,6 +657,24 @@ public class AsyncJobManagerImplTest {
     }
 
     @Test
+    public void testSecondCancelOfAJobBeingCancelledIsRefused() {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setUuid("job-uuid");
+        job.setCancelRequested(true);
+        job.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
+
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+            Assert.fail("A job already being cancelled was cancelled again");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("already being cancelled (Cancelled by admin via mgmt2)"));
+        }
+        Mockito.verify(asyncJobDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
     public void testCancelledResultReadsLikeAFailure() {
         String serialized = AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2");
 

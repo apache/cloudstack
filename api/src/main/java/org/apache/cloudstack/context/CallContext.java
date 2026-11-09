@@ -90,6 +90,9 @@ public class CallContext {
         this.contextId = contextId;
     }
 
+    /** Context parameter a handler sets when it refuses a request for a stated reason: the action event then records a refusal with that reason, not an error. */
+    public static final String REFUSAL_REASON_PARAM = "refusalReason";
+
     public void putContextParameter(Object key, Object value) {
         context.put(key, value);
     }
