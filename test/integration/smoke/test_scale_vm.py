@@ -171,9 +171,6 @@ class TestScaleVm(cloudstackTestCase):
 
         return ssh_client
 
-    def is_host_xcpng8(self, hostname):
-        return type(hostname) == list and len(hostname) > 0 and 'XCP-ng 8' in hostname[0]
-
     def wait_for_xen_pv_tools(self, vm, timeout=60, interval=10):
         """XenServer only: wait until the guest PV tools are detected.
         XenServer refuses a live vCPU change (VmLacksFeature) until then."""
@@ -278,18 +275,7 @@ class TestScaleVm(cloudstackTestCase):
             self.apiclient,
             isdynamicallyscalable='true')
 
-        if self.is_host_xcpng8(res):
-            self.debug("Only scaling for CPU for XCP-ng 8")
-            offering_data = self.services["service_offerings"]["big"]
-            offering_data["cpunumber"] = 2
-            offering_data["memory"] = self.virtual_machine.memory
-            self.bigger_offering = ServiceOffering.create(
-                self.apiclient,
-                offering_data
-            )
-            self.cleanup.append(self.bigger_offering)
-        else:
-            self.bigger_offering = self.big_offering
+        self.bigger_offering = self.big_offering
 
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine.id,
@@ -602,18 +588,7 @@ class TestScaleVm(cloudstackTestCase):
             self.userapiclient,
             isdynamicallyscalable='true')
 
-        if self.is_host_xcpng8(res):
-            self.debug("Only scaling for CPU for XCP-ng 8")
-            offering_data = self.services["service_offerings"]["big"]
-            offering_data["cpunumber"] = 2
-            offering_data["memory"] = self.virtual_machine_in_user_account.memory
-            self.bigger_offering = ServiceOffering.create(
-                self.apiclient,
-                offering_data
-            )
-            self.cleanup.append(self.bigger_offering)
-        else:
-            self.bigger_offering = self.big_offering
+        self.bigger_offering = self.big_offering
 
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine_in_user_account.id,
@@ -760,10 +735,6 @@ class TestScaleVm(cloudstackTestCase):
             'memory': 1024,
             'diskofferingid': self.disk_offering2.id
         }
-        if self.is_host_xcpng8(res):
-            self.debug("Only scaling for CPU for XCP-ng 8")
-            offering_data["memory"] = self.virtual_machine_test.memory
-
         self.ServiceOffering2WithDiskOffering2 = ServiceOffering.create(
             self.apiclient,
             offering_data,
@@ -850,10 +821,6 @@ class TestScaleVm(cloudstackTestCase):
             'memory': 1024,
             'diskofferingid': self.disk_offering3.id
         }
-        if self.is_host_xcpng8(res):
-            self.debug("Only scaling for CPU for XCP-ng 8")
-            offering_data["memory"] = vm_response.memory
-
         self.ServiceOffering3WithDiskOffering3 = ServiceOffering.create(
             self.apiclient,
             offering_data,
