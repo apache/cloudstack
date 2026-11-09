@@ -75,6 +75,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
@@ -1134,5 +1135,90 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(ruleDao).remove(rule.getId());
+    }
+
+    private ResourceAlertRuleVO vmDiskReadIopsRule(double threshold) {
+        return new ResourceAlertRuleVO("io", ResourceAlertRule.ResourceType.VirtualMachine,
+                VM_ID, 1L, 1L, "DISK_READ_IOPS", AlertCondition.GT, threshold,
+                AlertSeverity.HIGH, null, false, 600);
+    }
+
+    private void stubVmDiskReadIos(HypervisorType hypervisor, double ios) {
+        UserVmVO vm = runningVm();
+        when(vm.getHypervisorType()).thenReturn(hypervisor);
+        when(userVmDao.findById(VM_ID)).thenReturn(vm);
+        VmStats stats = mock(VmStats.class);
+        when(stats.getDiskReadIOs()).thenReturn(ios);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
+    }
+
+    @Test
+    public void testKvmVmDiskIopsIsDividedByStatsInterval() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmDiskReadIopsRule(500.0)));
+        stubVmDiskReadIos(HypervisorType.KVM, 60000.0);
+        when(statsCollector.getVmStatsInterval()).thenReturn(60000L);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(1000.0, alertCaptor.getValue().getMetricValue(), 0.001);
+    }
+
+    @Test
+    public void testKvmVmDiskIopsBelowThresholdOncePerSecond() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmDiskReadIopsRule(500.0)));
+        stubVmDiskReadIos(HypervisorType.KVM, 6000.0);
+        when(statsCollector.getVmStatsInterval()).thenReturn(60000L);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testVmwareVmDiskIopsIsUsedAsReported() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmDiskReadIopsRule(500.0)));
+        stubVmDiskReadIos(HypervisorType.VMware, 600.0);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(600.0, alertCaptor.getValue().getMetricValue(), 0.001);
+        verify(statsCollector, never()).getVmStatsInterval();
+    }
+
+    private void stubKvmHost() {
+        HostVO host = mock(HostVO.class);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+    }
+
+    @Test
+    public void testKvmHostNetworkRateIsChangeBetweenReadings() {
+        stubKvmHost();
+        doReturn(1000L, 61000L, 121000L).when(manager).currentTimeMillis();
+
+        assertNull(manager.toHostNetworkRate(HOST_ID, "read", 50000.0));
+        assertEquals(100.0, manager.toHostNetworkRate(HOST_ID, "read", 56000.0), 0.001);
+        assertEquals(100.0, manager.toHostNetworkRate(HOST_ID, "read", 56000.0), 0.001);
+        assertEquals(50.0, manager.toHostNetworkRate(HOST_ID, "read", 59000.0), 0.001);
+    }
+
+    @Test
+    public void testKvmHostNetworkRateSkipsReadingAfterCounterReset() {
+        stubKvmHost();
+        doReturn(1000L, 61000L).when(manager).currentTimeMillis();
+
+        assertNull(manager.toHostNetworkRate(HOST_ID, "write", 50000.0));
+        assertNull(manager.toHostNetworkRate(HOST_ID, "write", 10.0));
+    }
+
+    @Test
+    public void testNonKvmHostNetworkIsUsedAsReported() {
+        HostVO host = mock(HostVO.class);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+
+        assertEquals(2500.0, manager.toHostNetworkRate(HOST_ID, "read", 2500.0), 0.001);
     }
 }

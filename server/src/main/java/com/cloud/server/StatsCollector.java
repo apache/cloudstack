@@ -2237,6 +2237,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         return _storageStats.get(id);
     }
 
+    public long getVmStatsInterval() {
+        return vmStatsInterval;
+    }
+
     public HostStats getHostStats(long hostId) {
         return _hostStats.get(hostId);
     }

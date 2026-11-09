@@ -65,6 +65,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
@@ -138,6 +139,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             }, (r, e) -> logger.warn("Dropping resource alert email as {} emails are already waiting to be sent", EMAIL_QUEUE_SIZE));
 
     private final Map<Long, VmStats> vmStatsCache = new HashMap<>();
+    private final Map<String, NetworkReading> hostNetworkReadings = new HashMap<>();
 
     private SMTPMailSender mailSender;
     private String[] emailRecipients;
@@ -465,35 +467,35 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 break;
             case DISK_READ_IOPS: {
                 VmStats s = getVmStats(resourceId);
-                return s != null ? s.getDiskReadIOs() : null;
+                return s != null ? toVmRate(resourceId, s.getDiskReadIOs()) : null;
             }
             case DISK_WRITE_IOPS: {
                 VmStats s = getVmStats(resourceId);
-                return s != null ? s.getDiskWriteIOs() : null;
+                return s != null ? toVmRate(resourceId, s.getDiskWriteIOs()) : null;
             }
             case DISK_READ_KBPS: {
                 VmStats s = getVmStats(resourceId);
-                return s != null ? s.getDiskReadKBs() : null;
+                return s != null ? toVmRate(resourceId, s.getDiskReadKBs()) : null;
             }
             case DISK_WRITE_KBPS: {
                 VmStats s = getVmStats(resourceId);
-                return s != null ? s.getDiskWriteKBs() : null;
+                return s != null ? toVmRate(resourceId, s.getDiskWriteKBs()) : null;
             }
             case NETWORK_READ_KBPS: {
                 if (type == ResourceAlertRule.ResourceType.Host) {
                     HostStats s = statsCollector.getHostStats(resourceId);
-                    return s != null ? s.getNetworkReadKBs() : null;
+                    return s != null ? toHostNetworkRate(resourceId, "read", s.getNetworkReadKBs()) : null;
                 }
                 VmStats s = getVmStats(resourceId);
-                return s != null ? s.getNetworkReadKBs() : null;
+                return s != null ? toVmRate(resourceId, s.getNetworkReadKBs()) : null;
             }
             case NETWORK_WRITE_KBPS: {
                 if (type == ResourceAlertRule.ResourceType.Host) {
                     HostStats s = statsCollector.getHostStats(resourceId);
-                    return s != null ? s.getNetworkWriteKBs() : null;
+                    return s != null ? toHostNetworkRate(resourceId, "write", s.getNetworkWriteKBs()) : null;
                 }
                 VmStats s = getVmStats(resourceId);
-                return s != null ? s.getNetworkWriteKBs() : null;
+                return s != null ? toVmRate(resourceId, s.getNetworkWriteKBs()) : null;
             }
             case STORAGE_USED_IOPS: {
                 // only reported by storage drivers that track IOPS
@@ -522,6 +524,55 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 break;
         }
         return null;
+    }
+
+    // KVM reports VM disk and network as totals since its previous sample, other hypervisors as rates.
+    Double toVmRate(long vmId, double value) {
+        UserVmVO vm = userVmDao.findById(vmId);
+        if (vm == null || !HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            return value;
+        }
+        long intervalMillis = statsCollector.getVmStatsInterval();
+        if (intervalMillis <= 0) {
+            return null;
+        }
+        return value / (intervalMillis / 1000.0);
+    }
+
+    // KVM reports host network as a running total, so the rate is the change between two readings.
+    Double toHostNetworkRate(long hostId, String direction, double totalKBs) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null || !HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return totalKBs;
+        }
+        String key = hostId + "." + direction;
+        long now = currentTimeMillis();
+        NetworkReading previous = hostNetworkReadings.get(key);
+        if (previous != null && totalKBs == previous.totalKBs) {
+            return previous.rate;
+        }
+        Double rate = null;
+        if (previous != null && totalKBs > previous.totalKBs && now > previous.time) {
+            rate = (totalKBs - previous.totalKBs) / ((now - previous.time) / 1000.0);
+        }
+        hostNetworkReadings.put(key, new NetworkReading(totalKBs, now, rate));
+        return rate;
+    }
+
+    long currentTimeMillis() {
+        return System.currentTimeMillis();
+    }
+
+    static final class NetworkReading {
+        final double totalKBs;
+        final long time;
+        final Double rate;
+
+        NetworkReading(double totalKBs, long time, Double rate) {
+            this.totalKBs = totalKBs;
+            this.time = time;
+            this.rate = rate;
+        }
     }
 
     // Stats are keyed by path, except OVA volumes which are keyed by chain info.
