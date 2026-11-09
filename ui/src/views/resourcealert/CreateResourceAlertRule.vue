@@ -289,7 +289,7 @@ export default {
       const [api, responseKey, itemKey, params] = source
       this.resourcesLoading = true
       const hideExtensions = ['VirtualMachine', 'Host'].includes(this.form.resourcetype)
-      return getAPI(api, params).then(json => {
+      return getAPI(api, { ...params, pagesize: -1 }).then(json => {
         // Extensions do not report VM or host usage, so rules on them would never fire
         this.resources = (json?.[responseKey]?.[itemKey] || []).filter(r => !hideExtensions || r.hypervisor !== 'External')
       }).finally(() => {

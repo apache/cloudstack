@@ -965,7 +965,7 @@ export default {
         sources.push(['StoragePool', 'listStoragePools', 'liststoragepoolsresponse', 'storagepool', {}])
       }
       Promise.all(sources.filter(([, api]) => api in this.$store.getters.apis).map(([type, api, responseKey, itemKey, params]) =>
-        getAPI(api, params).then(json => (json?.[responseKey]?.[itemKey] || []).map(r => ({
+        getAPI(api, { ...params, pagesize: -1 }).then(json => (json?.[responseKey]?.[itemKey] || []).map(r => ({
           id: r.id,
           name: `${r.displayname || r.name} (${RESOURCE_TYPE_LABELS[type]})`
         }))).catch(() => [])
