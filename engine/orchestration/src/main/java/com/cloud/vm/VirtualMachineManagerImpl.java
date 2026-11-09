@@ -975,6 +975,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    private String currentJobCancellationReason() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context == null || context.getJob() == null || _jobMgr == null) {
+            return null;
+        }
+        return _jobMgr.getCancellationReason(context.getJob().getId());
+    }
+
     protected boolean checkWorkItems(final VMInstanceVO vm, final State state) throws ConcurrentOperationException {
         while (true) {
             final ItWorkVO vo = _workDao.findByOutstandingWork(vm.getId(), state);
@@ -997,6 +1005,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (vo.getSecondsTaskIsInactive() > VmOpCancelInterval.value()) {
                 logger.warn("The task item for vm {} has been inactive for {}", vm, vo.getSecondsTaskIsInactive());
                 return false;
+            }
+
+            final String cancelReason = currentJobCancellationReason();
+            if (cancelReason != null) {
+                logger.info("Not waiting for the work on {} any longer, the job was cancelled: {}", vm, cancelReason);
+                throw new OperationCancelledException(cancelReason);
             }
 
             try {
@@ -1687,12 +1701,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     canRetry = false;
                     throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
                 } catch (OperationCancelledException e) {
-                    // like an active timeout: the host may have half-started the VM
-                    logger.debug("Start of {} on host {} was cancelled", vm, dest.getHost());
+                    // unlike a timeout the host's state is known: the start was stopped or never sent, so the VM is released like any failed start
+                    logger.info("Start of {} on host {} was cancelled: {}", vm, dest.getHost(), e.getMessage());
                     if (e.isActive()) {
                         _haMgr.scheduleStop(vm, destHostId, WorkType.CheckStop);
                     }
-                    canRetry = false;
                     throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
                 } catch (final ResourceUnavailableException e) {
                     logger.warn("Unable to contact resource.", e);
