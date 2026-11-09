@@ -101,7 +101,9 @@ public class OpenLdapUserManagerImplTest {
 
     @After
     public void tearDown() {
-        ldapConfigurationMockedStatic.close();
+        if (ldapConfigurationMockedStatic != null) {
+            ldapConfigurationMockedStatic.close();
+        }
     }
 
     @Test
