@@ -6554,6 +6554,32 @@ public class LibvirtComputingResourceTest {
             assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
             assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
         }
+
+        // 5. test Bus: VIRTIO and disk.discard=ignore -> the detail overrides the Linstor default
+        vmToDetails.put(VmDetailConstants.DISK_DISCARD, "ignore");
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.IGNORE, rootDisk.getDiscard());
+        }
+
+        // 6. test Bus: IDE, broken qemu version and disk.discard=unmap -> NO discard
+        when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(6000000L);
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.IDE.name());
+        vmToDetails.put(VmDetailConstants.DISK_DISCARD, "unmap");
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskBus.IDE, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.IGNORE, rootDisk.getDiscard());
+        }
     }
 
     @Test
@@ -6563,7 +6589,47 @@ public class LibvirtComputingResourceTest {
         details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
         Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
         DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
-        assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
+        assertEquals(DiskDef.DiskBus.VIRTIO, diskBus);
+    }
+
+    private DiskDef virtioDisk() {
+        DiskDef disk = new DiskDef();
+        disk.defNetworkBasedDisk("pool/volume", "mon", 6789, "admin", "secret", 0, DiskDef.DiskBus.VIRTIO,
+                DiskDef.DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+        return disk;
+    }
+
+    @Test
+    public void applyDiskDiscardDetailUnmap() {
+        DiskDef disk = virtioDisk();
+        libvirtComputingResourceSpy.applyDiskDiscardDetail(disk, Map.of(VmDetailConstants.DISK_DISCARD, "unmap"));
+        assertEquals(DiskDef.DiscardType.UNMAP, disk.getDiscard());
+        assertTrue(disk.toString().contains("discard='unmap'"));
+    }
+
+    @Test
+    public void applyDiskDiscardDetailIgnoreOverridesUnmap() {
+        DiskDef disk = virtioDisk();
+        disk.setDiscard(DiskDef.DiscardType.UNMAP);
+        libvirtComputingResourceSpy.applyDiskDiscardDetail(disk, Map.of(VmDetailConstants.DISK_DISCARD, "IGNORE"));
+        assertEquals(DiskDef.DiscardType.IGNORE, disk.getDiscard());
+        assertFalse(disk.toString().contains("discard="));
+    }
+
+    @Test
+    public void applyDiskDiscardDetailWithoutDetailKeepsDiscard() {
+        DiskDef disk = virtioDisk();
+        disk.setDiscard(DiskDef.DiscardType.UNMAP);
+        libvirtComputingResourceSpy.applyDiskDiscardDetail(disk, new HashMap<>());
+        libvirtComputingResourceSpy.applyDiskDiscardDetail(disk, null);
+        assertEquals(DiskDef.DiscardType.UNMAP, disk.getDiscard());
+    }
+
+    @Test
+    public void applyDiskDiscardDetailUnknownValueKeepsDiscard() {
+        DiskDef disk = virtioDisk();
+        libvirtComputingResourceSpy.applyDiskDiscardDetail(disk, Map.of(VmDetailConstants.DISK_DISCARD, "on"));
+        assertEquals(DiskDef.DiscardType.IGNORE, disk.getDiscard());
     }
 
     @Test
