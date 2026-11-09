@@ -1980,6 +1980,9 @@ public class HypervisorHostHelper {
                         String deviceKey = deviceUrl.getImportKey();
                         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
                             if (deviceKey.equals(ovfFileItem.getDeviceId())) {
+                                if (leaseMo.isAborted()) {
+                                    throw new CloudRuntimeException("the import of " + vmName + " was cancelled, its lease is aborted");
+                                }
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
                                 LOGGER.info("Uploading file: " + absoluteFile);
                                 File f = new File(absoluteFile);
@@ -1989,6 +1992,10 @@ public class HypervisorHostHelper {
                                     context.uploadVmdkFile(ovfFileItem.isCreate() ? "PUT" : "POST", urlToPost, absoluteFile, bytesAlreadyWritten, new ActionDelegate<Long>() {
                                         @Override
                                         public void action(Long param) {
+                                            // the upload loop has no other way to learn that the lease was aborted under it
+                                            if (leaseMo.isAborted()) {
+                                                throw new CloudRuntimeException("the import of " + vmName + " was cancelled, its lease is aborted");
+                                            }
                                             progressReporter.reportProgress((int)(param * 100 / totalBytes));
                                         }
                                     });
@@ -1999,7 +2006,11 @@ public class HypervisorHostHelper {
                     }
                 } catch (Exception e) {
                     String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
-                    LOGGER.error(erroMsg);
+                    if (leaseMo.isAborted()) {
+                        LOGGER.info("Upload for " + vmName + " stopped, its lease was aborted: " + e.getMessage());
+                    } else {
+                        LOGGER.error(erroMsg);
+                    }
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
                     throw new CloudRuntimeException(erroMsg, e);
                 } catch (Throwable th) {
@@ -2032,7 +2043,9 @@ public class HypervisorHostHelper {
         } finally {
             try {
                 if (!importSuccess) {
-                    LOGGER.error("Aborting the lease on " + vmName + " after import operation failed.");
+                    if (!leaseMo.isAborted()) {
+                        LOGGER.error("Aborting the lease on " + vmName + " after import operation failed.");
+                    }
                     leaseMo.abortLease();
                 } else {
                     leaseMo.completeLease();

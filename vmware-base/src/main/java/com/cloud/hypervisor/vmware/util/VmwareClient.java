@@ -149,7 +149,8 @@ public class VmwareClient {
     private String serviceCookie;
     private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
-    private static final long CANCEL_TASK_WAIT_MS = 30000;
+    // a Storage vMotion takes vCenter 30 to 40 seconds to unwind; the resource passes the configured wait
+    public static final long DEFAULT_CANCEL_TASK_WAIT_MS = 120000;
     private static final long CANCEL_TASK_POLL_MS = 500;
 
     private boolean isConnected = false;
@@ -816,6 +817,10 @@ public class VmwareClient {
 
     /** Asks vCenter to cancel and waits, bounded, for a terminal state. */
     public Pair<Boolean, String> cancelTask(ManagedObjectReference task) throws Exception {
+        return cancelTask(task, DEFAULT_CANCEL_TASK_WAIT_MS);
+    }
+
+    public Pair<Boolean, String> cancelTask(ManagedObjectReference task, long waitMs) throws Exception {
         TaskInfo info = getDynamicProperty(task, "info");
         if (info == null) {
             LOGGER.warn("Unable to get the task info, so couldn't cancel the task");
@@ -839,7 +844,7 @@ public class VmwareClient {
 
         LOGGER.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
         if (!info.isCancelable()) {
-            LOGGER.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
+            LOGGER.info(taskName + " task will continue to run on vCenter because it can't be cancelled");
             return new Pair<>(false, "task " + taskName + " is not cancelable on vCenter");
         }
 
@@ -847,12 +852,12 @@ public class VmwareClient {
         getService().cancelTask(task);
 
         // poll rather than waitForValues: it is synchronized and the thread waiting on this task holds its monitor
-        final long deadline = System.currentTimeMillis() + CANCEL_TASK_WAIT_MS;
+        final long deadline = System.currentTimeMillis() + waitMs;
         while (System.currentTimeMillis() < deadline) {
             info = getDynamicProperty(task, "info");
             TaskInfoState state = info != null ? info.getState() : null;
             if (TaskInfoState.SUCCESS.equals(state)) {
-                LOGGER.warn("Failed to cancel " + taskName + " task of the entity " + entityName + ", the task successfully completed");
+                LOGGER.info("Failed to cancel " + taskName + " task of the entity " + entityName + ", the task successfully completed");
                 return new Pair<>(false, "task " + taskName + " completed before it could be cancelled");
             }
             if (TaskInfoState.ERROR.equals(state)) {
@@ -862,12 +867,12 @@ public class VmwareClient {
                     return new Pair<>(true, "task " + taskName + " cancelled");
                 }
                 String reason = error != null ? error.getLocalizedMessage() : "unknown error";
-                LOGGER.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + reason);
+                LOGGER.info("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + reason);
                 return new Pair<>(false, "task " + taskName + " failed: " + reason);
             }
             Thread.sleep(CANCEL_TASK_POLL_MS);
         }
-        LOGGER.warn(taskName + " task of the entity " + entityName + " is still running after the cancel request");
-        return new Pair<>(false, "task " + taskName + " did not stop within " + CANCEL_TASK_WAIT_MS / 1000 + " seconds of the cancel request");
+        LOGGER.warn(taskName + " task of the entity " + entityName + " is still running " + waitMs / 1000 + " seconds after the cancel request");
+        return new Pair<>(false, "task " + taskName + " did not stop within " + waitMs / 1000 + " seconds of the cancel request");
     }
 }
