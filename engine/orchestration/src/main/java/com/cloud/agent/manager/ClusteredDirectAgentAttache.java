@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CancelCommand;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
@@ -45,9 +48,30 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
 
         if (req instanceof Response) {
             super.process(((Response)req).getAnswers());
+        } else if (isCancelRequest(req)) {
+            // the resource cannot answer this; the task registry behind this attache can
+            final CancelCommand cancel = (CancelCommand) req.getCommands()[0];
+            final Answer answer = answerCancelRequest(cancel);
+            processAnswers(req.getSequence(), new Response(req, answer, req.getManagementServerId(), req.getAgentId()));
         } else {
             super.send(req);
         }
+    }
+
+    private static boolean isCancelRequest(final Request req) {
+        final Command[] cmds = req.getCommands();
+        return cmds != null && cmds.length == 1 && cmds[0] instanceof CancelCommand;
+    }
+
+    private Answer answerCancelRequest(final CancelCommand cancel) {
+        final long seq = cancel.getSequence();
+        if (cancel.isCheckOnly()) {
+            final String reason = checkExecutionIsNotCancellable(seq);
+            return new Answer(cancel, reason == null, reason == null ? "request sequence " + seq + " can be cancelled" : reason);
+        }
+        final boolean cancelled = cancelExecution(seq, cancel.getReason());
+        return new Answer(cancel, cancelled, cancelled ? "request sequence " + seq + " cancelled (" + cancel.getReason() + ")"
+                : "request sequence " + seq + " could not be cancelled on this host");
     }
 
     @Override

@@ -67,6 +67,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CancelCommand;
+import com.cloud.agent.api.CancelJobCommand;
 import com.cloud.agent.api.ChangeAgentAnswer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
@@ -921,6 +922,66 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
     }
 
+    /** A job's work may run on another server (its API thread, or a work job taken from the queue there): that server is asked too, so the answer is the same whichever server the cancel reaches. */
+    @Override
+    public String checkJobCannotBeCancelled(final long jobId) {
+        final String here = checkJobCannotBeCancelledHere(jobId);
+        if (here != null) {
+            return here;
+        }
+        for (final String peer : peersExecuting(jobId)) {
+            final Answer answer = askPeerAboutJob(peer, new CancelJobCommand(jobId, null, true));
+            if (answer == null) {
+                return "management server " + peer + " running its work could not be reached";
+            }
+            if (!answer.getResult()) {
+                return answer.getDetails();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean cancelJobExecution(final long jobId, final String reason) {
+        boolean all = cancelJobExecutionHere(jobId, reason);
+        for (final String peer : peersExecuting(jobId)) {
+            final Answer answer = askPeerAboutJob(peer, new CancelJobCommand(jobId, reason, false));
+            if (answer == null || !answer.getResult()) {
+                logger.info("Management server {} could not stop the work of job-{}: {}", peer, jobId, answer != null ? answer.getDetails() : "not reachable");
+                all = false;
+            }
+        }
+        return all;
+    }
+
+    protected String checkJobCannotBeCancelledHere(final long jobId) {
+        return super.checkJobCannotBeCancelled(jobId);
+    }
+
+    protected Set<String> peersExecuting(final long jobId) {
+        final Set<String> peers = new HashSet<>();
+        for (final Long msid : asyncJobManager.listMgmtServersExecutingJob(jobId)) {
+            if (msid != null && msid != _nodeId) {
+                peers.add(Long.toString(msid));
+            }
+        }
+        return peers;
+    }
+
+    protected Answer askPeerAboutJob(final String peer, final CancelJobCommand cmd) {
+        try {
+            final String ansStr = _clusterMgr.execute(peer, 0, _gson.toJson(new Command[] {cmd}), true);
+            if (ansStr == null) {
+                return null;
+            }
+            final Answer[] answers = _gson.fromJson(ansStr, Answer[].class);
+            return answers != null && answers.length > 0 ? answers[0] : null;
+        } catch (final Exception e) {
+            logger.warn("Unable to ask management server {} about job-{}", peer, cmd.getJobId(), e);
+            return null;
+        }
+    }
+
     public String getPeerName(final long agentHostId) {
 
         final HostVO host = _hostDao.findById(agentHostId);
@@ -1324,6 +1385,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 final Answer[] answers = new Answer[1];
                 answers[0] = new Answer(cmd, result, null);
+                return _gson.toJson(answers);
+            } else if (cmds.length == 1 && cmds[0] instanceof CancelJobCommand) {
+                final CancelJobCommand cmd = (CancelJobCommand) cmds[0];
+                final Answer[] answers = new Answer[1];
+                if (cmd.isCheckOnly()) {
+                    final String refusal = checkJobCannotBeCancelledHere(cmd.getJobId());
+                    answers[0] = new Answer(cmd, refusal == null, refusal);
+                } else {
+                    final boolean stopped = cancelJobExecutionHere(cmd.getJobId(), cmd.getReason());
+                    answers[0] = new Answer(cmd, stopped, stopped ? null : "not every in-flight command of job-" + cmd.getJobId() + " on management server " + _nodeId + " could be stopped");
+                }
                 return _gson.toJson(answers);
             } else if (cmds.length == 1 && cmds[0] instanceof ScheduleHostScanTaskCommand) {
                 final ScheduleHostScanTaskCommand cmd = (ScheduleHostScanTaskCommand) cmds[0];

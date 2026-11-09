@@ -24,8 +24,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1835,6 +1837,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean claimJobCancelDelivery(final long jobId) {
         return _jobDao.claimCancelDelivery(jobId);
+    }
+
+    @Override
+    public Set<Long> listMgmtServersExecutingJob(final long jobId) {
+        final Set<Long> servers = new HashSet<>();
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
+        if (job != null && job.getExecutingMsid() != null) {
+            servers.add(job.getExecutingMsid());
+        }
+        for (final AsyncJobVO child : _jobDao.listChildJobs(jobId)) {
+            if (child.getStatus() == JobInfo.Status.IN_PROGRESS && child.getExecutingMsid() != null) {
+                servers.add(child.getExecutingMsid());
+            }
+        }
+        return servers;
     }
 
     @Override

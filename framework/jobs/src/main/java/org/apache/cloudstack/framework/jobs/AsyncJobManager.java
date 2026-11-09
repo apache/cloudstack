@@ -18,6 +18,7 @@ package org.apache.cloudstack.framework.jobs;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -48,6 +49,9 @@ public interface AsyncJobManager extends Manager {
 
     /** True once the cancel reached the job's worker on any server: the commands it sends from then on are its cleanup. */
     boolean isJobCancelDelivered(long jobId);
+
+    /** The management servers executing the job or one of its running work jobs. */
+    Set<Long> listMgmtServersExecutingJob(long jobId);
 
     /** Completes a job whose cancellation was requested as CANCELLED once nothing of it is running any more. */
     void finalizeCancelledJob(long jobId);

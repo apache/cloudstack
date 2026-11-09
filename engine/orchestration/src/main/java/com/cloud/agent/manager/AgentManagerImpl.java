@@ -2257,7 +2257,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return false;
         }
         logger.info("Cancellation of job-{} was requested, stopping its in-flight commands", jobId);
-        if (cancelJobExecution(jobId, "Job was cancelled")) {
+        if (cancelJobExecutionHere(jobId, "Job was cancelled")) {
             return true;
         }
         cancelled.retryAfter = now + CANCEL_RETRY_MS;
@@ -2339,6 +2339,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean cancelJobExecution(final long jobId, final String reason) {
+        return cancelJobExecutionHere(jobId, reason);
+    }
+
+    /** This server's part of the job: what the clustered manager asks of each peer. */
+    protected boolean cancelJobExecutionHere(final long jobId, final String reason) {
         // mark first, so a worker that carries on to its next command is refused there
         final CancelledJob cancelled = _cancelledJobs.computeIfAbsent(jobId, id -> new CancelledJob());
         final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
