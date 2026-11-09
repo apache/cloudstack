@@ -516,6 +516,8 @@ export default class RFB extends EventTargetMixin {
             return;
         }
 
+        this._sock.sendActivity();
+
         const scancode = XtScancode[code];
 
         if (keysym === KeyTable.XK_Shift_L || keysym === KeyTable.XK_Shift_R) {
@@ -1209,6 +1211,8 @@ export default class RFB extends EventTargetMixin {
     _sendMouse(x, y, mask) {
         if (this._rfbConnectionState !== 'connected') { return; }
         if (this._viewOnly) { return; } // View only, skip mouse events
+
+        this._sock.sendActivity();
 
         RFB.messages.pointerEvent(this._sock, this._display.absX(x),
                                   this._display.absY(y), mask);

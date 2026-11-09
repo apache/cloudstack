@@ -118,9 +118,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     while (connectionAlive) {
                         logger.trace("Connection with client [{}] [IP: {}] is alive.", clientId, clientSourceIp);
                         if (client.isVncOverWebSocketConnection()) {
-                            if (client.isVncOverWebSocketConnectionOpen()) {
-                                updateFrontEndActivityTime();
-                            }
                             connectionAlive = session.isOpen();
                             sleepTime = 1;
                         } else if (client.isVncOverNioSocket()) {
@@ -128,7 +125,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             int bytesRead = client.readAvailableDataIntoBuffer(buffer, buffer.remaining());
 
                             if (bytesRead > 0) {
-                                updateFrontEndActivityTime();
                                 consecutiveZeroReads = 0; // Reset counter on successful read
 
                                 sleepTime = 0; // Still no sleep to catch any remaining data quickly
@@ -185,7 +181,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         try {
             // Buffer is already prepared for reading by flip()
             session.getRemote().sendBytes(buffer);
-            updateFrontEndActivityTime();
         } catch (WebSocketException | IOException e) {
             logger.error("VNC server connection exception.", e);
             return false;
@@ -367,7 +362,16 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         this.connectionAlive = false;
         // Clear buffer reference to allow GC when client disconnects
         this.readBuffer = null;
-        ConsoleProxy.removeViewer(this);
+
+        try {
+            if (session != null && session.isOpen()) {
+                session.disconnect();
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to disconnect WebSocket session for client [{}].", clientId, e);
+        } finally {
+            ConsoleProxy.removeViewer(this);
+        }
     }
 
     @Override
