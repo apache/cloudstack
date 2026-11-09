@@ -875,8 +875,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             String accountName = cmd.getAccountName();
             isRecursive = cmd.isRecursive();
             boolean listAll = cmd.listAll();
-            long startIndex = cmd.getStartIndex();
-            long pageSizeVal = cmd.getPageSizeVal();
+            Long startIndex = cmd.getStartIndex();
+            Long pageSizeVal = cmd.getPageSizeVal();
             Account caller = CallContext.current().getCallingAccount();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
