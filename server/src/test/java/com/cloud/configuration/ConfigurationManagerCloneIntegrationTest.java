@@ -30,6 +30,8 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOfferingCategoryVO;
+import com.cloud.service.dao.ServiceOfferingCategoryDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -94,6 +96,9 @@ public class ConfigurationManagerCloneIntegrationTest {
 
     @Mock
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+
+    @Mock
+    private ServiceOfferingCategoryDao serviceOfferingCategoryDao;
 
     @Mock
     private DiskOfferingDao diskOfferingDao;
@@ -167,6 +172,9 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
 
+        Mockito.lenient().when(serviceOfferingCategoryDao.findById(anyLong()))
+                .thenReturn(mock(ServiceOfferingCategoryVO.class));
+
         // User/Account DAO stubs used by createDiskOffering
         Mockito.lenient().when(userDao.findById(anyLong())).thenReturn(userVO);
         Mockito.lenient().when(userVO.getAccountId()).thenReturn(1L);
@@ -198,6 +206,7 @@ public class ConfigurationManagerCloneIntegrationTest {
 
         ServiceOfferingVO sourceOffering = mock(ServiceOfferingVO.class);
         when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getCategoryId()).thenReturn(42L);
         when(sourceOffering.getName()).thenReturn("source-offering");
         when(sourceOffering.getDisplayText()).thenReturn("Source Display Text");
         when(sourceOffering.getCpu()).thenReturn(2);
@@ -251,7 +260,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyString(), anyMap(), anyLong(), any(Boolean.class),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             any(Integer.class), anyString(), anyLong(), anyBoolean(), anyLong(), anyBoolean(), anyBoolean(), anyBoolean(),
-            anyLong(), any(Integer.class), any(Boolean.class), anyBoolean(), any(Integer.class), any(VMLeaseManager.ExpiryAction.class)
+            anyLong(), any(Integer.class), any(Boolean.class), anyBoolean(), any(Integer.class), any(VMLeaseManager.ExpiryAction.class), anyLong()
         );
 
         ServiceOffering result = configurationManager.cloneServiceOffering(cmd);
@@ -270,6 +279,7 @@ public class ConfigurationManagerCloneIntegrationTest {
 
         ServiceOfferingVO sourceOffering = mock(ServiceOfferingVO.class);
         when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getCategoryId()).thenReturn(42L);
         when(sourceOffering.getName()).thenReturn("source-offering");
         when(sourceOffering.getDisplayText()).thenReturn("Source Display Text");
         when(sourceOffering.getCpu()).thenReturn(2);
@@ -328,7 +338,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyInt(), anyString(), anyLong(), anyBoolean(), anyLong(),
             anyBoolean(), anyBoolean(), anyBoolean(), anyLong(), anyInt(), anyBoolean(),
-            anyBoolean(), anyInt(), any());
+            anyBoolean(), anyInt(), any(), anyLong());
 
         ServiceOffering result = configurationManager.cloneServiceOffering(cmd);
 
@@ -340,6 +350,7 @@ public class ConfigurationManagerCloneIntegrationTest {
         Assert.assertEquals("Cloned offering should override RAM", Integer.valueOf(4096), result.getRamSize());
         Assert.assertEquals("Cloned offering should override HA", Boolean.FALSE, result.isOfferHA());
     }
+
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCloneDiskOfferingFailsWhenSourceNotFound() {
@@ -520,6 +531,7 @@ public class ConfigurationManagerCloneIntegrationTest {
 
         ServiceOfferingVO sourceOffering = mock(ServiceOfferingVO.class);
         when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getCategoryId()).thenReturn(42L);
         when(sourceOffering.getCpu()).thenReturn(2);
         when(sourceOffering.getSpeed()).thenReturn(1000);
         when(sourceOffering.getRamSize()).thenReturn(2048);
@@ -553,7 +565,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyInt(), anyString(), anyLong(), anyBoolean(), anyLong(),
             anyBoolean(), anyBoolean(), anyBoolean(), anyLong(), anyInt(), anyBoolean(),
-            anyBoolean(), anyInt(), any());
+            anyBoolean(), anyInt(), any(), anyLong());
 
         ServiceOffering result = configurationManager.cloneServiceOffering(cmd);
 

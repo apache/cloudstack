@@ -133,6 +133,9 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "gpu_display")
     private Boolean gpuDisplay;
 
+    @Column(name = "category_id")
+    private Long categoryId;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call service offering dao to load it.
@@ -209,6 +212,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         diskOfferingStrictness = offering.diskOfferingStrictness;
         vgpuProfileId = offering.vgpuProfileId;
         gpuCount = offering.gpuCount;
+        categoryId = offering.categoryId;
     }
 
     @Override
@@ -481,5 +485,14 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public void setGpuDisplay(Boolean gpuDisplay) {
         this.gpuDisplay = gpuDisplay;
+    }
+
+    @Override
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(long categoryId) {
+        this.categoryId = categoryId;
     }
 }
