@@ -19,10 +19,13 @@ package com.cloud.kubernetes.cluster.actionworkers;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -34,7 +37,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -42,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.LongSupplier;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
@@ -258,5 +264,86 @@ public class KubernetesClusterScaleWorkerTest {
         Assert.assertFalse(KubernetesClusterScaleWorker.isVmDown(VirtualMachine.State.Migrating));
         Assert.assertFalse(KubernetesClusterScaleWorker.isVmDown(VirtualMachine.State.Unknown));
         Assert.assertFalse(KubernetesClusterScaleWorker.isVmDown(VirtualMachine.State.Starting));
+    }
+
+    private KubernetesClusterScaleWorker spyWorkerForReadyWait(long downNodeCount) {
+        KubernetesClusterScaleWorker worker = new KubernetesClusterScaleWorker(kubernetesCluster, new java.util.HashMap<>(), 3L, null, false, null, null, clusterManager);
+        KubernetesClusterScaleWorker spyWorker = Mockito.spy(worker);
+        Mockito.doReturn("cloud").when(spyWorker).getControlNodeLoginUser();
+        Mockito.lenient().doReturn(downNodeCount).when(spyWorker).getDownNodeCount(Mockito.anySet());
+        return spyWorker;
+    }
+
+    private UserVm mockNewVm(long id, String hostName) {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getId()).thenReturn(id);
+        Mockito.lenient().when(vm.getHostName()).thenReturn(hostName);
+        return vm;
+    }
+
+    private static void mockReadyNodesCount(MockedStatic<KubernetesClusterUtil> util, boolean valid) {
+        util.when(() -> KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(Mockito.any(), Mockito.any(), Mockito.anyInt(),
+                Mockito.any(), Mockito.any(), Mockito.any(LongSupplier.class), Mockito.anyLong(), Mockito.anyLong())).thenReturn(valid);
+    }
+
+    private static void mockNodeReady(MockedStatic<KubernetesClusterUtil> util, String nodeName, boolean ready) {
+        util.when(() -> KubernetesClusterUtil.isKubernetesClusterNodeReady(Mockito.any(), Mockito.any(), Mockito.anyInt(),
+                Mockito.any(), Mockito.any(), Mockito.eq(nodeName), Mockito.anyLong(), Mockito.anyInt())).thenReturn(ready);
+    }
+
+    @Test
+    public void testWaitForScaledUpNodesReadyWaitsForEachNewNode() {
+        KubernetesClusterScaleWorker spyWorker = spyWorkerForReadyWait(1L);
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getTotalNodeCount()).thenReturn(6L);
+        List<UserVm> newVms = Arrays.asList(mockNewVm(10L, "k8s-node-a"), mockNewVm(11L, "K8s-Node-B"));
+        try (MockedStatic<KubernetesClusterUtil> util = Mockito.mockStatic(KubernetesClusterUtil.class)) {
+            mockReadyNodesCount(util, true);
+            mockNodeReady(util, "k8s-node-a", true);
+            mockNodeReady(util, "k8s-node-b", true);
+
+            Assert.assertTrue(spyWorker.waitForScaledUpNodesReady(cluster, newVms));
+
+            // Nodes whose VMs are down aren't expected to be Ready, the new VMs always are
+            ArgumentCaptor<LongSupplier> expected = ArgumentCaptor.forClass(LongSupplier.class);
+            util.verify(() -> KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(Mockito.eq(cluster), Mockito.any(), Mockito.anyInt(),
+                    Mockito.eq("cloud"), Mockito.any(), expected.capture(), Mockito.anyLong(), Mockito.anyLong()));
+            Assert.assertEquals(5L, expected.getValue().getAsLong());
+            Mockito.verify(spyWorker).getDownNodeCount(Set.of(10L, 11L));
+            // Kubernetes node names are lower case
+            util.verify(() -> KubernetesClusterUtil.isKubernetesClusterNodeReady(Mockito.eq(cluster), Mockito.any(), Mockito.anyInt(),
+                    Mockito.eq("cloud"), Mockito.any(), Mockito.eq("k8s-node-b"), Mockito.anyLong(), Mockito.anyInt()));
+        }
+    }
+
+    @Test
+    public void testWaitForScaledUpNodesReadyCountMetButNewNodeNotReady() {
+        // A node whose VM was just stopped is still reported Ready, and makes up the count before
+        // the new node has joined
+        KubernetesClusterScaleWorker spyWorker = spyWorkerForReadyWait(1L);
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        List<UserVm> newVms = Arrays.asList(mockNewVm(10L, "k8s-node-a"), mockNewVm(11L, "k8s-node-b"));
+        try (MockedStatic<KubernetesClusterUtil> util = Mockito.mockStatic(KubernetesClusterUtil.class)) {
+            mockReadyNodesCount(util, true);
+            mockNodeReady(util, "k8s-node-a", false);
+
+            Assert.assertFalse(spyWorker.waitForScaledUpNodesReady(cluster, newVms));
+            util.verify(() -> KubernetesClusterUtil.isKubernetesClusterNodeReady(Mockito.any(), Mockito.any(), Mockito.anyInt(),
+                    Mockito.any(), Mockito.any(), Mockito.eq("k8s-node-b"), Mockito.anyLong(), Mockito.anyInt()), Mockito.never());
+        }
+    }
+
+    @Test
+    public void testWaitForScaledUpNodesReadyCountNotMet() {
+        KubernetesClusterScaleWorker spyWorker = spyWorkerForReadyWait(0L);
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        List<UserVm> newVms = Collections.singletonList(mockNewVm(10L, "k8s-node-a"));
+        try (MockedStatic<KubernetesClusterUtil> util = Mockito.mockStatic(KubernetesClusterUtil.class)) {
+            mockReadyNodesCount(util, false);
+
+            Assert.assertFalse(spyWorker.waitForScaledUpNodesReady(cluster, newVms));
+            util.verify(() -> KubernetesClusterUtil.isKubernetesClusterNodeReady(Mockito.any(), Mockito.any(), Mockito.anyInt(),
+                    Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyInt()), Mockito.never());
+        }
     }
 }

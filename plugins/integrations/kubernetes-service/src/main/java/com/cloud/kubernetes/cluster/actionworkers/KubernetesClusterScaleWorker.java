@@ -525,6 +525,37 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         return new ArrayList<>(workerVMsMap.subList(startIndex, totalWorkerNodes));
     }
 
+    /**
+     * Waits, until the scale timeout, for the cluster's nodes to be Ready after a scale-up, and for
+     * each new node to be Ready by name. Existing nodes whose VMs are down (the usual reason a
+     * cluster is in Alert) can't become Ready, so they aren't counted. The new nodes are always
+     * expected to become Ready, even if a new VM goes down.
+     * The count alone isn't enough: Kubernetes keeps reporting the node of a VM that was just
+     * stopped as Ready until its node-monitor-grace-period runs out, so that node can make up the
+     * count before a new node has joined. The binaries ISO is detached after this returns, and a
+     * new node that hasn't joined by then never can.
+     */
+    protected boolean waitForScaledUpNodesReady(final KubernetesClusterVO cluster, final List<UserVm> newVms) {
+        final Set<Long> newVmIds = newVms.stream().map(InternalIdentity::getId).collect(Collectors.toSet());
+        final String loginUser = getControlNodeLoginUser();
+        if (!KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(cluster, publicIpAddress, sshPort,
+                loginUser, sshKeyFile, () -> cluster.getTotalNodeCount() - getDownNodeCount(newVmIds), scaleTimeoutTime, 15000)) {
+            return false;
+        }
+        for (UserVm vm : newVms) {
+            String hostName = vm.getHostName();
+            if (StringUtils.isNotEmpty(hostName)) {
+                hostName = hostName.toLowerCase();
+            }
+            if (!KubernetesClusterUtil.isKubernetesClusterNodeReady(cluster, publicIpAddress, sshPort,
+                    loginUser, sshKeyFile, hostName, scaleTimeoutTime, 15000)) {
+                logger.warn("Node: {} on VM: {} in Kubernetes cluster: {} isn't Ready", hostName, vm, cluster);
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {
         if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
@@ -551,11 +582,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         attachIsoKubernetesVMs(clusterVMs);
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setNodeCount(clusterSize);
-        // Existing nodes whose VMs are down (the usual reason a cluster is in Alert) can't become
-        // ready. The new nodes are always expected to become ready, even if a new VM goes down.
-        final Set<Long> newVmIds = clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toSet());
-        boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesClusterVO, publicIpAddress, sshPort,
-                getControlNodeLoginUser(), sshKeyFile, () -> kubernetesClusterVO.getTotalNodeCount() - getDownNodeCount(newVmIds), scaleTimeoutTime, 15000);
+        boolean readyNodesCountValid = waitForScaledUpNodesReady(kubernetesClusterVO, clusterVMs);
         detachIsoKubernetesVMs(clusterVMs);
         deleteTemplateLaunchPermission();
         if (!readyNodesCountValid) { // Scaling failed
