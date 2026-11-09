@@ -104,6 +104,8 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
@@ -2040,6 +2042,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     public void copyAsync(Map<VolumeInfo, DataStore> volumeDataStoreMap, VirtualMachineTO vmTO, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         String errMsg = null;
         boolean success = false;
+        boolean destVolumesHandled = false;
         Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
         List<VolumeInfo> samePoolClvmVolumes = new ArrayList<>();
 
@@ -2234,6 +2237,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, srcHost, destHost);
+            destVolumesHandled = true;
 
             if (success) {
                 VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, agentManager::send, logger);
@@ -2263,12 +2267,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             throw new CloudRuntimeException(errMsg, ex);
         } finally {
-            if (!success && !srcVolumeInfoToDestVolumeInfo.isEmpty()) {
+            // handlePostMigration did not run: the migration was cancelled, timed out or failed before it
+            if (!success && !destVolumesHandled && !srcVolumeInfoToDestVolumeInfo.isEmpty()) {
                 for (VolumeInfo destVolumeInfo : srcVolumeInfoToDestVolumeInfo.values()) {
                     logger.info(String.format("Expunging dest volume [id: %s, state: %s] as part of failed VM migration with volumes command for VM [%s].", destVolumeInfo.getId(), destVolumeInfo.getState(), vmTO.getId()));
-                    destVolumeInfo.processEvent(Event.OperationFailed);
-                    destVolumeInfo.processEvent(Event.DestroyRequested);
-                    _volumeService.expungeVolumeAsync(destVolumeInfo);
+                    try {
+                        destVolumeInfo.processEvent(Event.OperationFailed);
+                        destroyMigrationCopy(destVolumeInfo);
+                        _volumeService.expungeVolumeAsync(_volumeDataFactory.getVolume(destVolumeInfo.getId()));
+                    } catch (Exception e) {
+                        logger.warn("Failed to clean up dest volume [id: {}] of VM [{}]: {}", destVolumeInfo.getId(), vmTO.getId(), e.getMessage());
+                    }
                 }
             }
 
@@ -2572,7 +2581,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 srcVolumeInfo.processEvent(Event.OperationFailed);
 
                 try {
-                    _volumeService.destroyVolume(destVolumeInfo.getId());
+                    destroyMigrationCopy(destVolumeInfo);
 
                     destVolumeInfo = _volumeDataFactory.getVolume(destVolumeInfo.getId());
 
@@ -2585,6 +2594,19 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     logger.debug("Failed to clean up dest volume on storage", e);
                 }
             }
+        }
+    }
+
+    /**
+     * The copy's VOLUME.CREATE went out when its row reached Ready, before any data moved. Closing that usage record takes the
+     * Destroy to Destroy transition destroyVolume performs, which the listener turns into VOLUME.DELETE for a data disk; a ROOT
+     * copy is published here, since the listener leaves ROOT volumes to the VM's own destroy, which never knows this copy.
+     */
+    protected void destroyMigrationCopy(VolumeInfo destVolumeInfo) {
+        _volumeService.destroyVolume(destVolumeInfo.getId());
+        if (Volume.Type.ROOT.equals(destVolumeInfo.getVolumeType())) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, destVolumeInfo.getAccountId(), destVolumeInfo.getDataCenterId(),
+                    destVolumeInfo.getId(), destVolumeInfo.getName(), Volume.class.getName(), destVolumeInfo.getUuid());
         }
     }
 
