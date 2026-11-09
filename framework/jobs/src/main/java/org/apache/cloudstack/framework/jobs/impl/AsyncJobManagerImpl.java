@@ -74,6 +74,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -389,7 +390,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
         final Status jobStatus = cancelReason != null ? JobInfo.Status.CANCELLED : requestedStatus;
         final int resultCode = cancelReason != null ? ApiErrorCode.INTERNAL_ERROR.getHttpCode() : requestedResultCode;
-        final String resultObject = cancelReason != null ? cancelledResult(cancelReason) : requestedResult;
+        final String resultObject = cancelReason == null ? requestedResult
+                : isWorkJob(job) && requestedResult != null ? requestedResult : cancelledResultFor(job, cancelReason);
 
         if (resultObject != null) {
             job.updateResultWithEncryptionIfNeeded(resultObject);
@@ -1207,7 +1209,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         final String cancelReason = job.isCancelRequested() ? getJobCancelReasonFromResult(job) : null;
                         job.setStatus(cancelReason != null ? JobInfo.Status.CANCELLED : JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-                        job.updateResultWithEncryptionIfNeeded(cancelReason != null ? cancelledResult(cancelReason + " (management server restart or shutdown)")
+                        job.updateResultWithEncryptionIfNeeded(cancelReason != null ? cancelledResultFor(job, cancelReason + " (management server restart or shutdown)")
                                 : "job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
                         final Date currentGMTTime = DateUtil.currentGMTTime();
@@ -1539,6 +1541,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return JobSerializerHelper.toSerializedString(response);
     }
 
+    static String cancelledResultFor(final AsyncJob job, final String text) {
+        return isWorkJob(job) ? JobSerializerHelper.toObjectSerializedString(new OperationCancelledException(text)) : cancelledResult(text);
+    }
+
+    static boolean isWorkJob(final AsyncJob job) {
+        final String dispatcher = job != null ? job.getDispatcher() : null;
+        return dispatcher != null && !dispatcher.equalsIgnoreCase("ApiAsyncJobDispatcher") && !AsyncJobVO.JOB_DISPATCHER_PSEUDO.equals(dispatcher);
+    }
+
     @Override
     public String getCancellationReason(final long jobId) {
         final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
@@ -1575,9 +1586,20 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     static String getJobCancelReasonFromResult(final AsyncJobVO job) {
+        if (job.getResult() == null) {
+            return null;
+        }
         try {
             final Object result = JobSerializerHelper.fromSerializedString(job.getResult());
-            return result instanceof ExceptionResponse ? ((ExceptionResponse)result).getErrorText() : null;
+            if (result instanceof ExceptionResponse) {
+                return ((ExceptionResponse)result).getErrorText();
+            }
+        } catch (final RuntimeException ignored) {
+            // not an API result; a work job's is tried next
+        }
+        try {
+            final Object result = JobSerializerHelper.fromObjectSerializedString(job.getResult());
+            return result instanceof OperationCancelledException ? ((OperationCancelledException)result).getReason() : null;
         } catch (final RuntimeException e) {
             return null;
         }
@@ -1641,7 +1663,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 continue;
             }
             logger.info("Cancelling queued job-{}, its parent job-{} was cancelled before it was scheduled", child.getId(), parentJobId);
-            completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResult(reason + " (parent job cancelled before this job was scheduled)"));
+            completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResultFor(child, reason + " (parent job cancelled before this job was scheduled)"));
             _jobMonitor.unregisterByJobId(child.getId());
             _queueMgr.purgeItem(queueItemId);
         }
@@ -1665,7 +1687,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (isJobCancelling(parentJob)) {
             final String reason = getJobCancelReasonFromResult(parentJob);
             completeAsyncJob(item.getContentId(), Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(),
-                    cancelledResult((reason != null ? reason : "job-" + parentJob.getId() + " was cancelled") + " (parent job cancelled before this job was scheduled)"));
+                    cancelledResultFor(job, (reason != null ? reason : "job-" + parentJob.getId() + " was cancelled") + " (parent job cancelled before this job was scheduled)"));
         } else {
             completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0,
                     "Job is not scheduled for execution as the parent job is done. Parent job state: " + parentJob.getStatus());
@@ -1787,6 +1809,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     public void finalizeCancelledJob(final long jobId) {
         final AsyncJobVO job = _jobDao.findById(jobId);
         if (job == null || !job.isCancelRequested() || job.getStatus() != JobInfo.Status.IN_PROGRESS) {
+            return;
+        }
+        if (_jobMonitor.isActiveJob(jobId)) {
+            logger.debug("Job-{} is cancelled but a thread on this server is still running it, it ends when that does", jobId);
             return;
         }
         for (final AsyncJobVO child : _jobDao.listChildJobs(jobId)) {

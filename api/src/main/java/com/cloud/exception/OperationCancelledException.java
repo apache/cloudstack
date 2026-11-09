@@ -53,6 +53,11 @@ public class OperationCancelledException extends CloudRuntimeException {
         _reason = reason;
     }
 
+    public OperationCancelledException(String reason) {
+        super(reason);
+        _reason = reason;
+    }
+
     /** The commands were never sent: its job had already been cancelled. */
     public static OperationCancelledException updateCmdsNotSent(Command[] cmds, long agentId, long jobId) {
         final String reason = "job-" + jobId + " was cancelled";
