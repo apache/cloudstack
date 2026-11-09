@@ -20,19 +20,26 @@ package com.cloud.vm.dao;
 import static com.cloud.vm.VirtualMachine.State.Running;
 import static com.cloud.vm.VirtualMachine.State.Stopped;
 import static com.cloud.vm.dao.VMInstanceDaoImpl.MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.PreparedStatement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 import com.cloud.host.dao.HostDao;
 import org.joda.time.DateTime;
@@ -40,8 +47,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -50,6 +59,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -208,6 +218,51 @@ public class VMInstanceDaoImplTest {
         verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
 
         assertTrue(result);
+    }
+
+    @Test
+    public void testUpdatePowerStatesBindsGmtUpdateTimeInsteadOfDbNow() throws Exception {
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        try {
+            for (String timeZone : List.of("UTC", "Europe/Amsterdam", "America/New_York", "Asia/Kolkata", "Pacific/Auckland")) {
+                TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
+                verifyBulkUpdatePowerStatesBindsGmtUpdateTime(timeZone);
+            }
+        } finally {
+            TimeZone.setDefault(defaultTimeZone);
+        }
+    }
+
+    private void verifyBulkUpdatePowerStatesBindsGmtUpdateTime(String timeZone) throws Exception {
+        VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
+        when(instance.getId()).thenReturn(1L);
+        when(instance.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        doReturn(List.of(instance)).when(vmInstanceDao).listSelectPowerStateByIds(any());
+        TransactionLegacy txn = Mockito.mock(TransactionLegacy.class);
+        PreparedStatement pstmt = Mockito.mock(PreparedStatement.class);
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        when(txn.prepareAutoCloseStatement(sqlCaptor.capture())).thenReturn(pstmt);
+        ArgumentCaptor<Timestamp> timeCaptor = ArgumentCaptor.forClass(Timestamp.class);
+        ArgumentCaptor<Calendar> calendarCaptor = ArgumentCaptor.forClass(Calendar.class);
+
+        long before = System.currentTimeMillis();
+        Map<Long, VirtualMachine.PowerState> notUpdated;
+        try (MockedStatic<TransactionLegacy> ignored = Mockito.mockStatic(TransactionLegacy.class)) {
+            ignored.when(TransactionLegacy::currentTxn).thenReturn(txn);
+            notUpdated = vmInstanceDao.updatePowerState(Map.of(1L, VirtualMachine.PowerState.PowerOff), 2L, new Date());
+        }
+        long after = System.currentTimeMillis();
+
+        assertTrue(timeZone, notUpdated.isEmpty());
+        String sql = sqlCaptor.getValue();
+        assertFalse(timeZone, sql.toLowerCase().contains("now()"));
+        assertTrue(timeZone, sql.contains("`power_state_update_time` = ?"));
+        verify(pstmt).setLong(1, 2L);
+        verify(pstmt).setTimestamp(eq(2), timeCaptor.capture(), calendarCaptor.capture());
+        verify(pstmt).executeUpdate();
+        long written = timeCaptor.getValue().getTime();
+        assertTrue(timeZone, written >= before && written <= after);
+        assertEquals(timeZone, "GMT", calendarCaptor.getValue().getTimeZone().getID());
     }
 
     @Test
