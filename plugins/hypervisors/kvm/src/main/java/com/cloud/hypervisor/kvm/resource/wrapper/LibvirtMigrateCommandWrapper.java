@@ -368,8 +368,18 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 logger.debug("Migration failed as connection to destination [{}] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
                 result = String.format("Failed to migrate domain [%s].", vmName);
             }
+        } catch (final ExecutionException e) {
+            // the migration thread's libvirt failure; after an abort that is "operation aborted: migration out job: canceled by client"
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            if (libvirtComputingResource.wasRequestCancelled(command.getRequestSequence())) {
+                logger.info("Migration of VM {} cancelled on request (seq {}): {}", vmName, command.getRequestSequence(), cause.getMessage());
+            } else {
+                logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, cause.getMessage()), e);
+            }
+            if (result == null) {
+                result = "Exception during migrate: " + cause.getMessage();
+            }
         } catch (final InterruptedException
-            | ExecutionException
             | TimeoutException
             | IOException
             | ParserConfigurationException

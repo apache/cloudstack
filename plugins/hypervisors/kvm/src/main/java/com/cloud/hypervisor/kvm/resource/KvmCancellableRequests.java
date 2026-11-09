@@ -105,7 +105,11 @@ public class KvmCancellableRequests {
         return null;
     }
 
-    /** Runs each hook once, bounded by its timeout; a Thread cannot be started twice, so ran hooks are handed back for removal from the disconnect list. */
+    /**
+     * Runs each hook once, bounded by its timeout; a Thread cannot be started twice, so ran hooks are handed back for removal from the
+     * disconnect list. True only when every hook stopped its work: a job that finished before the abort reached it was not cancelled,
+     * and the request's answer is then the real one.
+     */
     public boolean cancel(final long sequence, final Consumer<DisconnectHook> onHookRan) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
@@ -115,9 +119,8 @@ public class KvmCancellableRequests {
             LOGGER.debug("Request sequence {} ({}) has nothing that can be stopped", sequence, describe(state.command));
             return false;
         }
-        state.cancelRequested = true;
 
-        boolean allRan = true;
+        boolean allStopped = true;
         for (final DisconnectHook hook : state.hooks) {
             try {
                 if (hook.getState() == Thread.State.NEW) {
@@ -126,21 +129,25 @@ public class KvmCancellableRequests {
                 hook.join(hook.getTimeoutMs());
                 if (hook.isAlive()) {
                     LOGGER.warn("Cancel hook {} for request sequence {} did not finish within {} ms", hook.getName(), sequence, hook.getTimeoutMs());
-                    allRan = false;
+                    allStopped = false;
+                } else if (!hook.stoppedTheWork()) {
+                    LOGGER.info("Cancel hook {} for request sequence {} ({}) found nothing left to stop", hook.getName(), sequence, describe(state.command));
+                    allStopped = false;
                 } else {
+                    state.cancelRequested = true;
                     LOGGER.info("Ran cancel hook {} for request sequence {} ({})", hook.getName(), sequence, describe(state.command));
                 }
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
-                allRan = false;
+                allStopped = false;
             } catch (final Exception e) {
                 LOGGER.warn("Cancel hook {} for request sequence {} failed", hook.getName(), sequence, e);
-                allRan = false;
+                allStopped = false;
             } finally {
                 onHookRan.accept(hook);
             }
         }
-        return allRan;
+        return allStopped;
     }
 
     int hookCount(final long sequence) {

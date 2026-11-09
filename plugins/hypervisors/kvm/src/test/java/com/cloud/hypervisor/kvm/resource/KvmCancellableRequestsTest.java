@@ -128,4 +128,40 @@ public class KvmCancellableRequestsTest {
         Assert.assertNotNull(requests.checkRequestNotCancellable(SEQ));
         Assert.assertEquals(0, requests.hookCount(SEQ));
     }
+
+    private static final class NothingLeftToStopHook extends DisconnectHook {
+        NothingLeftToStopHook() {
+            super("too-late", 2000);
+        }
+
+        @Override
+        public void run() {
+            // the libvirt job had already finished: the abort found no job
+            setStoppedTheWork(false);
+        }
+    }
+
+    @Test
+    public void testHookThatFoundNothingToStopIsNotACancellation() {
+        requests.begin(SEQ, new CheckHealthCommand());
+        requests.attach(new NothingLeftToStopHook());
+
+        Assert.assertFalse(requests.cancel(SEQ, dropped::add));
+        // the request's real answer stands: a success is a success, a later failure is not a cancellation
+        Assert.assertFalse(requests.wasCancelRequested(SEQ));
+        Assert.assertEquals(1, dropped.size());
+    }
+
+    @Test
+    public void testRequestIsCancelledOnlyIfEveryHookStoppedItsWork() {
+        final CountingHook stopped = new CountingHook();
+        requests.begin(SEQ, new CheckHealthCommand());
+        requests.attach(stopped);
+        requests.attach(new NothingLeftToStopHook());
+
+        Assert.assertFalse(requests.cancel(SEQ, dropped::add));
+        Assert.assertEquals(1, stopped.runs.get());
+        // something was stopped, so the request's failure that follows is reported as cancelled
+        Assert.assertTrue(requests.wasCancelRequested(SEQ));
+    }
 }
