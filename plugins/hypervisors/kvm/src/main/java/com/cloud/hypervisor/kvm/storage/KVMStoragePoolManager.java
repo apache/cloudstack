@@ -31,10 +31,13 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.reflections.Reflections;
 
+import com.ceph.rados.exceptions.RadosException;
+import com.ceph.rbd.RbdException;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
@@ -52,6 +55,8 @@ import com.cloud.vm.VirtualMachine;
 
 public class KVMStoragePoolManager {
     protected Logger logger = LogManager.getLogger(getClass());
+
+    private static final int RBD_ENOENT = -2;
 
     private KVMHAMonitor _haMonitor;
     private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
@@ -354,15 +359,20 @@ public class KVMStoragePoolManager {
                     return vol;
                 }
             } catch (Exception e) {
+                if (isCephErrorOtherThanNotFound(e)) {
+                    /*
+                     * The loop waits for a volume created on another host to appear. A Ceph
+                     * operation that timed out or failed is not that, and retrying it would
+                     * hold this command for as many failed Ceph operations as there are retries.
+                     */
+                    logger.warn("Failed to find volume:" + volName + " due to " + e.toString() + ", not retrying a Ceph error", e);
+                    throw e instanceof CloudRuntimeException ? (CloudRuntimeException) e : new CloudRuntimeException(e.toString(), e);
+                }
                 logger.debug("Failed to find volume:" + volName + " due to " + e.toString() + ", retry:" + cnt);
                 errMsg = e.toString();
             }
 
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                logger.debug("[ignored] interrupted while trying to get storage pool.");
-            }
+            sleepBeforeRetry(3000);
             cnt++;
         }
 
@@ -373,6 +383,31 @@ public class KVMStoragePoolManager {
         } else {
             return vol;
         }
+    }
+
+    void sleepBeforeRetry(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            logger.debug("[ignored] interrupted while waiting for a volume to appear.");
+        }
+    }
+
+    /**
+     * Whether the cause chain carries a Ceph error other than librbd's -ENOENT, which is what
+     * opening an image that does not exist (yet) returns, and so the only one worth waiting on.
+     * A librados error, including -ENOENT for a pool that is gone, or one without an errno, is not.
+     */
+    static boolean isCephErrorOtherThanNotFound(Throwable e) {
+        for (Throwable t : ExceptionUtils.getThrowableList(e)) {
+            if (t instanceof RadosException) {
+                return true;
+            }
+            if (t instanceof RbdException && ((RbdException) t).getReturnValue() != RBD_ENOENT) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type) {
