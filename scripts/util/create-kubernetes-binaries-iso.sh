@@ -148,6 +148,10 @@ chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
 echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
 sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
 
-mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
+# The volume label must be CDROM: the CKS nodes locate this ISO with
+# "blkid -o device -t LABEL=CDROM" (see conf/k8s-control-node.yml). Do not rely on the
+# tool default -- genisoimage defaults to CDROM but xorriso's mkisofs compatibility mode
+# (the only mkisofs available on EL8+) defaults to ISOIMAGE, which the nodes never find.
+mkisofs -V CDROM -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
 rm -rf "${iso_dir}"
