@@ -504,10 +504,21 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     }
 
     public void checkForSuccess(final Connection c, final Task task) throws XenAPIException, XmlRpcException {
-        if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
+        final Types.TaskStatusType status = task.getStatus(c);
+        if (status == Types.TaskStatusType.SUCCESS) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") completed");
             }
+        } else if (status == Types.TaskStatusType.CANCELLED) {
+            // a cancelled task cannot be cancelled again; it is destroyed and reported as the cancellation it is
+            final String msg = "Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") was cancelled";
+            logger.info(msg);
+            try {
+                task.destroy(c);
+            } catch (final Exception e) {
+                logger.debug("Unable to destroy cancelled task " + task + ": " + e.getMessage());
+            }
+            throw new Types.BadAsyncResult(msg);
         } else {
             final String msg = "Task failed! Task record: " + task.getRecord(c);
             logger.warn(msg);
@@ -766,6 +777,49 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             } catch (final Exception e) {
                 logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
             }
+        }
+    }
+
+    /** Whether a cancel stopped a task of the request this thread is executing. */
+    public boolean wasCurrentRequestCancelled() {
+        return taskRegistry.wasCancelRequested(RequestExecutionContext.getRequestSequence());
+    }
+
+    /** The VDIs an SR holds now, taken before a copy or migration so that what a cancelled one leaves behind can be told apart; null when unknown. */
+    public Set<VDI> vdisOn(final Connection conn, final SR sr) {
+        if (sr == null) {
+            return null;
+        }
+        try {
+            return new HashSet<>(sr.getVDIs(conn));
+        } catch (final Exception e) {
+            logger.debug("Unable to list the VDIs of SR " + sr + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * A VDI.copy or pool_migrate cancelled half way leaves its destination VDI on the SR, unknown to CloudStack. The VDIs that
+     * appeared since the snapshot taken before the operation are destroyed; on a shared SR only one carrying the moved VDI's name
+     * label is touched, so that a VDI another operation created meanwhile is left alone.
+     */
+    public void destroyVdisLeftBy(final Connection conn, final SR sr, final Set<VDI> before, final String nameLabel) {
+        if (sr == null || before == null) {
+            return;
+        }
+        try {
+            for (final VDI vdi : sr.getVDIs(conn)) {
+                if (before.contains(vdi)) {
+                    continue;
+                }
+                if (nameLabel != null && !nameLabel.equals(vdi.getNameLabel(conn))) {
+                    continue;
+                }
+                logger.info("Destroying VDI " + vdi.getUuid(conn) + " left on SR " + sr.getUuid(conn) + " by a cancelled operation");
+                vdi.destroy(conn);
+            }
+        } catch (final Exception e) {
+            logger.warn("Unable to clean up the VDIs a cancelled operation left on SR " + sr + ": " + e.getMessage());
         }
     }
 
@@ -5309,17 +5363,19 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     public void waitForTask(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         final long beginTime = System.currentTimeMillis();
+        final String taskName = task.getNameLabel(c);
         if (logger.isTraceEnabled()) {
-            logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout + "ms timeout");
+            logger.trace("Task " + taskName + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout + "ms timeout");
         }
         // register with the executing request; a request already cancelled cancels the new task at once
-        if (XenServerTaskRegistry.taskStarted(task, c)) {
+        if (XenServerTaskRegistry.taskStarted(task, c, taskName)) {
             logger.info("Request executing on this thread was already cancelled, cancelling newly created task " + task);
             XenServerTaskRegistry.cancelTask(task, c);
         }
+        Types.TaskStatusType status = null;
         try {
             // wait through CANCELLING too: callers read the final status right after this returns
-            Types.TaskStatusType status = task.getStatus(c);
+            status = task.getStatus(c);
             while (status == Types.TaskStatusType.PENDING || status == Types.TaskStatusType.CANCELLING) {
                 try {
                     if (logger.isTraceEnabled()) {
@@ -5338,7 +5394,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 status = task.getStatus(c);
             }
         } finally {
-            XenServerTaskRegistry.taskFinished(task);
+            XenServerTaskRegistry.taskFinished(task, status);
         }
     }
 

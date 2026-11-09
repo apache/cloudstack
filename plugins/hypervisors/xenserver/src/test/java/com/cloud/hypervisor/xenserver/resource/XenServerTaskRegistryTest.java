@@ -187,4 +187,61 @@ public class XenServerTaskRegistryTest {
         Mockito.when(task.getStatus(connection)).thenReturn(first, rest);
         return task;
     }
+
+    @Test
+    public void testPowerTaskIsRefusedWithoutAskingXenServer() throws Exception {
+        final Task shutdown = task("OpaqueRef:8", Types.TaskStatusType.PENDING);
+        registry.beginRequest(SEQ, "StopCommand");
+        XenServerTaskRegistry.taskStarted(shutdown, connection, "Async.VM.clean_shutdown");
+
+        final String reason = registry.checkTaskNotCancellable(SEQ);
+        Assert.assertTrue(reason, reason.contains("Async.VM.clean_shutdown cannot be stopped"));
+        Assert.assertFalse(registry.cancel(SEQ));
+        Assert.assertFalse(registry.wasCancelRequested(SEQ));
+        Mockito.verify(shutdown, Mockito.never()).cancelAsync(Mockito.any());
+        Mockito.verify(shutdown, Mockito.never()).getStatus(Mockito.any());
+    }
+
+    @Test
+    public void testCopyTaskIsStillCancellable() throws Exception {
+        final Task copy = task("OpaqueRef:9", Types.TaskStatusType.PENDING, Types.TaskStatusType.PENDING, Types.TaskStatusType.CANCELLED);
+        registry.beginRequest(SEQ, "CopyCommand");
+        XenServerTaskRegistry.taskStarted(copy, connection, "Async.VDI.copy");
+
+        Assert.assertNull(registry.checkTaskNotCancellable(SEQ));
+        Assert.assertTrue(registry.cancel(SEQ));
+        Assert.assertTrue(registry.wasCancelRequested(SEQ));
+    }
+
+    @Test
+    public void testTaskDestroyedByItsWaiterAfterTheCancelCountsByItsFinalStatus() throws Exception {
+        final Task task = Mockito.mock(Task.class);
+        Mockito.when(task.toWireString()).thenReturn("OpaqueRef:10");
+        registry.beginRequest(SEQ, "MigrateCommand");
+        XenServerTaskRegistry.taskStarted(task, connection, "Async.VM.migrate_send");
+        // first poll: pending; the waiting thread then sees CANCELLED, records it and destroys the task before the next poll
+        Mockito.when(task.getStatus(connection)).thenReturn(Types.TaskStatusType.PENDING).thenAnswer(invocation -> {
+            XenServerTaskRegistry.taskFinished(task, Types.TaskStatusType.CANCELLED);
+            throw new Types.HandleInvalid("task", "OpaqueRef:10");
+        });
+
+        Assert.assertTrue(registry.cancel(SEQ));
+        Mockito.verify(task).cancelAsync(connection);
+        Assert.assertTrue(registry.wasCancelRequested(SEQ));
+    }
+
+    @Test
+    public void testTaskThatCompletedBeforeTheCancelAndWasDestroyedIsNotACancellation() throws Exception {
+        final Task task = Mockito.mock(Task.class);
+        Mockito.when(task.toWireString()).thenReturn("OpaqueRef:11");
+        registry.beginRequest(SEQ, "MigrateCommand");
+        XenServerTaskRegistry.taskStarted(task, connection, "Async.VM.migrate_send");
+        Mockito.when(task.getStatus(connection)).thenReturn(Types.TaskStatusType.PENDING).thenAnswer(invocation -> {
+            XenServerTaskRegistry.taskFinished(task, Types.TaskStatusType.SUCCESS);
+            throw new Types.HandleInvalid("task", "OpaqueRef:11");
+        });
+
+        Assert.assertFalse(registry.cancel(SEQ));
+        Assert.assertFalse(registry.wasCancelRequested(SEQ));
+    }
 }

@@ -424,11 +424,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             prevBackupUuid = "";
         }
         SR ssSR = null;
+        Set<VDI> onSrBefore = null;
 
         final String remoteDir = secondaryStorageMountPath;
         try {
             ssSR = createFileSr(conn, remoteDir, path, nfsVersion);
             filesrcreated = true;
+            onSrBefore = hypervisorResource.vdisOn(conn, ssSR);
 
             final VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
             if (wait == 0) {
@@ -460,6 +462,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final String result = dvdi.getUuid(conn).concat("#").concat(dvdi.getPhysicalUtilisation(conn).toString());
             return result;
         } catch (final Exception e) {
+            if (hypervisorResource.wasCurrentRequestCancelled()) {
+                hypervisorResource.destroyVdisLeftBy(conn, ssSR, onSrBefore, null);
+            }
             final String msg = "Exception in backupsnapshot stage due to " + e.toString();
             logger.debug(msg);
             throw new CloudRuntimeException(msg, e);
@@ -568,6 +573,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             if (fullbackup) {
                 SR snapshotSr = null;
                 Task task = null;
+                Set<VDI> onSrBefore = null;
+                boolean copied = false;
                 try {
                     final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
                     mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
@@ -579,11 +586,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     }
 
                     snapshotSr = createFileSr(conn, secondaryStorageMountPath, folder, nfsVersion);
+                    onSrBefore = hypervisorResource.vdisOn(conn, snapshotSr);
 
                     task = snapshotVdi.copyAsync(conn, snapshotSr, null, null);
                     // poll every 1 seconds ,
                     hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                     hypervisorResource.checkForSuccess(conn, task);
+                    copied = true;
                     final VDI backedVdi = Types.toVDI(task, conn);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
                     snapshotSr.scan(conn);
@@ -629,6 +638,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         } catch (final Exception e) {
                             logger.warn("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
                         }
+                    }
+                    if (!copied && hypervisorResource.wasCurrentRequestCancelled()) {
+                        hypervisorResource.destroyVdisLeftBy(conn, snapshotSr, onSrBefore, null);
                     }
                     if (snapshotSr != null) {
                         hypervisorResource.removeSR(conn, snapshotSr);
@@ -941,6 +953,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         if (destStore instanceof NfsTO) {
             SR secondaryStorage = null;
             Task task = null;
+            Set<VDI> onSrBefore = null;
+            boolean copied = false;
             try {
                 final NfsTO nfsStore = (NfsTO)destStore;
                 final String nfsVersion = nfsStore.getNfsVersion();
@@ -952,6 +966,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                 // Create a SR for the volume UUID folder
                 secondaryStorage = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), destVolume.getPath(), nfsVersion);
+                onSrBefore = hypervisorResource.vdisOn(conn, secondaryStorage);
                 // Look up the volume on the source primary storage pool
                 final VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
                 // Copy the volume to secondary storage
@@ -959,6 +974,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
+                copied = true;
                 final VDI destVdi = Types.toVDI(task, conn);
                 final String destVolumeUUID = destVdi.getUuid(conn);
 
@@ -976,6 +992,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     } catch (final Exception e) {
                         logger.warn("unable to destroy task(" + task.toWireString() + ") due to " + e.toString());
                     }
+                }
+                if (!copied && hypervisorResource.wasCurrentRequestCancelled()) {
+                    hypervisorResource.destroyVdisLeftBy(conn, secondaryStorage, onSrBefore, null);
                 }
                 hypervisorResource.removeSR(conn, secondaryStorage);
             }
@@ -1013,14 +1032,21 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             }
             final SR srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory, nfsVersion);
             Task task = null;
+            SR primaryStoragePool = null;
+            Set<VDI> onSrBefore = null;
+            String srcVdiName = null;
+            boolean copied = false;
             try {
-                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn,
+                primaryStoragePool = hypervisorResource.getStorageRepository(conn,
                         CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
                 final VDI srcVdi = VDI.getByUuid(conn, volumeUuid);
+                srcVdiName = srcVdi.getNameLabel(conn);
+                onSrBefore = hypervisorResource.vdisOn(conn, primaryStoragePool);
                 task = srcVdi.copyAsync(conn, primaryStoragePool, null, null);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
+                copied = true;
                 final VDI destVdi = Types.toVDI(task, conn);
                 final VolumeObjectTO newVol = new VolumeObjectTO();
                 destVdi.setNameLabel(conn, srcVolume.getName());
@@ -1039,6 +1065,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     } catch (final Exception e) {
                         logger.warn("unable to destroy task(" + task.toString() + ") due to " + e.toString());
                     }
+                }
+                if (!copied && hypervisorResource.wasCurrentRequestCancelled()) {
+                    hypervisorResource.destroyVdisLeftBy(conn, primaryStoragePool, onSrBefore, srcVdiName);
                 }
                 if (srcSr != null) {
                     hypervisorResource.removeSR(conn, srcSr);

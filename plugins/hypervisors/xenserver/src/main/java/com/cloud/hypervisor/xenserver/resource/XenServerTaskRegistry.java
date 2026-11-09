@@ -16,8 +16,12 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +38,15 @@ public class XenServerTaskRegistry {
     private static final long CANCEL_TASK_WAIT_MS = 30000;
     private static final long CANCEL_TASK_POLL_MS = 500;
 
+    /**
+     * Power operations cannot be taken back once issued: XAPI lets the task be cancelled, but the guest has already been told to shut
+     * down or reboot, and a hard_shutdown cancelled half way leaves the VM paused. The resource would then fall back to the hard
+     * variant, which is the opposite of what a cancel means.
+     */
+    static final Set<String> UNCANCELLABLE_TASKS = new HashSet<>(Arrays.asList(
+            "Async.VM.clean_shutdown", "Async.VM.hard_shutdown", "Async.VM.clean_reboot", "Async.VM.hard_reboot",
+            "Async.VM.start", "Async.VM.start_on", "Async.VM.suspend", "Async.VM.resume", "Async.VM.resume_on", "Async.VM.pause", "Async.VM.unpause"));
+
     private static final ThreadLocal<RequestScope> CURRENT = new ThreadLocal<>();
 
     private final Map<Long, RequestState> requests = new ConcurrentHashMap<>();
@@ -41,16 +54,20 @@ public class XenServerTaskRegistry {
     private static final class ActiveTask {
         final Task task;
         final Connection connection;
+        final String name;
 
-        ActiveTask(final Task task, final Connection connection) {
+        ActiveTask(final Task task, final Connection connection, final String name) {
             this.task = task;
             this.connection = connection;
+            this.name = name;
         }
     }
 
     private static final class RequestState {
         final String command;
         final Map<String, ActiveTask> tasks = new ConcurrentHashMap<>();
+        // the status the waiting thread saw last, kept because it destroys the task object right after and the canceller may still be polling it
+        final Map<String, Types.TaskStatusType> finished = new ConcurrentHashMap<>();
         volatile boolean cancelling;
         volatile boolean cancelRequested;
 
@@ -95,6 +112,10 @@ public class XenServerTaskRegistry {
 
     /** Returns true when the request is being cancelled right now, so the caller cancels the new task at once; a task started after the cancel is the request's undo and runs. */
     static boolean taskStarted(final Task task, final Connection connection) {
+        return taskStarted(task, connection, null);
+    }
+
+    static boolean taskStarted(final Task task, final Connection connection, final String name) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || task == null) {
             return false;
@@ -106,18 +127,26 @@ public class XenServerTaskRegistry {
         if (state.cancelling) {
             return true;
         }
-        state.tasks.put(refOf(task), new ActiveTask(task, connection));
+        state.tasks.put(refOf(task), new ActiveTask(task, connection, name));
         return false;
     }
 
     static void taskFinished(final Task task) {
+        taskFinished(task, null);
+    }
+
+    static void taskFinished(final Task task, final Types.TaskStatusType finalStatus) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || task == null) {
             return;
         }
         final RequestState state = scope.registry.requests.get(scope.sequence);
         if (state != null) {
-            state.tasks.remove(refOf(task));
+            final String ref = refOf(task);
+            if (finalStatus != null) {
+                state.finished.put(ref, finalStatus);
+            }
+            state.tasks.remove(ref);
         }
     }
 
@@ -131,6 +160,10 @@ public class XenServerTaskRegistry {
             return "no XenAPI task is running for " + state.command;
         }
         for (final ActiveTask active : state.tasks.values()) {
+            final String refusal = refusalForUncancellable(active);
+            if (refusal != null) {
+                return refusal;
+            }
             try {
                 final Types.TaskStatusType status = active.task.getStatus(active.connection);
                 if (status != Types.TaskStatusType.PENDING) {
@@ -138,9 +171,20 @@ public class XenServerTaskRegistry {
                     return "XenAPI task " + refOf(active.task) + " is already " + status;
                 }
             } catch (final Exception e) {
-                LOGGER.warn("Unable to check the status of XenAPI task {} of request sequence {}", refOf(active.task), sequence, e);
+                final Types.TaskStatusType finished = state.finished.get(refOf(active.task));
+                if (finished != null) {
+                    return "XenAPI task " + refOf(active.task) + " is already " + finished;
+                }
+                LOGGER.info("Unable to check the status of XenAPI task {} of request sequence {}: {}", refOf(active.task), sequence, e.getMessage());
                 return "unable to check XenAPI task " + refOf(active.task) + ": " + e.getMessage();
             }
+        }
+        return null;
+    }
+
+    private static String refusalForUncancellable(final ActiveTask active) {
+        if (active.name != null && UNCANCELLABLE_TASKS.contains(active.name)) {
+            return "XenAPI task " + active.name + " cannot be stopped once issued: the guest has already been told";
         }
         return null;
     }
@@ -155,12 +199,19 @@ public class XenServerTaskRegistry {
             LOGGER.debug("Request sequence {} ({}) has no XenAPI task to cancel", sequence, state.command);
             return false;
         }
+        for (final ActiveTask active : state.tasks.values()) {
+            final String refusal = refusalForUncancellable(active);
+            if (refusal != null) {
+                LOGGER.info("Not cancelling request sequence {} ({}): {}", sequence, state.command, refusal);
+                return false;
+            }
+        }
         state.cancelling = true;
         boolean allCancelled = true;
         boolean anyCancelled = false;
         try {
             for (final ActiveTask active : state.tasks.values()) {
-                final Pair<Boolean, String> result = cancelTask(active.task, active.connection);
+                final Pair<Boolean, String> result = cancelTask(active.task, active.connection, state.finished::get);
                 if (result.first()) {
                     anyCancelled = true;
                     LOGGER.info("Cancelled XenAPI task {} of request sequence {}", refOf(active.task), sequence);
@@ -180,7 +231,16 @@ public class XenServerTaskRegistry {
 
     /** cancelAsync, then poll to a terminal state: the synchronous cancel would hold the caller on a XenServer round trip. */
     static Pair<Boolean, String> cancelTask(final Task task, final Connection connection) {
+        return cancelTask(task, connection, ref -> null);
+    }
+
+    /**
+     * The thread waiting on the task destroys the task object as soon as it sees it finish, so a status poll here can meet an invalid
+     * handle. The final status that thread recorded then says whether the task ended CANCELLED or completed first.
+     */
+    static Pair<Boolean, String> cancelTask(final Task task, final Connection connection, final Function<String, Types.TaskStatusType> finishedStatus) {
         final String ref = refOf(task);
+        boolean cancelIssued = false;
         try {
             final Types.TaskStatusType status = task.getStatus(connection);
             if (status != Types.TaskStatusType.PENDING && status != Types.TaskStatusType.CANCELLING) {
@@ -189,6 +249,7 @@ public class XenServerTaskRegistry {
             if (status == Types.TaskStatusType.PENDING) {
                 task.cancelAsync(connection);
             }
+            cancelIssued = true;
 
             final long deadline = System.currentTimeMillis() + CANCEL_TASK_WAIT_MS;
             while (System.currentTimeMillis() < deadline) {
@@ -211,6 +272,13 @@ public class XenServerTaskRegistry {
             Thread.currentThread().interrupt();
             return new Pair<>(false, "interrupted while waiting for task " + ref + " to cancel");
         } catch (final Exception e) {
+            final Types.TaskStatusType finished = finishedStatus.apply(ref);
+            if (finished != null) {
+                LOGGER.debug("XenAPI task {} is gone, it ended {}", ref, finished);
+                return finished == Types.TaskStatusType.CANCELLED && cancelIssued
+                        ? new Pair<>(true, "task " + ref + " cancelled")
+                        : new Pair<>(false, "task " + ref + " is already " + finished);
+            }
             LOGGER.warn("Failed to cancel XenAPI task {}", ref, e);
             return new Pair<>(false, "failed to cancel task " + ref + ": " + e.getMessage());
         }
