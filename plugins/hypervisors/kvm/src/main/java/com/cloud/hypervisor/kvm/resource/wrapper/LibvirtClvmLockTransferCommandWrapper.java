@@ -20,7 +20,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.File;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.hypervisor.kvm.storage.ClvmSanlockLeaseReader;
+import com.cloud.hypervisor.kvm.storage.clvm.ClvmSanlockLeaseReader;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer.LeaseMode;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;

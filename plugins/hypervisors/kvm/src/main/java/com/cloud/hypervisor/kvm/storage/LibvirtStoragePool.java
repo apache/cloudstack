@@ -34,6 +34,7 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
+import com.cloud.hypervisor.kvm.storage.clvm.ClvmSanlockHaChecker;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.clvm.ClvmPoolManager;

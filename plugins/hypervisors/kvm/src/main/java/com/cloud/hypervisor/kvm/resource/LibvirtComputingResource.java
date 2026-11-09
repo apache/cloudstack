@@ -230,7 +230,7 @@ import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceE
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
-import com.cloud.hypervisor.kvm.storage.ClvmSanlockHaChecker;
+import com.cloud.hypervisor.kvm.storage.clvm.ClvmSanlockHaChecker;
 import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;

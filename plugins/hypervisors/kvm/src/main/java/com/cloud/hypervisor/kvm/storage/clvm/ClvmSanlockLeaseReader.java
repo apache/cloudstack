@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.hypervisor.kvm.storage;
+package com.cloud.hypervisor.kvm.storage.clvm;
 
 import java.util.ArrayList;
 import java.util.List;

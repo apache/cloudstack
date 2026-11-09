@@ -16,7 +16,7 @@
 // under the License.
 
 
-package com.cloud.hypervisor.kvm.storage;
+package com.cloud.hypervisor.kvm.storage.clvm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
