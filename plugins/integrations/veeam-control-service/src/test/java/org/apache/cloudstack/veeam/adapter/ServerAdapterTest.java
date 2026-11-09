@@ -30,6 +30,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1081,6 +1082,23 @@ public class ServerAdapterTest {
         when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
         when(backupDao.findByUuid("backup-uuid")).thenReturn(null);
         serverAdapter.finalizeBackup("vm-uuid", "backup-uuid");
+    }
+
+    @Test
+    public void testFinalizeBackup_BackupNotReady_IsRefusedBeforeTheJobIsDispatched() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getUuid()).thenReturn("backup-uuid");
+        when(backup.getStatus()).thenReturn(org.apache.cloudstack.backup.Backup.Status.Queued);
+        when(backupDao.findByUuid("backup-uuid")).thenReturn(backup);
+        ServerAdapter spyAdapter = spy(serverAdapter);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> spyAdapter.finalizeBackup("vm-uuid", "backup-uuid"));
+
+        assertTrue(ex.getMessage().contains("Backup backup-uuid is Queued and cannot be finalized"));
+        verify(spyAdapter, never()).processAsyncCmdWithContext(any(BaseAsyncCmd.class), any());
     }
 
 

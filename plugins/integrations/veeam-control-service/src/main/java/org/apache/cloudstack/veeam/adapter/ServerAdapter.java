@@ -2063,6 +2063,12 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
                 false, backup);
+        // The finalize runs as an asynchronous job whose failure the client never sees, so a backup that is not
+        // ready (still starting, already being finalized or finished) is refused here, before the job is dispatched.
+        if (backup.getStatus() != org.apache.cloudstack.backup.Backup.Status.ReadyForImageTransfer) {
+            throw new CloudRuntimeException(String.format("Backup %s is %s and cannot be finalized", backup.getUuid(),
+                    backup.getStatus()));
+        }
         try {
             FinalizeBackupCmd cmd = new FinalizeBackupCmd();
             ComponentContext.inject(cmd);
