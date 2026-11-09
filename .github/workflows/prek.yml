@@ -22,10 +22,6 @@ on: [pull_request]
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 jobs:
   prek:
     name: Run prek standard hooks
@@ -38,4 +34,3 @@ jobs:
       - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
         with:
           extra-args: --all-files
-          cache: false

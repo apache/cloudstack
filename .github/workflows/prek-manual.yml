@@ -22,10 +22,6 @@ on: [pull_request]
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 jobs:
   prek-manual:
     name: Run prek manual hooks
