@@ -174,6 +174,51 @@ class TestScaleVm(cloudstackTestCase):
     def is_host_xcpng8(self, hostname):
         return type(hostname) == list and len(hostname) > 0 and 'XCP-ng 8' in hostname[0]
 
+    def wait_for_xen_pv_tools(self, vm, timeout=60, interval=10):
+        """XenServer only: wait until the guest PV tools are detected.
+        XenServer refuses a live vCPU change (VmLacksFeature) until then."""
+        if self.hypervisor.lower() != "xenserver":
+            return
+        vm_info = VirtualMachine.list(self.apiclient, id=vm.id)[0]
+        instance_name = vm_info.instancename
+        host = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            hostid=vm_info.hostid,
+            type='Routing'
+        )[0]
+        ssh_client = self.get_ssh_client(host.ipaddress,
+                                         self.hostConfig["username"],
+                                         self.hostConfig["password"])
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            out = ssh_client.execute(
+                "xe vm-list name-label=%s params=PV-drivers-detected --minimal" % instance_name)
+            if out and out[0].strip().lower() == "true":
+                self.debug("PV tools detected on %s" % instance_name)
+                return
+            time.sleep(interval)
+        self.fail("PV tools were not detected on %s within %ds" % (instance_name, timeout))
+
+    def wait_for_vmware_tools(self, vm, timeout=60, interval=10):
+        """VMware only: wait until the guest VMware tools are running, so the
+        existing tools check below sees them after a freshly created VM boots."""
+        if self.hypervisor.lower() != "vmware":
+            return True
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                ssh_client = vm.get_ssh_client()
+                result = str(
+                    ssh_client.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
+                self.debug("and result is: %s" % result)
+                if "running" in result:
+                    return True
+            except Exception as e:
+                self.debug("VMware tools not reachable yet on %s: %s" % (vm.name, e))
+            time.sleep(interval)
+        return False
+
     @attr(hypervisor="xenserver")
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_scale_vm(self):
@@ -201,18 +246,13 @@ class TestScaleVm(cloudstackTestCase):
             mode=self.services["mode"]
         )
         self.cleanup.append(self.virtual_machine)
+        self.wait_for_xen_pv_tools(self.virtual_machine)
 
-        # If hypervisor is Vmware, then check if
-        # the vmware tools are installed and the process is running
-        # Vmware tools are necessary for scale VM operation
-        if self.hypervisor.lower() == "vmware":
-            sshClient = self.virtual_machine.get_ssh_client()
-            result = str(
-                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
-            self.debug("and result is: %s" % result)
-            if "running" not in result:
-                self.skipTest("Skipping scale VM operation because\
-                    VMware tools are not installed on the VM")
+        # VMware tools are necessary for scale VM operation: wait for them,
+        # and skip if they never come up
+        if not self.wait_for_vmware_tools(self.virtual_machine):
+            self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not running on the VM")
         res = None
         if self.hypervisor.lower() != 'simulator':
             hostid = self.virtual_machine.hostid
@@ -336,17 +376,11 @@ class TestScaleVm(cloudstackTestCase):
         )
         self.cleanup.append(self.virtual_machine_with_service_offering_dynamic_scaling_disabled)
 
-        # If hypervisor is Vmware, then check if
-        # the vmware tools are installed and the process is running
-        # Vmware tools are necessary for scale VM operation
-        if self.hypervisor.lower() == "vmware":
-            sshClient = self.virtual_machine_with_service_offering_dynamic_scaling_disabled.get_ssh_client()
-            result = str(
-                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
-            self.debug("and result is: %s" % result)
-            if "running" not in result:
-                self.skipTest("Skipping scale VM operation because\
-                    VMware tools are not installed on the VM")
+        # VMware tools are necessary for scale VM operation: wait for them,
+        # and skip if they never come up
+        if not self.wait_for_vmware_tools(self.virtual_machine_with_service_offering_dynamic_scaling_disabled):
+            self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not running on the VM")
 
         list_vm_response = VirtualMachine.list(
             self.apiclient,
@@ -445,17 +479,11 @@ class TestScaleVm(cloudstackTestCase):
         )
         self.cleanup.append(self.virtual_machine_not_dynamically_scalable)
 
-        # If hypervisor is Vmware, then check if
-        # the vmware tools are installed and the process is running
-        # Vmware tools are necessary for scale VM operation
-        if self.hypervisor.lower() == "vmware":
-            sshClient = self.virtual_machine_not_dynamically_scalable.get_ssh_client()
-            result = str(
-                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
-            self.debug("and result is: %s" % result)
-            if "running" not in result:
-                self.skipTest("Skipping scale VM operation because\
-                    VMware tools are not installed on the VM")
+        # VMware tools are necessary for scale VM operation: wait for them,
+        # and skip if they never come up
+        if not self.wait_for_vmware_tools(self.virtual_machine_not_dynamically_scalable):
+            self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not running on the VM")
 
         list_vm_response = VirtualMachine.list(
             self.apiclient,
@@ -538,15 +566,13 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=self.small_offering.id,
             mode=self.services["mode"]
         )
+        self.wait_for_xen_pv_tools(self.virtual_machine_in_user_account)
 
-        if self.hypervisor.lower() == "vmware":
-            sshClient = self.virtual_machine_in_user_account.get_ssh_client()
-            result = str(
-                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
-            self.debug("and result is: %s" % result)
-            if "running" not in result:
-                self.skipTest("Skipping scale VM operation because\
-                    VMware tools are not installed on the VM")
+        # VMware tools are necessary for scale VM operation: wait for them,
+        # and skip if they never come up
+        if not self.wait_for_vmware_tools(self.virtual_machine_in_user_account):
+            self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not running on the VM")
         res = None
         if self.hypervisor.lower() != 'simulator':
             list_vm_response = VirtualMachine.list(
@@ -687,15 +713,13 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=self.ServiceOffering1WithDiskOffering1.id,
             mode=self.services["mode"]
         )
+        self.wait_for_xen_pv_tools(self.virtual_machine_test)
 
-        if self.hypervisor.lower() == "vmware":
-            sshClient = self.virtual_machine_test.get_ssh_client()
-            result = str(
-                sshClient.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
-            self.debug("and result is: %s" % result)
-            if "running" not in result:
-                self.skipTest("Skipping scale VM operation because\
-                    VMware tools are not installed on the VM")
+        # VMware tools are necessary for scale VM operation: wait for them,
+        # and skip if they never come up
+        if not self.wait_for_vmware_tools(self.virtual_machine_test):
+            self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not running on the VM")
         res = None
         if self.hypervisor.lower() != 'simulator':
             hostid = self.virtual_machine_test.hostid
