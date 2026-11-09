@@ -539,6 +539,44 @@ public class KVMBackupExportServiceImplTest {
     }
 
     @Test
+    public void finalizeBackup_notStartedYet_isRejectedAndTouchesNothing() throws Exception {
+        // Finalize racing the start job: nothing is on the host yet and no checkpoint exists to record.
+        when(backupDao.findById(20L)).thenReturn(backup);
+        when(backup.getVmId()).thenReturn(1L);
+        when(backup.getUuid()).thenReturn("backup-uuid");
+        when(backup.getStatus()).thenReturn(Backup.Status.Queued);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.finalizeBackup(finalizeCmd(1L, 20L)));
+
+        assert ex.getMessage().contains("has not started yet");
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(backup, never()).setStatus(any());
+        verify(vmCheckpointDao, never()).persist(any(VmCheckpointVO.class));
+    }
+
+    @Test
+    public void finalizeBackup_failureAfterStop_marksBackupErrorSoTheWaitJobEnds() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new StopBackupAnswer(null, true, "stopped"));
+        when(vmCheckpointDao.persist(any(VmCheckpointVO.class))).thenThrow(new CloudRuntimeException("db down"));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.finalizeBackup(finalizeCmd(1L, 20L)));
+
+        assert ex.getMessage().contains("db down");
+        verify(backup).setStatus(Backup.Status.Error);
+        verify(backup, never()).setStatus(Backup.Status.BackedUp);
+        verify(backupDao).remove(20L);
+    }
+
+    @Test
+    public void deleteVmCheckpoint_unknownVm_isNotFound() {
+        when(vmInstanceDao.findById(1L)).thenReturn(null);
+
+        assertThrows(InvalidParameterValueException.class, () -> service.deleteVmCheckpoint(deleteCmd(1L, "ckp-b")));
+    }
+
+    @Test
     public void listVmCheckpoints_returnsAllOldestFirst_newestActive() {
         when(vmCheckpointDao.listByVmId(1L)).thenReturn(List.of(checkpoint(1L, 1L, "ckp-a1", 100L),
                 checkpoint(2L, 1L, "ckp-b1", 200L), checkpoint(3L, 1L, "ckp-a2", 300L)));

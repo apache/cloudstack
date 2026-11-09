@@ -24,7 +24,7 @@ import org.apache.cloudstack.backup.VmCheckpointVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface VmCheckpointDao extends GenericDao<VmCheckpointVO, Long> {
-    // Checkpoints of the VM, oldest first.
+    // Checkpoints of the VM in the order they were recorded, oldest first.
     List<VmCheckpointVO> listByVmId(long vmId);
 
     VmCheckpointVO findByVmIdAndCheckpointId(long vmId, String checkpointId);

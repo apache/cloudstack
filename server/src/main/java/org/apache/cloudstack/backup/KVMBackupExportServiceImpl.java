@@ -396,6 +396,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
+        if (backup.getStatus() == Backup.Status.Queued) {
+            // The start job has not run yet: there is nothing on the host to stop and no checkpoint to record.
+            throw new CloudRuntimeException(String.format("Backup %s has not started yet and cannot be finalized", backup.getUuid()));
+        }
+
         updateBackupState(backup, Backup.Status.FinalizingImageTransfer);
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
@@ -423,13 +428,19 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             }
         }
 
-        recordCheckpoint(vm, backup);
-
-        updateBackupState(backup, Backup.Status.BackedUp);
-        backupDao.remove(backup.getId());
+        try {
+            recordCheckpoint(vm, backup);
+            updateBackupState(backup, Backup.Status.BackedUp);
+            backupDao.remove(backup.getId());
+        } catch (RuntimeException e) {
+            // The host side is done; a backup left in FinalizingImageTransfer would hold the VM work queue
+            // until the wait job times out, so it is failed explicitly and the client retries with a full.
+            logger.error("Failed to finalize {} after stopping it on the host", backup, e);
+            removeFailedBackup(backup);
+            throw new CloudRuntimeException("Failed to finalize backup: " + e.getMessage(), e);
+        }
 
         return backup;
-
     }
 
     private ImageTransferVO createDownloadImageTransfer(Long backupId, VolumeVO volume, ImageTransfer.Backend backend) {
@@ -906,7 +917,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     public boolean deleteVmCheckpoint(DeleteVmCheckpointCmd cmd) {
         VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
         if (vm == null) {
-            throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
+            throw new InvalidParameterValueException("VM not found: " + cmd.getVmId());
         }
 
         verifyKVMBackupExportServiceSupported(vm.getDataCenterId());

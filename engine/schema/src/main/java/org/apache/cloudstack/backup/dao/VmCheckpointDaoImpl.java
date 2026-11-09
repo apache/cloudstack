@@ -50,9 +50,9 @@ public class VmCheckpointDaoImpl extends GenericDaoBase<VmCheckpointVO, Long> im
     public List<VmCheckpointVO> listByVmId(long vmId) {
         SearchCriteria<VmCheckpointVO> sc = vmIdSearch.create();
         sc.setParameters("vmId", vmId);
-        Filter oldestFirst = new Filter(VmCheckpointVO.class, "createTime", true, null, null);
-        oldestFirst.addOrderBy(VmCheckpointVO.class, "id", true);
-        return listBy(sc, oldestFirst);
+        // Rows are added in finalize order on the management server; the host's creation time is not
+        // comparable across hosts with different clocks.
+        return listBy(sc, new Filter(VmCheckpointVO.class, "id", true, null, null));
     }
 
     @Override
