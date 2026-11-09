@@ -21,6 +21,8 @@ package com.cloud.utils.crypt;
 
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 
+import com.cloud.utils.db.DbProperties;
+
 /**
  * Spring bean that resolves property placeholders, decrypting any value wrapped as
  * {@code ENC(...)} with the management server's own secret key, via
@@ -48,15 +50,23 @@ public class EncryptablePropertyPlaceholderConfigurer extends PropertyPlaceholde
 
     @Override
     protected String convertPropertyValue(String originalValue) {
-        if (originalValue == null || !EncryptionSecretKeyChecker.useEncryption()) {
-            return originalValue;
+        if (originalValue == null) {
+            return null;
         }
 
         String trimmedValue = originalValue.trim();
-        if (trimmedValue.startsWith(ENC_PREFIX) && trimmedValue.endsWith(ENC_SUFFIX)) {
-            return EncryptionSecretKeyChecker.decryptPropertyIfNeeded(trimmedValue);
+        if (!trimmedValue.startsWith(ENC_PREFIX) || !trimmedValue.endsWith(ENC_SUFFIX)) {
+            return originalValue;
         }
 
-        return originalValue;
+        if (!EncryptionSecretKeyChecker.useEncryption()) {
+            // the secret key is loaded along with db.properties; don't depend on a DAO having done that already
+            DbProperties.getDbProperties();
+        }
+        if (!EncryptionSecretKeyChecker.useEncryption()) {
+            return originalValue;
+        }
+
+        return EncryptionSecretKeyChecker.decryptPropertyIfNeeded(trimmedValue);
     }
 }

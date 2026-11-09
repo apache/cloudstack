@@ -19,10 +19,15 @@
 
 package com.cloud.utils.crypt;
 
+import java.util.Properties;
+
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import com.cloud.utils.db.DbProperties;
 
 public class EncryptablePropertyPlaceholderConfigurerTest {
 
@@ -55,18 +60,38 @@ public class EncryptablePropertyPlaceholderConfigurerTest {
 
     @Test
     public void convertPropertyValuePassesThroughWrappedValueWhenEncryptionNotConfigured() {
-        String result = configurer.convertPropertyValue(ENCRYPTED_VALUE);
+        try (MockedStatic<DbProperties> dbProperties = Mockito.mockStatic(DbProperties.class)) {
+            dbProperties.when(DbProperties::getDbProperties).thenReturn(new Properties());
 
-        Assert.assertEquals(ENCRYPTED_VALUE, result);
+            String result = configurer.convertPropertyValue(ENCRYPTED_VALUE);
+
+            Assert.assertEquals(ENCRYPTED_VALUE, result);
+            dbProperties.verify(DbProperties::getDbProperties);
+        }
+    }
+
+    @Test
+    public void convertPropertyValueLoadsSecretKeyWhenNotYetInitialized() {
+        try (MockedStatic<DbProperties> dbProperties = Mockito.mockStatic(DbProperties.class)) {
+            dbProperties.when(DbProperties::getDbProperties).then(invocation -> {
+                EncryptionSecretKeyChecker.initEncryptor("managementkey");
+                return new Properties();
+            });
+
+            String result = configurer.convertPropertyValue(ENCRYPTED_VALUE);
+
+            Assert.assertEquals("encthis", result);
+        }
     }
 
     @Test
     public void convertPropertyValuePassesThroughPlainValues() {
-        EncryptionSecretKeyChecker.initEncryptor("managementkey");
+        try (MockedStatic<DbProperties> dbProperties = Mockito.mockStatic(DbProperties.class)) {
+            String result = configurer.convertPropertyValue("guest");
 
-        String result = configurer.convertPropertyValue("guest");
-
-        Assert.assertEquals("guest", result);
+            Assert.assertEquals("guest", result);
+            dbProperties.verifyNoInteractions();
+        }
     }
 
     @Test
