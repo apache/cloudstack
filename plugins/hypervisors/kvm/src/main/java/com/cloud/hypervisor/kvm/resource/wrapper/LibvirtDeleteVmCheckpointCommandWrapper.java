@@ -87,11 +87,14 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
 
         if (disksWithBitmap.isEmpty()) {
             // Nothing left in the images; drop libvirt's record if it still has one.
-            if (virsh("checkpoint-dumpxml", "--domain", vmName, "--checkpointname", checkpointId, "--no-domain") == null) {
+            String dump = virsh("checkpoint-dumpxml", "--domain", vmName, "--checkpointname", checkpointId, "--no-domain");
+            if (dump == null) {
                 String metadata = virsh("checkpoint-delete", vmName, checkpointId, "--metadata");
                 if (metadata != null) {
                     return new Answer(cmd, false, "Failed to delete checkpoint " + checkpointId + ": " + metadata);
                 }
+            } else if (!dump.toLowerCase().contains("checkpoint not found")) {
+                return new Answer(cmd, false, "Failed to check whether libvirt still knows checkpoint " + checkpointId + ": " + dump);
             }
             return new Answer(cmd, true, "Checkpoint not present");
         }
@@ -156,9 +159,12 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
     // Only qcow2 nodes are looked at: the protocol node of the same file has neither bitmaps nor a backing chain.
     static Map<String, Boolean> findDisksWithBitmap(String namedBlockNodes, Map<String, String> diskPathLabelMap, String bitmapName) {
         JSONArray nodes = new JSONObject(namedBlockNodes).optJSONArray("return");
+        if (nodes == null) {
+            throw new CloudRuntimeException("query-named-block-nodes returned no node list: " + namedBlockNodes);
+        }
         Set<String> filesWithBitmap = new HashSet<>();
         Map<String, JSONObject> imageByFile = new LinkedHashMap<>();
-        for (int i = 0; nodes != null && i < nodes.length(); i++) {
+        for (int i = 0; i < nodes.length(); i++) {
             JSONObject node = nodes.getJSONObject(i);
             // An encrypted image is reported under a json: pseudo-filename, not its path.
             String file = QemuImageFilename.plain(node.optString("file", null));

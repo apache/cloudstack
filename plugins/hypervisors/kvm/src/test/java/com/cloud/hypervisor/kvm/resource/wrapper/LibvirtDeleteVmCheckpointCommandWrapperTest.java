@@ -147,7 +147,8 @@ public class LibvirtDeleteVmCheckpointCommandWrapperTest {
         Assert.assertEquals(Map.of("vda", true, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(NAMED_NODES, DISK_LABELS, "cp-5"));
         Assert.assertEquals(Map.of("vda", false, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(NAMED_NODES, DISK_LABELS, "cp-9"));
         Assert.assertEquals(List.of("vda", "vdb"), new ArrayList<>(LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(NAMED_NODES, DISK_LABELS, "cp-4").keySet()));
-        Assert.assertEquals(Map.of("vda", false, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap("{\"return\": {}}", DISK_LABELS, "cp-4"));
+        Assert.assertThrows(CloudRuntimeException.class, () -> LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap("{\"return\": {}}", DISK_LABELS, "cp-4"));
+        Assert.assertThrows(CloudRuntimeException.class, () -> LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap("{\"error\": {\"desc\": \"busy\"}}", DISK_LABELS, "cp-4"));
     }
 
     @Test
@@ -284,6 +285,21 @@ public class LibvirtDeleteVmCheckpointCommandWrapperTest {
 
             Assert.assertTrue(answer.getResult());
             Assert.assertEquals("Checkpoint not present", answer.getDetails());
+            Assert.assertEquals(2, args.size());
+        }
+    }
+
+    @Test
+    public void testRunningVmBitmapGoneButDumpxmlErrorOtherThanNotFoundReturnsFailure() throws Exception {
+        runningVmCommand("cp-9");
+        qmpReturns(NAMED_NODES);
+        List<List<String>> args = new ArrayList<>();
+
+        try (MockedConstruction<Script> ignored = scripts(args, "error: Domain checkpoint not found", "error: failed to connect to the hypervisor")) {
+            Answer answer = wrapper.execute(command, resource);
+
+            Assert.assertFalse(answer.getResult());
+            Assert.assertTrue(answer.getDetails(), answer.getDetails().startsWith("Failed to check whether libvirt still knows checkpoint cp-9"));
             Assert.assertEquals(2, args.size());
         }
     }
