@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
@@ -51,6 +52,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -388,6 +390,12 @@ public class AsyncJobManagerImplTest {
         return child;
     }
 
+    private AsyncJobVO workJob(long id, JobInfo.Status status) {
+        AsyncJobVO work = childJob(id, status);
+        work.setDispatcher("VmWorkJobDispatcher");
+        return work;
+    }
+
     private SyncQueueItemVO queueItem(long id, Long lastProcessMsid) {
         SyncQueueItemVO item = new SyncQueueItemVO();
         item.setId(id);
@@ -397,16 +405,49 @@ public class AsyncJobManagerImplTest {
 
     @Test
     public void testCancelQueuedChildJobsCompletesAndPurgesWaitingChild() {
-        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(workJob(11L, JobInfo.Status.IN_PROGRESS)));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
         Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.anyString());
 
         asyncJobManager.cancelQueuedChildJobs(10L, "user request");
 
-        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.contains("user request"));
+        ArgumentCaptor<String> result = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), result.capture());
+        // the parent reads a work job's result as a serialized object
+        Object cause = JobSerializerHelper.fromObjectSerializedString(result.getValue());
+        Assert.assertTrue(String.valueOf(cause), cause instanceof OperationCancelledException);
+        Assert.assertTrue(((OperationCancelledException) cause).getReason().contains("user request"));
         Mockito.verify(jobMonitor).unregisterByJobId(11L);
         Mockito.verify(queueMgr).purgeItem(5L);
+    }
+
+    @Test
+    public void testCancelledResultOfAWorkJobIsAnExceptionItsParentCanRethrow() {
+        String serialized = AsyncJobManagerImpl.cancelledResultFor(workJob(11L, JobInfo.Status.IN_PROGRESS), "Cancelled by admin via mgmt2");
+
+        Object cause = JobSerializerHelper.fromObjectSerializedString(serialized);
+        Assert.assertTrue(cause instanceof OperationCancelledException);
+        Assert.assertEquals("Cancelled by admin via mgmt2", ((OperationCancelledException) cause).getReason());
+        Assert.assertEquals("Cancelled by admin via mgmt2", ((OperationCancelledException) cause).getMessage());
+
+        AsyncJobVO work = workJob(11L, JobInfo.Status.CANCELLED);
+        work.setResult(serialized);
+        Assert.assertEquals("Cancelled by admin via mgmt2", AsyncJobManagerImpl.getJobCancelReasonFromResult(work));
+    }
+
+    @Test
+    public void testCancelledResultOfAnApiJobIsAnApiError() {
+        AsyncJobVO api = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        api.setDispatcher("ApiAsyncJobDispatcher");
+        Assert.assertFalse(AsyncJobManagerImpl.isWorkJob(api));
+        Assert.assertFalse(AsyncJobManagerImpl.isWorkJob(childJob(10L, JobInfo.Status.IN_PROGRESS)));
+        Assert.assertTrue(AsyncJobManagerImpl.isWorkJob(workJob(11L, JobInfo.Status.IN_PROGRESS)));
+
+        String serialized = AsyncJobManagerImpl.cancelledResultFor(api, "Cancelled by admin via mgmt2");
+        Assert.assertEquals(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"), serialized);
+        api.setResult(serialized);
+        Assert.assertEquals("Cancelled by admin via mgmt2", AsyncJobManagerImpl.getJobCancelReasonFromResult(api));
     }
 
     @Test
@@ -466,6 +507,25 @@ public class AsyncJobManagerImplTest {
         Mockito.verify(asyncJobManager, Mockito.never()).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
 
         child.setStatus(JobInfo.Status.CANCELLED);
+        asyncJobManager.finalizeCancelledJob(10L);
+        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(10L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.anyInt(), Mockito.contains("Cancelled by admin via mgmt2"));
+    }
+
+    @Test
+    public void testFinalisationWaitsForTheThreadStillRunningTheJob() {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setCancelRequested(true);
+        job.setRelated(null);
+        job.setResult(AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2"));
+        when(asyncJobDao.findById(10L)).thenReturn(job);
+        when(jobMonitor.isActiveJob(10L)).thenReturn(true, false);
+        Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+
+        // the API thread is still running: its own completion decides whether the work finished or was stopped
+        asyncJobManager.finalizeCancelledJob(10L);
+        Mockito.verify(asyncJobManager, Mockito.never()).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+        Mockito.verify(asyncJobDao, Mockito.never()).listChildJobs(10L);
+
         asyncJobManager.finalizeCancelledJob(10L);
         Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(10L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.anyInt(), Mockito.contains("Cancelled by admin via mgmt2"));
     }
