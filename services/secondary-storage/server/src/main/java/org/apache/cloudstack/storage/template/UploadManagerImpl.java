@@ -64,6 +64,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     protected static final String EXTRACT_USERDATA_DIR = "userdata";
     protected static final String BASE_EXTRACT_PATH = String.format("/var/www/html/%s/", EXTRACT_USERDATA_DIR);
+    protected static final String APACHE_USER = "www-data";
 
     public class Completion implements UploadCompleteCallback {
         private final String jobId;
@@ -276,14 +277,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         // Create the directory structure so that its visible under apache server root
         String extractDir = BASE_EXTRACT_PATH;
         extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
-        // Ensure the base extract directory exists and is owned by www-data so that
-        // the www-data user can create the per-entity subdirectory inside it.
-        Script baseDirCommand = new Script("/bin/bash", logger);
-        baseDirCommand.add("-c");
-        baseDirCommand.add("mkdir -p " + BASE_EXTRACT_PATH + " && chown www-data:www-data " + BASE_EXTRACT_PATH);
-        String result = baseDirCommand.execute();
+        String result = ensureBaseExtractDirectory();
         if (result != null) {
-            String errorString = "Error in creating base extract directory =" + result;
+            String errorString = String.format("Error in creating base extract directory %s owned by %s: %s", BASE_EXTRACT_PATH, APACHE_USER, result);
             logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
@@ -334,6 +330,29 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         return new CreateEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
 
+    }
+
+    /**
+     * Makes sure the base extract directory exists and is owned by the apache user, so that the apache user
+     * can create the per-entity subdirectory inside it. Stock systemvm templates do not ship this directory.
+     * @return null on success, the error output otherwise
+     */
+    protected String ensureBaseExtractDirectory() {
+        if (isBaseExtractDirectoryReady(Path.of(BASE_EXTRACT_PATH))) {
+            return null;
+        }
+        Script command = new Script("install", logger);
+        command.add("-d", "-o", APACHE_USER, "-g", APACHE_USER, "-m", "755", BASE_EXTRACT_PATH);
+        return command.execute();
+    }
+
+    protected boolean isBaseExtractDirectoryReady(Path baseDir) {
+        try {
+            return Files.isDirectory(baseDir) && APACHE_USER.equals(Files.getOwner(baseDir).getName());
+        } catch (IOException e) {
+            logger.debug("Unable to determine owner of {}: {}", baseDir, e.getMessage());
+            return false;
+        }
     }
 
     @Override
