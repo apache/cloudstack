@@ -94,6 +94,8 @@ import com.xensource.xenapi.VM;
 public class XenServerStorageProcessor implements StorageProcessor {
     protected Logger logger = LogManager.getLogger(getClass());
     protected CitrixResourceBase hypervisorResource;
+    static final long SNAPSHOT_DESTROY_WAIT_MS = 60000;
+    static final long SNAPSHOT_DESTROY_POLL_MS = 1000;
     protected String BaseMountPointOnHost = "/var/run/cloud_mount";
 
     protected final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
@@ -1176,8 +1178,23 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 logger.warn("Could not destroy snapshot " + lastSnapshotUuid + " due to can not find it");
                 return false;
             }
-            snapshot.destroy(conn);
-            return true;
+            // a VDI.copy that was just cancelled still holds its source for a while; XAPI refuses the destroy until it lets go
+            final long deadline = System.currentTimeMillis() + SNAPSHOT_DESTROY_WAIT_MS;
+            while (true) {
+                try {
+                    snapshot.destroy(conn);
+                    return true;
+                } catch (final Types.OtherOperationInProgress | Types.VdiInUse e) {
+                    if (System.currentTimeMillis() >= deadline) {
+                        throw e;
+                    }
+                    logger.info("Snapshot " + lastSnapshotUuid + " is still in use by " + snapshot.getCurrentOperations(conn).values() + ", waiting before destroying it");
+                    Thread.sleep(SNAPSHOT_DESTROY_POLL_MS);
+                }
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Interrupted while waiting to destroy snapshot " + lastSnapshotUuid);
         } catch (final XenAPIException e) {
             final String msg = "Destroying snapshot: " + lastSnapshotUuid + " failed due to " + e.toString();
             logger.error(msg, e);
