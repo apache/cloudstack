@@ -18,7 +18,7 @@
 #Import Local Modules
 from marvin.cloudstackAPI import *
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (validateList)
+from marvin.lib.utils import (validateList, wait_for_xen_pv_tools)
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
                              Host,
@@ -149,6 +149,12 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                    domainid=cls.account.domainid
                                    )
         cls._cleanup.append(cls.volume6)
+
+        if cls.hypervisor.lower() == "xenserver":
+            # XenServer refuses to attach a volume until the PV tools of the guest are detected
+            host_config = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+                0].__dict__
+            wait_for_xen_pv_tools(cls.apiclient, cls.virtual_machine, host_config["username"], host_config["password"])
 
     @classmethod
     def tearDownClass(cls):

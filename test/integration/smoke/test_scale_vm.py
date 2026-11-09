@@ -20,7 +20,7 @@
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import scaleVirtualMachine
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, wait_for_xen_pv_tools, wait_for_vmware_tools
 from marvin.lib.base import (Account,
                              Host,
                              VirtualMachine,
@@ -171,50 +171,22 @@ class TestScaleVm(cloudstackTestCase):
 
         return ssh_client
 
-    def wait_for_xen_pv_tools(self, vm, timeout=60, interval=10):
+    def wait_for_xen_pv_tools(self, vm):
         """XenServer only: wait until the guest PV tools are detected.
         XenServer refuses a live vCPU change (VmLacksFeature) until then."""
         if self.hypervisor.lower() != "xenserver":
             return
-        vm_info = VirtualMachine.list(self.apiclient, id=vm.id)[0]
-        instance_name = vm_info.instancename
-        host = Host.list(
-            self.apiclient,
-            zoneid=self.zone.id,
-            id=vm_info.hostid,
-            type='Routing'
-        )[0]
-        ssh_client = self.get_ssh_client(host.ipaddress,
-                                         self.hostConfig["username"],
-                                         self.hostConfig["password"])
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            out = ssh_client.execute(
-                "xe vm-list name-label=%s params=PV-drivers-detected --minimal" % instance_name)
-            if out and out[0].strip().lower() == "true":
-                self.debug("PV tools detected on %s" % instance_name)
-                return
-            time.sleep(interval)
-        self.fail("PV tools were not detected on %s within %ds" % (instance_name, timeout))
+        try:
+            wait_for_xen_pv_tools(self.apiclient, vm, self.hostConfig["username"], self.hostConfig["password"])
+        except Exception as e:
+            self.fail(str(e))
 
-    def wait_for_vmware_tools(self, vm, timeout=60, interval=10):
+    def wait_for_vmware_tools(self, vm):
         """VMware only: wait until the guest VMware tools are running, so the
         existing tools check below sees them after a freshly created VM boots."""
         if self.hypervisor.lower() != "vmware":
             return True
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            try:
-                ssh_client = vm.get_ssh_client()
-                result = str(
-                    ssh_client.execute("service vmware-tools status || systemctl status open-vm-tools")).lower()
-                self.debug("and result is: %s" % result)
-                if "running" in result:
-                    return True
-            except Exception as e:
-                self.debug("VMware tools not reachable yet on %s: %s" % (vm.name, e))
-            time.sleep(interval)
-        return False
+        return wait_for_vmware_tools(vm)
 
     @attr(hypervisor="xenserver")
     @attr(tags=["advanced", "basic"], required_hardware="false")
