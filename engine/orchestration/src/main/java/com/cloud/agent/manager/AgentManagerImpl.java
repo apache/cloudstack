@@ -2213,16 +2213,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 _cancelledJobs.values().removeIf(cancelled -> now - cancelled.since > CANCELLED_JOB_MEMORY_MS);
 
                 for (final AsyncJobVO job : asyncJobManager.listCancelRequestedJobsExecutingOn(_nodeId)) {
-                    _cancelledJobs.computeIfAbsent(job.getId(), id -> new CancelledJob());
-                    if (_jobToHostIdAndReqSequenceMap.containsKey(job.getId())) {
+                    // a work job's commands are keyed by the API job it runs for
+                    final long key = commandKeyOf(job);
+                    _cancelledJobs.computeIfAbsent(key, id -> new CancelledJob());
+                    if (_jobToHostIdAndReqSequenceMap.containsKey(key)) {
                         logger.info("Cancellation of job-{} on {} {} was requested, stopping its in-flight commands",
-                                job.getId(), job.getInstanceType(), job.getInstanceId());
-                        if (!cancelJobExecution(job.getId(), "Job was cancelled")) {
-                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", job.getId());
+                                key, job.getInstanceType(), job.getInstanceId());
+                        if (!cancelJobExecution(key, "Job was cancelled")) {
+                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", key);
                             continue;
                         }
                     }
-                    asyncJobManager.finalizeCancelledJob(job.getId());
+                    if (key == job.getId()) {
+                        asyncJobManager.finalizeCancelledJob(job.getId());
+                    }
                 }
 
                 // a VM work job may run here on behalf of an API job executing on another server; its commands are keyed by that job
@@ -2249,14 +2253,40 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return jobId != null && _cancelledJobs.containsKey(jobId);
     }
 
-    /** True once: the worker that has not yet seen its cancellation is stopped at this command; the commands it then sends to undo its work pass. */
+    /** True once per job across the cluster: the worker that has not yet seen its cancellation is stopped at this command; the commands it then sends to undo its work pass. */
     protected boolean refusesCommandsOf(final Long jobId) {
         final CancelledJob cancelled = jobId == null ? null : _cancelledJobs.get(jobId);
         if (cancelled == null || cancelled.handedToWorker) {
             return false;
         }
-        cancelled.handedToWorker = true;
-        return true;
+        if (asyncJobManager.claimJobCancelDelivery(jobId)) {
+            cancelled.handedToWorker = true;
+            return true;
+        }
+        if (asyncJobManager.getCancellationReason(jobId) == null) {
+            // withdrawn: the job runs on
+            _cancelledJobs.remove(jobId);
+        } else {
+            // delivered through a command of the job on another server
+            cancelled.handedToWorker = true;
+        }
+        return false;
+    }
+
+    static long commandKeyOf(final AsyncJobVO job) {
+        if (StringUtils.isNotBlank(job.getRelated())) {
+            try {
+                return Long.parseLong(job.getRelated());
+            } catch (final NumberFormatException ignored) {
+                return job.getId();
+            }
+        }
+        return job.getId();
+    }
+
+    @Override
+    public void jobCancelWithdrawn(final long jobId) {
+        _cancelledJobs.remove(jobId);
     }
 
     @Override
@@ -2290,6 +2320,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (CollectionUtils.isEmpty(inFlight)) {
             return true;
         }
+        if (cancelled.handedToWorker || asyncJobManager.isJobCancelDelivered(jobId)) {
+            // the worker already knows: what it has in flight now is its cleanup
+            cancelled.handedToWorker = true;
+            logger.debug("Job-{} already received its cancellation, leaving its commands in flight alone", jobId);
+            return true;
+        }
 
         boolean allCancelled = true;
         for (final Pair<Long, Long> request : inFlight) {
@@ -2310,6 +2346,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
             if (attache.cancelExecution(request.second(), reason)) {
                 cancelled.handedToWorker = true;
+                asyncJobManager.claimJobCancelDelivery(jobId);
             } else {
                 allCancelled = false;
             }

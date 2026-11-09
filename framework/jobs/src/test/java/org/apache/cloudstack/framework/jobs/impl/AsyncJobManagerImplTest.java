@@ -46,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.jobs.JobCancellationHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.junit.After;
 import org.junit.Assert;
@@ -340,6 +341,12 @@ public class AsyncJobManagerImplTest {
         return ((ThreadPoolExecutor) executor).getCorePoolSize();
     }
 
+    private void setField(String name, Object value) throws Exception {
+        Field f = AsyncJobManagerImpl.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(asyncJobManager, value);
+    }
+
     private Object readField(String name) throws Exception {
         Field f = AsyncJobManagerImpl.class.getDeclaredField(name);
         f.setAccessible(true);
@@ -420,6 +427,8 @@ public class AsyncJobManagerImplTest {
         Assert.assertTrue(((OperationCancelledException) cause).getReason().contains("user request"));
         Mockito.verify(jobMonitor).unregisterByJobId(11L);
         Mockito.verify(queueMgr).purgeItem(5L);
+        // the parent's cleanup after this outcome must not be refused as the job's first command
+        Mockito.verify(asyncJobDao).claimCancelDelivery(10L);
     }
 
     @Test
@@ -597,6 +606,54 @@ public class AsyncJobManagerImplTest {
             Assert.assertTrue(e.getMessage(), e.getMessage().contains("started meanwhile"));
         }
         Assert.assertFalse(job.isCancelRequested());
+    }
+
+    @Test
+    public void testWithdrawnCancelIsAnnouncedToTheHandlers() throws Exception {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setUuid("job-uuid");
+        job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
+        job.setExecutingMsid(1L);
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
+        when(asyncJobDao.findById(10L)).thenReturn(job);
+        AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
+        when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
+        when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
+        when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null), queueItem(5L, 1L));
+        JobCancellationHandler handler = Mockito.mock(JobCancellationHandler.class);
+        setField("jobCancellationHandlers", Collections.singletonList(handler));
+
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+            Assert.fail("A job whose work had started was cancelled");
+        } catch (CloudRuntimeException expected) {
+            // the cancel was withdrawn
+        }
+        Assert.assertFalse(job.isCancelRequested());
+        Assert.assertFalse(job.isCancelDelivered());
+        Mockito.verify(handler).jobCancelWithdrawn(10L);
+    }
+
+    @Test
+    public void testCancelRequestedListingIncludesTheWorkJobsOfCancelledParents() {
+        AsyncJobVO parent = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        parent.setRelated(null);
+        parent.setCancelRequested(true);
+        when(asyncJobDao.getCancelRequestedJobs(1L)).thenReturn(Collections.emptyList());
+        AsyncJobVO ofCancelled = workJob(11L, JobInfo.Status.IN_PROGRESS);
+        AsyncJobVO ofRunning = workJob(12L, JobInfo.Status.IN_PROGRESS);
+        ofRunning.setRelated("20");
+        AsyncJobVO orphan = workJob(13L, JobInfo.Status.IN_PROGRESS);
+        orphan.setRelated("");
+        when(asyncJobDao.getRunningWorkJobs(1L)).thenReturn(Arrays.asList(ofCancelled, ofRunning, orphan));
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(parent);
+        when(asyncJobDao.findByIdIncludingRemoved(20L)).thenReturn(childJob(20L, JobInfo.Status.IN_PROGRESS));
+
+        List<AsyncJobVO> listed = asyncJobManager.listCancelRequestedJobsExecutingOn(1L);
+
+        Assert.assertEquals(1, listed.size());
+        Assert.assertEquals(11L, listed.get(0).getId());
     }
 
     @Test

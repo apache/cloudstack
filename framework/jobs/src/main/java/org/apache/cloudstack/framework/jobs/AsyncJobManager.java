@@ -40,8 +40,14 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
-    /** In-progress jobs with a cancel requested that this server executes, whose in-flight work it has to stop. */
+    /** In-progress jobs with a cancel requested that this server executes, and the work jobs it runs for such a job, whose in-flight work it has to stop. */
     List<AsyncJobVO> listCancelRequestedJobsExecutingOn(long msid);
+
+    /** Records that the cancel reached the job's worker (a command was stopped or refused); true only for the caller that recorded it first. */
+    boolean claimJobCancelDelivery(long jobId);
+
+    /** True once the cancel reached the job's worker on any server: the commands it sends from then on are its cleanup. */
+    boolean isJobCancelDelivered(long jobId);
 
     /** Completes a job whose cancellation was requested as CANCELLED once nothing of it is running any more. */
     void finalizeCancelledJob(long jobId);
