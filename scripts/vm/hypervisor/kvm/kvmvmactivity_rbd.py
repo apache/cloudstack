@@ -45,7 +45,7 @@ import re
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, check_bindings, CephError, WatchersError, KEY_ENV, heartbeat_max_age, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, check_bindings, CephError, WatchersError, DEFAULT_WRITE_TIMEOUT, KEY_ENV, heartbeat_max_age, silence_standard_error
 
 # the interval at which the agents write their heartbeat, if it is not given with -i
 DEFAULT_HEARTBEAT_INTERVAL = 60
@@ -81,6 +81,8 @@ def main():
     parser.add_argument("-d", dest="suspect_time", default="", help="suspect time")
     parser.add_argument("-i", dest="interval", default="",
                         help="interval in seconds at which the agents write their heartbeat, default %d" % DEFAULT_HEARTBEAT_INTERVAL)
+    parser.add_argument("-w", dest="write_timeout", default="",
+                        help="seconds after which the agent stops a write of the heartbeat, default %d" % DEFAULT_WRITE_TIMEOUT)
     parser.add_argument("--help", action="help")
     args = parser.parse_args()
 
@@ -104,6 +106,9 @@ def main():
     if args.interval and not re.fullmatch(r"[0-9]+", args.interval):
         sys.exit(2)
     interval = int(args.interval) if args.interval else DEFAULT_HEARTBEAT_INTERVAL
+    if args.write_timeout and not re.fullmatch(r"[0-9]+", args.write_timeout):
+        sys.exit(2)
+    write_timeout = int(args.write_timeout) if args.write_timeout else DEFAULT_WRITE_TIMEOUT
     volumes = args.images
     if args.images_file:
         try:
@@ -115,12 +120,12 @@ def main():
     silence_standard_error()
     ceph = Ceph(args.mon_hosts, args.pool, args.user, key, watchers=True)
     try:
-        check(ceph, args.pool, args.host, volumes, suspect_time, interval)
+        check(ceph, args.pool, args.host, volumes, suspect_time, interval, write_timeout)
     finally:
         ceph.close()
 
 
-def check(ceph, pool, host, volumes, suspect_time, interval):
+def check(ceph, pool, host, volumes, suspect_time, interval, write_timeout):
     heartbeat_object = "KVMHA-hb-" + host
     activity_object = "KVMHA-ac-" + host
 
@@ -139,7 +144,7 @@ def check(ceph, pool, host, volumes, suspect_time, interval):
             heartbeat_note = " The RADOS object [%s] does not hold a heartbeat." % heartbeat_object
         else:
             age = now - int(heartbeat)
-            if age <= heartbeat_max_age(interval):
+            if age <= heartbeat_max_age(interval, write_timeout):
                 alive()
             heartbeat_note = " The heartbeat in RADOS object [%s] is [%d] seconds old." % (heartbeat_object, age)
     except CephError:

@@ -46,14 +46,16 @@ except ImportError:
 KEY_ENV = "CEPH_KEY"
 TIMEOUT = 30
 MAX_OBJECT_SIZE = 1024 * 1024
-# A heartbeat is written every <interval> seconds, but a write which starts on time can end up to TIMEOUT seconds
-# later when Ceph is slow, so the heartbeat of a host which is alive can be older than the interval.
-HEARTBEAT_SLACK = TIMEOUT
+# A heartbeat is written every <interval> seconds, but a write which starts on time can take long when Ceph is slow
+# (connecting and writing take up to TIMEOUT seconds each), so the heartbeat of a host which is alive can be older than
+# the interval. The agent stops a write after heartbeat.update.timeout (60 seconds by default), which is the longest a
+# write can take, and the agent gives it to the scripts with -w.
+DEFAULT_WRITE_TIMEOUT = 2 * TIMEOUT
 
 
-def heartbeat_max_age(interval):
+def heartbeat_max_age(interval, write_timeout=DEFAULT_WRITE_TIMEOUT):
     """The age in seconds up to which a heartbeat, which is written every interval seconds, is not stale."""
-    return interval + HEARTBEAT_SLACK
+    return interval + write_timeout
 
 
 def silence_standard_error():

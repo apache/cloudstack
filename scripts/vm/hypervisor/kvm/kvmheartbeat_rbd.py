@@ -39,7 +39,7 @@ import subprocess
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, ObjectNotFoundError, check_bindings, heartbeat_max_age, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, CephError, DEFAULT_WRITE_TIMEOUT, KEY_ENV, ObjectNotFoundError, check_bindings, heartbeat_max_age, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
@@ -57,6 +57,8 @@ def main():
     parser.add_argument("-r", dest="check", action="store_true", help="read the heartbeat, instead of writing it")
     parser.add_argument("-c", dest="cleanup", action="store_true", help="cleanup: reboot the host")
     parser.add_argument("-t", dest="interval", default="", help="interval in seconds at which the heartbeat is written, when it is read")
+    parser.add_argument("-w", dest="write_timeout", default="",
+                        help="seconds after which the agent stops a write of the heartbeat, when it is read, default %d" % DEFAULT_WRITE_TIMEOUT)
     parser.add_argument("--check-bindings", dest="check_bindings", action="store_true",
                         help="only check that the Python bindings of librados and librbd are installed")
     parser.add_argument("--help", action="help")
@@ -94,6 +96,9 @@ def main():
         sys.exit(1)
     if args.check and not re.fullmatch(r"[0-9]+", args.interval):
         sys.exit(1)
+    if args.write_timeout and not re.fullmatch(r"[0-9]+", args.write_timeout):
+        sys.exit(1)
+    write_timeout = int(args.write_timeout) if args.write_timeout else DEFAULT_WRITE_TIMEOUT
 
     if args.cleanup:
         reboot()
@@ -104,7 +109,7 @@ def main():
     ceph = Ceph(args.mon_hosts, args.pool, args.user, key)
     try:
         if args.check:
-            check(ceph, heartbeat_object, args.pool, int(args.interval))
+            check(ceph, heartbeat_object, args.pool, int(args.interval), write_timeout)
             return
         try:
             ceph.write(heartbeat_object, "%d\n" % time.time())
@@ -114,7 +119,7 @@ def main():
         ceph.close()
 
 
-def check(ceph, heartbeat_object, pool, interval):
+def check(ceph, heartbeat_object, pool, interval, write_timeout):
     now = int(time.time())
     try:
         heartbeat = ceph.read(heartbeat_object).strip()
@@ -134,11 +139,11 @@ def check(ceph, heartbeat_object, pool, interval):
               % (heartbeat_object, pool))
         sys.exit(2)
     age = now - int(heartbeat)
-    max_age = heartbeat_max_age(interval)
+    max_age = heartbeat_max_age(interval, write_timeout)
     if age > max_age:
         print("=====> Considering host as DEAD because last write to RADOS object [%s] in pool [%s] was [%d] seconds ago, "
-              "but the max age is [%d] (the interval of [%d] and the time which a write can take) <======"
-              % (heartbeat_object, pool, age, max_age, interval))
+              "but the max age is [%d] (the interval of [%d] and the time which a write can take of [%d]) <======"
+              % (heartbeat_object, pool, age, max_age, interval, write_timeout))
     else:
         print("=====> ALIVE <=====")
 

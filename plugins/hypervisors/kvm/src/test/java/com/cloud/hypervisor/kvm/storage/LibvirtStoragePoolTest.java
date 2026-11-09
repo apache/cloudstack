@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -425,5 +426,36 @@ public class LibvirtStoragePoolTest extends TestCase {
                 Mockito.verifyNoInteractions(cmd);
             }
         }
+    }
+
+    private Script heartBeatIsReadWith(LibvirtStoragePool pool, String scriptName) {
+        HostTO host = getHost("10.0.0.5", "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource");
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> construction = Mockito.mockConstruction(Script.class,
+                     (cmd, context) -> Mockito.when(cmd.execute(Mockito.any(OutputInterpreter.OneLineParser.class), Mockito.any())).thenReturn("not a null"))) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq(scriptName))).thenReturn("/scripts/" + scriptName);
+
+            pool.hasHeartBeat(Mockito.mock(HAStoragePool.class), host);
+
+            return construction.constructed().get(0);
+        }
+    }
+
+    @Test
+    public void testHeartBeatOfRbdIsReadWithTheTimeWhichTheAgentLetsAWriteTake() {
+        // the default of heartbeat.update.timeout is 60 seconds
+        Script cmd = heartBeatIsReadWith(getRbdPool("cephuser", "cephkey"), "kvmheartbeat_rbd.py");
+
+        Mockito.verify(cmd).add("-t", "60");
+        Mockito.verify(cmd).add("-w", "60");
+    }
+
+    @Test
+    public void testHeartBeatOfOtherPoolsIsReadWithoutTheTimeOfAWrite() {
+        // the scripts of these pools do not know the option
+        Script cmd = heartBeatIsReadWith(getPool(StoragePoolType.NetworkFilesystem), "kvmheartbeat.sh");
+
+        Mockito.verify(cmd).add("-t", "60");
+        Mockito.verify(cmd, Mockito.never()).add(Mockito.eq("-w"), Mockito.anyString());
     }
 }

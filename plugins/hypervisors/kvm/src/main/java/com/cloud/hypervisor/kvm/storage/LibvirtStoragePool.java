@@ -539,6 +539,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
         cmd.add("-h", heartBeatHostId);
         cmd.add("-r");
         cmd.add("-t", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
+        if (StoragePoolType.RBD.equals(type)) {
+            // a heartbeat which is alive can be as old as the interval and the time which the agent lets a write take
+            cmd.add("-w", String.valueOf(HeartBeatUpdateTimeoutInMs / 1000));
+        }
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         String result = cmd.execute(parser, getHeartBeatScriptEnvironment());
         String parsedLine = parser.getLine();
@@ -564,6 +568,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         if (StoragePoolType.RBD.equals(type)) {
             // the age up to which a heartbeat counts as fresh depends on how often it is written
             cmd.add("-i", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
+            cmd.add("-w", String.valueOf(HeartBeatUpdateTimeoutInMs / 1000));
         }
         cmd.add("-t", String.valueOf(System.currentTimeMillis() / 1000));
         cmd.add("-d", String.valueOf(duration));
