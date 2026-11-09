@@ -1195,7 +1195,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw (InvalidParameterValueException) e;
             }
             if (isCurrentJobCancelled()) {
-                expungeCancelledVolume(volumeId);
+                // a volume created on a pool had its VOLUME.CREATE published at allocation; one from a snapshot only on success
+                expungeCancelledVolume(volumeId, snapshotId == null && volume.isDisplayVolume());
             }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
@@ -1220,13 +1221,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    protected void expungeCancelledVolume(long volumeId) {
+    protected void expungeCancelledVolume(long volumeId, boolean usageRecorded) {
         final VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             return;
         }
         logger.info("Creation of volume {} was cancelled, expunging it", volume);
-        if (volume.getState() == Volume.State.Destroy) {
+        if (usageRecorded && volume.getState() == Volume.State.Destroy) {
             volume.stateTransit(Volume.Event.OperationSucceeded);
         }
         try {
