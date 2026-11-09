@@ -717,39 +717,24 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * an RBD volume.
      */
     private KVMPhysicalDisk getRbdPhysicalDisk(String volumeUuid, LibvirtStoragePool pool) {
-        Rados r = new Rados(pool.getAuthUserName());
+        Rados r = null;
+        IoCTX io = null;
         try {
-            r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-            /*
-             * The secret is null when the pool has no cephx user, and librados
-             * aborts the process rather than returning an error if it is handed a
-             * null value here.
-             */
-            if (pool.getAuthUserName() != null) {
-                r.confSet("key", pool.getAuthSecret());
-            } else {
-                r.confSet("auth_client_required", "none");
-            }
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
+            r = CephUtil.connect(pool.getAuthUserName(), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthSecret());
 
-            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+            io = r.ioCtxCreate(pool.getSourceDir());
+            Rbd rbd = new Rbd(io);
+            // The image is only stat'ed, so it is opened read only and cannot take the exclusive lock.
+            RbdImage image = rbd.openReadOnly(volumeUuid);
             try {
-                Rbd rbd = new Rbd(io);
-                // The image is only stat'ed, so it is opened read only and cannot take the exclusive lock.
-                RbdImage image = rbd.openReadOnly(volumeUuid);
-                try {
-                    RbdImageInfo rbdInfo = image.stat();
-                    KVMPhysicalDisk disk = new KVMPhysicalDisk(pool.getSourceDir() + "/" + volumeUuid, volumeUuid, pool);
-                    disk.setFormat(PhysicalDiskFormat.RAW);
-                    disk.setSize(rbdInfo.size);
-                    disk.setVirtualSize(rbdInfo.size);
-                    return disk;
-                } finally {
-                    closeRbdImage(rbd, image, volumeUuid);
-                }
+                RbdImageInfo rbdInfo = image.stat();
+                KVMPhysicalDisk disk = new KVMPhysicalDisk(pool.getSourceDir() + "/" + volumeUuid, volumeUuid, pool);
+                disk.setFormat(PhysicalDiskFormat.RAW);
+                disk.setSize(rbdInfo.size);
+                disk.setVirtualSize(rbdInfo.size);
+                return disk;
             } finally {
-                r.ioCtxDestroy(io);
+                closeRbdImage(rbd, image, volumeUuid);
             }
         } catch (RadosException e) {
             logger.error("A Ceph RADOS operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage()
@@ -760,7 +745,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
             throw new CloudRuntimeException(e.toString(), e);
         } finally {
-            r.shutDown();
+            CephUtil.ioCtxDestroyQuietly(r, io);
+            CephUtil.shutDownQuietly(r);
         }
     }
 
