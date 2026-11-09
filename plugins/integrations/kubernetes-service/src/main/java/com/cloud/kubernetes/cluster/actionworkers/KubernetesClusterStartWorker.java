@@ -730,22 +730,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     private boolean isKubernetesClusterKubeConfigAvailable(final long timeoutTime) {
         if (StringUtils.isEmpty(publicIpAddress)) {
-            KubernetesClusterDetailsVO kubeConfigDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "kubeConfigData");
+            KubernetesClusterDetailsVO kubeConfigDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), KUBE_CONFIG_DATA_DETAIL);
             if (kubeConfigDetail != null && StringUtils.isNotEmpty(kubeConfigDetail.getValue())) {
                 return true;
             }
         }
-        String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, timeoutTime);
-        if (StringUtils.isNotEmpty(kubeConfig)) {
-            final String controlVMPrivateIpAddress = getControlVmPrivateIp();
-            if (StringUtils.isNotEmpty(controlVMPrivateIpAddress)) {
-                kubeConfig = kubeConfig.replace(String.format("server: https://%s:%d", controlVMPrivateIpAddress, CLUSTER_API_PORT),
-                        String.format("server: https://%s:%d", apiPublicIpAddress, CLUSTER_API_PORT));
-            }
-            kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), "kubeConfigData", Base64.encodeBase64String(kubeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset())), false);
-            return true;
-        }
-        return false;
+        return refreshKubeConfigData(timeoutTime);
     }
 
     private boolean isKubernetesClusterDashboardServiceRunning(final boolean onCreate, final Long timeoutTime) {
@@ -978,8 +968,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
             return false;
         }
-        // mark the cluster to be running
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested);
+        // mark the cluster to be running, unless another operation (e.g. a certificate rotation) took it meanwhile
+        if (!stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested)) {
+            return false;
+        }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
     }
