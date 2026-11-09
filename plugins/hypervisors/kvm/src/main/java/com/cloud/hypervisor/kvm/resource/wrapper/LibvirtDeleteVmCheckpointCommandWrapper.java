@@ -33,6 +33,7 @@ import java.util.Set;
 import org.apache.cloudstack.backup.DeleteVmCheckpointCommand;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuCommand;
+import org.apache.cloudstack.utils.qemu.QemuImageFilename;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -159,7 +160,8 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         Map<String, JSONObject> imageByFile = new LinkedHashMap<>();
         for (int i = 0; nodes != null && i < nodes.length(); i++) {
             JSONObject node = nodes.getJSONObject(i);
-            String file = node.optString("file", null);
+            // An encrypted image is reported under a json: pseudo-filename, not its path.
+            String file = QemuImageFilename.plain(node.optString("file", null));
             if (file == null || !"qcow2".equals(node.optString("drv"))) {
                 continue;
             }
@@ -178,7 +180,7 @@ public class LibvirtDeleteVmCheckpointCommandWrapper extends CommandWrapper<Dele
         for (Map.Entry<String, String> disk : diskPathLabelMap.entrySet()) {
             boolean has = false;
             for (JSONObject image = imageByFile.get(disk.getKey()); image != null; image = image.optJSONObject("backing-image")) {
-                if (filesWithBitmap.contains(image.optString("filename"))) {
+                if (filesWithBitmap.contains(QemuImageFilename.plain(image.optString("filename")))) {
                     has = true;
                     break;
                 }

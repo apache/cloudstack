@@ -160,6 +160,25 @@ public class LibvirtDeleteVmCheckpointCommandWrapperTest {
     }
 
     @Test
+    public void testFindDisksWithBitmapOnEncryptedImagesReportedAsJsonPseudoFilenames() {
+        // qemu reports a LUKS qcow2 under json:{...} in both "file" and "image.filename", for the disk and its backing file.
+        String enc = "{\"return\": ["
+                + "{\"node-name\": \"libvirt-2-format\", \"drv\": \"qcow2\", \"ro\": false,"
+                + "  \"file\": \"json:{\\\"encrypt.key-secret\\\": \\\"libvirt-2-format-encryption-secret0\\\", \\\"driver\\\": \\\"qcow2\\\", \\\"file\\\": {\\\"driver\\\": \\\"file\\\", \\\"filename\\\": \\\"/p/vda.qcow2\\\"}}\","
+                + "  \"image\": {\"filename\": \"json:{\\\"encrypt.key-secret\\\": \\\"libvirt-2-format-encryption-secret0\\\", \\\"driver\\\": \\\"qcow2\\\", \\\"file\\\": {\\\"driver\\\": \\\"file\\\", \\\"filename\\\": \\\"/p/vda.qcow2\\\"}}\","
+                + "            \"backing-image\": {\"filename\": \"json:{\\\"encrypt.key-secret\\\": \\\"libvirt-3-format-encryption-secret0\\\", \\\"driver\\\": \\\"qcow2\\\", \\\"file\\\": {\\\"driver\\\": \\\"file\\\", \\\"filename\\\": \\\"/p/base.qcow2\\\"}}\"}},"
+                + "  \"dirty-bitmaps\": [{\"name\": \"cp-5\"}]},"
+                + "{\"node-name\": \"libvirt-3-format\", \"drv\": \"qcow2\", \"ro\": true,"
+                + "  \"file\": \"json:{\\\"encrypt.key-secret\\\": \\\"libvirt-3-format-encryption-secret0\\\", \\\"driver\\\": \\\"qcow2\\\", \\\"file\\\": {\\\"driver\\\": \\\"file\\\", \\\"filename\\\": \\\"/p/base.qcow2\\\"}}\","
+                + "  \"image\": {\"filename\": \"/p/base.qcow2\"}, \"dirty-bitmaps\": [{\"name\": \"cp-4\"}]},"
+                + "{\"node-name\": \"libvirt-1-format\", \"drv\": \"qcow2\", \"ro\": false, \"file\": \"/p/vdb.qcow2\", \"image\": {\"filename\": \"/p/vdb.qcow2\"}, \"dirty-bitmaps\": []}"
+                + "]}";
+        Assert.assertEquals(Map.of("vda", true, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(enc, DISK_LABELS, "cp-5"));
+        Assert.assertEquals(Map.of("vda", true, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(enc, DISK_LABELS, "cp-4"));
+        Assert.assertEquals(Map.of("vda", false, "vdb", false), LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(enc, DISK_LABELS, "cp-9"));
+    }
+
+    @Test
     public void testFindChainLayersWithBitmap() {
         Assert.assertEquals(List.of("/p/old.qcow2"), LibvirtDeleteVmCheckpointCommandWrapper.findChainLayersWithBitmap(CHAIN_INFO, "cp-2"));
         Assert.assertTrue(LibvirtDeleteVmCheckpointCommandWrapper.findChainLayersWithBitmap(CHAIN_INFO, "cp-9").isEmpty());

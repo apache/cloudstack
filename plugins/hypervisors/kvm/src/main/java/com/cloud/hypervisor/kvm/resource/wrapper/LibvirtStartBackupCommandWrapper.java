@@ -27,6 +27,7 @@ import org.apache.cloudstack.backup.StartBackupAnswer;
 import org.apache.cloudstack.backup.StartBackupCommand;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuCommand;
+import org.apache.cloudstack.utils.qemu.QemuImageFilename;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
@@ -262,7 +263,8 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             if (inserted == null) {
                 continue;
             }
-            String file = inserted.optString("file");
+            // An encrypted image is reported under a json: pseudo-filename, not its path.
+            String file = QemuImageFilename.plain(inserted.optString("file"));
             if (StringUtils.isBlank(file)) {
                 continue;
             }
