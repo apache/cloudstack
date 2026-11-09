@@ -59,7 +59,7 @@ public class ListResourceAlertRulesCmd extends BaseListProjectAndAccountResource
     private String name;
 
     @Parameter(name = ApiConstants.METRIC, type = CommandType.STRING,
-            description = "filter by metric, for example CpuUtilization")
+            description = "filter by metric, for example CPU_UTILIZATION")
     private String metric;
 
     @Parameter(name = ApiConstants.SEVERITY, type = CommandType.STRING,
