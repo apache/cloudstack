@@ -377,6 +377,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException(String.format("The snapshot [%s] is part of a [%s] snapshots and cannot be reverted separately", snapshot, snapshot.getTypeDescription()));
         }
         VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
+        if (volume == null) {
+            throw new InvalidParameterValueException(String.format("Cannot revert snapshot %s, because its volume no longer exists", snapshot.getUuid()));
+        }
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("The volume is not in Ready state.");
         }
@@ -2265,9 +2268,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (snapshot.getLocationType() != null && !Snapshot.LocationType.SECONDARY.equals(snapshot.getLocationType()) && !useStorageReplication) {
             throw new InvalidParameterValueException("Snapshot is not backed up");
         }
-        Volume volume = _volsDao.findById(snapshot.getVolumeId());
         if (sourceZoneId == null) {
-            sourceZoneId = volume.getDataCenterId();
+            // The volume may have been removed since the snapshot was taken; the snapshot records the same zone.
+            Volume volume = _volsDao.findById(snapshot.getVolumeId());
+            sourceZoneId = volume != null ? volume.getDataCenterId() : snapshot.getDataCenterId();
         }
         if (CollectionUtils.isEmpty(destZoneIds)) {
                 throw new InvalidParameterValueException("Please specify valid destination zone(s).");
