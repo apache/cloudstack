@@ -379,6 +379,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             logger.error("New checkpoint details are missing for backup {} and vm {}", backup.getId(), vm.getId());
             return;
         }
+        if (vmCheckpointDao.findByVmIdAndCheckpointId(vm.getId(), newCheckpointId) != null) {
+            logger.warn("Checkpoint {} of VM {} is already recorded, not recording it again for backup {}", newCheckpointId, vm.getId(), backup.getId());
+            return;
+        }
         vmCheckpointDao.persist(new VmCheckpointVO(vm.getId(), newCheckpointId, newCreateTime, backup.getId()));
     }
 
@@ -411,9 +415,17 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
         for (ImageTransferVO transfer : transfers) {
-            if (transfer.getPhase() != ImageTransferVO.Phase.finished) {
-                logger.warn("Finalize called for backup {} while Image transfer {} is not finalized, attempting to finalize it", backup.getUuid(), transfer.getUuid());
+            if (transfer.getPhase() == ImageTransferVO.Phase.finished) {
+                continue;
+            }
+            logger.warn("Finalize called for backup {} while Image transfer {} is not finalized, attempting to finalize it", backup.getUuid(), transfer.getUuid());
+            try {
                 finalizeImageTransfer(transfer.getId());
+            } catch (RuntimeException e) {
+                // Nothing has been stopped on the host yet, so the backup goes back to ready and the finalize can be retried.
+                updateBackupState(backup, Backup.Status.ReadyForImageTransfer);
+                throw new CloudRuntimeException(String.format("Failed to finalize image transfer %s of backup %s, the backup can be finalized again: %s",
+                        transfer.getUuid(), backup.getUuid(), e.getMessage()), e);
             }
         }
 

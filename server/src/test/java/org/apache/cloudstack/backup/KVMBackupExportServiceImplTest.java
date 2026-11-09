@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -49,6 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -540,6 +542,39 @@ public class KVMBackupExportServiceImplTest {
         when(vm.getId()).thenReturn(1L);
         when(vm.getState()).thenReturn(State.Running);
         when(imageTransferDao.listByBackupId(20L)).thenReturn(Collections.emptyList());
+    }
+
+    @Test
+    public void finalizeBackup_transferFinalizeFailure_putsTheBackupBackToReadyAndStopsNothing() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(backup.getUuid()).thenReturn("backup-uuid");
+        ImageTransferVO transfer = new ImageTransferVO("tx-open", 11L, 20L, 31L, "sock",
+                ImageTransferVO.Phase.transferring, ImageTransfer.Direction.download, 1L, 1L, 1L);
+        when(imageTransferDao.listByBackupId(20L)).thenReturn(List.of(transfer));
+        when(imageTransferDao.findById(transfer.getId())).thenReturn(null);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.finalizeBackup(finalizeCmd(1L, 20L)));
+
+        assert ex.getMessage().contains("can be finalized again");
+        InOrder order = inOrder(backup);
+        order.verify(backup).setStatus(Backup.Status.FinalizingImageTransfer);
+        order.verify(backup).setStatus(Backup.Status.ReadyForImageTransfer);
+        verify(backup, never()).setStatus(Backup.Status.Error);
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(vmCheckpointDao, never()).persist(any(VmCheckpointVO.class));
+        verify(backupDao, never()).remove(any(Long.class));
+    }
+
+    @Test
+    public void finalizeBackup_checkpointAlreadyRecorded_isNotRecordedTwice() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new StopBackupAnswer(null, true, "stopped"));
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-new")).thenReturn(mock(VmCheckpointVO.class));
+
+        service.finalizeBackup(finalizeCmd(1L, 20L));
+
+        verify(vmCheckpointDao, never()).persist(any(VmCheckpointVO.class));
+        verify(backup).setStatus(Backup.Status.BackedUp);
     }
 
     @Test
