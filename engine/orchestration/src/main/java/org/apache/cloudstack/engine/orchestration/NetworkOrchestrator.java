@@ -2085,13 +2085,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private Map<Long, NetworkVO> batchLoadNetworksForNics(List<NicVO> nics) {
+        List<Long> networkIds = nics.stream().map(NicVO::getNetworkId).distinct().collect(Collectors.toList());
+        Map<Long, NetworkVO> result = new HashMap<>(networkIds.size());
+        for (NetworkVO network : _networksDao.listByIds(networkIds)) {
+            result.put(network.getId(), network);
+        }
+        return result;
+    }
+
     @Override
     public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException {
         String hypervisorHostName = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
         if (StringUtils.isNotEmpty(hypervisorHostName)) {
             final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+            final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
             for (final NicVO nic : nics) {
-                final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                final NetworkVO network = networksById.get(nic.getNetworkId());
+                if (network == null) {
+                    continue;
+                }
                 final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
                 final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                         _networkModel.getNetworkTag(vm.getHypervisorType(), network));
@@ -2266,8 +2279,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final NetworkVO network = networksById.get(nic.getNetworkId());
+            if (network == null) {
+                logger.warn("Network {} not found for nic {} during migration prep, skipping", nic.getNetworkId(), nic);
+                continue;
+            }
             final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
@@ -2302,6 +2320,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private boolean isReservedForExternalProvider(Long vlanId) {
+        VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlanId, ApiConstants.NETRIS_DETAIL_KEY);
+        return vlanDetail != null && BooleanUtils.toBoolean(vlanDetail.getValue());
+    }
+
     /*
     Prepare All Nics for migration including the nics dynamically created and not stored in DB
     This is a temporary workaround work KVM migration
@@ -2311,9 +2334,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void prepareAllNicsForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        final Map<Long, NetworkVO> networksById = batchLoadNetworksForNics(nics);
         Long guestNetworkId = null;
         for (final NicVO nic : nics) {
-            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final NetworkVO network = networksById.get(nic.getNetworkId());
+            if (network == null) {
+                logger.warn("Network {} not found for nic {} during migration prep, skipping", nic.getNetworkId(), nic);
+                continue;
+            }
             if (network.getTrafficType().equals(TrafficType.Guest) && network.getGuestType().equals(GuestType.Isolated)) {
                 guestNetworkId = network.getId();
             }
@@ -2350,6 +2378,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(guestNetworkId, null);
             for (final IPAddressVO userIp : publicIps) {
                 final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                if (isReservedForExternalProvider(publicIp.getVlanId())) {
+                    logger.debug("Skipping public IP {} for migration NIC profile: managed by external network provider", publicIp.getAddress());
+                    continue;
+                }
                 final URI broadcastUri = BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag());
                 final long ntwkId = publicIp.getNetworkId();
                 final Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ntwkId, vm.getId(),
@@ -3175,7 +3207,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     /**
      * Checks for L2 network offering services. Only 2 cases allowed:
      * - No services
-     * - User Data service only, provided by ConfigDrive
+     * - UserData service only, provided by ConfigDrive
      *
      * @param ntwkOff network offering
      */

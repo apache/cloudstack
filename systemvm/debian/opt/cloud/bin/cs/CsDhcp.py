@@ -145,7 +145,7 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=tag:interface-%s-%s,1,%s" % (device, idx, netmask)
             self.conf.search(sline, line)
             # Listen Address
-            if self.cl.is_redundant():
+            if self.cl.is_redundant() and gn.router_owns_gateway():
                 listen_address.append(gateway)
             else:
                 listen_address.append(ip)

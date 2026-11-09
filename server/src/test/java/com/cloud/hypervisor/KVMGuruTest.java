@@ -18,10 +18,12 @@ package com.cloud.hypervisor;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.junit.After;
@@ -31,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -38,6 +41,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -48,11 +52,16 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
@@ -61,6 +70,10 @@ public class KVMGuruTest {
     HostDao hostDao;
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Mock
+    VMInstanceDao _instanceDao;
+    @Mock
+    VolumeDao _volumeDao;
 
     @Spy
     @InjectMocks
@@ -505,5 +518,40 @@ public class KVMGuruTest {
         Long clusterId = guru.findClusterOfVm(vm);
 
         Assert.assertNull(clusterId);
+    }
+
+    /**
+     * The restore maps backup files onto volumes by their device id ordering, so re-importing the
+     * instance has to put every data disk back on the device id recorded in the backup. Handing out
+     * the next free id instead shifts the disks on every restore and misaligns that mapping.
+     */
+    @Test
+    public void testImportVirtualMachineFromBackupReinstatesRecordedDeviceIds() {
+        String vmInternalName = "i-2-42-VM";
+        VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstance.getId()).thenReturn(42L);
+        Mockito.when(vmInstance.getRemoved()).thenReturn(null);
+        Mockito.when(_instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName)).thenReturn(vmInstance);
+
+        Backup.VolumeInfo rootVolume = new Backup.VolumeInfo("root-uuid", "root-uuid", Volume.Type.ROOT, 1L, 0L, null, null, null);
+        Backup.VolumeInfo dataVolume = new Backup.VolumeInfo("data-uuid", "data-uuid", Volume.Type.DATADISK, 1L, 5L, null, null, null);
+        Mockito.when(vmInstance.getBackupVolumeList()).thenReturn(List.of(rootVolume, dataVolume));
+
+        VolumeVO rootVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(rootVolumeVO.getId()).thenReturn(10L);
+        VolumeVO dataVolumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(dataVolumeVO.getId()).thenReturn(11L);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("root-uuid")).thenReturn(rootVolumeVO);
+        Mockito.when(_volumeDao.findByUuidIncludingRemoved("data-uuid")).thenReturn(dataVolumeVO);
+
+        Backup backup = Mockito.mock(Backup.class);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            guru.importVirtualMachineFromBackup(1L, 1L, 1L, 1L, vmInternalName, backup);
+        }
+
+        Mockito.verify(_volumeDao).attachVolume(10L, 42L, 0L);
+        Mockito.verify(_volumeDao).attachVolume(11L, 42L, 5L);
+        Mockito.verify(guru, Mockito.never()).getNextAvailableDeviceId(Mockito.anyList());
     }
 }

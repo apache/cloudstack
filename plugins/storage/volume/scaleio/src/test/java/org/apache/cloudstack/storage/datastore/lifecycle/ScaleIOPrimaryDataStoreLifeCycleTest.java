@@ -151,6 +151,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
         when(resourceManager.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), Hypervisor.HypervisorType.KVM))
                 .thenReturn(Arrays.asList(host1, host2));
+        when(hostDao.listByIds(List.of(1L, 2L))).thenReturn(List.of(host1, host2));
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.isShared()).thenReturn(true);
@@ -164,6 +165,8 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
         boolean result = scaleIOPrimaryDataStoreLifeCycleTest.attachZone(dataStore, scope, Hypervisor.HypervisorType.KVM);
         assertThat(result).isTrue();
+        Mockito.verify(hostListener).hostConnect(host1, store);
+        Mockito.verify(hostListener).hostConnect(host2, store);
     }
 
     @Test(expected = CloudRuntimeException.class)

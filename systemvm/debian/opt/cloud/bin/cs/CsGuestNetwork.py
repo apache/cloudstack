@@ -37,6 +37,9 @@ class CsGuestNetwork:
     def is_vr_guest_gateway(self):
         return self.guest and ('is_vr_guest_gateway' not in self.data or self.data['is_vr_guest_gateway'])
 
+    def router_owns_gateway(self):
+        return not self.guest or self.is_vr_guest_gateway()
+
     def get_dns(self):
         if not self.guest:
             return self.config.get_dns()

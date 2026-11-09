@@ -183,10 +183,12 @@ public interface VolumeOrchestrationService {
      */
     DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                              Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
-                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo);
+                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo,
+                             Storage.ImageFormat format);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile);
+                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile,
+                                     Storage.ImageFormat format);
 
     /**
      * Unmanage VM volumes

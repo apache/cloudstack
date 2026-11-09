@@ -2311,6 +2311,10 @@ public class ApiDBUtils {
         return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 
+    public static NicVO findNonPlaceHolderByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
     public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
     }

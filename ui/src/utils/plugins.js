@@ -217,7 +217,6 @@ export const pollJobPlugin = {
 export const notifierPlugin = {
   install (app) {
     app.config.globalProperties.$notifyError = function (error) {
-      console.log(error)
       var msg = i18n.global.t('message.request.failed')
       var desc = ''
       if (error && error.response) {

@@ -456,10 +456,11 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
-    public List<NicVO> listByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
+    public List<NicVO> listNonPlaceholderNicsByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("vmType", vmType);
+        sc.setParameters("strategyNEQ", Nic.ReservationStrategy.PlaceHolder.toString());
         return listBy(sc);
     }
 
