@@ -19,6 +19,7 @@
 package org.apache.cloudstack.api.command.admin.account;
 
 import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.logging.log4j.Logger;
@@ -82,24 +83,28 @@ public class CreateAccountCmdTest {
     @Test
     public void testExecuteWithNullPasswordGeneratesOne() {
         ReflectionTestUtils.setField(createAccountCmd, "password", null);
-        try {
-            createAccountCmd.execute();
-        } catch (ServerApiException e) {
-            Assert.assertTrue("Received exception as the mock accountService createUserAccount returns null user", true);
-        }
-        Assert.assertNotNull("a password should be generated for accounts that authenticate externally", createAccountCmd.getPassword());
+        // the mock accountService createUserAccount returns null, so execute fails after validation
+        ServerApiException e = Assert.assertThrows(ServerApiException.class, () -> createAccountCmd.execute());
+        Assert.assertEquals(ApiErrorCode.INTERNAL_ERROR, e.getErrorCode());
+        Assert.assertEquals("a password should be generated for accounts that authenticate externally",
+                12, createAccountCmd.getPassword().length());
         Mockito.verify(accountService, Mockito.times(1)).createUserAccount(createAccountCmd);
     }
 
     @Test
-    public void testExecuteWithEmptyPasswordGeneratesOne() {
+    public void testExecuteWithEmptyPassword() {
         ReflectionTestUtils.setField(createAccountCmd, "password", "");
-        try {
-            createAccountCmd.execute();
-        } catch (ServerApiException e) {
-            Assert.assertTrue("Received exception as the mock accountService createUserAccount returns null user", true);
-        }
-        Assert.assertNotNull("a password should be generated for accounts that authenticate externally", createAccountCmd.getPassword());
-        Mockito.verify(accountService, Mockito.times(1)).createUserAccount(createAccountCmd);
+        ServerApiException e = Assert.assertThrows(ServerApiException.class, () -> createAccountCmd.execute());
+        Assert.assertEquals(ApiErrorCode.PARAM_ERROR, e.getErrorCode());
+        Assert.assertEquals("Blank passwords are not allowed", e.getMessage());
+        Mockito.verify(accountService, Mockito.never()).createUserAccount(createAccountCmd);
+    }
+
+    @Test
+    public void testExecuteWithWhitespacePassword() {
+        ReflectionTestUtils.setField(createAccountCmd, "password", "   ");
+        ServerApiException e = Assert.assertThrows(ServerApiException.class, () -> createAccountCmd.execute());
+        Assert.assertEquals(ApiErrorCode.PARAM_ERROR, e.getErrorCode());
+        Mockito.verify(accountService, Mockito.never()).createUserAccount(createAccountCmd);
     }
 }
