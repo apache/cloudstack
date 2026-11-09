@@ -58,6 +58,7 @@ public class KubernetesClusterScaleWorkerTest {
     private KubernetesClusterScaleWorker worker;
 
     private static final Long defaultOfferingId = 1L;
+    private static final Long DEFAULT_NODE_GROUP_ID = 10L;
 
     @Before
     public void setUp() {
@@ -135,6 +136,7 @@ public class KubernetesClusterScaleWorkerTest {
         KubernetesClusterManagerImpl clusterManager = Mockito.mock(KubernetesClusterManagerImpl.class);
         KubernetesClusterScaleWorker worker = new KubernetesClusterScaleWorker(kubernetesCluster, new java.util.HashMap<>(), 2L, null, false, null, null, clusterManager);
         KubernetesClusterScaleWorker spyWorker = Mockito.spy(worker);
+        Mockito.doReturn(DEFAULT_NODE_GROUP_ID).when(spyWorker).getDefaultNodeGroupId();
 
         KubernetesClusterVmMapVO vm1 = Mockito.mock(KubernetesClusterVmMapVO.class);
         Mockito.when(vm1.isExternalNode()).thenReturn(false);
@@ -165,6 +167,7 @@ public class KubernetesClusterScaleWorkerTest {
 
         KubernetesClusterScaleWorker worker = new KubernetesClusterScaleWorker(kubernetesCluster, new java.util.HashMap<>(), 3L, null, false, null, null, clusterManager);
         KubernetesClusterScaleWorker spyWorker = Mockito.spy(worker);
+        Mockito.doReturn(DEFAULT_NODE_GROUP_ID).when(spyWorker).getDefaultNodeGroupId();
 
         KubernetesClusterVmMapVO vm1 = Mockito.mock(KubernetesClusterVmMapVO.class);
         Mockito.when(vm1.isExternalNode()).thenReturn(false);
@@ -186,5 +189,25 @@ public class KubernetesClusterScaleWorkerTest {
         List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
 
         Assert.assertTrue(toRemove.isEmpty());
+    }
+
+    @Test
+    public void testGetWorkerNodesToRemoveExcludesNodeGroupNodes() {
+        KubernetesCluster kubernetesCluster = Mockito.mock(KubernetesCluster.class);
+        KubernetesClusterScaleWorker worker = new KubernetesClusterScaleWorker(kubernetesCluster, new java.util.HashMap<>(), 1L, null, false, null, null, clusterManager);
+        KubernetesClusterScaleWorker spyWorker = Mockito.spy(worker);
+        Mockito.doReturn(DEFAULT_NODE_GROUP_ID).when(spyWorker).getDefaultNodeGroupId();
+
+        KubernetesClusterVmMapVO vm1 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        KubernetesClusterVmMapVO vm2 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        KubernetesClusterVmMapVO nodeGroupVm = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(nodeGroupVm.isInNodeGroupOtherThan(DEFAULT_NODE_GROUP_ID)).thenReturn(true);
+
+        Mockito.doReturn(Arrays.asList(vm1, vm2, nodeGroupVm)).when(spyWorker).getKubernetesClusterVMMaps();
+
+        List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
+
+        Assert.assertEquals(1, toRemove.size());
+        Assert.assertSame(vm2, toRemove.get(0));
     }
 }

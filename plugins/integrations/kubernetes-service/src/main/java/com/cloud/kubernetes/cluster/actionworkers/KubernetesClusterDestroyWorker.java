@@ -370,6 +370,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         annotationDao.removeByEntityType(AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), kubernetesCluster.getUuid());
         kubernetesClusterDetailsDao.removeDetails(kubernetesCluster.getId());
         kubernetesClusterAffinityGroupMapDao.removeByClusterId(kubernetesCluster.getId());
+        kubernetesClusterNodeGroupDao.removeByClusterId(kubernetesCluster.getId());
         boolean deleted = kubernetesClusterDao.remove(kubernetesCluster.getId());
         if (!deleted) {
             logMessage(Level.WARN, String.format("Failed to delete Kubernetes cluster: %s", kubernetesCluster), null);

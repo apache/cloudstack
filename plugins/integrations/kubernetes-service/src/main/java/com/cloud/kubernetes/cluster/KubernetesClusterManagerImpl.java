@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -91,6 +92,12 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetes
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.CreateKubernetesClusterNodeGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.DeleteKubernetesClusterNodeGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.ListKubernetesClusterNodeGroupsCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.ScaleKubernetesClusterNodeGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.UpdateKubernetesClusterNodeCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.nodegroup.UpdateKubernetesClusterNodeGroupCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerRuleCmd;
@@ -113,6 +120,8 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
+import org.apache.cloudstack.api.response.KubernetesClusterNodeGroupResponse;
+import org.apache.cloudstack.api.response.KubernetesClusterNodeResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.KubernetesUserVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -168,6 +177,7 @@ import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNod
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterDestroyWorker;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterNodeGroupWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterScaleWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
@@ -176,7 +186,9 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterNodeGroupDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeGroupUtil;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import com.cloud.kubernetes.version.KubernetesVersionManagerImpl;
@@ -220,7 +232,9 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.user.Account;
@@ -312,6 +326,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected final static List<String> CLUSTER_NODES_TYPES_LIST = Arrays.asList(WORKER.name(), CONTROL.name(), ETCD.name());
 
+    /**
+     * Locks of a Kubernetes cluster: the node groups lock serializes the start and completion of the operations on
+     * its node groups, the network rules lock the updates of its SSH rules and the autoscaler lock the deployments
+     * of its cluster autoscaler
+     */
+    public static final String NODE_GROUPS_LOCK = "NodeGroups";
+    public static final String NETWORK_RULES_LOCK = "NetworkRules";
+    public static final String AUTOSCALER_LOCK = "Autoscaler";
+    protected static final int KUBERNETES_CLUSTER_LOCK_TIMEOUT = 600;
+    protected static final String NODE_GROUP_TEMPLATE_LAUNCH_PERMISSION_DETAIL = "nodeGroupTemplateLaunchPermission";
+
     ScheduledExecutorService _gcExecutor;
     ScheduledExecutorService _stateScanner;
 
@@ -323,6 +348,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
     @Inject
     public KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
+    @Inject
+    public KubernetesClusterNodeGroupDao kubernetesClusterNodeGroupDao;
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
     @Inject
     public KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
     @Inject
@@ -851,6 +880,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setMasterNodes(kubernetesCluster.getControlNodeCount());
         response.setControlNodes(kubernetesCluster.getControlNodeCount());
         response.setClusterSize(kubernetesCluster.getNodeCount());
+        response.setWorkerNodes(kubernetesCluster.getNodeCount() + kubernetesCluster.getNodeGroupNodeCount());
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesCluster.getTemplateId());
         if (template != null) {
             response.setTemplateId(template.getUuid());
@@ -899,6 +929,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
+        List<KubernetesClusterNodeGroupVO> nodeGroups = kubernetesClusterNodeGroupDao.listByClusterId(kubernetesCluster.getId());
+        Map<Long, KubernetesClusterNodeGroupVO> nodeGroupById = nodeGroups.stream()
+                .collect(Collectors.toMap(KubernetesClusterNodeGroupVO::getId, group -> group));
+        response.setNodeGroups(nodeGroups.stream().map(group -> createKubernetesClusterNodeGroupResponse(group.getId())).collect(Collectors.toList()));
+
         List<KubernetesUserVmResponse> vmResponses = new ArrayList<>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         ResponseView userVmResponseView = ResponseView.Restricted;
@@ -936,6 +971,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
                     kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
                     kubernetesUserVmResponse.setNodeVersion(vmMapVO.getNodeVersion());
+                    if (vmMapVO.getNodeGroupId() != null) {
+                        KubernetesClusterNodeGroupVO nodeGroup = nodeGroupById.get(vmMapVO.getNodeGroupId());
+                        if (nodeGroup != null) {
+                            kubernetesUserVmResponse.setNodeGroupId(nodeGroup.getUuid());
+                            kubernetesUserVmResponse.setNodeGroupName(nodeGroup.getName());
+                        }
+                    }
                     vmResponses.add(kubernetesUserVmResponse);
                 }
             }
@@ -1079,7 +1121,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         BaseCmd.getCommandNameByClass(StopKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(AddNodesToKubernetesClusterCmd.class),
-                        BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class)
+                        BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(CreateKubernetesClusterNodeGroupCmd.class),
+                        BaseCmd.getCommandNameByClass(ListKubernetesClusterNodeGroupsCmd.class),
+                        BaseCmd.getCommandNameByClass(UpdateKubernetesClusterNodeGroupCmd.class),
+                        BaseCmd.getCommandNameByClass(ScaleKubernetesClusterNodeGroupCmd.class),
+                        BaseCmd.getCommandNameByClass(DeleteKubernetesClusterNodeGroupCmd.class),
+                        BaseCmd.getCommandNameByClass(UpdateKubernetesClusterNodeCmd.class)
                 ).contains(cmdName);
             case ExternalManaged:
                 return Arrays.asList(
@@ -1345,7 +1393,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterSize < 1) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled for size, %d", kubernetesCluster.getName(), clusterSize));
         }
-        if (clusterSize + kubernetesCluster.getControlNodeCount() > maxClusterSize) {
+        if (clusterSize + kubernetesCluster.getControlNodeCount() + kubernetesCluster.getNodeGroupNodeCount() > maxClusterSize) {
             throw new InvalidParameterValueException(
                     String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
         }
@@ -1426,9 +1474,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (maxSize <= minSize) {
                 throw new InvalidParameterValueException("Maxsize must be greater than minsize");
             }
-            if (maxSize + kubernetesCluster.getControlNodeCount() > maxClusterSize) {
+            if (maxSize + kubernetesCluster.getControlNodeCount() + kubernetesCluster.getNodeGroupNodeCount() > maxClusterSize) {
                 throw new InvalidParameterValueException(
                     String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
+            }
+            KubernetesClusterNodeGroupVO defaultNodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(kubernetesCluster.getId());
+            if (defaultNodeGroup != null) {
+                validateNodeGroupAutoscaling(kubernetesCluster, defaultNodeGroup, true, minSize, maxSize);
             }
         }
 
@@ -1441,6 +1493,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             // Do all the nodes exist ?
             if (nodes == null || nodes.size() != nodeIds.size()) {
                 throw new InvalidParameterValueException("Invalid node ids");
+            }
+            KubernetesClusterNodeGroupVO defaultNodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(kubernetesCluster.getId());
+            Long defaultNodeGroupId = defaultNodeGroup != null ? defaultNodeGroup.getId() : null;
+            if (nodes.stream().anyMatch(node -> node.isInNodeGroupOtherThan(defaultNodeGroupId))) {
+                throw new InvalidParameterValueException(String.format("Some of the nodes belong to a node group, use %s to remove them",
+                        BaseCmd.getCommandNameByClass(ScaleKubernetesClusterNodeGroupCmd.class)));
             }
             // Ensure there's always a control node
             long controleNodesToRemove = nodes.stream().filter(x -> x.isControlNode()).count();
@@ -1745,6 +1803,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final VMTemplateVO etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD, clusterKubernetesVersion);
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId(), asNumber);
 
+        final String defaultNodeGroupLabels = KubernetesClusterNodeGroupUtil.labelsToString(
+                KubernetesClusterNodeGroupUtil.getLabelsFromApiMap(cmd.getNodeLabels()));
+        final List<KubernetesClusterNodeGroupUtil.Taint> defaultNodeGroupTaintList = KubernetesClusterNodeGroupUtil.getTaintsFromApiMap(cmd.getNodeTaints());
+        validateNodeGroupTaints(true, defaultNodeGroupTaintList);
+        final String defaultNodeGroupTaints = KubernetesClusterNodeGroupUtil.taintsToString(defaultNodeGroupTaintList);
+
         final SecurityGroup finalSecurityGroup = securityGroup;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
@@ -1784,6 +1848,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
+                createDefaultNodeGroup(newCluster, defaultNodeGroupLabels, defaultNodeGroupTaints, clusterSize);
                 persistAffinityGroupMappings(newCluster.getId(), affinityGroupNodeTypeMap);
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
@@ -2297,7 +2362,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 this);
         scaleWorker.setKeys(keys);
         scaleWorker = ComponentContext.inject(scaleWorker);
-        return scaleWorker.scaleCluster();
+        try {
+            return scaleWorker.scaleCluster();
+        } finally {
+            syncDefaultNodeGroupWithCluster(kubernetesCluster.getId());
+        }
     }
 
     /**
@@ -2493,7 +2562,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateNodeAffinityGroups(validNodeIds, kubernetesCluster);
         KubernetesClusterAddWorker addWorker = new KubernetesClusterAddWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
         addWorker = ComponentContext.inject(addWorker);
-        return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr(), cmd.isManualUpgrade());
+        try {
+            return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr(), cmd.isManualUpgrade());
+        } finally {
+            syncDefaultNodeGroupWithCluster(kubernetesCluster.getId());
+        }
     }
 
     @Override
@@ -2508,7 +2581,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         KubernetesClusterRemoveWorker removeWorker = new KubernetesClusterRemoveWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
         removeWorker = ComponentContext.inject(removeWorker);
-        return removeWorker.removeNodesFromCluster(validNodeIds);
+        try {
+            return removeWorker.removeNodesFromCluster(validNodeIds);
+        } finally {
+            syncDefaultNodeGroupWithCluster(kubernetesCluster.getId());
+        }
     }
 
     private KubernetesClusterVO validateCluster(long clusterId) {
@@ -2766,6 +2843,877 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         deleteProjectKubernetesAccount(account);
     }
 
+    /**
+     * Runs the action holding the given lock of the Kubernetes cluster, shared by all the management servers
+     */
+    public <T> T executeWithKubernetesClusterLock(final long clusterId, final String purpose, final Supplier<T> action) {
+        GlobalLock lock = GlobalLock.getInternLock(String.format("KubernetesCluster.%s.%d", purpose, clusterId));
+        try {
+            if (!lock.lock(KUBERNETES_CLUSTER_LOCK_TIMEOUT)) {
+                throw new CloudRuntimeException(String.format("Unable to acquire the %s lock of the Kubernetes cluster with ID %d", purpose, clusterId));
+            }
+            try {
+                return action.get();
+            } finally {
+                lock.unlock();
+            }
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
+    protected long getExternalNodeCount(final long clusterId) {
+        return kubernetesClusterVmMapDao.listByClusterId(clusterId).stream().filter(KubernetesClusterVmMapVO::isExternalNode).count();
+    }
+
+    /**
+     * Creates the default node group of a CloudManaged cluster, which holds the worker nodes of the cluster size
+     * except the external nodes, with the worker service offering and template of the cluster
+     */
+    protected KubernetesClusterNodeGroupVO createDefaultNodeGroup(final KubernetesClusterVO kubernetesCluster, final String labels,
+                                                                  final String taints, final long nodeCount) {
+        Long serviceOfferingId = kubernetesCluster.getWorkerNodeServiceOfferingId() != null ?
+                kubernetesCluster.getWorkerNodeServiceOfferingId() : kubernetesCluster.getServiceOfferingId();
+        Long templateId = kubernetesCluster.getWorkerNodeTemplateId() != null ?
+                kubernetesCluster.getWorkerNodeTemplateId() : kubernetesCluster.getTemplateId();
+        if (serviceOfferingId == null || templateId == null) {
+            throw new CloudRuntimeException(String.format("Unable to find the worker service offering and template of the Kubernetes cluster %s",
+                    kubernetesCluster.getName()));
+        }
+        String name = KubernetesClusterNodeGroup.DEFAULT_NODE_GROUP_NAME;
+        if (kubernetesClusterNodeGroupDao.findByClusterIdAndName(kubernetesCluster.getId(), name) != null) {
+            name = String.format("%s-pool", KubernetesClusterNodeGroup.DEFAULT_NODE_GROUP_NAME);
+        }
+        KubernetesClusterNodeGroupVO nodeGroup = new KubernetesClusterNodeGroupVO(kubernetesCluster.getId(), name,
+                serviceOfferingId, templateId, labels, taints);
+        nodeGroup.setDefault(true);
+        nodeGroup.setNodeCount(nodeCount);
+        nodeGroup.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
+        nodeGroup.setMinSize(kubernetesCluster.getMinSize());
+        nodeGroup.setMaxSize(kubernetesCluster.getMaxSize());
+        nodeGroup.setUpdated(new Date());
+        return kubernetesClusterNodeGroupDao.persist(nodeGroup);
+    }
+
+    /**
+     * Creates the default node group of the CloudManaged clusters created before node groups existed, with the
+     * existing worker nodes of the cluster size, and labels these nodes with the node group label
+     */
+    protected void createMissingDefaultNodeGroups() {
+        List<Long> labelledClusterIds = new ArrayList<>();
+        for (KubernetesClusterVO kubernetesCluster : kubernetesClusterDao.listAll()) {
+            if (!KubernetesCluster.ClusterType.CloudManaged.equals(kubernetesCluster.getClusterType()) ||
+                    Arrays.asList(KubernetesCluster.State.Destroying, KubernetesCluster.State.Destroyed).contains(kubernetesCluster.getState()) ||
+                    kubernetesClusterNodeGroupDao.findDefaultByClusterId(kubernetesCluster.getId()) != null) {
+                continue;
+            }
+            try {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+                        List<KubernetesClusterVmMapVO> defaultNodes = vmMaps.stream().filter(vmMap -> !vmMap.isControlNode() &&
+                                !vmMap.isEtcdNode() && !vmMap.isExternalNode() && vmMap.getNodeGroupId() == null).collect(Collectors.toList());
+                        long nodeCount = vmMaps.isEmpty() ? kubernetesCluster.getNodeCount() : defaultNodes.size();
+                        KubernetesClusterNodeGroupVO nodeGroup = createDefaultNodeGroup(kubernetesCluster, null, null, nodeCount);
+                        for (KubernetesClusterVmMapVO vmMap : defaultNodes) {
+                            vmMap.setNodeGroupId(nodeGroup.getId());
+                            kubernetesClusterVmMapDao.update(vmMap.getId(), vmMap);
+                        }
+                        logger.info("Created the default node group {} of Kubernetes cluster {} with {} nodes", nodeGroup, kubernetesCluster, nodeCount);
+                    }
+                });
+                if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
+                    labelledClusterIds.add(kubernetesCluster.getId());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to create the default node group of Kubernetes cluster {}", kubernetesCluster, e);
+            }
+        }
+        if (labelledClusterIds.isEmpty()) {
+            return;
+        }
+        // Label the existing nodes in the background, the clusters may not be reachable yet
+        _stateScanner.schedule(new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                for (Long clusterId : labelledClusterIds) {
+                    KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+                    KubernetesClusterNodeGroupVO nodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(clusterId);
+                    if (kubernetesCluster == null || nodeGroup == null || !KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
+                        continue;
+                    }
+                    try {
+                        createNodeGroupWorker(kubernetesCluster, nodeGroup).updateNodeGroupLabelsAndTaints(null, null);
+                    } catch (Exception e) {
+                        logger.warn("Failed to label the nodes of the default node group of Kubernetes cluster {}, " +
+                                "they will be labelled on the next update of the node group", kubernetesCluster, e);
+                    }
+                }
+            }
+        }, 120, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Updates the default node group of the cluster after an operation on the worker nodes of the cluster size,
+     * such as scaling the cluster or adding and removing external nodes
+     */
+    protected void syncDefaultNodeGroupWithCluster(final long clusterId) {
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+        KubernetesClusterNodeGroupVO nodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(clusterId);
+        if (kubernetesCluster == null || nodeGroup == null) {
+            return;
+        }
+        nodeGroup.setNodeCount(Math.max(0, kubernetesCluster.getNodeCount() - getExternalNodeCount(clusterId)));
+        Long serviceOfferingId = kubernetesCluster.getWorkerNodeServiceOfferingId() != null ?
+                kubernetesCluster.getWorkerNodeServiceOfferingId() : kubernetesCluster.getServiceOfferingId();
+        if (serviceOfferingId != null) {
+            nodeGroup.setServiceOfferingId(serviceOfferingId);
+        }
+        nodeGroup.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
+        nodeGroup.setMinSize(kubernetesCluster.getMinSize());
+        nodeGroup.setMaxSize(kubernetesCluster.getMaxSize());
+        kubernetesClusterNodeGroupDao.update(nodeGroup.getId(), nodeGroup);
+    }
+
+    /**
+     * Updates the node count and service offering of the node group from its nodes, and the node count, cores and
+     * memory of the cluster accordingly. The cluster row is locked as several node groups can be scaled at the same time
+     * @param newServiceOfferingId the new service offering of the node group, null to keep the existing one
+     */
+    public KubernetesClusterNodeGroupVO syncNodeGroupEntries(final long clusterId, final long nodeGroupId, final Long newServiceOfferingId) {
+        return Transaction.execute((TransactionCallback<KubernetesClusterNodeGroupVO>) status -> {
+            KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.lockRow(clusterId, true);
+            KubernetesClusterNodeGroupVO nodeGroup = kubernetesClusterNodeGroupDao.findByIdIncludingRemoved(nodeGroupId);
+            long oldCount = nodeGroup.getNodeCount();
+            long newCount = kubernetesClusterVmMapDao.listByNodeGroupId(nodeGroupId).size();
+            ServiceOfferingVO oldOffering = serviceOfferingDao.findByIdIncludingRemoved(nodeGroup.getServiceOfferingId());
+            ServiceOfferingVO offering = newServiceOfferingId != null ? serviceOfferingDao.findByIdIncludingRemoved(newServiceOfferingId) : oldOffering;
+
+            nodeGroup.setNodeCount(newCount);
+            nodeGroup.setServiceOfferingId(offering.getId());
+            kubernetesClusterNodeGroupDao.update(nodeGroupId, nodeGroup);
+
+            kubernetesCluster.setCores(Math.max(0, kubernetesCluster.getCores() - (long) oldOffering.getCpu() * oldCount + (long) offering.getCpu() * newCount));
+            kubernetesCluster.setMemory(Math.max(0, kubernetesCluster.getMemory() - (long) oldOffering.getRamSize() * oldCount + (long) offering.getRamSize() * newCount));
+            if (nodeGroup.isDefault()) {
+                kubernetesCluster.setNodeCount(Math.max(0, kubernetesCluster.getNodeCount() - oldCount + newCount));
+                if (newServiceOfferingId != null) {
+                    kubernetesCluster.setWorkerNodeServiceOfferingId(offering.getId());
+                }
+            } else {
+                kubernetesCluster.setNodeGroupNodeCount(Math.max(0, kubernetesCluster.getNodeGroupNodeCount() - oldCount + newCount));
+            }
+            kubernetesClusterDao.update(clusterId, kubernetesCluster);
+            return nodeGroup;
+        });
+    }
+
+    /**
+     * Grants the owner of the cluster the permission to deploy nodes from the default CKS template, which is owned
+     * by the system. The permission is revoked by the last node group operation of the cluster using it
+     */
+    public void grantNodeGroupTemplateLaunchPermission(final long clusterId, final long templateId, final long accountId) {
+        executeWithKubernetesClusterLock(clusterId, NODE_GROUPS_LOCK, () -> {
+            if (launchPermissionDao.findByTemplateAndAccount(templateId, accountId) == null) {
+                launchPermissionDao.persist(new LaunchPermissionVO(templateId, accountId));
+                kubernetesClusterDetailsDao.addDetail(clusterId, NODE_GROUP_TEMPLATE_LAUNCH_PERMISSION_DETAIL, String.valueOf(templateId), false);
+            }
+            return null;
+        });
+    }
+
+    public void revokeNodeGroupTemplateLaunchPermission(final long clusterId, final long nodeGroupId, final long templateId, final long accountId) {
+        executeWithKubernetesClusterLock(clusterId, NODE_GROUPS_LOCK, () -> {
+            boolean otherNodeGroupsScaling = kubernetesClusterNodeGroupDao.listByClusterId(clusterId).stream()
+                    .anyMatch(nodeGroup -> nodeGroup.getId() != nodeGroupId && KubernetesClusterNodeGroup.State.Scaling.equals(nodeGroup.getState()));
+            if (!otherNodeGroupsScaling && kubernetesClusterDetailsDao.findDetail(clusterId, NODE_GROUP_TEMPLATE_LAUNCH_PERMISSION_DETAIL) != null) {
+                launchPermissionDao.removePermissions(templateId, Collections.singletonList(accountId));
+                kubernetesClusterDetailsDao.removeDetail(clusterId, NODE_GROUP_TEMPLATE_LAUNCH_PERMISSION_DETAIL);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Starts an operation on a node group: the node group must not have another operation in progress and the cluster
+     * must be Running, or Scaling for operations on its other node groups. The cluster stays in the Scaling state
+     * while operations on its node groups are in progress, which prevents the operations on the cluster itself
+     * @param newNodeGroup whether the node group is a new one to be persisted
+     */
+    protected KubernetesClusterNodeGroupVO startNodeGroupOperation(final long clusterId, final KubernetesClusterNodeGroupVO nodeGroup,
+                                                                   final KubernetesClusterNodeGroup.State operationState, final boolean newNodeGroup) {
+        return executeWithKubernetesClusterLock(clusterId, NODE_GROUPS_LOCK, () -> {
+            KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+            KubernetesClusterNodeGroupVO operationNodeGroup = nodeGroup;
+            if (!newNodeGroup) {
+                operationNodeGroup = kubernetesClusterNodeGroupDao.findById(nodeGroup.getId());
+                if (operationNodeGroup == null) {
+                    throw new InvalidParameterValueException("Invalid Kubernetes cluster node group ID");
+                }
+                if (operationNodeGroup.getState().isBusy()) {
+                    throw new PermissionDeniedException(String.format("Node group %s is in %s state, wait for the operation in progress to complete",
+                            operationNodeGroup.getName(), operationNodeGroup.getState()));
+                }
+            }
+            boolean nodeGroupOperationsInProgress = kubernetesClusterNodeGroupDao.listByClusterId(clusterId).stream()
+                    .anyMatch(group -> group.getState().isBusy());
+            if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
+                if (!stateTransitTo(clusterId, KubernetesCluster.Event.ScaleUpRequested)) {
+                    throw new CloudRuntimeException(String.format("Unable to start the operation on the node groups of Kubernetes cluster %s", kubernetesCluster.getName()));
+                }
+            } else if (!KubernetesCluster.State.Scaling.equals(kubernetesCluster.getState()) || !nodeGroupOperationsInProgress) {
+                throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state, node groups can only be managed for a Running cluster",
+                        kubernetesCluster.getName(), kubernetesCluster.getState()));
+            }
+            operationNodeGroup.setState(operationState);
+            operationNodeGroup.setUpdated(new Date());
+            if (newNodeGroup) {
+                return kubernetesClusterNodeGroupDao.persist(operationNodeGroup);
+            }
+            kubernetesClusterNodeGroupDao.update(operationNodeGroup.getId(), operationNodeGroup);
+            return operationNodeGroup;
+        });
+    }
+
+    /**
+     * Completes an operation on a node group, and moves the cluster back to the Running state when no operation is
+     * in progress on its node groups anymore
+     */
+    protected void finishNodeGroupOperation(final long clusterId, final long nodeGroupId, final boolean success) {
+        executeWithKubernetesClusterLock(clusterId, NODE_GROUPS_LOCK, () -> {
+            KubernetesClusterNodeGroupVO nodeGroup = kubernetesClusterNodeGroupDao.findById(nodeGroupId);
+            if (nodeGroup != null) {
+                nodeGroup.setState(success ? KubernetesClusterNodeGroup.State.Ready : KubernetesClusterNodeGroup.State.Error);
+                nodeGroup.setUpdated(new Date());
+                kubernetesClusterNodeGroupDao.update(nodeGroupId, nodeGroup);
+            }
+            KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+            if (kubernetesCluster != null && KubernetesCluster.State.Scaling.equals(kubernetesCluster.getState()) &&
+                    kubernetesClusterNodeGroupDao.listByClusterId(clusterId).stream().noneMatch(group -> group.getState().isBusy())) {
+                stateTransitTo(clusterId, KubernetesCluster.Event.OperationSucceeded);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Marks the operations on node groups which did not complete in time, e.g. due to a management server restart,
+     * as failed so that the node groups and their cluster can be managed again
+     */
+    protected void failStaleNodeGroupOperations() {
+        long staleTime = System.currentTimeMillis() - (KubernetesClusterScaleTimeout.value() + 600) * 1000L;
+        for (KubernetesClusterNodeGroupVO nodeGroup : kubernetesClusterNodeGroupDao.listByStates(KubernetesClusterNodeGroup.State.Scaling,
+                KubernetesClusterNodeGroup.State.Updating, KubernetesClusterNodeGroup.State.Deleting)) {
+            if (nodeGroup.getUpdated() != null && nodeGroup.getUpdated().getTime() > staleTime) {
+                continue;
+            }
+            logger.warn("Operation on node group {} in state {} did not complete in time, marking it as failed", nodeGroup, nodeGroup.getState());
+            try {
+                finishNodeGroupOperation(nodeGroup.getClusterId(), nodeGroup.getId(), false);
+            } catch (CloudRuntimeException e) {
+                logger.warn("Failed to mark the operation on node group {} as failed", nodeGroup, e);
+            }
+        }
+    }
+
+    protected KubernetesClusterVO validateClusterForNodeGroupOperation(final Long clusterId, final String cmdName) {
+        KubernetesClusterVO kubernetesCluster = clusterId == null ? null : kubernetesClusterDao.findById(clusterId);
+        if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+        if (!isCommandSupported(kubernetesCluster, cmdName)) {
+            throw new InvalidParameterValueException(String.format("Node groups are not supported for an externally managed Kubernetes cluster (%s)", kubernetesCluster.getName()));
+        }
+        if (!Arrays.asList(KubernetesCluster.State.Running, KubernetesCluster.State.Scaling).contains(kubernetesCluster.getState())) {
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state, node groups can only be managed for a Running cluster",
+                    kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        return kubernetesCluster;
+    }
+
+    protected KubernetesClusterNodeGroupVO getNodeGroupOrThrow(final Long nodeGroupId) {
+        KubernetesClusterNodeGroupVO nodeGroup = nodeGroupId == null ? null : kubernetesClusterNodeGroupDao.findById(nodeGroupId);
+        if (nodeGroup == null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster node group ID");
+        }
+        return nodeGroup;
+    }
+
+    protected ServiceOfferingVO validateNodeGroupServiceOffering(final Long serviceOfferingId, final KubernetesClusterVO kubernetesCluster) {
+        ServiceOfferingVO serviceOffering = serviceOfferingId == null ? null : serviceOfferingDao.findById(serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Invalid service offering ID");
+        }
+        KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        if (clusterVersion == null) {
+            throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster : %s", kubernetesCluster.getName()));
+        }
+        checkServiceOfferingForNodesScale(serviceOffering, kubernetesCluster, clusterVersion);
+        return serviceOffering;
+    }
+
+    /**
+     * Validates the template of a node group, which defaults to the template of the worker nodes of the cluster.
+     * Node group nodes must run on the same hypervisor and architecture as the rest of the cluster
+     */
+    protected VMTemplateVO validateNodeGroupTemplate(final Long templateId, final KubernetesClusterVO kubernetesCluster) {
+        Long nodeGroupTemplateId = templateId;
+        if (nodeGroupTemplateId == null) {
+            nodeGroupTemplateId = kubernetesCluster.getWorkerNodeTemplateId() != null ? kubernetesCluster.getWorkerNodeTemplateId() : kubernetesCluster.getTemplateId();
+        }
+        VMTemplateVO template = templateDao.findById(nodeGroupTemplateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("Invalid template ID");
+        }
+        if (template.getId() != kubernetesCluster.getTemplateId() && !template.isForCks()) {
+            throw new InvalidParameterValueException(String.format("Template %s is not a CKS template", template.getName()));
+        }
+        VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
+        if (clusterTemplate != null && (!clusterTemplate.getHypervisorType().equals(template.getHypervisorType()) ||
+                !clusterTemplate.getArch().equals(template.getArch()))) {
+            throw new InvalidParameterValueException(String.format("Template %s must have the same hypervisor (%s) and architecture (%s) as the Kubernetes cluster %s",
+                    template.getName(), clusterTemplate.getHypervisorType(), clusterTemplate.getArch(), kubernetesCluster.getName()));
+        }
+        if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, kubernetesCluster.getZoneId(), true))) {
+            throw new InvalidParameterValueException(String.format("Template %s is not in Ready state in the zone of the Kubernetes cluster %s",
+                    template.getName(), kubernetesCluster.getName()));
+        }
+        return template;
+    }
+
+    /**
+     * The default node group has to accept the system pods, which have no tolerations for the user defined taints
+     */
+    protected void validateNodeGroupTaints(final boolean isDefault, final List<KubernetesClusterNodeGroupUtil.Taint> taints) {
+        if (isDefault && KubernetesClusterNodeGroupUtil.hasSchedulingTaints(taints)) {
+            throw new InvalidParameterValueException("The default node group has to accept the system pods, only taints with the PreferNoSchedule effect are allowed for it");
+        }
+    }
+
+    protected void validateNodeGroupClusterSize(final KubernetesClusterVO kubernetesCluster, final long additionalNodes) {
+        if (additionalNodes <= 0) {
+            return;
+        }
+        int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
+        if (kubernetesCluster.getControlNodeCount() + kubernetesCluster.getNodeCount() + kubernetesCluster.getNodeGroupNodeCount() + additionalNodes > maxClusterSize) {
+            throw new InvalidParameterValueException(
+                    String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
+        }
+    }
+
+    /**
+     * Validates the size of a node group, which must contain at least one node for the default node group and stay
+     * within the minimum and maximum size of the node group when its autoscaling is enabled
+     */
+    protected void validateNodeGroupSize(final boolean isDefault, final boolean autoscalingEnabled, final Long minSize,
+                                         final Long maxSize, final long size) {
+        if (size < (isDefault ? 1 : 0)) {
+            throw new InvalidParameterValueException(isDefault ? "The default node group must have at least one node" : "Node group size can not be negative");
+        }
+        if (autoscalingEnabled && (size < minSize || size > maxSize)) {
+            throw new InvalidParameterValueException(String.format("Node group size %d must be within its autoscaling minimum size %d and maximum size %d",
+                    size, minSize, maxSize));
+        }
+    }
+
+    /**
+     * Validates the autoscaling settings of a node group: the maximum size of the node group, with the size of the
+     * control nodes, external nodes and other node groups (their maximum size when autoscaled), can not exceed the
+     * maximum cluster size. The autoscaling of node groups other than the default one requires an autoscaler image
+     * supporting node groups
+     * @param nodeGroup the node group, null for a new node group
+     */
+    protected void validateNodeGroupAutoscaling(final KubernetesClusterVO kubernetesCluster, final KubernetesClusterNodeGroupVO nodeGroup,
+                                                final boolean isDefault, final Long minSize, final Long maxSize) {
+        KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        if (clusterVersion == null || !KubernetesVersionManagerImpl.versionSupportsAutoscaling(clusterVersion)) {
+            throw new InvalidParameterValueException(String.format("Autoscaling requires Kubernetes Version %s or above",
+                    KubernetesVersionManagerImpl.MINIMUN_AUTOSCALER_SUPPORTED_VERSION));
+        }
+        ApiServiceConfiguration.validateEndpointUrl();
+        if (minSize == null || maxSize == null) {
+            throw new InvalidParameterValueException("Autoscaling requires minsize and maxsize to be passed");
+        }
+        long lowestMinSize = isDefault ? 1 : 0;
+        if (minSize < lowestMinSize) {
+            throw new InvalidParameterValueException(String.format("Minsize must be at least %d", lowestMinSize));
+        }
+        if (maxSize < 1 || maxSize < minSize) {
+            throw new InvalidParameterValueException("Maxsize must be at least 1 and not lower than minsize");
+        }
+        if (!isDefault && StringUtils.isBlank(KubernetesClusterAutoscalerImage.value())) {
+            throw new InvalidParameterValueException(String.format("Autoscaling of node groups other than the default one requires a cluster autoscaler image " +
+                    "supporting node groups, set by the global setting %s", KubernetesClusterAutoscalerImage.key()));
+        }
+        long otherNodes = kubernetesCluster.getControlNodeCount() + getExternalNodeCount(kubernetesCluster.getId());
+        for (KubernetesClusterNodeGroupVO group : kubernetesClusterNodeGroupDao.listByClusterId(kubernetesCluster.getId())) {
+            if (nodeGroup != null && group.getId() == nodeGroup.getId()) {
+                continue;
+            }
+            otherNodes += group.isAutoscalingEnabled() && group.getMaxSize() != null ? Math.max(group.getMaxSize(), group.getNodeCount()) : group.getNodeCount();
+        }
+        int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
+        if (otherNodes + maxSize > maxClusterSize) {
+            throw new InvalidParameterValueException(String.format("Maximum cluster size can not exceed %d, the maximum size of the node group can be at most %d. " +
+                    "Please contact your administrator", maxClusterSize, Math.max(0, maxClusterSize - otherNodes)));
+        }
+    }
+
+    protected void ensureResourceLimitsForNodeGroup(final KubernetesClusterVO kubernetesCluster, final long additionalVms,
+                                                    final long additionalCpu, final long additionalRamMb) {
+        Account owner = accountDao.findById(kubernetesCluster.getAccountId());
+        try {
+            if (additionalVms > 0) {
+                resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, additionalVms);
+            }
+            if (additionalCpu > 0) {
+                resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.cpu, additionalCpu);
+            }
+            if (additionalRamMb > 0) {
+                resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.memory, additionalRamMb);
+            }
+        } catch (ResourceAllocationException e) {
+            throw new CloudRuntimeException("Resource limits prevent scaling the node group: " + e.getMessage(), e);
+        }
+    }
+
+    protected KubernetesClusterNodeGroupWorker createNodeGroupWorker(final KubernetesClusterVO kubernetesCluster,
+                                                                     final KubernetesClusterNodeGroupVO nodeGroup) {
+        KubernetesClusterNodeGroupWorker worker = new KubernetesClusterNodeGroupWorker(kubernetesCluster, nodeGroup, this);
+        return ComponentContext.inject(worker);
+    }
+
+    /**
+     * @return a worker able to deploy the cluster autoscaler, which needs the API keys of the cluster owner
+     */
+    protected KubernetesClusterNodeGroupWorker createNodeGroupAutoscalerWorker(final KubernetesClusterVO kubernetesCluster,
+                                                                               final KubernetesClusterNodeGroupVO nodeGroup) {
+        KubernetesClusterNodeGroupWorker worker = createNodeGroupWorker(kubernetesCluster, nodeGroup);
+        worker.setKeys(getServiceUserKeys(kubernetesCluster));
+        return worker;
+    }
+
+    /**
+     * Updates the autoscaling settings of the node group, and of the cluster for its default node group
+     */
+    protected void setNodeGroupAutoscaling(final KubernetesClusterNodeGroupVO nodeGroup, final boolean enabled, final Long minSize, final Long maxSize) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                nodeGroup.setAutoscalingEnabled(enabled);
+                nodeGroup.setMinSize(enabled ? minSize : null);
+                nodeGroup.setMaxSize(enabled ? maxSize : null);
+                kubernetesClusterNodeGroupDao.update(nodeGroup.getId(), nodeGroup);
+                if (nodeGroup.isDefault()) {
+                    KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(nodeGroup.getClusterId());
+                    kubernetesCluster.setAutoscalingEnabled(enabled);
+                    kubernetesCluster.setMinSize(enabled ? minSize : null);
+                    kubernetesCluster.setMaxSize(enabled ? maxSize : null);
+                    kubernetesClusterDao.update(kubernetesCluster.getId(), kubernetesCluster);
+                }
+            }
+        });
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODE_GROUP_CREATE,
+            eventDescription = "creating Kubernetes cluster node group", async = true)
+    public KubernetesClusterNodeGroup createKubernetesClusterNodeGroup(CreateKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterVO kubernetesCluster = validateClusterForNodeGroupOperation(cmd.getClusterId(), cmd.getActualCommandName());
+        final String name = StringUtils.trim(cmd.getName());
+        KubernetesClusterNodeGroupUtil.validateNodeGroupName(name);
+        if (kubernetesClusterNodeGroupDao.findByClusterIdAndName(kubernetesCluster.getId(), name) != null) {
+            throw new InvalidParameterValueException(String.format("A node group with name %s already exists in the Kubernetes cluster %s", name, kubernetesCluster.getName()));
+        }
+        final Long size = cmd.getSize();
+        if (size == null) {
+            throw new InvalidParameterValueException("Node group size must be passed");
+        }
+        final boolean autoscalingEnabled = Boolean.TRUE.equals(cmd.isAutoscalingEnabled());
+        if (!autoscalingEnabled && (cmd.getMinSize() != null || cmd.getMaxSize() != null)) {
+            throw new InvalidParameterValueException(String.format("%s and %s can only be passed along with %s=true",
+                    ApiConstants.MIN_SIZE, ApiConstants.MAX_SIZE, ApiConstants.AUTOSCALING_ENABLED));
+        }
+        if (autoscalingEnabled) {
+            validateNodeGroupAutoscaling(kubernetesCluster, null, false, cmd.getMinSize(), cmd.getMaxSize());
+        }
+        validateNodeGroupSize(false, autoscalingEnabled, cmd.getMinSize(), cmd.getMaxSize(), size);
+        ServiceOfferingVO serviceOffering = validateNodeGroupServiceOffering(cmd.getServiceOfferingId(), kubernetesCluster);
+        VMTemplateVO template = validateNodeGroupTemplate(cmd.getTemplateId(), kubernetesCluster);
+        String labels = KubernetesClusterNodeGroupUtil.labelsToString(KubernetesClusterNodeGroupUtil.getLabelsFromApiMap(cmd.getLabels()));
+        String taints = KubernetesClusterNodeGroupUtil.taintsToString(KubernetesClusterNodeGroupUtil.getTaintsFromApiMap(cmd.getTaints()));
+        validateNodeGroupClusterSize(kubernetesCluster, size);
+        ensureResourceLimitsForNodeGroup(kubernetesCluster, size, serviceOffering.getCpu() * size, serviceOffering.getRamSize() * size);
+
+        KubernetesClusterNodeGroupVO newNodeGroup = new KubernetesClusterNodeGroupVO(kubernetesCluster.getId(),
+                name, serviceOffering.getId(), template.getId(), labels, taints);
+        newNodeGroup.setAutoscalingEnabled(autoscalingEnabled);
+        newNodeGroup.setMinSize(autoscalingEnabled ? cmd.getMinSize() : null);
+        newNodeGroup.setMaxSize(autoscalingEnabled ? cmd.getMaxSize() : null);
+        final KubernetesClusterNodeGroupVO nodeGroup = startNodeGroupOperation(kubernetesCluster.getId(), newNodeGroup,
+                KubernetesClusterNodeGroup.State.Scaling, true);
+        boolean success = false;
+        try {
+            KubernetesClusterNodeGroupWorker worker = autoscalingEnabled ? createNodeGroupAutoscalerWorker(kubernetesCluster, nodeGroup) :
+                    createNodeGroupWorker(kubernetesCluster, nodeGroup);
+            worker.scaleNodeGroup(size, null, null);
+            if (autoscalingEnabled) {
+                worker.updateClusterAutoscaler();
+            }
+            success = true;
+        } catch (CloudRuntimeException e) {
+            // Do not keep an empty node group when none of its nodes could be provisioned
+            if (CollectionUtils.isEmpty(kubernetesClusterVmMapDao.listByNodeGroupId(nodeGroup.getId()))) {
+                kubernetesClusterNodeGroupDao.remove(nodeGroup.getId());
+            }
+            throw e;
+        } finally {
+            finishNodeGroupOperation(kubernetesCluster.getId(), nodeGroup.getId(), success);
+        }
+        return kubernetesClusterNodeGroupDao.findById(nodeGroup.getId());
+    }
+
+    @Override
+    public ListResponse<KubernetesClusterNodeGroupResponse> listKubernetesClusterNodeGroups(ListKubernetesClusterNodeGroupsCmd cmd) {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        Long clusterId = cmd.getClusterId();
+        KubernetesClusterNodeGroupVO nodeGroup = null;
+        if (cmd.getId() != null) {
+            nodeGroup = getNodeGroupOrThrow(cmd.getId());
+            if (clusterId != null && clusterId != nodeGroup.getClusterId()) {
+                throw new InvalidParameterValueException("The node group does not belong to the specified Kubernetes cluster");
+            }
+            clusterId = nodeGroup.getClusterId();
+        }
+        if (clusterId == null) {
+            throw new InvalidParameterValueException(String.format("Either %s or %s must be specified", ApiConstants.ID, ApiConstants.CLUSTER_ID));
+        }
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+        if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, kubernetesCluster);
+
+        List<KubernetesClusterNodeGroupVO> nodeGroups = nodeGroup != null ? List.of(nodeGroup) :
+                kubernetesClusterNodeGroupDao.listByClusterId(clusterId);
+        if (StringUtils.isNotBlank(cmd.getName())) {
+            nodeGroups = nodeGroups.stream().filter(group -> group.getName().equals(cmd.getName())).collect(Collectors.toList());
+        }
+        int startIndex = cmd.getStartIndex() == null ? 0 : (int) Math.min(cmd.getStartIndex(), nodeGroups.size());
+        int endIndex = cmd.getPageSizeVal() == null ? nodeGroups.size() : (int) Math.min(startIndex + cmd.getPageSizeVal(), nodeGroups.size());
+        List<KubernetesClusterNodeGroupResponse> responses = nodeGroups.subList(startIndex, endIndex).stream()
+                .map(group -> createKubernetesClusterNodeGroupResponse(group.getId())).collect(Collectors.toList());
+        ListResponse<KubernetesClusterNodeGroupResponse> response = new ListResponse<>();
+        response.setResponses(responses, nodeGroups.size());
+        return response;
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODE_GROUP_UPDATE,
+            eventDescription = "updating Kubernetes cluster node group", async = true)
+    public KubernetesClusterNodeGroup updateKubernetesClusterNodeGroup(UpdateKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterNodeGroupVO nodeGroup = getNodeGroupOrThrow(cmd.getId());
+        KubernetesClusterVO kubernetesCluster = validateClusterForNodeGroupOperation(nodeGroup.getClusterId(), cmd.getActualCommandName());
+        boolean updateLabels = MapUtils.isNotEmpty(cmd.getLabels()) || cmd.isCleanupLabels();
+        boolean updateTaints = MapUtils.isNotEmpty(cmd.getTaints()) || cmd.isCleanupTaints();
+        boolean updateAutoscaling = cmd.isAutoscalingEnabled() != null || cmd.getMinSize() != null || cmd.getMaxSize() != null;
+        if (MapUtils.isNotEmpty(cmd.getLabels()) && cmd.isCleanupLabels()) {
+            throw new InvalidParameterValueException(String.format("%s can not be passed along with %s", ApiConstants.CLEANUP_NODE_LABELS, ApiConstants.NODE_LABELS));
+        }
+        if (MapUtils.isNotEmpty(cmd.getTaints()) && cmd.isCleanupTaints()) {
+            throw new InvalidParameterValueException(String.format("%s can not be passed along with %s", ApiConstants.CLEANUP_NODE_TAINTS, ApiConstants.NODE_TAINTS));
+        }
+        if (!updateLabels && !updateTaints && !updateAutoscaling) {
+            throw new InvalidParameterValueException("Nothing to update, labels, taints or autoscaling settings must be passed");
+        }
+        String labels = nodeGroup.getLabels();
+        if (updateLabels) {
+            labels = cmd.isCleanupLabels() ? null :
+                    KubernetesClusterNodeGroupUtil.labelsToString(KubernetesClusterNodeGroupUtil.getLabelsFromApiMap(cmd.getLabels()));
+        }
+        String taints = nodeGroup.getTaints();
+        if (updateTaints) {
+            List<KubernetesClusterNodeGroupUtil.Taint> taintList = cmd.isCleanupTaints() ? Collections.emptyList() :
+                    KubernetesClusterNodeGroupUtil.getTaintsFromApiMap(cmd.getTaints());
+            validateNodeGroupTaints(nodeGroup.isDefault(), taintList);
+            taints = KubernetesClusterNodeGroupUtil.taintsToString(taintList);
+        }
+        final boolean autoscalingEnabled = cmd.isAutoscalingEnabled() != null ? cmd.isAutoscalingEnabled() : nodeGroup.isAutoscalingEnabled();
+        final Long minSize = autoscalingEnabled ? (cmd.getMinSize() != null ? cmd.getMinSize() : nodeGroup.getMinSize()) : null;
+        final Long maxSize = autoscalingEnabled ? (cmd.getMaxSize() != null ? cmd.getMaxSize() : nodeGroup.getMaxSize()) : null;
+        if (updateAutoscaling) {
+            if (!autoscalingEnabled && (cmd.getMinSize() != null || cmd.getMaxSize() != null)) {
+                throw new InvalidParameterValueException(String.format("%s and %s can not be passed when autoscaling is disabled",
+                        ApiConstants.MIN_SIZE, ApiConstants.MAX_SIZE));
+            }
+            if (autoscalingEnabled) {
+                validateNodeGroupAutoscaling(kubernetesCluster, nodeGroup, nodeGroup.isDefault(), minSize, maxSize);
+                if (nodeGroup.getNodeCount() < minSize || nodeGroup.getNodeCount() > maxSize) {
+                    throw new InvalidParameterValueException(String.format("The size %d of node group %s must be within the minimum size %d and maximum size %d, " +
+                            "scale the node group first", nodeGroup.getNodeCount(), nodeGroup.getName(), minSize, maxSize));
+                }
+            }
+        }
+
+        final String oldLabels = nodeGroup.getLabels();
+        final String oldTaints = nodeGroup.getTaints();
+        final boolean oldAutoscalingEnabled = nodeGroup.isAutoscalingEnabled();
+        final Long oldMinSize = nodeGroup.getMinSize();
+        final Long oldMaxSize = nodeGroup.getMaxSize();
+        nodeGroup = startNodeGroupOperation(kubernetesCluster.getId(), nodeGroup, KubernetesClusterNodeGroup.State.Updating, false);
+        boolean success = false;
+        try {
+            KubernetesClusterNodeGroupWorker worker = updateAutoscaling ? createNodeGroupAutoscalerWorker(kubernetesCluster, nodeGroup) :
+                    createNodeGroupWorker(kubernetesCluster, nodeGroup);
+            if (updateLabels || updateTaints) {
+                nodeGroup.setLabels(labels);
+                nodeGroup.setTaints(taints);
+                kubernetesClusterNodeGroupDao.update(nodeGroup.getId(), nodeGroup);
+                // Nodes added later are registered with the new labels and taints, apply them to the existing nodes too
+                worker.updateNodeGroupLabelsAndTaints(oldLabels, oldTaints);
+            }
+            if (updateAutoscaling) {
+                setNodeGroupAutoscaling(nodeGroup, autoscalingEnabled, minSize, maxSize);
+                try {
+                    worker.updateClusterAutoscaler();
+                } catch (CloudRuntimeException e) {
+                    setNodeGroupAutoscaling(nodeGroup, oldAutoscalingEnabled, oldMinSize, oldMaxSize);
+                    throw e;
+                }
+            }
+            success = true;
+        } finally {
+            finishNodeGroupOperation(kubernetesCluster.getId(), nodeGroup.getId(), success);
+        }
+        return kubernetesClusterNodeGroupDao.findById(nodeGroup.getId());
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODE_GROUP_SCALE,
+            eventDescription = "scaling Kubernetes cluster node group", async = true)
+    public KubernetesClusterNodeGroup scaleKubernetesClusterNodeGroup(ScaleKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterNodeGroupVO nodeGroup = getNodeGroupOrThrow(cmd.getId());
+        KubernetesClusterVO kubernetesCluster = validateClusterForNodeGroupOperation(nodeGroup.getClusterId(), cmd.getActualCommandName());
+        final Long size = cmd.getSize();
+        final List<Long> nodeIds = cmd.getNodeIds();
+        if (size == null && CollectionUtils.isEmpty(nodeIds) && cmd.getServiceOfferingId() == null) {
+            throw new InvalidParameterValueException("Either size, nodeids or serviceofferingid must be passed");
+        }
+        if (CollectionUtils.isNotEmpty(nodeIds) && (size != null || cmd.getServiceOfferingId() != null)) {
+            throw new InvalidParameterValueException("nodeids can not be passed along with size or serviceofferingid");
+        }
+        List<KubernetesClusterVmMapVO> nodeGroupVms = kubernetesClusterVmMapDao.listByNodeGroupId(nodeGroup.getId());
+        if (CollectionUtils.isNotEmpty(nodeIds)) {
+            Set<Long> nodeGroupVmIds = nodeGroupVms.stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toSet());
+            if (!nodeGroupVmIds.containsAll(nodeIds)) {
+                throw new InvalidParameterValueException(String.format("Some of the nodes do not belong to the node group %s", nodeGroup.getName()));
+            }
+        }
+
+        ServiceOfferingVO existingOffering = serviceOfferingDao.findByIdIncludingRemoved(nodeGroup.getServiceOfferingId());
+        ServiceOfferingVO serviceOffering = null;
+        if (cmd.getServiceOfferingId() != null && cmd.getServiceOfferingId() != nodeGroup.getServiceOfferingId()) {
+            serviceOffering = validateNodeGroupServiceOffering(cmd.getServiceOfferingId(), kubernetesCluster);
+            if (serviceOffering.getRamSize() < existingOffering.getRamSize() ||
+                    serviceOffering.getCpu() * serviceOffering.getSpeed() < existingOffering.getCpu() * existingOffering.getSpeed()) {
+                throw new InvalidParameterValueException(String.format("Node group %s cannot be scaled down for service offering. Service offering %s offers lesser resources as compared to service offering %s",
+                        nodeGroup.getName(), serviceOffering.getName(), existingOffering.getName()));
+            }
+        }
+        ServiceOfferingVO newOffering = serviceOffering != null ? serviceOffering : existingOffering;
+        long currentSize = nodeGroupVms.size();
+        long newSize = CollectionUtils.isNotEmpty(nodeIds) ? currentSize - nodeIds.stream().distinct().count() : (size != null ? size : currentSize);
+        if (size != null || CollectionUtils.isNotEmpty(nodeIds)) {
+            validateNodeGroupSize(nodeGroup.isDefault(), nodeGroup.isAutoscalingEnabled(), nodeGroup.getMinSize(), nodeGroup.getMaxSize(), newSize);
+        }
+        if (newSize > currentSize) {
+            validateNodeGroupClusterSize(kubernetesCluster, newSize - currentSize);
+            validateNodeGroupTemplate(nodeGroup.getTemplateId(), kubernetesCluster);
+        }
+        long additionalCpu = (long) newOffering.getCpu() * newSize - (long) existingOffering.getCpu() * currentSize;
+        long additionalRam = (long) newOffering.getRamSize() * newSize - (long) existingOffering.getRamSize() * currentSize;
+        ensureResourceLimitsForNodeGroup(kubernetesCluster, newSize - currentSize, additionalCpu, additionalRam);
+
+        nodeGroup = startNodeGroupOperation(kubernetesCluster.getId(), nodeGroup, KubernetesClusterNodeGroup.State.Scaling, false);
+        boolean success = false;
+        try {
+            createNodeGroupWorker(kubernetesCluster, nodeGroup).scaleNodeGroup(size, nodeIds, serviceOffering);
+            success = true;
+        } finally {
+            finishNodeGroupOperation(kubernetesCluster.getId(), nodeGroup.getId(), success);
+        }
+        return kubernetesClusterNodeGroupDao.findById(nodeGroup.getId());
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODE_GROUP_DELETE,
+            eventDescription = "deleting Kubernetes cluster node group", async = true)
+    public boolean deleteKubernetesClusterNodeGroup(DeleteKubernetesClusterNodeGroupCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterNodeGroupVO nodeGroup = getNodeGroupOrThrow(cmd.getId());
+        KubernetesClusterVO kubernetesCluster = validateClusterForNodeGroupOperation(nodeGroup.getClusterId(), cmd.getActualCommandName());
+        if (nodeGroup.isDefault()) {
+            throw new InvalidParameterValueException(String.format("Node group %s is the default node group of Kubernetes cluster %s and can not be deleted",
+                    nodeGroup.getName(), kubernetesCluster.getName()));
+        }
+        final boolean autoscalingEnabled = nodeGroup.isAutoscalingEnabled();
+        nodeGroup = startNodeGroupOperation(kubernetesCluster.getId(), nodeGroup, KubernetesClusterNodeGroup.State.Deleting, false);
+        boolean success = false;
+        try {
+            KubernetesClusterNodeGroupWorker worker = autoscalingEnabled ? createNodeGroupAutoscalerWorker(kubernetesCluster, nodeGroup) :
+                    createNodeGroupWorker(kubernetesCluster, nodeGroup);
+            if (autoscalingEnabled) {
+                // Stop autoscaling the node group before removing its nodes
+                setNodeGroupAutoscaling(nodeGroup, false, null, null);
+                worker.updateClusterAutoscaler();
+            }
+            success = worker.deleteNodeGroup();
+        } finally {
+            finishNodeGroupOperation(kubernetesCluster.getId(), nodeGroup.getId(), success);
+        }
+        return success;
+    }
+
+    protected KubernetesClusterNodeResponse createKubernetesClusterNodeResponse(final KubernetesClusterVmMapVO vmMap,
+                                                                                final KubernetesClusterNodeGroupVO nodeGroup) {
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmMap.getVmId());
+        if (vm == null) {
+            return null;
+        }
+        KubernetesClusterNodeResponse response = new KubernetesClusterNodeResponse();
+        response.setId(vm.getUuid());
+        response.setName(vm.getHostName());
+        response.setHostName(vm.getHostName() != null ? vm.getHostName().toLowerCase() : null);
+        response.setState(vm.getState() != null ? vm.getState().toString() : null);
+        NicVO nic = nicDao.findDefaultNicForVM(vm.getId());
+        if (nic != null) {
+            response.setIpAddress(nic.getIPv4Address());
+        }
+        if (nodeGroup != null) {
+            response.setNodeGroupId(nodeGroup.getUuid());
+            response.setNodeGroupName(nodeGroup.getName());
+        }
+        response.setLabels(KubernetesClusterNodeGroupUtil.labelsFromString(vmMap.getLabels()));
+        response.setTaints(KubernetesClusterNodeGroupUtil.taintsFromString(vmMap.getTaints()).stream()
+                .map(KubernetesClusterNodeGroupUtil.Taint::toString).collect(Collectors.toList()));
+        return response;
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODE_UPDATE,
+            eventDescription = "updating Kubernetes cluster node", async = true)
+    public KubernetesClusterNodeResponse updateKubernetesClusterNode(UpdateKubernetesClusterNodeCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        final KubernetesClusterVmMapVO vmMap = cmd.getId() == null ? null : kubernetesClusterVmMapDao.findByVmId(cmd.getId());
+        if (vmMap == null || vmMap.getNodeGroupId() == null) {
+            throw new InvalidParameterValueException("The instance is not a node of a node group of a Kubernetes cluster");
+        }
+        KubernetesClusterNodeGroupVO nodeGroup = getNodeGroupOrThrow(vmMap.getNodeGroupId());
+        KubernetesClusterVO kubernetesCluster = validateClusterForNodeGroupOperation(vmMap.getClusterId(), cmd.getActualCommandName());
+        boolean updateLabels = MapUtils.isNotEmpty(cmd.getLabels()) || cmd.isCleanupLabels();
+        boolean updateTaints = MapUtils.isNotEmpty(cmd.getTaints()) || cmd.isCleanupTaints();
+        if (MapUtils.isNotEmpty(cmd.getLabels()) && cmd.isCleanupLabels()) {
+            throw new InvalidParameterValueException(String.format("%s can not be passed along with %s", ApiConstants.CLEANUP_NODE_LABELS, ApiConstants.NODE_LABELS));
+        }
+        if (MapUtils.isNotEmpty(cmd.getTaints()) && cmd.isCleanupTaints()) {
+            throw new InvalidParameterValueException(String.format("%s can not be passed along with %s", ApiConstants.CLEANUP_NODE_TAINTS, ApiConstants.NODE_TAINTS));
+        }
+        if (!updateLabels && !updateTaints) {
+            throw new InvalidParameterValueException("Nothing to update, labels or taints must be passed");
+        }
+        String labels = vmMap.getLabels();
+        if (updateLabels) {
+            labels = cmd.isCleanupLabels() ? null :
+                    KubernetesClusterNodeGroupUtil.labelsToString(KubernetesClusterNodeGroupUtil.getLabelsFromApiMap(cmd.getLabels()));
+        }
+        String taints = vmMap.getTaints();
+        if (updateTaints) {
+            List<KubernetesClusterNodeGroupUtil.Taint> taintList = cmd.isCleanupTaints() ? Collections.emptyList() :
+                    KubernetesClusterNodeGroupUtil.getTaintsFromApiMap(cmd.getTaints());
+            validateNodeGroupTaints(nodeGroup.isDefault(), taintList);
+            taints = KubernetesClusterNodeGroupUtil.taintsToString(taintList);
+        }
+
+        final String oldLabels = vmMap.getLabels();
+        final String oldTaints = vmMap.getTaints();
+        nodeGroup = startNodeGroupOperation(kubernetesCluster.getId(), nodeGroup, KubernetesClusterNodeGroup.State.Updating, false);
+        boolean success = false;
+        try {
+            vmMap.setLabels(labels);
+            vmMap.setTaints(taints);
+            kubernetesClusterVmMapDao.update(vmMap.getId(), vmMap);
+            createNodeGroupWorker(kubernetesCluster, nodeGroup).updateNodeLabelsAndTaints(vmMap, oldLabels, oldTaints);
+            success = true;
+        } finally {
+            finishNodeGroupOperation(kubernetesCluster.getId(), nodeGroup.getId(), success);
+        }
+        return createKubernetesClusterNodeResponse(kubernetesClusterVmMapDao.findById(vmMap.getId()), nodeGroup);
+    }
+
+    @Override
+    public KubernetesClusterNodeGroupResponse createKubernetesClusterNodeGroupResponse(long nodeGroupId) {
+        KubernetesClusterNodeGroupVO nodeGroup = kubernetesClusterNodeGroupDao.findByIdIncludingRemoved(nodeGroupId);
+        KubernetesClusterNodeGroupResponse response = new KubernetesClusterNodeGroupResponse();
+        response.setId(nodeGroup.getUuid());
+        response.setName(nodeGroup.getName());
+        response.setDefault(nodeGroup.isDefault());
+        response.setState(nodeGroup.getState() != null ? nodeGroup.getState().toString() : null);
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findByIdIncludingRemoved(nodeGroup.getClusterId());
+        if (kubernetesCluster != null) {
+            response.setClusterId(kubernetesCluster.getUuid());
+            response.setClusterName(kubernetesCluster.getName());
+        }
+        ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(nodeGroup.getServiceOfferingId());
+        if (offering != null) {
+            response.setServiceOfferingId(offering.getUuid());
+            response.setServiceOfferingName(offering.getName());
+            response.setCpuNumber(offering.getCpu());
+            response.setMemory(offering.getRamSize());
+        }
+        VMTemplateVO template = ApiDBUtils.findTemplateById(nodeGroup.getTemplateId());
+        if (template != null) {
+            response.setTemplateId(template.getUuid());
+            response.setTemplateName(template.getName());
+        }
+        response.setSize(nodeGroup.getNodeCount());
+        response.setLabels(KubernetesClusterNodeGroupUtil.labelsFromString(nodeGroup.getLabels()));
+        response.setTaints(KubernetesClusterNodeGroupUtil.taintsFromString(nodeGroup.getTaints()).stream()
+                .map(KubernetesClusterNodeGroupUtil.Taint::toString).collect(Collectors.toList()));
+        response.setAutoscalingEnabled(nodeGroup.isAutoscalingEnabled());
+        response.setMinSize(nodeGroup.getMinSize());
+        response.setMaxSize(nodeGroup.getMaxSize());
+        List<String> vmIds = new ArrayList<>();
+        List<KubernetesClusterNodeResponse> nodes = new ArrayList<>();
+        for (KubernetesClusterVmMapVO vmMap : kubernetesClusterVmMapDao.listByNodeGroupId(nodeGroupId)) {
+            KubernetesClusterNodeResponse node = createKubernetesClusterNodeResponse(vmMap, nodeGroup);
+            if (node != null) {
+                vmIds.add(node.getId());
+                nodes.add(node);
+            }
+        }
+        response.setVirtualMachineIds(vmIds);
+        response.setNodes(nodes);
+        response.setCreated(nodeGroup.getCreated());
+        return response;
+    }
+
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
@@ -2785,6 +3733,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(AddNodesToKubernetesClusterCmd.class);
         cmdList.add(RemoveNodesFromKubernetesClusterCmd.class);
         cmdList.add(UpdateKubernetesClusterAffinityGroupCmd.class);
+        cmdList.add(CreateKubernetesClusterNodeGroupCmd.class);
+        cmdList.add(ListKubernetesClusterNodeGroupsCmd.class);
+        cmdList.add(UpdateKubernetesClusterNodeGroupCmd.class);
+        cmdList.add(ScaleKubernetesClusterNodeGroupCmd.class);
+        cmdList.add(DeleteKubernetesClusterNodeGroupCmd.class);
+        cmdList.add(UpdateKubernetesClusterNodeCmd.class);
         return cmdList;
     }
 
@@ -2865,6 +3819,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         public void reallyRun() {
+            try {
+                failStaleNodeGroupOperations();
+            } catch (Exception e) {
+                logger.warn("Failed to check the operations in progress on Kubernetes cluster node groups", e);
+            }
             try {
                 // run through Kubernetes clusters in 'Running' state and ensure all the VM's are Running in the cluster
                 List<KubernetesClusterVO> runningKubernetesClusters = kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.Running);
@@ -3001,6 +3960,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         getProjectKubernetesAccountRole();
 
+        createMissingDefaultNodeGroups();
+
         _gcExecutor.scheduleWithFixedDelay(new KubernetesClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
         _stateScanner.scheduleWithFixedDelay(new KubernetesClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
 
@@ -3089,7 +4050,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesControlNodeInstallReattempts,
             KubernetesWorkerNodeInstallAttemptWait,
             KubernetesWorkerNodeInstallReattempts,
-            KubernetesEtcdNodeStartPort
+            KubernetesEtcdNodeStartPort,
+            KubernetesClusterAutoscalerImage
         };
     }
 }

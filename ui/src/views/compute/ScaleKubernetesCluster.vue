@@ -106,36 +106,52 @@
         </a-form-item>
         <a-form-item name="autoscalingenabled" ref="autoscalingenabled" v-if="apiParams.autoscalingenabled">
           <template #label>
-            <tooltip-label :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
+            <kubernetes-default-node-group-label
+              keypath="label.cks.cluster.default.node.group.autoscalingenabled"
+              :tooltip="$t('message.kubernetes.cluster.default.node.group.autoscaling')"
+              :resource="resource"
+              @navigate="closeAction" />
           </template>
           <a-switch :checked="autoscalingenabled" @change="val => { autoscalingenabled = val }" />
         </a-form-item>
         <span v-if="autoscalingenabled">
           <a-form-item name="minsize" ref="minsize">
             <template #label>
-              <tooltip-label :title="$t('label.cks.cluster.minsize')" :tooltip="apiParams.minsize.description"/>
+              <kubernetes-default-node-group-label
+                keypath="label.cks.cluster.default.node.group.minsize"
+                :tooltip="$t('message.kubernetes.cluster.default.node.group.minsize')"
+                :resource="resource"
+                @navigate="closeAction" />
             </template>
             <a-input
               v-model:value="form.minsize"
-              :placeholder="apiParams.minsize.description"/>
+              :placeholder="$t('message.kubernetes.cluster.default.node.group.minsize')"/>
           </a-form-item>
           <a-form-item name="maxsize" ref="maxsize">
             <template #label>
-              <tooltip-label :title="$t('label.cks.cluster.maxsize')" :tooltip="apiParams.maxsize.description"/>
+              <kubernetes-default-node-group-label
+                keypath="label.cks.cluster.default.node.group.maxsize"
+                :tooltip="$t('message.kubernetes.cluster.default.node.group.maxsize')"
+                :resource="resource"
+                @navigate="closeAction" />
             </template>
             <a-input
               v-model:value="form.maxsize"
-              :placeholder="apiParams.maxsize.description"/>
+              :placeholder="$t('message.kubernetes.cluster.default.node.group.maxsize')"/>
           </a-form-item>
         </span>
         <span v-else>
           <a-form-item name="size" ref="size" v-if="['Created', 'Running'].includes(resource.state)">
             <template #label>
-              <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+              <kubernetes-default-node-group-label
+                keypath="label.cks.cluster.default.node.group.size"
+                :tooltip="$t('message.kubernetes.cluster.default.node.group.size')"
+                :resource="resource"
+                @navigate="closeAction" />
             </template>
             <a-input
               v-model:value="form.size"
-              :placeholder="apiParams.size.description"/>
+              :placeholder="$t('message.kubernetes.cluster.default.node.group.size')"/>
           </a-form-item>
         </span>
         <div :span="24" class="action-button">
@@ -152,12 +168,14 @@ import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import KubernetesDefaultNodeGroupLabel from '@/views/compute/KubernetesDefaultNodeGroupLabel'
 
 export default {
   name: 'ScaleKubernetesCluster',
   mixins: [mixinForm],
   components: {
-    TooltipLabel
+    TooltipLabel,
+    KubernetesDefaultNodeGroupLabel
   },
   props: {
     resource: {

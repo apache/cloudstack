@@ -79,6 +79,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterNodeGroupVO;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -430,6 +432,34 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return provisionKubernetesClusterNodeVms(nodeCount, 0, controlIpAddress, domainId, accountId);
     }
 
+    /**
+     * @return the CPU cores and memory (MB) used by the nodes of the node groups of the cluster other than the
+     * default one, whose nodes are accounted with the cluster size
+     */
+    protected Pair<Long, Long> calculateNodeGroupsCapacity() {
+        long cores = 0L;
+        long memory = 0L;
+        if (!(kubernetesCluster instanceof KubernetesClusterVO) || ((KubernetesClusterVO) kubernetesCluster).getNodeGroupNodeCount() == 0) {
+            return new Pair<>(cores, memory);
+        }
+        for (KubernetesClusterNodeGroupVO nodeGroup : kubernetesClusterNodeGroupDao.listByClusterId(kubernetesCluster.getId())) {
+            if (nodeGroup.isDefault()) {
+                continue;
+            }
+            ServiceOffering offering = serviceOfferingDao.findById(nodeGroup.getServiceOfferingId());
+            if (offering == null) {
+                continue;
+            }
+            cores += offering.getCpu() * nodeGroup.getNodeCount();
+            memory += offering.getRamSize() * nodeGroup.getNodeCount();
+        }
+        return new Pair<>(cores, memory);
+    }
+
+    protected String getWorkerNodeHostName(String suffix) {
+        return String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
+    }
+
     protected UserVm createKubernetesNode(String joinIp, Long domainId, Long accountId) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
@@ -448,7 +478,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
         }
         String suffix = Long.toHexString(System.currentTimeMillis());
-        String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
+        String hostName = getWorkerNodeHostName(suffix);
         String k8sNodeConfig = null;
         try {
             k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), false);
@@ -953,50 +983,111 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return kubernetesClusterVO;
     }
 
-    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+    /**
+     * Updates the autoscaling settings of the default node group, which are the autoscaling settings of the cluster
+     */
+    private void updateDefaultNodeGroupAutoscaling(final boolean enable, final Long minSize, final Long maxSize) {
+        KubernetesClusterNodeGroupVO defaultNodeGroup = kubernetesClusterNodeGroupDao.findDefaultByClusterId(kubernetesCluster.getId());
+        if (defaultNodeGroup == null) {
+            return;
         }
+        defaultNodeGroup.setAutoscalingEnabled(enable);
+        defaultNodeGroup.setMinSize(minSize);
+        defaultNodeGroup.setMaxSize(maxSize);
+        kubernetesClusterNodeGroupDao.update(defaultNodeGroup.getId(), defaultNodeGroup);
+    }
 
-        File pkFile = getManagementServerSshPublicKeyFile();
-        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
-        publicIpAddress = publicIpSshPort.first();
-        sshPort = publicIpSshPort.second();
+    /**
+     * @return the min:max:id specs of the node groups with autoscaling enabled, passed to the cluster autoscaler as
+     * --nodes arguments. The ID of the cluster identifies its default node group, as expected by the upstream cluster
+     * autoscaler, and the ID of the node group identifies the other node groups
+     */
+    protected List<String> getClusterAutoscalerNodeGroupSpecs() {
+        List<String> specs = new ArrayList<>();
+        List<KubernetesClusterNodeGroupVO> nodeGroups = kubernetesClusterNodeGroupDao.listByClusterId(kubernetesCluster.getId());
+        if (nodeGroups.stream().noneMatch(KubernetesClusterNodeGroupVO::isDefault)) {
+            KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+            if (cluster.getAutoscalingEnabled()) {
+                specs.add(String.format("%d:%d:%s", cluster.getMinSize(), cluster.getMaxSize(), cluster.getUuid()));
+            }
+        }
+        for (KubernetesClusterNodeGroupVO nodeGroup : nodeGroups) {
+            if (!nodeGroup.isAutoscalingEnabled()) {
+                continue;
+            }
+            String id = nodeGroup.isDefault() ? kubernetesCluster.getUuid() : nodeGroup.getUuid();
+            specs.add(String.format("%d:%d:%s", nodeGroup.getMinSize(), nodeGroup.getMaxSize(), id));
+        }
+        return specs;
+    }
 
-        try {
-            if (enable) {
-                String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
-                        kubernetesCluster.getUuid(), maxSize, minSize);
+    protected String getClusterAutoscalerCommand(List<String> nodeGroupSpecs) {
+        if (CollectionUtils.isEmpty(nodeGroupSpecs)) {
+            return String.format("sudo %s%s -d", scriptPath, autoscaleScriptFilename);
+        }
+        StringBuilder command = new StringBuilder(String.format("sudo %s%s -e", scriptPath, autoscaleScriptFilename));
+        for (String spec : nodeGroupSpecs) {
+            command.append(" -n ").append(spec);
+        }
+        String image = KubernetesClusterService.KubernetesClusterAutoscalerImage.value();
+        if (StringUtils.isNotBlank(image)) {
+            command.append(String.format(" -I '%s'", image.trim()));
+        }
+        return command.toString();
+    }
+
+    /**
+     * Deploys the cluster autoscaler for the node groups of the cluster with autoscaling enabled, or removes it when
+     * autoscaling is not enabled for any node group. Deployments are serialized per cluster so that the autoscaler is
+     * always deployed with the latest settings of all the node groups
+     */
+    protected void applyClusterAutoscaler() throws CloudRuntimeException {
+        manager.executeWithKubernetesClusterLock(kubernetesCluster.getId(), KubernetesClusterManagerImpl.AUTOSCALER_LOCK, () -> {
+            File pkFile = getManagementServerSshPublicKeyFile();
+            Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+            publicIpAddress = publicIpSshPort.first();
+            sshPort = publicIpSshPort.second();
+            String command = getClusterAutoscalerCommand(getClusterAutoscalerNodeGroupSpecs());
+            try {
                 Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                         pkFile, null, command, 10000, 10000, 60000);
-
-                // Maybe the file isn't present. Try and copy it
+                // The script may be missing or outdated on the control node. Copy the current one
                 if (!result.first()) {
-                    logMessage(Level.INFO, "Autoscaling files missing. Adding them now", null);
+                    logMessage(Level.INFO, "Autoscaling files missing or outdated. Adding them now", null);
                     retrieveScriptFiles();
                     copyScripts(publicIpAddress, sshPort);
-
                     if (!createCloudStackSecret(keys)) {
-                        logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
-                                kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                        throw new CloudRuntimeException(String.format("Failed to setup keys for Kubernetes cluster %s", kubernetesCluster.getName()));
                     }
-
-                    // If at first you don't succeed ...
                     result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                             pkFile, null, command, 10000, 10000, 60000);
                     if (!result.first()) {
                         throw new CloudRuntimeException(result.second());
                     }
                 }
-                updateKubernetesClusterEntry(true, minSize, maxSize);
-            } else {
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
-                        pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
-                        10000, 10000, 60000);
-                if (!result.first()) {
-                    throw new CloudRuntimeException(result.second());
-                }
-                updateKubernetesClusterEntry(false, null, null);
+            } catch (CloudRuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e.getMessage(), e);
+            }
+            return null;
+        });
+    }
+
+    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
+        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+        }
+        KubernetesClusterVO previousCluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+        try {
+            updateKubernetesClusterEntry(enable, enable ? minSize : null, enable ? maxSize : null);
+            updateDefaultNodeGroupAutoscaling(enable, enable ? minSize : null, enable ? maxSize : null);
+            try {
+                applyClusterAutoscaler();
+            } catch (CloudRuntimeException e) {
+                updateKubernetesClusterEntry(previousCluster.getAutoscalingEnabled(), previousCluster.getMinSize(), previousCluster.getMaxSize());
+                updateDefaultNodeGroupAutoscaling(previousCluster.getAutoscalingEnabled(), previousCluster.getMinSize(), previousCluster.getMaxSize());
+                throw e;
             }
             return true;
         } catch (Exception e) {

@@ -94,11 +94,14 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterNodeGroupVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterNodeGroupDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeGroupUtil;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
@@ -232,6 +235,7 @@ public class KubernetesClusterActionWorker {
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     protected KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
     protected KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
+    protected KubernetesClusterNodeGroupDao kubernetesClusterNodeGroupDao;
     protected KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
 
     protected KubernetesCluster kubernetesCluster;
@@ -286,6 +290,7 @@ public class KubernetesClusterActionWorker {
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
         this.kubernetesClusterAffinityGroupMapDao = clusterManager.kubernetesClusterAffinityGroupMapDao;
+        this.kubernetesClusterNodeGroupDao = clusterManager.kubernetesClusterNodeGroupDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
         this.manager = clusterManager;
     }
@@ -416,6 +421,30 @@ public class KubernetesClusterActionWorker {
         return new File(keyFile);
     }
 
+    /**
+     * @return the node group of the worker nodes provisioned by this worker, the default node group of the cluster
+     * unless overridden. Null for clusters without node groups
+     */
+    protected KubernetesClusterNodeGroupVO getWorkerNodeGroup() {
+        return kubernetesClusterNodeGroupDao.findDefaultByClusterId(kubernetesCluster.getId());
+    }
+
+    /**
+     * @return the ID of the node group to which the worker nodes provisioned by this worker belong
+     */
+    protected Long getWorkerNodeGroupId() {
+        KubernetesClusterNodeGroupVO nodeGroup = getWorkerNodeGroup();
+        return nodeGroup != null ? nodeGroup.getId() : null;
+    }
+
+    /**
+     * @return additional kubelet arguments (node labels, taints) for the worker nodes provisioned by this worker
+     */
+    protected String getWorkerNodeKubeletExtraArgs() {
+        KubernetesClusterNodeGroupVO nodeGroup = getWorkerNodeGroup();
+        return nodeGroup != null ? KubernetesClusterNodeGroupUtil.getKubeletExtraArgs(nodeGroup) : null;
+    }
+
     protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId,
                                                               boolean isControlNode, boolean isExternalNode,
                                                               boolean isEtcdNode,  boolean markForManualUpgrade) {
@@ -427,6 +456,9 @@ public class KubernetesClusterActionWorker {
                 newClusterVmMap.setExternalNode(isExternalNode);
                 newClusterVmMap.setManualUpgrade(markForManualUpgrade);
                 newClusterVmMap.setEtcdNode(isEtcdNode);
+                if (!isControlNode && !isEtcdNode && !isExternalNode) {
+                    newClusterVmMap.setNodeGroupId(getWorkerNodeGroupId());
+                }
                 if (!isEtcdNode) {
                     newClusterVmMap.setNodeVersion(kubernetesVersion.getSemanticVersion());
                 }
@@ -1039,6 +1071,7 @@ public class KubernetesClusterActionWorker {
         final String routerIpKey = "{{ k8s.vr.iso.mounted.ip }}";
         final String installWaitTime = "{{ k8s.install.wait.time }}";
         final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
+        final String kubeletExtraArgsKey = "{{ k8s.kubelet.extra.args }}";
 
         final Long waitTime = KubernetesClusterService.KubernetesWorkerNodeInstallAttemptWait.value();
         final Long reattempts = KubernetesClusterService.KubernetesWorkerNodeInstallReattempts.value();
@@ -1064,6 +1097,7 @@ public class KubernetesClusterActionWorker {
         k8sNodeConfig = k8sNodeConfig.replace(routerIpKey, routerIp);
         k8sNodeConfig = k8sNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
         k8sNodeConfig = k8sNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
+        k8sNodeConfig = k8sNodeConfig.replace(kubeletExtraArgsKey, StringUtils.defaultString(getWorkerNodeKubeletExtraArgs()));
 
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
 

@@ -32,7 +32,13 @@ public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterV
 
     public int removeByClusterId(long clusterId);
 
+    /**
+     * Lists the VMs of the cluster of the given node type. For the WORKER node type only the
+     * nodes of the default worker pool are listed, nodes of the node groups are excluded
+     */
     List<KubernetesClusterVmMapVO> listByClusterIdAndVmType(long clusterId, KubernetesClusterNodeType nodeType);
+
+    List<KubernetesClusterVmMapVO> listByNodeGroupId(long nodeGroupId);
 
     KubernetesClusterVmMapVO findByVmId(long vmId);
 }
