@@ -2308,6 +2308,41 @@ public class VirtualMachineManagerImplTest {
         assertNull(virtualMachineManagerImpl.migrationSourceThatMayBeRunningIt(vm));
     }
 
+    /**
+     * A stalled instance whose forced cleanup succeeds is Stopped. advanceStop() must return there rather than go on
+     * to the StopCommand path, which requires Stopping and would fail the stop of an instance it had just stopped.
+     */
+    private VMInstanceVO startingVmWhoseCleanupSucceeds(final Status hostStatus) throws Exception {
+        VMInstanceVO vm = startingVmOnHost(hostStatus);
+        doReturn(new Pair<>(true, null)).when(virtualMachineManagerImpl).cleanup(any(), any(), any(), any(), eq(true));
+        Mockito.doAnswer(invocation -> {
+            ReflectionTestUtils.setField(vm, "state", State.Stopped);
+            return true;
+        }).when(virtualMachineManagerImpl).changeState(vm, VirtualMachine.Event.AgentReportStopped, null, null, ItWorkVO.Step.Done);
+        return vm;
+    }
+
+    @Test
+    public void explicitForcedStopOfAStalledInstanceSucceedsOnceCleanedUp() throws Exception {
+        VMInstanceVO vm = startingVmWhoseCleanupSucceeds(Status.Up);
+
+        virtualMachineManagerImpl.advanceStop(vm, true, false);
+
+        assertEquals(State.Stopped, vm.getState());
+        verify(virtualMachineManagerImpl).changeState(vm, VirtualMachine.Event.AgentReportStopped, null, null, ItWorkVO.Step.Done);
+        verify(agentManagerMock, never()).send(anyLong(), any(StopCommand.class));
+    }
+
+    @Test
+    public void destroyStopOfAStalledInstanceSucceedsOnceCleanedUp() throws Exception {
+        VMInstanceVO vm = startingVmWhoseCleanupSucceeds(Status.Down);
+
+        virtualMachineManagerImpl.advanceStop(vm, true, true);
+
+        assertEquals(State.Stopped, vm.getState());
+        verify(agentManagerMock, never()).send(anyLong(), any(StopCommand.class));
+    }
+
     @Test
     public void advanceStopQueuesTheFlagOnTheStopJob() throws Exception {
         final AsyncJobExecutionContext jobContext = mock(AsyncJobExecutionContext.class);

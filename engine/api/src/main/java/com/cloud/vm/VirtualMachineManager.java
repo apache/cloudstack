@@ -178,6 +178,13 @@ public interface VirtualMachineManager extends Manager {
      */
     void advanceStopForDestroy(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
+    /**
+     * As advanceStop(vmUuid, cleanupEvenIfUnableToStop), but with releaseOnlyIfHostIsGone the instance's resources
+     * are only released without the host confirming the stop if the host is gone, as for advanceStopForDestroy().
+     */
+    void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop, boolean releaseOnlyIfHostIsGone)
+            throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+
     void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;

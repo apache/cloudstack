@@ -359,6 +359,23 @@ public interface NetworkOrchestrationService {
     void destroyExpendableRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException;
 
     /**
+     * A rolling restart deploys the new router before it stops the old ones, so refuse it up front when an old router
+     * cannot be stopped safely: it is migrating, or its host is neither Up nor gone (Down or Removed) and may still be
+     * running it with the network's addresses.
+     * @param routers the routers the rolling restart would replace
+     * @throws ResourceUnavailableException if one of them cannot be stopped safely
+     */
+    void checkRoutersCanBeReplaced(List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+
+    /**
+     * Stop and destroy the routers a rolling restart has replaced. The stop is forced, but a router is only released
+     * without its host confirming the stop if the host is gone.
+     * @param routers the replaced routers
+     * @param context reservation context
+     */
+    void destroyReplacedRouters(List<? extends VirtualRouter> routers, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    /**
      * areRoutersRunning check if the given list of routers are running
      * @param routers list of routers
      * @return returns true is all routers are running

@@ -3622,6 +3622,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return false;
         }
         logger.debug("Performing rolling restart of routers of VPC " + vpc);
+        _ntwkMgr.checkRoutersCanBeReplaced(routerDao.listByVpcId(vpc.getId()));
         _ntwkMgr.destroyExpendableRouters(routerDao.listByVpcId(vpc.getId()), context);
 
         final DeployDestination dest = new DeployDestination(_dcDao.findById(vpc.getZoneId()), null, null, null);
@@ -3644,11 +3645,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        // Destroy old routers
-        for (final DomainRouterVO oldRouter : oldRouters) {
-            _routerService.stopRouter(oldRouter.getId(), true);
-            _routerService.destroyRouter(oldRouter.getId(), context.getAccount(), context.getCaller().getId());
-        }
+        _ntwkMgr.destroyReplacedRouters(oldRouters, context);
 
         // Re-program VPC VR or add a new backup router for redundant VPC
         if (!startVpc(vpc, dest, context)) {
