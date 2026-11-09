@@ -210,13 +210,37 @@ def save_iptables(command, iptables_file):
     """ Execute command """
     logging.debug("Saving iptables for %s" % command)
 
-    result = execute(command)
-    fIptables = open(iptables_file, "w+")
+    write_lines(iptables_file, execute(command))
 
-    for line in result:
-        fIptables.write(line)
-        fIptables.write("\n")
-    fIptables.close()
+
+def write_lines(path, lines):
+    with open(path, "w+") as f:
+        for line in lines:
+            f.write(line)
+            f.write("\n")
+
+
+IPTABLES_FAMILIES = ["ip", "ip6", "arp", "bridge"]
+IPTABLES_TABLES = ["filter", "nat", "mangle", "raw", "security", "broute"]
+
+
+def save_nftables(nftables_file):
+    """ Save the tables that only nftables manages, such as the IPv6 firewall and ACLs. The iptables-nft tables are
+    saved by save_iptables and restored with iptables-restore. nft can't load them, and one of them in the file fails
+    the whole restore at boot. """
+    logging.debug("Saving nftables tables to %s" % nftables_file)
+
+    rules = []
+    for line in execute("nft list tables"):
+        table = line.split()
+        if len(table) != 3 or table[0] != "table":
+            continue
+        family, name = table[1], table[2]
+        if family in IPTABLES_FAMILIES and name in IPTABLES_TABLES:
+            continue
+        rules.extend(execute("nft list table %s %s" % (family, name)))
+
+    write_lines(nftables_file, rules)
 
 
 def execute2(command, wait=True):
