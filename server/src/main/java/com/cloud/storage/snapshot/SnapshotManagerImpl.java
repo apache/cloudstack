@@ -805,7 +805,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
      * <br></br>
      * <b>This method should only be called when kvm.incremental.snapshot = false and for volumes in KVM</b>
      * */
-    protected void endLastChainIfNeeded(long clusterId, long volumeId) {
+    protected void endLastChainIfNeeded(Long clusterId, long volumeId) {
+        // null for a detached volume: the setting's global value applies
         if (kvmIncrementalSnapshot.valueIn(clusterId)) {
             return;
         }

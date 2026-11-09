@@ -1731,23 +1731,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             CallContext.current().setEventDetails("Job id: " + job.getUuid() + ". " + cancelledBy);
         }
 
+        if (job.isCancelRequested() && job.getStatus() == JobInfo.Status.IN_PROGRESS) {
+            final String earlier = getJobCancelReasonFromResult(job);
+            throw refused("Cannot cancel job-" + jobId + ", it is already being cancelled" + (earlier != null ? " (" + earlier + ")" : "") + ".");
+        }
+
         boolean onlyQueuedWork = false;
         if (job.getExecutingMsid() != null || isActiveJob(jobId)) {
             try {
                 final Class<?> cmdClass = Class.forName(job.getCmd());
                 final APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
                 if (apiCommand == null && job.getRelated() != null && !job.getRelated().isEmpty()) {
-                    final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
-                    errMessage = "Cannot cancel job-" + jobId + ", it runs on behalf of job " + (parent != null ? parent.getUuid() : job.getRelated()) + "; cancel that job instead.";
-                    logger.debug(errMessage);
-                    throw new CloudRuntimeException(errMessage);
+                    throw refused("Cannot cancel job-" + jobId + ", it runs on behalf of job-" + job.getRelated() + "; cancel that job instead.");
                 }
                 if (apiCommand == null || !apiCommand.cancellable()) {
                     // none of its work has started while its work jobs are all still queued; cancelling then only frees the queue
                     if (!hasOnlyQueuedWork(jobId)) {
-                        errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
-                        logger.debug(errMessage);
-                        throw new CloudRuntimeException(errMessage);
+                        throw refused("Cannot cancel, job-" + jobId + " is not cancellable.");
                     }
                     logger.info("job-{} is not cancellable, but its work jobs are all still queued and nothing has started; cancelling it", jobId);
                     onlyQueuedWork = true;
@@ -1760,19 +1760,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         if (job.getStatus() != null && job.getStatus().done()) {
-            errMessage = "Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".";
-            logger.debug(errMessage);
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
-            throw new CloudRuntimeException(errMessage);
+            throw refused("Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".");
         }
 
         // ask before changing state: a job whose work cannot be stopped is refused, not recorded as cancelled
         for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
             final String refusal = handler.checkJobCannotBeCancelled(jobId);
             if (refusal != null) {
-                errMessage = "Cannot cancel job-" + jobId + ", its work cannot be stopped at this point: " + refusal;
-                logger.info(errMessage);
-                throw new CloudRuntimeException(errMessage);
+                throw refused("Cannot cancel job-" + jobId + ", its work cannot be stopped at this point: " + refusal);
             }
         }
 
@@ -1781,17 +1777,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         // the flag stops a queued work job from starting; one taken by a server before the flag is work under way that cannot be stopped
         if (onlyQueuedWork && !hasOnlyQueuedWork(jobId)) {
             withdrawJobCancel(jobId);
-            errMessage = "Cannot cancel job-" + jobId + ", its work started meanwhile and cannot be stopped.";
-            logger.info(errMessage);
-            throw new CloudRuntimeException(errMessage);
+            throw refused("Cannot cancel job-" + jobId + ", its work started meanwhile and cannot be stopped.");
         }
         try {
             for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
                 if (!handler.cancelJobExecution(jobId, reason)) {
                     withdrawJobCancel(jobId);
-                    errMessage = "Cannot cancel job-" + jobId + ", the operation it is running could not be stopped.";
-                    logger.info(errMessage);
-                    throw new CloudRuntimeException(errMessage);
+                    throw refused("Cannot cancel job-" + jobId + ", the operation it is running could not be stopped.");
                 }
             }
         } catch (final CloudRuntimeException e) {
@@ -1808,6 +1800,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             finalizeCancelledJob(jobId);
         }
         cancelQueuedChildJobs(jobId, cancelledBy);
+    }
+
+    /** A refusal is the answer to a cancel the work cannot honour; the action event records it as such, with the reason, not as an error. */
+    private CloudRuntimeException refused(final String message) {
+        logger.info(message);
+        if (CallContext.current() != null) {
+            CallContext.current().putContextParameter(CallContext.REFUSAL_REASON_PARAM, message);
+        }
+        return new CloudRuntimeException(message);
     }
 
     @Override

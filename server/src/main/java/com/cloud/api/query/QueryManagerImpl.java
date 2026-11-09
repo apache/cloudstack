@@ -3239,6 +3239,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
+        final Map<String, String> urlParams = cmd.getFullUrlParams();
+        if (cmd.getId() == null && urlParams != null && urlParams.containsKey(ApiConstants.ID)) {
+            throw new InvalidParameterValueException("Unable to find a job with id " + urlParams.get(ApiConstants.ID));
+        }
 
         List<Long> permittedAccounts = new ArrayList<>();
 

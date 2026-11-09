@@ -130,14 +130,18 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
                 return;
 
             final String cancelReason = ActionEventUtils.cancellationReasonOfCurrentJob();
-            final String level = cancelReason != null ? EventVO.LEVEL_WARN : EventVO.LEVEL_ERROR;
+            // a refusal (a cancel the work cannot honour) is an answer, not a fault
+            final Object refusal = ctx.getContextParameter(CallContext.REFUSAL_REASON_PARAM);
+            final String level = cancelReason != null || refusal != null ? EventVO.LEVEL_WARN : EventVO.LEVEL_ERROR;
             if (actionEvent.create()) {
-                final String description = cancelReason != null ? "Cancelled while creating entity for " + eventDescription + ": " + cancelReason : "Error while creating entity for " + eventDescription;
+                final String description = cancelReason != null ? "Cancelled while creating entity for " + eventDescription + ": " + cancelReason
+                        : refusal != null ? "Refused creating entity for " + eventDescription + ": " + refusal : "Error while creating entity for " + eventDescription;
                 long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, level, eventType,
                         isEventDisplayEnabled, description, eventResourceId, eventResourceType);
                 ctx.setStartEventId(eventId);
             } else {
-                final String description = cancelReason != null ? getEventDescription(actionEvent, ctx, true) + " cancelled: " + cancelReason : "Error while " + eventDescription;
+                final String description = cancelReason != null ? getEventDescription(actionEvent, ctx, true) + " cancelled: " + cancelReason
+                        : refusal != null ? getEventDescription(actionEvent, ctx, true) + " refused: " + refusal : "Error while " + eventDescription;
                 ActionEventUtils.onCompletedActionEvent(userId, accountId, level, eventType, isEventDisplayEnabled,
                         description, eventResourceId, eventResourceType, startEventId);
             }
