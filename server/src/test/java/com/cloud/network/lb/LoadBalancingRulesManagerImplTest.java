@@ -493,9 +493,45 @@ public class LoadBalancingRulesManagerImplTest{
     }
 
     @Test
+    public void testUpdateLoadBalancerRuleOnlyConnectionSettings() throws Exception {
+        setupUpdateLoadBalancerRule();
+        stubConnectionSettings(null, null, null);
+        // No column of the rule changes, so the dao reports no row updated
+        when(_lbDao.update(lbRuleId, loadBalancerMock)).thenReturn(false);
+
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "algorithm", "roundrobin");
+        ReflectionTestUtils.setField(cmd, "idleTimeout", 120000L);
+        when(loadBalancerMock.getAlgorithm()).thenReturn("roundrobin");
+
+        lbr.updateLoadBalancerRule(cmd);
+
+        Mockito.verify(_firewallRuleDetailsDao).addDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT, "120000", true);
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testUpdateLoadBalancerRuleNothingChangedStillFails() throws Exception {
+        setupUpdateLoadBalancerRule();
+        stubConnectionSettings(null, "5000", null);
+        when(_lbDao.update(lbRuleId, loadBalancerMock)).thenReturn(false);
+
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "algorithm", "roundrobin");
+        ReflectionTestUtils.setField(cmd, "idleTimeout", 5000L);
+        when(loadBalancerMock.getAlgorithm()).thenReturn("roundrobin");
+
+        lbr.updateLoadBalancerRule(cmd);
+    }
+
+    @Test
     public void testUpdateLoadBalancerRuleCleanupReappliesConfig() throws Exception {
         setupUpdateLoadBalancerRule();
         stubConnectionSettings(null, "5000", null);
+        // No column of the rule changes, so the dao reports no row updated
+        when(_lbDao.update(lbRuleId, loadBalancerMock)).thenReturn(false);
 
         // Only the connection settings change, algorithm and protocol are the same
         UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();

@@ -2428,7 +2428,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 cmd.isCleanupConnectionSettings());
 
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
-        boolean success = _lbDao.update(lbRuleId, lb);
+        // update() reports false when no column of the rule changed, which is the case when only the
+        // connection settings change, since they are kept in firewall_rule_details
+        boolean success = _lbDao.update(lbRuleId, lb) || settingsChanged;
 
         // Check if algorithm, lb protocol, or cidrlist has changed, and reapply the lb config if needed
         boolean algorithmChanged = !Objects.equals(algorithm, tmplbVo.getAlgorithm());
