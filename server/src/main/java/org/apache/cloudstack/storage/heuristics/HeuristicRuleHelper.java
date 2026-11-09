@@ -35,8 +35,11 @@ import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Account;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Domain;
+import org.apache.cloudstack.storage.heuristics.presetvariables.DownloadDetails;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.storage.heuristics.presetvariables.SecondaryStorage;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Snapshot;
@@ -77,6 +80,9 @@ public class HeuristicRuleHelper {
 
     @Inject
     private DataCenterDao zoneDao;
+
+    @Inject
+    private TemplateDataStoreDao templateDataStoreDao;
 
     /**
      * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicType}.
@@ -187,6 +193,23 @@ public class HeuristicRuleHelper {
         template.setName(templateVO.getName());
         template.setFormat(templateVO.getFormat().toString());
         template.setHypervisorType(templateVO.getHypervisorType().toString());
+        template.setTemplateType(templateVO.getTemplateType().toString());
+        template.setPublic(templateVO.isPublicTemplate());
+
+        List<DownloadDetails> downloadDetails = new ArrayList<>();
+        List<TemplateDataStoreVO> templateDataStoreVOs = templateDataStoreDao.listByTemplate(templateVO.getId());
+
+        for (TemplateDataStoreVO templateDataStoreVO : templateDataStoreVOs) {
+            ImageStoreVO imageStore = imageStoreDao.findById(templateDataStoreVO.getDataStoreId());
+
+            DownloadDetails downloadDetail = new DownloadDetails();
+            downloadDetail.setDataStoreId(imageStore.getUuid());
+            downloadDetail.setDownloadState(templateDataStoreVO.getDownloadState());
+            downloadDetails.add(downloadDetail);
+        }
+
+        template.setDownloadDetails(downloadDetails);
+
 
         return template;
     }
@@ -248,13 +271,15 @@ public class HeuristicRuleHelper {
      * in the code scope.
      * <br>
      * <br>
-     * The JS script needs to return a valid UUID ({@link String}) of a secondary storage, otherwise a {@link CloudRuntimeException} is thrown.
+     * The JS script needs to either return the valid UUID ({@link String}) of a secondary storage or nothing. If a valid UUID is returned,
+     * this method returns the specific secondary storage; if nothing is returned, this method returns null to allow allocation in any
+     * available secondary storage; otherwise a {@link CloudRuntimeException} is thrown.
      * @param rule the {@link String} representing the JS script.
      * @param heuristicType used for building the preset variables accordingly to the  {@link HeuristicType} specified.
      * @param obj can be from the following classes: {@link VMTemplateVO}, {@link SnapshotInfo} and {@link VolumeVO}.
      *           They are used to retrieve attributes for injecting in the JS rule.
      * @param zoneId used for injecting the {@link SecondaryStorage} preset variables.
-     * @return the {@link DataStore} returned by the script.
+     * @return the {@link DataStore} returned by the script, or null.
      */
     public DataStore interpretHeuristicRule(String rule, HeuristicType heuristicType, Object obj, long zoneId) {
         try (JsInterpreter jsInterpreter = new JsInterpreter(HEURISTICS_SCRIPT_TIMEOUT)) {
@@ -262,14 +287,14 @@ public class HeuristicRuleHelper {
             Object scriptReturn = jsInterpreter.executeScript(rule);
 
             if (!(scriptReturn instanceof String)) {
-                throw new CloudRuntimeException(String.format("Error while interpreting heuristic rule [%s], the rule did not return a String.", rule));
+                logger.debug("Script did not return a string; allocating resource in any available secondary storage.");
+                return null;
             }
 
             DataStore dataStore = dataStoreManager.getImageStoreByUuid((String) scriptReturn);
 
             if (dataStore == null) {
-                throw new CloudRuntimeException(String.format("Unable to find a secondary storage with the UUID [%s] returned by the heuristic rule [%s]. Check if the rule is " +
-                        "returning a valid UUID.", scriptReturn, rule));
+                logger.debug("Script did not return a valid secondary storage; allocating resource in any available secondary storage.");
             }
 
             return dataStore;
