@@ -301,12 +301,17 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         return msHost != null && msHost.getMsid() == ManagementServerNode.getManagementServerId();
     }
 
+    // Alerts still inside a rule's cooldown are kept, as the cooldown is read from the last alert.
     void removeExpiredAlerts() {
         int days = HISTORY_RETENTION_DAYS.value();
         if (days < 0) {
             return;
         }
-        int removed = alertDao.removeOlderThan(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days)));
+        long longestCooldownSeconds = ruleDao.listActive().stream()
+                .mapToLong(ResourceAlertRuleVO::getResetInterval)
+                .max().orElse(0L);
+        long keepMillis = Math.max(TimeUnit.DAYS.toMillis(days), TimeUnit.SECONDS.toMillis(longestCooldownSeconds));
+        int removed = alertDao.removeOlderThan(new Date(System.currentTimeMillis() - keepMillis));
         if (removed > 0) {
             logger.debug("Removed {} resource alerts older than {} days", removed, days);
         }

@@ -1221,4 +1221,18 @@ public class ResourceAlertManagerImplTest {
 
         assertEquals(2500.0, manager.toHostNetworkRate(HOST_ID, "read", 2500.0), 0.001);
     }
+
+    @Test
+    public void testRemoveExpiredAlertsKeepsAlertsInsideLongestCooldown() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        rule.setResetInterval((int) TimeUnit.DAYS.toSeconds(45));
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        long before = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(45);
+
+        manager.removeExpiredAlerts();
+
+        ArgumentCaptor<Date> cutoff = ArgumentCaptor.forClass(Date.class);
+        verify(alertDao).removeOlderThan(cutoff.capture());
+        assertTrue("cutoff should be about 45 days ago", Math.abs(cutoff.getValue().getTime() - before) < 60_000L);
+    }
 }
