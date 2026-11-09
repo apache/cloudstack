@@ -235,6 +235,11 @@ public abstract class AgentAttache {
         }
     }
 
+    /** True once no sender waits for the request's answer: it has completed, and there is nothing of it left to stop. */
+    protected boolean isExecutionFinished(final long seq) {
+        return !_waitForList.containsKey(seq);
+    }
+
     /** Null when the request's work can be stopped, otherwise why not. Defaults to a refusal: an attache that cannot ask its resource must not claim it. */
     protected String checkExecutionIsNotCancellable(final long seq) {
         return "this host does not support cancelling a running command";

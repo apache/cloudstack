@@ -37,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -174,8 +175,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected static final class CancelledJob {
         final long since = System.currentTimeMillis();
         volatile boolean handedToWorker;
+        // a refused attempt is retried, but not on every check and not while another thread is at it
+        volatile long retryAfter;
+        volatile int refusals;
+        final AtomicBoolean attempting = new AtomicBoolean();
     }
     private static final long CANCELLED_JOB_MEMORY_MS = TimeUnit.HOURS.toMillis(1);
+    protected static final long CANCEL_RETRY_MS = TimeUnit.SECONDS.toMillis(10);
 
     @Inject
     protected CAManager caService;
@@ -2216,36 +2222,51 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     // a work job's commands are keyed by the API job it runs for
                     final long key = commandKeyOf(job);
                     _cancelledJobs.computeIfAbsent(key, id -> new CancelledJob());
-                    if (_jobToHostIdAndReqSequenceMap.containsKey(key)) {
-                        logger.info("Cancellation of job-{} on {} {} was requested, stopping its in-flight commands",
-                                key, job.getInstanceType(), job.getInstanceId());
-                        if (!cancelJobExecution(key, "Job was cancelled")) {
-                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", key);
-                            continue;
-                        }
+                    if (_jobToHostIdAndReqSequenceMap.containsKey(key) && !stopInFlightCommandsOfJob(key, now)) {
+                        continue;
                     }
                     if (key == job.getId()) {
                         asyncJobManager.finalizeCancelledJob(job.getId());
                     }
                 }
 
-                // a VM work job may run here on behalf of an API job executing on another server; its commands are keyed by that job
+                // commands in flight here for a job cancelled on another server, keyed by that job
                 for (final Long jobId : _jobToHostIdAndReqSequenceMap.keySet()) {
-                    if (_cancelledJobs.containsKey(jobId)) {
+                    final CancelledJob known = _cancelledJobs.get(jobId);
+                    if (known != null && (known.handedToWorker || now < known.retryAfter)) {
                         continue;
                     }
                     final AsyncJobVO job = asyncJobManager.getAsyncJob(jobId);
                     if (job != null && (job.isCancelRequested() || job.getStatus() == JobInfo.Status.CANCELLED)) {
-                        logger.info("Job-{} is being cancelled elsewhere; stopping the commands in flight for it on this server", jobId);
-                        if (!cancelJobExecution(jobId, "Job was cancelled")) {
-                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", jobId);
-                        }
+                        stopInFlightCommandsOfJob(jobId, now);
                     }
                 }
             } catch (final Throwable e) {
                 logger.error("Unexpected exception in the cancelled jobs check task", e);
             }
         }
+    }
+
+    /** One attempt per retry interval, and none while another thread (the cancel API) is already stopping the job's commands. */
+    protected boolean stopInFlightCommandsOfJob(final long jobId, final long now) {
+        final CancelledJob cancelled = _cancelledJobs.computeIfAbsent(jobId, id -> new CancelledJob());
+        if (cancelled.handedToWorker) {
+            return true;
+        }
+        if (cancelled.attempting.get() || now < cancelled.retryAfter) {
+            return false;
+        }
+        logger.info("Cancellation of job-{} was requested, stopping its in-flight commands", jobId);
+        if (cancelJobExecution(jobId, "Job was cancelled")) {
+            return true;
+        }
+        cancelled.retryAfter = now + CANCEL_RETRY_MS;
+        if (cancelled.refusals++ == 0) {
+            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying every {} s", jobId, CANCEL_RETRY_MS / 1000);
+        } else {
+            logger.debug("Not every in-flight command of cancelled job-{} could be stopped; retry {}", jobId, cancelled.refusals);
+        }
+        return false;
     }
 
     @Override
@@ -2303,6 +2324,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         request.first(), jobId, request.second());
                 return "host " + request.first() + " running its command is no longer connected";
             }
+            if (attache.isExecutionFinished(request.second())) {
+                // answered, its sender is just about to drop it from the map
+                continue;
+            }
             final String reason = attache.checkExecutionIsNotCancellable(request.second());
             if (reason != null) {
                 logger.info("Job-{} cannot be cancelled, sequence {} on host {}: {}", jobId, request.second(), attache.getName(), reason);
@@ -2327,31 +2352,39 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return true;
         }
 
-        boolean allCancelled = true;
-        for (final Pair<Long, Long> request : inFlight) {
-            final AgentAttache attache = findAttache(request.first());
-            if (attache == null) {
-                logger.debug("Agent {} for job-{} is no longer attached, cannot cancel sequence {}",
-                        request.first(), jobId, request.second());
-                allCancelled = false;
-                continue;
+        cancelled.attempting.set(true);
+        try {
+            boolean allCancelled = true;
+            for (final Pair<Long, Long> request : inFlight) {
+                final AgentAttache attache = findAttache(request.first());
+                if (attache == null) {
+                    logger.debug("Agent {} for job-{} is no longer attached, cannot cancel sequence {}",
+                            request.first(), jobId, request.second());
+                    allCancelled = false;
+                    continue;
+                }
+                if (attache.isExecutionFinished(request.second())) {
+                    continue;
+                }
+                final String refusal = attache.checkExecutionIsNotCancellable(request.second());
+                if (refusal != null) {
+                    logger.info("Not cancelling sequence {} on host {} for job-{}, letting it run to completion: {}",
+                            request.second(), request.first(), jobId, refusal);
+                    allCancelled = false;
+                    continue;
+                }
+                logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
+                if (attache.cancelExecution(request.second(), reason)) {
+                    cancelled.handedToWorker = true;
+                    asyncJobManager.claimJobCancelDelivery(jobId);
+                } else {
+                    allCancelled = false;
+                }
             }
-            final String refusal = attache.checkExecutionIsNotCancellable(request.second());
-            if (refusal != null) {
-                logger.info("Not cancelling sequence {} on host {} for job-{}, letting it run to completion: {}",
-                        request.second(), request.first(), jobId, refusal);
-                allCancelled = false;
-                continue;
-            }
-            logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
-            if (attache.cancelExecution(request.second(), reason)) {
-                cancelled.handedToWorker = true;
-                asyncJobManager.claimJobCancelDelivery(jobId);
-            } else {
-                allCancelled = false;
-            }
+            return allCancelled;
+        } finally {
+            cancelled.attempting.set(false);
         }
-        return allCancelled;
     }
 
     private AgentAttache findAttache(final Long hostId) {
