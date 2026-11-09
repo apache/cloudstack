@@ -285,6 +285,7 @@
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
   <bean id="backupUsageMetricDaoImpl" class="org.apache.cloudstack.backup.dao.BackupUsageMetricDaoImpl" />
   <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
+  <bean id="vmCheckpointDaoImpl" class="org.apache.cloudstack.backup.dao.VmCheckpointDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="routerHealthCheckResultsDaoImpl" class="com.cloud.network.dao.RouterHealthCheckResultDaoImpl" />

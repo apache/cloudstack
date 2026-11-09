@@ -294,4 +294,17 @@ public class VmsRouteHandlerTest extends RouteHandlerTestSupport {
         verify(handler.serverAdapter).deleteCheckpoint("vm-1", "chk-1");
         verify(delete.response).setStatus(200);
     }
+
+    @Test
+    public void testDeleteUnknownCheckpointIsNotFound() throws Exception {
+        final VmsRouteHandler handler = new VmsRouteHandler();
+        handler.serverAdapter = mock(org.apache.cloudstack.veeam.adapter.ServerAdapter.class);
+        org.mockito.Mockito.doThrow(new com.cloud.exception.InvalidParameterValueException("Checkpoint chk-9 not found for Instance vm-1"))
+                .when(handler.serverAdapter).deleteCheckpoint("vm-1", "chk-9");
+
+        final ResponseCapture delete = newResponse();
+        handler.handle(newRequest("DELETE"), delete.response, "/api/vms/vm-1/checkpoints/chk-9", Negotiation.OutFormat.JSON, newServlet());
+        verify(delete.response).setStatus(404);
+        assertContains(delete.body(), "chk-9 not found");
+    }
 }

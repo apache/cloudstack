@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -38,6 +39,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiServerService;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -47,6 +51,7 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.veeam.api.converter.BackupVOToBackupConverter;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
@@ -57,6 +62,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -99,6 +105,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -1077,6 +1084,79 @@ public class ServerAdapterTest {
     }
 
 
+    @Test
+    public void testCreateInstanceBackup_PassesRequestedCheckpointToStartBackup() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(vmVO.getUuid()).thenReturn("vm-uuid");
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        ServerAdapter spyAdapter = spy(serverAdapter);
+        doNothing().when(spyAdapter).validateInstanceBackupConditions(vmVO);
+        doNothing().when(spyAdapter).validateInstanceStorage(vmVO);
+        BackupVO persisted = mock(BackupVO.class);
+        when(backupDao.findById(7L)).thenReturn(persisted);
+        ArgumentCaptor<Map<String, String>> params = ArgumentCaptor.forClass(Map.class);
+        doReturn(new ApiServerService.AsyncCmdResult(7L, "backup-uuid", null, 1L))
+                .when(spyAdapter).processAsyncCmdWithContext(any(BaseAsyncCmd.class), params.capture());
+        org.apache.cloudstack.veeam.api.dto.Backup request = new org.apache.cloudstack.veeam.api.dto.Backup();
+        request.setName("job-a");
+        request.setFromCheckpointId("ckp-a1ad9f35");
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class);
+             MockedStatic<BackupVOToBackupConverter> converter = Mockito.mockStatic(BackupVOToBackupConverter.class)) {
+            converter.when(() -> BackupVOToBackupConverter.toBackup(eq(persisted), any(), any(), any()))
+                    .thenReturn(new org.apache.cloudstack.veeam.api.dto.Backup());
+            spyAdapter.createInstanceBackup("vm-uuid", request);
+        }
+
+        assertEquals("ckp-a1ad9f35", params.getValue().get(ApiConstants.FROM_CHECKPOINT_ID));
+        assertEquals("job-a", params.getValue().get(ApiConstants.NAME));
+    }
+
+    @Test
+    public void testCreateInstanceBackup_NoRequestedCheckpoint_OmitsParameter() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(vmVO.getUuid()).thenReturn("vm-uuid");
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        ServerAdapter spyAdapter = spy(serverAdapter);
+        doNothing().when(spyAdapter).validateInstanceBackupConditions(vmVO);
+        doNothing().when(spyAdapter).validateInstanceStorage(vmVO);
+        BackupVO persisted = mock(BackupVO.class);
+        when(backupDao.findById(7L)).thenReturn(persisted);
+        ArgumentCaptor<Map<String, String>> params = ArgumentCaptor.forClass(Map.class);
+        doReturn(new ApiServerService.AsyncCmdResult(7L, "backup-uuid", null, 1L))
+                .when(spyAdapter).processAsyncCmdWithContext(any(BaseAsyncCmd.class), params.capture());
+        org.apache.cloudstack.veeam.api.dto.Backup request = new org.apache.cloudstack.veeam.api.dto.Backup();
+        request.setFromCheckpointId("");
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class);
+             MockedStatic<BackupVOToBackupConverter> converter = Mockito.mockStatic(BackupVOToBackupConverter.class)) {
+            converter.when(() -> BackupVOToBackupConverter.toBackup(eq(persisted), any(), any(), any()))
+                    .thenReturn(new org.apache.cloudstack.veeam.api.dto.Backup());
+            spyAdapter.createInstanceBackup("vm-uuid", request);
+        }
+
+        assertFalse(params.getValue().containsKey(ApiConstants.FROM_CHECKPOINT_ID));
+    }
+
+    @Test
+    public void testCreateInstanceBackup_RejectedCheckpoint_SurfacesAsCloudRuntimeException() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        ServerAdapter spyAdapter = spy(serverAdapter);
+        doNothing().when(spyAdapter).validateInstanceBackupConditions(vmVO);
+        doNothing().when(spyAdapter).validateInstanceStorage(vmVO);
+        doThrow(new CloudRuntimeException("Checkpoint ckp-a1ad9f35 doesn't exist for Instance vm-uuid"))
+                .when(spyAdapter).processAsyncCmdWithContext(any(BaseAsyncCmd.class), any());
+        org.apache.cloudstack.veeam.api.dto.Backup request = new org.apache.cloudstack.veeam.api.dto.Backup();
+        request.setFromCheckpointId("ckp-a1ad9f35");
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> spyAdapter.createInstanceBackup("vm-uuid", request));
+            assertTrue(ex.getMessage().contains("ckp-a1ad9f35 doesn't exist"));
+        }
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testListCheckpointsByInstanceUuid_VmNotFound_Throws() {
         when(userVmDao.findByUuid("vm-uuid")).thenReturn(null);
@@ -1084,10 +1164,77 @@ public class ServerAdapterTest {
     }
 
 
+    @Test
+    public void testListCheckpointsByInstanceUuid_ReturnsAllCheckpoints() {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(vmVO.getId()).thenReturn(5L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        org.apache.cloudstack.api.response.CheckpointResponse a = new org.apache.cloudstack.api.response.CheckpointResponse();
+        a.setId("ckp-a1");
+        a.setCreated(new java.util.Date(100000L));
+        org.apache.cloudstack.api.response.CheckpointResponse b = new org.apache.cloudstack.api.response.CheckpointResponse();
+        b.setId("ckp-b1");
+        b.setCreated(new java.util.Date(200000L));
+        when(kvmBackupExportService.listVmCheckpoints(5L)).thenReturn(List.of(a, b));
+
+        List<org.apache.cloudstack.veeam.api.dto.Checkpoint> checkpoints = serverAdapter.listCheckpointsByInstanceUuid("vm-uuid");
+
+        assertEquals(2, checkpoints.size());
+        assertEquals("ckp-a1", checkpoints.get(0).getId());
+        assertEquals("100000", checkpoints.get(0).getCreationDate());
+        assertEquals("ckp-b1", checkpoints.get(1).getId());
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteCheckpoint_VmNotFound_Throws() {
         when(userVmDao.findByUuid("vm-uuid")).thenReturn(null);
         serverAdapter.deleteCheckpoint("vm-uuid", "chk-001");
+    }
+
+    @Test
+    public void testDeleteCheckpoint_DelegatesToService() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(vmVO.getId()).thenReturn(5L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        ArgumentCaptor<org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd> cmd =
+                ArgumentCaptor.forClass(org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd.class);
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            serverAdapter.deleteCheckpoint("vm-uuid", "chk-001");
+        }
+
+        verify(kvmBackupExportService).deleteVmCheckpoint(cmd.capture());
+        assertEquals(Long.valueOf(5L), cmd.getValue().getVmId());
+        assertEquals("chk-001", cmd.getValue().getCheckpointId());
+    }
+
+    @Test
+    public void testDeleteCheckpoint_UnknownCheckpoint_SurfacesAsNotFound() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        when(kvmBackupExportService.deleteVmCheckpoint(any()))
+                .thenThrow(new InvalidParameterValueException("Checkpoint chk-001 not found for Instance vm-uuid"));
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
+                    () -> serverAdapter.deleteCheckpoint("vm-uuid", "chk-001"));
+            assertTrue(ex.getMessage().contains("chk-001 not found"));
+        }
+    }
+
+    @Test
+    public void testDeleteCheckpoint_HostFailure_IsWrapped() throws Exception {
+        UserVmVO vmVO = mock(UserVmVO.class);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+        when(kvmBackupExportService.deleteVmCheckpoint(any()))
+                .thenThrow(new CloudRuntimeException("Failed to delete checkpoint: bitmap is busy"));
+
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> serverAdapter.deleteCheckpoint("vm-uuid", "chk-001"));
+            assertFalse(ex instanceof InvalidParameterValueException);
+            assertTrue(ex.getMessage().contains("bitmap is busy"));
+        }
     }
 
 
