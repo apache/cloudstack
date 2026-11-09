@@ -46,7 +46,8 @@
 #
 # SHA512SUMS with the checksums of the output files is written to the output directory when all
 # is done (the entries of other files are kept). The tools needed by the actions and formats are
-# checked first, and nothing is installed.
+# checked first, and nothing is installed on the host. The vhd-util (with libvhd.so.1.0) of the XenServer VHD and the
+# xe-guest-utilities packages are always downloaded from https://download.cloudstack.org/tools/
 set -euo pipefail
 
 usage() { sed -n '19,46p' "$0"; exit 1; }
@@ -59,6 +60,7 @@ UPDATE=""
 COMPRESS="-c"
 OS_FAMILY=""
 ROOT_PASSWORD="password"
+TOOLS_URL="https://download.cloudstack.org/tools"
 while getopts "a:f:o:g:uzd:p:" opt; do
   case $opt in
     a) ACTIONS="$OPTARG" ;;
@@ -130,7 +132,7 @@ pkg_hint() {
   elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then
     [ "$what" = "libguestfs" ] && echo "dnf install guestfs-tools (libguestfs-tools-c on EL8) qemu-img" || echo "dnf install $what"
   else
-    echo "install libguestfs tools and qemu-img"
+    [ "$what" = "libguestfs" ] && echo "install libguestfs tools and qemu-img" || echo "install $what"
   fi
 }
 
@@ -141,6 +143,11 @@ check_dependencies() {
   local missing=() warnings=()
   local cmd
 
+  # curl downloads the xe-guest-utilities packages (patch) and the vhd-util (XenServer VHD), stop here without it
+  if [ -n "$DO_PATCH" ] || [ -n "$WANT_XEN" ]; then
+    command -v curl >/dev/null 2>&1 || { echo "ERROR: curl not found, needed to download the tools from $TOOLS_URL ($(pkg_hint curl))" >&2; exit 1; }
+  fi
+
   for cmd in qemu-img cp mktemp sha512sum; do
     command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd not found ($(pkg_hint libguestfs))")
   done
@@ -148,7 +155,6 @@ check_dependencies() {
     for cmd in virt-customize virt-cat virt-ls virt-inspector; do
       command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd not found ($(pkg_hint libguestfs))")
     done
-    command -v curl >/dev/null 2>&1 || missing+=("curl not found, needed to download xe-guest-utilities ($(pkg_hint curl))")
   fi
   if [ -n "$DO_SHRINK" ]; then
     command -v virt-sparsify >/dev/null 2>&1 || missing+=("virt-sparsify not found ($(pkg_hint libguestfs))")
@@ -180,22 +186,38 @@ check_dependencies() {
     fi
   fi
 
-  # the XenServer VHD: bzip2, and the 32-bit vhd-util with faketime (as in tools/appliance/build.sh)
+  # the XenServer VHD: bzip2, and the vhd-util with faketime (as in tools/appliance/build.sh)
   if [ -n "$WANT_XEN" ]; then
     command -v bzip2 >/dev/null 2>&1 || missing+=("bzip2 not found, required for the XenServer VHD (install bzip2)")
     command -v faketime >/dev/null 2>&1 || missing+=("faketime not found, required for the XenServer VHD (install faketime)")
-    if ! command -v vhd-util >/dev/null 2>&1; then
-      missing+=("vhd-util not found, required for the XenServer VHD (see the comments in tools/appliance/build.sh, or http://packages.shapeblue.com/systemvmtemplate/vhd-util)")
-    else
-      # vhd-util is a 32-bit binary: it needs the i386 libraries, and faketime must be preloadable into it
+    # vhd-util and its libvhd.so.1.0 are always downloaded from $TOOLS_URL, the directory is first in the PATH
+    # and the library path so that the ones of the host are not used
+    local vhd_dir vhd_url="$TOOLS_URL/vhd-util.x86_64"
+    vhd_dir=$(mktemp -d "$OUTDIR/.vhd-util.XXXXXX" 2>/dev/null || true)
+    if [ -n "$vhd_dir" ]; then
+      CLEAN_PATHS+=("$vhd_dir")
+      if curl -fsSL -o "$vhd_dir/vhd-util" "$vhd_url/vhd-util" && curl -fsSL -o "$vhd_dir/libvhd.so.1.0" "$vhd_url/libvhd.so.1.0" \
+         && chmod +x "$vhd_dir/vhd-util"; then
+        PATH="$vhd_dir:$PATH"
+        export LD_LIBRARY_PATH="$vhd_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        echo "Downloaded vhd-util and libvhd.so.1.0 from $vhd_url"
+      fi
+    fi
+    [ -n "$vhd_dir" ] && [ -x "$vhd_dir/vhd-util" ] && [ -s "$vhd_dir/libvhd.so.1.0" ] || \
+      missing+=("vhd-util and libvhd.so.1.0 could not be downloaded from $vhd_url")
+    if [ -n "$vhd_dir" ] && [ -x "$vhd_dir/vhd-util" ] && [ -s "$vhd_dir/libvhd.so.1.0" ]; then
+      # the libraries must be found, faketime must be preloadable into it and it must support convert
       local vhd_out
-      vhd_out=$(ldd "$(command -v vhd-util)" 2>&1 || true)
+      vhd_out=$(ldd "$vhd_dir/vhd-util" 2>&1 || true)
       if echo "$vhd_out" | grep -qE "not found|not a dynamic|No such file"; then
-        missing+=("vhd-util cannot be run, missing libraries (32-bit libuuid and libc, and libvhd.so.1.0 in the ldconfig path)")
-      elif command -v faketime >/dev/null 2>&1; then
-        vhd_out=$(faketime '2010-01-01' vhd-util 2>&1 || true)
-        echo "$vhd_out" | grep -q "cannot be preloaded" && \
-          missing+=("faketime cannot be used with the 32-bit vhd-util (install the 32-bit faketime library, e.g. faketime:i386)")
+        missing+=("vhd-util cannot be run, missing libraries: $(echo "$vhd_out" | grep -E 'not found' | awk '{print $1}' | tr '\n' ' ')")
+      else
+        vhd_out=$(vhd-util 2>&1 || true)
+        echo "$vhd_out" | grep -q "convert" || missing+=("the downloaded vhd-util does not support convert")
+        if command -v faketime >/dev/null 2>&1; then
+          vhd_out=$(faketime '2010-01-01' vhd-util 2>&1 || true)
+          echo "$vhd_out" | grep -q "cannot be preloaded" && missing+=("faketime cannot be used with vhd-util")
+        fi
       fi
     fi
   fi
@@ -413,7 +435,7 @@ fi'
       local pkg
       for pkg in "${XE_PACKAGES[@]}"; do
         echo "Downloading $pkg"
-        curl -fsSL -o "$tmp/$pkg" "https://github.com/xenserver/xe-guest-utilities/releases/download/v10.0.0/$pkg"
+        curl -fsSL -o "$tmp/$pkg" "$TOOLS_URL/xe-guest-utilities/$pkg"
         xe_args+=(--upload "$tmp/$pkg:/tmp/xe-pkgs/$pkg")
       done
       xe_args+=(--run-command "$XE_INSTALL")
