@@ -18,6 +18,7 @@ import logging
 import os.path
 from os import listdir
 import re
+import shutil
 from cs.CsDatabag import CsDataBag
 from .CsProcess import CsProcess
 from .CsFile import CsFile
@@ -53,7 +54,12 @@ class CsLoadBalancer(CsDataBag):
             if haproxy_err:
                 raise Exception("haproxy config is invalid with error \n%s" % haproxy_err)
 
-            CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
+            # Do not reload haproxy on the old file and report success when the new one cannot be installed
+            try:
+                shutil.copy2(HAPROXY_CONF_T, HAPROXY_CONF_P)
+            except OSError as e:
+                logging.error("Could not copy %s to %s: %s" % (HAPROXY_CONF_T, HAPROXY_CONF_P, e))
+                raise Exception("Could not install new haproxy config %s: %s" % (HAPROXY_CONF_P, e))
 
             proc = CsProcess(['/run/haproxy.pid'])
             if not proc.find():
