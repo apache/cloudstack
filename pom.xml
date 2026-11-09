@@ -1290,8 +1290,6 @@
             </modules>
         </profile>
         <profile>
-            <!-- Writes target/ACS.sbom.{json,xml}: mvn -Psbom validate (add -Dnoredist to include those modules).
-                 makeAggregateBom resolves the whole reactor from the root, so no modules need to be built first. -->
             <id>sbom</id>
             <activation>
                 <property>
