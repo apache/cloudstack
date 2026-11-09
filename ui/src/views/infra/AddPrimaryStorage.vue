@@ -829,7 +829,7 @@ export default {
       if (value === 'PowerFlex') {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
-      } else if (value === 'Flash Array') {
+      } else if (value === 'FlashArray') {
         this.protocols = ['FiberChannel', 'NVMeTCP']
         this.form.protocol = 'FiberChannel'
       } else if (value === 'Primera') {

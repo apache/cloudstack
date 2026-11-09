@@ -371,8 +371,6 @@ public class FlashArrayAdapter implements ProviderAdapter {
             throw new RuntimeException(
                     "Invalid volume address type [" + addressType + "] requested for volume search");
         }
-        // convert WWN to serial to search on. strip out WWN type # + FlashArray OUI value
-        String serial = address.substring(FlashArrayVolume.PURE_OUI.length() + 1).toUpperCase();
         String query = "serial='" + serial + "'";
 
         FlashArrayVolume volume = null;
