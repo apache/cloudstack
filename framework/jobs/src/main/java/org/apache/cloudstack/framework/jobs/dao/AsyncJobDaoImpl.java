@@ -36,6 +36,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
 
@@ -52,6 +53,8 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final GenericSearchBuilder<AsyncJobVO, Long> pendingNonPseudoAsyncJobsSearch;
     private final SearchBuilder<AsyncJobVO> relatedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> cancelledAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> runningWorkJobSearch;
+    private final SearchBuilder<AsyncJobVO> undeliveredCancelSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -129,6 +132,20 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         cancelledAsyncJobSearch.and("completeMsId", cancelledAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
         cancelledAsyncJobSearch.and("executingMsid", cancelledAsyncJobSearch.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
         cancelledAsyncJobSearch.done();
+
+        runningWorkJobSearch = createSearchBuilder();
+        runningWorkJobSearch.and("status", runningWorkJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        runningWorkJobSearch.and("executingMsid", runningWorkJobSearch.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+        runningWorkJobSearch.and("related", runningWorkJobSearch.entity().getRelated(), SearchCriteria.Op.NNULL);
+        runningWorkJobSearch.done();
+
+        undeliveredCancelSearch = createSearchBuilder();
+        undeliveredCancelSearch.and("id", undeliveredCancelSearch.entity().getId(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.and("cancelDelivered", undeliveredCancelSearch.entity().isCancelDelivered(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.and().op("cancelRequested", undeliveredCancelSearch.entity().isCancelRequested(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.or("status", undeliveredCancelSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.cp();
+        undeliveredCancelSearch.done();
     }
 
     @Override
@@ -344,5 +361,26 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("cancelRequested", true);
         sc.setParameters("executingMsid", executingMsid);
         return listBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> getRunningWorkJobs(long executingMsid) {
+        SearchCriteria<AsyncJobVO> sc = runningWorkJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("executingMsid", executingMsid);
+        return listBy(sc);
+    }
+
+    @Override
+    public boolean claimCancelDelivery(long jobId) {
+        AsyncJobVO delivered = createForUpdate();
+        delivered.setCancelDelivered(true);
+        UpdateBuilder ub = getUpdateBuilder(delivered);
+        SearchCriteria<AsyncJobVO> sc = undeliveredCancelSearch.create();
+        sc.setParameters("id", jobId);
+        sc.setParameters("cancelDelivered", false);
+        sc.setParameters("cancelRequested", true);
+        sc.setParameters("status", JobInfo.Status.CANCELLED);
+        return update(ub, sc, null) == 1;
     }
 }

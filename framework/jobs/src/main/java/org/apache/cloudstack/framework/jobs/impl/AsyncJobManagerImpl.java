@@ -1607,6 +1607,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private void requestJobCancel(final AsyncJobVO job, final String cancelledBy) {
         job.setCancelRequested(true);
+        job.setCancelDelivered(false);
         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
         job.updateResultWithEncryptionIfNeeded(cancelledResult(cancelledBy));
         job.setLastUpdated(DateUtil.currentGMTTime());
@@ -1619,10 +1620,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
         job.setCancelRequested(false);
+        job.setCancelDelivered(false);
         job.setResultCode(0);
         job.updateResultWithEncryptionIfNeeded(null);
         job.setLastUpdated(DateUtil.currentGMTTime());
         _jobDao.update(jobId, job);
+        for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
+            handler.jobCancelWithdrawn(jobId);
+        }
     }
 
     @Override
@@ -1666,6 +1671,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResultFor(child, reason + " (parent job cancelled before this job was scheduled)"));
             _jobMonitor.unregisterByJobId(child.getId());
             _queueMgr.purgeItem(queueItemId);
+            // the parent learns of the cancel from this outcome: what it sends next is its cleanup, not work to refuse
+            _jobDao.claimCancelDelivery(parentJobId);
         }
     }
 
@@ -1688,6 +1695,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final String reason = getJobCancelReasonFromResult(parentJob);
             completeAsyncJob(item.getContentId(), Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(),
                     cancelledResultFor(job, (reason != null ? reason : "job-" + parentJob.getId() + " was cancelled") + " (parent job cancelled before this job was scheduled)"));
+            _jobDao.claimCancelDelivery(parentJob.getId());
         } else {
             completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0,
                     "Job is not scheduled for execution as the parent job is done. Parent job state: " + parentJob.getStatus());
@@ -1802,7 +1810,37 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public List<AsyncJobVO> listCancelRequestedJobsExecutingOn(final long msid) {
-        return _jobDao.getCancelRequestedJobs(msid);
+        final List<AsyncJobVO> jobs = new ArrayList<>(_jobDao.getCancelRequestedJobs(msid));
+        // a VM work job taken by this server runs for an API job that may be cancelled on another one
+        for (final AsyncJobVO work : _jobDao.getRunningWorkJobs(msid)) {
+            final AsyncJobVO parent = parentOf(work);
+            if (parent != null && isJobCancelling(parent)) {
+                jobs.add(work);
+            }
+        }
+        return jobs;
+    }
+
+    private AsyncJobVO parentOf(final AsyncJobVO job) {
+        if (StringUtils.isBlank(job.getRelated())) {
+            return null;
+        }
+        try {
+            return _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
+        } catch (final NumberFormatException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean claimJobCancelDelivery(final long jobId) {
+        return _jobDao.claimCancelDelivery(jobId);
+    }
+
+    @Override
+    public boolean isJobCancelDelivered(final long jobId) {
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
+        return job != null && job.isCancelDelivered();
     }
 
     @Override

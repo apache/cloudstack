@@ -76,4 +76,10 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     List<AsyncJobVO> listChildJobs(long parentJobId);
 
     List<AsyncJobVO> getCancelRequestedJobs(long executingMsid);
+
+    /** In-progress work jobs this server executes on behalf of another job. */
+    List<AsyncJobVO> getRunningWorkJobs(long executingMsid);
+
+    /** Flags the job's cancel as delivered to its worker; true only for the caller that flipped the flag. */
+    boolean claimCancelDelivery(long jobId);
 }

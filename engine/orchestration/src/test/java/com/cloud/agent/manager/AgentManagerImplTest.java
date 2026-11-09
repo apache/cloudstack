@@ -268,12 +268,21 @@ public class AgentManagerImplTest {
         Assert.assertNull(mgr.checkJobCannotBeCancelled(7L));
     }
 
+    private AsyncJobManager deliveryNotYetClaimed() {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        Mockito.when(asyncJobManager.claimJobCancelDelivery(Mockito.anyLong())).thenReturn(true);
+        return asyncJobManager;
+    }
+
     @Test
     public void testCancelWithNothingInFlightRefusesTheNextCommandOnly() {
+        final AsyncJobManager asyncJobManager = deliveryNotYetClaimed();
         Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
 
         Assert.assertTrue(mgr.isJobCancelled(42L));
         Assert.assertTrue(mgr.refusesCommandsOf(42L));
+        Mockito.verify(asyncJobManager).claimJobCancelDelivery(42L);
         // the worker is now unwinding: its rollback commands go through
         Assert.assertFalse(mgr.refusesCommandsOf(42L));
         Assert.assertFalse(mgr.refusesCommandsOf(7L));
@@ -281,7 +290,86 @@ public class AgentManagerImplTest {
     }
 
     @Test
+    public void testRefusalIsSkippedWhenTheCancelReachedTheWorkerOnAnotherServer() {
+        final AsyncJobManager asyncJobManager = deliveryNotYetClaimed();
+        // the work child on the other server was already refused or stopped
+        Mockito.when(asyncJobManager.claimJobCancelDelivery(42L)).thenReturn(false);
+        Mockito.when(asyncJobManager.getCancellationReason(42L)).thenReturn("Cancelled by admin via mgmt2");
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        // the API thread's cleanup command passes, here and on every later call
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        Mockito.verify(asyncJobManager, Mockito.times(1)).claimJobCancelDelivery(42L);
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+    }
+
+    @Test
+    public void testCleanupCommandsOfAWorkerThatKnowsAreLeftAlone() throws Exception {
+        final AsyncJobManager asyncJobManager = deliveryNotYetClaimed();
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        // the worker is unwinding with a new command in flight: a later pass must not stop it
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 12L))));
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+        Mockito.verify(attache, Mockito.never()).checkExecutionIsNotCancellable(12L);
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.eq(12L), Mockito.anyString());
+
+        // the same when the delivery happened on the other server
+        mgr._cancelledJobs.clear();
+        Mockito.when(asyncJobManager.isJobCancelDelivered(42L)).thenReturn(true);
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+        Mockito.verify(attache, Mockito.never()).checkExecutionIsNotCancellable(12L);
+    }
+
+    @Test
+    public void testWithdrawnCancelIsForgotten() {
+        final AsyncJobManager asyncJobManager = deliveryNotYetClaimed();
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+
+        mgr.jobCancelWithdrawn(42L);
+        Assert.assertFalse(mgr.isJobCancelled(42L));
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+
+        // the row says the cancel is gone although the entry is still here: the job runs on
+        Assert.assertTrue(mgr.cancelJobExecution(42L, "Job was cancelled"));
+        Mockito.when(asyncJobManager.claimJobCancelDelivery(42L)).thenReturn(false);
+        Mockito.when(asyncJobManager.getCancellationReason(42L)).thenReturn(null);
+        Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        Assert.assertFalse(mgr.isJobCancelled(42L));
+    }
+
+    @Test
+    public void testWorkJobOfACancelledParentIsStoppedUnderItsParentsKey() throws Exception {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        final AsyncJobVO work = new AsyncJobVO();
+        work.setId(43L);
+        work.setRelated("42");
+        Mockito.when(asyncJobManager.listCancelRequestedJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.singletonList(work));
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
+        Mockito.verify(asyncJobManager).claimJobCancelDelivery(42L);
+        Assert.assertTrue(mgr.isJobCancelled(42L));
+        // the API job is finalised by the server executing it, not by the one running its work
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
+    }
+
+    @Test
     public void testStoppedCommandHandsTheCancelToTheWorkerSoItsRollbackPasses() throws Exception {
+        final AsyncJobManager asyncJobManager = deliveryNotYetClaimed();
         final AgentAttache attache = Mockito.mock(AgentAttache.class);
         Mockito.doReturn(attache).when(mgr).getAttache(1L);
         Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn(null);
@@ -292,10 +380,13 @@ public class AgentManagerImplTest {
 
         Assert.assertTrue(mgr.isJobCancelled(42L));
         Assert.assertFalse(mgr.refusesCommandsOf(42L));
+        // the other server's workers learn through the row that the cancel has been delivered
+        Mockito.verify(asyncJobManager).claimJobCancelDelivery(42L);
     }
 
     @Test
     public void testCommandThatCannotBeStoppedLeavesTheRefusalForTheNextOne() throws Exception {
+        deliveryNotYetClaimed();
         final AgentAttache attache = Mockito.mock(AgentAttache.class);
         Mockito.doReturn(attache).when(mgr).getAttache(1L);
         Mockito.when(attache.checkExecutionIsNotCancellable(11L)).thenReturn("vCenter reports task PowerOffVM_Task(task-1) as not cancelable");

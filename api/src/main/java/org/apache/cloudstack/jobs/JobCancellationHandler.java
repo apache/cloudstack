@@ -24,4 +24,8 @@ public interface JobCancellationHandler {
 
     /** Returns true only if everything in flight was actually stopped. */
     boolean cancelJobExecution(long jobId, String reason);
+
+    /** The cancel was taken back (its work could not be stopped after all): the job runs on and none of its commands is to be refused. */
+    default void jobCancelWithdrawn(long jobId) {
+    }
 }

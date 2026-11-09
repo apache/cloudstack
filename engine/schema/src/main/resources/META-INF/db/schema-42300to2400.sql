@@ -274,3 +274,4 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event', 'async_job_id', 'BIGINT UNSI
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_event__async_job_id', 'cloud.event', '(`async_job_id`)');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.async_job', 'cancel_requested', 'TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Cancel requested flag'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.async_job', 'cancel_delivered', 'TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Set once the cancel stopped or refused a command of the job, on any management server'' ');
