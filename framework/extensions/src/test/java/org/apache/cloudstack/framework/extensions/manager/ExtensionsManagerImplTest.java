@@ -1010,6 +1010,7 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void updateNetworkExtensionServicesOnPhysicalNetworks_IgnoresRemovedOfferings() {
         ExtensionVO ext = mock(ExtensionVO.class);
         when(ext.getId()).thenReturn(9L);
