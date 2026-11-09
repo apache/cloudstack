@@ -21,6 +21,8 @@ from marvin.cloudstackAPI import (deployVirtualMachine, destroyVirtualMachine)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              ServiceOffering,
+                             NetworkOffering,
+                             Network,
                              Host, Pod, Cluster)
 from marvin.lib.common import (get_domain,
                                get_zone,
@@ -61,9 +63,32 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             cls.service_offering
         ]
 
+        cls.network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["l2-network_offering"]
+        )
+        cls._cleanup.append(cls.network_offering)
+        cls.network_offering.update(cls.apiclient, state="enabled")
+
+        cls.network = Network.create(
+            cls.apiclient,
+            cls.services["l2-network"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            networkofferingid=cls.network_offering.id,
+            zoneid=cls.zone.id
+        )
+        cls._cleanup.append(cls.network)
+
     @classmethod
     def tearDownClass(cls):
         super(TestVMDeploymentPlanner, cls).tearDownClass()
+
+    def set_owner(self, cmd):
+        cmd.account = self.account.name
+        cmd.domainid = self.account.domainid
+        cmd.networkids = [self.network.id]
+        return cmd
 
     def deploy_vm(self, destination_id):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -75,6 +100,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.templateid = template.id
         cmd.serviceofferingid = self.service_offering.id
         cmd.hostid = destination_id
+        self.set_owner(cmd)
         return self.apiclient.deployVirtualMachine(cmd)
 
     def destroy_vm(self, vm_id):
@@ -123,6 +149,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.serviceofferingid = self.service_offering.id
         cmd.templateid = template.id
         cmd.clusterid = target_id
+        self.set_owner(cmd)
         vm = self.apiclient.deployVirtualMachine(cmd)
 
         vm_host = Host.list(self.apiclient,
@@ -160,6 +187,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
 
         cmd.templateid = template.id
         cmd.podid = target_pod.id
+        self.set_owner(cmd)
         vm = self.apiclient.deployVirtualMachine(cmd)
 
         vm_host = Host.list(self.apiclient,
@@ -200,6 +228,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.podid = pod.id
         cmd.clusterid = clusters[1].id if len(clusters) > 1 else clusters[0].id
         cmd.hostid = host.id
+        self.set_owner(cmd)
 
         vm = self.apiclient.deployVirtualMachine(cmd)
 
@@ -235,6 +264,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         # Add optional deployment params
         cmd.podid = pod.id
         cmd.clusterid = clusters[0].id
+        self.set_owner(cmd)
 
         vm = self.apiclient.deployVirtualMachine(cmd)
 
