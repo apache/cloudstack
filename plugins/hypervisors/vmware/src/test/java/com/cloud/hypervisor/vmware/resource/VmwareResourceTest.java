@@ -58,6 +58,9 @@ import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
+import com.vmware.vim25.VirtualDisk;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -879,5 +882,26 @@ public class VmwareResourceTest {
     public void testUnknownRequestSequenceIsNotCancellable() {
         assertNotNull(vmwareResource.checkRequestSequenceIsNotCancellable(4242L));
         assertFalse(vmwareResource.cancelRequestSequence(4242L));
+    }
+
+    @Test
+    public void testWorkerVmIsDestroyedByItsDisksOwnBackingAfterACancelledVolumeMigration() throws Exception {
+        VirtualMachineMO worker = Mockito.mock(VirtualMachineMO.class);
+        DatastoreMO destination = Mockito.mock(DatastoreMO.class);
+        VirtualDisk disk = new VirtualDisk();
+        VirtualDiskFlatVer2BackingInfo backing = new VirtualDiskFlatVer2BackingInfo();
+        // the relocate was cancelled: the disk is still on the source datastore
+        backing.setFileName("[source-ds] i-2-7-VM/DATA-7.vmdk");
+        disk.setBacking(backing);
+        Mockito.when(worker.getVmName()).thenReturn("worker-1");
+        Mockito.when(worker.getAllDiskDevice()).thenReturn(new VirtualDisk[] {disk});
+        Mockito.doThrow(new Exception("No such disk device")).when(worker).detachDisk(Mockito.anyString(), Mockito.eq(false));
+
+        String name = vmwareResource.destroyWorkerVmAfterVolumeMigration(worker, destination, "worker-0");
+
+        Mockito.verify(worker).detachDisk("[source-ds] i-2-7-VM/DATA-7.vmdk", false);
+        Mockito.verify(worker).destroy();
+        Mockito.verifyNoInteractions(destination);
+        Assert.assertEquals("worker-1", name);
     }
 }

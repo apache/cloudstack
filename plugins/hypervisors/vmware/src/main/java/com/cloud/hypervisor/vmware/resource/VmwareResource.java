@@ -239,6 +239,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.guru.VMwareGuru;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
@@ -493,7 +494,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public boolean cancelRequestSequence(long sequence) {
-        return taskRegistry.cancel(sequence);
+        return taskRegistry.cancel(sequence, cancelTaskWaitMs());
+    }
+
+    protected long cancelTaskWaitMs() {
+        final Integer seconds = VmwareManager.s_vmwareCancelTaskWait.value();
+        return seconds != null && seconds > 0 ? seconds * 1000L : VmwareClient.DEFAULT_CANCEL_TASK_WAIT_MS;
     }
 
     private Answer executeRequestInternal(Command cmd) {
@@ -4934,6 +4940,34 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
+    /**
+     * The worker's disk is detached by its own backing file: after a cancelled relocate it is still on the source datastore, and
+     * a path built from the destination finds no such device. A detach that fails must not keep the worker VM alive.
+     */
+    protected String destroyWorkerVmAfterVolumeMigration(final VirtualMachineMO vmMo, final DatastoreMO destinationDsMo, String vmName) {
+        try {
+            // OfflineVmwareMigration: worker *may* have been renamed
+            vmName = vmMo.getVmName();
+            logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
+            for (VirtualDisk disk : vmMo.getAllDiskDevice()) {
+                String vmdkDataStorePath = VmwareHelper.getAbsoluteVmdkFile(disk);
+                if (vmdkDataStorePath == null || vmdkDataStorePath.isEmpty()) {
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(destinationDsMo, vmMo.getVmdkFileBaseName(disk) + VMDK_EXTENSION);
+                }
+                try {
+                    vmMo.detachDisk(vmdkDataStorePath, false);
+                } catch (Exception e) {
+                    logger.warn("Unable to detach " + vmdkDataStorePath + " from worker VM '" + vmName + "': " + e.getMessage());
+                }
+            }
+            logger.info("Destroy worker VM '" + vmName + "' after volume migration");
+            vmMo.destroy();
+        } catch (Throwable e) {
+            logger.warn("Failed to destroy worker VM '" + vmName + "': " + e.getMessage());
+        }
+        return vmName;
+    }
+
     private Answer migrateVolume(MigrateVolumeCommand cmd) {
         Answer answer;
         String path = cmd.getVolumePath();
@@ -5047,26 +5081,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             answer = migrateAndAnswer(vmMo, cmd.getTargetPool().getUuid(), hyperHost, cmd);
         } catch (Exception e) {
             String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
-            logger.error(msg, e);
+            if (taskRegistry.wasCancelRequested(RequestExecutionContext.getRequestSequence())) {
+                logger.info("Migration of volume '{}' was cancelled: {}", cmd.getVolumePath(), e.getLocalizedMessage());
+            } else {
+                logger.error(msg, e);
+            }
             answer = new Answer(cmd, false, msg);
         } finally {
-            try {
-                // OfflineVmwareMigration: worker *may* have been renamed
-                vmName = vmMo.getVmName();
-                logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
-                VirtualDisk[] disks = vmMo.getAllDiskDevice();
-                String format = "disk %d was migrated to %s";
-                for (VirtualDisk disk : disks) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format(format, disk.getKey(), vmMo.getVmdkFileBaseName(disk)));
-                    }
-                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(destinationDsMo, vmMo.getVmdkFileBaseName(disk) + VMDK_EXTENSION);
-                    vmMo.detachDisk(vmdkDataStorePath, false);
-                }
-                logger.info("Destroy worker VM '" + vmName + "' after volume migration");
-                vmMo.destroy();
-            } catch (Throwable e) {
-                logger.info("Failed to destroy worker VM: " + vmName);
+            if (vmMo != null) {
+                vmName = destroyWorkerVmAfterVolumeMigration(vmMo, destinationDsMo, vmName);
             }
         }
         if (answer instanceof MigrateVolumeAnswer) {

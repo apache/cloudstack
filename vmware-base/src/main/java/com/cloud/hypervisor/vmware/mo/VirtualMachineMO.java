@@ -1904,6 +1904,9 @@ public class VirtualMachineMO extends BaseMO {
                                         if (logger.isTraceEnabled()) {
                                             logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
                                         }
+                                        if (leaseMo.isAborted()) {
+                                            throw new CloudRuntimeException("the export was cancelled, its lease is aborted");
+                                        }
                                         progressReporter.reportProgress((int)(param * 100 / totalBytes));
                                     }
                                 });
@@ -1928,6 +1931,9 @@ public class VirtualMachineMO extends BaseMO {
                                             public void action(Long param) {
                                                 if (logger.isTraceEnabled()) {
                                                     logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
+                                                }
+                                                if (leaseMo.isAborted()) {
+                                                    throw new CloudRuntimeException("the export was cancelled, its lease is aborted");
                                                 }
                                                 progressReporter.reportProgress((int)(param * 100 / totalBytes));
                                             }
@@ -2011,7 +2017,11 @@ public class VirtualMachineMO extends BaseMO {
                     }
                     logger.info("volss: copy vmdk and ovf file finished " + System.currentTimeMillis());
                 } catch (Throwable e) {
-                    logger.error("Unexpected exception ", e);
+                    if (leaseMo.isAborted()) {
+                        logger.info("Export of " + exportName + " stopped, its lease was aborted: " + e.getMessage());
+                    } else {
+                        logger.error("Unexpected exception ", e);
+                    }
                 } finally {
                     progressReporter.close();
 

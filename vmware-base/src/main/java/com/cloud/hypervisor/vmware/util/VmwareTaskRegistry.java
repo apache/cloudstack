@@ -173,6 +173,10 @@ public class VmwareTaskRegistry {
 
     /** Cancels the tasks and transfers in flight. One that starts meanwhile is cancelled on arrival; what the request starts afterwards is its undo (removing a half-made snapshot, consolidating disks) and runs. */
     public boolean cancel(final long sequence) {
+        return cancel(sequence, VmwareClient.DEFAULT_CANCEL_TASK_WAIT_MS);
+    }
+
+    public boolean cancel(final long sequence, final long taskWaitMs) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
             return false;
@@ -187,7 +191,7 @@ public class VmwareTaskRegistry {
         try {
             for (final ActiveTask task : state.tasks.values()) {
                 try {
-                    final Pair<Boolean, String> result = task.client.cancelTask(task.mor);
+                    final Pair<Boolean, String> result = task.client.cancelTask(task.mor, taskWaitMs);
                     if (result.first()) {
                         anyCancelled = true;
                         LOGGER.info("Cancelled vCenter task {} of request sequence {}", task.mor.getValue(), sequence);
