@@ -139,6 +139,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
@@ -2503,5 +2504,60 @@ public class VolumeApiServiceImplTest {
                     "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
+    }
+
+    private VolumeVO mockRootVolumeOfSize(long size) {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getSize()).thenReturn(size);
+        Mockito.when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        return volume;
+    }
+
+    private VMInstanceVO mockVm(HypervisorType hypervisorType, State state) {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.lenient().when(vm.getHypervisorType()).thenReturn(hypervisorType);
+        Mockito.lenient().when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vm.getState()).thenReturn(state);
+        return vm;
+    }
+
+    @Test
+    public void checkIfVolumeIsRootAndVmIsRunningAllowsGrowOnRunningKvmVm() {
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(20L << 30, mockRootVolumeOfSize(10L << 30), mockVm(HypervisorType.KVM, State.Running));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfVolumeIsRootAndVmIsRunningRefusesShrinkOnRunningKvmVm() {
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(5L << 30, mockRootVolumeOfSize(10L << 30), mockVm(HypervisorType.KVM, State.Running));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfVolumeIsRootAndVmIsRunningRefusesGrowOnRunningNonKvmVm() {
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(20L << 30, mockRootVolumeOfSize(10L << 30), mockVm(HypervisorType.VMware, State.Running));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfVolumeIsRootAndVmIsRunningRefusesGrowOnRunningKvmSystemVm() {
+        VMInstanceVO vm = mockVm(HypervisorType.KVM, State.Running);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(20L << 30, mockRootVolumeOfSize(10L << 30), vm);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfVolumeIsRootAndVmIsRunningRefusesGrowOnKvmVmNotRunning() {
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(20L << 30, mockRootVolumeOfSize(10L << 30), mockVm(HypervisorType.KVM, State.Migrating));
+    }
+
+    @Test
+    public void checkIfVolumeIsRootAndVmIsRunningAllowsResizeOnStoppedVm() {
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(5L << 30, mockRootVolumeOfSize(10L << 30), mockVm(HypervisorType.VMware, State.Stopped));
+    }
+
+    @Test
+    public void checkIfVolumeIsRootAndVmIsRunningIgnoresDataDisk() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getSize()).thenReturn(10L << 30);
+        Mockito.when(volume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        volumeApiServiceImpl.checkIfVolumeIsRootAndVmIsRunning(5L << 30, volume, Mockito.mock(VMInstanceVO.class));
     }
 }
