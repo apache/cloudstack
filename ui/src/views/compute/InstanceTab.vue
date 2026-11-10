@@ -51,7 +51,7 @@
         <ListResourceTable
           apiName="listVMSnapshot"
           :resource="dataResource"
-          :params="{virtualmachineid: dataResource.id}"
+          :params="{virtualmachineid: dataResource.id, projectid: dataResource.projectid}"
           :columns="['displayname', 'state', 'type', 'created']"
           :routerlinks="(record) => { return { displayname: '/vmsnapshot/' + record.id } }"/>
       </a-tab-pane>
@@ -59,7 +59,7 @@
         <ListResourceTable
           apiName="listBackups"
           :resource="resource"
-          :params="{virtualmachineid: dataResource.id}"
+          :params="{virtualmachineid: dataResource.id, projectid: dataResource.projectid}"
           :columns="['created', 'status', 'type', 'size', 'virtualsize']"
           :routerlinks="(record) => { return { created: '/backup/' + record.id } }"
           :showSearch="false"/>
