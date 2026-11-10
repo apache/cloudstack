@@ -29,6 +29,8 @@ public interface ObjectStoreEntity extends DataStore, ObjectStore {
 
     List<Bucket> listBuckets();
 
+    void verifyServiceConnectivity();
+
     boolean createUser(long accountId);
 
     boolean deleteBucket(BucketTO bucket);
