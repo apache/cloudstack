@@ -675,26 +675,6 @@ class TestNasBackupMixedStorage(TestNasBackupStorPool):
 
         cls.nfs_disk_offering = cls._get_or_create_disk_offering(
             cls.nfs_tag, "NFS NAS backup disk offering")
-        cls.nfs_service_offering = cls._get_or_create_nfs_service_offering()
-
-    @classmethod
-    def _get_or_create_nfs_service_offering(cls):
-        service_offerings = list_service_offering(cls.apiclient, name=cls.nfs_tag)
-        if not service_offerings:
-            service_offering = ServiceOffering.create(
-                cls.apiclient,
-                {
-                    "name": cls.nfs_tag,
-                    "displaytext": "NFS NAS offering (%s)" % cls.nfs_tag,
-                    "cpunumber": 1,
-                    "cpuspeed": 500,
-                    "memory": 512,
-                    "storagetype": "shared",
-                    "tags": cls.nfs_tag,
-                })
-            cls._cleanup.append(service_offering)
-            return service_offering
-        return service_offerings[0]
 
     @classmethod
     def _ensure_maintenance(cls, pool_id, enable):
