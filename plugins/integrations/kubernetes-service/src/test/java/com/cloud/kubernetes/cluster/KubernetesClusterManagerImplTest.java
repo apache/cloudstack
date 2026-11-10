@@ -108,6 +108,58 @@ public class KubernetesClusterManagerImplTest {
     KubernetesClusterManagerImpl kubernetesClusterManager;
 
     @Test
+    public void testSetNodeServiceOfferingIdsWithDefaultOffering() {
+        KubernetesClusterVO cluster = new KubernetesClusterVO();
+        cluster.setServiceOfferingId(1L);
+
+        kubernetesClusterManager.setNodeServiceOfferingIds(cluster, Collections.emptyMap());
+
+        Assert.assertEquals(Long.valueOf(1L), cluster.getWorkerNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(1L), cluster.getControlNodeServiceOfferingId());
+        Assert.assertNull(cluster.getEtcdNodeServiceOfferingId());
+    }
+
+    @Test
+    public void testSetNodeServiceOfferingIdsWithPartialOverrides() {
+        KubernetesClusterVO cluster = new KubernetesClusterVO();
+        cluster.setServiceOfferingId(1L);
+        cluster.setEtcdNodeCount(3L);
+
+        kubernetesClusterManager.setNodeServiceOfferingIds(cluster, Map.of(WORKER.name(), 2L));
+
+        Assert.assertEquals(Long.valueOf(2L), cluster.getWorkerNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(1L), cluster.getControlNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(1L), cluster.getEtcdNodeServiceOfferingId());
+    }
+
+    @Test
+    public void testSetNodeServiceOfferingIdsWithOnlyExplicitOfferings() {
+        KubernetesClusterVO cluster = new KubernetesClusterVO();
+        cluster.setEtcdNodeCount(3L);
+
+        kubernetesClusterManager.setNodeServiceOfferingIds(cluster,
+                Map.of(WORKER.name(), 2L, CONTROL.name(), 3L, ETCD.name(), 4L));
+
+        Assert.assertEquals(Long.valueOf(2L), cluster.getWorkerNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(3L), cluster.getControlNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(4L), cluster.getEtcdNodeServiceOfferingId());
+        Assert.assertNull(cluster.getServiceOfferingId());
+    }
+
+    @Test
+    public void testSetNodeServiceOfferingIdsWithoutSeparateEtcdNodes() {
+        KubernetesClusterVO cluster = new KubernetesClusterVO();
+        cluster.setServiceOfferingId(1L);
+
+        kubernetesClusterManager.setNodeServiceOfferingIds(cluster,
+                Map.of(WORKER.name(), 2L, CONTROL.name(), 3L, ETCD.name(), 4L));
+
+        Assert.assertEquals(Long.valueOf(2L), cluster.getWorkerNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(3L), cluster.getControlNodeServiceOfferingId());
+        Assert.assertNull(cluster.getEtcdNodeServiceOfferingId());
+    }
+
+    @Test
     public void testValidateVpcTierAllocated() {
         Network network = Mockito.mock(Network.class);
         Mockito.when(network.getState()).thenReturn(Network.State.Allocated);
