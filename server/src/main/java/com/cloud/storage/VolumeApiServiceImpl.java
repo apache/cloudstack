@@ -3550,7 +3550,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new CloudRuntimeException(checkResult.second());
         }
 
-        if (!liveMigrateVolume && vm != null) {
+        if (!liveMigrateVolume && vm != null
+                && storageMgr.findUpAndEnabledHostWithAccessToStoragePools(Arrays.asList(vol.getPoolId(), destPool.getId())) == null) {
             DataStore primaryStore = dataStoreMgr.getPrimaryDataStore(destPool.getId());
             if (_epSelector.select(primaryStore) == null) {
                 throw new CloudRuntimeException("Unable to find accessible host for volume migration");
