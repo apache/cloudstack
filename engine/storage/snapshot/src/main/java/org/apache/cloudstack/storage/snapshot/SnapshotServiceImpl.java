@@ -143,7 +143,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     }
 
-    static private class CopySnapshotContext<T> extends AsyncRpcContext<T> {
+    static class CopySnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo srcSnapshot;
         final SnapshotInfo destSnapshot;
         final AsyncCallFuture<SnapshotResult> future;
@@ -494,7 +494,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotResult snapResult = new SnapshotResult(destSnapshot, result.getAnswer());
         if (result.isFailed()) {
             try {
-                if (BooleanUtils.isTrue(createSnapshotPayload.getAsyncBackup())) {
+                if (createSnapshotPayload != null && BooleanUtils.isTrue(createSnapshotPayload.getAsyncBackup())) {
                     _snapshotDao.remove(srcSnapshot.getId());
                     destSnapshot.processEvent(Event.OperationFailed);
                     throw new SnapshotBackupException(String.format("Failed in creating backup of snapshot %s", srcSnapshot));
