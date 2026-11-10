@@ -110,6 +110,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -119,6 +120,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -458,6 +460,95 @@ public class ConfigurationManagerTest {
         }
     }
 
+    @Test
+    public void releaseDedicatedRangeKeepsReservedEndpointAllocated() {
+        IPAddressVO ip = mockAllocatedIpForDedicatedRange();
+        when(_networkModel.isIpAddressReserved(ip)).thenReturn(true);
+
+        assertTrue(configurationMgr.releasePublicIpRange(1L, CallContext.current().getCallingUser(), CallContext.current().getCallingAccount()));
+
+        org.mockito.InOrder order = Mockito.inOrder(_publicIpAddressDao, _networkModel);
+        order.verify(_publicIpAddressDao).acquireInLockTable(30L);
+        order.verify(_networkModel).isIpAddressReserved(ip);
+        order.verify(_publicIpAddressDao).releaseFromLockTable(30L);
+        Mockito.verify(_ipAddrMgr, Mockito.never()).disassociatePublicIpAddress(any(), anyLong(), any());
+        Mockito.verify(_accountVlanMapDao).remove(anyLong());
+        Mockito.verify(_vlanDao).releaseFromLockTable(1L);
+    }
+
+    @Test
+    public void releaseDedicatedRangeStillReleasesUnreservedIpUnderLock() {
+        IPAddressVO ip = mockAllocatedIpForDedicatedRange();
+        when(_ipAddrMgr.disassociatePublicIpAddress(any(), anyLong(), any())).thenReturn(true);
+        try (MockedStatic<com.cloud.event.UsageEventUtils> usageEvents = Mockito.mockStatic(com.cloud.event.UsageEventUtils.class)) {
+            assertTrue(configurationMgr.releasePublicIpRange(1L, CallContext.current().getCallingUser(), CallContext.current().getCallingAccount()));
+        }
+
+        org.mockito.InOrder order = Mockito.inOrder(_publicIpAddressDao, _networkModel, _ipAddrMgr);
+        order.verify(_publicIpAddressDao).acquireInLockTable(30L);
+        order.verify(_networkModel).isIpAddressReserved(ip);
+        order.verify(_ipAddrMgr).disassociatePublicIpAddress(Mockito.eq(ip), anyLong(), any());
+        order.verify(_publicIpAddressDao).releaseFromLockTable(30L);
+    }
+
+    @Test
+    public void deleteDedicatedRangeRejectsReservedEndpointBeforeReleaseOrDeletion() {
+        IPAddressVO ip = mockAllocatedIpForDedicatedRange();
+        when(_networkModel.isIpAddressReserved(ip)).thenReturn(true);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationMgr.deleteVlanAndPublicIpRange(1L, 1L, CallContext.current().getCallingAccount()));
+
+        Mockito.verify(_ipAddrMgr, Mockito.never()).disassociatePublicIpAddress(any(), anyLong(), any());
+        Mockito.verify(_publicIpAddressDao, Mockito.never()).deletePublicIPRange(anyLong());
+        Mockito.verify(_vlanDao, Mockito.never()).remove(anyLong());
+        Mockito.verify(_publicIpAddressDao).releaseFromLockTable(30L);
+        Mockito.verify(_vlanDao).releaseFromLockTable(1L);
+    }
+
+    @Test
+    public void releaseDedicatedRangeCannotReleaseIpWithoutItsLock() {
+        mockAllocatedIpForDedicatedRange();
+        when(_publicIpAddressDao.acquireInLockTable(30L)).thenReturn(null);
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> configurationMgr.releasePublicIpRange(1L, CallContext.current().getCallingUser(), CallContext.current().getCallingAccount()));
+
+        Mockito.verify(_ipAddrMgr, Mockito.never()).disassociatePublicIpAddress(any(), anyLong(), any());
+        Mockito.verify(_accountVlanMapDao, Mockito.never()).remove(anyLong());
+        Mockito.verify(_publicIpAddressDao, Mockito.never()).releaseFromLockTable(anyLong());
+        Mockito.verify(_vlanDao).releaseFromLockTable(1L);
+    }
+
+    @Test
+    public void deleteDedicatedRangeCannotDeleteIpWithoutItsLock() {
+        mockAllocatedIpForDedicatedRange();
+        when(_publicIpAddressDao.acquireInLockTable(30L)).thenReturn(null);
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> configurationMgr.deleteVlanAndPublicIpRange(1L, 1L, CallContext.current().getCallingAccount()));
+
+        Mockito.verify(_ipAddrMgr, Mockito.never()).disassociatePublicIpAddress(any(), anyLong(), any());
+        Mockito.verify(_publicIpAddressDao, Mockito.never()).deletePublicIPRange(anyLong());
+        Mockito.verify(_publicIpAddressDao, Mockito.never()).releaseFromLockTable(anyLong());
+        Mockito.verify(_vlanDao).releaseFromLockTable(1L);
+    }
+
+    private IPAddressVO mockAllocatedIpForDedicatedRange() {
+        ReflectionTestUtils.setField(vlan, "id", 1L);
+        when(_vlanDao.findById(1L)).thenReturn(vlan);
+        when(_accountVlanMapDao.listAccountVlanMapsByVlan(anyLong())).thenReturn(List.of(new AccountVlanMapVO(1L, 1L)));
+        when(_accountVlanMapDao.remove(anyLong())).thenReturn(true);
+        IPAddressVO listedIp = new IPAddressVO(new Ip("203.0.113.30"), 1L, 1L, 1L, false);
+        ReflectionTestUtils.setField(listedIp, "id", 30L);
+        IPAddressVO freshIp = new IPAddressVO(new Ip("203.0.113.30"), 1L, 1L, 1L, false);
+        ReflectionTestUtils.setField(freshIp, "id", 30L);
+        freshIp.setAllocatedTime(new Date());
+        when(_publicIpAddressDao.listByVlanId(1L)).thenReturn(List.of(listedIp));
+        when(_publicIpAddressDao.acquireInLockTable(30L)).thenReturn(freshIp);
+        return freshIp;
+    }
+
     void runReleasePublicIpRangePostiveTest1() throws Exception {
         TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangePostiveTest1");
 
@@ -500,6 +591,8 @@ public class ConfigurationManagerTest {
         when(configurationMgr._publicIpAddressDao.listByVlanId(anyLong())).thenReturn(ipAddressList);
 
         when(configurationMgr._firewallDao.countRulesByIpId(anyLong())).thenReturn(0L);
+
+        when(configurationMgr._publicIpAddressDao.acquireInLockTable(ipAddress.getId())).thenReturn(ipAddress);
 
         when(configurationMgr._ipAddrMgr.disassociatePublicIpAddress(any(), anyLong(), any(Account.class))).thenReturn(true);
 

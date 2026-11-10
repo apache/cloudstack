@@ -219,6 +219,8 @@ public interface NetworkModel {
 
     boolean checkIpForService(IpAddress ip, Service service, Long networkId);
 
+    boolean isIpAddressReserved(IpAddress ip);
+
     boolean providerSupportsCapability(Set<Provider> providers, Service service, Capability cap);
 
     void checkCapabilityForProvider(Set<Provider> providers, Service service, Capability cap, String capValue);

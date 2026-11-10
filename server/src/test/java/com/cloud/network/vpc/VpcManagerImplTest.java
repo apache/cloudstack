@@ -31,6 +31,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -240,6 +242,71 @@ public class VpcManagerImplTest {
     public void tearDown() throws Exception {
         CallContext.unregister();
         closeable.close();
+    }
+
+    @Test
+    public void associateIpToVpcRejectsReservedEndpointBeforeReassignment() {
+        IPAddressVO ip = mock(IPAddressVO.class);
+        Mockito.when(ipAddressDao.acquireInLockTable(31L)).thenReturn(ip);
+        Mockito.when(networkModel.isIpAddressReserved(ip)).thenReturn(true);
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.associateIPToVpc(31L, vpcId));
+
+        verify(ipAddressDao, Mockito.never()).update(anyLong(), any());
+        verify(ipAddressDao, Mockito.never()).unassignIpAddress(anyLong());
+        verify(vpcDao, Mockito.never()).findById(anyLong());
+        verify(ipAddressDao).releaseFromLockTable(31L);
+    }
+
+    @Test
+    public void associateUnreservedIpToVpcPreservesNormalAllocation() throws Exception {
+        manager = Mockito.spy(manager);
+        IpAddressManager ipAddressManager = mock(IpAddressManager.class);
+        manager._ipAddrMgr = ipAddressManager;
+        IPAddressVO ip = new IPAddressVO(new Ip("203.0.113.31"), 1L, 1L, 1L, false);
+        ReflectionTestUtils.setField(ip, "id", 31L);
+        ip.setAllocatedToAccountId(ACCOUNT_ID);
+        ip.setState(IpAddress.State.Allocating);
+        VpcVO vpc = mock(VpcVO.class);
+        Mockito.when(ipAddressDao.acquireInLockTable(31L)).thenReturn(ip);
+        Mockito.when(ipAddressDao.findById(31L)).thenReturn(ip);
+        Mockito.when(networkModel.getIp(31L)).thenReturn(ip);
+        Mockito.when(accountManager.getAccount(ACCOUNT_ID)).thenReturn(account);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
+        doReturn(false).when(manager).isSrcNatIpRequired(anyLong());
+
+        Assert.assertSame(ip, manager.associateIPToVpc(31L, vpcId));
+
+        Assert.assertEquals(vpcId, ip.getVpcId());
+        Assert.assertFalse(ip.isSourceNat());
+        verify(ipAddressDao).update(31L, ip);
+        verify(ipAddressManager).markPublicIpAsAllocated(ip);
+        verify(ipAddressDao).releaseFromLockTable(31L);
+    }
+
+    @Test
+    public void destroyVpcMarksInactiveWhileLockedAndPreservesRowsAfterFailedShutdown() throws Exception {
+        manager = Mockito.spy(manager);
+        VpcVO vpc = new VpcVO();
+        ReflectionTestUtils.setField(vpc, "id", vpcId);
+        ReflectionTestUtils.setField(vpc, "accountId", ACCOUNT_ID);
+        vpc.setState(Vpc.State.Enabled);
+        Mockito.when(vpcDao.acquireInLockTable(vpcId)).thenReturn(vpc);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
+        Mockito.doAnswer(invocation -> {
+            Assert.assertEquals(Vpc.State.Inactive, vpc.getState());
+            return false;
+        }).when(manager).shutdownVpc(vpcId);
+
+        Assert.assertFalse(manager.destroyVpc(vpc, account, 1L));
+
+        org.mockito.InOrder order = Mockito.inOrder(vpcDao, manager);
+        order.verify(vpcDao).acquireInLockTable(vpcId);
+        order.verify(vpcDao).update(vpcId, vpc);
+        order.verify(vpcDao).releaseFromLockTable(vpcId);
+        order.verify(manager).shutdownVpc(vpcId);
+        verify(manager, Mockito.never()).cleanupVpcResources(any(), any(), anyLong());
+        verify(vpcDao, Mockito.never()).remove(anyLong());
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name,

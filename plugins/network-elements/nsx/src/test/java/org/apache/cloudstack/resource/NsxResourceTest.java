@@ -59,10 +59,16 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
@@ -312,6 +318,58 @@ public class NsxResourceTest {
     }
 
     @Test
+    public void testSourceNatUpdateWaitsForVpnMutationOnSameTier1() throws Exception {
+        String tier1 = "D1-A2-Z1-V3";
+        CountDownLatch vpnEntered = new CountDownLatch(1);
+        CountDownLatch finishVpn = new CountDownLatch(1);
+        AtomicBoolean natEntered = new AtomicBoolean();
+        Mockito.doAnswer(invocation -> {
+            vpnEntered.countDown();
+            assertTrue(finishVpn.await(10, TimeUnit.SECONDS));
+            return null;
+        }).when(nsxApi).createVpnService(tier1, "203.0.113.20");
+        Mockito.doAnswer(invocation -> {
+            natEntered.set(true);
+            return null;
+        }).when(nsxApi).createTier1NatRule(tier1, "USER", tier1 + "-NAT", "SNAT", "203.0.113.21");
+        FutureTask<NsxAnswer> vpnTask = new FutureTask<>(() -> (NsxAnswer) nsxResource.executeRequest(
+                new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId, 3L, "VPC01", "203.0.113.20")));
+        FutureTask<NsxAnswer> natTask = new FutureTask<>(() -> (NsxAnswer) nsxResource.executeRequest(
+                new CreateOrUpdateNsxTier1NatRuleCommand(domainId, accountId, zoneId,
+                        tier1, "SNAT", "203.0.113.21", tier1 + "-NAT")));
+        Thread vpnThread = new Thread(vpnTask, "vpn-mutation-test");
+        Thread natThread = new Thread(natTask, "source-nat-update-test");
+        try {
+            vpnThread.start();
+            assertTrue(vpnEntered.await(10, TimeUnit.SECONDS));
+            natThread.start();
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            ThreadInfo natThreadInfo;
+            do {
+                natThreadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(natThread.getId(), 0);
+                if (natThreadInfo != null && natThreadInfo.getLockOwnerId() == vpnThread.getId()) {
+                    break;
+                }
+                Thread.yield();
+            } while (!natEntered.get() && System.nanoTime() < deadline);
+
+            assertFalse("Source NAT must not read or replace the rule while VPN changes its order", natEntered.get());
+            assertTrue("Source NAT must wait for the VPN mutation's monitor",
+                    natThreadInfo != null && natThreadInfo.getLockOwnerId() == vpnThread.getId());
+            finishVpn.countDown();
+            assertTrue(vpnTask.get(10, TimeUnit.SECONDS).getResult());
+            assertTrue(natTask.get(10, TimeUnit.SECONDS).getResult());
+            assertTrue(natEntered.get());
+        } finally {
+            finishVpn.countDown();
+            vpnThread.interrupt();
+            natThread.interrupt();
+            vpnThread.join(TimeUnit.SECONDS.toMillis(10));
+            natThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+    }
+
+    @Test
     public void testCreateNsxVpnGatewayRollsBackAfterFailure() {
         CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
                 3L, "VPC01", "203.0.113.20");
@@ -351,6 +409,36 @@ public class NsxResourceTest {
         assertTrue(answer.getResult());
         verify(nsxApi).createVpnService("D1-A2-Z1-V3", "203.0.113.20");
         verify(nsxApi, never()).deleteVpnService("D1-A2-Z1-V3");
+    }
+
+    @Test
+    public void testReconciliationPreflightFailureRetainsPossibleEndpointOwnership() {
+        CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "203.0.113.20", true);
+        when(nsxApi.isVpnServicePresent("D1-A2-Z1-V3"))
+                .thenThrow(new CloudRuntimeException("NSX unavailable"));
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        assertTrue(answer.isEndpointMayBeInUse());
+        verify(nsxApi, never()).createVpnService(anyString(), anyString());
+        verify(nsxApi, never()).deleteVpnService(anyString());
+    }
+
+    @Test
+    public void testFreshPreflightFailureDoesNotClaimAnUnrelatedEndpoint() {
+        CreateNsxVpnGatewayCommand command = new CreateNsxVpnGatewayCommand(domainId, accountId, zoneId,
+                3L, "VPC01", "203.0.113.20", false);
+        when(nsxApi.isVpnServicePresent("D1-A2-Z1-V3"))
+                .thenThrow(new CloudRuntimeException("NSX unavailable"));
+
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
+
+        assertFalse(answer.getResult());
+        assertFalse(answer.isEndpointMayBeInUse());
+        verify(nsxApi, never()).createVpnService(anyString(), anyString());
+        verify(nsxApi, never()).deleteVpnService(anyString());
     }
 
     @Test

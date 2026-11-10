@@ -522,6 +522,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      * @see com.cloud.network.NetworkModel#checkIpForService(com.cloud.network.IPAddressVO, com.cloud.network.Network.Service, java.lang.Long)
      */
     @Override
+    public boolean isIpAddressReserved(IpAddress ip) {
+        return false;
+    }
+
+    @Override
     public boolean checkIpForService(IpAddress ip, Service service, Long networkId) {
         // TODO Auto-generated method stub
         return false;

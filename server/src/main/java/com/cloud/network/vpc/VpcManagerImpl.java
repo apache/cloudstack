@@ -1904,6 +1904,24 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     public boolean destroyVpc(final Vpc vpc, final Account caller, final Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
+        final Vpc lockedVpc = vpcDao.acquireInLockTable(vpc.getId());
+        if (lockedVpc == null) {
+            if (vpcDao.findById(vpc.getId()) == null) {
+                return true;
+            }
+            throw new ConcurrentOperationException("Unable to lock VPC for deletion");
+        }
+        try {
+            markVpcInactiveForDeletion(lockedVpc);
+        } finally {
+            vpcDao.releaseFromLockTable(vpc.getId());
+        }
+        // Provider callbacks can start or stop routers on another worker thread.
+        // Native VPN creation rejects the durable Inactive state under the same VPC lock.
+        return destroyVpcAfterMarkingInactive(lockedVpc, caller, callerUserId);
+    }
+
+    private void markVpcInactiveForDeletion(final Vpc vpc) {
         logger.debug("Destroying vpc " + vpc);
 
         // don't allow to delete vpc if it's in use by existing non system
@@ -1931,7 +1949,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             });
         }
+    }
 
+    private boolean destroyVpcAfterMarkingInactive(final Vpc vpc, final Account caller, final Long callerUserId)
+            throws ConcurrentOperationException, ResourceUnavailableException {
         // shutdown VPC
         if (!shutdownVpc(vpc.getId())) {
             logger.warn("Failed to shutdown vpc " + vpc + " as a part of vpc destroy process");
@@ -3766,6 +3787,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
     public IpAddress associateIPToVpc(final long ipId, final long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
             ConcurrentOperationException {
+        final IPAddressVO ip = _ipAddressDao.acquireInLockTable(ipId);
+        if (ip == null) {
+            throw new ConcurrentOperationException("Unable to lock public IP for VPC association");
+        }
+        try {
+            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, ip);
+            if (_ntwkModel.isIpAddressReserved(ip)) {
+                throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be associated with a VPC");
+            }
+            return associateIPToVpcLocked(ipId, vpcId);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipId);
+        }
+    }
+
+    private IpAddress associateIPToVpcLocked(final long ipId, final long vpcId) {
         final Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
 

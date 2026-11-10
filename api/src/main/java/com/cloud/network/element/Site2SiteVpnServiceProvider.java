@@ -26,6 +26,9 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.component.Adapter;
 
 public interface Site2SiteVpnServiceProvider extends Adapter {
+    // Gateway-scoped identity survives release and reuse of its public IP allocation.
+    String VPN_GATEWAY_PROVIDER_DETAIL = "vpnProvider";
+
     default void validateSite2SiteVpnCustomerGateway(Site2SiteCustomerGateway customerGateway) {
     }
 
@@ -64,9 +67,9 @@ public interface Site2SiteVpnServiceProvider extends Adapter {
     }
 
     /**
-     * Identifies a gateway previously owned by this provider. This is used during teardown when
-     * an offering has been edited since the gateway was created and the current service map no
-     * longer advertises the provider.
+     * Identifies the gateway resources currently owned by this provider, independent of the
+     * current offering. A recorded gateway provider retains teardown ownership after its public
+     * IP has been released; this live claim must not adopt a later allocation of the same IP.
      */
     default boolean ownsVpnGateway(Site2SiteVpnGateway gateway) {
         return false;

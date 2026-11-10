@@ -123,6 +123,42 @@ public class NetworkModelImplTest {
         Mockito.lenient().when(extensionHelper.isNetworkExtensionProvider(Mockito.anyString())).thenReturn(false);
     }
 
+    @Test
+    public void testReservedEndpointBlocksAllCompetingServicesWithoutNetworkAssociation() {
+        IpAddress endpoint = mock(IpAddress.class);
+        NetworkElement owningProvider = mock(NetworkElement.class);
+        NetworkElement legacyProvider = mock(NetworkElement.class, Mockito.CALLS_REAL_METHODS);
+        networkModel.setNetworkElements(List.of(legacyProvider, owningProvider));
+        when(owningProvider.isIpAddressReserved(endpoint)).thenReturn(true);
+
+        // A retained endpoint need not yet have a gateway row or an associated guest network.
+        for (Network.Service service : List.of(Network.Service.PortForwarding, Network.Service.StaticNat,
+                Network.Service.Lb, Network.Service.Vpn)) {
+            InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> networkModel.checkIpForService(endpoint, service, null));
+            assertTrue(exception.getMessage().contains("reserved by a network provider"));
+        }
+
+        Mockito.verifyNoInteractions(_networksDao, networkOfferingDao);
+    }
+
+    @Test
+    public void testUnreservedAddressRetainsNormalServiceValidation() {
+        IpAddress address = mock(IpAddress.class);
+        NetworkElement legacyProvider = mock(NetworkElement.class, Mockito.CALLS_REAL_METHODS);
+        networkModel.setNetworkElements(List.of(legacyProvider));
+        NetworkVO network = mock(NetworkVO.class);
+        NetworkOfferingVO offering = mock(NetworkOfferingVO.class);
+        when(_networksDao.findById(11L)).thenReturn(network);
+        when(network.getNetworkOfferingId()).thenReturn(12L);
+        when(networkOfferingDao.findById(12L)).thenReturn(offering);
+        when(offering.getGuestType()).thenReturn(Network.GuestType.Shared);
+
+        assertFalse(networkModel.isIpAddressReserved(address));
+        assertTrue(networkModel.checkIpForService(address, Network.Service.StaticNat, 11L));
+        Mockito.verify(_networksDao).findById(11L);
+    }
+
     private void prepareMocks(boolean isIp6, Network network, DataCenter zone, VpcVO vpc,
                               String networkDns1, String zoneDns1, String networkDns2, String zoneDns2,
                               String vpcDns1, String vpcDns2) {

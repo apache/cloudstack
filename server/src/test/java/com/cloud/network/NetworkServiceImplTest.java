@@ -39,6 +39,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
@@ -72,7 +78,10 @@ import com.cloud.bgp.BGPService;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -88,6 +97,7 @@ import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
@@ -95,14 +105,18 @@ import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -340,6 +354,275 @@ public class NetworkServiceImplTest {
     public void tearDown() throws Exception {
         callContextMocked.close();
         closeable.close();
+    }
+
+    private IPAddressVO prepareAllocatedPublicIp() {
+        IPAddressVO ip = new IPAddressVO(new Ip("203.0.113.31"), 1L, 1L, 1L, false);
+        ReflectionTestUtils.setField(ip, "id", publicIpId);
+        ip.setAllocatedTime(new Date());
+        ip.setAllocatedToAccountId(ACCOUNT_ID);
+        ip.setState(IpAddress.State.Allocated);
+        when(ipAddressDao.acquireInLockTable(publicIpId)).thenReturn(ip);
+        when(ipAddressDao.findById(publicIpId)).thenReturn(ip);
+        service._networkModel = networkModel;
+        return ip;
+    }
+
+    private void reserveProviderEndpoint(IPAddressVO ip) {
+        NetworkModelImpl model = new NetworkModelImpl();
+        NetworkElement provider = Mockito.mock(NetworkElement.class);
+        model.setNetworkElements(List.of(provider));
+        when(provider.isIpAddressReserved(ip)).thenReturn(true);
+        service._networkModel = model;
+    }
+
+    @Test
+    public void releaseIpAddressRejectsProviderEndpointBeforeDisassociation() {
+        IPAddressVO ip = prepareAllocatedPublicIp();
+        reserveProviderEndpoint(ip);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.releaseIpAddress(publicIpId));
+
+        Assert.assertTrue(exception.getMessage().contains("reserved by a network provider"));
+        Mockito.verify(ipAddressManagerMock, Mockito.never()).disassociatePublicIpAddress(any(), anyLong(), any());
+        Mockito.verify(ipAddressDao, Mockito.never()).unassignIpAddress(anyLong());
+        Mockito.verify(ipAddressDao).releaseFromLockTable(publicIpId);
+    }
+
+    @Test
+    public void releasePortableIpAddressRejectsProviderEndpoint() {
+        IPAddressVO ip = prepareAllocatedPublicIp();
+        ip.setPortable(true);
+        reserveProviderEndpoint(ip);
+
+        Assert.assertFalse(service.releasePortableIpAddress(publicIpId));
+
+        Mockito.verify(ipAddressManagerMock, Mockito.never()).disassociatePublicIpAddress(any(), anyLong(), any());
+        Mockito.verify(ipAddressDao, Mockito.never()).unassignIpAddress(anyLong());
+        Mockito.verify(ipAddressDao).releaseFromLockTable(publicIpId);
+    }
+
+    @Test
+    public void releaseReservedIpAddressCannotBypassProviderReservation() {
+        IPAddressVO ip = prepareAllocatedPublicIp();
+        ip.setState(IpAddress.State.Reserved);
+        reserveProviderEndpoint(ip);
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> service.releaseReservedIpAddress(publicIpId));
+
+        Mockito.verify(ipAddressDao, Mockito.never()).unassignIpAddress(anyLong());
+        Mockito.verify(ipAddressDao).releaseFromLockTable(publicIpId);
+    }
+
+    @Test
+    public void releaseUnallocatedIpAddressRemainsNoop() throws Exception {
+        IPAddressVO ip = prepareAllocatedPublicIp();
+        ip.setAllocatedTime(null);
+
+        Assert.assertTrue(service.releaseIpAddress(publicIpId));
+
+        Mockito.verifyNoInteractions(networkModel, ipAddressManagerMock);
+        Mockito.verify(ipAddressDao).releaseFromLockTable(publicIpId);
+    }
+
+    @Test
+    public void releaseUnreservedIpAddressStillCallsNormalCleanupWhileLocked() throws Exception {
+        IPAddressVO ip = prepareAllocatedPublicIp();
+        VlanDao vlanDao = Mockito.mock(VlanDao.class);
+        VlanVO vlan = Mockito.mock(VlanVO.class);
+        ResourceTagDao resourceTagDao = Mockito.mock(ResourceTagDao.class);
+        service._vlanDao = vlanDao;
+        service._resourceTagDao = resourceTagDao;
+        when(vlanDao.findById(ip.getVlanId())).thenReturn(vlan);
+        when(vlan.getVlanType()).thenReturn(Vlan.VlanType.VirtualNetwork);
+        when(ipAddressManagerMock.disassociatePublicIpAddress(eq(ip), anyLong(), any())).thenReturn(true);
+
+        Assert.assertTrue(service.releaseIpAddress(publicIpId));
+
+        org.mockito.InOrder order = Mockito.inOrder(ipAddressDao, networkModel, ipAddressManagerMock);
+        order.verify(ipAddressDao).acquireInLockTable(publicIpId);
+        order.verify(networkModel).isIpAddressReserved(ip);
+        order.verify(ipAddressManagerMock).disassociatePublicIpAddress(eq(ip), anyLong(), any());
+        order.verify(ipAddressDao).releaseFromLockTable(publicIpId);
+    }
+
+    @Test
+    public void migrateVpcRejectsReservedEndpointBeforeCopyOrStart() {
+        long vpcId = 12L;
+        ResourceTagDao resourceTagDao = Mockito.mock(ResourceTagDao.class);
+        NetworkMigrationManager migrationManager = Mockito.mock(NetworkMigrationManager.class);
+        service._resourceTagDao = resourceTagDao;
+        service._networkMigrationManager = migrationManager;
+        service._networkModel = networkModel;
+        VpcVO lockedVpc = Mockito.mock(VpcVO.class);
+        IPAddressVO endpoint = Mockito.mock(IPAddressVO.class);
+        when(vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + vpcId)).thenReturn(true);
+        when(vpcDao.findById(vpcId)).thenReturn(lockedVpc);
+        when(ipAddressDao.listByAssociatedVpc(vpcId, null)).thenReturn(List.of(endpoint));
+        when(networkModel.isIpAddressReserved(endpoint)).thenReturn(true);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.migrateVpcNetwork(vpcId, 24L, Map.of(), accountMock, user, false));
+
+        Mockito.verifyNoInteractions(migrationManager);
+        Mockito.verify(ipAddressDao, Mockito.never()).update(anyLong(), any());
+        Mockito.verify(vpcDao).unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + vpcId);
+    }
+
+    @Test
+    public void resumedVpcMigrationRejectsReservedEndpointOnOriginalVpc() {
+        verifyResumedMigrationRejectsReservedEndpoint(12L);
+    }
+
+    @Test
+    public void resumedVpcMigrationRejectsReservedEndpointOnCopyVpc() {
+        verifyResumedMigrationRejectsReservedEndpoint(20L);
+    }
+
+    private void verifyResumedMigrationRejectsReservedEndpoint(long reservedVpcId) {
+        long originalVpcId = 12L;
+        long copyVpcId = 20L;
+        ResourceTagDao resourceTagDao = Mockito.mock(ResourceTagDao.class);
+        ResourceTagVO relation = Mockito.mock(ResourceTagVO.class);
+        NetworkMigrationManager migrationManager = Mockito.mock(NetworkMigrationManager.class);
+        service._resourceTagDao = resourceTagDao;
+        service._networkMigrationManager = migrationManager;
+        service._networkModel = networkModel;
+        when(resourceTagDao.findByKey(copyVpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION)).thenReturn(relation);
+        when(relation.getValue()).thenReturn(String.valueOf(originalVpcId));
+        when(vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + originalVpcId)).thenReturn(true);
+        when(vpcDao.findById(originalVpcId)).thenReturn(Mockito.mock(VpcVO.class));
+        if (reservedVpcId == copyVpcId) {
+            when(vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + copyVpcId)).thenReturn(true);
+            when(vpcDao.findById(copyVpcId)).thenReturn(Mockito.mock(VpcVO.class));
+            when(ipAddressDao.listByAssociatedVpc(originalVpcId, null)).thenReturn(List.of());
+        }
+        IPAddressVO endpoint = Mockito.mock(IPAddressVO.class);
+        when(ipAddressDao.listByAssociatedVpc(reservedVpcId, null)).thenReturn(List.of(endpoint));
+        when(networkModel.isIpAddressReserved(endpoint)).thenReturn(true);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.migrateVpcNetwork(copyVpcId, 24L, Map.of(), accountMock, user, true));
+
+        Mockito.verifyNoInteractions(migrationManager);
+        Mockito.verify(ipAddressDao, Mockito.never()).update(anyLong(), any());
+        org.mockito.InOrder order = Mockito.inOrder(vpcDao);
+        order.verify(vpcDao).lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + originalVpcId);
+        if (reservedVpcId == copyVpcId) {
+            order.verify(vpcDao).lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + copyVpcId);
+            order.verify(vpcDao).unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + copyVpcId);
+        }
+        order.verify(vpcDao).unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + originalVpcId);
+    }
+
+    @Test
+    public void migrateUnreservedVpcToCurrentOfferingRemainsNoop() {
+        long vpcId = 12L;
+        long offeringId = 24L;
+        service._resourceTagDao = Mockito.mock(ResourceTagDao.class);
+        service._vpcOfferingDao = Mockito.mock(VpcOfferingDao.class);
+        service._networkMigrationManager = Mockito.mock(NetworkMigrationManager.class);
+        service._networkModel = networkModel;
+        VpcVO lockedVpc = Mockito.mock(VpcVO.class);
+        when(vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + vpcId)).thenReturn(true);
+        when(vpcDao.findById(vpcId)).thenReturn(lockedVpc);
+        when(lockedVpc.getVpcOfferingId()).thenReturn(offeringId);
+        when(ipAddressDao.listByAssociatedVpc(vpcId, null)).thenReturn(List.of());
+
+        Assert.assertSame(lockedVpc, service.migrateVpcNetwork(vpcId, offeringId, Map.of(), accountMock, user, false));
+
+        Mockito.verifyNoInteractions(service._networkMigrationManager);
+        Mockito.verify(vpcDao).unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + vpcId);
+    }
+
+    @Test
+    public void resumedVpcMigrationReleasesOriginalAdmissionLockIfCopyLockFails() {
+        long originalVpcId = 12L;
+        long copyVpcId = 20L;
+        ResourceTagDao resourceTagDao = Mockito.mock(ResourceTagDao.class);
+        ResourceTagVO relation = Mockito.mock(ResourceTagVO.class);
+        service._resourceTagDao = resourceTagDao;
+        service._networkMigrationManager = Mockito.mock(NetworkMigrationManager.class);
+        service._networkModel = networkModel;
+        when(resourceTagDao.findByKey(copyVpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION)).thenReturn(relation);
+        when(relation.getValue()).thenReturn(String.valueOf(originalVpcId));
+        when(vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + originalVpcId)).thenReturn(true);
+        when(vpcDao.findById(originalVpcId)).thenReturn(Mockito.mock(VpcVO.class));
+        when(ipAddressDao.listByAssociatedVpc(originalVpcId, null)).thenReturn(List.of());
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> service.migrateVpcNetwork(copyVpcId, 24L, Map.of(), accountMock, user, true));
+
+        Mockito.verifyNoInteractions(service._networkMigrationManager);
+        Mockito.verify(vpcDao).unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + originalVpcId);
+        Mockito.verify(vpcDao, Mockito.never()).unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + copyVpcId);
+    }
+
+    @Test
+    public void resumedVpcMigrationAllowsRouterWorkerVpcLockWhileExcludingGatewayCreation() throws Exception {
+        long originalVpcId = 12L;
+        long copyVpcId = 20L;
+        long offeringId = 24L;
+        VpcVO originalVpc = Mockito.mock(VpcVO.class);
+        VpcVO copyVpc = Mockito.mock(VpcVO.class);
+        ResourceTagDao resourceTagDao = Mockito.mock(ResourceTagDao.class);
+        ResourceTagVO relation = Mockito.mock(ResourceTagVO.class);
+        NetworkMigrationManager migrationManager = Mockito.mock(NetworkMigrationManager.class);
+        service._resourceTagDao = resourceTagDao;
+        service._networkMigrationManager = migrationManager;
+        service._vpcOfferingDao = Mockito.mock(VpcOfferingDao.class);
+        service._networkModel = networkModel;
+        when(resourceTagDao.findByKey(copyVpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION)).thenReturn(relation);
+        when(relation.getValue()).thenReturn(String.valueOf(originalVpcId));
+        when(vpcDao.findById(originalVpcId)).thenReturn(originalVpc);
+        when(vpcDao.findById(copyVpcId)).thenReturn(copyVpc);
+        when(originalVpc.getVpcOfferingId()).thenReturn(11L);
+        when(copyVpc.getVpcOfferingId()).thenReturn(offeringId);
+
+        Map<String, ReentrantLock> locks = new ConcurrentHashMap<>();
+        when(vpcDao.lockInLockTable(Mockito.anyString())).thenAnswer(invocation ->
+                locks.computeIfAbsent(invocation.getArgument(0), key -> new ReentrantLock()).tryLock());
+        when(vpcDao.unlockFromLockTable(Mockito.anyString())).thenAnswer(invocation -> {
+            locks.get(invocation.getArgument(0)).unlock();
+            return true;
+        });
+        when(vpcDao.acquireInLockTable(anyLong())).thenAnswer(invocation -> {
+            long id = invocation.getArgument(0);
+            return locks.computeIfAbsent(String.valueOf(id), key -> new ReentrantLock()).tryLock() ? vpcDao.findById(id) : null;
+        });
+        when(vpcDao.releaseFromLockTable(anyLong())).thenAnswer(invocation -> {
+            locks.get(String.valueOf((long) invocation.getArgument(0))).unlock();
+            return true;
+        });
+
+        ExecutorService worker = Executors.newSingleThreadExecutor();
+        Mockito.doAnswer(invocation -> {
+            Future<Boolean> workerProgress = worker.submit(() -> {
+                for (long id : List.of(originalVpcId, copyVpcId)) {
+                    Assert.assertFalse("Gateway admission must remain excluded during provider work",
+                            vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + id));
+                    VpcVO acquiredVpc = vpcDao.acquireInLockTable(id);
+                    if (acquiredVpc == null) {
+                        return false;
+                    }
+                    vpcDao.releaseFromLockTable(id);
+                }
+                return true;
+            });
+            Assert.assertTrue("Router workers must be able to acquire numeric VPC locks", workerProgress.get(5, TimeUnit.SECONDS));
+            return null;
+        }).when(migrationManager).startVpc(copyVpc);
+
+        try {
+            Assert.assertSame(copyVpc, service.migrateVpcNetwork(copyVpcId, offeringId, Map.of(), accountMock, user, true));
+            Mockito.verify(migrationManager).startVpc(copyVpc);
+            Mockito.verify(migrationManager).deleteCopyOfVpc(originalVpcId, copyVpcId);
+            Assert.assertTrue(locks.values().stream().noneMatch(ReentrantLock::isLocked));
+        } finally {
+            worker.shutdownNow();
+            Assert.assertTrue(worker.awaitTermination(5, TimeUnit.SECONDS));
+        }
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {

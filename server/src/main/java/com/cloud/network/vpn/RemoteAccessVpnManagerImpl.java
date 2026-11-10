@@ -184,6 +184,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 throw new CloudRuntimeException("Unable to acquire lock on public IP.");
             }
 
+            if (_networkMgr.isIpAddressReserved(ipAddress)) {
+                throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be used for remote access VPN");
+            }
+
             Long networkId = ipAddress.getAssociatedWithNetworkId();
             if (networkId != null) {
                 if (ipAddress.isForRouter()) {

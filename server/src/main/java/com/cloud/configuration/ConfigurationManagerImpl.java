@@ -6459,31 +6459,42 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (logger.isDebugEnabled()) {
                     logger.debug("lock on vlan {} is acquired", vlanRange);
                 }
-                for (final IPAddressVO ip : ips) {
-                    boolean success = true;
-                    if (ip.isOneToOneNat()) {
-                        throw new InvalidParameterValueException(String.format("Can't delete account specific vlan %s as ip %s belonging to the range is used for static nat purposes. Cleanup the rules first", vlanRange, ip));
+                for (final IPAddressVO listedIp : ips) {
+                    final IPAddressVO ip = _publicIpAddressDao.acquireInLockTable(listedIp.getId());
+                    if (ip == null) {
+                        throw new CloudRuntimeException("Unable to lock public IP for range deletion: " + listedIp.getId());
                     }
+                    try {
+                        boolean success = true;
+                        if (_networkModel.isIpAddressReserved(ip)) {
+                            throw new InvalidParameterValueException("Can't delete an IP range containing a reserved provider endpoint. Remove the dependent service first");
+                        }
+                        if (ip.isOneToOneNat()) {
+                            throw new InvalidParameterValueException(String.format("Can't delete account specific vlan %s as ip %s belonging to the range is used for static nat purposes. Cleanup the rules first", vlanRange, ip));
+                        }
 
-                    if (ip.isSourceNat()) {
-                        throw new InvalidParameterValueException(String.format("Can't delete account specific vlan %s as ip %s belonging to the range is a source nat ip for the network id=%d. IP range with the source nat ip address can be removed either as a part of Network, or account removal", vlanRange, ip, ip.getSourceNetworkId()));
-                    }
+                        if (ip.isSourceNat()) {
+                            throw new InvalidParameterValueException(String.format("Can't delete account specific vlan %s as ip %s belonging to the range is a source nat ip for the network id=%d. IP range with the source nat ip address can be removed either as a part of Network, or account removal", vlanRange, ip, ip.getSourceNetworkId()));
+                        }
 
-                    if (_firewallDao.countRulesByIpId(ip.getId()) > 0) {
-                        throw new InvalidParameterValueException(String.format("Can't delete account specific vlan %s as ip %s belonging to the range has firewall rules applied. Cleanup the rules first", vlanRange, ip));
-                    }
-                    if (ip.getAllocatedTime() != null) {
-                        // This means IP is allocated
-                        // release public ip address here
-                        success = _ipAddrMgr.disassociatePublicIpAddress(ip, userId, caller);
-                    }
-                    if (!success) {
-                        logger.warn("Some ip addresses failed to be released as a part of vlan {} removal", vlanRange);
-                    } else {
-                        resourceCountToBeDecrement++;
-                        final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
-                                ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
+                        if (_firewallDao.countRulesByIpId(ip.getId()) > 0) {
+                            throw new InvalidParameterValueException(String.format("Can't delete account specific vlan %s as ip %s belonging to the range has firewall rules applied. Cleanup the rules first", vlanRange, ip));
+                        }
+                        if (ip.getAllocatedTime() != null) {
+                            // This means IP is allocated
+                            // release public ip address here
+                            success = _ipAddrMgr.disassociatePublicIpAddress(ip, userId, caller);
+                        }
+                        if (!success) {
+                            logger.warn("Some ip addresses failed to be released as a part of vlan {} removal", vlanRange);
+                        } else {
+                            resourceCountToBeDecrement++;
+                            final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
+                                    ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
+                        }
+                    } finally {
+                        _publicIpAddressDao.releaseFromLockTable(listedIp.getId());
                     }
                 }
             } finally {
@@ -6704,15 +6715,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (logger.isDebugEnabled()) {
                     logger.debug("lock on vlan {} is acquired", vlan);
                 }
-                for (final IPAddressVO ip : ips) {
-                    // Disassociate allocated IP's that are not in use
-                    if (!ip.isOneToOneNat() && !ip.isSourceNat() && !(_firewallDao.countRulesByIpId(ip.getId()) > 0)) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Releasing Public IP addresses {} of vlan {} as part of Public IP range release to the system pool", ip, vlan);
+                for (final IPAddressVO listedIp : ips) {
+                    final IPAddressVO ip = _publicIpAddressDao.acquireInLockTable(listedIp.getId());
+                    if (ip == null) {
+                        throw new CloudRuntimeException("Unable to lock public IP for range release: " + listedIp.getId());
+                    }
+                    try {
+                        // Provider endpoints remain allocated just like other IPs that are in use.
+                        if (!_networkModel.isIpAddressReserved(ip) && !ip.isOneToOneNat() && !ip.isSourceNat()
+                                && !(_firewallDao.countRulesByIpId(ip.getId()) > 0)) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Releasing Public IP addresses {} of vlan {} as part of Public IP range release to the system pool", ip, vlan);
+                            }
+                            success = success && _ipAddrMgr.disassociatePublicIpAddress(ip, user.getId(), caller);
+                        } else {
+                            ipsInUse.add(listedIp);
                         }
-                        success = success && _ipAddrMgr.disassociatePublicIpAddress(ip, user.getId(), caller);
-                    } else {
-                        ipsInUse.add(ip);
+                    } finally {
+                        _publicIpAddressDao.releaseFromLockTable(listedIp.getId());
                     }
                 }
                 if (!success) {

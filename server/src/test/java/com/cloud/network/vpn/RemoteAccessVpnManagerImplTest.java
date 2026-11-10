@@ -32,6 +32,7 @@ import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -47,6 +48,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
+import org.mockito.Mock;
+import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -60,6 +63,11 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
     private static final long VPC_ID = 12L;
     private static final long PUBLIC_IP_ID = 31L;
 
+    @Mock
+    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    @InjectMocks
+    private RemoteAccessVpnManagerImpl providerManager;
+
     Class<InvalidParameterValueException> expectedException = InvalidParameterValueException.class;
     Class<CloudRuntimeException> cloudRuntimeException = CloudRuntimeException.class;
 
@@ -71,11 +79,37 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
     }
 
     private RemoteAccessVpnManagerImpl managerWithProvider(RemoteAccessVPNServiceProvider provider) {
-        RemoteAccessVpnManagerImpl manager = new RemoteAccessVpnManagerImpl();
+        RemoteAccessVpnManagerImpl manager = providerManager;
         manager._vpnServiceProviders = List.of(provider);
         manager._networkMgr = Mockito.mock(com.cloud.network.NetworkModel.class);
         manager.vpcManager = Mockito.mock(VpcManager.class);
         return manager;
+    }
+
+    @Test
+    public void createRemoteAccessVpnRejectsReservedEndpointBeforePersistenceOrNatSetup() {
+        RemoteAccessVpnManagerImpl manager = managerWithProvider(Mockito.mock(RemoteAccessVPNServiceProvider.class));
+        manager._remoteAccessVpnDao = Mockito.mock(RemoteAccessVpnDao.class);
+        manager._ipAddressDao = Mockito.mock(IPAddressDao.class);
+        manager._accountMgr = Mockito.mock(AccountManager.class);
+        PublicIpAddress publicIp = Mockito.mock(PublicIpAddress.class);
+        IPAddressVO lockedIp = Mockito.mock(IPAddressVO.class);
+        CallContext context = Mockito.mock(CallContext.class);
+        Mockito.when(manager._networkMgr.getPublicIpAddress(PUBLIC_IP_ID)).thenReturn(publicIp);
+        Mockito.when(publicIp.readyToUse()).thenReturn(true);
+        Mockito.when(manager._ipAddressDao.acquireInLockTable(PUBLIC_IP_ID)).thenReturn(lockedIp);
+        Mockito.when(manager._networkMgr.isIpAddressReserved(lockedIp)).thenReturn(true);
+
+        try (MockedStatic<CallContext> contexts = Mockito.mockStatic(CallContext.class)) {
+            contexts.when(CallContext::current).thenReturn(context);
+            InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> manager.createRemoteAccessVpn(PUBLIC_IP_ID, "10.1.2.1-10.1.2.8", false, null));
+            Assert.assertTrue(exception.getMessage().contains("reserved by a network provider"));
+        }
+
+        Mockito.verify(manager._remoteAccessVpnDao, Mockito.never()).persist(Mockito.any());
+        Mockito.verify(manager.vpcManager, Mockito.never()).configStaticNatForVpcVr(Mockito.any(), Mockito.any());
+        Mockito.verify(manager._ipAddressDao).releaseFromLockTable(PUBLIC_IP_ID);
     }
 
     @Test
@@ -101,6 +135,8 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         Mockito.when(ipAddress.getVpcId()).thenReturn(VPC_ID);
         Mockito.when(ipAddress.isSourceNat()).thenReturn(true);
         Mockito.when(manager._vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        Mockito.lenient().when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(Mockito.anyLong(), Mockito.any(Network.Service[].class)))
+                .thenReturn(true);
         Mockito.when(vpc.getId()).thenReturn(VPC_ID);
         Mockito.when(vpc.getCidr()).thenReturn("10.2.0.0/24");
         Mockito.when(manager.vpcManager.isProviderSupportServiceInVpc(VPC_ID, Network.Service.Vpn,

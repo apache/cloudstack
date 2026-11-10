@@ -1871,7 +1871,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
+    public boolean isIpAddressReserved(IpAddress ip) {
+        // Ownership survives offering changes and partially completed provider operations.
+        return networkElements.stream().anyMatch(element -> element.isIpAddressReserved(ip));
+    }
+
+    @Override
     public boolean checkIpForService(IpAddress userIp, Service service, Long networkId) {
+        if (isIpAddressReserved(userIp)) {
+            throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be used for " + service.getName());
+        }
         if (networkId == null) {
             networkId = userIp.getAssociatedWithNetworkId();
         }

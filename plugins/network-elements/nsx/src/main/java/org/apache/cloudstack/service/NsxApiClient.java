@@ -300,10 +300,16 @@ public class NsxApiClient {
     public void createTier1NatRule(String tier1GatewayName, String natId, String natRuleId,
                                    String action, String translatedIp) {
         NatRules natRulesService = (NatRules) nsxService.apply(NatRules.class);
-        PolicyNatRule natPolicy = new PolicyNatRule.Builder()
-                .setAction(action)
-                .setTranslatedNetwork(translatedIp)
-                .build();
+        PolicyNatRule natPolicy;
+        try {
+            natPolicy = natRulesService.get(tier1GatewayName, natId, natRuleId);
+        } catch (NotFound e) {
+            natPolicy = new PolicyNatRule.Builder().build();
+        }
+        // Policy PATCH replaces omitted fields unless partial PATCH is explicitly enabled.
+        // Preserve VPN ordering, ownership tags and the rest of an existing rule on IP updates.
+        natPolicy.setAction(action);
+        natPolicy.setTranslatedNetwork(translatedIp);
         natRulesService.patch(tier1GatewayName, natId, natRuleId, natPolicy);
     }
 
@@ -353,8 +359,9 @@ public class NsxApiClient {
             }
             logger.debug("Moving CloudStack source NAT rule {} on tier-1 gateway {} behind VPN no-SNAT rules",
                     ruleId, tier1GatewayName);
-            natRulesService.patch(tier1GatewayName, NatId.USER.name(), ruleId,
-                    copyNatRule(natRule, CATCH_ALL_NAT_SEQUENCE_NUMBER, tags));
+            natRule.setSequenceNumber(CATCH_ALL_NAT_SEQUENCE_NUMBER);
+            natRule.setTags(tags);
+            natRulesService.patch(tier1GatewayName, NatId.USER.name(), ruleId, natRule);
         } catch (NotFound e) {
             logger.debug("CloudStack source NAT rule is absent on tier-1 gateway {}; no VPN NAT ordering change is required",
                     tier1GatewayName);
@@ -385,8 +392,9 @@ public class NsxApiClient {
                         originalSequenceTag.getTag(), tier1GatewayName), e);
             }
             tags.remove(originalSequenceTag);
-            natRulesService.patch(tier1GatewayName, NatId.USER.name(), ruleId,
-                    copyNatRule(natRule, originalSequence, tags));
+            natRule.setSequenceNumber(originalSequence);
+            natRule.setTags(tags);
+            natRulesService.patch(tier1GatewayName, NatId.USER.name(), ruleId, natRule);
         } catch (NotFound e) {
             logger.debug("CloudStack source NAT rule is absent on tier-1 gateway {}; no sequence restoration is required",
                     tier1GatewayName);
@@ -411,27 +419,6 @@ public class NsxApiClient {
                 .filter(tag -> VPN_ORIGINAL_SNAT_SEQUENCE_TAG_SCOPE.equals(tag.getScope()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    private PolicyNatRule copyNatRule(PolicyNatRule natRule, long sequenceNumber, List<Tag> tags) {
-        return new PolicyNatRule.Builder()
-                .setId(natRule.getId())
-                .setDisplayName(natRule.getDisplayName())
-                .setDescription(natRule.getDescription())
-                .setAction(natRule.getAction())
-                .setTranslatedNetwork(natRule.getTranslatedNetwork())
-                .setTranslatedPorts(natRule.getTranslatedPorts())
-                .setSourceNetwork(natRule.getSourceNetwork())
-                .setDestinationNetwork(natRule.getDestinationNetwork())
-                .setService(natRule.getService())
-                .setScope(natRule.getScope())
-                .setFirewallMatch(natRule.getFirewallMatch())
-                .setPolicyBasedVpnMode(natRule.getPolicyBasedVpnMode())
-                .setLogging(natRule.getLogging())
-                .setEnabled(natRule.getEnabled())
-                .setTags(tags)
-                .setSequenceNumber(sequenceNumber)
-                .build();
     }
 
     private boolean isCatchAllSourceNatRule(PolicyNatRule natRule) {
@@ -1515,10 +1502,9 @@ public class NsxApiClient {
         }
         updatedTypes.add(RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT.name());
         Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
-        Tier1 tier1Update = new Tier1.Builder()
-                .setRouteAdvertisementTypes(updatedTypes)
-                .build();
-        tier1service.patch(tier1GatewayName, tier1Update);
+        // Retain the Tier-0 attachment and all other router settings under full PATCH semantics.
+        tier1.setRouteAdvertisementTypes(updatedTypes);
+        tier1service.patch(tier1GatewayName, tier1);
     }
 
     public void deleteVpnService(String tier1GatewayName) {
@@ -1560,7 +1546,7 @@ public class NsxApiClient {
                 logger.info("A VPN object for connection {} is still being purged by NSX, retrying in {}s (attempt {}/{})",
                         connectionId, VPN_MARKED_FOR_DELETION_RETRY_INTERVAL_SECS, attempt, VPN_MARKED_FOR_DELETION_RETRIES);
                 try {
-                    Thread.sleep(VPN_MARKED_FOR_DELETION_RETRY_INTERVAL_SECS * 1000L);
+                    waitBeforeVpnRetry(VPN_MARKED_FOR_DELETION_RETRY_INTERVAL_SECS * 1000L);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw e;
@@ -1568,6 +1554,10 @@ public class NsxApiClient {
             }
         }
         throw lastFailure;
+    }
+
+    void waitBeforeVpnRetry(long milliseconds) throws InterruptedException {
+        Thread.sleep(milliseconds);
     }
 
     private boolean isMarkedForDeletionError(CloudRuntimeException e) {

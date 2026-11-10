@@ -1629,6 +1629,26 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
+        if (_ipAddressDao.findById(ipId) == null) {
+            return null;
+        }
+        IPAddressVO ip = _ipAddressDao.acquireInLockTable(ipId);
+        if (ip == null) {
+            throw new CloudRuntimeException("Unable to lock public IP for network association");
+        }
+        try {
+            // Check before any association or release-on-failure cleanup can change the address.
+            if (_networkModel.isIpAddressReserved(ip)) {
+                throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be associated with a network");
+            }
+            return associateIPToGuestNetworkLocked(ipId, networkId, releaseOnFailure);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipId);
+        }
+    }
+
+    private IPAddressVO associateIPToGuestNetworkLocked(long ipId, long networkId, boolean releaseOnFailure)
+            throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
 
@@ -2693,17 +2713,30 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
-        Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
-            // update all other IPs to not be sourcenat, should be at most one
-            for(IPAddressVO oldIpAddress :userIps) {
-                oldIpAddress.setSourceNat(false);
-                _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+    @DB
+    public void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception {
+        IPAddressVO lockedIp = _ipAddressDao.acquireInLockTable(requestedIp.getId());
+        if (lockedIp == null) {
+            throw new CloudRuntimeException("Unable to lock public IP for source NAT update");
+        }
+        try {
+            if (_networkModel.isIpAddressReserved(lockedIp)) {
+                throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be used for source NAT");
             }
-            requestedIp.setSourceNat(true);
-            _ipAddressDao.update(requestedIp.getId(),requestedIp);
-            return requestedIp;
-        });
+            Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
+                // update all other IPs to not be sourcenat, should be at most one
+                for (IPAddressVO oldIpAddress : userIps) {
+                    oldIpAddress.setSourceNat(false);
+                    _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+                }
+                lockedIp.setSourceNat(true);
+                _ipAddressDao.update(lockedIp.getId(), lockedIp);
+                requestedIp.setSourceNat(true);
+                return lockedIp;
+            });
+        } finally {
+            _ipAddressDao.releaseFromLockTable(requestedIp.getId());
+        }
     }
 
     @Override

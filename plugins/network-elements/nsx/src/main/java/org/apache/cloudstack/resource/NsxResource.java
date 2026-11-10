@@ -274,12 +274,14 @@ public class NsxResource implements ServerResource {
         String translatedIpAddress = cmd.getTranslatedIpAddress();
         String natRuleId = cmd.getNatRuleId();
         String natId = "USER";
-        try {
-            nsxApiClient.createTier1NatRule(tier1GatewayName, natId, natRuleId, action, translatedIpAddress);
-        } catch (CloudRuntimeException e) {
-            String msg = String.format("Error creating the NAT rule with ID %s on Tier1 Gateway %s: %s", natRuleId, tier1GatewayName, e.getMessage());
-            logger.error(msg, e);
-            return new NsxAnswer(cmd, e);
+        synchronized (getVpnTier1Lock(tier1GatewayName)) {
+            try {
+                nsxApiClient.createTier1NatRule(tier1GatewayName, natId, natRuleId, action, translatedIpAddress);
+            } catch (CloudRuntimeException e) {
+                String msg = String.format("Error creating the NAT rule with ID %s on Tier1 Gateway %s: %s", natRuleId, tier1GatewayName, e.getMessage());
+                logger.error(msg, e);
+                return new NsxAnswer(cmd, e);
+            }
         }
         return new NsxAnswer(cmd, true, "");
     }
@@ -532,7 +534,11 @@ public class NsxResource implements ServerResource {
             } catch (Exception e) {
                 logger.error(String.format("Failed to check the existing NSX VPN service on tier-1 gateway %s before creation: %s",
                         tier1GatewayName, e.getMessage()));
-                return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+                NsxAnswer answer = new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+                // A retry may own an endpoint left by an earlier ambiguous failure. A failed
+                // read cannot prove that endpoint is gone. Fresh attempts have not mutated NSX.
+                answer.setEndpointMayBeInUse(cmd.isReconcileExistingService());
+                return answer;
             }
             if (vpnServiceExisted && !cmd.isReconcileExistingService()) {
                 NsxAnswer answer = new NsxAnswer(cmd, new CloudRuntimeException(String.format(

@@ -432,7 +432,7 @@ public class NsxApiClientTest {
     }
 
     @Test
-    public void testVpnNatOrderingRestoresOriginalSourceNatSequenceAndTags() {
+    public void testVpnNatOrderingSurvivesSourceNatAddressUpdateAndRestoresOriginalSequence() {
         NatRules natRules = Mockito.mock(NatRules.class);
         PolicyNatRule sourceNatRule = new PolicyNatRule.Builder()
                 .setId("t1-NAT")
@@ -445,6 +445,7 @@ public class NsxApiClientTest {
                 .setTags(List.of(new Tag.Builder().setScope("owner").setTag("cloudstack").build()))
                 .setEnabled(true)
                 .build();
+        sourceNatRule.setRevision(19L);
         Mockito.when(nsxService.apply(NatRules.class)).thenReturn(natRules);
         Mockito.when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT")).thenReturn(sourceNatRule);
 
@@ -455,6 +456,7 @@ public class NsxApiClientTest {
         PolicyNatRule demotedRule = demotedCaptor.getValue();
         assertEquals(Long.valueOf(1000L), demotedRule.getSequenceNumber());
         assertEquals("203.0.113.10", demotedRule.getTranslatedNetwork());
+        assertEquals(Long.valueOf(19L), demotedRule.getRevision());
         assertTrue(demotedRule.getTags().stream().anyMatch(tag -> "owner".equals(tag.getScope())
                 && "cloudstack".equals(tag.getTag())));
         assertTrue(demotedRule.getTags().stream().anyMatch(tag -> "cloudstack-vpn-original-snat-sequence".equals(tag.getScope())
@@ -462,16 +464,106 @@ public class NsxApiClientTest {
 
         clearInvocations(natRules);
         Mockito.when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT")).thenReturn(demotedRule);
+        client.createTier1NatRule(TIER_1_GATEWAY_NAME, "USER", "t1-NAT", "SNAT", "203.0.113.11");
+
+        ArgumentCaptor<PolicyNatRule> updatedCaptor = ArgumentCaptor.forClass(PolicyNatRule.class);
+        verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), eq("USER"), eq("t1-NAT"), updatedCaptor.capture());
+        PolicyNatRule updatedRule = updatedCaptor.getValue();
+        assertEquals("203.0.113.11", updatedRule.getTranslatedNetwork());
+        assertEquals(Long.valueOf(1000L), updatedRule.getSequenceNumber());
+        assertEquals(Long.valueOf(19L), updatedRule.getRevision());
+        assertEquals("0.0.0.0/0", updatedRule.getSourceNetwork());
+        assertEquals("ANY", updatedRule.getDestinationNetwork());
+        assertEquals("CloudStack source NAT", updatedRule.getDisplayName());
+        assertTrue(updatedRule.getEnabled());
+        assertTrue(updatedRule.getTags().stream().anyMatch(tag -> "cloudstack-vpn-original-snat-sequence".equals(tag.getScope())
+                && "42".equals(tag.getTag())));
+
+        clearInvocations(natRules);
+        Mockito.when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT")).thenReturn(updatedRule);
         client.restoreSourceNatRuleSequence(TIER_1_GATEWAY_NAME);
 
         ArgumentCaptor<PolicyNatRule> restoredCaptor = ArgumentCaptor.forClass(PolicyNatRule.class);
         verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), eq("USER"), eq("t1-NAT"), restoredCaptor.capture());
         PolicyNatRule restoredRule = restoredCaptor.getValue();
         assertEquals(Long.valueOf(42L), restoredRule.getSequenceNumber());
-        assertEquals("203.0.113.10", restoredRule.getTranslatedNetwork());
+        assertEquals("203.0.113.11", restoredRule.getTranslatedNetwork());
+        assertEquals(Long.valueOf(19L), restoredRule.getRevision());
         assertEquals(1, restoredRule.getTags().size());
         assertEquals("owner", restoredRule.getTags().get(0).getScope());
         assertEquals("cloudstack", restoredRule.getTags().get(0).getTag());
+    }
+
+    @Test
+    public void testCreateTier1NatRuleCreatesMissingRule() {
+        NatRules natRules = Mockito.mock(NatRules.class);
+        when(nsxService.apply(NatRules.class)).thenReturn(natRules);
+        when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT")).thenThrow(new NotFound(null, null));
+
+        client.createTier1NatRule(TIER_1_GATEWAY_NAME, "USER", "t1-NAT", "SNAT", "203.0.113.10");
+
+        ArgumentCaptor<PolicyNatRule> captor = ArgumentCaptor.forClass(PolicyNatRule.class);
+        verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), eq("USER"), eq("t1-NAT"), captor.capture());
+        assertEquals("SNAT", captor.getValue().getAction());
+        assertEquals("203.0.113.10", captor.getValue().getTranslatedNetwork());
+    }
+
+    @Test
+    public void testCreateTier1NatRuleDoesNotOverwriteAfterFailedRead() {
+        NatRules natRules = Mockito.mock(NatRules.class);
+        when(nsxService.apply(NatRules.class)).thenReturn(natRules);
+        when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT"))
+                .thenThrow(new CloudRuntimeException("NSX unavailable"));
+
+        assertThrows(CloudRuntimeException.class, () -> client.createTier1NatRule(
+                TIER_1_GATEWAY_NAME, "USER", "t1-NAT", "SNAT", "203.0.113.10"));
+
+        verify(natRules, never()).patch(anyString(), anyString(), anyString(), any(PolicyNatRule.class));
+    }
+
+    @Test
+    public void testCreateVpnServicePreservesExistingTier1SettingsWhenAddingAdvertisement() {
+        Tier1s tier1s = Mockito.mock(Tier1s.class);
+        IpsecVpnServices vpnServices = Mockito.mock(IpsecVpnServices.class);
+        LocalEndpoints localEndpoints = Mockito.mock(LocalEndpoints.class);
+        NatRules natRules = Mockito.mock(NatRules.class);
+        List<String> expectedOwnerTag = List.of("owner", "cloudstack");
+        Tier1 tier1 = new Tier1.Builder()
+                .setId(TIER_1_GATEWAY_NAME)
+                .setDisplayName("Existing VPC")
+                .setTier0Path("/infra/tier-0s/edge-uplink")
+                .setHaMode("ACTIVE_STANDBY")
+                .setFailoverMode("PREEMPTIVE")
+                .setPoolAllocation("ROUTING")
+                .setRouteAdvertisementTypes(List.of("TIER1_NAT", "TIER1_LB_VIP"))
+                .setTags(List.of(new Tag.Builder().setScope("owner").setTag("cloudstack").build()))
+                .build();
+        tier1.setRevision(7L);
+        when(nsxService.apply(Tier1s.class)).thenReturn(tier1s);
+        when(nsxService.apply(IpsecVpnServices.class)).thenReturn(vpnServices);
+        when(nsxService.apply(LocalEndpoints.class)).thenReturn(localEndpoints);
+        when(nsxService.apply(NatRules.class)).thenReturn(natRules);
+        when(tier1s.get(TIER_1_GATEWAY_NAME)).thenReturn(tier1);
+        when(natRules.get(TIER_1_GATEWAY_NAME, "USER", "t1-NAT")).thenThrow(new NotFound(null, null));
+
+        client.createVpnService(TIER_1_GATEWAY_NAME, "203.0.113.20");
+
+        ArgumentCaptor<Tier1> captor = ArgumentCaptor.forClass(Tier1.class);
+        verify(tier1s).patch(eq(TIER_1_GATEWAY_NAME), captor.capture());
+        Tier1 updated = captor.getValue();
+        assertEquals("/infra/tier-0s/edge-uplink", updated.getTier0Path());
+        assertEquals("ACTIVE_STANDBY", updated.getHaMode());
+        assertEquals("PREEMPTIVE", updated.getFailoverMode());
+        assertEquals("ROUTING", updated.getPoolAllocation());
+        assertEquals("Existing VPC", updated.getDisplayName());
+        assertEquals(Long.valueOf(7L), updated.getRevision());
+        assertEquals(1, updated.getTags().size());
+        assertEquals(expectedOwnerTag, List.of(updated.getTags().get(0).getScope(), updated.getTags().get(0).getTag()));
+        assertEquals(List.of("TIER1_NAT", "TIER1_LB_VIP", "TIER1_IPSEC_LOCAL_ENDPOINT"), updated.getRouteAdvertisementTypes());
+
+        clearInvocations(tier1s);
+        client.createVpnService(TIER_1_GATEWAY_NAME, "203.0.113.20");
+        verify(tier1s, never()).patch(anyString(), any(Tier1.class));
     }
 
     @Test
@@ -1061,15 +1153,31 @@ public class NsxApiClientTest {
         client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, CONNECTION_ID,
                 List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16");
 
+        ArgumentCaptor<com.vmware.nsx_policy.model.StaticRoutes> routeCaptor =
+                ArgumentCaptor.forClass(com.vmware.nsx_policy.model.StaticRoutes.class);
+        ArgumentCaptor<PolicyNatRule> ruleCaptor = ArgumentCaptor.forClass(PolicyNatRule.class);
         InOrder inOrder = Mockito.inOrder(staticRoutes, natRules);
         inOrder.verify(staticRoutes).patch(eq(TIER_1_GATEWAY_NAME), eq("cs-conn-5-route0"),
-                any(com.vmware.nsx_policy.model.StaticRoutes.class));
-        inOrder.verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), anyString(),
-                eq("cs-conn-5-nosnat0"), any(PolicyNatRule.class));
+                routeCaptor.capture());
+        inOrder.verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), eq("USER"),
+                eq("cs-conn-5-nosnat0"), ruleCaptor.capture());
         inOrder.verify(staticRoutes).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route1");
         inOrder.verify(natRules).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat1");
         verify(staticRoutes, never()).delete(TIER_1_GATEWAY_NAME, "cs-conn-5-route0");
         verify(natRules, never()).delete(TIER_1_GATEWAY_NAME, "USER", "cs-conn-5-nosnat0");
+
+        com.vmware.nsx_policy.model.StaticRoutes route = routeCaptor.getValue();
+        assertEquals("cs-conn-5-route0", route.getId());
+        assertEquals("192.168.100.0/24", route.getNetwork());
+        assertEquals(1, route.getNextHops().size());
+        assertEquals("169.254.64.22", route.getNextHops().get(0).getIpAddress());
+        PolicyNatRule rule = ruleCaptor.getValue();
+        assertEquals("cs-conn-5-nosnat0", rule.getId());
+        assertEquals("NO_SNAT", rule.getAction());
+        assertEquals("10.1.0.0/16", rule.getSourceNetwork());
+        assertEquals("192.168.100.0/24", rule.getDestinationNetwork());
+        assertEquals(Long.valueOf(100L), rule.getSequenceNumber());
+        assertEquals(Boolean.TRUE, rule.getEnabled());
     }
 
     @Test
@@ -1091,7 +1199,7 @@ public class NsxApiClientTest {
     }
 
     @Test
-    public void testAddVpnConnectionRoutesRetriesMarkedForDeletion() {
+    public void testAddVpnConnectionRoutesRetriesMarkedForDeletion() throws InterruptedException {
         StaticRoutes staticRoutes = Mockito.mock(StaticRoutes.class);
         NatRules natRules = Mockito.mock(NatRules.class);
         Mockito.when(nsxService.apply(StaticRoutes.class)).thenReturn(staticRoutes);
@@ -1100,14 +1208,48 @@ public class NsxApiClientTest {
         doThrow(new CloudRuntimeException("An object is marked for deletion"))
                 .doNothing()
                 .when(staticRoutes).patch(anyString(), anyString(), any(com.vmware.nsx_policy.model.StaticRoutes.class));
+        client = Mockito.spy(client);
+        Mockito.doNothing().when(client).waitBeforeVpnRetry(15000L);
 
         client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, CONNECTION_ID,
                 List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16");
 
         verify(staticRoutes, Mockito.times(2)).patch(eq(TIER_1_GATEWAY_NAME),
                 eq("cs-conn-5-route0"), any(com.vmware.nsx_policy.model.StaticRoutes.class));
+        verify(client).waitBeforeVpnRetry(15000L);
         verify(natRules).patch(eq(TIER_1_GATEWAY_NAME), anyString(),
                 eq("cs-conn-5-nosnat0"), any(PolicyNatRule.class));
+    }
+
+    @Test
+    public void testAddVpnConnectionRoutesPreservesInterruptionDuringDeletionRetry() throws InterruptedException {
+        StaticRoutes staticRoutes = Mockito.mock(StaticRoutes.class);
+        NatRules natRules = Mockito.mock(NatRules.class);
+        when(nsxService.apply(StaticRoutes.class)).thenReturn(staticRoutes);
+        when(nsxService.apply(NatRules.class)).thenReturn(natRules);
+        CloudRuntimeException deletionPending = new CloudRuntimeException("An object is marked for deletion");
+        doThrow(deletionPending).when(staticRoutes)
+                .patch(anyString(), anyString(), any(com.vmware.nsx_policy.model.StaticRoutes.class));
+        client = Mockito.spy(client);
+        doThrow(new InterruptedException("stop retry")).when(client).waitBeforeVpnRetry(15000L);
+        boolean wasInterrupted = Thread.interrupted();
+        try {
+            CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                    () -> client.addVpnConnectionRoutes(TIER_1_GATEWAY_NAME, CONNECTION_ID,
+                            List.of("192.168.100.0/24"), "169.254.64.22", "10.1.0.0/16"));
+
+            Assert.assertSame(deletionPending, exception);
+            assertTrue(Thread.currentThread().isInterrupted());
+            verify(client).waitBeforeVpnRetry(15000L);
+            verify(staticRoutes).patch(eq(TIER_1_GATEWAY_NAME), eq("cs-conn-5-route0"),
+                    any(com.vmware.nsx_policy.model.StaticRoutes.class));
+            verify(natRules, never()).patch(anyString(), anyString(), anyString(), any(PolicyNatRule.class));
+        } finally {
+            Thread.interrupted();
+            if (wasInterrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     @Test
@@ -1131,6 +1273,37 @@ public class NsxApiClientTest {
         verify(ikeProfiles).delete("cs-conn-5-ike");
         verify(tunnelProfiles).delete("cs-conn-5-esp");
         verify(dpdProfiles).delete("cs-conn-5-dpd");
+    }
+
+    @Test
+    public void testDeleteVpnConnectionRetriesProfilesAfterSessionWasAlreadyDeleted() {
+        StaticRoutes staticRoutes = Mockito.mock(StaticRoutes.class);
+        NatRules natRules = Mockito.mock(NatRules.class);
+        Sessions sessions = Mockito.mock(Sessions.class);
+        IpsecVpnIkeProfiles ikeProfiles = Mockito.mock(IpsecVpnIkeProfiles.class);
+        IpsecVpnTunnelProfiles tunnelProfiles = Mockito.mock(IpsecVpnTunnelProfiles.class);
+        IpsecVpnDpdProfiles dpdProfiles = Mockito.mock(IpsecVpnDpdProfiles.class);
+        mockEmptyVpnConnectionRouteLists(staticRoutes, natRules);
+        when(nsxService.apply(Sessions.class)).thenReturn(sessions);
+        when(nsxService.apply(IpsecVpnIkeProfiles.class)).thenReturn(ikeProfiles);
+        when(nsxService.apply(IpsecVpnTunnelProfiles.class)).thenReturn(tunnelProfiles);
+        when(nsxService.apply(IpsecVpnDpdProfiles.class)).thenReturn(dpdProfiles);
+        Mockito.doNothing().doThrow(new NotFound(null, null)).when(sessions)
+                .delete(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5");
+        Mockito.doThrow(new CloudRuntimeException("profile deletion failed")).doNothing()
+                .when(ikeProfiles).delete("cs-conn-5-ike");
+        Mockito.doNothing().doThrow(new NotFound(null, null)).when(tunnelProfiles).delete("cs-conn-5-esp");
+        Mockito.doNothing().doThrow(new NotFound(null, null)).when(dpdProfiles).delete("cs-conn-5-dpd");
+
+        assertThrows(CloudRuntimeException.class,
+                () -> client.deleteVpnConnection(TIER_1_GATEWAY_NAME, CONNECTION_ID));
+        client.deleteVpnConnection(TIER_1_GATEWAY_NAME, CONNECTION_ID);
+
+        verify(sessions, Mockito.times(2)).delete(TIER_1_GATEWAY_NAME, "t1-vpn", "cs-conn-5");
+        verify(ikeProfiles, Mockito.times(2)).delete("cs-conn-5-ike");
+        verify(tunnelProfiles, Mockito.times(2)).delete("cs-conn-5-esp");
+        verify(dpdProfiles, Mockito.times(2)).delete("cs-conn-5-dpd");
+        Mockito.verifyNoMoreInteractions(ikeProfiles, tunnelProfiles, dpdProfiles);
     }
 
     private LbMonitorProfiles mockLbMonitorProfiles() {

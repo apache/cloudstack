@@ -51,6 +51,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.resource.NsxNetworkRule;
+import org.apache.cloudstack.resourcedetail.Site2SiteVpnGatewayDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
@@ -62,11 +64,13 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.nsx.NsxService;
 import com.cloud.network.nsx.NsxVpnGatewayResult;
 import com.cloud.network.vpc.Vpc;
@@ -109,6 +113,10 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
     @Inject
     UserIpAddressDetailsDao userIpAddressDetailsDao;
+    @Inject
+    IPAddressDao ipAddressDao;
+    @Inject
+    Site2SiteVpnGatewayDetailsDao site2SiteVpnGatewayDetailsDao;
     @Inject
     AlertManager alertManager;
 
@@ -312,6 +320,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return new NsxVpnGatewayResult(result.getResult(), result.isEndpointMayBeInUse());
     }
 
+    @Override
     public boolean deleteVpnGateway(Vpc vpc) {
         DeleteNsxVpnGatewayCommand deleteNsxVpnGatewayCommand = new DeleteNsxVpnGatewayCommand(vpc.getDomainId(),
                 vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName());
@@ -319,6 +328,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return result.getResult();
     }
 
+    @Override
     public boolean createVpnConnection(Vpc vpc, long connectionId, String peerAddress, String psk,
                                        String ikePolicy, String espPolicy, Long ikeLifetime, Long espLifetime,
                                        boolean dpdEnabled, String ikeVersion, boolean passive, List<String> peerCidrs,
@@ -331,6 +341,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return result.getResult();
     }
 
+    @Override
     public boolean deleteVpnConnection(Vpc vpc, long connectionId) {
         DeleteNsxVpnConnectionCommand deleteNsxVpnConnectionCommand = new DeleteNsxVpnConnectionCommand(vpc.getDomainId(),
                 vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId);
@@ -338,6 +349,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return result.getResult();
     }
 
+    @Override
     public boolean updateVpnConnectionState(Vpc vpc, long connectionId, boolean enabled) {
         UpdateNsxVpnConnectionStateCommand command = new UpdateNsxVpnConnectionStateCommand(vpc.getDomainId(),
                 vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId, enabled);
@@ -345,6 +357,7 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
         return result.getResult();
     }
 
+    @Override
     public String getVpnConnectionStatus(Vpc vpc, long connectionId) {
         GetNsxVpnSessionStatusCommand getNsxVpnSessionStatusCommand = new GetNsxVpnSessionStatusCommand(vpc.getDomainId(),
                 vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), connectionId);
@@ -353,9 +366,9 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     }
 
     /**
-     * The global lock makes the scan a cluster-wide singleton. The connection row lock in
-     * transitionVpnConnectionState separately protects each state transition from a concurrent
-     * user operation that starts, stops, resets, or deletes the connection.
+     * The global lock makes the scan a cluster-wide singleton. Each connection row is locked
+     * from the status query through its state transition, so a reset cannot replace the session
+     * between an observation and the update, even if it returns to the same CloudStack state.
      */
     protected class VpnStatusPollTask extends ManagedContextRunnable {
         @Override
@@ -398,13 +411,39 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
     }
 
     private boolean isVpnProvidedByNsx(Vpc vpc, Site2SiteVpnGatewayVO vpnGateway) {
-        return vpc != null
-                && userIpAddressDetailsDao != null
-                && vpnGateway != null
-                && userIpAddressDetailsDao.findDetail(vpnGateway.getAddrId(), NsxElement.NSX_VPN_GATEWAY_IP_DETAIL) != null;
+        if (vpc == null || vpnGateway == null || userIpAddressDetailsDao == null
+                || vpc.getId() != vpnGateway.getVpcId()
+                || !NsxElement.isIpAllocatedToGateway(ipAddressDao.findById(vpnGateway.getAddrId()), vpnGateway)
+                || userIpAddressDetailsDao.findDetail(vpnGateway.getAddrId(), NsxElement.NSX_VPN_GATEWAY_IP_DETAIL) == null) {
+            return false;
+        }
+        Site2SiteVpnGatewayDetailVO providerDetail = site2SiteVpnGatewayDetailsDao.findDetail(vpnGateway.getId(),
+                Site2SiteVpnServiceProvider.VPN_GATEWAY_PROVIDER_DETAIL);
+        return providerDetail == null || Network.Provider.Nsx.getName().equals(providerDetail.getValue());
     }
 
+    @DB
     protected void pollVpnConnectionStatus(Site2SiteVpnConnectionVO connection, VpcVO vpc) {
+        Site2SiteVpnConnectionVO lockedConnection = site2SiteVpnConnectionDao.acquireInLockTable(connection.getId());
+        if (lockedConnection == null) {
+            logger.debug("Unable to find or lock the NSX Site-to-Site VPN connection {}, skipping its status query", connection);
+            return;
+        }
+        try {
+            if (VPN_POLLED_STATES.contains(lockedConnection.getState())) {
+                Site2SiteVpnGatewayVO gateway = site2SiteVpnGatewayDao.findById(lockedConnection.getVpnGatewayId());
+                VpcVO currentVpc = gateway == null ? null : vpcDao.findById(gateway.getVpcId());
+                if (vpc != null && currentVpc != null && vpc.getId() == currentVpc.getId()
+                        && isVpnProvidedByNsx(currentVpc, gateway)) {
+                    pollVpnConnectionStatusLocked(lockedConnection, currentVpc);
+                }
+            }
+        } finally {
+            site2SiteVpnConnectionDao.releaseFromLockTable(lockedConnection.getId());
+        }
+    }
+
+    private void pollVpnConnectionStatusLocked(Site2SiteVpnConnectionVO connection, VpcVO vpc) {
         Site2SiteVpnConnection.State observedState = connection.getState();
         String status;
         try {
@@ -449,39 +488,23 @@ public class NsxServiceImpl extends ManagerBase implements NsxService, Configura
             logger.debug("NSX VPN connection {} of VPC {} reported the status {}, not transitioning the state", connection, vpc, status);
             return;
         }
-        transitionVpnConnectionState(connection, vpc, observedState, newState);
+        transitionVpnConnectionState(connection, vpc, newState);
     }
 
-    @DB
-    protected void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
-                                                Site2SiteVpnConnection.State observedState,
-                                                Site2SiteVpnConnection.State newState) {
-        if (observedState == newState) {
+    private void transitionVpnConnectionState(Site2SiteVpnConnectionVO connection, VpcVO vpc,
+                                             Site2SiteVpnConnection.State newState) {
+        Site2SiteVpnConnection.State oldState = connection.getState();
+        if (oldState == newState) {
             return;
         }
-        Site2SiteVpnConnectionVO lock = site2SiteVpnConnectionDao.acquireInLockTable(connection.getId());
-        if (lock == null) {
-            logger.warn("Unable to acquire the lock for the NSX Site-to-Site VPN connection {}, not updating its state", connection);
-            return;
-        }
-        try {
-            Site2SiteVpnConnectionVO lockedConnection = site2SiteVpnConnectionDao.findById(connection.getId());
-            if (lockedConnection == null || !VPN_POLLED_STATES.contains(lockedConnection.getState())
-                    || lockedConnection.getState() != observedState) {
-                return;
-            }
-            Site2SiteVpnConnection.State oldState = lockedConnection.getState();
-            lockedConnection.setState(newState);
-            site2SiteVpnConnectionDao.persist(lockedConnection);
-            vpnStatusPollFailures.remove(lockedConnection.getId());
-            String title = String.format("Site-to-site Vpn Connection %s just switched from %s to %s", lockedConnection.getUuid(), oldState, newState);
-            String context = String.format("Site-to-site Vpn Connection %s on the NSX tier-1 gateway of VPC %s just switched from %s to %s",
-                    lockedConnection.getUuid(), vpc.getName(), oldState, newState);
-            logger.info(context);
-            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vpc.getZoneId(), null, title, context);
-        } finally {
-            site2SiteVpnConnectionDao.releaseFromLockTable(lock.getId());
-        }
+        connection.setState(newState);
+        site2SiteVpnConnectionDao.persist(connection);
+        vpnStatusPollFailures.remove(connection.getId());
+        String title = String.format("Site-to-site Vpn Connection %s just switched from %s to %s", connection.getUuid(), oldState, newState);
+        String context = String.format("Site-to-site Vpn Connection %s on the NSX tier-1 gateway of VPC %s just switched from %s to %s",
+                connection.getUuid(), vpc.getName(), oldState, newState);
+        logger.info(context);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vpc.getZoneId(), null, title, context);
     }
 
     @Override

@@ -97,6 +97,15 @@ public interface NetworkElement extends Adapter {
     }
 
     /**
+     * Whether this provider reserves an address for its own endpoint. Such an address must not
+     * be released or reassigned by ordinary public-IP operations, including while creation or
+     * cleanup is being retried. The owning provider remains responsible for releasing it.
+     */
+    default boolean isIpAddressReserved(IpAddress ipAddress) {
+        return false;
+    }
+
+    /**
      * The network is being shutdown.
      * @param network
      * @param context
