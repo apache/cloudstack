@@ -66,6 +66,12 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.BackupProviderException;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
@@ -91,6 +97,12 @@ public class NASBackupProviderTest {
 
     @Mock
     private BackupDao backupDao;
+
+    @Mock
+    private SnapshotDao snapshotDao;
+
+    @Mock
+    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     @Mock
     private BackupRepositoryDao backupRepositoryDao;
@@ -1060,6 +1072,66 @@ public class NASBackupProviderTest {
                 () -> nasBackupProvider.restoreVMFromBackup(vm, backup, false, null));
         Assert.assertTrue(e.getMessage(), e.getMessage().contains("carries snapshot(s) which this backup path did not take"));
         Mockito.verify(vmInstanceDetailsDao, Mockito.never()).removeDetail(Mockito.eq(vmId), Mockito.eq(NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID));
+    }
+
+    private VolumeVO rbdVolume(long id, String name, long poolId, Storage.StoragePoolType poolType) {
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.lenient().when(volume.getId()).thenReturn(id);
+        Mockito.lenient().when(volume.getName()).thenReturn(name);
+        Mockito.lenient().when(volume.getUuid()).thenReturn(name + "-uuid");
+        Mockito.lenient().when(volume.getPoolId()).thenReturn(poolId);
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.lenient().when(pool.getPoolType()).thenReturn(poolType);
+        Mockito.lenient().when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        return volume;
+    }
+
+    private void volumeSnapshotOnPrimary(VolumeVO volume, long snapshotId, String name, ObjectInDataStoreStateMachine.State state) {
+        SnapshotDataStoreVO reference = mock(SnapshotDataStoreVO.class);
+        Mockito.lenient().when(reference.getSnapshotId()).thenReturn(snapshotId);
+        Mockito.lenient().when(reference.getState()).thenReturn(state);
+        Mockito.when(snapshotDataStoreDao.listAllByVolumeAndDataStore(volume.getId(), DataStoreRole.Primary)).thenReturn(List.of(reference));
+        SnapshotVO snapshot = mock(SnapshotVO.class);
+        Mockito.lenient().when(snapshot.getName()).thenReturn(name);
+        Mockito.lenient().when(snapshot.getUuid()).thenReturn(name + "-uuid");
+        Mockito.lenient().when(snapshotDao.findById(snapshotId)).thenReturn(snapshot);
+    }
+
+    @Test
+    public void failIfVolumesCarrySnapshotsOnPrimaryStorageRefusesAnRbdVolumeWithAVolumeSnapshot() {
+        VolumeVO root = rbdVolume(1L, "ROOT-7", 10L, Storage.StoragePoolType.RBD);
+        volumeSnapshotOnPrimary(root, 5L, "ux-foreign", ObjectInDataStoreStateMachine.State.Ready);
+
+        BackupProviderException e = Assert.assertThrows(BackupProviderException.class,
+                () -> nasBackupProvider.failIfVolumesCarrySnapshotsOnPrimaryStorage(List.of(root)));
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("ROOT-7"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("ux-foreign (ux-foreign-uuid)"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("restoring the volume would remove them"));
+    }
+
+    @Test
+    public void failIfVolumesCarrySnapshotsOnPrimaryStorageIgnoresASnapshotWhichIsNotReadyOnPrimaryStorage() {
+        VolumeVO root = rbdVolume(1L, "ROOT-7", 10L, Storage.StoragePoolType.RBD);
+        volumeSnapshotOnPrimary(root, 5L, "gone", ObjectInDataStoreStateMachine.State.Destroyed);
+
+        nasBackupProvider.failIfVolumesCarrySnapshotsOnPrimaryStorage(List.of(root)); // must not throw
+    }
+
+    @Test
+    public void failIfVolumesCarrySnapshotsOnPrimaryStorageIgnoresVolumesWhichAreNotOnRbd() {
+        VolumeVO root = rbdVolume(1L, "ROOT-7", 10L, Storage.StoragePoolType.NetworkFilesystem);
+
+        nasBackupProvider.failIfVolumesCarrySnapshotsOnPrimaryStorage(List.of(root)); // must not throw
+        Mockito.verifyNoInteractions(snapshotDataStoreDao);
+    }
+
+    @Test
+    public void failIfVolumesCarrySnapshotsOnPrimaryStorageAllowsAnRbdVolumeWithoutVolumeSnapshots() {
+        VolumeVO root = rbdVolume(1L, "ROOT-7", 10L, Storage.StoragePoolType.RBD);
+        Mockito.when(snapshotDataStoreDao.listAllByVolumeAndDataStore(1L, DataStoreRole.Primary)).thenReturn(Collections.emptyList());
+
+        nasBackupProvider.failIfVolumesCarrySnapshotsOnPrimaryStorage(List.of(root)); // must not throw
     }
 
     /**

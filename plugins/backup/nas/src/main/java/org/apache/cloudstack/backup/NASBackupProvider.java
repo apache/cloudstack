@@ -33,12 +33,14 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
@@ -62,9 +64,12 @@ import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections4.CollectionUtils;
@@ -141,6 +146,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private BackupDao backupDao;
+
+    @Inject
+    private SnapshotDao snapshotDao;
+
+    @Inject
+    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     @Inject
     private BackupRepositoryDao backupRepositoryDao;
@@ -1149,6 +1160,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 .sorted(Comparator.comparingLong(VolumeVO::getDeviceId))
                 .collect(Collectors.toList());
         List<VolumeVO> restoreVolumes = getVolumesToRestoreInto(backedVolumes, vmVolumes);
+        if (isRbdChain(backup)) {
+            failIfVolumesCarrySnapshotsOnPrimaryStorage(restoreVolumes);
+        }
 
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(backup);
@@ -1232,6 +1246,36 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     backup.getUuid(), dirs.size(), targetPosition + 1));
         }
         return dirs;
+    }
+
+    /**
+     * Restoring an RBD volume from a backup rewinds its image wholesale, which removes every snapshot the image
+     * carries. A volume snapshot kept on primary storage is such a snapshot, so refuse before anything is sent to
+     * the host, and before the host would find the snapshot on the image itself. The host still checks the image,
+     * which also catches snapshots that CloudStack does not know about.
+     */
+    protected void failIfVolumesCarrySnapshotsOnPrimaryStorage(List<VolumeVO> volumes) {
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (pool == null || !Storage.StoragePoolType.RBD.equals(pool.getPoolType())) {
+                continue;
+            }
+            List<String> snapshots = new ArrayList<>();
+            for (SnapshotDataStoreVO reference : snapshotDataStoreDao.listAllByVolumeAndDataStore(volume.getId(), DataStoreRole.Primary)) {
+                if (!ObjectInDataStoreStateMachine.State.Ready.equals(reference.getState())) {
+                    continue;
+                }
+                SnapshotVO snapshot = snapshotDao.findById(reference.getSnapshotId());
+                if (snapshot != null) {
+                    snapshots.add(String.format("%s (%s)", snapshot.getName(), snapshot.getUuid()));
+                }
+            }
+            if (!snapshots.isEmpty()) {
+                throw new BackupProviderException(String.format("Unable to restore the backup into volume %s (%s): it has volume snapshot(s) [%s] "
+                        + "on its primary storage, and restoring the volume would remove them. Delete those volume snapshots first, "
+                        + "or restore the backup into a new volume instead.", volume.getName(), volume.getUuid(), String.join(", ", snapshots)));
+            }
+        }
     }
 
     /**
