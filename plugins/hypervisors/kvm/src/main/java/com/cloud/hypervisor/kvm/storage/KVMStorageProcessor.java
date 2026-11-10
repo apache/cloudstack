@@ -1813,7 +1813,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         if (poolType == StoragePoolType.RBD
                 && resource.getHypervisorLibvirtVersion() < MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
             throw new CloudRuntimeException("Libvirt version 10.1.0 required to attach an encrypted RBD volume to a running VM, but version "
-                    + resource.getHypervisorLibvirtVersion() + " detected. Booting a VM from an encrypted RBD disk is not affected.");
+                    + LibvirtComputingResource.prettyVersion(resource.getHypervisorLibvirtVersion()) + " detected. Booting a VM from an encrypted RBD disk is not affected.");
         }
     }
 

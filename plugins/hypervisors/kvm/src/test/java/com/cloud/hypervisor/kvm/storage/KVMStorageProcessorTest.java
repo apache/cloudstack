@@ -756,6 +756,7 @@ public class KVMStorageProcessorTest {
         CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
                 () -> storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.RBD));
         Assert.assertTrue(ex.getMessage(), ex.getMessage().contains("Libvirt version 10.1.0 required"));
+        Assert.assertTrue(ex.getMessage(), ex.getMessage().contains("but version 10.0.0 detected"));
     }
 
     @Test
