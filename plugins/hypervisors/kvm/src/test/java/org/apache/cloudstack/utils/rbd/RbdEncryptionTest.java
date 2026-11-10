@@ -90,7 +90,7 @@ public class RbdEncryptionTest {
     public void importTemplateFromRbdSourceConvertsThroughQemuImg() throws Exception {
         RbdEncryption spy = Mockito.spy(new RbdEncryption());
         QemuImg qemuImg = Mockito.mock(QemuImg.class);
-        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
+        Mockito.doReturn(qemuImg).when(spy).createQemuImg(Mockito.anyLong());
 
         spy.importTemplate("srcpool", "srcimg", null, null, "1.2.3.4", 6789, "cloudstack", "secret",
                 "cloudstack", "dst", "passphrase".getBytes(StandardCharsets.UTF_8), CryptSetup.LuksType.LUKS2);
@@ -128,7 +128,7 @@ public class RbdEncryptionTest {
     public void importTemplateFromFileSourceForcesSourceFormat() throws Exception {
         RbdEncryption spy = Mockito.spy(new RbdEncryption());
         QemuImg qemuImg = Mockito.mock(QemuImg.class);
-        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
+        Mockito.doReturn(qemuImg).when(spy).createQemuImg(Mockito.anyLong());
 
         spy.importTemplate(null, null, "/tmp/tmpl.qcow2", "QCOW2", "1.2.3.4", 6789, "cloudstack", "secret",
                 "cloudstack", "dst", "passphrase".getBytes(StandardCharsets.UTF_8), CryptSetup.LuksType.LUKS2);
@@ -147,9 +147,12 @@ public class RbdEncryptionTest {
     public void copyTemplateDenseWritesZeroRangesAndLeavesTheCopyPlaintext() throws Exception {
         RbdEncryption spy = Mockito.spy(new RbdEncryption());
         QemuImg qemuImg = Mockito.mock(QemuImg.class);
-        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
+        Mockito.doReturn(qemuImg).when(spy).createQemuImg(Mockito.anyLong());
 
-        spy.copyTemplateDense("1.2.3.4", 6789, "cloudstack", "secret", "cloudstack", "tmpl", "cloudstack-base-snap");
+        spy.copyTemplateDense("1.2.3.4", 6789, "cloudstack", "secret", "cloudstack", "tmpl", "cloudstack-base-snap", 10800000L);
+
+        // the copy writes the whole template: it must get the caller's timeout, not qemu-img's default of 1 hour
+        Mockito.verify(spy).createQemuImg(10800000L);
 
         // without -S 0 the template keeps its holes
         Mockito.verify(qemuImg).setWriteZeroRanges(true);
