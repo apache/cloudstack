@@ -174,7 +174,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         }
         filterOutManualUpgradeNodesFromClusterUpgrade();
         retrieveScriptFiles();
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);
+        transitToOperationState(KubernetesCluster.Event.UpgradeRequested);
         attachIsoKubernetesVMs(clusterVMs, upgradeVersion);
         upgradeKubernetesClusterNodes();
         detachIsoKubernetesVMs(clusterVMs);

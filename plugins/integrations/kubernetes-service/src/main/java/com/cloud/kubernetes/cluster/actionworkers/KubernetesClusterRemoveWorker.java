@@ -70,7 +70,7 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
         } catch (ManagementServerException e) {
             throw new CloudRuntimeException(String.format("Failed to retrieve public IP for the network: %s ", network.getName()));
         }
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RemoveNodeRequested);
+        transitToOperationState(KubernetesCluster.Event.RemoveNodeRequested);
         boolean result = removeNodesFromCluster(nodeIds, network, publicIp);
         if (!result) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);

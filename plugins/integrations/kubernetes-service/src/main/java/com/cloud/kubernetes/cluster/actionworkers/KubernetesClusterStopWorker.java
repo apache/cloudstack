@@ -40,7 +40,8 @@ public class KubernetesClusterStopWorker extends KubernetesClusterActionWorker {
         if (logger.isInfoEnabled()) {
             logger.info("Stopping Kubernetes cluster: {}", kubernetesCluster);
         }
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested);
+        // a cluster that was never started or failed to start may still have VMs to stop; it is left in its state
+        transitToOperationState(KubernetesCluster.Event.StopRequested, KubernetesCluster.State.Created, KubernetesCluster.State.Error);
         List<UserVm> clusterVMs = getKubernetesClusterVMs();
         for (UserVm vm : clusterVMs) {
             if (vm == null) {
