@@ -394,7 +394,7 @@ public abstract class StorageStrategy {
             resizeRequest.setSize(volume.getSize());
             JobResponse jobResponse = volumeFeignClient.updateVolume(authHeader, volume.getUuid(), resizeRequest);
             pollJobIfPresent(jobResponse, "resize FlexVolume [" + volume.getUuid() + "]",
-                    OntapStorageConstants.ONTAP_VOLUME_JOB_MAX_RETRIES, OntapStorageConstants.ONTAP_VOLUME_JOB_POLL_INTERVAL_MS);
+                    OntapStorageConstants.ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES, OntapStorageConstants.ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS);
             logger.info("FlexVolume '{}' (UUID: {}) resized successfully to {} bytes", volume.getName(), volume.getUuid(), volume.getSize());
         } catch (FeignException e) {
             if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
