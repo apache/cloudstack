@@ -30,6 +30,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.hypervisor.kvm.storage.LibvirtStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -416,6 +417,17 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         boolean pivoted = false;
         KVMStoragePool destKvmPool = null;
         try {
+            // libvirt < 10.1.0 cannot add the LUKS secret of an encrypted RBD image to a running domain before the
+            // image itself (see KVMStorageProcessor.MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG), so the block copy
+            // into it fails. Refuse before anything is created on the destination pool.
+            if (Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType()) && ArrayUtils.isNotEmpty(destVolumeObjectTO.getPassphrase())
+                    && libvirtComputingResource.getHypervisorLibvirtVersion() < KVMStorageProcessor.MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
+                return new MigrateVolumeAnswer(command, false, String.format("Libvirt version %s required to live migrate a volume to an encrypted RBD volume, but version %s detected."
+                        + " Stop the Instance to migrate the volume, or upgrade libvirt.",
+                        LibvirtComputingResource.prettyVersion(KVMStorageProcessor.MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG),
+                        LibvirtComputingResource.prettyVersion(libvirtComputingResource.getHypervisorLibvirtVersion())), null);
+            }
+
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
             Connect conn = libvirtUtilitiesHelper.getConnection();
             dm = libvirtComputingResource.getDomain(conn, vmName);

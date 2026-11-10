@@ -598,6 +598,38 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
     }
 
     @Test
+    public void testMigrateRBDVolumeRefusesAnEncryptedRbdDestinationOnLibvirtBefore10_1_0() throws Exception {
+        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+        Mockito.doReturn(new byte[] {1, 2, 3}).when(destVolumeObjectTO).getPassphrase();
+        PrimaryDataStoreTO destPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(destPrimaryDataStore).when(destVolumeObjectTO).getDataStore();
+        Mockito.doReturn(Storage.StoragePoolType.RBD).when(destPrimaryDataStore).getPoolType();
+        Mockito.doReturn(10000000L).when(libvirtComputingResource).getHypervisorLibvirtVersion(); // libvirt 10.0.0
+
+        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("Libvirt version 10.1.0 required"));
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("but version 10.0.0 detected"));
+        // nothing was touched: no connection to libvirt, no destination volume
+        Mockito.verify(libvirtComputingResource, Mockito.never()).getLibvirtUtilitiesHelper();
+        Mockito.verify(libvirtMigrateVolumeCommandWrapper, Mockito.never()).createEncryptedDestinationVolume(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void testMigrateRBDVolumeAllowsAnEncryptedRbdDestinationOnLibvirt10_1_0() throws Exception {
+        prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.RBD, new byte[] {1, 2, 3});
+        Mockito.doReturn(10001000L).when(libvirtComputingResource).getHypervisorLibvirtVersion(); // libvirt 10.1.0
+
+        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getDetails(), answer.getResult());
+    }
+
+    @Test
     public void testMigrateRBDVolumeKeepsTheDestinationOfAnEncryptedVolumeWhichIsPivoted() throws Exception {
         KVMStoragePool[] pools = prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.RBD, Storage.StoragePoolType.NetworkFilesystem, new byte[] {1, 2, 3});
         Mockito.doThrow(new CloudRuntimeException("failed to remove volume")).when(pools[0]).deletePhysicalDisk(Mockito.any(), Mockito.any());

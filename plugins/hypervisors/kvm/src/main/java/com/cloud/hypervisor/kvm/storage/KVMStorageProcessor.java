@@ -187,7 +187,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
     // "No secret with id '...-format-encryption-secret0'". Booting a VM from an encrypted disk is unaffected (the
     // QEMU command line resolves all -object before -blockdev). See qemuBlockStorageSourceAttachApply() in libvirt.
-    private static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
+    public static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
     /**
      * Time interval before rechecking virsh commands
      */
