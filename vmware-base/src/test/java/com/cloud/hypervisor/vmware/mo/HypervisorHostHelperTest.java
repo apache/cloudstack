@@ -20,17 +20,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.network.Networks;
@@ -1040,5 +1048,136 @@ public class HypervisorHostHelperTest {
         false, Networks.BroadcastDomainType.NSX, null,
                 null, networkName);
         assertEquals(morNet.second(), networkName);
+    }
+
+    @Test
+    public void testPrepareNetworkWaitsForNsxDvPortGroup() throws Exception {
+        String networkName = "D1-A2-Z2-V8-S4";
+        DynamicProperty property = new DynamicProperty();
+        property.setVal(networkName);
+
+        when(hostMO.getHyperHostDatacenter()).thenReturn(mor);
+        when(datacenterMO.getDvSwitchMor(any(String.class))).thenReturn(mor);
+        when(vmwareClient.getDecendentMoRef(nullable(ManagedObjectReference.class), any(String.class), any(String.class))).thenReturn(mor);
+        when(vimService.retrieveProperties(any(), anyList())).thenReturn(List.of(), List.of(ocs));
+        when(ocs.getPropSet()).thenReturn(List.of(property));
+        when(ocs.getObj()).thenReturn(mor);
+
+        Pair<ManagedObjectReference, String> morNet = HypervisorHostHelper.prepareNetwork("NSX-VDS", "cloud.guest", hostMO, null, null,
+                200, null, 900000, VirtualSwitchType.VMwareDistributedVirtualSwitch, 1, null,
+                false, Networks.BroadcastDomainType.NSX, null,
+                null, networkName);
+        assertEquals(networkName, morNet.second());
+        verify(vimService, times(2)).retrieveProperties(any(), anyList());
+    }
+
+    @Test
+    public void testDvPortGroupWaitBudget() throws Exception {
+        for (long timeout : new long[] {0, 25, 2500}) {
+            for (long start : new long[] {0, Long.MAX_VALUE - TimeUnit.MILLISECONDS.toNanos(500)}) {
+                DatacenterMO dc = mock(DatacenterMO.class);
+                AtomicLong clock = new AtomicLong(start);
+                List<Long> sleeps = new ArrayList<>();
+                assertNull(HypervisorHostHelper.waitForDvPortGroupReady(dc, "nsx", timeout, clock::get, nanos -> {
+                    sleeps.add(nanos);
+                    clock.addAndGet(nanos);
+                }));
+                assertEquals(TimeUnit.MILLISECONDS.toNanos(timeout), clock.get() - start);
+                List<Long> expected = timeout == 0 ? List.of() : timeout == 25 ? List.of(25000000L)
+                        : List.of(1000000000L, 1000000000L, 500000000L);
+                assertEquals(expected, sleeps);
+                verify(dc, times(expected.size() + 1)).getDvPortGroupMor("nsx");
+            }
+        }
+    }
+
+    @Test
+    public void testDvPortGroupWaitFindsGroupDuringFinalSleep() throws Exception {
+        for (long timeout : new long[] {25, 2500}) {
+            for (long wakeupDelay : new long[] {0, TimeUnit.MILLISECONDS.toNanos(1)}) {
+                DatacenterMO dc = mock(DatacenterMO.class);
+                AtomicLong clock = new AtomicLong();
+                long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeout);
+                long visibleAtNanos = timeoutNanos - TimeUnit.MILLISECONDS.toNanos(1);
+                when(dc.getDvPortGroupMor("nsx")).thenAnswer(ignored -> clock.get() >= visibleAtNanos ? mor : null);
+
+                assertSame(mor, HypervisorHostHelper.waitForDvPortGroupReady(dc, "nsx", timeout, clock::get,
+                        nanos -> clock.addAndGet(nanos + wakeupDelay)));
+
+                assertEquals(timeoutNanos + wakeupDelay, clock.get());
+                verify(dc, times(timeout == 25 ? 2 : 4)).getDvPortGroupMor("nsx");
+            }
+        }
+    }
+
+    @Test
+    public void testDvPortGroupWaitChecksOnceWithZeroBudget() throws Exception {
+        when(datacenterMO.getDvPortGroupMor("nsx")).thenReturn(mor);
+        assertSame(mor, HypervisorHostHelper.waitForDvPortGroupReady(datacenterMO, "nsx", 0, () -> 0,
+                nanos -> { throw new AssertionError("Unexpected sleep"); }));
+        assertThrows(IllegalArgumentException.class,
+                () -> HypervisorHostHelper.waitForDvPortGroupReady(datacenterMO, "nsx", -1));
+        verify(datacenterMO).getDvPortGroupMor("nsx");
+    }
+
+    @Test
+    public void testDvPortGroupWaitAccountsForSlowLookupAndLateWakeup() throws Exception {
+        AtomicLong clock = new AtomicLong();
+        when(datacenterMO.getDvPortGroupMor("nsx")).thenAnswer(ignored -> {
+            clock.addAndGet(TimeUnit.SECONDS.toNanos(2));
+            return null;
+        });
+        assertNull(HypervisorHostHelper.waitForDvPortGroupReady(datacenterMO, "nsx", 1000, clock::get,
+                nanos -> { throw new AssertionError("Lookup already exhausted the budget"); }));
+        verify(datacenterMO).getDvPortGroupMor("nsx");
+        DatacenterMO dc = mock(DatacenterMO.class);
+        assertNull(HypervisorHostHelper.waitForDvPortGroupReady(dc, "nsx", 1000, clock::get,
+                nanos -> clock.addAndGet(TimeUnit.SECONDS.toNanos(2))));
+        verify(dc, times(2)).getDvPortGroupMor("nsx");
+    }
+
+    @Test
+    public void testDvPortGroupWaitPropagatesLookupFailure() throws Exception {
+        Exception failure = new Exception("vCenter unavailable");
+        when(datacenterMO.getDvPortGroupMor("nsx")).thenThrow(failure);
+        assertSame(failure, assertThrows(Exception.class,
+                () -> HypervisorHostHelper.waitForDvPortGroupReady(datacenterMO, "nsx", 60000)));
+        verify(datacenterMO).getDvPortGroupMor("nsx");
+    }
+
+    @Test
+    public void testDvPortGroupWaitPreservesInterrupt() throws Exception {
+        for (boolean duringLookup : new boolean[] {true, false}) {
+            DatacenterMO dc = mock(DatacenterMO.class);
+            InterruptedException interrupted = new InterruptedException("cancelled");
+            if (duringLookup) {
+                when(dc.getDvPortGroupMor("nsx")).thenThrow(interrupted);
+            }
+            try {
+                assertSame(interrupted, assertThrows(InterruptedException.class,
+                        () -> HypervisorHostHelper.waitForDvPortGroupReady(dc, "nsx", 60000, () -> 0,
+                                nanos -> { throw interrupted; })));
+                assertTrue(Thread.currentThread().isInterrupted());
+                verify(dc).getDvPortGroupMor("nsx");
+                assertThrows(InterruptedException.class,
+                        () -> HypervisorHostHelper.waitForDvPortGroupReady(dc, "nsx", 60000));
+                verify(dc).getDvPortGroupMor("nsx");
+            } finally {
+                Thread.interrupted();
+            }
+        }
+    }
+
+    @Test
+    public void testPrepareNetworkFailsForMissingNsxPortGroup() throws Exception {
+        when(hostMO.getHyperHostDatacenter()).thenReturn(mor);
+        when(vmwareClient.getDecendentMoRef(nullable(ManagedObjectReference.class), any(String.class), any(String.class))).thenReturn(mor);
+        when(vimService.retrieveProperties(any(), anyList())).thenReturn(List.of());
+        Exception failure = assertThrows(Exception.class, () -> HypervisorHostHelper.prepareNetwork("NSX-VDS", "cloud.guest", hostMO,
+                null, null, 200, null, 0, VirtualSwitchType.VMwareDistributedVirtualSwitch, 1, null,
+                false, Networks.BroadcastDomainType.NSX, null, null, "nsx"));
+        assertEquals("NSX DV port group nsx was not visible in vCenter (polling timeout: 0 ms)", failure.getMessage());
+        verify(vimService).retrieveProperties(any(), anyList());
+        verifyNoMoreInteractions(vimService);
     }
 }

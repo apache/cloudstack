@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
@@ -40,6 +41,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
@@ -67,6 +69,12 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckGuestOsMappingAnswer;
@@ -106,6 +114,15 @@ import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
+import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.hypervisor.vmware.manager.VmwareManagerImpl;
+import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.VirtualMachine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VmwareResourceTest {
@@ -873,5 +890,96 @@ public class VmwareResourceTest {
         vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+    }
+
+    private void assertNetworkTimeout(VirtualSwitchType switchType, BroadcastDomainType broadcast, String name,
+                                      long configured, long expected) throws Exception {
+        doReturn(configured).when(_resource).getNsxDvPortGroupWaitTimeout();
+        Mockito.clearInvocations(_resource);
+        NicTO nic = new NicTO();
+        nic.setName("NSX-VDS,untagged," + switchType);
+        nic.setType(TrafficType.Guest);
+        nic.setBroadcastType(broadcast);
+        nic.setBroadcastUri(broadcast.toUri(broadcast == BroadcastDomainType.Vlan ? "123" : "nsx"));
+        try (MockedStatic<HypervisorHostHelper> helper = mockStatic(HypervisorHostHelper.class)) {
+            _resource.prepareNetworkFromNicInfo(host, nic, false, name, VirtualMachine.Type.User);
+            if (switchType == VirtualSwitchType.StandardVirtualSwitch) {
+                helper.verify(() -> HypervisorHostHelper.prepareNetwork(any(), any(), eq(host), any(), any(), any(), eq(expected),
+                        eq(true), eq(broadcast), any(), any()));
+            } else {
+                helper.verify(() -> HypervisorHostHelper.prepareNetwork(any(), any(), eq(host), any(), any(), any(), any(), eq(expected),
+                        eq(switchType), Mockito.anyInt(), any(), eq(false), eq(broadcast), any(), any(), eq(name)));
+            }
+            helper.verifyNoMoreInteractions();
+            if (broadcast != BroadcastDomainType.NSX || switchType != VirtualSwitchType.VMwareDistributedVirtualSwitch || name == null) {
+                verify(_resource, never()).getNsxDvPortGroupWaitTimeout();
+            }
+        }
+    }
+
+    @Test
+    public void testNsxVisibilityTimeoutRouting() throws Exception {
+        assertEquals(60000L, new VmwareResource().getNsxDvPortGroupWaitTimeout());
+        assertTrue(Arrays.asList(new VmwareManagerImpl().getConfigKeys()).contains(VmwareManager.VmwareNsxDvPortGroupWaitTimeout));
+        for (long timeout : new long[] {0, 2500, Long.MAX_VALUE}) {
+            assertNetworkTimeout(VirtualSwitchType.VMwareDistributedVirtualSwitch, BroadcastDomainType.NSX, "nsx", timeout, Math.min(900000, timeout));
+        }
+    }
+
+    @Test
+    public void testOtherNetworkTimeoutsAreUnchanged() throws Exception {
+        assertNetworkTimeout(VirtualSwitchType.VMwareDistributedVirtualSwitch, BroadcastDomainType.Vlan, "network", -1, 900000);
+        assertNetworkTimeout(VirtualSwitchType.VMwareDistributedVirtualSwitch, BroadcastDomainType.Lswitch, "network", -1, 900000);
+        assertNetworkTimeout(VirtualSwitchType.VMwareDistributedVirtualSwitch, BroadcastDomainType.NSX, null, -1, 900000);
+        assertNetworkTimeout(VirtualSwitchType.NexusDistributedVirtualSwitch, BroadcastDomainType.NSX, "network", -1, 900000);
+        assertNetworkTimeout(VirtualSwitchType.StandardVirtualSwitch, BroadcastDomainType.Vlan, "network", -1, 900000);
+    }
+
+    @Test
+    public void testNsxTimeoutConfigurationIsValidatedBeforeSaving() {
+        String key = VmwareManager.VmwareNsxDvPortGroupWaitTimeout.key();
+        ConfigurationDao dao = mock(ConfigurationDao.class);
+        ConfigDepotImpl depot = mock(ConfigDepotImpl.class);
+        ConfigurationVO row = mock(ConfigurationVO.class);
+        MessageBus bus = mock(MessageBus.class);
+        AtomicReference<String> stored = new AtomicReference<>("60000");
+        when(dao.findByName(key)).thenReturn(row);
+        when(row.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+        doReturn(VmwareManager.VmwareNsxDvPortGroupWaitTimeout).when(depot).get(key);
+        when(dao.getValue(key)).thenAnswer(ignored -> stored.get());
+        when(dao.update(eq(key), anyString(), anyString())).thenAnswer(invocation -> {
+            stored.set(invocation.getArgument(2));
+            return true;
+        });
+        when(depot.getConfigStringValue(key, ConfigKey.Scope.Global, null)).thenAnswer(ignored -> stored.get());
+        ConfigurationManagerImpl manager = new ConfigurationManagerImpl();
+        ReflectionTestUtils.setField(manager, "_configDao", dao);
+        ReflectionTestUtils.setField(manager, "_configDepot", depot);
+        ReflectionTestUtils.setField(manager, "messageBus", bus);
+        ConfigDepotImpl previous = (ConfigDepotImpl) ReflectionTestUtils.getField(ConfigKey.class, "s_depot");
+        ConfigKey.init(depot);
+        try (MockedStatic<TransactionLegacy> transactions = mockStatic(TransactionLegacy.class)) {
+            for (String value : List.of("-1", "", "invalid", "1.5", "9223372036854775808")) {
+                assertThrows(InvalidParameterValueException.class,
+                        () -> manager.updateConfiguration(1, key, "Advanced", value, ConfigKey.Scope.Global, null));
+            }
+            transactions.verifyNoInteractions();
+            verify(dao, never()).update(anyString(), anyString(), anyString());
+            verify(depot, never()).invalidateConfigCache(key, ConfigKey.Scope.Global, null);
+            Mockito.verifyNoInteractions(bus);
+            assertEquals("60000", stored.get());
+            assertEquals(60000L, new VmwareResource().getNsxDvPortGroupWaitTimeout());
+            TransactionLegacy transaction = mock(TransactionLegacy.class);
+            transactions.when(TransactionLegacy::currentTxn).thenReturn(transaction);
+            for (String value : List.of("0", "60000", "2500", String.valueOf(Long.MAX_VALUE))) {
+                assertEquals(value, manager.updateConfiguration(1, key, "Advanced", value, ConfigKey.Scope.Global, null));
+                assertEquals(Long.parseLong(value), new VmwareResource().getNsxDvPortGroupWaitTimeout());
+            }
+            verify(transaction, times(4)).start();
+            verify(transaction, times(4)).commit();
+            verify(depot, times(4)).invalidateConfigCache(key, ConfigKey.Scope.Global, null);
+        } finally {
+            ConfigKey.init(previous);
+        }
     }
 }
