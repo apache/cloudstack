@@ -164,7 +164,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), any(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
+            anyInt(), anyString(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
 
         // User/Account DAO stubs used by createDiskOffering
@@ -250,7 +250,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyBoolean(), anyBoolean(), anyBoolean(), anyString(), anyList(), anyList(), anyString(), any(Integer.class),
             anyString(), anyMap(), anyLong(), any(Boolean.class),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            any(Integer.class), anyString(), anyLong(), anyBoolean(), anyLong(), anyBoolean(), anyBoolean(), anyBoolean(),
+            any(Integer.class), anyString(), anyString(), anyLong(), anyBoolean(), anyLong(), anyBoolean(), anyBoolean(), anyBoolean(),
             anyLong(), any(Integer.class), any(Boolean.class), anyBoolean(), any(Integer.class), any(VMLeaseManager.ExpiryAction.class)
         );
 
@@ -326,7 +326,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyString(), anyList(), anyList(), anyString(), anyInt(), anyString(), any(),
             anyLong(), anyBoolean(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyLong(), anyLong(), anyInt(), anyString(), anyLong(), anyBoolean(), anyLong(),
+            anyLong(), anyLong(), anyInt(), anyString(), anyString(), anyLong(), anyBoolean(), anyLong(),
             anyBoolean(), anyBoolean(), anyBoolean(), anyLong(), anyInt(), anyBoolean(),
             anyBoolean(), anyInt(), any());
 
@@ -395,7 +395,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), any(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
+            anyInt(), anyString(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
         DiskOffering result = configurationManager.cloneDiskOffering(cmd);
 
@@ -451,7 +451,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), eq("tag1,tag2"), anyBoolean(), anyBoolean(), anyBoolean(), any(),
             eq(100L), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
+            anyInt(), anyString(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
         DiskOffering result = configurationManager.cloneDiskOffering(cmd);
 
@@ -504,7 +504,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), any(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
+            anyInt(), anyString(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
         DiskOffering result = configurationManager.cloneDiskOffering(cmd);
 
@@ -551,7 +551,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyString(), anyList(), anyList(), anyString(), anyInt(), anyString(), any(),
             anyLong(), anyBoolean(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyLong(), anyLong(), anyInt(), anyString(), anyLong(), anyBoolean(), anyLong(),
+            anyLong(), anyLong(), anyInt(), anyString(), anyString(), anyLong(), anyBoolean(), anyLong(),
             anyBoolean(), anyBoolean(), anyBoolean(), anyLong(), anyInt(), anyBoolean(),
             anyBoolean(), anyInt(), any());
 
@@ -597,7 +597,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyString(), eq(50L), eq("production,ssd"), anyBoolean(), anyBoolean(),
             anyBoolean(), any(), eq(1000L), eq(5000L), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyLong(), anyLong(), eq(20), anyString(), any(), anyLong(), anyBoolean(),
+            anyLong(), anyLong(), eq(20), anyString(), anyString(), any(), anyLong(), anyBoolean(),
             eq(true));
 
         DiskOffering result = configurationManager.cloneDiskOffering(cmd);
@@ -651,7 +651,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             eq("production,high-performance"), anyBoolean(), anyBoolean(), anyBoolean(),
             any(), eq(2000L), eq(10000L), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyLong(), anyInt(), anyString(), any(), anyLong(), anyBoolean(), eq(true));
+            anyLong(), anyInt(), anyString(), anyString(), any(), anyLong(), anyBoolean(), eq(true));
 
         DiskOffering result = configurationManager.cloneDiskOffering(cmd);
 
@@ -706,7 +706,7 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(), any(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
-            anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
+            anyInt(), anyString(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
         DiskOffering result = configurationManager.cloneDiskOffering(cmd);
 

@@ -272,3 +272,5 @@ INSERT INTO `cloud`.`guest_os_details` (`guest_os_id`, `name`, `value`, `display
     WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)'
     AND NOT EXISTS (SELECT 1 FROM `cloud`.`guest_os_details` d JOIN `cloud`.`guest_os` g ON d.`guest_os_id` = g.`id`
         WHERE g.`display_name` = 'Debian GNU/Linux 12 (64-bit)' AND d.`name` = 'xenserver.dynamicMax');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
