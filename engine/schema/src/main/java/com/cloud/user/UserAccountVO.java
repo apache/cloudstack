@@ -376,7 +376,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Override
     public String toString() {
-        return String.format("UserAccount %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields
+        return String.format("UserAccount %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields
                 (this, "id", "uuid", "username", "accountName"));
     }
 }

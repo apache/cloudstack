@@ -438,7 +438,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     @Override
     public String toString() {
-        return String.format("Service offering %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid"));
+        return String.format("Service offering %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid"));
     }
 
     public boolean isDynamicScalingEnabled() {
