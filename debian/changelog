@@ -1,3 +1,9 @@
+cloudstack (4.22.2.0) unstable; urgency=low
+
+  * Update the version to 4.22.2.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  вт, 10 ное 2026 14:23:22 +0200
+
 cloudstack (4.22.2.0-SNAPSHOT) unstable; urgency=low
 
   * Update the version to 4.22.2.0-SNAPSHOT
