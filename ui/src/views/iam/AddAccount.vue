@@ -428,8 +428,6 @@ export default {
           domainid: values.domainid
         }
         if (!values.samlenable) {
-          // SAML-authenticated accounts never log in with a native password; let the API
-          // generate one rather than asking the admin to set one that will never be used
           params.password = values.password
         }
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
