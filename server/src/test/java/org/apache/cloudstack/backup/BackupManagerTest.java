@@ -2432,4 +2432,18 @@ public class BackupManagerTest {
         verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);
         verify(volumeDao, times(1)).findByInstance(vmId);
     }
+
+    @Test
+    public void checkStatusOfCurrentlyExecutingBackupsTestMissingAsyncJobSchedulesNextBackup() {
+        BackupScheduleVO backupSchedule = mock(BackupScheduleVO.class);
+        doReturn(1L).when(backupSchedule).getAsyncJobId();
+        doReturn(mock(SearchCriteria.class)).when(backupScheduleDao).createSearchCriteria();
+        doReturn(List.of(backupSchedule)).when(backupScheduleDao).search(any(), any());
+        doReturn(null).when(asyncJobManager).getAsyncJob(1L);
+        doReturn(new Date()).when(backupManager).scheduleNextBackupJob(backupSchedule);
+
+        backupManager.checkStatusOfCurrentlyExecutingBackups();
+
+        verify(backupManager).scheduleNextBackupJob(backupSchedule);
+    }
 }
