@@ -344,6 +344,19 @@ public class SnapshotManagerTest {
         _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
     }
 
+    // volume removed or its row gone
+    @Test
+    public void testRevertSnapshotVolumeGone() {
+        when(_volumeDao.findById(anyLong())).thenReturn(null);
+        try {
+            _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
+            Assert.fail("Reverting a snapshot whose volume no longer exists must be refused");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("no longer exists"));
+        }
+        Mockito.verify(snapshotStrategy, Mockito.never()).revertSnapshot(any());
+    }
+
     // vm on Xenserver, return null
     @Test
     public void testRevertSnapshotF2() {

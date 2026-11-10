@@ -447,9 +447,20 @@ public class SnapshotManagerImplTest {
     public void testGetCheckedSnapshotForCopyDestContainsSource() {
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
-        Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
-        Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VolumeVO.class));
         snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 1L), 1L, false);
+    }
+
+    @Test
+    public void testGetCheckedSnapshotForCopyVolumeRemoved() {
+        final Long zoneId = 1L;
+        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+        Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+        Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
+        Mockito.when(snapshotVO.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(volumeDao.findById(1L)).thenReturn(null);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(Mockito.mock(DataCenterVO.class));
+        Pair<SnapshotVO, Long> result = snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 101L), null, false);
+        Assert.assertEquals(zoneId, result.second());
     }
 
     @Test(expected = InvalidParameterValueException.class)
