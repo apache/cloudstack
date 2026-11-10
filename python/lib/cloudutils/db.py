@@ -17,7 +17,10 @@
 import os
 from .utilities import bash
 from .cloudException import CloudRuntimeException
-import mysql.connector
+try:
+    import mysql.connector as mysqldb
+except ImportError:
+    import pymysql as mysqldb
 
 class Database(object):
     """Database connection"""
@@ -29,10 +32,10 @@ class Database(object):
         self.db = db
 
     def connect(self):
-        return mysql.connector.connect(host=self.host,
-                                       user=self.username,
-                                       password=self.password,
-                                       database=self.db)
+        return mysqldb.connect(host=self.host,
+                               user=self.username,
+                               password=self.password,
+                               database=self.db)
 
     def execute(self, statement):
         txn = None

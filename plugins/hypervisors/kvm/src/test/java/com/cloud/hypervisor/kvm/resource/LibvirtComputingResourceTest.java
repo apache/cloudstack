@@ -3645,6 +3645,15 @@ public class LibvirtComputingResourceTest {
             when(vifDriver.plug(nic, "Other PV", "", null)).thenReturn(interfaceDef);
             when(interfaceDef.toString()).thenReturn("Interface");
 
+            // Stub vm.getXMLDesc(0) so findNextAvailablePciSlot can scan the domain XML
+            // for in-use PCI slots. Returning a minimal <domain> with a single NIC at
+            // slot 0x03 exercises the production parser without forcing the production
+            // code into its null-fallback path.
+            when(vm.getXMLDesc(0)).thenReturn(
+                    "<domain><devices><interface type='bridge'>" +
+                    "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>" +
+                    "</interface></devices></domain>");
+
             final String interfaceDefStr = interfaceDef.toString();
             doNothing().when(vm).attachDevice(interfaceDefStr);
 
@@ -7242,6 +7251,38 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals("mce", cpuFeatures.get(1));
         Assert.assertEquals("-mmx", cpuFeatures.get(2));
         Assert.assertEquals("hle", cpuFeatures.get(3));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputReturnsLibraryVersion() {
+        String output = "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n" +
+                "vddk_library_version=8\n" +
+                "vddk_transport_modes=file:san:hotadd:nbdssl:nbd\n";
+
+        Assert.assertEquals("8", libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputIgnoresPluginVersionWithoutLoadedLibrary() {
+        String output = "nbdkit 1.24.0\n" +
+                "vddk 1.24.0\n" +
+                "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n";
+
+        Assert.assertNull(libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void isNbdkitVddkPluginUsableRequiresLoadedVddkLibrary() throws IOException {
+        Path vddkDir = Files.createTempDirectory("vddk-test");
+        Files.createDirectories(vddkDir.resolve("lib64"));
+        Files.createFile(vddkDir.resolve("lib64/libvixDiskLib.so.8"));
+        Mockito.doReturn("vddk_library_version=8\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertTrue(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
+
+        Mockito.doReturn("nbdkit: error: libssl.so.3: cannot open shared object file\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertFalse(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
     }
 
     @Test

@@ -137,6 +137,10 @@ public class DiskOfferingVO implements DiskOffering {
     @Enumerated(value = EnumType.STRING)
     private DiskCacheMode cacheMode;
 
+    @Column(name = "error_policy", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    private DiskErrorPolicy errorPolicy;
+
     @Column(name = "provisioning_type")
     Storage.ProvisioningType provisioningType;
 
@@ -286,6 +290,16 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public void setCacheMode(DiskCacheMode cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    @Override
+    public DiskErrorPolicy getErrorPolicy() {
+        return errorPolicy;
+    }
+
+    @Override
+    public void setErrorPolicy(DiskErrorPolicy errorPolicy) {
+        this.errorPolicy = errorPolicy;
     }
 
     @Override

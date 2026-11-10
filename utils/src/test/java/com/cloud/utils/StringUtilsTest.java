@@ -277,4 +277,33 @@ public class StringUtilsTest {
         assertEquals(key, output.first());
         assertEquals(value, output.second());
     }
+
+    @Test
+    public void testCleanSensitiveDetailsAtEndOfQuery() {
+        for (String index : new String[] {"[1]", "%5B1%5D"}) {
+            for (String key : new String[] {"password", "Password", "accesskey", "secretkey"}) {
+                String query = "command=addImageStore&name=store-1"
+                        + "&details[2].key=bucket&details[2].value=archive"
+                        + "&details" + index + ".value=SECRET_SENTINEL&details" + index + ".key=" + key;
+                assertEquals("Terminal descriptor " + key + " at " + index,
+                        "command=addImageStore&name=store-1&details[2].key=bucket&details[2].value=archive&",
+                        StringUtils.cleanString(query));
+            }
+        }
+    }
+
+    @Test
+    public void testCleanDetailsDoesNotTreatSensitiveKeyPrefixesAsCredentials() {
+        for (String key : new String[] {"secretkeyname", "accesskeyid", "passwordenabled", "bucket"}) {
+            String query = "command=addImageStore&details[1].value=retained-value&details[1].key=" + key;
+            assertEquals(query, StringUtils.cleanString(query));
+        }
+    }
+
+    @Test
+    public void testCleanSensitiveDetailsAtEndOfEncodedQuery() {
+        String query = "command%3DaddImageStore%26name%3Dstore-1"
+                + "%26details%5B1%5D.value%3DSECRET_SENTINEL%26details%5B1%5D.key%3Dsecretkey";
+        assertEquals("command%3DaddImageStore%26name%3Dstore-1&", StringUtils.cleanString(query));
+    }
 }
