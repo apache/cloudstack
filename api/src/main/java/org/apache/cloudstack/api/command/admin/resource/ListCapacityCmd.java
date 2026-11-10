@@ -65,7 +65,7 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "Lists capacity by type" + "* CAPACITY_TYPE_MEMORY = 0" + "* CAPACITY_TYPE_CPU = 1"
         + "* CAPACITY_TYPE_STORAGE = 2" + "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" + "* CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4" + "* CAPACITY_TYPE_PRIVATE_IP = 5"
         + "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" + "* CAPACITY_TYPE_VLAN = 7" + "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" + "* CAPACITY_TYPE_LOCAL_STORAGE = 9"
-        + "* CAPACITY_TYPE_GPU = 19" + "* CAPACITY_TYPE_CPU_CORE = 90.")
+        + "* CAPACITY_TYPE_GPU = 19" + "* CAPACITY_TYPE_OBJECT_STORAGE = 20" + "* CAPACITY_TYPE_BACKUP_STORAGE = 21" + "* CAPACITY_TYPE_CPU_CORE = 90.")
     private Integer type;
 
     @Parameter(name = ApiConstants.SORT_BY, type = CommandType.STRING, since = "3.0.0", description = "Sort the results. Available values: Usage")
