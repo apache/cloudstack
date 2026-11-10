@@ -1019,7 +1019,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected void validateCniConfiguration(Long cniConfigId) {
+        if (cniConfigId == null) {
+            return;
+        }
+        UserDataVO userData = userDataDao.findById(cniConfigId);
+        if (userData == null) {
+            throw new InvalidParameterValueException("Unable to find user data with the specified ID.");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, userData);
+    }
+
     private void validateManagedKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        validateCniConfiguration(cmd.getCniConfigId());
         ApiServiceConfiguration.validateEndpointUrl();
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
