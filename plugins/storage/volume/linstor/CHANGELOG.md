@@ -35,6 +35,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "shares '<n>' must be in range [1, 10000]" for VMs with more than 10000 cpus * MHz, and smaller
   VMs ended up with an unscaled CPU weight; the CPU shares calculated by the target host are now used.
 
+## [2026-07-31]
+
+### Added
+
+- Support for shared (thick LVM) storage pools: resources on a shared LUN are
+  activated on at most one node; live migration uses the LINSTOR 1.29
+  make-available/unmake-available API (with fallback to the previous handling
+  for older controllers), snapshots work on thick LVM pools, and resources of
+  stopped VMs are activated on demand for start, snapshot backup and revert
+
+### Changed
+
+- java-linstor client updated to 0.8.1 (LINSTOR REST API 1.29.1)
+
 ## [2026-07-30]
 
 ### Added
