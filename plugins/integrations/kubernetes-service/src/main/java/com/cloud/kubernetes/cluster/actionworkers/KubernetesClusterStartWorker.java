@@ -691,6 +691,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 throw new ManagementServerException(String.format("Failed to provision firewall rules for etcd nodes for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
             }
             provisionPublicIpPortForwardingRule(publicIp, network, owner, etcdVmIds.get(i), etcdStartPort, DEFAULT_SSH_PORT);
+            if (isVpcFirewallEnabled(network)) {
+                // In a VPC the firewall rule follows the port forwarding rule, see setupKubernetesClusterVpcTierRules
+                try {
+                    provisionFirewallRules(publicIp, owner, etcdStartPort, etcdStartPort);
+                } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+                    throw new ManagementServerException(String.format("Failed to provision firewall rules for etcd nodes for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+                }
+            }
         }
     }
 

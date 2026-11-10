@@ -23,13 +23,21 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.HashMap;
+import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterResourceModifierActionWorkerTest {
@@ -50,6 +58,18 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
     @Mock
     private KubernetesCluster kubernetesClusterMock;
+
+    @Mock
+    private NetworkOfferingDao networkOfferingDaoMock;
+
+    @Mock
+    private NetworkOfferingVO networkOfferingMock;
+
+    @Mock
+    private Network networkMock;
+
+    @Mock
+    private IpAddress publicIpMock;
 
     private KubernetesClusterResourceModifierActionWorker kubernetesClusterResourceModifierActionWorker;
 
@@ -134,5 +154,50 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
         Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
+    }
+
+    private KubernetesClusterResourceModifierActionWorker mockWorkerForVpcTierRules(boolean vpcFirewall) throws Exception {
+        KubernetesClusterResourceModifierActionWorker worker = Mockito.spy(kubernetesClusterResourceModifierActionWorker);
+        worker.networkOfferingDao = networkOfferingDaoMock;
+        Mockito.when(networkMock.getNetworkOfferingId()).thenReturn(1L);
+        Mockito.when(networkOfferingDaoMock.findById(1L)).thenReturn(networkOfferingMock);
+        Mockito.when(networkOfferingMock.isConserveMode()).thenReturn(true);
+        Mockito.doNothing().when(worker).createVpcTierAclRules(networkMock);
+        Mockito.doReturn(vpcFirewall).when(worker).isVpcFirewallEnabled(networkMock);
+        Mockito.doNothing().when(worker).provisionLoadBalancerRule(Mockito.eq(publicIpMock), Mockito.eq(networkMock), Mockito.any(),
+                Mockito.anyList(), Mockito.anyInt());
+        Mockito.doReturn(new HashMap<>()).when(worker).getVmPortMap();
+        Mockito.doNothing().when(worker).provisionSshPortForwardingRules(Mockito.eq(publicIpMock), Mockito.eq(networkMock), Mockito.any(),
+                Mockito.anyList(), Mockito.anyMap());
+        return worker;
+    }
+
+    @Test
+    public void setupKubernetesClusterVpcTierRulesTestOpensPublicIpFirewallWhenVpcFirewallIsEnabled() throws Exception {
+        List<Long> clusterVmIds = List.of(10L, 11L);
+        KubernetesClusterResourceModifierActionWorker worker = mockWorkerForVpcTierRules(true);
+        Mockito.doReturn(new HashMap<>()).when(worker).createFirewallRules(publicIpMock, clusterVmIds, true);
+
+        worker.setupKubernetesClusterVpcTierRules(publicIpMock, networkMock, clusterVmIds);
+
+        // Firewall rules on a VPC public IP must follow the LB/PF rules, which associate the IP with the VR
+        InOrder inOrder = Mockito.inOrder(worker);
+        inOrder.verify(worker).createVpcTierAclRules(networkMock);
+        inOrder.verify(worker).provisionLoadBalancerRule(Mockito.eq(publicIpMock), Mockito.eq(networkMock), Mockito.any(),
+                Mockito.anyList(), Mockito.anyInt());
+        inOrder.verify(worker).provisionSshPortForwardingRules(Mockito.eq(publicIpMock), Mockito.eq(networkMock), Mockito.any(),
+                Mockito.anyList(), Mockito.anyMap());
+        inOrder.verify(worker).createFirewallRules(publicIpMock, clusterVmIds, true);
+    }
+
+    @Test
+    public void setupKubernetesClusterVpcTierRulesTestKeepsAclOnlyWhenVpcHasNoFirewall() throws Exception {
+        List<Long> clusterVmIds = List.of(10L, 11L);
+        KubernetesClusterResourceModifierActionWorker worker = mockWorkerForVpcTierRules(false);
+
+        worker.setupKubernetesClusterVpcTierRules(publicIpMock, networkMock, clusterVmIds);
+
+        Mockito.verify(worker).createVpcTierAclRules(networkMock);
+        Mockito.verify(worker, Mockito.never()).createFirewallRules(Mockito.any(), Mockito.anyList(), Mockito.anyBoolean());
     }
 }

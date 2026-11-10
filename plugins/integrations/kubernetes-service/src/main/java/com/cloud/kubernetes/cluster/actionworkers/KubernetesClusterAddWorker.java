@@ -31,7 +31,6 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -49,7 +48,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.Level;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -60,8 +58,6 @@ import java.util.stream.Collectors;
 
 public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
 
-    @Inject
-    private FirewallRulesDao firewallRulesDao;
     private long addNodeTimeoutTime;
 
     List<Long> finalNodeIds = new ArrayList<>();
@@ -229,9 +225,13 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
                 provisionFirewallRules(publicIp, owner, sshStartPort, sshStartPort);
             }
             provisionPublicIpPortForwardingRule(publicIp, network, account, nodeId, sshStartPort, DEFAULT_SSH_PORT);
+            if (isVpcFirewallEnabled(network)) {
+                // In a VPC the firewall rule follows the port forwarding rule, see setupKubernetesClusterVpcTierRules
+                provisionFirewallRules(publicIp, owner, sshStartPort, sshStartPort);
+            }
             boolean isCompatible = validateNodeCompatibility(publicIp, nodeId, sshStartPort);
             if (!isCompatible) {
-                revertNetworkRules(network, nodeId, sshStartPort);
+                revertNetworkRules(network, publicIp, nodeId, sshStartPort);
                 return new Pair<>(false, nodeIndex);
             }
 
@@ -249,13 +249,13 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
                  InsufficientCapacityException | IllegalAccessException e) {
             logger.error(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()));
             // remove added Firewall and PF rules
-            revertNetworkRules(network, nodeId, sshStartPort);
+            revertNetworkRules(network, publicIp, nodeId, sshStartPort);
             return new Pair<>( false, nodeIndex);
         } catch (Exception e) {
             String errMsg = String.format("Unexpected exception while trying to add the external node %s to the Kubernetes cluster %s: %s",
                     nodeId, kubernetesCluster.getName(), e.getMessage());
             logger.error(errMsg, e);
-            revertNetworkRules(network, nodeId, sshStartPort);
+            revertNetworkRules(network, publicIp, nodeId, sshStartPort);
             throw new CloudRuntimeException(e);
         }
         return new Pair<>(true, ++nodeIndex);
@@ -310,12 +310,14 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         }
     }
 
-    private void revertNetworkRules(Network network, long vmId, int port) {
+    private void revertNetworkRules(Network network, IpAddress publicIp, long vmId, int port) {
         logger.debug(String.format("Reverting network rules for VM ID %s on network %s", vmId, network.getName()));
-        FirewallRuleVO ruleVO = firewallRulesDao.findByNetworkIdAndPorts(network.getId(), port, port);
-        if (Objects.isNull(network.getVpcId())) {
-            logger.debug(String.format("Removing firewall rule %s", ruleVO.getId()));
-            firewallService.revokeIngressFirewallRule(ruleVO.getId(), true);
+        if (isPublicIpFirewallRequired(network)) {
+            FirewallRuleVO ruleVO = findIngressFirewallRuleForPorts(network, publicIp.getId(), port, port);
+            if (ruleVO != null) {
+                logger.debug(String.format("Removing firewall rule %s", ruleVO.getId()));
+                firewallService.revokeIngressFirewallRule(ruleVO.getId(), true);
+            }
         }
         List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByVm(vmId);
         for (PortForwardingRuleVO pfRule : pfRules) {
