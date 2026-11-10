@@ -85,7 +85,8 @@ import java.util.stream.Collectors;
 public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStrategy {
 
     private static final List<Storage.StoragePoolType> supportedStoragePoolTypes = List.of(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint);
-    private static final String KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM = "kvmFileBasedStorageSnapshotNvram";
+    protected static final String KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM = "kvmFileBasedStorageSnapshotNvram";
+    protected static final String KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY = "kvmFileBasedStorageSnapshotStrategy";
 
     @Inject
     protected SnapshotDataStoreDao snapshotDataStoreDao;
@@ -133,8 +134,12 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     @Override
     public boolean deleteVMSnapshot(VMSnapshot vmSnapshot) {
         logger.info("Starting VM snapshot delete process for snapshot [{}].", vmSnapshot.getUuid());
-        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
         VMSnapshotVO vmSnapshotBeingDeleted = (VMSnapshotVO) vmSnapshot;
+        if (!hasRelevantVmSnapshotDetails(vmSnapshotBeingDeleted)) {
+            return deleteVMSnapshotMetadataOnly(vmSnapshotBeingDeleted);
+        }
+
+        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
         Long hostId = pickHostForNvramSidecarCleanup(vmSnapshotBeingDeleted, userVm, "delete");
         validateHostSupportsNvramSidecarCleanup(vmSnapshotBeingDeleted, hostId, "delete");
         long virtualSize = 0;
@@ -322,16 +327,41 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         transitStateWithoutThrow(oldParent, VMSnapshot.Event.OperationSucceeded);
     }
 
+    protected boolean deleteVMSnapshotMetadataOnly(VMSnapshotVO vmSnapshot) {
+        logger.info("VM snapshot [{}] has no volume snapshots or NVRAM sidecar on primary storage; removing only its metadata.", vmSnapshot.getUuid());
+
+        transitStateWithoutThrow(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+        transitStateWithoutThrow(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
+
+        vmSnapshotDetailsDao.removeDetails(vmSnapshot.getId());
+
+        vmSnapshot.setRemoved(DateUtil.now());
+        vmSnapshotDao.update(vmSnapshot.getId(), vmSnapshot);
+
+        return true;
+    }
+
+    protected boolean hasKVMFileBasedStorageSnapshotDetailInVmSnapshotDetails(VMSnapshot vmSnapshot) {
+        return CollectionUtils.isNotEmpty(vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT));
+    }
+
+    protected boolean hasRelevantVmSnapshotDetails(VMSnapshotVO vmSnapshot) {
+        return hasKVMFileBasedStorageSnapshotDetailInVmSnapshotDetails(vmSnapshot) || StringUtils.isNotBlank(getNvramSnapshotPath(vmSnapshot));
+    }
+
+    protected boolean isCreatedByThisStrategy(VMSnapshot vmSnapshot) {
+        return vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY) != null;
+    }
+
     @Override
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
         if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
-            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT);
-            if (CollectionUtils.isEmpty(vmSnapshotDetails)) {
-                logger.debug("KVM file based storage VM snapshot strategy cannot handle [{}] as it is not a KVM file based storage VM snapshot.",
-                        vmSnapshot.getUuid());
-                return StrategyPriority.CANT_HANDLE;
+            if (hasKVMFileBasedStorageSnapshotDetailInVmSnapshotDetails(vmSnapshot) || isCreatedByThisStrategy(vmSnapshot)) {
+                return StrategyPriority.HIGHEST;
             }
-            return StrategyPriority.HIGHEST;
+            logger.debug("KVM file based storage VM snapshot strategy cannot handle [{}] as it is not a KVM file based storage VM snapshot.",
+                    vmSnapshot.getUuid());
+            return StrategyPriority.CANT_HANDLE;
         }
 
         long vmId = vmSnapshot.getVmId();
@@ -523,6 +553,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         logger.info("Starting disk-only VM snapshot process for VM [{}].", userVm.getUuid());
 
         transitStateWithoutThrow(vmSnapshot, VMSnapshot.Event.CreateRequested);
+        vmSnapshotDetailsDao.addDetail(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY, Boolean.TRUE.toString(), false);
 
         Long hostId = pickHostForUefiNvramAwareDiskOnlySnapshot(userVm, "create");
         validateHostSupportsUefiNvramAwareDiskOnlySnapshots(hostId, userVm, "create");
