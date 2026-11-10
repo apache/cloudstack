@@ -19,8 +19,15 @@ package org.apache.cloudstack.storage.datastore.driver;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.DrbdVolume;
 import com.linbit.linstor.api.model.LayerType;
+import com.linbit.linstor.api.model.Properties;
+import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceGroup;
+import com.linbit.linstor.api.model.ResourceWithVolumes;
+import com.linbit.linstor.api.model.Volume;
+import com.linbit.linstor.api.model.VolumeDefinition;
+import com.linbit.linstor.api.model.VolumeLayer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,6 +49,11 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.ResourceLimitService;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -53,6 +65,15 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
     @Mock
     private SnapshotDataStoreDao snapshotStoreDao;
+
+    @Mock
+    private VolumeDao volumeDao;
+
+    @Mock
+    private DiskOfferingDao diskOfferingDao;
+
+    @Mock
+    private ResourceLimitService resourceLimitMgr;
 
     @InjectMocks
     private LinstorPrimaryDataStoreDriverImpl linstorPrimaryDataStoreDriver;
@@ -177,5 +198,88 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
         layers = LinstorUtil.getEncryptedLayerList(api, "EncryptedGrp");
         Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE), layers);
+    }
+
+    /**
+     * A 512 MiB volume definition whose DRBD device has 540909568 bytes (LVM-thin rounds the storage up).
+     */
+    private void mockLinstorVolume(String rscName) throws ApiException {
+        VolumeDefinition vlmDfn = new VolumeDefinition();
+        vlmDfn.setSizeKib(524288L);
+        ResourceDefinition rscDfn = new ResourceDefinition();
+        rscDfn.setName(rscName);
+        rscDfn.addVolumeDefinitionsItem(vlmDfn);
+        rscDfn.setProps(new Properties());
+        when(api.resourceDefinitionList(Collections.singletonList(rscName), true, null, null, null))
+                .thenReturn(Collections.singletonList(rscDfn));
+
+        DrbdVolume drbdVolume = new DrbdVolume();
+        drbdVolume.setUsableSizeKib(528232L);
+        VolumeLayer layer = new VolumeLayer();
+        layer.setType(LayerType.DRBD);
+        layer.setData(drbdVolume);
+        Volume volume = new Volume();
+        volume.addLayerDataListItem(layer);
+        ResourceWithVolumes rsc = new ResourceWithVolumes();
+        rsc.setNodeName("nodeA");
+        rsc.setVolumes(Collections.singletonList(volume));
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList(rscName), Collections.emptyList(),
+                null, null, null)).thenReturn(Collections.singletonList(rsc));
+    }
+
+    private VolumeVO mockVolume(long size) {
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.lenient().when(volume.getId()).thenReturn(7L);
+        Mockito.lenient().when(volume.getAccountId()).thenReturn(2L);
+        Mockito.lenient().when(volume.isDisplayVolume()).thenReturn(true);
+        Mockito.lenient().when(volume.getDiskOfferingId()).thenReturn(3L);
+        when(volume.getSize()).thenReturn(size);
+        return volume;
+    }
+
+    @Test
+    public void testRecordDeviceSizeRecordsTheLargerDevice() throws ApiException {
+        mockLinstorVolume("cs-vol");
+        VolumeVO volume = mockVolume(536870912L);
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(diskOfferingDao.findById(3L)).thenReturn(diskOffering);
+
+        long size = linstorPrimaryDataStoreDriver.recordDeviceSize(api, volume, "cs-vol", true);
+
+        Assert.assertEquals(540909568L, size);
+        Mockito.verify(volume).setSize(540909568L);
+        Mockito.verify(volumeDao).update(7L, volume);
+        Mockito.verify(resourceLimitMgr).incrementVolumePrimaryStorageResourceCount(2L, true, 4038656L, diskOffering);
+    }
+
+    @Test
+    public void testRecordDeviceSizeWithoutResourceCount() throws ApiException {
+        // a resize counts the recorded size itself
+        mockLinstorVolume("cs-vol");
+        VolumeVO volume = mockVolume(536870912L);
+
+        Assert.assertEquals(540909568L, linstorPrimaryDataStoreDriver.recordDeviceSize(api, volume, "cs-vol", false));
+        Mockito.verify(volumeDao).update(7L, volume);
+        Mockito.verifyNoInteractions(resourceLimitMgr);
+    }
+
+    @Test
+    public void testRecordDeviceSizeKeepsRecordedDeviceSize() throws ApiException {
+        mockLinstorVolume("cs-vol");
+        VolumeVO volume = mockVolume(540909568L);
+
+        Assert.assertEquals(540909568L, linstorPrimaryDataStoreDriver.recordDeviceSize(api, volume, "cs-vol", true));
+        Mockito.verify(volume, Mockito.never()).setSize(Mockito.anyLong());
+        Mockito.verifyNoInteractions(volumeDao, resourceLimitMgr);
+    }
+
+    @Test
+    public void testRecordDeviceSizeKeepsSizeIfLinstorFails() throws ApiException {
+        when(api.resourceDefinitionList(Collections.singletonList("cs-vol"), true, null, null, null))
+                .thenThrow(new ApiException(500, "controller unreachable"));
+        VolumeVO volume = mockVolume(536870912L);
+
+        Assert.assertEquals(536870912L, linstorPrimaryDataStoreDriver.recordDeviceSize(api, volume, "cs-vol", true));
+        Mockito.verifyNoInteractions(volumeDao, resourceLimitMgr);
     }
 }
