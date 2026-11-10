@@ -578,4 +578,25 @@ public class VpcManagerImplTest {
         Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, differentVpcAclId));
     }
 
+    @Test
+    public void rollingRestartIsRefusedBeforeTheNewRouterIsDeployed() throws Exception {
+        final VpcVO vpc = Mockito.mock(VpcVO.class);
+        Mockito.when(vpc.getId()).thenReturn(vpcId);
+        Mockito.when(vpcDao.getActiveVpcById(vpcId)).thenReturn(vpc);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
+        final List<DomainRouterVO> routers = List.of(Mockito.mock(DomainRouterVO.class));
+        Mockito.when(routerDao.listByVpcId(vpcId)).thenReturn(routers);
+        Mockito.doThrow(new ResourceUnavailableException("router host is Disconnected", Vpc.class, vpcId))
+                .when(networkMgr).checkRoutersCanBeReplaced(routers);
+        final User caller = Mockito.mock(User.class);
+        Mockito.when(caller.getAccountId()).thenReturn(ACCOUNT_ID);
+
+        Assert.assertThrows(ResourceUnavailableException.class, () -> manager.restartVpc(vpcId, true, false, false, caller));
+
+        verify(networkMgr).checkRoutersCanBeReplaced(routers);
+        verify(networkMgr, Mockito.never()).destroyExpendableRouters(any(), any());
+        verify(networkMgr, Mockito.never()).destroyReplacedRouters(any(), any());
+        verify(dataCenterDao, Mockito.never()).findById(anyLong());
+    }
+
 }

@@ -339,6 +339,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     VpcVirtualNetworkApplianceService _routerService;
     @Inject
+    VirtualMachineManager _itMgr;
+    @Inject
     UserVmManager _userVmMgr;
     @Inject
     TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
@@ -3869,6 +3871,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return false;
         }
         logger.debug("Performing rolling restart of routers of network {}", network);
+        checkRoutersCanBeReplaced(routerDao.findByNetwork(network.getId()));
         destroyExpendableRouters(routerDao.findByNetwork(network.getId()), context);
 
         final List<Provider> providersToImplement = getNetworkProviders(network.getId());
@@ -3891,11 +3894,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        // Destroy old routers
-        for (final DomainRouterVO oldRouter : oldRouters) {
-            _routerService.stopRouter(oldRouter.getId(), true);
-            _routerService.destroyRouter(oldRouter.getId(), context.getAccount(), context.getCaller().getId());
-        }
+        destroyReplacedRouters(oldRouters, context);
 
         if (network.isRedundant()) {
             // Add a new backup router for redundant network
@@ -3906,6 +3905,41 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         return areRoutersRunning(routerDao.findByNetwork(network.getId()));
+    }
+
+    @Override
+    public void checkRoutersCanBeReplaced(final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        for (final VirtualRouter router : routers) {
+            final VirtualMachine.State state = router.getState();
+            if (state == VirtualMachine.State.Stopped || state == VirtualMachine.State.Destroyed || state == VirtualMachine.State.Expunging
+                    || state == VirtualMachine.State.Error || router.getHostId() == null) {
+                continue;
+            }
+            if (state == VirtualMachine.State.Migrating) {
+                throw new ResourceUnavailableException(String.format("Unable to replace router %s: it is migrating. Retry once the migration has completed.",
+                        router.getInstanceName()), Host.class, router.getHostId());
+            }
+            final HostVO host = _hostDao.findById(router.getHostId());
+            if (host != null && host.getStatus() != Status.Up && host.getStatus() != Status.Down && host.getStatus() != Status.Removed) {
+                throw new ResourceUnavailableException(String.format("Unable to replace router %s: its host %s is %s and may still be running it. "
+                        + "Retry once the host is Up, or stop the router with forced=true first.", router.getInstanceName(), host.getName(), host.getStatus()),
+                        Host.class, host.getId());
+            }
+        }
+    }
+
+    @Override
+    public void destroyReplacedRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException,
+            ConcurrentOperationException {
+        for (final VirtualRouter router : routers) {
+            try {
+                // A router on a host that is only briefly unreachable may still be running with the network's addresses
+                _itMgr.advanceStop(router.getUuid(), true, true);
+            } catch (final OperationTimedoutException e) {
+                throw new CloudRuntimeException("Unable to stop " + router, e);
+            }
+            _routerService.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId());
+        }
     }
 
     private void setRestartRequired(final NetworkVO network, final boolean restartRequired) {

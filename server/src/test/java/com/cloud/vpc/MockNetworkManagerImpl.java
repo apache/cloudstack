@@ -995,6 +995,14 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void checkRoutersCanBeReplaced(final List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    }
+
+    @Override
+    public void destroyReplacedRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException {
+    }
+
+    @Override
     public boolean areRoutersRunning(final List<? extends VirtualRouter> routers) {
         return false;
     }
