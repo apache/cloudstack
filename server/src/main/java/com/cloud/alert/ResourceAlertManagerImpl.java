@@ -537,11 +537,11 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         if (vm == null || !HypervisorType.KVM.equals(vm.getHypervisorType())) {
             return value;
         }
-        long intervalMillis = statsCollector.getVmStatsInterval();
-        if (intervalMillis <= 0) {
+        Long sampleMillis = statsCollector.getRecentVmStatsSampleMillis(vmId);
+        if (sampleMillis == null) {
             return null;
         }
-        return value / (intervalMillis / 1000.0);
+        return value / (sampleMillis / 1000.0);
     }
 
     // KVM reports host network as a running total, so the rate is the change between two readings.

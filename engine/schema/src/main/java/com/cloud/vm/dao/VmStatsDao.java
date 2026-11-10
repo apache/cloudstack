@@ -48,6 +48,8 @@ public interface VmStatsDao extends GenericDao<VmStatsVO, Long> {
      */
     VmStatsVO findLatestByVmId(long vmId);
 
+    List<VmStatsVO> listLatestByVmId(long vmId, long limit);
+
     /**
      * Finds stats by VM ID and timestamp >= a given time.
      * @param vmId the specific VM.

@@ -1155,10 +1155,10 @@ public class ResourceAlertManagerImplTest {
     }
 
     @Test
-    public void testKvmVmDiskIopsIsDividedByStatsInterval() {
+    public void testKvmVmDiskIopsIsDividedBySampleTime() {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmDiskReadIopsRule(500.0)));
         stubVmDiskReadIos(HypervisorType.KVM, 60000.0);
-        when(statsCollector.getVmStatsInterval()).thenReturn(60000L);
+        when(statsCollector.getRecentVmStatsSampleMillis(VM_ID)).thenReturn(60000L);
 
         manager.evaluateRules();
 
@@ -1170,7 +1170,7 @@ public class ResourceAlertManagerImplTest {
     public void testKvmVmDiskIopsBelowThresholdOncePerSecond() {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmDiskReadIopsRule(500.0)));
         stubVmDiskReadIos(HypervisorType.KVM, 6000.0);
-        when(statsCollector.getVmStatsInterval()).thenReturn(60000L);
+        when(statsCollector.getRecentVmStatsSampleMillis(VM_ID)).thenReturn(60000L);
 
         manager.evaluateRules();
 
@@ -1186,7 +1186,29 @@ public class ResourceAlertManagerImplTest {
 
         verify(alertDao).persist(alertCaptor.capture());
         assertEquals(600.0, alertCaptor.getValue().getMetricValue(), 0.001);
-        verify(statsCollector, never()).getVmStatsInterval();
+        verify(statsCollector, never()).getRecentVmStatsSampleMillis(anyLong());
+    }
+
+    private void stubKvmVm() {
+        UserVmVO vm = runningVm();
+        when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(userVmDao.findById(VM_ID)).thenReturn(vm);
+    }
+
+    @Test
+    public void testKvmVmRateUsesTimeSincePreviousSample() {
+        stubKvmVm();
+        when(statsCollector.getRecentVmStatsSampleMillis(VM_ID)).thenReturn(20000L);
+
+        assertEquals(300.0, manager.toVmRate(VM_ID, 6000.0), 0.001);
+    }
+
+    @Test
+    public void testKvmVmRateSkippedWithoutPreviousSample() {
+        stubKvmVm();
+        when(statsCollector.getRecentVmStatsSampleMillis(VM_ID)).thenReturn(null);
+
+        assertNull(manager.toVmRate(VM_ID, 6000.0));
     }
 
     private void stubKvmHost() {
