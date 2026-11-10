@@ -348,9 +348,10 @@ public class KubernetesClusterUtil {
                 Pair<Boolean, String> clusterVersionMatchesAndValue = clusterNodeVersionMatches(result, version);
                 if (Boolean.TRUE.equals(clusterVersionMatchesAndValue.first())) {
                     KubernetesClusterVmMapVO vmMapVO = vmMapDao.getClusterMapFromVmId(vmId);
-                    String newNodeVersion = clusterVersionMatchesAndValue.second();
-                    LOGGER.debug(String.format("Updating node %s Kubernetes version to %s", hostName, newNodeVersion));
-                    vmMapVO.setNodeVersion(newNodeVersion);
+                    // Record the version in the form a new node gets, not the command output, which ends with a
+                    // newline and may hold more than the version
+                    LOGGER.debug(String.format("Updating node %s Kubernetes version to %s", hostName, version));
+                    vmMapVO.setNodeVersion(version);
                     vmMapDao.update(vmMapVO.getId(), vmMapVO);
                     return true;
                 }
