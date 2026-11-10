@@ -688,6 +688,52 @@ public class SnapshotSchedulerImplTest {
         Assert.assertFalse(result);
     }
 
+    @Test
+    public void shouldSkipUnchangedVolumeSnapshotTestVmPowerUnknownReturnsFalse() {
+        stubSkipConfigEnabled();
+        doReturn(5L).when(volumeVoMock).getInstanceId();
+        doReturn(1L).when(volumeVoMock).getId();
+        doReturn(snapshotVoMock).when(snapshotSchedulerImplSpy).findLastSnapshot(Mockito.anyLong());
+        doReturn(vmInstanceVoMock).when(vmInstanceDaoMock).findById(5L);
+        doReturn(VirtualMachine.PowerState.PowerUnknown).when(vmInstanceVoMock).getPowerState();
+
+        boolean result = snapshotSchedulerImplSpy.shouldSkipUnchangedVolumeSnapshot(volumeVoMock);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldSkipUnchangedVolumeSnapshotTestAttachedAfterLastSnapshotReturnsFalse() {
+        stubSkipConfigEnabled();
+        doReturn(5L).when(volumeVoMock).getInstanceId();
+        doReturn(1L).when(volumeVoMock).getId();
+        doReturn(new Date(3000L)).when(volumeVoMock).getAttached();
+        doReturn(new Date(2000L)).when(snapshotVoMock).getCreated();
+        doReturn(snapshotVoMock).when(snapshotSchedulerImplSpy).findLastSnapshot(Mockito.anyLong());
+
+        boolean result = snapshotSchedulerImplSpy.shouldSkipUnchangedVolumeSnapshot(volumeVoMock);
+
+        Assert.assertFalse(result);
+        Mockito.verifyNoInteractions(vmInstanceDaoMock);
+    }
+
+    @Test
+    public void shouldSkipUnchangedVolumeSnapshotTestAttachedBeforeLastSnapshotAndVmOffReturnsTrue() {
+        stubSkipConfigEnabled();
+        doReturn(5L).when(volumeVoMock).getInstanceId();
+        doReturn(1L).when(volumeVoMock).getId();
+        doReturn(new Date(500L)).when(volumeVoMock).getAttached();
+        doReturn(new Date(2000L)).when(snapshotVoMock).getCreated();
+        doReturn(snapshotVoMock).when(snapshotSchedulerImplSpy).findLastSnapshot(Mockito.anyLong());
+        doReturn(vmInstanceVoMock).when(vmInstanceDaoMock).findById(5L);
+        doReturn(VirtualMachine.PowerState.PowerOff).when(vmInstanceVoMock).getPowerState();
+        doReturn(new Date(1000L)).when(vmInstanceVoMock).getPowerStateUpdateTime();
+
+        boolean result = snapshotSchedulerImplSpy.shouldSkipUnchangedVolumeSnapshot(volumeVoMock);
+
+        Assert.assertTrue(result);
+    }
+
     private void stubSkipConfigEnabled() {
         doReturn(true).when(snapshotSchedulerImplSpy).getScopedConfigValue(Mockito.eq(SnapshotManager.SnapshotSkipIfVmNotRunning), Mockito.any(), Mockito.any());
         doReturn(1L).when(volumeVoMock).getAccountId();
@@ -734,7 +780,7 @@ public class SnapshotSchedulerImplTest {
 
     @Test
     public void findLastSnapshotTestReturnsMostRecentSnapshot() {
-        doReturn(List.of(snapshotVoMock)).when(snapshotDaoMock).listByVolumeId(Mockito.any(), Mockito.eq(1L));
+        doReturn(List.of(snapshotVoMock)).when(snapshotDaoMock).listByStatus(Mockito.any(), Mockito.eq(1L), Mockito.eq(Snapshot.State.BackedUp));
 
         SnapshotVO result = snapshotSchedulerImplSpy.findLastSnapshot(1L);
 
@@ -743,7 +789,7 @@ public class SnapshotSchedulerImplTest {
 
     @Test
     public void findLastSnapshotTestNoSnapshotsReturnsNull() {
-        doReturn(Collections.emptyList()).when(snapshotDaoMock).listByVolumeId(Mockito.any(), Mockito.eq(1L));
+        doReturn(Collections.emptyList()).when(snapshotDaoMock).listByStatus(Mockito.any(), Mockito.eq(1L), Mockito.eq(Snapshot.State.BackedUp));
 
         SnapshotVO result = snapshotSchedulerImplSpy.findLastSnapshot(1L);
 

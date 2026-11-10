@@ -499,8 +499,16 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             return false;
         }
 
+        // The volume may have been written to on another instance and attached to this one after the last snapshot.
+        // Volumes allocated together with their instance have no attach time and have been on it since creation.
+        final Date attached = volume.getAttached();
+        if (attached != null && !attached.before(lastSnapshot.getCreated())) {
+            return false;
+        }
+
+        // Only a confirmed powered off state proves the instance has not been running; PowerUnknown does not.
         final VMInstanceVO vm = vmInstanceDao.findById(instanceId);
-        if (vm == null || vm.getPowerState() == VirtualMachine.PowerState.PowerOn) {
+        if (vm == null || vm.getPowerState() != VirtualMachine.PowerState.PowerOff) {
             return false;
         }
 
@@ -510,9 +518,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         return poweredOffSince != null && poweredOffSince.before(lastSnapshot.getCreated());
     }
 
+    /**
+     * Returns the most recent successfully taken snapshot of the volume. Snapshots left in Allocated or Error
+     * state by failed attempts are not a usable baseline and are ignored.
+     */
     protected SnapshotVO findLastSnapshot(final long volumeId) {
         final Filter filter = new Filter(SnapshotVO.class, "created", false, 0L, 1L);
-        final List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(filter, volumeId);
+        final List<SnapshotVO> snapshots = _snapshotDao.listByStatus(filter, volumeId, Snapshot.State.BackedUp);
         return (snapshots == null || snapshots.isEmpty()) ? null : snapshots.get(0);
     }
 
