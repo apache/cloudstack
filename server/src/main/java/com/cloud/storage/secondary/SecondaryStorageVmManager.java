@@ -44,6 +44,10 @@ public interface SecondaryStorageVmManager extends Manager {
             "The time interval(in millisecond) to scan whether or not system needs more SSVM to ensure minimal standby capacity",
             false);
 
+    ConfigKey<String> SecondaryStorageServiceOffering = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class, "secstorage.service.offering", null,
+            "UUID of the system offering used by secondary storage VMs. If not found, ACS will fallback to the default system offering, " +
+                    "or create one using the 'ssvm.ram.size' and 'ssvm.cpu.mhz' settings if it does not exist yet.", true, ConfigKey.Scope.Zone);
+
     ConfigKey<String> SecondaryStorageVmUserData = new ConfigKey<>(String.class, "secstorage.vm.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
             "UUID for user data for secondary storage VMs. This works only when systemvm.userdata.enabled is set to true",

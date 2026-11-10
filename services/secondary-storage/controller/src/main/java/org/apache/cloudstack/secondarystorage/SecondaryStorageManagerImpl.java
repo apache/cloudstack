@@ -210,8 +210,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected SnapshotDao _snapshotDao;
     private SecondaryStorageListener _listener;
 
-    private ServiceOfferingVO _serviceOffering;
-
     @Inject
     protected ConfigurationDao _configDao;
     @Inject
@@ -685,7 +683,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             throw new CloudRuntimeException(String.format("Unable to find the system Templates or it was not downloaded in %s.", dc));
         }
 
-        ServiceOfferingVO serviceOffering = _serviceOffering;
+        ServiceOfferingVO serviceOffering = findSecondaryStorageVmDefaultOffering(dataCenterId);
         if (serviceOffering == null) {
             serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
@@ -711,6 +709,47 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, Object> context = new HashMap<>();
         context.put("secStorageVmId", secStorageVm.getId());
         return context;
+    }
+
+    private ServiceOfferingVO findSecondaryStorageVmDefaultOffering(long zoneId) {
+        ServiceOfferingVO serviceOfferingVO = null;
+        String configValue = SecondaryStorageServiceOffering.valueIn(zoneId);
+        String configKey = SecondaryStorageServiceOffering.key();
+        if (configValue != null) {
+            serviceOfferingVO = _offeringDao.findByUuid(configValue);
+            if (serviceOfferingVO == null) {
+                try {
+                    logger.debug("Unable to find a service offering by the UUID for secondary storage VM with the value [{}] set in the configuration [{}]. Trying to find by the ID.", configValue, configKey);
+                    serviceOfferingVO = _offeringDao.findById(Long.parseLong(configValue));
+
+                    if (serviceOfferingVO == null) {
+                        logger.warn("Unable to find a service offering by the UUID or ID for secondary storage VM with the value [{}] set in the configuration [{}]", configValue, configKey);
+                    }
+                } catch (NumberFormatException ex) {
+                    logger.warn("Unable to find a service offering by the ID for secondary storage VM with the value [{}] set in the configuration [{}]. The value is not a valid integer number. Error: [{}].", configValue, configKey, ex.getMessage(), ex);
+                }
+            }
+        }
+
+        if (serviceOfferingVO != null && !serviceOfferingVO.isSystemUse()) {
+            logger.warn("The service offering [{}] set in the configuration [{}] for secondary storage VM is not a system offering. The default system offering will be used instead.", configValue, configKey);
+            serviceOfferingVO = null;
+        }
+
+        if (serviceOfferingVO == null) {
+            int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
+            int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
+            List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Secondary Storage VM",
+                    ServiceOffering.ssvmDefaultOffUniqueName, 1, ramSize, cpuFreq, null, null, false, null,
+                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
+
+            if (offerings == null || offerings.size() < 2) {
+                String msg = "Unable to set a service offering for secondary storage VM. Verify if it was removed.";
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+        return serviceOfferingVO;
     }
 
     private SecondaryStorageVmAllocator getCurrentAllocator() {
@@ -942,38 +981,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         _agentMgr.registerForHostEvents(_listener, true, false, true);
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
-
-        String configKey = Config.SecondaryStorageServiceOffering.key();
-        String ssvmSrvcOffIdStr = configs.get(configKey);
-        if (ssvmSrvcOffIdStr != null) {
-            _serviceOffering = _offeringDao.findByUuid(ssvmSrvcOffIdStr);
-            if (_serviceOffering == null) {
-                try {
-                    logger.debug(String.format("Unable to find a service offering by the UUID for secondary storage VM with the value [%s] set in the configuration [%s]. Trying to find by the ID.", ssvmSrvcOffIdStr, configKey));
-                    _serviceOffering = _offeringDao.findById(Long.parseLong(ssvmSrvcOffIdStr));
-
-                    if (_serviceOffering == null) {
-                        logger.info(String.format("Unable to find a service offering by the UUID or ID for secondary storage VM with the value [%s] set in the configuration [%s]", ssvmSrvcOffIdStr, configKey));
-                    }
-                } catch (NumberFormatException ex) {
-                    logger.warn(String.format("Unable to find a service offering by the ID for secondary storage VM with the value [%s] set in the configuration [%s]. The value is not a valid integer number. Error: [%s].", ssvmSrvcOffIdStr, configKey, ex.getMessage()), ex);
-                }
-            }
-        }
-
-        if (_serviceOffering == null || !_serviceOffering.isSystemUse()) {
-            int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
-            int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
-            List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Secondary Storage VM",
-                    ServiceOffering.ssvmDefaultOffUniqueName, 1, ramSize, cpuFreq, null, null, false, null,
-                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
-
-            if (offerings == null || offerings.size() < 2) {
-                String msg = "Unable to set a service offering for secondary storage VM. Verify if it was removed.";
-                logger.error(msg);
-                throw new ConfigurationException(msg);
-            }
-        }
 
         if (_useServiceVM) {
             _loadScanner = new SystemVmLoadScanner<>(this);
@@ -1550,7 +1557,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
-                                   SecondaryStorageVmUserData};
+                                   SecondaryStorageServiceOffering, SecondaryStorageVmUserData};
     }
 
 }
