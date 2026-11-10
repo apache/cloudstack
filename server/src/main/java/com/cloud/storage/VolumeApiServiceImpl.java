@@ -1486,7 +1486,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * system VM the volume is resized on the storage, but the running guest is not told and keeps seeing the old size
      * until it next starts. So a system VM's volume can only be resized while the system VM is stopped.
      */
-    protected void validateVolumeIsNotOnRunningSystemVm(VolumeVO volume) {
+    protected void validateSystemVmIsStoppedForResize(VolumeVO volume) {
         if (volume.getInstanceId() == null) {
             return;
         }
@@ -2512,7 +2512,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // if the caller is looking to change the size of the volume
         if (newSize != null && currentSize != newSize) {
             validateNoVmSnapshots(volume);
-            validateVolumeIsNotOnRunningSystemVm(volume);
+            validateSystemVmIsStoppedForResize(volume);
 
             if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");

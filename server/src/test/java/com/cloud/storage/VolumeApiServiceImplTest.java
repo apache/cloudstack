@@ -2278,36 +2278,36 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void validateVolumeIsNotOnRunningSystemVmTestDetachedVolume() {
+    public void validateSystemVmIsStoppedForResizeTestDetachedVolume() {
         Mockito.when(volumeVoMock.getInstanceId()).thenReturn(null);
 
-        volumeApiServiceImpl.validateVolumeIsNotOnRunningSystemVm(volumeVoMock);
+        volumeApiServiceImpl.validateSystemVmIsStoppedForResize(volumeVoMock);
 
         Mockito.verify(_vmInstanceDao, Mockito.never()).findById(Mockito.anyLong());
     }
 
     @Test
-    public void validateVolumeIsNotOnRunningSystemVmTestRunningUserVm() {
+    public void validateSystemVmIsStoppedForResizeTestRunningUserVm() {
         mockVmInstance(VirtualMachine.Type.User, State.Running);
 
-        volumeApiServiceImpl.validateVolumeIsNotOnRunningSystemVm(volumeVoMock);
+        volumeApiServiceImpl.validateSystemVmIsStoppedForResize(volumeVoMock);
     }
 
     @Test
-    public void validateVolumeIsNotOnRunningSystemVmTestStoppedRouter() {
+    public void validateSystemVmIsStoppedForResizeTestStoppedRouter() {
         mockVmInstance(VirtualMachine.Type.DomainRouter, State.Stopped);
 
-        volumeApiServiceImpl.validateVolumeIsNotOnRunningSystemVm(volumeVoMock);
+        volumeApiServiceImpl.validateSystemVmIsStoppedForResize(volumeVoMock);
     }
 
     @Test
-    public void validateVolumeIsNotOnRunningSystemVmTestNotStoppedSystemVms() {
+    public void validateSystemVmIsStoppedForResizeTestNotStoppedSystemVms() {
         for (VirtualMachine.Type type : List.of(VirtualMachine.Type.DomainRouter, VirtualMachine.Type.ConsoleProxy,
                 VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.InternalLoadBalancerVm)) {
             for (State state : List.of(State.Running, State.Starting, State.Stopping, State.Migrating)) {
                 mockVmInstance(type, state);
                 try {
-                    volumeApiServiceImpl.validateVolumeIsNotOnRunningSystemVm(volumeVoMock);
+                    volumeApiServiceImpl.validateSystemVmIsStoppedForResize(volumeVoMock);
                     Assert.fail("Resizing the volume of a " + type + " in state " + state + " must be refused");
                 } catch (InvalidParameterValueException e) {
                     Assert.assertTrue(e.getMessage(), e.getMessage().contains("Stop the system VM"));
