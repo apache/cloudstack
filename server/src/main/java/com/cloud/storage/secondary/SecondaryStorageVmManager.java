@@ -45,7 +45,8 @@ public interface SecondaryStorageVmManager extends Manager {
             false);
 
     ConfigKey<String> SecondaryStorageServiceOffering = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class, "secstorage.service.offering", null,
-            "UUID of the system offering used by secondary storage VMs. If not found, ACS will create a system offering using the 'ssvm.ram.size' and 'ssvm.cpu.mhz' settings.", true, ConfigKey.Scope.Zone);
+            "UUID of the system offering used by secondary storage VMs. If not found, ACS will fallback to the default system offering, " +
+                    "or create one using the 'ssvm.ram.size' and 'ssvm.cpu.mhz' settings if it does not exist yet.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<String> SecondaryStorageVmUserData = new ConfigKey<>(String.class, "secstorage.vm.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
