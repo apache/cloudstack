@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -347,6 +348,10 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
+    protected boolean isSystemTrafficLabel(String brName, Set<String> systemTrafficLabels) {
+        return StringUtils.isNotBlank(brName) && systemTrafficLabels != null && systemTrafficLabels.contains(brName);
+    }
+
     private void deleteVnetBr(String brName, boolean deleteBr) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
@@ -389,6 +394,12 @@ public class BridgeVifDriver extends VifDriverBase {
                 scriptPath = _modifyVxlanPath;
             } else {
                 scriptPath = _modifyVlanPath;
+            }
+
+            final Set<String> systemTrafficLabels = _libvirtComputingResource.getSystemTrafficLabels();
+            if (isSystemTrafficLabel(brName, systemTrafficLabels)) {
+                logger.info("Bridge [{}] is part of the system traffic labels {}; therefore, it will not be removed.", brName, systemTrafficLabels);
+                return;
             }
 
             final Script command = new Script(scriptPath, _timeout, logger);
