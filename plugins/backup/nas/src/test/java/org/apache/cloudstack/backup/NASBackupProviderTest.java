@@ -65,6 +65,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.BackupProviderException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
@@ -1019,6 +1020,46 @@ public class NASBackupProviderTest {
         boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup, false, null);
         Assert.assertTrue(ok);
         Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+    }
+
+    @Test
+    public void restoreVMFromBackupReportsTheReasonWhenTheAgentRefusesTheRestore() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 7L;
+        Long hostId = 8L;
+        Long backupOfferingId = 9L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        Mockito.when(vm.getRemoved()).thenReturn(null);
+        Mockito.when(vm.getName()).thenReturn("vm7");
+        Mockito.when(vm.getInstanceName()).thenReturn("i-2-7-VM");
+
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        BackupVO backup = new BackupVO();
+        backup.setVmId(vmId);
+        backup.setBackupOfferingId(backupOfferingId);
+        backup.setExternalId("i-2-7-VM/2026.05.16.10.00.00");
+        ReflectionTestUtils.setField(backup, "id", 100L);
+
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(backupOfferingId)).thenReturn(repo);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(Collections.emptyList());
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(answer.getDetails()).thenReturn("RBD image cloudstack/vol carries snapshot(s) which this backup path did not take");
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(RestoreBackupCommand.class))).thenReturn(answer);
+
+        BackupProviderException e = Assert.assertThrows(BackupProviderException.class,
+                () -> nasBackupProvider.restoreVMFromBackup(vm, backup, false, null));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("carries snapshot(s) which this backup path did not take"));
+        Mockito.verify(vmInstanceDetailsDao, Mockito.never()).removeDetail(Mockito.eq(vmId), Mockito.eq(NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID));
     }
 
     /**

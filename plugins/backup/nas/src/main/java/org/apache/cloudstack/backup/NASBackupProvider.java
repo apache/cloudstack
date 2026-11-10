@@ -44,6 +44,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.BackupProviderException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.vm.VMInstanceDetailVO;
@@ -1122,7 +1123,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup, boolean quickRestore, Long hostId) {
-        return restoreVMBackup(vm, backup).first();
+        Pair<Boolean, String> result = restoreVMBackup(vm, backup);
+        if (!result.first()) {
+            // the reason (a refused restore, a failed mount, ...) is only known here: hand it to the user
+            // instead of the generic error of the backup manager
+            throw new BackupProviderException(String.format("Failed to restore Instance %s from Backup %s: %s",
+                    vm.getInstanceName(), backup.getUuid(), result.second()));
+        }
+        return true;
     }
 
     private Pair<Boolean, String> restoreVMBackup(VirtualMachine vm, Backup backup) {
