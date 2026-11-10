@@ -31,7 +31,7 @@ import com.cloud.vm.VirtualMachine;
 
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts  an Instance based on a service offering, disk offering, and Template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
 
 
