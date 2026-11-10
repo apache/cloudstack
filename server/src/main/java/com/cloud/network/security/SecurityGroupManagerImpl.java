@@ -564,9 +564,6 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     protected void handleVmMigrated(VMInstanceVO vm) {
-        if (!isVmSecurityGroupEnabled(vm.getId())) {
-            return;
-        }
         if (vm.getType() != VirtualMachine.Type.User) {
             Commands cmds = null;
             NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
@@ -580,6 +577,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
 
         } else {
+            if (!isVmSecurityGroupEnabled(vm.getId())) {
+                return;
+            }
             List<Long> affectedVms = new ArrayList<Long>();
             affectedVms.add(vm.getId());
             scheduleRulesetUpdateToHosts(affectedVms, true, null);
