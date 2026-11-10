@@ -57,29 +57,29 @@ import com.cloud.vm.dao.VMInstanceDao;
  * Scores run from 0 (idle) upwards and lower is better. Hosts are then chosen from among the best
  * rather than strictly in order - see {@link #applySelectionSpread}.
  */
-public class WeightedHostScorer extends AdapterBase implements Configurable {
+public class WeightedHostScorer extends AdapterBase implements Configurable, HostScoringWeights {
 
-    private static final String WEIGHT_DESCRIPTION_SUFFIX =
+    private static final String ALLOCATOR_WEIGHT_DESCRIPTION_SUFFIX =
             " Relative weight, only meaningful compared with the other host.weighted.* weights. Zero disables the term.";
 
     public static final ConfigKey<Double> VmCountWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             Double.class, "host.weighted.vm.count.weight", "1.0",
             "How much the number of VMs already on a host counts against it, regardless of how busy they are."
-                    + WEIGHT_DESCRIPTION_SUFFIX,
+                    + ALLOCATOR_WEIGHT_DESCRIPTION_SUFFIX,
             true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Double> RecentStartWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             Double.class, "host.weighted.recent.start.weight", "2.0",
             "How much VMs started recently on a host count against it. Guards against sending a burst of new "
                     + "VMs to one host, since neither allocation nor utilisation has caught up with them yet."
-                    + WEIGHT_DESCRIPTION_SUFFIX,
+                    + ALLOCATOR_WEIGHT_DESCRIPTION_SUFFIX,
             true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Double> DominantResourceWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             Double.class, "host.weighted.dominant.resource.weight", "1.0",
             "How much a host's single most stressed resource counts against it, on top of the average across "
                     + "resources. Keeps a host that is fine on average but nearly out of one resource from ranking well."
-                    + WEIGHT_DESCRIPTION_SUFFIX,
+                    + ALLOCATOR_WEIGHT_DESCRIPTION_SUFFIX,
             true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Integer> RecentStartWindow = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
@@ -436,7 +436,9 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     }
 
     /**
-     * The weights for one ranking, read once rather than per host.
+     * The weights for one ranking, read once rather than per host. Every host in a ranking is then
+     * scored with the same values even if a setting changes part way through, and a bad value is
+     * reported once per ranking rather than once per host.
      *
      * A negative weight would invert the ranking and make the most loaded host the best, so they
      * are floored at zero and the bad value is reported.
@@ -452,10 +454,10 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
         private final double vmScale;
 
         protected Weights(Long clusterId) {
-            cpuAllocated = nonNegative(HostScoringWeights.CpuAllocatedWeight, clusterId);
-            cpuUsed = nonNegative(HostScoringWeights.CpuUsedWeight, clusterId);
-            memoryAllocated = nonNegative(HostScoringWeights.MemoryAllocatedWeight, clusterId);
-            memoryUsed = nonNegative(HostScoringWeights.MemoryUsedWeight, clusterId);
+            cpuAllocated = nonNegative(CpuAllocatedWeight, clusterId);
+            cpuUsed = nonNegative(CpuUsedWeight, clusterId);
+            memoryAllocated = nonNegative(MemoryAllocatedWeight, clusterId);
+            memoryUsed = nonNegative(MemoryUsedWeight, clusterId);
             vmCount = nonNegative(VmCountWeight, clusterId);
             recentStart = nonNegative(RecentStartWeight, clusterId);
             dominant = nonNegative(DominantResourceWeight, clusterId);
@@ -493,10 +495,10 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
-                HostScoringWeights.CpuAllocatedWeight,
-                HostScoringWeights.CpuUsedWeight,
-                HostScoringWeights.MemoryAllocatedWeight,
-                HostScoringWeights.MemoryUsedWeight,
+                CpuAllocatedWeight,
+                CpuUsedWeight,
+                MemoryAllocatedWeight,
+                MemoryUsedWeight,
                 VmCountWeight,
                 RecentStartWeight,
                 DominantResourceWeight,
