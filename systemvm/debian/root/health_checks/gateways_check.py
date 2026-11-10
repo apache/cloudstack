@@ -36,7 +36,8 @@ def main():
         for i in range(5):
             pingCmd = "ping " + gw + " -c 5 -w 10"
             pout = Popen(pingCmd, shell=True, stdout=PIPE)
-            if pout.wait() == 0:
+            pout.communicate()
+            if pout.returncode == 0:
                 reachableGw = True
                 break
 

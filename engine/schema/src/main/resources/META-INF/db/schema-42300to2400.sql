@@ -261,3 +261,5 @@ UPDATE  `cloud`.`volumes` v
 WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
   AND   sp.`pool_type`             IN ('Iscsi', 'OntapiSCSI')
   AND   (v.`format` IS NULL OR v.`format` <> 'RAW');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
