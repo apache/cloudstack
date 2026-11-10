@@ -498,6 +498,9 @@ public class NetworkACLServiceImplTest {
 
     @Test
     public void validateSourceStartAndEndPortsTestBothPortsNull() {
+        Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(null);
+        Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(null);
+
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
 
@@ -529,6 +532,23 @@ public class NetworkACLServiceImplTest {
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(1);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(2);
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("all");
+
+        networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateSourceStartAndEndPortsTestPortZeroAlone() {
+        Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(0);
+        Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(0);
+
+        networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
+    }
+
+    @Test
+    public void validateSourceStartAndEndPortsTestRangeStartingAtZero() {
+        Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(0);
+        Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(1024);
+        Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
 
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }

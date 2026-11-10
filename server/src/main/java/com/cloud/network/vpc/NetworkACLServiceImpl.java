@@ -663,6 +663,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      *  <li> Check if start port is valid using {@link NetUtils#isValidPort(int)};
      *  <li> Check if end port is valid using {@link NetUtils#isValidPort(int)};
      *  <li> Check if start port is bigger than end port;
+     *  <li> Check if the range is port 0 alone (0:0), which the virtual router cannot tell apart from a rule without ports;
      *  <li> Check if start and end ports were used with protocol 'all'
      *  </ul>
      *  All of the above cases will generate an {@link InvalidParameterValueException}.
@@ -683,6 +684,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         if (sourcePortStart > sourcePortEnd) {
             throw new InvalidParameterValueException(String.format("Start port can't be bigger than end port [startport=%d,endport=%d]", sourcePortStart, sourcePortEnd));
+        }
+        if (sourcePortStart == 0 && sourcePortEnd == 0) {
+            throw new InvalidParameterValueException("Port 0 alone is not a valid port range; omit start port and end port to match all ports");
         }
         String protocol = networkACLItemVO.getProtocol();
         if ("all".equalsIgnoreCase(protocol)) {
