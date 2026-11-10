@@ -1904,6 +1904,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return new Pair<>(newVol, destPool);
     }
 
+    @Override
+    public void setUpVolumeEncryption(long volumeId, DiskOffering diskOffering) {
+        if (diskOffering == null || !diskOffering.getEncrypt()) {
+            return;
+        }
+        VolumeVO volume = _volsDao.findById(volumeId);
+        setPassphraseForVolumeEncryption(volume);
+    }
+
     private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
         if (volume.getPassphraseId() != null) {
             return volume;
