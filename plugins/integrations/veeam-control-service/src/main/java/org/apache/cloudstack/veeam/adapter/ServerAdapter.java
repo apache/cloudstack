@@ -1407,7 +1407,7 @@ public class ServerAdapter extends ManagerBase {
         Pair<Vm, UserVm> result = createInstance(zone, clusterId, owner, ownerDetails.first(), ownerDetails.second(),
                 ownerDetails.third(), name, displayName, serviceOfferingUuid, cpu, memoryMB, templateUuid, guestOs,
                 userdata, bootOptions.first(), bootOptions.second(), request);
-        saveInstanceRestoreConfig(request, result.second());
+        saveInstanceAdditionalDetails(request, result.second());
         return result.first();
     }
 
