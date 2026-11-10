@@ -156,9 +156,16 @@ public class SMTPMailSender {
     }
 
     public void sendMail(SMTPMailProperties mailProps) {
+        trySendMail(mailProps);
+    }
+
+    /**
+     * Sends the mail and reports whether the SMTP server accepted it. Failures are logged.
+     */
+    public boolean trySendMail(SMTPMailProperties mailProps) {
         if (session == null) {
             logger.error("Unable to send mail due to null session.");
-            return;
+            return false;
         }
 
         try {
@@ -167,7 +174,7 @@ public class SMTPMailSender {
             if (ArrayUtils.isEmpty(message.getAllRecipients())) {
                 logger.error(String.format("Unable to send mail [%s] due to the recipient list of the message being empty.",
                         mailProps.getSubject()));
-                return;
+                return false;
             }
 
             SMTPTransport smtpTrans = createSmtpTransport();
@@ -175,9 +182,11 @@ public class SMTPMailSender {
             smtpTrans.connect();
             smtpTrans.sendMessage(message, message.getAllRecipients());
             smtpTrans.close();
+            return true;
 
         } catch (MessagingException | UnsupportedEncodingException ex) {
             logger.error(String.format("Unable to send mail [%s] to the recipcients [%s].", mailProps.getSubject(), mailProps.getRecipients().toString()), ex);
+            return false;
         }
     }
 

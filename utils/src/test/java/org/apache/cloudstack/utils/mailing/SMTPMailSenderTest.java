@@ -616,6 +616,23 @@ public class SMTPMailSenderTest extends TestCase {
     }
 
     @Test
+    public void validateSMTPMailSenderTrySendMailWithNullSession() {
+        assertFalse(smtpMailSenderMock.trySendMail(new SMTPMailProperties()));
+    }
+
+    @Test
+    public void validateSMTPMailSenderTrySendMailWithValidSession() throws MessagingException, UnsupportedEncodingException {
+        smtpMailSenderMock.session = Session.getDefaultInstance(Mockito.mock(Properties.class));
+        Address[] recipients = {new InternetAddress("email@acme.com")};
+
+        Mockito.doReturn(recipients).when(messageMock).getAllRecipients();
+        Mockito.doReturn(messageMock).when(smtpMailSenderMock).createMessage(Mockito.any());
+        Mockito.doReturn(Mockito.mock(SMTPTransport.class)).when(smtpMailSenderMock).createSmtpTransport();
+
+        assertTrue(smtpMailSenderMock.trySendMail(new SMTPMailProperties()));
+    }
+
+    @Test
     public void validateSMTPMailSenderSendMailWithValidSession() throws MessagingException, UnsupportedEncodingException {
         SMTPMailProperties mailProps = new SMTPMailProperties();
         smtpMailSenderMock.session = Session.getDefaultInstance(Mockito.mock(Properties.class));
