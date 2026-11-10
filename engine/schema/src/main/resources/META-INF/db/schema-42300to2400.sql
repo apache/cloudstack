@@ -241,3 +241,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- Remove leftovers from awsapi
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.account', 'fk_account__default_zone_id');
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.account', 'default_zone_id');
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud_usage.account', 'default_zone_id');
+
+DELETE FROM `cloud`.`configuration` WHERE name='enable.ec2.api';
+DELETE FROM `cloud`.`configuration` WHERE name='enable.s3.api';
