@@ -243,6 +243,9 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Arrays.asList(60000L, 60000L), importTimeouts);
     }
 
+    private static final String SNAPSHOT_LISTING_FAILS = "rbd snap ls fails";
+    private static final String IMAGE_DOES_NOT_EXIST = "rbd snap ls finds no image";
+
     private Object[] restoreTwoRbdVolumes(Storage.StoragePoolType secondPoolType, String snapshotsOfSecondImage) throws Exception {
         when(command.getVmName()).thenReturn("test-vm");
         lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
@@ -313,6 +316,12 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                             List<String[]> commands = invocation.getArgument(0);
                             List<String> args = Arrays.asList(commands.get(0));
                             if (args.contains("snap") && args.contains("ls")) {
+                                if (args.contains("cephpool/vol2") && SNAPSHOT_LISTING_FAILS.equals(snapshotsOfSecondImage)) {
+                                    return new Pair<>(1, "");
+                                }
+                                if (args.contains("cephpool/vol2") && IMAGE_DOES_NOT_EXIST.equals(snapshotsOfSecondImage)) {
+                                    return new Pair<>(2, "");
+                                }
                                 return new Pair<>(0, args.contains("cephpool/vol2") ? snapshotsOfSecondImage : "[]");
                             }
                             return new Pair<>(0, "{\"name\":\"vol\",\"size\":1073741824}");
@@ -340,6 +349,22 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         Assert.assertFalse(answer.getResult());
         Assert.assertTrue(answer.getDetails().contains("user-snap"));
         assertNoImageWasTouched(outcome);
+    }
+
+    @Test
+    public void testExecuteRefusesToRestoreWhenTheSnapshotsOfAnRbdVolumeCannotBeListed() throws Exception {
+        Object[] outcome = restoreTwoRbdVolumes(Storage.StoragePoolType.RBD, SNAPSHOT_LISTING_FAILS);
+        BackupAnswer answer = (BackupAnswer) outcome[0];
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Unable to list the snapshots of RBD image cephpool/vol2"));
+        assertNoImageWasTouched(outcome);
+    }
+
+    @Test
+    public void testExecuteRestoresIntoAnImageThatDoesNotExistYet() throws Exception {
+        // `rbd snap ls` exits with ENOENT for an image which is not there, as when a restore creates a new volume.
+        Object[] outcome = restoreTwoRbdVolumes(Storage.StoragePoolType.RBD, IMAGE_DOES_NOT_EXIST);
+        Assert.assertTrue(((BackupAnswer) outcome[0]).getResult());
     }
 
     @Test

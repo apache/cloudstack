@@ -106,6 +106,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdBackupGuestManager;
 import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -1431,6 +1432,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final LibvirtException e) {
             throw new CloudRuntimeException(e.getMessage());
         }
+
+        // A backup of an RBD volume which this agent was running when it went down may have left its guest frozen or paused.
+        new RbdBackupGuestManager().releaseAllGuests();
 
         // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
         try {

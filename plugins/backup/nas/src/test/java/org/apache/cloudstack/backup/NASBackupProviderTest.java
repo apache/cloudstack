@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -1596,6 +1597,12 @@ public class NASBackupProviderTest {
 
     // -- the backup anchors are removed once the chain is gone ---------------------------
 
+    private void setRbdCliOfHost(long hostId, boolean hasRbdCli) {
+        DetailVO detail = mock(DetailVO.class);
+        Mockito.lenient().when(detail.getValue()).thenReturn(String.valueOf(hasRbdCli));
+        Mockito.lenient().when(hostDetailsDao.findDetail(hostId, Host.HOST_RBD_CLI)).thenReturn(detail);
+    }
+
     // Defaults for an Instance with one RBD volume; lenient, as a test may override a stub or
     // return before reaching it.
     private VMInstanceVO vmWithRbdVolume(long vmId, long hostId, long poolId) {
@@ -1607,6 +1614,7 @@ public class NASBackupProviderTest {
         Mockito.lenient().when(host.getStatus()).thenReturn(Status.Up);
         Mockito.lenient().when(host.getId()).thenReturn(hostId);
         Mockito.lenient().when(hostDao.findById(hostId)).thenReturn(host);
+        setRbdCliOfHost(hostId, true);
 
         VolumeVO volume = mock(VolumeVO.class);
         Mockito.lenient().when(volume.getPoolId()).thenReturn(poolId);
@@ -1637,6 +1645,42 @@ public class NASBackupProviderTest {
 
         Mockito.verify(vmInstanceDetailsDao).findDetail(21L, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
         Mockito.verify(agentManager).send(Mockito.eq(22L), Mockito.any(RemoveBackupAnchorsCommand.class));
+    }
+
+    /**
+     * A stopped Instance can be backed up on another host than its own when that one lacks the rbd
+     * command, so the anchor it left on the images can be on any host: removing it must not be sent
+     * to a host which cannot run the command either.
+     */
+    @Test
+    public void removingTheOfferingRemovesTheBackupAnchorsOnAHostThatHasTheRbdCommand() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = vmWithRbdVolume(51L, 52L, 53L);
+        setRbdCliOfHost(52L, false);
+        HostVO ownHost = (HostVO) hostDao.findById(52L);
+        Mockito.lenient().when(ownHost.getClusterId()).thenReturn(10L);
+        HostVO withCli = hostWithRbdCli(54L, true, 10L);
+        Mockito.when(hostDao.findHypervisorHostInCluster(10L)).thenReturn(Arrays.asList(ownHost, withCli));
+        Mockito.when(agentManager.send(anyLong(), Mockito.any(RemoveBackupAnchorsCommand.class)))
+                .thenReturn(new BackupAnswer(null, true, null));
+
+        Assert.assertTrue(nasBackupProvider.removeVMFromBackupOffering(vm));
+
+        Mockito.verify(agentManager).send(Mockito.eq(54L), Mockito.any(RemoveBackupAnchorsCommand.class));
+        Mockito.verify(agentManager, Mockito.never()).send(Mockito.eq(52L), Mockito.any(RemoveBackupAnchorsCommand.class));
+    }
+
+    @Test
+    public void removingTheOfferingSendsNoCommandWhenNoHostHasTheRbdCommand() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = vmWithRbdVolume(61L, 62L, 63L);
+        setRbdCliOfHost(62L, false);
+        HostVO ownHost = (HostVO) hostDao.findById(62L);
+        Mockito.lenient().when(ownHost.getClusterId()).thenReturn(10L);
+        HostVO otherWithoutCli = hostWithRbdCli(64L, false, 10L);
+        Mockito.when(hostDao.findHypervisorHostInCluster(10L)).thenReturn(Arrays.asList(ownHost, otherWithoutCli));
+
+        Assert.assertTrue(nasBackupProvider.removeVMFromBackupOffering(vm));
+
+        Mockito.verify(agentManager, Mockito.never()).send(anyLong(), Mockito.any(RemoveBackupAnchorsCommand.class));
     }
 
     /**

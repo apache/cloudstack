@@ -838,9 +838,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 LOG.debug("No host to remove the backup anchors of VM id={} on", vmId);
                 return;
             }
+            Host cleanupHost = findHostForRbdAnchorCleanup(host);
+            if (cleanupHost == null) {
+                LOG.warn("Host {} has no rbd command and no other host of its cluster has it, so the backup anchors "
+                        + "of VM id={} stay on the RBD images until a later backup of it sweeps them", host.getName(), vmId);
+                return;
+            }
             Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(volumes);
             RemoveBackupAnchorsCommand command = new RemoveBackupAnchorsCommand(volumePoolsAndPaths.first(), volumePoolsAndPaths.second());
-            Answer answer = agentManager.send(host.getId(), command);
+            Answer answer = agentManager.send(cleanupHost.getId(), command);
             if (answer == null || !answer.getResult()) {
                 LOG.warn("Failed to remove the backup anchors of VM id={}: {}", vmId,
                         answer != null ? answer.getDetails() : "no answer received");
@@ -931,6 +937,17 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             }
         }
         return null;
+    }
+
+    /**
+     * The host that removes the backup anchors: it drives the {@code rbd} command against the images
+     * and needs nothing of the Instance's libvirt domain, so any host of the cluster that has the
+     * command will do, whether the Instance is stopped or not. {@code preferred} is used when it has it.
+     *
+     * @return the host to use, or {@code null} when none has the {@code rbd} command
+     */
+    protected Host findHostForRbdAnchorCleanup(Host preferred) {
+        return hostHasRbdCli(preferred) ? preferred : findOtherHostWithRbdCli(preferred);
     }
 
     /**

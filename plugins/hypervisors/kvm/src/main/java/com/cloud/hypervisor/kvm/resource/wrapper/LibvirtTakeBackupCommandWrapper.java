@@ -34,6 +34,7 @@ import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.utils.rbd.RbdBackupGuestManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
@@ -52,6 +53,8 @@ import java.util.stream.Collectors;
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
     private static final Integer EXIT_CLEANUP_FAILED = 20;
+    // nasbackup.sh found another backup of the VM running: that one may hold the guest, so leave it alone.
+    private static final Integer EXIT_BACKUP_IN_PROGRESS = 21;
     // nasbackup.sh prints this on stdout when it could not proceed as an incremental and
     // completed a full backup instead; the orchestrator then records the backup as a full.
     private static final String INCREMENTAL_FALLBACK_MARKER = "INCREMENTAL_FALLBACK=true";
@@ -165,6 +168,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             logger.debug("Failed to take VM backup: " + result.second());
             if (Script.ERR_TIMEOUT.equals(result.second()) && METHOD_CONTENT.equals(command.getMethod())) {
                 abortPullBackupJob(vmName);
+            }
+            if (METHOD_RBD.equals(command.getMethod()) && !EXIT_BACKUP_IN_PROGRESS.equals(result.first())) {
+                releaseGuestOfFailedRbdBackup(vmName);
             }
             BackupAnswer answer = new BackupAnswer(command, false, StringUtils.trimToEmpty(result.second()));
             if (EXIT_CLEANUP_FAILED.equals(result.first())) {
@@ -287,6 +293,20 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     static long scratchSize(long diskSize) {
         return diskSize + diskSize / 4096 + SCRATCH_EXTRA_BYTES;
+    }
+
+    protected RbdBackupGuestManager guestManager() {
+        return new RbdBackupGuestManager();
+    }
+
+    /**
+     * The RBD method freezes or pauses the guest while it takes its snapshots. A script which is
+     * killed because the backup timed out, or which fails at the wrong moment, cannot be relied on to
+     * undo that: SIGKILL runs no trap. Release the guest here, but only if the script says in its state
+     * file that it was the one holding it, so a VM which an operator paused is left alone.
+     */
+    private void releaseGuestOfFailedRbdBackup(String vmName) {
+        guestManager().releaseGuest(vmName);
     }
 
     /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */

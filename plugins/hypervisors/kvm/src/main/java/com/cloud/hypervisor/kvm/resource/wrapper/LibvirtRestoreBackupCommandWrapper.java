@@ -78,6 +78,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     // `rbd info --format json` reports the image size in bytes.
     private static final Pattern RBD_INFO_SIZE = Pattern.compile("\"size\"\\s*:\\s*(\\d+)");
     private static final Pattern RBD_SNAP_NAME = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+    /** What the rbd command exits with when the image does not exist (ENOENT). */
+    private static final int RBD_EXIT_NO_SUCH_IMAGE = 2;
 
     // Matches the features CloudStack itself creates RBD volumes with
     // (LibvirtStorageAdaptor.RBD_FEATURES), so a restored image behaves like any other. object-map
@@ -638,11 +640,12 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private boolean recreateRbdImage(List<String> connection, String image, long sizeBytes, String dataPool) {
         // `rbd rm` refuses to delete an image that still has snapshots, and a restore target
         // normally carries the anchor snapshot of the backup chain it belongs to. Ask first, so an
-        // image without snapshots is not handed a purge with nothing to do; when the listing itself
-        // fails we cannot tell, and purging is what we would have done anyway.
+        // image without snapshots is not handed a purge with nothing to do. When the listing fails
+        // the restore stops: a purge of snapshots which could not be looked at may remove one that
+        // was not ours to remove.
         List<String> snapshots = rbdSnapshots(connection, image);
         failIfImageCarriesForeignSnapshots(image, snapshots);
-        if (snapshots == null || CollectionUtils.isNotEmpty(snapshots)) {
+        if (CollectionUtils.isNotEmpty(snapshots)) {
             Script.executeCommandForExitValue(rbdCommand(connection, "snap", "purge", image));
         }
         if (Script.executeCommandForExitValue(rbdCommand(connection, "rm", image)) != 0
@@ -673,9 +676,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
      * not something a restore should do quietly.
      */
     private void failIfImageCarriesForeignSnapshots(String image, List<String> snapshots) {
-        if (snapshots == null) {
-            return;
-        }
         List<String> foreign = snapshots.stream()
                 .filter(snapshot -> !snapshot.startsWith(RBD_BACKUP_SNAPSHOT_PREFIX))
                 .collect(Collectors.toList());
@@ -687,12 +687,20 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
-    /** The snapshots an image carries, or {@code null} when they could not be listed at all. */
+    /**
+     * The snapshots an image carries; none for an image which does not exist yet, as when a restore
+     * creates a new volume. Any other failure to list them is an error: the caller is about to
+     * purge the snapshots, so it must not go on without having seen them.
+     */
     private List<String> rbdSnapshots(List<String> connection, String image) {
         Pair<Integer, String> result = Script.executePipedCommands(
                 Collections.singletonList(rbdCommand(connection, "snap", "ls", image, "--format", "json")), 0);
+        if (result.first() != null && result.first() == RBD_EXIT_NO_SUCH_IMAGE) {
+            return new ArrayList<>();
+        }
         if (result.first() == null || result.first() != 0 || StringUtils.isBlank(result.second())) {
-            return null;
+            throw new CloudRuntimeException(String.format("Unable to list the snapshots of RBD image %s, so the restore "
+                    + "cannot tell whether it would remove a snapshot it did not take.", image));
         }
         List<String> names = new ArrayList<>();
         Matcher matcher = RBD_SNAP_NAME.matcher(result.second());

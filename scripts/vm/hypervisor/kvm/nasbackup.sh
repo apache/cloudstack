@@ -56,6 +56,9 @@ UNMOUNT_TIMEOUT=60
 EXIT_CLEANUP_FAILED=20
 BACKUP_JOB_ACTIVE=0
 PULL_WORK_DIR=""      # Work dir of a running pull-mode backup, removed by on_pull_backup_exit()
+# Another backup of the same VM is running on this host. The agent must not touch the guest then, as that
+# backup may be the one holding it frozen or paused.
+EXIT_BACKUP_IN_PROGRESS=21
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -153,6 +156,40 @@ RBD_KEYFILE=""        # temporary cephx keyfile, removed by rbd_cleanup_keyfile
 # Prefix NASBackupProvider names every chain anchor with. Snapshots carrying it belong to this
 # tool and no other, which is what makes the stale-anchor sweep safe.
 RBD_SNAPSHOT_PREFIX="csbackup-"
+# The guest is frozen or paused while the snapshots are taken, so none of the steps in between may
+# wait for ever. A TERM/HUP/INT trap releases the guest, and the agent does it for a script it had to
+# kill with SIGKILL or lost in a restart, see RBD_GUEST_STATE_FILE.
+RBD_GUEST_TIMEOUT=60
+RBD_SNAPSHOT_TIMEOUT=120
+# Written while the script holds the guest ("frozen" and/or "suspended"), removed once it let go.
+# LibvirtTakeBackupCommandWrapper reads it to release a guest of a script it had to kill: an EXIT
+# trap does not run on SIGKILL.
+RBD_STATE_DIR="/run/csbackup"
+RBD_GUEST_STATE_FILE="$RBD_STATE_DIR/%s.guest"
+# Held for the whole RBD backup of a VM, so two backups of it (a scheduled one started by a management
+# server which just restarted, while the old one still runs here) cannot freeze the guest and share
+# the state file at the same time. The kernel drops the lock with the script, even on SIGKILL.
+RBD_BACKUP_LOCK_FILE="$RBD_STATE_DIR/%s.lock"
+
+# Let go of a guest this script holds, as its state file says. Run by the TERM/HUP/INT trap, so a
+# restart of the agent, which signals the script, does not leave the guest frozen or paused. SIGKILL
+# cannot be trapped; the agent then releases the guest from the state file when it starts.
+rbd_release_guest() {
+  local state_file
+  state_file=$(printf "$RBD_GUEST_STATE_FILE" "$VM")
+  [[ -f "$state_file" ]] || return 0
+  local state
+  state=$(cat "$state_file" 2>/dev/null)
+  local ok=1
+  if [[ "$state" == *suspended* && "$(virsh -c qemu:///system domstate "$VM" 2>/dev/null)" == "paused" ]]; then
+    timeout 20 virsh -c qemu:///system resume "$VM" > /dev/null 2>&1 || ok=0
+  fi
+  if [[ "$state" == *frozen* ]]; then
+    timeout 20 virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' > /dev/null 2>&1 || true
+  fi
+  [[ $ok -eq 1 ]] && rm -f "$state_file"
+  return 0
+}
 
 rbd_cleanup_keyfile() {
   if [[ -n "$RBD_KEYFILE" ]]; then
@@ -290,6 +327,20 @@ backup_rbd_vm() {
     exit 1
   fi
 
+  mkdir -p "$RBD_STATE_DIR" || { echo "Failed to create $RBD_STATE_DIR"; exit 1; }
+  if command -v flock > /dev/null 2>&1; then
+    local lock_file
+    lock_file=$(printf "$RBD_BACKUP_LOCK_FILE" "$VM")
+    if ! { exec {RBD_LOCK_FD}>"$lock_file"; } 2>/dev/null; then
+      log -ne "WARNING: unable to open $lock_file, taking the backup of vm $VM without a lock"
+    elif ! flock -n "$RBD_LOCK_FD"; then
+      echo "Another backup of vm $VM is already running on this host"
+      exit $EXIT_BACKUP_IN_PROGRESS
+    fi
+  else
+    log -ne "WARNING: flock is not installed, taking the backup of vm $VM without a lock"
+  fi
+
   local effective_mode="$MODE"
   case "$effective_mode" in
     full|incremental)
@@ -332,14 +383,19 @@ backup_rbd_vm() {
 
   # Freezing the guest filesystems makes the snapshot set filesystem-consistent instead of merely
   # crash-consistent. Only possible while the VM runs and its guest agent answers.
+  local guest_state
+  guest_state=$(printf "$RBD_GUEST_STATE_FILE" "$VM")
+  rm -f "$guest_state"
   local thaw=0
   local freeze_ok=0
   local resume=0
   local vm_state
   vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
+  trap 'rbd_release_guest; rbd_cleanup_keyfile; exit 143' TERM HUP INT
   if [[ ${QUIESCE} == "true" && "$vm_state" == "running" ]]; then
     # Always thaw after a freeze attempt: a freeze that times out on the host can still
     # complete inside the guest, and nothing else would unfreeze it.
+    echo "frozen" >> "$guest_state"
     thaw=1
     if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
       freeze_ok=1
@@ -353,7 +409,8 @@ backup_rbd_vm() {
   # moments the snapshots take restores that, much as a backup-begin checkpoint does. A single
   # disk needs no pause: one snapshot is already a single point in time.
   if [[ $freeze_ok -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
-    if virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
+    echo "suspended" >> "$guest_state"
+    if timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
       resume=1
     else
       log -ne "WARNING: unable to pause VM $VM, the disk snapshots will not be taken at the same instant"
@@ -366,7 +423,7 @@ backup_rbd_vm() {
   local snap_failed=0
   for d in "${disks[@]}"; do
     parse_rbd_opts "$d"
-    if rbd "${RBD_ARGS[@]}" snap create "$RBD_IMAGE@$BITMAP_NEW" >> "$logFile" 2>&1; then
+    if timeout "$RBD_SNAPSHOT_TIMEOUT" rbd "${RBD_ARGS[@]}" snap create "$RBD_IMAGE@$BITMAP_NEW" >> "$logFile" 2>&1; then
       snapped+=("$d")
     else
       log -e "Failed to create RBD snapshot $RBD_IMAGE@$BITMAP_NEW"
@@ -378,7 +435,7 @@ backup_rbd_vm() {
 
   # Resume before thawing: the guest agent does not answer while the VM is paused.
   if [[ $resume -eq 1 ]]; then
-    if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
       echo "Failed to resume vm $VM after taking the disk snapshots"
       rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
       cleanup
@@ -391,6 +448,8 @@ backup_rbd_vm() {
     cleanup
     exit 1
   fi
+  rm -f "$guest_state"
+  trap - TERM HUP INT
 
   if [[ $snap_failed -eq 1 ]]; then
     echo "Failed to create RBD snapshot $BITMAP_NEW for vm $VM"
