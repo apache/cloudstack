@@ -98,7 +98,7 @@ public class InternalBackupServiceJobDaoImpl extends GenericDaoBase<InternalBack
     }
 
     @Override
-    public Pair<List<InternalBackupServiceJobVO>, Integer> searchAndCountForListApi(Long id, Long backupId, Long hostId, Long zoneId, InternalBackupServiceJobType type, boolean executing,
+    public Pair<List<InternalBackupServiceJobVO>, Integer> searchAndCountForListApi(Long id, Long backupId, Long hostId, Long zoneId, String type, boolean executing,
             boolean scheduled, Long startIndex, Long pageSize) {
         SearchBuilder<InternalBackupServiceJobVO> sb = createSearchBuilder();
 
@@ -122,7 +122,7 @@ public class InternalBackupServiceJobDaoImpl extends GenericDaoBase<InternalBack
         sc.setParametersIfNotNull(HOST_ID, hostId);
         sc.setParametersIfNotNull(ZONE_ID, zoneId);
         if (type != null) {
-            sc.setParameters(TYPE, type);
+            sc.setParameters(TYPE, InternalBackupServiceJobType.valueOf(type));
         }
 
         Filter filter = new Filter(InternalBackupServiceJobVO.class, "created", false, startIndex, pageSize);

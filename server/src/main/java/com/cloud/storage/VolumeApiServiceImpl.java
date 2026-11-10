@@ -1127,6 +1127,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+        if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(new Pair<>(volume, diskProfile)), storagePool, storagePool.getClusterId())) {
+            throw new InvalidParameterValueException(String.format("Storage pool %s does not have enough space to create volume %s.",
+                    storagePool.getName(), volume.getUuid()));
+        }
+
         DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
         VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
@@ -1184,6 +1191,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             created = false;
             VolumeInfo vol = volFactory.getVolume(volumeId);
             vol.stateTransit(Volume.Event.DestroyRequested);
+            if (e instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException) e;
+            }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
             if (!created) {
@@ -1446,11 +1456,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
                 volumeResizeRequired = true;
             }
-            if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null) {
-                _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
-                volume = _volsDao.findById(volume.getId());
-                updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+            if (!volumeMigrateRequired && !volumeResizeRequired) {
 
+                if (newDiskOffering != null && newDiskOffering.getId() != diskOffering.getId()) {
+                    _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
+                    volume = _volsDao.findById(volume.getId());
+                    updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+                }
                 return volume;
             }
 
@@ -2174,7 +2186,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkCheckAndRepairVolume workInfo = new VmWorkCheckAndRepairVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, repair);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -2601,7 +2613,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 if (storagePoolVO.isManaged() && !List.of(
                         Storage.StoragePoolType.PowerFlex,
-                        Storage.StoragePoolType.FiberChannel).contains(storagePoolVO.getPoolType())) {
+                        Storage.StoragePoolType.FiberChannel,
+                        Storage.StoragePoolType.NVMeTCP).contains(storagePoolVO.getPoolType())) {
                     Long instanceId = volume.getInstanceId();
 
                     if (instanceId != null) {
@@ -4153,7 +4166,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             result = CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), storageTagsList);
         }
-        logger.debug(String.format("Destination storage pool [{}] accepts tags [{}]? {}", destPool.getUuid(), diskOfferingTags, result));
+        logger.debug("Destination storage pool [{}] accepts tags [{}]? {}", destPool.getUuid(), diskOfferingTags, result);
         return result;
     }
 
@@ -5357,14 +5370,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
+    @Override
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+        return _tmpltMgr.getCdromDeviceIds(vm);
+    }
+
+    @Override
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
+        return _tmpltMgr.getCdromDeviceIds(vm, configDriveUsed);
+    }
+
+    /**
+     * Returns the first {@code maxDataVolumes} device ids (starting from 1) which are not reserved.
+     */
+    private List<Long> getAvailableDeviceIds(int maxDataVolumes, Set<Long> reservedDeviceIds) {
+        List<Long> availableDeviceIds = new ArrayList<>();
+        for (long id = 1; availableDeviceIds.size() < maxDataVolumes; id++) {
+            if (!reservedDeviceIds.contains(id)) {
+                availableDeviceIds.add(id);
+            }
+        }
+        return availableDeviceIds;
+    }
+
     private Long getDeviceId(UserVmVO vm, Long deviceId) {
         // allocate deviceId
-        int maxDevices = getMaxDataVolumesSupported(vm) + 2; // add 2 to consider devices root volume and cdrom
-        int maxDeviceId = maxDevices - 1;
+        Set<Long> reservedDeviceIds = getReservedDeviceIds(vm);
+        List<Long> availableDeviceIds = getAvailableDeviceIds(getMaxDataVolumesSupported(vm), reservedDeviceIds);
+        long maxDeviceId = availableDeviceIds.get(availableDeviceIds.size() - 1);
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (deviceId != null) {
-            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3) {
-                throw new RuntimeException("deviceId should be 0,1,2,4-" + maxDeviceId);
+            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || reservedDeviceIds.contains(deviceId)) {
+                throw new RuntimeException(String.format("deviceId should be 0 or between 1 and %d, except the ones reserved for CD-ROM/config drive devices: %s",
+                        maxDeviceId, reservedDeviceIds));
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
@@ -5373,18 +5411,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         } else {
             // allocate deviceId here
-            List<String> devIds = new ArrayList<String>();
-            for (int i = 1; i <= maxDeviceId; i++) {
-                devIds.add(String.valueOf(i));
-            }
-            devIds.remove("3");
             for (VolumeVO vol : vols) {
-                devIds.remove(vol.getDeviceId().toString().trim());
+                availableDeviceIds.remove(vol.getDeviceId());
             }
-            if (devIds.isEmpty()) {
+            if (availableDeviceIds.isEmpty()) {
                 throw new RuntimeException(String.format("All device Ids are used by vm %s", vm));
             }
-            deviceId = Long.parseLong(devIds.iterator().next());
+            deviceId = availableDeviceIds.get(0);
         }
 
         return deviceId;
@@ -5512,7 +5545,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5546,7 +5579,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5578,7 +5611,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize,
                 newMinIops, newMaxIops, newHypervisorSnapshotReserve, newServiceOfferingId, shrinkOk);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5609,7 +5642,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkExtractVolume workInfo = new VmWorkExtractVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, zoneId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5640,7 +5673,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkMigrateVolume workInfo = new VmWorkMigrateVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, vol.getId(), destPool.getId(),
                 liveMigrateVolume, newDiskOfferingId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5673,7 +5706,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkTakeVolumeSnapshot workInfo = new VmWorkTakeVolumeSnapshot(callingUser.getId(), accountId != null ? accountId : callingAccount.getId(), vm.getId(),
                 VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, policyId, snapshotId, quiesceVm, locationType, asyncBackup, zoneIds, poolIds);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5744,7 +5777,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
         workJob.setCmd("");
-        workJob.setCmdInfo("");
+        workJob.updateCmdInfoWithEncryptionIfNeeded("");
 
         workJob.setAccountId(0);
         workJob.setUserId(0);

@@ -137,6 +137,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         int i = 0;
         while (!downloaded && i < metalinkUrls.size()) {
             String url = metalinkUrls.get(i);
+            try {
+                UriUtils.validateMetalinkInnerUrl(url);
+            } catch (IllegalArgumentException e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed SSRF validation: %s - %s", url, e.getMessage()));
+                i++;
+                continue;
+            }
             request = createRequest(url);
             downloaded = downloadTemplate();
             i++;

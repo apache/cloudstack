@@ -206,6 +206,8 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import static org.apache.commons.lang3.StringUtils.deleteWhitespace;
+
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServer.class.getName());
@@ -400,7 +402,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         Account jobOwner = accountMgr.getAccount(userJobOwner.getAccountId());
 
         // Get the event type from the cmdInfo json string
-        String info = job.getCmdInfo();
+        String info = StringUtils.obfuscatePasswordInJsonLikeString(job.getCmdInfo());
         String cmdEventType = "unknown";
         Map<String, Object> cmdInfoObj = new HashMap<>();
         if (info != null) {
@@ -440,7 +442,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("instanceType", instanceType);
         eventDescription.put("commandEventType", cmdEventType);
         eventDescription.put("jobId", job.getUuid());
-        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(job.getResult()));
+        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(StringUtils.obfuscatePasswordInJsonLikeString(job.getResult())));
         eventDescription.put("cmdInfo", cmdInfoObj);
         eventDescription.put("status", "" + job.getStatus());
         // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
@@ -1007,7 +1009,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // if userId not null, that mean that user is logged in
             if (userId != null) {
                 final User user = ApiDBUtils.findUserById(userId);
-                return commandAvailable(remoteAddress, commandName, user);
+                return commandAvailable(remoteAddress, commandName, user, null);
             } else {
                 if (commandName.equalsIgnoreCase(ListGuiThemesCmd.class.getAnnotation(APICommand.class).name())) {
                     return true;
@@ -1120,7 +1122,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 return false;
             }
 
-            if (!commandAvailable(remoteAddress, commandName, user)) {
+            if (!commandAvailable(remoteAddress, commandName, user, null)) {
                 return false;
             }
 
@@ -1156,7 +1158,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             CallContext.register(user, account);
 
             List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId());
-            if (commandAvailable(remoteAddress, commandName, user, keyPairPermissions.toArray(new ApiKeyPairPermission[0]))) {
+            if (commandAvailable(remoteAddress, commandName, user, keyPair, keyPairPermissions.toArray(new ApiKeyPairPermission[0]))) {
                 logger.info("API accessed through API Key Pair. API Key: [{}].", keyPair.getApiKey());
                 return true;
             }
@@ -1170,9 +1172,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return false;
     }
 
-    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user, ApiKeyPairPermission... rolePermissions) {
+    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user, ApiKeyPair keyPair, ApiKeyPairPermission... rolePermissions) {
         try {
-            checkCommandAvailable(user, commandName, remoteAddress, rolePermissions);
+            checkCommandAvailable(user, commandName, remoteAddress, keyPair, rolePermissions);
         } catch (final RequestLimitException ex) {
             logger.debug(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
@@ -1465,17 +1467,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return domainIdArr[0];
     }
 
-    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress, ApiKeyPairPermission ... apiKeyPairPermissions) throws PermissionDeniedException {
+    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        final Account account = accountMgr.getAccount(user.getAccountId());
-        final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
-
         if (apiSourceCidrChecksEnabled) {
-            logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account.toString(), accessAllowedCidrs);
+            final Account account = accountMgr.getAccount(user.getAccountId());
+            final String accessAllowedCidrs = deleteWhitespace(ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()));
+            logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
                 logger.warn("Request by account '{}' was denied since {} does not match {}", account.toString(), remoteAddress, accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
@@ -1483,7 +1484,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         for (final APIChecker apiChecker : apiAccessCheckers) {
-            apiChecker.checkAccess(user, commandName, apiKeyPairPermissions);
+            apiChecker.checkAccess(user, commandName, keyPair, apiKeyPairPermissions);
         }
     }
 

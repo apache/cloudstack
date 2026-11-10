@@ -452,8 +452,16 @@ public class StorPoolUtil {
         return obj.getAsJsonObject(DATA).getAsJsonArray(CLUSTERS);
     }
 
+    public static SpApiResponse volumesListResponse(SpConnectionDesc conn) {
+        return GET("MultiCluster/VolumesList", conn);
+    }
+
+    public static SpApiResponse volumeDescribeResponse(String name, SpConnectionDesc conn) {
+        return GET("MultiCluster/Volume/" + name, conn);
+    }
+
     public static JsonArray volumesList(SpConnectionDesc conn) {
-        SpApiResponse resp = GET("MultiCluster/VolumesList", conn);
+        SpApiResponse resp = volumesListResponse(conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
         return obj.getAsJsonArray(DATA);
     }

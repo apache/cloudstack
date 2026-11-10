@@ -94,7 +94,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.update.physical.network',
       dataView: true,
-      args: ['vlan', 'tags', 'externaldetails']
+      args: ['vlan', 'tags']
     },
     {
       api: 'addTrafficType',

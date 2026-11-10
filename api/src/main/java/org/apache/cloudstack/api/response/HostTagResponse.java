@@ -29,7 +29,7 @@ public class HostTagResponse extends BaseResponse {
 
     @SerializedName("hostid")
     @Param(description = "The host ID of the host tag")
-    private long hostId;
+    private String hostId;
 
     @SerializedName("name")
     @Param(description = "The name of the host tag")
@@ -47,11 +47,11 @@ public class HostTagResponse extends BaseResponse {
         this.id = id;
     }
 
-    public long getHostId() {
+    public String getHostId() {
         return hostId;
     }
 
-    public void setHostId(long hostId) {
+    public void setHostId(String hostId) {
         this.hostId = hostId;
     }
 

@@ -21,6 +21,7 @@ import { isZoneCreated } from '@/utils/zone'
 import { getAPI, postAPI, getBaseUrl } from '@/api'
 import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
 import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
+import { escapeHtml } from '@/utils/util'
 
 const attachedIsoCount = (record) => (record.isos && record.isos.length) || (record.isoid ? 1 : 0)
 // Server pre-computes the effective cap (cluster-scoped vm.iso.max.count clamped to the
@@ -202,6 +203,7 @@ export default {
           api: 'createVMSnapshot',
           icon: 'camera-outlined',
           label: 'label.action.vmsnapshot.create',
+          message: 'message.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           args: (record, store) => {
@@ -392,7 +394,7 @@ export default {
           show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }
@@ -1056,6 +1058,99 @@ export default {
           icon: 'delete-outlined',
           label: 'label.delete.instance.group',
           message: 'message.action.delete.instance.group',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'instancebootgroup',
+      title: 'label.instance.boot.groups',
+      icon: 'ordered-list-outlined',
+      resourceType: 'InstanceBootGroup',
+      permission: ['listInstanceBootGroups'],
+      searchFilters: ['name', 'domainid', 'account'],
+      columns: (store) => {
+        var fields = ['name', 'description', 'account']
+        if (store.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('domain')
+        fields.push('created')
+        return fields
+      },
+      details: ['name', 'id', 'description', 'account', 'domain', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'members',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceBootGroupMembersTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'InstanceBootGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'createInstanceBootGroup',
+          icon: 'plus-outlined',
+          label: 'label.add.instance.boot.group',
+          listView: true,
+          args: (record, store) => {
+            var fields = ['name', 'description']
+            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+              fields.push('domainid')
+              fields.push('account')
+            }
+            fields.push('readinessattempttimeoutseconds', 'readinessmaxretryattempts', 'readinessrebootonretry', 'readinessinitialdelayseconds')
+            return fields
+          }
+        },
+        {
+          api: 'updateInstanceBootGroup',
+          icon: 'edit-outlined',
+          label: 'label.update.instance.boot.group',
+          dataView: true,
+          args: ['name', 'description', 'readinessattempttimeoutseconds', 'readinessmaxretryattempts', 'readinessrebootonretry', 'readinessinitialdelayseconds']
+        },
+        {
+          api: 'startInstanceBootGroup',
+          icon: 'caret-right-outlined',
+          label: 'label.action.start.instance.boot.group',
+          message: 'message.action.start.instance.boot.group',
+          dataView: true,
+          popup: true
+        },
+        {
+          api: 'stopInstanceBootGroup',
+          icon: 'poweroff-outlined',
+          label: 'label.action.stop.instance.boot.group',
+          message: 'message.action.stop.instance.boot.group',
+          dataView: true,
+          popup: true,
+          args: ['forced']
+        },
+        {
+          api: 'rebootInstanceBootGroup',
+          icon: 'reload-outlined',
+          label: 'label.action.reboot.instance.boot.group',
+          message: 'message.action.reboot.instance.boot.group',
+          dataView: true,
+          popup: true,
+          args: ['forced']
+        },
+        {
+          api: 'deleteInstanceBootGroup',
+          icon: 'delete-outlined',
+          label: 'label.delete.instance.boot.group',
+          message: 'message.action.delete.instance.boot.group',
           dataView: true,
           groupAction: true,
           popup: true,

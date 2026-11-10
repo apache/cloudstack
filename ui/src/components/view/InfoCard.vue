@@ -255,7 +255,12 @@
                   </a-tooltip>
                 </span>
                 <span v-else>{{ resource.cputotal }}</span>
-                <a-tag v-if="resource.arch" style="margin-left: 10px">
+                <a-tooltip v-if="resource.details && resource.details['host.cpu.max.speed.mhz']" :title="$t('label.host.cpu.max.speed')">
+                  <a-tag>
+                    <RocketOutlined /> {{ (resource.details['host.cpu.max.speed.mhz'] / 1000.0).toFixed(2) }} GHz
+                  </a-tag>
+                </a-tooltip>
+                <a-tag v-if="resource.arch">
                   {{ resource.arch }}
                 </a-tag>
               </div>
@@ -412,7 +417,7 @@
               <div class="resource-detail-item__label" v-else>{{ $t('label.disksize') }}</div>
               <div class="resource-detail-item__details">
                 <hdd-outlined />
-                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GiB Storage</span>
                 <span style="width: 100%;" v-else-if="$route.meta.name === 'backup'">
                   {{ $bytesToHumanReadableSize(resource.size) }}
                   <a-tooltip placement="right">

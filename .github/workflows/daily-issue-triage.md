@@ -14,7 +14,89 @@ permissions: read-all
 
 network: defaults
 
+engine:
+  id: copilot
+  model: claude-haiku-5.5
+
+# Rotates the Copilot token across volunteer PATs, see .github/COPILOT_TOKENS.md.
+# Strict mode forbids reading secrets in the agent job, so this job picks today's
+# token and outputs its alias only; the agent job resolves the secret itself.
+# ROTATION_SLOT 1 staggers this workflow half the pool away from
+# weekly-repo-status so the two pick different tokens (pool of 2 or more).
+# After `gh aw compile`, run `bash .github/scripts/post-compile.sh` to re-wire the
+# agent job to this output.
+jobs:
+  pick_copilot_token:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.pick.outputs.name }}
+    steps:
+      - name: Compute candidate names by date
+        id: names
+        env:
+          NAMES_JSON: "${{ vars.GH_AW_COPILOT_TOKEN_NAMES }}"
+          ROTATION_SLOT: "1"
+        run: |
+          set -euo pipefail
+          NAMES=()
+          if [ -n "${NAMES_JSON:-}" ]; then
+            mapfile -t NAMES < <(printf '%s' "$NAMES_JSON" | jq -r '.[]')
+          fi
+          N=${#NAMES[@]}
+          K=3   # today's pick plus 2 fallbacks in case it's dead
+          if [ "$N" -eq 0 ]; then
+            for o in $(seq 0 $((K-1))); do echo "name_$o=" >> "$GITHUB_OUTPUT"; done
+            echo "GH_AW_COPILOT_TOKEN_NAMES is empty -> agent will use base COPILOT_GITHUB_TOKEN"
+            exit 0
+          fi
+          DOY=$(date -u +%-j)
+          # slot 1 starts half the pool away from slot 0 so the two workflows
+          # pick different tokens whenever the pool has at least 2
+          START=$(( (DOY - 1 + ROTATION_SLOT * ((N + 1) / 2)) % N ))
+          for o in $(seq 0 $((K-1))); do
+            i=$(( (START + o) % N ))
+            echo "name_$o=${NAMES[$i]}" >> "$GITHUB_OUTPUT"
+          done
+      - name: Pick first live token name
+        id: pick
+        env:
+          NAME_0: "${{ steps.names.outputs.name_0 }}"
+          NAME_1: "${{ steps.names.outputs.name_1 }}"
+          NAME_2: "${{ steps.names.outputs.name_2 }}"
+          CAND_0: "${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_0)] }}"
+          CAND_1: "${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_1)] }}"
+          CAND_2: "${{ secrets[format('COPILOT_GITHUB_TOKEN_{0}', steps.names.outputs.name_2)] }}"
+          BASE: "${{ secrets.COPILOT_GITHUB_TOKEN }}"
+        run: |
+          set -euo pipefail
+          live() {
+            [ -n "$1" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer $1" https://api.github.com/user || echo 000)" = "200" ]
+          }
+          # name and token are passed as separate args so the name never derives from the token
+          pick() {
+            [ -n "$2" ] || return 1
+            echo "::add-mask::$2"
+            live "$2" || return 1
+            echo "name=$1" >> "$GITHUB_OUTPUT"
+            echo "Selected rotated token '$1'"
+          }
+          pick "$NAME_0" "$CAND_0" && exit 0
+          pick "$NAME_1" "$CAND_1" && exit 0
+          pick "$NAME_2" "$CAND_2" && exit 0
+          # empty name makes the agent job fall back to the base COPILOT_GITHUB_TOKEN secret
+          [ -n "$BASE" ] && echo "::add-mask::$BASE"
+          echo "name=" >> "$GITHUB_OUTPUT"
+          if live "$BASE"; then echo "Falling back to base COPILOT_GITHUB_TOKEN"; else
+            echo "WARNING: no live Copilot token (rotated or base)" >&2; fi
+
 safe-outputs:
+  # Don't open tracking issues when the agentic run itself fails or is unhealthy
+  report-failure-as-issue: false
+  report-missing-tool:
+    create-issue: false
+  report-incomplete:
+    create-issue: false
   add-labels:
     target: "*"
     max: 10
@@ -23,16 +105,18 @@ safe-outputs:
     max: 10
 
 tools:
-  web-fetch:
+  bash: ["cat", "ls", "find", "grep", "head", "tail", "wc", "curl"]
   github:
     toolsets: [issues, labels]
     min-integrity: none
 
-source: githubnext/agentics/workflows/daily-issue-triage.md@d7c1dc4b72b00607a67caaffdcc216cb64379cf9
 timeout-minutes: 60
+source: githubnext/agentics/workflows/daily-issue-triage.md@139fa09ef17cde4135e696ff8e7af09bc5ddfa6e
 ---
 
 # Daily Issue Triage
+
+Use GitHub read tools for repository content and proxy-aware `curl` through bash for external references. Stay within the configured network allowlist, keep TLS verification enabled, and report blocked requests rather than bypassing the firewall or guessing missing content.
 
 <!-- Note - this file can be customized to your needs. Replace this section directly, or add further instructions here. After editing run 'gh aw compile' -->
 
@@ -125,7 +209,7 @@ Assess whether the issue is suitable for automated coding agent assignment:
 ### 3g: Apply results and post comment
 
 Apply all triage results for this issue:
-- Use `update_issue` to apply the chosen labels.
+- Use the `add_labels` safe output to apply the chosen labels.
 - Add an issue comment with the triage report using the format below.
 
 Then move to the next issue.

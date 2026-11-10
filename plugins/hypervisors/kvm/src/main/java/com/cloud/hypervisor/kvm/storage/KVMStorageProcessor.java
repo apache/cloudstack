@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.offering.DiskOffering;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
 
@@ -182,6 +183,12 @@ public class KVMStorageProcessor implements StorageProcessor {
     private static final String CEPH_AUTH_KEY = "key";
     private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
     private static final String CEPH_DEFAULT_MOUNT_TIMEOUT = "30";
+
+    // libvirt < 10.1.0 has an object apply-order bug (fixed in 10.1.0) that breaks hot-plug of an encrypted
+    // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
+    // "No secret with id '...-format-encryption-secret0'". Booting a VM from an encrypted disk is unaffected (the
+    // QEMU command line resolves all -object before -blockdev). See qemuBlockStorageSourceAttachApply() in libvirt.
+    private static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
     /**
      * Time interval before rechecking virsh commands
      */
@@ -415,7 +422,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     StoragePoolType.PowerFlex,
                     StoragePoolType.Linstor,
                     StoragePoolType.FiberChannel,
-                    StoragePoolType.CLVM).contains(primaryPool.getType())) {
+                    StoragePoolType.CLVM,
+                    StoragePoolType.NVMeTCP).contains(primaryPool.getType())) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);
@@ -448,7 +456,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     public static String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
         String path = null;
-        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
+        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel
+                || primaryStore.getPoolType() == StoragePoolType.NVMeTCP) {
             path = destData.getPath();
         } else {
             path = details != null ? details.get("managedStoreTarget") : null;
@@ -911,7 +920,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (path == null) {
                     path = srcData.getPath();
                     if (path == null) {
-                        new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                       throw new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
                     }
                 }
             }
@@ -1587,11 +1596,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
-                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails, Map<String, String> details, Map<String, String> controllerInfo)
+                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final String errorPolicy, final DiskDef.LibvirtDiskEncryptDetails encryptDetails, Map<String, String> details, Map<String, String> controllerInfo)
             throws LibvirtException, InternalErrorException {
         attachOrDetachDisk(conn, attach, vmName, attachingDisk, devId, serial, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength,
                 bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate,
-                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l, details, controllerInfo);
+                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, errorPolicy, encryptDetails, 0l, details, controllerInfo);
     }
 
     /**
@@ -1626,7 +1635,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
-                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails,
+                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final String errorPolicy, final DiskDef.LibvirtDiskEncryptDetails encryptDetails,
                                                    long waitDetachDevice, Map<String, String> details, Map<String, String> controllerInfo)
             throws LibvirtException, InternalErrorException {
 
@@ -1753,6 +1762,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
+                if (errorPolicy != null) {
+                    diskdef.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(errorPolicy.toUpperCase()));
+                }
 
                 diskdef.isIothreadsEnabled(details != null && details.containsKey(VmDetailConstants.IOTHREADS));
 
@@ -1795,6 +1807,20 @@ public class KVMStorageProcessor implements StorageProcessor {
         return DiskDef.DiskBus.VIRTIO;
     }
 
+    /**
+     * libvirt &lt; 10.1.0 cannot hot-plug an encrypted rbd blockdev (the LUKS secret is applied after the disk is
+     * opened), so refuse the attach with a clear message rather than letting libvirt fail with an opaque
+     * "No secret with id ..." error. Only the RBD hot-plug path is affected; booting a VM from an encrypted RBD
+     * disk works on older libvirt, so this does not gate the boot/root path.
+     */
+    protected void ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType poolType) {
+        if (poolType == StoragePoolType.RBD
+                && resource.getHypervisorLibvirtVersion() < MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
+            throw new CloudRuntimeException("Libvirt version 10.1.0 required to attach an encrypted RBD volume to a running VM, but version "
+                    + resource.getHypervisorLibvirtVersion() + " detected. Booting a VM from an encrypted RBD disk is not affected.");
+        }
+    }
+
     @Override
     public Answer attachVolume(final AttachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
@@ -1807,8 +1833,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             DiskDef.LibvirtDiskEncryptDetails encryptDetails = null;
             if (vol.requiresEncryption()) {
+                // Encrypted RBD is decrypted by librbd inside qemu; hot-plugging it needs a libvirt new enough to
+                // emit the LUKS secret before the rbd blockdev. Booting from an encrypted RBD disk is unaffected.
+                ensureLibvirtSupportsEncryptedRbdHotplug(primaryStore.getPoolType());
                 String secretUuid = resource.createLibvirtVolumeSecret(conn, vol.getPath(), vol.getPassphrase());
-                encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()));
+                // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                String encryptEngine = (primaryStore.getPoolType() == StoragePoolType.RBD) ? "librbd" : null;
+                encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()), encryptEngine);
                 vol.clearPassphrase();
             }
 
@@ -1816,13 +1847,14 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
             final String volCacheMode = vol.getCacheMode() == null ? null : vol.getCacheMode().toString();
+            final String volErrorPolicy = vol.getErrorPolicy() == null ? null : vol.getErrorPolicy().toString();
             logger.debug(String.format("Attaching physical disk %s with format %s", phyDisk.getPath(), phyDisk.getFormat()));
 
             attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(), serial,
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode,
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, volErrorPolicy,
                     encryptDetails, disk.getDetails(), cmd.getControllerInfo());
 
             resource.recreateCheckpointsOnVm(List.of((VolumeObjectTO) disk.getData()), vmName, conn);
@@ -1857,12 +1889,13 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
             final String volCacheMode = vol.getCacheMode() == null ? null : vol.getCacheMode().toString();
+            final String volErrorPolicy = vol.getErrorPolicy() == null ? null : vol.getErrorPolicy().toString();
 
             attachOrDetachDisk(conn, false, vmName, phyDisk, disk.getDiskSeq().intValue(), serial,
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice, null, null);
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, volErrorPolicy, null, waitDetachDevice, null, null);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
@@ -2568,33 +2601,36 @@ public class KVMStorageProcessor implements StorageProcessor {
      * barriers properly (>2.6.32) this won't be any different then pulling the power
      * cord out of a running machine.
      */
-    private Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+    protected Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
         Long snapshotSize = null;
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage image = null;
         try {
-            Rados r = radosConnect(primaryPool);
+            r = radosConnect(primaryPool);
 
-            final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-            final Rbd rbd = new Rbd(io);
-            final RbdImage image = rbd.open(disk.getName());
+            io = r.ioCtxCreate(primaryPool.getSourceDir());
+            rbd = new Rbd(io);
+            image = rbd.open(disk.getName());
 
             logger.debug("Attempting to create RBD snapshot {}@{}", disk.getName(), snapshotName);
             image.snapCreate(snapshotName);
 
-            image.snapCreate(snapshotName);
             long rbdSnapshotSize = getRbdSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
             if (rbdSnapshotSize > 0) {
                 snapshotSize = rbdSnapshotSize;
             }
-
-            rbd.close(image);
-            r.ioCtxDestroy(io);
         } catch (final Exception e) {
             logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
+        } finally {
+            closeRbdImage(rbd, image, disk.getName());
+            destroyRadosIoCtx(r, io, disk.getName());
         }
         return snapshotSize;
     }
 
-    private long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
+    protected long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
         logger.debug("Get RBD snapshot size for {}/{}@{}", poolPath, diskName, snapshotName);
         //cmd: rbd du <pool>/<disk-name>@<snapshot-name> --format json --mon-host <monitor-host> --id <user> --key <key> 2>/dev/null
         String snapshotDetailsInJson = Script.runSimpleBashScript(String.format("rbd du %s/%s@%s --format json --mon-host %s --id %s --key %s 2>/dev/null", poolPath, diskName, snapshotName, rbdMonitor, authUser, authSecret));
@@ -2881,7 +2917,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         return ((availablePoolSize * 1d) / (diskSize * 1d)) < MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT;
     }
 
-    private Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
+    protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
         Rados r = new Rados(primaryPool.getAuthUserName());
         r.confSet(CEPH_MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
         r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
@@ -2889,6 +2925,50 @@ public class KVMStorageProcessor implements StorageProcessor {
         r.connect();
         logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
         return r;
+    }
+
+    /**
+     * Closes an RBD image if it was opened; never throws. An image left open keeps this client's RBD
+     * exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and keeps
+     * the image busy so it cannot be removed.
+     */
+    protected void closeRbdImage(Rbd rbd, RbdImage image, String imageName) {
+        if (image == null) {
+            return;
+        }
+        try {
+            rbd.close(image);
+        } catch (final Exception e) {
+            logger.warn("Failed to close RBD image [{}]. The error was: {}", imageName, e.getMessage(), e);
+        }
+    }
+
+    /** Destroys a RADOS IO context if it was created; never throws. */
+    protected void destroyRadosIoCtx(Rados r, IoCTX io, String contextDescription) {
+        if (io == null) {
+            return;
+        }
+        try {
+            r.ioCtxDestroy(io);
+        } catch (final Exception e) {
+            logger.warn("Failed to destroy the RADOS IO context used for [{}]. The error was: {}", contextDescription, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Unprotects an RBD snapshot if it was protected; never throws. A snapshot left protected cannot
+     * be deleted, and neither can its volume.
+     */
+    protected void unprotectRbdSnapshot(RbdImage image, String snapshotName, boolean snapProtected) {
+        if (!snapProtected) {
+            return;
+        }
+        try {
+            image.snapUnprotect(snapshotName);
+        } catch (final Exception e) {
+            logger.error("Failed to unprotect RBD snapshot [{}]; it and its volume cannot be deleted until this is resolved manually. The error was: {}",
+                    snapshotName, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -3020,7 +3100,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (path == null) {
                 path = details != null ? details.get(DiskTO.IQN) : null;
                 if (path == null) {
-                    new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                   logger.warn("The 'path' or 'iqn' field must be specified.");
                 }
             }
         }
@@ -3046,17 +3126,24 @@ public class KVMStorageProcessor implements StorageProcessor {
         disk.setSize(size > volume.getVirtualSize() ? size : volume.getVirtualSize());
         disk.setVirtualSize(size > volume.getVirtualSize() ? size : disk.getSize());
 
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage srcImage = null;
+        RbdImage diskImage = null;
+        boolean snapProtected = false;
+
         try {
 
-            Rados r = new Rados(srcPool.getAuthUserName());
+            r = new Rados(srcPool.getAuthUserName());
             r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
             r.confSet("key", srcPool.getAuthSecret());
             r.confSet("client_mount_timeout", "30");
             r.connect();
 
-            IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
-            Rbd rbd = new Rbd(io);
-            RbdImage srcImage = rbd.open(volume.getName());
+            io = r.ioCtxCreate(srcPool.getSourceDir());
+            rbd = new Rbd(io);
+            srcImage = rbd.open(volume.getName());
 
             List<RbdSnapInfo> snaps = srcImage.snapList();
             boolean snapFound = false;
@@ -3072,23 +3159,26 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return null;
             }
             srcImage.snapProtect(snapshotName);
+            snapProtected = true;
 
             logger.debug(String.format("Try to clone snapshot %s on RBD", snapshotName));
             rbd.clone(volume.getName(), snapshotName, io, disk.getName(), LibvirtStorageAdaptor.RBD_FEATURES, 0);
-            RbdImage diskImage = rbd.open(disk.getName());
+            diskImage = rbd.open(disk.getName());
             if (disk.getVirtualSize() > volume.getVirtualSize()) {
                 diskImage.resize(disk.getVirtualSize());
             }
 
             diskImage.flatten();
-            rbd.close(diskImage);
-
-            srcImage.snapUnprotect(snapshotName);
-            rbd.close(srcImage);
-            r.ioCtxDestroy(io);
         } catch (RadosException | RbdException e) {
             logger.error(String.format("Failed due to %s", e.getMessage()), e);
             disk = null;
+        } finally {
+            // Every handle has to be released on all paths, including the "snapshot not found" return and
+            // any failure of clone/resize/flatten.
+            closeRbdImage(rbd, diskImage, newUuid);
+            unprotectRbdSnapshot(srcImage, snapshotName, snapProtected);
+            closeRbdImage(rbd, srcImage, volume.getName());
+            destroyRadosIoCtx(r, io, snapshotName);
         }
 
         return disk;
@@ -3431,7 +3521,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 StoragePoolType.PowerFlex,
                 StoragePoolType.Linstor,
                 StoragePoolType.FiberChannel,
-                StoragePoolType.CLVM).contains(poolType)) {
+                StoragePoolType.CLVM,
+                StoragePoolType.NVMeTCP).contains(poolType)) {
             return ImageFormat.RAW;
         } else {
             return ImageFormat.QCOW2;

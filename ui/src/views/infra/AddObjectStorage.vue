@@ -87,7 +87,7 @@
             <a-input v-model:value="form.accessKey" />
           </a-form-item>
           <a-form-item name="secretKey" ref="secretKey" :label="$t('label.secret.key')">
-            <a-input v-model:value="form.secretKey" />
+            <a-input-password v-model:value="form.secretKey" autocomplete="off" />
           </a-form-item>
           <a-form-item name="size" ref="size">
             <template #label>
@@ -106,7 +106,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -209,7 +209,7 @@ export default {
     },
     addObjectStore (params) {
       return new Promise((resolve, reject) => {
-        getAPI('addObjectStoragePool', params).then(json => {
+        postAPI('addObjectStoragePool', params).then(json => {
           resolve()
         }).catch(error => {
           reject(error)

@@ -174,6 +174,12 @@ public class ParamProcessWorker implements DispatchWorker {
                             validateNameForRFCCompliance(paramObj, argName);
                             break;
                     }
+                    break;
+                case SafeCommandOptions:
+                    validator.validate(paramObj, annotation);
+                    break;
+                default:
+                    break;
             }
         }
     }

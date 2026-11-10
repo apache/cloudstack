@@ -114,6 +114,10 @@ export default {
           min: 4096,
           max: 16777214
         },
+        Netris: {
+          min: 4096,
+          max: 16777214
+        },
         GRE: {
           min: 0,
           max: 4294967295

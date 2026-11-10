@@ -859,6 +859,8 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         excluded from the check — the connectivity failure will surface
         naturally when the test later tries to deploy scripts.
         """
+        if self.hv.lower() != 'kvm':
+            raise self.skipTest("Skipping test case for non-kvm hypervisor")
         if tools is None:
             tools = ['arping', 'dnsmasq', 'haproxy']
         if not self.kvm_host_configs:
@@ -2387,7 +2389,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_09_vpc_source_nat_ip_update(self):
         """Update VPC source NAT IP and verify old/new source NAT flags flip correctly."""
-        self._check_kvm_host_prerequisites(['arping'])
+        self._check_kvm_host_prerequisites(['ip', 'arping', 'dnsmasq', 'haproxy'])
 
         svc  = VPC_NETWORK_SERVICES
         _nw_offering, ext_name = self._setup_extension_nsp_offering(

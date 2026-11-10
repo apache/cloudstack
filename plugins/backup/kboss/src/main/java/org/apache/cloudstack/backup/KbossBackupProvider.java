@@ -1819,8 +1819,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             succeedingDeltaPaths = gatherSnapshotReferencesOfChildrenSnapshot(List.of(volumeObjectTO), succeedingVmSnapshot).getOrDefault(volumeObjectTO.getVolumeId(), List.of())
                     .stream().map(SnapshotDataStoreVO::getInstallPath).collect(Collectors.toList());
 
-            if (!childIsVolume && !runningVm && succeedingDeltaPaths.isEmpty()) {
-                succeedingDeltaPaths = List.of(volumeObjectTO.getPath());
+            if (!childIsVolume && !runningVm && succeedingVmSnapshot.getCurrent()) {
+                succeedingDeltaPaths.add(volumeObjectTO.getPath());
                 logger.debug("Since the last backup delta of volume [{}] is succeeded by a snapshot and the delta created by this snapshot is also the volume, it will have to be" +
                         " rebased. Setting it as the grand-child.", volumeObjectTO.getUuid());
             }

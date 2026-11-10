@@ -57,6 +57,8 @@ github:
     - jmsperu
     - GaOrtiga
     - bhouse-nexthop
+    - Dogface2k
+    - prashanthr2
 
   rulesets:
     - name: "Default Branch Protection"
@@ -72,7 +74,7 @@ github:
 
   copilot_code_review:
     enabled: true
-    review_drafts: true
+    review_drafts: false
     review_on_push: true
 
 notifications:

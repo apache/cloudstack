@@ -24,8 +24,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -155,6 +157,10 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
@@ -201,6 +207,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.EncryptionUtil;
@@ -218,6 +225,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -227,9 +235,11 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmIsoMapVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -263,6 +273,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private DataCenterDao _dcDao;
     @Inject
     private UserVmDao _userVmDao;
+    @Inject
+    private NicDao _nicDao;
+    @Inject
+    private NetworkModel _networkModel;
+    @Inject
+    private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private VmIsoMapDao _vmIsoMapDao;
     @Inject
@@ -331,6 +347,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
     @Inject
     private HeuristicRuleHelper heuristicRuleHelper;
+    @Inject
+    private UserDataDao userDataDao;
 
     private List<TemplateAdapter> _adapters;
 
@@ -360,6 +378,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return adapter;
     }
 
+    private long validateUrlAndGetSecondaryStorageUsage(TemplateAdapter adapter, String format, String url, boolean isDirectDownload) {
+        boolean isHypervisorTemplateAdapter = adapter instanceof HypervisorTemplateAdapter && !isDirectDownload;
+        if (isHypervisorTemplateAdapter) {
+            UriUtils.validateUrl(format, url, !TemplateManager.getValidateUrlIsResolvableBeforeRegisteringTemplateValue(), isDirectDownload);
+        }
+        return isHypervisorTemplateAdapter ?
+                UriUtils.getRemoteSize(url, StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "Creating ISO")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException {
@@ -369,8 +396,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Secondary storage resource count is not incremented for BareMetalTemplateAdapter
         // Note: checking the file size before registering will require the Management Server host to have access to the Internet and a DNS server
         // If it does not, UriUtils.getRemoteSize will return 0L.
-        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
-                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+        long secondaryStorageUsage = validateUrlAndGetSecondaryStorageUsage(adapter, ImageFormat.ISO.getFileExtension(), cmd.getUrl(), cmd.isDirectDownload());
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
@@ -409,8 +435,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
-        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
-                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+        long secondaryStorageUsage = validateUrlAndGetSecondaryStorageUsage(adapter, cmd.getFormat(), cmd.getUrl(), cmd.isDirectDownload());
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
@@ -695,13 +720,85 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
         // runtime attachIso can only media-swap into a slot the domain already owns.
         int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getId()), slotsNeededFor(slotToIsoId));
+        boolean configDriveUsed = isConfigDriveUsed(vm);
         for (int i = 0; i < totalSlots; i++) {
-            int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + i;
-            Long isoId = slotToIsoId.get(diskSeq);
+            int slot = CDROM_PRIMARY_DEVICE_SEQ + i;
+            int diskSeq = getIsoDeviceSeq(slot, configDriveUsed);
+            Long isoId = slotToIsoId.get(slot);
             profile.addDisk(isoId != null
                     ? buildIsoDisk(profile, vm, dest, poolId, diskSeq, isoId)
                     : buildEmptyCdromDisk(diskSeq));
         }
+    }
+
+    @Override
+    public Set<Long> getCdromDeviceIds(VirtualMachine vm) {
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return getCdromDeviceIds(1);
+        }
+        return getCdromDeviceIds(vm, isConfigDriveUsed(vm));
+    }
+
+    @Override
+    public Set<Long> getCdromDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
+        return getCdromDeviceIds(getCdromCount(vm, configDriveUsed));
+    }
+
+    private Set<Long> getCdromDeviceIds(int cdromCount) {
+        Set<Long> deviceIds = new HashSet<>();
+        for (int i = 0; i < cdromCount; i++) {
+            deviceIds.add((long) CDROM_PRIMARY_DEVICE_SEQ + i);
+        }
+        return deviceIds;
+    }
+
+    private int getCdromCount(VirtualMachine vm, boolean configDriveUsed) {
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return 1;
+        }
+        // all the CD-ROM devices supported by the host are defined for the Instance at boot, even if the configured
+        // maximum number of ISOs (vm.iso.max.count) is lower or is increased later
+        int cdromCount = advertisedCdromCap(hostIdForVm(vm));
+        UserVmVO userVm = _userVmDao.findById(vm.getId());
+        if (userVm != null) {
+            cdromCount = Math.max(cdromCount, slotsNeededFor(loadAttachedIsoSlots(userVm)));
+        }
+        // the config drive ISO is one more CD-ROM, it is not counted in the CD-ROMs supported for the ISOs
+        return cdromCount + (configDriveUsed ? 1 : 0);
+    }
+
+    /**
+     * Returns the device id of the CD-ROM of an ISO slot (the slots are the ones stored for the ISOs of the Instance,
+     * starting from {@link #CDROM_PRIMARY_DEVICE_SEQ}). The config drive ISO always has the device id
+     * {@link ConfigDriveNetworkElement#CONFIGDRIVEDISKSEQ}, so the slots from it are moved to the next device ids
+     * when the Instance uses config drive.
+     */
+    int getIsoDeviceSeq(int slot, boolean configDriveUsed) {
+        return configDriveUsed && slot >= ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ ? slot + 1 : slot;
+    }
+
+    /**
+     * Checks if a config drive ISO is (or will be) attached to the Instance, which is the case when any of its networks
+     * has ConfigDrive as the provider of the Dhcp, Dns or UserData service. Checking the network providers (instead of
+     * only the config drive location detail, which is added when the ISO is created) also covers Instances which have
+     * never been started.
+     */
+    boolean isConfigDriveUsed(VirtualMachine vm) {
+        if (_vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            return true;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        if (CollectionUtils.isEmpty(nics)) {
+            return false;
+        }
+        for (NicVO nic : nics) {
+            for (Service service : Arrays.asList(Service.UserData, Service.Dhcp, Service.Dns)) {
+                if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), service, Provider.ConfigDrive)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Long singleStoragePoolId(DeployDestination dest) {
@@ -1441,7 +1538,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         DataTO isoTO = tmplt.getTO();
-        DiskTO disk = new DiskTO(isoTO, (long) deviceSeq, null, Volume.Type.ISO);
+        int diskSeq = !isVirtualRouter ? getIsoDeviceSeq(deviceSeq, isConfigDriveUsed(vm)) : deviceSeq;
+        DiskTO disk = new DiskTO(isoTO, (long) diskSeq, null, Volume.Type.ISO);
 
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -2804,12 +2902,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
-        template.setUserDataId(userDataId);
         if (userDataId != null) {
+            UserData userData = userDataDao.findById(userDataId);
+            if (userData == null) {
+                throw new InvalidParameterValueException("Unable to find user data with the specified ID.");
+            }
+            _accountMgr.checkAccess(caller, null, false, userData);
             template.setUserDataLinkPolicy(overridePolicy);
         } else {
             template.setUserDataLinkPolicy(null);
         }
+        template.setUserDataId(userDataId);
         _tmpltDao.update(template.getId(), template);
 
         return _tmpltDao.findById(template.getId());

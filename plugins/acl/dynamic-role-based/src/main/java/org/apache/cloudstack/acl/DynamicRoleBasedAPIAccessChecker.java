@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.api.APICommand;
@@ -64,6 +65,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     @Override
+    public void refreshRoleCacheOnPermissionsChange(Role role) {
+        invalidateRolePermissionsCache(role.getId());
+    }
+
+    @Override
     public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
         if (!isEnabled()) {
             return apiNames;
@@ -76,6 +82,32 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         List<String> allowedApis = new ArrayList<>();
         for (String api : apiNames) {
             if (checkApiPermissionByRole(role, api, allPermissionEntities, false)) {
+                allowedApis.add(api);
+            }
+        }
+        return allowedApis;
+    }
+
+    @Override
+    public List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+        Pair<Role, List<RolePermission>> roleAndPermissions = getRolePermissionsUsingCache(account.getRoleId());
+        final Role accountRole = roleAndPermissions.first();
+        if (accountRole == null) {
+            throw new PermissionDeniedException("The account [" + account + "] has role null or unknown.");
+        }
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            return apiNames;
+        }
+        List<RolePermission> allPermissions = roleAndPermissions.second();
+        List<RolePermissionEntity> allPermissionEntities = allPermissions.stream().map(permission -> (RolePermissionEntity) permission)
+                .collect(Collectors.toList());
+
+        List<String> allowedApis = new ArrayList<>();
+        for (String api : apiNames) {
+            if (checkApiPermissionByRole(accountRole, api, allPermissionEntities, false)) {
                 allowedApis.add(api);
             }
         }
@@ -126,6 +158,12 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
     }
 
+    protected void invalidateRolePermissionsCache(long roleId) {
+        if (cachePeriod > 0) {
+            rolePermissionsCache.invalidate(roleId);
+        }
+    }
+
     protected Pair<Role, List<RolePermission>> getRolePermissionsUsingCache(long roleId) {
         if (cachePeriod > 0) {
             return rolePermissionsCache.get(roleId);
@@ -141,7 +179,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     @Override
-    public boolean checkAccess(User user, String commandName, ApiKeyPairPermission ... apiKeyPairPermissions) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String commandName, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
@@ -150,11 +188,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             throw new PermissionDeniedException(String.format("Account for user with ID [%s] cannot be found", user.getUuid()));
         }
 
-        return checkAccess(account, commandName, apiKeyPairPermissions);
+        return checkAccess(account, commandName, keyPair, apiKeyPairPermissions);
     }
 
     @Override
-    public boolean checkAccess(Account account, String commandName, ApiKeyPairPermission ... apiKeyPairPermissions) {
+    public boolean checkAccess(Account account, String commandName, ApiKeyPair keyPair, ApiKeyPairPermission ... apiKeyPairPermissions) {
         Pair<Role, List<RolePermission>> roleAndPermissions = getRolePermissionsUsingCache(account.getRoleId());
         final Role accountRole = roleAndPermissions.first();
         if (accountRole == null) {
@@ -166,7 +204,8 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return true;
         }
 
-        boolean considerKeyPairPermissions = apiKeyPairPermissions.length > 0;
+        boolean keyPairHasExplicitPermissions = keyPair != null && !accountService.getAllExplicitKeyPairPermissions(keyPair.getId()).isEmpty();
+        boolean considerKeyPairPermissions = apiKeyPairPermissions.length > 0 || keyPairHasExplicitPermissions;
         List<RolePermissionEntity> allRules = considerKeyPairPermissions ? Arrays.asList(apiKeyPairPermissions) : new ArrayList<>(roleAndPermissions.second());
         if (checkApiPermissionByRole(accountRole, commandName, allRules, considerKeyPairPermissions)) {
             return true;

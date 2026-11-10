@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,29 +42,30 @@ import java.util.Map;
             responseObject = ApiKeyPairResponse.class,
             description = "Registers an API key pair (API and secret keys) for a user.",
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class RegisterUserKeysCmd extends BaseAsyncCmd {
+public class RegisterUserKeysCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "ID of the user.")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "API key pair name.")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "API key pair name.", since = "4.23.0")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "API key pair description.", length = 1024)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "API key pair description.", length = 1024,
+            since = "4.23.0")
     private String description;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date of the API key pair. " +
-            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
+            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS, since = "4.23.0")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "Expiration date of the API key pair. " +
-            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.23.0")
     private Date endDate;
 
     @Parameter(name = ApiConstants.RULES, type = CommandType.MAP, description = "The rules of the API key pair. If no rules are informed, " +
             "defaults to allowing all account permissions. Otherwise, only the explicitly informed permissions for the key pair will be " +
             "considered. Lower indexed rules take precedence over higher. Thus, in the following example: " +
             "\"rules[0].rule=deleteUserKeys rules[0].permission=deny rules[1].rule=*UserKey* rules[1].permission=allow\", all rules matching " +
-            "the expression \"*UserKeys*\" will be allowed, except for \"deleteUserKeys\".")
+            "the expression \"*UserKeys*\" will be allowed, except for \"deleteUserKeys\".", since = "4.23.0")
     private Map rules;
 
     public void setUserId(Long userId) {
@@ -187,26 +187,5 @@ public class RegisterUserKeysCmd extends BaseAsyncCmd {
         response.setObjectName("userkeys");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY;
-    }
-
-    @Override
-    public String getEventDescription() {
-        String userUuid = getResourceUuid(ApiConstants.ID);
-        return String.format("Registering API keypair for user [%s].", userUuid == null ? id : userUuid);
-    }
-
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.user;
-    }
-
-    @Override
-    public Long getSyncObjId() {
-        return getUserId();
     }
 }

@@ -26,12 +26,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Domain;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Tariff;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Value;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffUsageDao;
@@ -39,10 +42,13 @@ import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -95,7 +101,20 @@ public class QuotaManagerImplTest {
     @Mock
     QuotaTariffUsageDao quotaTariffUsageDaoMock;
 
+    @Mock
+    ConfigDepotImpl configDepotImplMock;
+
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    @Before
+    public void setup() {
+        ConfigKey.init(configDepotImplMock);
+    }
+
+    @After
+    public void tearDown() {
+        ConfigKey.init(null);
+    }
 
     @Test
     public void isLockableTestValidateAccountTypes() {
@@ -111,6 +130,49 @@ public class QuotaManagerImplTest {
                 Assert.assertFalse(quotaManagerImplSpy.isLockable(accountVO));
             }
         });
+    }
+
+    @Test
+    public void shouldCalculateUsageRecordTestQuotaIsDisabledForAccountReturnFalse() {
+        Mockito.doReturn(1L).when(accountVoMock).getAccountId();
+        Mockito.doReturn("false").when(configDepotImplMock).getConfigStringValue(Mockito.eq(QuotaConfig.QuotaAccountEnabled.key()), Mockito.eq(ConfigKey.Scope.Account),
+                Mockito.eq(1L));
+
+        boolean result = quotaManagerImplSpy.shouldCalculateUsageRecord(accountVoMock, usageVoMock);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldCalculateUsageRecordTestQuotaIsEnabledForAccountAndUsageRecordIsVolumeWithVmInstanceIdReturnFalse() {
+        Mockito.doReturn(1L).when(accountVoMock).getAccountId();
+        Mockito.doReturn(UsageTypes.VOLUME).when(usageVoMock).getUsageType();
+        Mockito.doReturn(1L).when(usageVoMock).getVmInstanceId();
+
+        boolean result = quotaManagerImplSpy.shouldCalculateUsageRecord(accountVoMock, usageVoMock);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldCalculateUsageRecordTestQuotaIsEnabledForAccountAndUsageRecordIsVolumeWithoutVmInstanceIdReturnTrue() {
+        Mockito.doReturn(1L).when(accountVoMock).getAccountId();
+        Mockito.doReturn(UsageTypes.VOLUME).when(usageVoMock).getUsageType();
+        Mockito.doReturn(null).when(usageVoMock).getVmInstanceId();
+
+        boolean result = quotaManagerImplSpy.shouldCalculateUsageRecord(accountVoMock, usageVoMock);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void shouldCalculateUsageRecordTestQuotaIsEnabledForAccountAndUsageRecordIsNotVolumeReturnTrue() {
+        Mockito.doReturn(1L).when(accountVoMock).getAccountId();
+        Mockito.doReturn(UsageTypes.RUNNING_VM).when(usageVoMock).getUsageType();
+
+        boolean result = quotaManagerImplSpy.shouldCalculateUsageRecord(accountVoMock, usageVoMock);
+
+        Assert.assertTrue(result);
     }
 
     @Test

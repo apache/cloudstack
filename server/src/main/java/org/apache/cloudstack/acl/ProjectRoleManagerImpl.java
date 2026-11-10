@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.command.admin.acl.project.UpdateProjectRolePerm
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.PermissionDeniedException;
@@ -69,6 +70,8 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     ProjectRolePermissionsDao projRolePermissionsDao;
     @Inject
     AccountService accountService;
+    @Inject
+    DomainDao domainDao;
 
 
     private Project validateProjectId(Long projectId) {
@@ -94,7 +97,14 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             throw new PermissionDeniedException("Restricted API called by an invalid user account");
         }
 
-        if (accountService.isRootAdmin(callerAcc.getId()) || accountService.isDomainAdmin(callerAcc.getAccountId())) {
+        if (accountService.isRootAdmin(callerAcc.getId())) {
+            return;
+        }
+
+        if (accountService.isDomainAdmin(callerAcc.getAccountId())) {
+            // A domain admin may only manage a project that belongs to their own domain hierarchy,
+            // not an arbitrary project elsewhere in the system.
+            accountService.checkAccess(callerAcc, domainDao.findById(project.getDomainId()));
             return;
         }
 
@@ -154,6 +164,8 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             return null;
         }
 
+        checkAccess(projectId);
+
         ProjectRoleVO role = projRoleDao.findById(roleId);
         if (role == null) {
             logger.warn(String.format("Project Role not found [id=%s]", roleId));
@@ -172,6 +184,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             logger.warn("Invalid project ID provided");
             return null;
         }
+        checkAccess(projectId);
         return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId, keyword));
     }
 
@@ -228,6 +241,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
 
     @Override
     public List<ProjectRolePermission> findAllProjectRolePermissions(Long projectId, Long projectRoleId) {
+        checkAccess(projectId);
         List<? extends ProjectRolePermission> permissions = projRolePermissionsDao.findAllByRoleIdSorted(projectRoleId, projectId);
         if (permissions != null) {
             return new ArrayList<>(permissions);
@@ -238,6 +252,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName) {
         List<? extends ProjectRole> roles = null;
+        checkAccess(projectId);
         if (StringUtils.isNotBlank(roleName)) {
             roles = projRoleDao.findByName(roleName, projectId);
         }
