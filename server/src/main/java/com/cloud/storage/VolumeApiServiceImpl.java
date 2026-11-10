@@ -1481,6 +1481,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    /**
+     * The resize orchestration (orchestrateResizeVolume) only tells the hypervisor about a running user VM. For a
+     * system VM the volume is resized on the storage, but the running guest is not told and keeps seeing the old size
+     * until it next starts. So a system VM's volume can only be resized while the system VM is stopped.
+     */
+    protected void validateSystemVmIsStoppedForResize(VolumeVO volume) {
+        if (volume.getInstanceId() == null) {
+            return;
+        }
+        VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+        if (vm != null && vm.getType().isUsedBySystem() && !State.Stopped.equals(vm.getState())) {
+            throw new InvalidParameterValueException(String.format("Cannot resize volume [%s] of system VM %s while it is in state %s. "
+                    + "Stop the system VM before resizing its volume.", volume.getName(), vm.getInstanceName(), vm.getState()));
+        }
+    }
+
     protected void validateNoVmSnapshots(VolumeVO volume) {
         if (volume.getInstanceId() != null) {
             if (vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(volume.getInstanceId())) {
@@ -2496,6 +2512,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // if the caller is looking to change the size of the volume
         if (newSize != null && currentSize != newSize) {
             validateNoVmSnapshots(volume);
+            validateSystemVmIsStoppedForResize(volume);
 
             if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
