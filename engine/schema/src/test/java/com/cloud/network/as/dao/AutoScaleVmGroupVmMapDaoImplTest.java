@@ -83,6 +83,20 @@ public class AutoScaleVmGroupVmMapDaoImplTest {
     }
 
     @Test
+    public void testGetErroredInstanceCount() throws Exception {
+        Mockito.doReturn(Arrays.asList(3)).when(AutoScaleVmGroupVmMapDaoImplSpy).customSearch(Mockito.any(SearchCriteria.class), Mockito.eq(null));
+
+        long groupId = 4L;
+
+        int result = AutoScaleVmGroupVmMapDaoImplSpy.getErroredInstanceCount(groupId);
+
+        Assert.assertEquals(3, result);
+
+        Mockito.verify(searchCriteriaCountAvailableVmsByGroup).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaCountAvailableVmsByGroup).setJoinParameters("vmSearch", "states", new Object[] {VirtualMachine.State.Error, VirtualMachine.State.Stopped});
+    }
+
+    @Test
     public void testCountByGroup() throws Exception {
         Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVmMapVOMock).setParameters(Mockito.anyString(), Mockito.any());
         Mockito.doReturn(6).when(AutoScaleVmGroupVmMapDaoImplSpy).getCountIncludingRemoved(Mockito.any(SearchCriteria.class));

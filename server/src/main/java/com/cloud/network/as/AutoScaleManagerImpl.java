@@ -2112,7 +2112,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                                 String.format("Failed to assign LB rule for VM %s in AutoScale VM group %s", vm, asGroup), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
                         break;
                     }
-                } catch (ServerApiException e) {
+                } catch (CloudRuntimeException e) {
                     logger.error("Can not deploy new VM for scaling up in the group {}. Waiting for next round", asGroup);
                     ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
                             String.format("Failed to start VM %s in AutoScale VM group %s", vm, asGroup), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
