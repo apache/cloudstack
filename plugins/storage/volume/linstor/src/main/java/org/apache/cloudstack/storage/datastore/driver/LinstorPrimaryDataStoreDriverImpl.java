@@ -22,17 +22,20 @@ import com.linbit.linstor.api.CloneWaiter;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.AutoSelectFilter;
 import com.linbit.linstor.api.model.CbtExtents;
 import com.linbit.linstor.api.model.CbtSession;
 import com.linbit.linstor.api.model.CbtSessionStart;
 import com.linbit.linstor.api.model.CbtSessionVolume;
 import com.linbit.linstor.api.model.CreateMultiSnapshotRequest;
 import com.linbit.linstor.api.model.LayerType;
+import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneStarted;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
+import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.Snapshot;
@@ -1775,5 +1778,61 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             throw new CloudRuntimeException(String.format("Linstor: unable to prepare %s for a restore: %s",
                     rscName, apiEx.getBestMessage()), apiEx);
         }
+    }
+
+    /**
+     * A resource with a single diskful replica, on the host if it has storage of the resource group, else on another
+     * node and diskless on the host.
+     */
+    @Override
+    public VolumeBackupExport createUploadStaging(StoragePool pool, VolumeInfo volume, String name, long hostId,
+            long sizeBytes) {
+        DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = LinstorUtil.RSC_PREFIX + name;
+        final String rscGrp = LinstorUtil.getRscGrp(pool);
+        final Host host = _hostDao.findById(hostId);
+        try {
+            boolean local = LinstorUtil.getRscGroupStoragePools(api, rscGrp).stream()
+                    .anyMatch(sp -> sp.getProviderKind() != ProviderKind.DISKLESS && host.getName().equals(sp.getNodeName()));
+            AutoSelectFilter selectFilter = new AutoSelectFilter();
+            selectFilter.setPlaceCount(1);
+            if (local) {
+                selectFilter.setNodeNameList(Collections.singletonList(host.getName()));
+            }
+            ResourceGroupSpawn spawn = new ResourceGroupSpawn();
+            spawn.setResourceDefinitionName(rscName);
+            spawn.addVolumeSizesItem((sizeBytes + 1023) / 1024);
+            spawn.setSelectFilter(selectFilter);
+            ApiCallRcList answers = api.resourceGroupSpawn(rscGrp, spawn);
+            if (!answers.hasError() && !local) {
+                answers = api.resourceMakeAvailableOnNode(rscName, host.getName(), new ResourceMakeAvailable());
+            }
+            if (answers.hasError()) {
+                deleteFailedUploadStaging(pool, name);
+                throw new CloudRuntimeException(String.format("Linstor: unable to create %s on %s for an upload to %s: %s",
+                        rscName, host.getName(), volume.getUuid(), LinstorUtil.getBestErrorMessage(answers)));
+            }
+            String devicePath = LinstorUtil.getDevicePath(api, rscName);
+            logger.info("Linstor: created {} on {} for an upload to {}: {}", rscName, host.getName(), volume.getUuid(),
+                    devicePath);
+            return new VolumeBackupExport(volume.getId(), hostId, devicePath, sizeBytes);
+        } catch (ApiException apiEx) {
+            deleteFailedUploadStaging(pool, name);
+            throw new CloudRuntimeException(String.format("Linstor: unable to create %s for an upload to %s: %s",
+                    rscName, volume.getUuid(), apiEx.getBestMessage()), apiEx);
+        }
+    }
+
+    private void deleteFailedUploadStaging(StoragePool pool, String name) {
+        try {
+            deleteUploadStaging(pool, name);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Linstor: unable to delete the failed {}: {}", LinstorUtil.RSC_PREFIX + name, e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteUploadStaging(StoragePool pool, String name) {
+        deleteResourceDefinition(_storagePoolDao.findById(pool.getId()), LinstorUtil.RSC_PREFIX + name);
     }
 }

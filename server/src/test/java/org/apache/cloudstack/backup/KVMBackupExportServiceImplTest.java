@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeBackupExport;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
@@ -110,6 +112,9 @@ public class KVMBackupExportServiceImplTest {
 
     @Mock
     VolumeDetailsDao volumeDetailsDao;
+
+    @Mock
+    ConfigurationDao configDao;
 
     @Mock
     ImageTransferDao imageTransferDao;
@@ -724,5 +729,139 @@ public class KVMBackupExportServiceImplTest {
 
         assertEquals(Map.of("snapshot", "ckp-1", "mode", "zero"), transferCmd.getExtentsSource());
         assertEquals("pool-7", transferCmd.getExtentsPoolUuid());
+    }
+
+    /**
+     * Creates an upload of a qcow2 image into volume 601 on pool 7, whose driver exports the volumes as devices.
+     * @param staging what the driver returns for the temporary device
+     * @return the commands sent to the host
+     */
+    private List<Command> createQcow2UploadToStorageDriverExport(PrimaryDataStoreDriver driver, VolumeBackupExport staging,
+            Answer transferAnswer) throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUser()).thenReturn(user);
+
+            when(volumeDao.findById(601L)).thenReturn(volume);
+            when(volume.getId()).thenReturn(601L);
+            when(volume.getDataCenterId()).thenReturn(1L);
+            when(volume.getPoolId()).thenReturn(7L);
+            Mockito.lenient().when(volume.getState()).thenReturn(Volume.State.Ready);
+            when(imageTransferDao.findByVolume(601L)).thenReturn(null);
+            StoragePoolVO pool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, driver);
+            when(driver.canExportVolumesForBackup(pool)).thenReturn(true);
+            VolumeInfo volumeInfo = mock(VolumeInfo.class);
+            when(volumeDataFactory.getVolume(601L)).thenReturn(volumeInfo);
+            when(driver.prepareVolumeForRestore(pool, volumeInfo))
+                    .thenReturn(new VolumeBackupExport(601L, 11L, "/dev/drbd1001", 1073741824L));
+            when(hostDao.findById(11L)).thenReturn(hostVO);
+            when(hostVO.getId()).thenReturn(11L);
+            when(driver.createUploadStaging(eq(pool), eq(volumeInfo), startsWith("upload-"), eq(11L),
+                    eq(KVMBackupExportServiceImpl.getUploadStagingSize(1073741824L)))).thenReturn(staging);
+            ArgumentCaptor<Command> commands = ArgumentCaptor.forClass(Command.class);
+            if (staging != null) {
+                when(hostVO.getDataCenterId()).thenReturn(1L);
+                when(agentManager.send(eq(11L), commands.capture())).thenReturn(transferAnswer);
+                Mockito.lenient().when(imageTransferDao.persist(any(ImageTransferVO.class))).thenAnswer(i -> i.getArgument(0));
+            }
+
+            service.createImageTransfer(601L, null, ImageTransfer.Direction.upload, ImageTransfer.Format.cow);
+
+            return commands.getAllValues();
+        }
+    }
+
+    @Test
+    public void createImageTransfer_uploadQcow2ToStorageDriverExport_uploadsToTemporaryDevice() throws Exception {
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        List<Command> commands = createQcow2UploadToStorageDriverExport(driver,
+                new VolumeBackupExport(601L, 11L, "/dev/drbd1002", 1210056704L),
+                new CreateImageTransferAnswer(null, true, null, "ticket-1", "https://transfer/file"));
+
+        CreateImageTransferCommand transferCmd = (CreateImageTransferCommand) commands.get(0);
+        assertEquals(ImageTransfer.Backend.file, transferCmd.getBackend());
+        assertEquals("/dev/drbd1002", transferCmd.getFile());
+        ArgumentCaptor<String> stagingName = ArgumentCaptor.forClass(String.class);
+        verify(driver).createUploadStaging(any(), any(), stagingName.capture(), eq(11L), any(Long.class));
+        verify(volumeDetailsDao).addDetail(601L, KVMBackupExportServiceImpl.VOLUME_DETAIL_UPLOAD_STAGING,
+                stagingName.getValue(), false);
+        verify(driver, never()).deleteUploadStaging(any(), any());
+    }
+
+    @Test
+    public void createImageTransfer_uploadQcow2ToDriverWithoutTemporaryDevices_throws() throws Exception {
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> createQcow2UploadToStorageDriverExport(driver, null, null));
+
+        assert ex.getMessage().contains("Only raw images can be uploaded");
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+    }
+
+    @Test
+    public void createImageTransfer_uploadQcow2HostFails_deletesTemporaryDevice() throws Exception {
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+
+        assertThrows(CloudRuntimeException.class, () -> createQcow2UploadToStorageDriverExport(driver,
+                new VolumeBackupExport(601L, 11L, "/dev/drbd1002", 1210056704L),
+                new CreateImageTransferAnswer(null, false, "no image server", null, null)));
+
+        verify(driver).deleteUploadStaging(any(), startsWith("upload-"));
+        verify(volumeDetailsDao, never()).addDetail(any(Long.class), any(), any(), any(Boolean.class));
+    }
+
+    /**
+     * Finalizes, or cancels, the upload of a qcow2 image to the temporary device upload-tx-up for volume 601 on pool 7.
+     * @return the finalize command sent to the host
+     */
+    private FinalizeImageTransferCommand finalizeQcow2UploadToStorageDriverExport(PrimaryDataStoreDriver driver,
+            boolean cancel) throws Exception {
+        ImageTransferVO transfer = new ImageTransferVO("tx-up", 601L, 11L, "/dev/drbd1002",
+                ImageTransferVO.Phase.transferring, ImageTransfer.Direction.upload, 1L, 1L, 1L);
+        ReflectionTestUtils.setField(transfer, "id", 502L);
+        when(imageTransferDao.findById(502L)).thenReturn(transfer);
+        when(volumeDetailsDao.findDetail(601L, KVMBackupExportServiceImpl.VOLUME_DETAIL_UPLOAD_STAGING))
+                .thenReturn(new VolumeDetailVO(601L, KVMBackupExportServiceImpl.VOLUME_DETAIL_UPLOAD_STAGING, "upload-tx-up", false));
+        when(volumeDao.findById(601L)).thenReturn(volume);
+        when(volume.getPoolId()).thenReturn(7L);
+        Mockito.lenient().when(volume.getPath()).thenReturn("vol-601");
+        when(volume.getState()).thenReturn(Volume.State.Restoring);
+        StoragePoolVO pool = mockStoragePool(7L, Storage.StoragePoolType.Linstor, driver);
+        pool.setUuid("pool-7");
+        ArgumentCaptor<Command> commands = ArgumentCaptor.forClass(Command.class);
+        when(agentManager.send(eq(11L), commands.capture())).thenReturn(new Answer(null, true, null));
+
+        if (cancel) {
+            service.cancelImageTransfer(502L);
+        } else {
+            service.finalizeImageTransfer(502L);
+        }
+
+        verify(driver).deleteUploadStaging(pool, "upload-tx-up");
+        verify(volumeDetailsDao).removeDetail(601L, KVMBackupExportServiceImpl.VOLUME_DETAIL_UPLOAD_STAGING);
+        verify(imageTransferDao).remove(502L);
+        return (FinalizeImageTransferCommand) commands.getAllValues().get(1);
+    }
+
+    @Test
+    public void finalizeImageTransfer_qcow2UploadToStorageDriverExport_convertsIntoVolume() throws Exception {
+        FinalizeImageTransferCommand finalizeCmd = finalizeQcow2UploadToStorageDriverExport(
+                mock(PrimaryDataStoreDriver.class), false);
+
+        assertEquals("/dev/drbd1002", finalizeCmd.getConvertSource());
+        assertEquals(Storage.StoragePoolType.Linstor, finalizeCmd.getConvertPoolType());
+        assertEquals("pool-7", finalizeCmd.getConvertPoolUuid());
+        assertEquals("vol-601", finalizeCmd.getConvertVolumePath());
+        assertEquals(10800, finalizeCmd.getWait());
+    }
+
+    @Test
+    public void cancelImageTransfer_qcow2UploadToStorageDriverExport_deletesTemporaryDeviceWithoutConverting() throws Exception {
+        FinalizeImageTransferCommand finalizeCmd = finalizeQcow2UploadToStorageDriverExport(
+                mock(PrimaryDataStoreDriver.class), true);
+
+        assert finalizeCmd.getConvertSource() == null;
     }
 }

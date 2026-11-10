@@ -29,7 +29,9 @@ import com.linbit.linstor.api.model.CbtSessionVolume;
 import com.linbit.linstor.api.model.ControllerVersion;
 import com.linbit.linstor.api.model.CreateMultiSnapshotRequest;
 import com.linbit.linstor.api.model.LayerType;
+import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
+import com.linbit.linstor.api.model.ResourceGroupSpawn;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +41,8 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -82,6 +86,9 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
     @Mock
     private SnapshotDataStoreDao snapshotStoreDao;
+
+    @Mock
+    private HostDao _hostDao;
 
     @InjectMocks
     private LinstorPrimaryDataStoreDriverImpl linstorPrimaryDataStoreDriver;
@@ -563,5 +570,79 @@ public class LinstorPrimaryDataStoreDriverImplTest {
             Assert.assertEquals(1073741824L, target.getSizeBytes());
         }
         Mockito.verify(api, Mockito.never()).resourceMakeAvailableOnNode(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    private static com.linbit.linstor.api.model.StoragePool linstorPool(String node, ProviderKind kind) {
+        com.linbit.linstor.api.model.StoragePool sp = new com.linbit.linstor.api.model.StoragePool();
+        sp.setNodeName(node);
+        sp.setProviderKind(kind);
+        return sp;
+    }
+
+    /**
+     * Creates the temporary device upload-tx-1 on host node-1 for an upload to volume 4, with storage of the resource
+     * group on the given nodes.
+     * @return the spawn request
+     */
+    private ResourceGroupSpawn createUploadStaging(ApiCallRcList spawnAnswers, String... storageNodes) throws ApiException {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.lenient().when(pool.getId()).thenReturn(5L);
+        Mockito.lenient().when(_storagePoolDao.findById(5L)).thenReturn(pool);
+        LinstorPrimaryDataStoreDriverImpl driver = driverWithApi(pool);
+        VolumeInfo volume = mock(VolumeInfo.class);
+        Mockito.lenient().when(volume.getId()).thenReturn(4L);
+        HostVO host = mock(HostVO.class);
+        when(host.getName()).thenReturn("node-1");
+        when(_hostDao.findById(21L)).thenReturn(host);
+        List<com.linbit.linstor.api.model.StoragePool> linstorPools = new java.util.ArrayList<>();
+        linstorPools.add(linstorPool("node-1", ProviderKind.DISKLESS));
+        for (String node : storageNodes) {
+            linstorPools.add(linstorPool(node, ProviderKind.LVM_THIN));
+        }
+        ArgumentCaptor<ResourceGroupSpawn> spawn = ArgumentCaptor.forClass(ResourceGroupSpawn.class);
+        when(api.resourceGroupSpawn(Mockito.eq("cloudstack"), spawn.capture())).thenReturn(spawnAnswers);
+        Mockito.lenient().when(api.resourceMakeAvailableOnNode(Mockito.eq("cs-upload-tx-1"), Mockito.eq("node-1"), Mockito.any()))
+                .thenReturn(answers(ApiConsts.MASK_SUCCESS, "made available"));
+        Mockito.lenient().when(api.resourceDefinitionDelete("cs-upload-tx-1")).thenReturn(answers(ApiConsts.MASK_SUCCESS, "deleted"));
+        try (MockedStatic<LinstorUtil> linstorUtil = Mockito.mockStatic(LinstorUtil.class)) {
+            linstorUtil.when(() -> LinstorUtil.getRscGrp(pool)).thenReturn("cloudstack");
+            linstorUtil.when(() -> LinstorUtil.getRscGroupStoragePools(api, "cloudstack")).thenReturn(linstorPools);
+            linstorUtil.when(() -> LinstorUtil.getDevicePath(api, "cs-upload-tx-1")).thenReturn("/dev/drbd/by-res/cs-upload-tx-1/0");
+            linstorUtil.when(() -> LinstorUtil.getBestErrorMessage(Mockito.any())).thenReturn("not enough free space");
+
+            VolumeBackupExport staging = driver.createUploadStaging(pool, volume, "upload-tx-1", 21L, 1073741824L);
+
+            Assert.assertEquals(21L, staging.getHostId());
+            Assert.assertEquals("/dev/drbd/by-res/cs-upload-tx-1/0", staging.getDevicePath());
+        }
+        Assert.assertEquals("cs-upload-tx-1", spawn.getValue().getResourceDefinitionName());
+        Assert.assertEquals(Collections.singletonList(1048576L), spawn.getValue().getVolumeSizes());
+        Assert.assertEquals(Integer.valueOf(1), spawn.getValue().getSelectFilter().getPlaceCount());
+        return spawn.getValue();
+    }
+
+    @Test
+    public void testCreateUploadStagingPlacesTheOnlyReplicaOnTheHost() throws ApiException {
+        ResourceGroupSpawn spawn = createUploadStaging(answers(ApiConsts.MASK_SUCCESS, "spawned"), "node-1", "node-2");
+
+        Assert.assertEquals(Collections.singletonList("node-1"), spawn.getSelectFilter().getNodeNameList());
+        Mockito.verify(api, Mockito.never()).resourceMakeAvailableOnNode(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testCreateUploadStagingWithoutStorageOnTheHostMakesItAvailableThere() throws ApiException {
+        ResourceGroupSpawn spawn = createUploadStaging(answers(ApiConsts.MASK_SUCCESS, "spawned"), "node-2");
+
+        Assert.assertNull(spawn.getSelectFilter().getNodeNameList());
+        Mockito.verify(api).resourceMakeAvailableOnNode(Mockito.eq("cs-upload-tx-1"), Mockito.eq("node-1"), Mockito.any());
+    }
+
+    @Test
+    public void testCreateUploadStagingFailsAndDeletesTheResource() throws ApiException {
+        CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
+                () -> createUploadStaging(answers(ApiConsts.MASK_ERROR, "not enough free space"), "node-1"));
+
+        Assert.assertTrue(ex.getMessage().contains("not enough free space"));
+        Mockito.verify(api).resourceDefinitionDelete("cs-upload-tx-1");
     }
 }

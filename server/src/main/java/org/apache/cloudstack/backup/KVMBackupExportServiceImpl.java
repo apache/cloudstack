@@ -57,6 +57,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeBackupExport;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
@@ -70,6 +71,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.configuration.Config;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -120,6 +122,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
      * value: the checkpoint id of that backup, ':' and the change tracking id
      */
     protected static final String VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID = "backup.change.tracking.id";
+    /**
+     * volume detail: the temporary device of the storage driver a qcow2 image is being uploaded to, to convert it into
+     * the volume, see {@link PrimaryDataStoreDriver#createUploadStaging}
+     */
+    protected static final String VOLUME_DETAIL_UPLOAD_STAGING = "upload.staging";
     private static final Gson GSON = new Gson();
 
     @Inject
@@ -142,6 +149,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     private VolumeDetailsDao volumeDetailsDao;
+
+    @Inject
+    private ConfigurationDao configDao;
 
     @Inject
     private AgentManager agentManager;
@@ -802,16 +812,27 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         Host host;
         String volumePath;
         StartNBDServerCommand nbdServerCmd = null;
+        String uploadStaging = null;
         PrimaryDataStoreDriver exportDriver = getBackupExportDriver(storagePool);
         if (exportDriver != null) {
-            if (ImageTransfer.Backend.file.equals(backend)) {
-                throw new CloudRuntimeException(String.format("Only raw images can be uploaded to volume %s on storage pool %s",
-                        volume.getUuid(), storagePool.getName()));
-            }
-            VolumeBackupExport target = exportDriver.prepareVolumeForRestore(storagePool, volumeDataFactory.getVolume(volume.getId()));
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
+            VolumeBackupExport target = exportDriver.prepareVolumeForRestore(storagePool, volumeInfo);
             host = hostDao.findById(target.getHostId());
-            volumePath = target.getDevicePath();
-            nbdServerCmd = new StartNBDServerCommand(transferId, volume.getUuid(), volumePath, target.getSizeBytes(), transferId, direction);
+            if (ImageTransfer.Backend.file.equals(backend)) {
+                // the image is uploaded as is to a temporary device, the host converts it into the volume on finalize
+                String stagingName = getUploadStagingName(transferId);
+                VolumeBackupExport staging = exportDriver.createUploadStaging(storagePool, volumeInfo, stagingName,
+                        host.getId(), getUploadStagingSize(target.getSizeBytes()));
+                if (staging == null) {
+                    throw new CloudRuntimeException(String.format("Only raw images can be uploaded to volume %s on storage pool %s",
+                            volume.getUuid(), storagePool.getName()));
+                }
+                uploadStaging = stagingName;
+                volumePath = staging.getDevicePath();
+            } else {
+                volumePath = target.getDevicePath();
+                nbdServerCmd = new StartNBDServerCommand(transferId, volume.getUuid(), volumePath, target.getSizeBytes(), transferId, direction);
+            }
         } else {
             host = getRandomHostFromStoragePool(storagePool);
             volumePath = getVolumePathForFileBasedBackend(volume);
@@ -870,6 +891,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         try {
             transferAnswer = (CreateImageTransferAnswer) agentManager.send(imageTransfer.getHostId(), transferCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
+            deleteUploadStaging(storagePool, uploadStaging);
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
 
@@ -877,12 +899,16 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             if (!backend.equals(ImageTransfer.Backend.file)) {
                 stopNBDServer(imageTransfer);
             }
+            deleteUploadStaging(storagePool, uploadStaging);
             throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
         }
 
         imageTransfer.setTransferUrl(transferAnswer.getTransferUrl());
         imageTransfer.setSignedTicketId(transferAnswer.getImageTransferId());
         imageTransfer = imageTransferDao.persist(imageTransfer);
+        if (uploadStaging != null) {
+            volumeDetailsDao.addDetail(volume.getId(), VOLUME_DETAIL_UPLOAD_STAGING, uploadStaging, false);
+        }
 
         try {
             final StateMachine2<Volume.State, Volume.Event, Volume> stateMachine = Volume.State.getStateMachine();
@@ -893,6 +919,34 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         return imageTransfer;
 
+    }
+
+    protected static String getUploadStagingName(String transferId) {
+        return "upload-" + transferId;
+    }
+
+    /**
+     * The most a qcow2 image of a volume of the given size takes: the data plus, for clusters of at least 4 KiB,
+     * an L2 table entry and a refcount of together 10 bytes per cluster, and room for the rest of the metadata.
+     */
+    protected static long getUploadStagingSize(long volumeSize) {
+        return volumeSize + volumeSize / 256 + 64L * 1024 * 1024;
+    }
+
+    /**
+     * Deletes the temporary device of an upload, see {@link PrimaryDataStoreDriver#createUploadStaging}. A failure
+     * only leaves the device behind.
+     */
+    private void deleteUploadStaging(StoragePool storagePool, String name) {
+        if (name == null) {
+            return;
+        }
+        try {
+            DataStore dataStore = dataStoreManager.getPrimaryDataStore(storagePool.getId());
+            ((PrimaryDataStoreDriver) dataStore.getDriver()).deleteUploadStaging(storagePool, name);
+        } catch (RuntimeException e) {
+            logger.warn("Unable to delete the temporary device {} of an upload to {}: {}", name, storagePool, e.getMessage());
+        }
     }
 
     private ImageTransfer.Backend getImageTransferBackend(ImageTransfer.Format format, ImageTransfer.Direction direction) {
@@ -949,7 +1003,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean cancelImageTransfer(long imageTransferId) {
-        finalizeImageTransfer(imageTransferId);
+        finalizeImageTransfer(imageTransferId, false);
         return true;
     }
 
@@ -995,7 +1049,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return answer.getResult();
     }
 
-    private String finalizeUploadImageTransferWithResult(ImageTransferVO imageTransfer) {
+    /**
+     * @param complete whether the upload is complete, false if it is cancelled
+     */
+    private String finalizeUploadImageTransferWithResult(ImageTransferVO imageTransfer, boolean complete) {
         String transferId = imageTransfer.getUuid();
         boolean stopNbdServerResult = stopNBDServer(imageTransfer);
         if (!stopNbdServerResult) {
@@ -1003,11 +1060,27 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
 
         FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
+        VolumeDetailVO uploadStaging = volumeDetailsDao.findDetail(imageTransfer.getVolumeId(), VOLUME_DETAIL_UPLOAD_STAGING);
+        StoragePoolVO storagePool = null;
+        if (uploadStaging != null) {
+            VolumeVO volume = volumeDao.findById(imageTransfer.getVolumeId());
+            storagePool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (complete) {
+                finalizeCmd.setConvertInto(imageTransfer.getFile(), storagePool.getPoolType(), storagePool.getUuid(), volume.getPath());
+                finalizeCmd.setWait(NumbersUtil.parseInt(configDao.getValue(Config.CopyVolumeWait.toString()),
+                        Integer.parseInt(Config.CopyVolumeWait.getDefaultValue())));
+            }
+        }
         Answer answer;
         try {
             answer = agentManager.send(imageTransfer.getHostId(), finalizeCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             return "Failed to communicate with agent";
+        } finally {
+            if (uploadStaging != null) {
+                deleteUploadStaging(storagePool, uploadStaging.getValue());
+                volumeDetailsDao.removeDetail(imageTransfer.getVolumeId(), VOLUME_DETAIL_UPLOAD_STAGING);
+            }
         }
 
         if (!answer.getResult()) {
@@ -1016,8 +1089,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return null;
     }
 
-    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
-        String failureReason = finalizeUploadImageTransferWithResult(imageTransfer);
+    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer, boolean complete) {
+        String failureReason = finalizeUploadImageTransferWithResult(imageTransfer, complete);
         Volume.Event event = failureReason == null ? Volume.Event.RestoreSucceeded : Volume.Event.RestoreFailed;
 
         VolumeVO volume = volumeDao.findById(imageTransfer.getVolumeId());
@@ -1040,6 +1113,13 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean finalizeImageTransfer(final long imageTransferId) {
+        return finalizeImageTransfer(imageTransferId, true);
+    }
+
+    /**
+     * @param complete whether the transfer is complete, false if it is cancelled
+     */
+    private boolean finalizeImageTransfer(final long imageTransferId, boolean complete) {
         ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
         if (imageTransfer == null) {
             throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
@@ -1048,7 +1128,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (imageTransfer.getDirection().equals(ImageTransfer.Direction.download)) {
             finalizeDownloadImageTransfer(imageTransfer);
         } else {
-            finalizeUploadImageTransfer(imageTransfer);
+            finalizeUploadImageTransfer(imageTransfer, complete);
         }
         imageTransfer.setPhase(ImageTransferVO.Phase.finished);
         imageTransferDao.update(imageTransfer.getId(), imageTransfer);

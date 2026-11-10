@@ -287,4 +287,25 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     default VolumeBackupExport prepareVolumeForRestore(StoragePool pool, VolumeInfo volume) {
         throw new UnsupportedOperationException("The storage driver does not export volumes for backups");
     }
+
+    /**
+     * Creates a temporary raw device on a host, to upload an image of the volume in another format than raw
+     * (qcow2) into. The host converts the image into the device of {@link #prepareVolumeForRestore} afterwards.
+     * Without, only raw images can be uploaded into the volumes of the pool.
+     *
+     * @param name name of the device, unique per upload
+     * @param hostId host to create the device on
+     * @param sizeBytes the most the image can take
+     * @return where to write the image, null if the driver has no temporary devices
+     */
+    default VolumeBackupExport createUploadStaging(StoragePool pool, VolumeInfo volume, String name, long hostId,
+            long sizeBytes) {
+        return null;
+    }
+
+    /**
+     * Deletes the device of {@link #createUploadStaging}. Does nothing if there is none.
+     */
+    default void deleteUploadStaging(StoragePool pool, String name) {
+    }
 }
