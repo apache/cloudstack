@@ -71,7 +71,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
