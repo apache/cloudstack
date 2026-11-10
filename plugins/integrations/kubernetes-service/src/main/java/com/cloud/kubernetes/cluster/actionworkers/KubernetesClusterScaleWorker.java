@@ -17,7 +17,6 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +39,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -47,6 +48,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
+import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
@@ -55,12 +57,12 @@ import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -85,7 +87,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private Long minSize;
     private Long maxSize;
     private Boolean isAutoscalingEnabled;
-    private long scaleTimeoutTime;
+    protected long scaleTimeoutTime;
+    /** How many times to try to drain a node that is being removed, as scale-down did before. */
+    private static final int SCALE_DOWN_DRAIN_ATTEMPTS = 3;
 
     protected KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -287,45 +291,88 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         return new Pair<>(offering.getCpu() * nodeCount, offering.getRamSize() * nodeCount);
     }
 
+    /**
+     * Deletes the Kubernetes node object of a VM that is being removed from the cluster. The node has been drained
+     * already, see {@link #drainNodesToRemove(List)}. A failed attempt is retried after waiting.
+     */
     private boolean removeKubernetesClusterNode(final String ipAddress, final int port, final UserVm userVm, final int retries, final int waitDuration) {
-        File pkFile = getManagementServerSshPublicKeyFile();
-        int retryCounter = 0;
-        String hostName = userVm.getHostName();
-        if (StringUtils.isNotEmpty(hostName)) {
-            hostName = hostName.toLowerCase();
-        }
-        while (retryCounter < retries) {
-            retryCounter++;
-            try {
-                Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(),
-                        pkFile, null, String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-emptydir-data", hostName),
-                        10000, 10000, 60000);
-                if (!result.first()) {
-                    logger.warn("Draining node: {} on VM: {} in Kubernetes cluster: {} unsuccessful", hostName, userVm, kubernetesCluster);
-                } else {
-                    result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(),
-                            pkFile, null, String.format("sudo /opt/bin/kubectl delete node %s", hostName),
-                            10000, 10000, 30000);
-                    if (result.first()) {
-                        return true;
-                    } else {
-                        logger.warn("Deleting node: {} on VM: {} in Kubernetes cluster: {} unsuccessful", hostName, userVm, kubernetesCluster);
-                    }
-                }
+        final String hostName = getNodeName(userVm);
+        for (int attempt = 1; attempt <= retries; attempt++) {
+            if (attempt > 1 && !sleepBeforeRetry(waitDuration)) {
                 break;
-            } catch (Exception e) {
-                String msg = String.format("Failed to remove Kubernetes cluster: %s node: %s on VM: %s", kubernetesCluster, hostName, userVm);
-                logger.warn(msg, e);
             }
             try {
-                Thread.sleep(waitDuration);
-            } catch (InterruptedException ie) {
-                logger.error("Error while waiting for Kubernetes cluster: {} node: {} on VM: {} removal", kubernetesCluster, hostName, userVm, ie);
+                Pair<Boolean, String> result = executeSshCommand(ipAddress, port,
+                        String.format("sudo /opt/bin/kubectl delete node %s --ignore-not-found", hostName), 10000, 10000, 30000);
+                if (result.first()) {
+                    return true;
+                }
+                logger.warn("Deleting node: {} on VM: {} in Kubernetes cluster: {} unsuccessful: {}", hostName, userVm, kubernetesCluster, result.second());
+            } catch (Exception e) {
+                logger.warn("Failed to remove Kubernetes cluster: {} node: {} on VM: {}", kubernetesCluster, hostName, userVm, e);
             }
-            retryCounter++;
         }
         return false;
     }
+
+    /**
+     * Drains the nodes that are being removed, before any of them is removed. All of them are cordoned first, so
+     * that the pods evicted from one are not moved to another one that is going away. If a node can't be drained,
+     * all of them are uncordoned and the scale-down stops with nothing removed: the nodes are still working members
+     * of the cluster, so the cluster goes back to the state it was in, rather than to Alert.
+     *
+     * @return the nodes that were cordoned here, as opposed to the ones that were cordoned already
+     */
+    protected List<UserVmVO> drainNodesToRemove(final List<UserVmVO> vms) throws CloudRuntimeException {
+        List<UserVmVO> cordoned = new ArrayList<>();
+        String failure = null;
+        for (UserVmVO vm : vms) {
+            // A node cordoned by someone else has to stay cordoned if the scale-down is rolled back
+            final boolean cordonedAlready = isNodeCordoned(vm);
+            String output;
+            try {
+                Pair<Boolean, String> result = executeSshCommand(publicIpAddress, sshPort,
+                        String.format("sudo /opt/bin/kubectl cordon %s", getNodeName(vm)), 10000, 10000, 30000);
+                if (result.first()) {
+                    if (!cordonedAlready) {
+                        cordoned.add(vm);
+                    }
+                    continue;
+                }
+                output = result.second();
+            } catch (Exception e) {
+                output = e.getMessage();
+            }
+            failure = String.format("unable to cordon Kubernetes node: %s on VM: %s: %s", getNodeName(vm), vm, output);
+            break;
+        }
+        if (failure == null) {
+            for (UserVmVO vm : vms) {
+                if (System.currentTimeMillis() > scaleTimeoutTime) {
+                    failure = String.format("scaling action timed out before Kubernetes node: %s on VM: %s was drained", getNodeName(vm), vm);
+                    break;
+                }
+                Pair<Boolean, String> drained = drainKubernetesClusterNode(publicIpAddress, sshPort, vm, SCALE_DOWN_DRAIN_ATTEMPTS, DRAIN_RETRY_WAIT, scaleTimeoutTime);
+                if (!drained.first()) {
+                    failure = String.format("unable to drain Kubernetes node: %s on VM: %s: %s", getNodeName(vm), vm, drained.second());
+                    break;
+                }
+            }
+        }
+        if (failure == null) {
+            return cordoned;
+        }
+        uncordonNodes(cordoned);
+        String message = String.format("Scaling failed for Kubernetes cluster %s, %s. No node was removed", kubernetesCluster, failure);
+        logger.error(message);
+        // Nothing has changed, so the cluster goes back to the state it was in: Scaling goes back to Running (and
+        // ScalingStoppedCluster to Stopped) on OperationSucceeded. Scaling a cluster in Alert is not allowed today,
+        // but if it is, such a cluster has to go back to Alert, not to Running.
+        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.State.Alert.equals(originalState) ?
+                KubernetesCluster.Event.OperationFailed : KubernetesCluster.Event.OperationSucceeded);
+        throw new CloudRuntimeException(message);
+    }
+
 
     private void validateKubernetesClusterScaleOfferingParameters() throws CloudRuntimeException {
         if (KubernetesCluster.State.Created.equals(originalState)) {
@@ -411,48 +458,225 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
     }
 
-    private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
-        for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
-            UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
-            logger.info("Removing vm {} from cluster {}", userVM, kubernetesCluster);
-            if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes" +
-                        " cluster %s, failed to remove Kubernetes node: %s running on VM : %s",
-                        kubernetesCluster, userVM.getHostName(), userVM), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-            }
-            CallContext vmContext = CallContext.register(CallContext.current(),
-                    ApiCommandResourceType.VirtualMachine);
-            vmContext.setEventResourceId(userVM.getId());
-            try {
-                UserVm vm = userVmService.destroyVm(userVM.getId(), true);
-                if (!userVmManager.expunge(userVM)) {
-                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to expunge VM '%s'."
-                            , kubernetesCluster, vm), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+    protected void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
+        List<UserVmVO> vms = vmMaps.stream().map(vmMapVO -> userVmDao.findById(vmMapVO.getVmId())).collect(Collectors.toList());
+        List<UserVmVO> cordoned = drainNodesToRemove(vms);
+        // Index of the first VM whose Kubernetes node is still in the cluster
+        int firstInCluster = 0;
+        // VMs taken out of the cluster's VM map so far
+        List<UserVmVO> removed = new ArrayList<>();
+        boolean completed = false;
+        try {
+            for (int i = 0; i < vmMaps.size(); i++) {
+                // No timeout check here: the nodes are drained, and stopping part way would leave the cluster
+                // with some of them removed and the node count not updated
+                UserVmVO userVM = vms.get(i);
+                KubernetesClusterVmMapVO vmMapVO = vmMaps.get(i);
+                logger.info("Removing vm {} from cluster {}", userVM, kubernetesCluster);
+                if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes" +
+                            " cluster %s, failed to remove Kubernetes node: %s running on VM : %s",
+                            kubernetesCluster, userVM.getHostName(), userVM), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }
-            } catch (ResourceUnavailableException e) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to remove VM ID: %s",
-                        kubernetesCluster, userVM), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
-            } finally {
-                CallContext.unregister();
+                firstInCluster = i + 1;
+                try {
+                    destroyRemovedNodeVm(userVM);
+                } finally {
+                    // The node has left the Kubernetes cluster, so its VM leaves the cluster's VM map, whatever
+                    // happened to the VM. A map entry kept for it would never match a Kubernetes node again: the
+                    // state scanner would hold the cluster in Alert, which blocks the next scale, and the node count
+                    // and the next scale-down's choice of nodes would be worked out from a VM that is gone. The
+                    // entry is deleted only now as the VM's expunge looks it up (to leave alone the port-forwarding
+                    // rules of a CKS node in an NSX zone).
+                    kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
+                    removed.add(userVM);
+                }
             }
-            kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
-            if (System.currentTimeMillis() > scaleTimeoutTime) {
-                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster %s failed, scaling action timed out",
-                        kubernetesCluster), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+
+            // Scale network rules to update firewall rule
+            try {
+                List<Long> clusterVMIds = getKubernetesClusterVMMaps()
+                        .stream()
+                        .filter(x -> !x.isEtcdNode())
+                        .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+                scaleKubernetesClusterNetworkRules(clusterVMIds);
+            } catch (ManagementServerException e) {
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
+                        "cluster %s, unable to update network rules", kubernetesCluster),
+                        kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+            }
+            completed = true;
+        } finally {
+            if (!completed) {
+                // The nodes that are still in the cluster were drained above and would stay unschedulable
+                updateKubernetesClusterEntryForRemovedNodes(removed);
+                List<UserVmVO> inCluster = vms.subList(firstInCluster, vms.size());
+                uncordonNodes(cordoned.stream().filter(inCluster::contains).collect(Collectors.toList()));
             }
         }
+    }
 
-        // Scale network rules to update firewall rule
+    /**
+     * Destroys and expunges the VM of a node that has been deleted from the Kubernetes cluster. The caller then takes
+     * the VM out of the cluster's VM map, whether this succeeds or not.
+     * <ul>
+     * <li>If the VM can't be destroyed, the scale fails: the VM may still be running, though it is no longer a
+     * Kubernetes node nor a member of the cluster, and has to be destroyed by hand.</li>
+     * <li>If the destroyed VM can't be expunged, the scale goes on, with a warning event that names the VM and its
+     * state. The expunge task retries VMs left Destroyed, Expunging or in Error.</li>
+     * </ul>
+     */
+    protected void destroyRemovedNodeVm(final UserVmVO userVM) throws CloudRuntimeException {
+        CallContext vmContext = CallContext.register(CallContext.current(),
+                ApiCommandResourceType.VirtualMachine);
+        vmContext.setEventResourceId(userVM.getId());
+        // Whether the VM is left behind, destroyed or not
+        boolean leftBehind = false;
         try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps()
-                    .stream()
-                    .filter(x -> !x.isEtcdNode())
-                    .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            scaleKubernetesClusterNetworkRules(clusterVMIds);
-        } catch (ManagementServerException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
-                    "cluster %s, unable to update network rules", kubernetesCluster),
-                    kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+            try {
+                userVmService.destroyVm(userVM.getId(), true);
+            } catch (ResourceUnavailableException | CloudRuntimeException e) {
+                // destroyVm can fail after the VM has been destroyed, on the resource count updates that follow
+                VMInstanceVO vm = null;
+                boolean found = false;
+                try {
+                    vm = vmInstanceDao.findByIdIncludingRemoved(userVM.getId());
+                    found = true;
+                } catch (RuntimeException lookupError) {
+                    logger.warn("Unable to look up VM {} after it failed to be destroyed", userVM, lookupError);
+                }
+                if (found && (vm == null || vm.getRemoved() != null)) {
+                    logger.warn("Destroying VM {} of the node removed from Kubernetes cluster {} reported an error, but the VM is expunged",
+                            userVM, kubernetesCluster, e);
+                    return;
+                }
+                if (found && List.of(VirtualMachine.State.Destroyed, VirtualMachine.State.Expunging).contains(vm.getState())) {
+                    logger.warn("Destroying VM {} of the node removed from Kubernetes cluster {} reported an error, but the VM is {}",
+                            userVM, kubernetesCluster, vm.getState(), e);
+                } else {
+                    leftBehind = true;
+                    logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to destroy VM %s%s." +
+                        " Its node was removed from the Kubernetes cluster and the VM is no longer part of the cluster;" +
+                        " it may still be running and has to be destroyed manually", kubernetesCluster, userVM,
+                        vm == null ? "" : String.format(" (left in state %s)", vm.getState())),
+                        kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+                }
+            }
+            boolean expunged = false;
+            Exception expungeError = null;
+            try {
+                expunged = userVmManager.expunge(userVM);
+            } catch (RuntimeException e) {
+                expungeError = e;
+            }
+            if (!expunged) {
+                leftBehind = warnVmNotExpunged(userVM, expungeError);
+            }
+        } finally {
+            CallContext.unregister();
+            if (leftBehind) {
+                revokeRemovedNodeVmSshRules(userVM);
+            }
+        }
+    }
+
+    /** @return false if the VM turns out to be expunged, true if it is left behind. Doesn't throw. */
+    private boolean warnVmNotExpunged(final UserVmVO userVM, final Exception expungeError) {
+        VMInstanceVO vm;
+        try {
+            vm = vmInstanceDao.findByIdIncludingRemoved(userVM.getId());
+        } catch (RuntimeException e) {
+            logger.warn("Unable to expunge VM {} of the node removed from Kubernetes cluster {}; it is no longer part of the cluster",
+                    userVM, kubernetesCluster, expungeError);
+            return true;
+        }
+        if (vm == null || vm.getRemoved() != null) {
+            // Expunged meanwhile, by the expunge task for one
+            logger.info("VM {} of the node removed from Kubernetes cluster {} has been expunged", userVM, kubernetesCluster);
+            return false;
+        }
+        String message = String.format("Unable to expunge VM %s of the node removed from Kubernetes cluster %s. The VM is" +
+                " no longer part of the cluster and is left in state %s, for the expunge task to retry. Until it is expunged" +
+                " it keeps the cluster's network in use, and the cluster can't be deleted with its network",
+                userVM, kubernetesCluster, vm.getState());
+        logger.warn(message, expungeError);
+        try {
+            // Recorded for the VM's owner, who has to see why the VM still holds the network
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), userVM.getAccountId(),
+                    EventVO.LEVEL_WARN, KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_SCALE,
+                    message, userVM.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
+        } catch (RuntimeException e) {
+            logger.warn("Unable to record an event for VM {} that was not expunged", userVM, e);
+        }
+        return true;
+    }
+
+    /**
+     * Revokes the SSH port-forwarding rule that the cluster has on a removed node's VM that is left behind. Expunging
+     * the VM would revoke it; the cluster's network rule updates may not: a VPC tier's only clears the ports of the
+     * nodes that remain, where the rule would conflict with the rule of a node added later, and none runs if the
+     * scale-down stops. Left alone are: a rule provided by NSX (the VM's expunge leaves the port-forwarding rules of a
+     * CKS node alone in an NSX zone); the rule on the port this scale reaches the cluster through, if it is the removed
+     * VM's, as the nodes that remain are still to be reached through it; and the VM's other rules.
+     */
+    protected void revokeRemovedNodeVmSshRules(final UserVmVO userVM) {
+        boolean registered = false;
+        try {
+            if (network == null || publicIpAddress == null || manager.isDirectAccess(network) ||
+                    networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.PortForwarding, Network.Provider.Nsx)) {
+                return;
+            }
+            // A context of its own rather than the VM's or the scale's
+            CallContext.register(CallContext.current(), null);
+            registered = true;
+            for (PortForwardingRuleVO pfRule : portForwardingRulesDao.listByVm(userVM.getId())) {
+                if (!FirewallRule.State.Revoke.equals(pfRule.getState()) && pfRule.getNetworkId() == network.getId() &&
+                        pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT && pfRule.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT &&
+                        pfRule.getSourcePortStart() != sshPort && isRuleOnAddress(pfRule, publicIpAddress)) {
+                    try {
+                        rulesService.revokePortForwardingRule(pfRule.getId(), true);
+                    } catch (Exception e) {
+                        logger.warn("Unable to revoke the SSH port-forwarding rule {} of VM {} of the node removed from Kubernetes cluster {}",
+                                pfRule, userVM, kubernetesCluster, e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to revoke the SSH port-forwarding rule of VM {} of the node removed from Kubernetes cluster {}",
+                    userVM, kubernetesCluster, e);
+        } finally {
+            if (registered) {
+                CallContext.unregister();
+            }
+        }
+    }
+
+    /**
+     * Takes the VMs that have left the cluster's VM map off the cluster's node count, cores and memory, when a
+     * scale-down stops part way, so that the cluster matches its VM map. The scale-down updates them itself once every
+     * node has been removed, and this takes the same view of the node count: every VM removed, including a control
+     * node removed by ID, comes off the node count, so that the cluster's total node count matches its VM map. Any
+     * failure here is logged, so that the scale-down's own error is the one reported.
+     */
+    private void updateKubernetesClusterEntryForRemovedNodes(final List<UserVmVO> removed) {
+        if (removed.isEmpty()) {
+            return;
+        }
+        try {
+            long removedCores = 0;
+            long removedMemory = 0;
+            for (UserVmVO vm : removed) {
+                ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+                removedCores += offering.getCpu();
+                removedMemory += offering.getRamSize();
+            }
+            KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+            updateKubernetesClusterEntry(cluster.getCores() - removedCores, cluster.getMemory() - removedMemory,
+                    cluster.getNodeCount() - removed.size(), null, cluster.getAutoscalingEnabled(), cluster.getMinSize(),
+                    cluster.getMaxSize(), WORKER, false, false);
+        } catch (RuntimeException e) {
+            logger.error("Unable to take {} removed nodes off the node count, cores and memory of Kubernetes cluster {};" +
+                    " they no longer match its VMs", removed.size(), kubernetesCluster, e);
         }
     }
 
