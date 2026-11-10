@@ -178,8 +178,14 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     }
                     logger.info("Connection with client [{}] [IP: {}] is dead.", clientId, clientSourceIp);
                     ConsoleProxy.grantReconnectWindowForSessionAndClientIp(sessionUuid, clientSourceIp);
-                } catch (IOException e) {
-                    logger.error("Error on VNC client", e);
+                } catch (IOException | RuntimeException e) {
+                    if (connectionAlive) {
+                        logger.error("Error on VNC client [{}] [IP: {}], closing the connection.", clientId, clientSourceIp, e);
+                    } else {
+                        logger.debug("VNC client [{}] [IP: {}] stopped after its connection was closed: {}", clientId, clientSourceIp, e.getMessage());
+                    }
+                    closeClient();
+                    session.close();
                 }
             }
 
@@ -253,8 +259,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
 
         client.processSecurityResultMsg();
         byte[] securityResultToClient = new byte[] { 0, 0, 0, 0 };
-        sendMessageToVNCClient(securityResultToClient, 4);
+        // Set the flag before sending, as noVNC may reply before sendMessageToVNCClient() returns
         client.setWaitForNoVnc(true);
+        sendMessageToVNCClient(securityResultToClient, 4);
     }
 
     protected int handshakeSecurity() {
@@ -288,8 +295,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                 client.isTLSConnectionEstablished() ? "(TLS backend)" : "");
         byte[] bytesServerInit = rewriteServerNameInServerInit(serverInitByteArray, displayNameForVM);
 
-        sendMessageToVNCClient(bytesServerInit, bytesServerInit.length);
         client.setWaitForNoVnc(true);
+        sendMessageToVNCClient(bytesServerInit, bytesServerInit.length);
         client.waitForNoVNCReply();
     }
 
