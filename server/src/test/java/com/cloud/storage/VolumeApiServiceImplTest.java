@@ -1199,8 +1199,31 @@ public class VolumeApiServiceImplTest {
         }
 
         Mockito.verify(volumeInfo).stateTransit(Volume.Event.DestroyRequested);
-        // from a snapshot: VOLUME.CREATE is published only on success, so there is no usage record to close
         Mockito.verify(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId, false);
+    }
+
+    @Test
+    public void testCreateVolumeClosesTheUsageRecordWhenCancelledAfterTheSnapshotCopy() throws Exception {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO createdVolume = Mockito.mock(VolumeVO.class);
+        Mockito.doReturn(volumeMockId).when(createdVolume).getId();
+        Mockito.doReturn(Volume.State.Ready).when(createdVolume).getState();
+        Mockito.doReturn(true).when(createdVolume).isDisplayVolume();
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
+        Mockito.doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeMockId);
+        Mockito.doReturn(createdVolume).when(volumeApiServiceImpl).createVolumeFromSnapshot(volumeVoMock, 9L, 5L);
+        Mockito.doThrow(new CloudRuntimeException("job-7 was cancelled")).when(volumeApiServiceImpl).attachVolumeToVM(Mockito.eq(5L), Mockito.eq(volumeMockId), Mockito.any(), Mockito.eq(false), Mockito.eq(false));
+        Mockito.doReturn(true).when(volumeApiServiceImpl).isCurrentJobCancelled();
+        Mockito.doNothing().when(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId, true);
+
+        try {
+            volumeApiServiceImpl.createVolume(volumeMockId, 5L, 9L, null, true);
+            Assert.fail("The failed creation was not reported");
+        } catch (CloudRuntimeException expected) {
+        }
+
+        Mockito.verify(volumeInfo).stateTransit(Volume.Event.DestroyRequested);
+        Mockito.verify(volumeApiServiceImpl).expungeCancelledVolume(volumeMockId, true);
     }
 
     @Test
