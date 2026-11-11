@@ -337,6 +337,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             if (!sendFailed && s_buffer.isEmpty() && s_connection != null) {
                 return false;
             }
+            if (s_buffer.isEmpty()) {
+                logger.warn("Unable to send events to AMQP server, buffering them until they can be sent");
+            }
             if (s_buffer.size() >= bufferSize) {
                 logger.warn("Event buffer is full, dropping the oldest event " + s_buffer.poll().first());
             }
@@ -347,19 +350,20 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     // drops the expired events and, if connected, sends the buffered ones in the order they were added
     private void flushBuffer() {
+        int sent = 0;
         while (true) {
             Ternary<String, String, Long> bufferedEvent;
             synchronized (s_buffer) {
                 bufferedEvent = s_buffer.peek();
             }
             if (bufferedEvent == null) {
-                return;
+                break;
             }
 
             boolean expired = System.currentTimeMillis() - bufferedEvent.third() > bufferExpiry;
             Connection connection = s_connection;
             if (!expired && connection == null) {
-                return;
+                break;
             }
 
             if (expired) {
@@ -367,11 +371,12 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             } else {
                 try {
                     sendEvent(connection, bufferedEvent.first(), bufferedEvent.second());
+                    sent++;
                 } catch (AlreadyClosedException e) {
                     closeConnection();
-                    return;
+                    break;
                 } catch (IOException e) {
-                    return; // retry with the next run
+                    break; // retry with the next run
                 } catch (Exception e) {
                     logger.warn("Dropping buffered event " + bufferedEvent.first() + " due to " + e.getMessage());
                 }
@@ -383,6 +388,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                     s_buffer.poll();
                 }
             }
+        }
+        if (sent > 0) {
+            logger.info("Sent " + sent + " buffered events to AMQP server");
         }
     }
 
