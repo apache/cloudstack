@@ -1246,7 +1246,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         long totalArchived = _eventDao.archiveEvents(ids, type, startDate, endDate, accountId, domainIds,
                 ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
 
-        return totalArchived > 0;
+        return CollectionUtils.isEmpty(ids) || totalArchived > 0;
     }
 
     @Override
@@ -1272,7 +1272,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         long totalRemoved = _eventDao.purgeAll(ids, startDate, endDate, null, type, accountId, domainIds,
                 ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
 
-        return totalRemoved > 0;
+        return CollectionUtils.isEmpty(ids) || totalRemoved > 0;
     }
 
     protected void validateEventOperationParameters(List<Long> ids, String type, Date endDate, Date startDate) {
