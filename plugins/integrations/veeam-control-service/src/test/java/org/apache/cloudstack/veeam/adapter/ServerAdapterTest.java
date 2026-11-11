@@ -147,6 +147,7 @@ public class ServerAdapterTest {
     @Mock AsyncJobJoinDao asyncJobJoinDao;
     @Mock VMSnapshotDao vmSnapshotDao;
     @Mock BackupDao backupDao;
+    @Mock org.apache.cloudstack.backup.dao.VmCheckpointDao vmCheckpointDao;
     @Mock NetworkModel networkModel;
     @Mock ProjectManager projectManager;
     @Mock DomainDao domainDao;
@@ -1183,9 +1184,10 @@ public class ServerAdapterTest {
 
 
     @Test
-    public void testListCheckpointsByInstanceUuid_ReturnsAllCheckpoints() {
+    public void testListCheckpointsByInstanceUuid_ReturnsAllCheckpointsWithTheirBackupsDescriptionAndParent() {
         UserVmVO vmVO = mock(UserVmVO.class);
         when(vmVO.getId()).thenReturn(5L);
+        when(vmVO.getUuid()).thenReturn("vm-uuid");
         when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
         org.apache.cloudstack.api.response.CheckpointResponse a = new org.apache.cloudstack.api.response.CheckpointResponse();
         a.setId("ckp-a1");
@@ -1194,13 +1196,28 @@ public class ServerAdapterTest {
         b.setId("ckp-b1");
         b.setCreated(new java.util.Date(200000L));
         when(kvmBackupExportService.listVmCheckpoints(5L)).thenReturn(List.of(a, b));
+        // ckp-a1 was migrated from the old instance details and has no backup; ckp-b1 was created by backup 7.
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(5L, "ckp-a1")).thenReturn(null);
+        org.apache.cloudstack.backup.VmCheckpointVO rowB = mock(org.apache.cloudstack.backup.VmCheckpointVO.class);
+        when(rowB.getBackupId()).thenReturn(7L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(5L, "ckp-b1")).thenReturn(rowB);
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getDescription()).thenReturn("{\"type\":\"veeam\",\"job_uuid\":\"j1\"}");
+        when(backup.getFromCheckpointId()).thenReturn("ckp-a1");
+        when(backupDao.findByIdIncludingRemoved(7L)).thenReturn(backup);
 
         List<org.apache.cloudstack.veeam.api.dto.Checkpoint> checkpoints = serverAdapter.listCheckpointsByInstanceUuid("vm-uuid");
 
         assertEquals(2, checkpoints.size());
         assertEquals("ckp-a1", checkpoints.get(0).getId());
         assertEquals("100000", checkpoints.get(0).getCreationDate());
+        assertNull(checkpoints.get(0).getDescription());
+        assertNull(checkpoints.get(0).getParentId());
+        assertEquals("vm-uuid", checkpoints.get(0).getVm().getId());
         assertEquals("ckp-b1", checkpoints.get(1).getId());
+        assertEquals("{\"type\":\"veeam\",\"job_uuid\":\"j1\"}", checkpoints.get(1).getDescription());
+        assertEquals("ckp-a1", checkpoints.get(1).getParentId());
+        assertTrue(checkpoints.get(1).getHref().endsWith("/vms/vm-uuid/checkpoints/ckp-b1"));
     }
 
     @Test(expected = InvalidParameterValueException.class)

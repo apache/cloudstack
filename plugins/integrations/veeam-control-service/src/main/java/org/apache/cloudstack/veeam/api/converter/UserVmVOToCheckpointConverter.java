@@ -19,7 +19,10 @@ package org.apache.cloudstack.veeam.api.converter;
 
 import java.time.Instant;
 
+import org.apache.cloudstack.veeam.VeeamControlService;
+import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Checkpoint;
+import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.NumbersUtil;
@@ -40,6 +43,21 @@ public class UserVmVOToCheckpointConverter {
             checkpoint.setCreationDate(String.valueOf(System.currentTimeMillis()));
         }
         checkpoint.setState("created");
+        return checkpoint;
+    }
+
+    // A checkpoint also carries the description of the backup that created it, which a client uses to tell its own
+    // checkpoints apart, the checkpoint that backup started from, and the VM.
+    public static Checkpoint toCheckpoint(String vmUuid, String checkpointId, String createTimeStr, String description, String parentId) {
+        Checkpoint checkpoint = toCheckpoint(checkpointId, createTimeStr);
+        if (checkpoint == null) {
+            return null;
+        }
+        final String vmHref = VeeamControlService.ContextPath.value() + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid;
+        checkpoint.setHref(vmHref + "/checkpoints/" + checkpointId);
+        checkpoint.setVm(Vm.of(vmHref, vmUuid));
+        checkpoint.setDescription(description);
+        checkpoint.setParentId(parentId);
         return checkpoint;
     }
 }

@@ -90,7 +90,9 @@ import org.apache.cloudstack.backup.ImageTransfer.Direction;
 import org.apache.cloudstack.backup.ImageTransfer.Format;
 import org.apache.cloudstack.backup.ImageTransferVO;
 import org.apache.cloudstack.backup.KVMBackupExportService;
+import org.apache.cloudstack.backup.VmCheckpointVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.VmCheckpointDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
@@ -322,6 +324,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     BackupDao backupDao;
+
+    @Inject
+    VmCheckpointDao vmCheckpointDao;
 
     @Inject
     ResourceTagDao resourceTagDao;
@@ -2104,8 +2109,11 @@ public class ServerAdapter extends ManagerBase {
         accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
         List<Checkpoint> checkpoints = new ArrayList<>();
         for (CheckpointResponse response : kvmBackupExportService.listVmCheckpoints(vo.getId())) {
-            Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(response.getId(),
-                    response.getCreated() != null ? String.valueOf(response.getCreated().getTime() / 1000) : null);
+            VmCheckpointVO row = vmCheckpointDao.findByVmIdAndCheckpointId(vo.getId(), response.getId());
+            BackupVO backup = row != null && row.getBackupId() != null ? backupDao.findByIdIncludingRemoved(row.getBackupId()) : null;
+            Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(vo.getUuid(), response.getId(),
+                    response.getCreated() != null ? String.valueOf(response.getCreated().getTime() / 1000) : null,
+                    backup != null ? backup.getDescription() : null, backup != null ? backup.getFromCheckpointId() : null);
             if (checkpoint != null) {
                 checkpoints.add(checkpoint);
             }
