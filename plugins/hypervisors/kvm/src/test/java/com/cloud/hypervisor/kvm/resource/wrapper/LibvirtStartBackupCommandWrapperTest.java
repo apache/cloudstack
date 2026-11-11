@@ -160,7 +160,13 @@ public class LibvirtStartBackupCommandWrapperTest {
     public void testExecuteRunningVmForgottenFromCheckpointIsRedefinedWithTheDisksThatHaveItsBitmap() throws Exception {
         runningVmFromForgottenCheckpoint();
         Mockito.when(domain.qemuMonitorCommand(Mockito.contains("query-named-block-nodes"), Mockito.eq(0))).thenReturn(NAMED_NODES);
+        // disk1 is encrypted, so qemu reports it under a json: pseudo-filename; only it carries the bitmap.
+        Mockito.when(domain.qemuMonitorCommand(Mockito.contains("query-block"), Mockito.eq(0))).thenReturn("{\"return\": ["
+                + "{\"device\": \"\", \"inserted\": {\"file\": \"json:{\\\"driver\\\": \\\"qcow2\\\", \\\"encrypt\\\": {\\\"key-secret\\\": \\\"s\\\", \\\"format\\\": \\\"luks\\\"},"
+                + " \\\"file\\\": {\\\"driver\\\": \\\"file\\\", \\\"filename\\\": \\\"/path/disk1.qcow2\\\"}}\", \"dirty-bitmaps\": [{\"name\": \"cp-running-0\"}]}},"
+                + "{\"device\": \"\", \"inserted\": {\"file\": \"/path/disk2.qcow2\", \"dirty-bitmaps\": []}}]}");
         List<String> redefineXml = new ArrayList<>();
+        List<String> backupXml = new ArrayList<>();
 
         try (MockedConstruction<Script> scripts = Mockito.mockConstruction(Script.class, (mock, context) -> {
             if (context.getCount() == 1) {
@@ -172,7 +178,11 @@ public class LibvirtStartBackupCommandWrapperTest {
                     return null;
                 });
             } else {
-                Mockito.when(mock.execute()).thenReturn(null);
+                Mockito.when(mock.execute()).thenAnswer(invocation -> {
+                    String[] args = commandOf(mock).split(" ");
+                    backupXml.add(new String(Files.readAllBytes(Paths.get(args[java.util.Arrays.asList(args).indexOf("backup-begin") + 2]))));
+                    return null;
+                });
             }
         })) {
             Answer answer = wrapper.execute(command, resource);
@@ -187,6 +197,10 @@ public class LibvirtStartBackupCommandWrapperTest {
             Assert.assertTrue(redefineXml.get(0), redefineXml.get(0).contains("<disk name='vda' checkpoint='bitmap'/>"));
             Assert.assertTrue(redefineXml.get(0), redefineXml.get(0).contains("<disk name='vdb' checkpoint='no'/>"));
             Assert.assertTrue(commandOf(scripts.constructed().get(2)).startsWith("virsh backup-begin i-2-3-VM"));
+            // The backup is incremental from the redefined checkpoint on the disk that has its bitmap, full on the other.
+            Assert.assertTrue(backupXml.get(0), backupXml.get(0).contains(
+                    "<disk name=\"vda\" type=\"file\" exportname=\"vol-1\" backupmode=\"incremental\" incremental=\"cp-running-0\" exportbitmap=\"cp-running-0\">"));
+            Assert.assertTrue(backupXml.get(0), backupXml.get(0).contains("<disk name=\"vdb\" type=\"file\" exportname=\"vol-2\">"));
         }
     }
 
