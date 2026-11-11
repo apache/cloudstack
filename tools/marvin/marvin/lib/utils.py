@@ -29,7 +29,7 @@ import email
 import socket
 import urllib.parse
 import datetime
-from marvin.cloudstackAPI import cloudstackAPIClient, listHosts, listRouters
+from marvin.cloudstackAPI import cloudstackAPIClient, listHosts, listRouters, listVirtualMachines
 from platform import system
 from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.sshClient import SshClient
@@ -622,23 +622,33 @@ def wait_for_xen_pv_tools(apiclient, vm, username, password, timeout=120, interv
     until then, it takes about 45 seconds after the boot.
 
     @param apiclient: API client
-    @param vm: VirtualMachine object of marvin.lib.base (with hostid and instancename)
+    @param vm: VirtualMachine object of marvin.lib.base (hostid and instancename are looked up if missing)
     @param username, password: credentials to log in to the XenServer host of the VM
     @raise Exception: if the PV tools were not detected within timeout seconds
     """
+    hostid = getattr(vm, "hostid", None)
+    instancename = getattr(vm, "instancename", None)
+    if not hostid or not instancename:
+        # the object returned by VirtualMachine.create does not always have them (e.g. VMs of a user account)
+        vm_cmd = listVirtualMachines.listVirtualMachinesCmd()
+        vm_cmd.id = vm.id
+        vm_cmd.listall = True
+        vm_info = apiclient.listVirtualMachines(vm_cmd)[0]
+        hostid = vm_info.hostid
+        instancename = vm_info.instancename
     cmd = listHosts.listHostsCmd()
-    cmd.id = vm.hostid
+    cmd.id = hostid
     cmd.type = "Routing"
     host = apiclient.listHosts(cmd)[0]
     ssh_client = SshClient(host.ipaddress, 22, username, password, 10)
     deadline = time.time() + timeout
     while time.time() < deadline:
         out = ssh_client.execute(
-            "xe vm-list name-label=%s params=PV-drivers-detected --minimal" % vm.instancename)
+            "xe vm-list name-label=%s params=PV-drivers-detected --minimal" % instancename)
         if out and out[0].strip().lower() == "true":
             return
         time.sleep(interval)
-    raise Exception("PV tools were not detected on %s within %ds" % (vm.instancename, timeout))
+    raise Exception("PV tools were not detected on %s within %ds" % (instancename, timeout))
 
 
 def wait_for_vmware_tools(vm, timeout=60, interval=10):
