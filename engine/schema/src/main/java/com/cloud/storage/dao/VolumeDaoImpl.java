@@ -99,6 +99,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART1 = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? ";
     private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART2 = " GROUP BY pool.id ORDER BY 2 ASC ";
+    private static final String LIST_USER_VOLUME_IDS = "SELECT vol.id FROM `cloud`.`volumes` vol "
+            + "LEFT JOIN `cloud`.`vm_instance` vm ON vm.id = vol.instance_id "
+            + "WHERE vol.removed IS NULL AND (vol.instance_id IS NULL OR vm.type = 'User')";
 
     private static final String ORDER_ZONE_WIDE_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
             + " AND pool.scope = 'ZONE' AND pool.status='Up' " + " GROUP BY pool.id ORDER BY 2 ASC ";
@@ -116,6 +119,47 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listUserVolumeIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, Volume.State state) {
+        if (domainIds != null && domainIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        StringBuilder sql = new StringBuilder(LIST_USER_VOLUME_IDS);
+        if (accountId != null) {
+            sql.append(" AND vol.account_id = ?");
+        }
+        if (domainIds != null) {
+            sql.append(" AND vol.domain_id IN (").append(String.join(",", Collections.nCopies(domainIds.size(), "?"))).append(")");
+        }
+        if (state != null) {
+            sql.append(" AND vol.state = ?");
+        }
+        List<Long> ids = new ArrayList<>();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
+            int i = 1;
+            if (accountId != null) {
+                pstmt.setLong(i++, accountId);
+            }
+            if (domainIds != null) {
+                for (Long domainId : domainIds) {
+                    pstmt.setLong(i++, domainId);
+                }
+            }
+            if (state != null) {
+                pstmt.setString(i, state.name());
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getLong(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to list user volume IDs", e);
+        }
+        return ids;
     }
 
     @Override

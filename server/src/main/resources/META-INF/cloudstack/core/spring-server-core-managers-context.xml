@@ -133,6 +133,10 @@
 
     <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
 
+    <bean id="resourceAlertServiceImpl" class="com.cloud.alert.ResourceAlertServiceImpl" />
+
+    <bean id="resourceAlertManagerImpl" class="com.cloud.alert.ResourceAlertManagerImpl" />
+
     <bean id="autoScaleManagerImpl" class="com.cloud.network.as.AutoScaleManagerImpl" />
 
     <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />
