@@ -72,3 +72,13 @@ JOIN cloud.vm_template vt ON vt.cross_zones = 1 AND vt.removed IS NULL
 WHERE dc.type = 'Edge' AND dc.removed IS NULL
   AND NOT EXISTS (SELECT 1 FROM cloud.template_zone_ref tzr
                   WHERE tzr.zone_id = dc.id AND tzr.template_id = vt.id AND tzr.removed IS NULL);
+
+--- Recalculate the allocated size in bytes for each Object Storage provider
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) * 1024 * 1024 * 1024 AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
