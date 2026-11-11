@@ -241,3 +241,13 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+--- Recalculate the allocated size in bytes for each Object Storage provider
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) * 1024 * 1024 * 1024 AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
