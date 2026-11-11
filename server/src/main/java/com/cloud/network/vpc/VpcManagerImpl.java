@@ -2578,8 +2578,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     // check number of active networks in vpc
                     final int maxNetworks = VpcMaxNetworks.value();
                     if (_ntwkDao.countVpcNetworks(vpc.getId()) >= maxNetworks) {
-                        logger.warn("Failed to create a new network in VPC [{}] because it has reached the maximum of [{}] networks for {}. "
-                                + "Increase it by modifying the global setting [{}].", vpc, maxNetworks, _accountMgr.getAccount(vpc.getAccountId()), VpcMaxNetworks.key());
+                        logger.warn("Failed to create a new network in VPC [{}] because it has reached the maximum of [{}] networks. "
+                                + "Increase it by modifying the global setting [{}].", vpc, maxNetworks, VpcMaxNetworks.key());
                         throw new InvalidParameterValueException(String.format("VPC %s has reached the maximum of %d networks. "
                                 + "Delete an unused network or contact your platform administrator to raise the limit.", vpc.getName(), maxNetworks));
                     }
