@@ -93,10 +93,17 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         return sc;
     }
 
+    private boolean allIdsMatch(List<Long> ids, SearchCriteria<EventVO> sc) {
+        return CollectionUtils.isEmpty(ids) || getCountIncludingRemoved(sc) == ids.size();
+    }
+
     @Override
     public long archiveEvents(List<Long> ids, String type, Date startDate, Date endDate, Long accountId, List<Long> domainIds,
                               long limitPerQuery) {
         SearchCriteria<EventVO> sc = createEventSearchCriteria(ids, type, startDate, endDate, null, accountId, domainIds);
+        if (!allIdsMatch(ids, sc)) {
+            return 0L;
+        }
 
         long totalArchived = 0L;
         int archived;
@@ -115,6 +122,9 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     public long purgeAll(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId,
                          List<Long> domainIds, long limitPerQuery) {
         SearchCriteria<EventVO> sc = createEventSearchCriteria(ids, type, startDate, endDate, limitDate, accountId, domainIds);
+        if (!allIdsMatch(ids, sc)) {
+            return 0L;
+        }
         return batchExpunge(sc, limitPerQuery);
     }
 }

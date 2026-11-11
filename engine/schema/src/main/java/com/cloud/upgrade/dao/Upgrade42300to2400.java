@@ -37,17 +37,19 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     }
 
     private void addIndexes(Connection conn) {
-        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__archived__created__id",
-                "archived", "created", "id");
-        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__account_id__archived__created__id",
-                "account_id", "archived", "created", "id");
-        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__domain_id__archived__created__id",
-                "domain_id", "archived", "created", "id");
-        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__resource_type__resource_id__archived__created__id",
-                "resource_type", "resource_id", "archived", "created", "id");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__archived__created",
+                "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__account_id__archived__created",
+                "account_id", "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__domain_id__archived__created",
+                "domain_id", "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__resource_type__resource_id__archived__created",
+                "resource_type", "resource_id", "archived", "created");
     }
 
     private void dropOldIndexes(Connection conn) {
+        DbUpgradeUtils.dropIndexIfExists(conn, "event", "archived");
+        DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__account_id");
         DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
     }
 }

@@ -81,22 +81,6 @@ public class ArchiveEventsCmd extends BaseCmd {
         return type;
     }
 
-    public void setIds(List<Long> ids) {
-        this.ids = ids;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

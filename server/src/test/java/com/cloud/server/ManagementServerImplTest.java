@@ -1163,11 +1163,12 @@ public class ManagementServerImplTest {
     }
 
     private ArchiveEventsCmd createArchiveEventsCmdForTests() {
-        ArchiveEventsCmd cmd = new ArchiveEventsCmd();
-        cmd.setIds(List.of(10L, 11L, 12L, 13L));
-        cmd.setType("type");
-        cmd.setEndDate(new Date());
-        cmd.setStartDate(DateUtils.addDays(cmd.getEndDate(), -1));
+        ArchiveEventsCmd cmd = Mockito.mock(ArchiveEventsCmd.class);
+        Date endDate = new Date();
+        Mockito.when(cmd.getIds()).thenReturn(List.of(10L, 11L, 12L, 13L));
+        Mockito.when(cmd.getType()).thenReturn("type");
+        Mockito.when(cmd.getEndDate()).thenReturn(endDate);
+        Mockito.when(cmd.getStartDate()).thenReturn(DateUtils.addDays(endDate, -1));
         return cmd;
     }
 
@@ -1205,12 +1206,27 @@ public class ManagementServerImplTest {
                 domainIds, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
     }
 
+    @Test
+    public void archiveEventsTestDoesNotFilterDomainsWhenCallerIsRootAdmin() {
+        ArchiveEventsCmd cmd = createArchiveEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.ADMIN).when(account).getType();
+        Mockito.doReturn(account).when(spy).getCaller();
+
+        spy.archiveEvents(cmd);
+
+        Mockito.verify(domainDao, Mockito.never()).getDomainAndChildrenIds(Mockito.anyLong());
+        Mockito.verify(eventDao).archiveEvents(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), null,
+                null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
     private DeleteEventsCmd createDeleteEventsCmdForTests() {
-        DeleteEventsCmd cmd = new DeleteEventsCmd();
-        cmd.setIds(List.of(10L, 11L, 12L, 13L));
-        cmd.setType("type");
-        cmd.setEndDate(new Date());
-        cmd.setStartDate(DateUtils.addDays(cmd.getEndDate(), -1));
+        DeleteEventsCmd cmd = Mockito.mock(DeleteEventsCmd.class);
+        Date endDate = new Date();
+        Mockito.when(cmd.getIds()).thenReturn(List.of(10L, 11L, 12L, 13L));
+        Mockito.when(cmd.getType()).thenReturn("type");
+        Mockito.when(cmd.getEndDate()).thenReturn(endDate);
+        Mockito.when(cmd.getStartDate()).thenReturn(DateUtils.addDays(endDate, -1));
         return cmd;
     }
 
@@ -1246,6 +1262,20 @@ public class ManagementServerImplTest {
         Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
         Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
                 null, domainIds, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    @Test
+    public void deleteEventsTestDoesNotFilterDomainsWhenCallerIsRootAdmin() {
+        DeleteEventsCmd cmd = createDeleteEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.ADMIN).when(account).getType();
+        Mockito.doReturn(account).when(spy).getCaller();
+
+        spy.deleteEvents(cmd);
+
+        Mockito.verify(domainDao, Mockito.never()).getDomainAndChildrenIds(Mockito.anyLong());
+        Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
+                null, null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
     }
 
     @Test

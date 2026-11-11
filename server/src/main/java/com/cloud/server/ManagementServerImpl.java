@@ -1239,7 +1239,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         if (callerType == Account.Type.NORMAL || callerType == Account.Type.PROJECT) {
             accountId = caller.getId();
-        } else {
+        } else if (callerType != Account.Type.ADMIN) {
             domainIds = _domainDao.getDomainAndChildrenIds(caller.getDomainId());
         }
 
@@ -1265,7 +1265,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         if (callerType == Account.Type.NORMAL || callerType == Account.Type.PROJECT) {
             accountId = caller.getId();
-        } else {
+        } else if (callerType != Account.Type.ADMIN) {
             domainIds = _domainDao.getDomainAndChildrenIds(caller.getDomainId());
         }
 
