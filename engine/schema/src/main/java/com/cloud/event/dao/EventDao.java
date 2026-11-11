@@ -39,7 +39,7 @@ public interface EventDao extends GenericDao<EventVO, Long> {
     long archiveEvents(List<Long> ids, String type, Date startDate, Date endDate, Long accountId, List<Long> domainIds,
                        long limitPerQuery);
 
-    long purgeAll(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId, List<Long> domainIds,
-                  long limitPerQuery);
+    long deleteEvents(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId, List<Long> domainIds,
+                      long limitPerQuery);
 
 }

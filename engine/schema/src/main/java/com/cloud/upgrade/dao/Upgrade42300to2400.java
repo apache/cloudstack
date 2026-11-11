@@ -48,8 +48,14 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     }
 
     private void dropOldIndexes(Connection conn) {
-        DbUpgradeUtils.dropIndexIfExists(conn, "event", "archived");
-        DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__account_id");
-        DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "archived");
+        }
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__account_id__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__account_id");
+        }
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__resource_type__resource_id__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
+        }
     }
 }

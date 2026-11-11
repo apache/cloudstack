@@ -39,12 +39,12 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
 
     public EventDaoImpl() {
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
-        ToArchiveOrDeleteEventSearch.select("id", SearchCriteria.Func.NATIVE, ToArchiveOrDeleteEventSearch.entity().getId());
         ToArchiveOrDeleteEventSearch.and("id", ToArchiveOrDeleteEventSearch.entity().getId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("type", ToArchiveOrDeleteEventSearch.entity().getType(), Op.EQ);
         ToArchiveOrDeleteEventSearch.and("accountId", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.EQ);
         ToArchiveOrDeleteEventSearch.and("domainIds", ToArchiveOrDeleteEventSearch.entity().getDomainId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("createdDateB", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.BETWEEN);
+        ToArchiveOrDeleteEventSearch.and("createdDateG", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.GTEQ);
         ToArchiveOrDeleteEventSearch.and("createdDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LTEQ);
         ToArchiveOrDeleteEventSearch.and("createdDateLT", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LT);
         ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
@@ -84,6 +84,8 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
             sc.setParameters("createdDateB", startDate, endDate);
         } else if (endDate != null) {
             sc.setParameters("createdDateL", endDate);
+        } else if (startDate != null) {
+            sc.setParameters("createdDateG", startDate);
         }
         sc.setParametersIfNotNull("accountId", accountId);
         sc.setParametersIfNotNull("createdDateLT", limitDate);
@@ -119,8 +121,8 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     }
 
     @Override
-    public long purgeAll(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId,
-                         List<Long> domainIds, long limitPerQuery) {
+    public long deleteEvents(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId,
+                             List<Long> domainIds, long limitPerQuery) {
         SearchCriteria<EventVO> sc = createEventSearchCriteria(ids, type, startDate, endDate, limitDate, accountId, domainIds);
         if (!allIdsMatch(ids, sc)) {
             return 0L;

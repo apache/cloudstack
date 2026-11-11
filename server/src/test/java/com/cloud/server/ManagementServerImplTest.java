@@ -1154,12 +1154,17 @@ public class ManagementServerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateEventOperationParametersTestIdsAndTypeAndEndDateIsNullThrowInvalidParameterValueException() {
-        spy.validateEventOperationParameters(null, null, null, new Date());
+        spy.validateEventOperationParameters(null, null, new Date(), null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateEventOperationParametersTestStartDateIsNotNullAndEndDateIsNullThrowInvalidParameterValueException() {
-        spy.validateEventOperationParameters(List.of(1L), null, null, new Date());
+        spy.validateEventOperationParameters(List.of(1L), null, new Date(), null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateEventOperationParametersTestEmptyIdsThrowInvalidParameterValueException() {
+        spy.validateEventOperationParameters(Collections.emptyList(), "type", null, null);
     }
 
     private ArchiveEventsCmd createArchiveEventsCmdForTests() {
@@ -1183,7 +1188,7 @@ public class ManagementServerImplTest {
 
         spy.archiveEvents(cmd);
 
-        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate());
         Mockito.verify(eventDao).archiveEvents(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), callerId,
                 null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
     }
@@ -1201,9 +1206,21 @@ public class ManagementServerImplTest {
 
         spy.archiveEvents(cmd);
 
-        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate());
         Mockito.verify(eventDao).archiveEvents(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), null,
                 domainIds, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void archiveEventsTestFailsWhenCallerDomainIsNotFound() {
+        ArchiveEventsCmd cmd = createArchiveEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.DOMAIN_ADMIN).when(account).getType();
+        Mockito.doReturn(6L).when(account).getDomainId();
+        Mockito.doReturn(account).when(spy).getCaller();
+        Mockito.doReturn(Collections.emptyList()).when(domainDao).getDomainAndChildrenIds(6L);
+
+        spy.archiveEvents(cmd);
     }
 
     @Test
@@ -1241,8 +1258,8 @@ public class ManagementServerImplTest {
 
         spy.deleteEvents(cmd);
 
-        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
-        Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate());
+        Mockito.verify(eventDao).deleteEvents(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
                 callerId, null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
     }
 
@@ -1259,9 +1276,21 @@ public class ManagementServerImplTest {
 
         spy.deleteEvents(cmd);
 
-        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getEndDate(), cmd.getStartDate());
-        Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
+        Mockito.verify(spy).validateEventOperationParameters(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate());
+        Mockito.verify(eventDao).deleteEvents(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
                 null, domainIds, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void deleteEventsTestFailsWhenCallerDomainIsNotFound() {
+        DeleteEventsCmd cmd = createDeleteEventsCmdForTests();
+
+        Mockito.doReturn(Account.Type.DOMAIN_ADMIN).when(account).getType();
+        Mockito.doReturn(6L).when(account).getDomainId();
+        Mockito.doReturn(account).when(spy).getCaller();
+        Mockito.doReturn(Collections.emptyList()).when(domainDao).getDomainAndChildrenIds(6L);
+
+        spy.deleteEvents(cmd);
     }
 
     @Test
@@ -1274,7 +1303,7 @@ public class ManagementServerImplTest {
         spy.deleteEvents(cmd);
 
         Mockito.verify(domainDao, Mockito.never()).getDomainAndChildrenIds(Mockito.anyLong());
-        Mockito.verify(eventDao).purgeAll(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
+        Mockito.verify(eventDao).deleteEvents(cmd.getIds(), cmd.getStartDate(), cmd.getEndDate(), null, cmd.getType(),
                 null, null, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
     }
 

@@ -1230,7 +1230,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
 
-        validateEventOperationParameters(ids, type, endDate, startDate);
+        validateEventOperationParameters(ids, type, startDate, endDate);
 
         Long accountId = null;
         List<Long> domainIds = null;
@@ -1241,6 +1241,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             accountId = caller.getId();
         } else if (callerType != Account.Type.ADMIN) {
             domainIds = _domainDao.getDomainAndChildrenIds(caller.getDomainId());
+            if (CollectionUtils.isEmpty(domainIds)) {
+                throw new CloudRuntimeException(String.format("Unable to determine the domains of account %s", caller.getUuid()));
+            }
         }
 
         long totalArchived = _eventDao.archiveEvents(ids, type, startDate, endDate, accountId, domainIds,
@@ -1256,7 +1259,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
 
-        validateEventOperationParameters(ids, type, endDate, startDate);
+        validateEventOperationParameters(ids, type, startDate, endDate);
 
         Long accountId = null;
         List<Long> domainIds = null;
@@ -1267,15 +1270,21 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             accountId = caller.getId();
         } else if (callerType != Account.Type.ADMIN) {
             domainIds = _domainDao.getDomainAndChildrenIds(caller.getDomainId());
+            if (CollectionUtils.isEmpty(domainIds)) {
+                throw new CloudRuntimeException(String.format("Unable to determine the domains of account %s", caller.getUuid()));
+            }
         }
 
-        long totalRemoved = _eventDao.purgeAll(ids, startDate, endDate, null, type, accountId, domainIds,
+        long totalRemoved = _eventDao.deleteEvents(ids, startDate, endDate, null, type, accountId, domainIds,
                 ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
 
         return CollectionUtils.isEmpty(ids) || totalRemoved > 0;
     }
 
-    protected void validateEventOperationParameters(List<Long> ids, String type, Date endDate, Date startDate) {
+    protected void validateEventOperationParameters(List<Long> ids, String type, Date startDate, Date endDate) {
+        if (ids != null && ids.isEmpty()) {
+            throw new InvalidParameterValueException("'ids' must not be empty when provided.");
+        }
         if (CollectionUtils.isEmpty(ids) && ObjectUtils.allNull(type, endDate)) {
             throw new InvalidParameterValueException("Either 'ids', 'type' or 'enddate' must be specified.");
         }
@@ -4475,7 +4484,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                     purgeCal.add(Calendar.DAY_OF_YEAR, -_purgeDelay);
                     final Date purgeTime = purgeCal.getTime();
                     logger.debug("Starting to purge all event rows older than [{}].", purgeTime);
-                    long totalRemoved = _eventDao.purgeAll(null, null, null, purgeTime, null, null, null,
+                    long totalRemoved = _eventDao.deleteEvents(null, null, null, purgeTime, null, null, null,
                             ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
                     logger.info("Purged a total of [{}] event rows older than [{}].", totalRemoved, purgeTime);
                 } catch (final Exception e) {
