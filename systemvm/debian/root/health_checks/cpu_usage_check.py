@@ -37,8 +37,9 @@ def main():
           "'{ split($1, vs, \",\");  idle=vs[length(vs)]; " \
           "sub(\"%\", \"\", idle); printf \"%.2f\", 100 - idle }'"
     pout = Popen(cmd, shell=True, stdout=PIPE)
-    if pout.wait() == 0:
-        currentUsage = float(pout.communicate()[0].decode().strip())
+    stdout, _ = pout.communicate()
+    if pout.returncode == 0:
+        currentUsage = float(stdout.decode().strip())
         if currentUsage > maxCpuUsage:
             print("CPU Usage " + str(currentUsage) +
                   "% has crossed threshold of " + str(maxCpuUsage) + "%")

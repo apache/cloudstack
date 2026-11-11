@@ -33,23 +33,33 @@ delete_workloads_using_pvc() {
     local deleted_count=0
 
     # Find & delete any deployment using the PVC
-    /opt/bin/kubectl get deployments -n "$namespace" -o json 2>/dev/null | grep -l "$pvc_name" | \
-    while IFS= read -r deployment; do
-        if [ -n "$deployment" ]; then
-            deployment_name=$(echo "$deployment" | cut -d'/' -f2)
-            echo "$(timestamp) -   Deleting Deployment: $deployment_name"
-            /opt/bin/kubectl delete deployment "$deployment_name" -n "$namespace" --ignore-not-found=true
+    # Iterate resource names and check the volumes via jsonpath to avoid grep -l on JSON (which prints "(standard input)")
+    /opt/bin/kubectl get deployments -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        dep_volumes=$(/opt/bin/kubectl get deployment "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$dep_volumes" ] && echo "$dep_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting Deployment: $name"
+            /opt/bin/kubectl delete deployment "$name" -n "$namespace" --ignore-not-found=true
             deleted_count=$((deleted_count + 1))
         fi
     done
 
     # Find and delete any StatefulSet using the PVC
-    /opt/bin/kubectl get statefulsets -n "$namespace" -o json 2>/dev/null | grep -l "$pvc_name" | \
-    while IFS= read -r sts; do
-        if [ -n "$sts" ]; then
-            sts_name=$(echo "$sts" | cut -d'/' -f2)
-            echo "$(timestamp) -   Deleting StatefulSet: $sts_name"
-            /opt/bin/kubectl delete statefulset "$sts_name" -n "$namespace" --ignore-not-found=true
+    /opt/bin/kubectl get statefulsets -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        # Check both template volumes and volumeClaimTemplates
+        sts_volumes=$(/opt/bin/kubectl get statefulset "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName} {.spec.volumeClaimTemplates[*].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$sts_volumes" ] && echo "$sts_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting StatefulSet: $name"
+            /opt/bin/kubectl delete statefulset "$name" -n "$namespace" --ignore-not-found=true
             deleted_count=$((deleted_count + 1))
         fi
     done
@@ -71,34 +81,46 @@ delete_workloads_using_pvc() {
     done
 
     # Find and delete any DaemonSet using the PVC
-    /opt/bin/kubectl get daemonsets -n "$namespace" -o json 2>/dev/null | grep -l "$pvc_name" | \
-    while IFS= read -r ds; do
-        if [ -n "$ds" ]; then
-            ds_name=$(echo "$ds" | cut -d'/' -f2)
-            echo "$(timestamp) -   Deleting DaemonSet: $ds_name"
-            /opt/bin/kubectl delete daemonset "$ds_name" -n "$namespace" --ignore-not-found=true
+    /opt/bin/kubectl get daemonsets -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        ds_volumes=$(/opt/bin/kubectl get daemonset "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$ds_volumes" ] && echo "$ds_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting DaemonSet: $name"
+            /opt/bin/kubectl delete daemonset "$name" -n "$namespace" --ignore-not-found=true
             deleted_count=$((deleted_count + 1))
         fi
     done
 
     # Find and delete any Job using the PVC
-    /opt/bin/kubectl get jobs -n "$namespace" -o json 2>/dev/null | grep -l "$pvc_name" | \
-    while IFS= read -r job; do
-        if [ -n "$job" ]; then
-            job_name=$(echo "$job" | cut -d'/' -f2)
-            echo "$(timestamp) -   Deleting Job: $job_name"
-            /opt/bin/kubectl delete job "$job_name" -n "$namespace" --ignore-not-found=true
+    /opt/bin/kubectl get jobs -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        job_volumes=$(/opt/bin/kubectl get job "$name" -n "$namespace" -o jsonpath='{.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$job_volumes" ] && echo "$job_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting Job: $name"
+            /opt/bin/kubectl delete job "$name" -n "$namespace" --ignore-not-found=true
             deleted_count=$((deleted_count + 1))
         fi
     done
 
     # Find and delete any CronJobs using the PVC
-    /opt/bin/kubectl get cronjobs -n "$namespace" -o json 2>/dev/null | grep -l "$pvc_name" | \
-    while IFS= read -r cronjob; do
-        if [ -n "$cronjob" ]; then
-            cronjob_name=$(echo "$cronjob" | cut -d'/' -f2)
-            echo "$(timestamp) -   Deleting CronJob: $cronjob_name"
-            /opt/bin/kubectl delete cronjob "$cronjob_name" -n "$namespace" --ignore-not-found=true
+    /opt/bin/kubectl get cronjobs -n "$namespace" -o name 2>/dev/null | \
+    while IFS= read -r resource; do
+        if [ -z "$resource" ]; then
+            continue
+        fi
+        name=${resource#*/}
+        cron_volumes=$(/opt/bin/kubectl get cronjob "$name" -n "$namespace" -o jsonpath='{.spec.jobTemplate.spec.template.spec.volumes[*].persistentVolumeClaim.claimName}' 2>/dev/null || echo "")
+        if [ -n "$cron_volumes" ] && echo "$cron_volumes" | grep -F -q "$pvc_name"; then
+            echo "$(timestamp) -   Deleting CronJob: $name"
+            /opt/bin/kubectl delete cronjob "$name" -n "$namespace" --ignore-not-found=true
             deleted_count=$((deleted_count + 1))
         fi
     done
