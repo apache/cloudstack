@@ -663,14 +663,16 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                     return; // event bus is being stopped
                 }
 
-                flushBuffer();
-                if (s_connection != null) {
-                    continue;
-                }
-
                 try {
+                    flushBuffer();
                     try {
-                        connection = createConnection();
+                        // check and connect under the same lock as getConnection(), so a connection is never replaced
+                        synchronized (RabbitMQEventBus.this) {
+                            if (s_connection != null) {
+                                continue;
+                            }
+                            connection = createConnection();
+                        }
                     } catch (IOException ie) {
                         continue; // can't establish connection to AMQP server yet, so continue
                     }
@@ -719,10 +721,10 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                         subscriberDetails.second(channel);
                         s_subscribers.put(subscriberId, subscriberDetails);
                     }
+                    flushBuffer();
                 } catch (Exception e) {
                     logger.warn("Failed to recreate queues and binding for the subscribers due to " + e.getMessage());
                 }
-                flushBuffer();
             }
         }
     }
