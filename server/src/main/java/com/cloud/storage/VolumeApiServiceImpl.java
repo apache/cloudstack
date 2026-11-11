@@ -1158,10 +1158,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public VolumeVO createVolume(long volumeId, Long vmId, Long snapshotId, Long storageId, Boolean display) {
         VolumeVO volume = _volsDao.findById(volumeId);
         boolean created = true;
+        boolean usageRecorded = snapshotId == null && volume.isDisplayVolume();
 
         try {
             if (snapshotId != null) {
                 volume = createVolumeFromSnapshot(volume, snapshotId, vmId);
+                usageRecorded = volume.isDisplayVolume();
                 if (volume.getState() != Volume.State.Ready) {
                     created = false;
                 }
@@ -1195,8 +1197,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw (InvalidParameterValueException) e;
             }
             if (isCurrentJobCancelled()) {
-                // a volume created on a pool had its VOLUME.CREATE published at allocation; one from a snapshot only on success
-                expungeCancelledVolume(volumeId, snapshotId == null && volume.isDisplayVolume());
+                expungeCancelledVolume(volumeId, usageRecorded);
             }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
