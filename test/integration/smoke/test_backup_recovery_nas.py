@@ -21,7 +21,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account, Network, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
                              NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool, Template,
                              SSHKeyPair)
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (get_domain, get_zone, get_template, release_publicIP)
 from marvin.lib.utils import (cleanup_resources, random_gen)
 from nose.plugins.attrib import attr
 import os
@@ -201,10 +201,23 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
+        # Destroy the Instances created by the test, then give back the public IP
+        # each one was given for SSH. The shared class Instance (cls.vm) is not in
+        # self.cleanup, so it, and its IP, stay for the other tests.
+        errors = []
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+            errors.append(e)
+        for vm in self.cleanup:
+            ssh_ip = getattr(vm, "ssh_ip", None)
+            if ssh_ip:
+                try:
+                    release_publicIP(self.apiclient, ssh_ip)
+                except Exception as e:
+                    errors.append("could not release public IP %s: %s" % (ssh_ip, e))
+        if errors:
+            raise Exception("Warning: Exception during cleanup : %s" % errors)
 
     def vm_backup_create_vm_from_backup_int(self, templateid=None, networkids=None):
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
@@ -841,6 +854,10 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                     target_vm.delete(self.apiclient)
                 except Exception:
                     pass
+                try:
+                    release_publicIP(self.apiclient, target_vm.ssh_ip)
+                except Exception:
+                    pass
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
     # ------------------------------------------------------------------
@@ -946,6 +963,11 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             # environment's capacity partway through the run.
             try:
                 new_vm.delete(self.apiclient, expunge=True)
+            except Exception:
+                pass
+            # ... and so is its public IP, which destroying the VM does not release
+            try:
+                release_publicIP(self.apiclient, new_vm.ssh_ip)
             except Exception:
                 pass
 
