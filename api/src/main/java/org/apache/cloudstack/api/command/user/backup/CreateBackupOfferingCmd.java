@@ -92,7 +92,7 @@ public class CreateBackupOfferingCmd extends BaseCmd {
             description = "Restrict the backup offering to the Domains identified by these IDs.")
     private List<Long> domainIds;
 
-    @Parameter(name = ApiConstants.COMPRESS_ASYNC, type = CommandType.BOOLEAN, description = "Whether to compress synchronously during backup creation, or asynchronously later. " +
+    @Parameter(name = ApiConstants.COMPRESS_ASYNC, type = CommandType.BOOLEAN, description = "Set to false to compress synchronously during backup creation; conversely, set to true to compress asynchronously later. " +
             "Default true.")
     private Boolean compressAsync;
 
