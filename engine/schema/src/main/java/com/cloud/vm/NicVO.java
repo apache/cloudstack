@@ -128,6 +128,9 @@ public class NicVO implements Nic {
     @Column(name = "secondary_ip")
     boolean secondaryIp;
 
+    @Column(name = "multi_network")
+    boolean multiNetwork;
+
     @Column(name = "mtu")
     Integer mtu;
 
@@ -337,7 +340,7 @@ public class NicVO implements Nic {
         return String.format("Nic %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "uuid", "instanceId",
-                        "deviceId", "broadcastUri", "reservationId", "iPv4Address"));
+                        "deviceId", "broadcastUri", "reservationId", "iPv4Address", "multiNetwork"));
     }
 
     @Override
@@ -379,6 +382,15 @@ public class NicVO implements Nic {
 
     public void setSecondaryIp(boolean secondaryIp) {
         this.secondaryIp = secondaryIp;
+    }
+
+    @Override
+    public boolean getMultiNetwork() {
+        return multiNetwork;
+    }
+
+    public void setMultiNetwork(boolean multiNetwork) {
+        this.multiNetwork = multiNetwork;
     }
 
     public void setVmType(VirtualMachine.Type vmType) {
