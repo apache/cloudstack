@@ -110,8 +110,9 @@ FROM
     `cloud`.`ha_config` ON ha_config.resource_id=host.id
         and ha_config.resource_type='Host'
         LEFT JOIN
-    (SELECT `annotations`.`entity_uuid`, `annotations`.`user_uuid`, MAX(`annotations`.`created`) AS created, `annotations`.`annotation`
-    FROM `cloud`.`annotations` WHERE `annotations`.`removed` IS NULL GROUP BY `annotations`.`entity_uuid`) AS last_annotated ON last_annotated.entity_uuid = host.uuid
+    (SELECT `annotations`.`annotation`, `annotations`.`entity_uuid`, `annotations`.`user_uuid`, `annotations`.`created` FROM `annotations` WHERE `annotations`.`created` IN
+        (SELECT MAX(`annotations`.`created`) FROM `annotations` WHERE `annotations`.`removed` IS NULL GROUP BY `annotations`.`entity_uuid`)) AS last_annotated
+        ON last_annotated.entity_uuid = host.uuid
         LEFT JOIN
     `cloud`.`user` ON `user`.`uuid` = last_annotated.user_uuid
 GROUP BY
