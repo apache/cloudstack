@@ -1243,6 +1243,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    /**
+     * Scaling removes only nodes that CKS deployed (see KubernetesClusterScaleWorker.scaleDownKubernetesClusterSize),
+     * external nodes are removed with removeNodesFromKubernetesCluster.
+     *
+     * @param nodes the nodes passed in nodeids to scaleKubernetesCluster
+     */
+    protected void validateKubernetesClusterScaleNodesToRemove(final List<KubernetesClusterVmMapVO> nodes) {
+        if (nodes.stream().anyMatch(KubernetesClusterVmMapVO::isExternalNode)) {
+            throw new InvalidParameterValueException("External nodes can not be removed by scaling a cluster, use removeNodesFromKubernetesCluster");
+        }
+    }
+
     protected void validateKubernetesClusterScaleSize(final KubernetesClusterVO kubernetesCluster, final Long clusterSize, final int maxClusterSize, final DataCenter zone) {
         if (clusterSize == null) {
             return;
@@ -1353,6 +1365,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (nodes == null || nodes.size() != nodeIds.size()) {
                 throw new InvalidParameterValueException("Invalid node ids");
             }
+            validateKubernetesClusterScaleNodesToRemove(nodes);
             // Ensure there's always a control node
             long controleNodesToRemove = nodes.stream().filter(x -> x.isControlNode()).count();
             if (controleNodesToRemove >= kubernetesCluster.getControlNodeCount()) {
