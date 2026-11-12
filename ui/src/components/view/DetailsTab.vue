@@ -69,7 +69,7 @@
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'backuppaths' && dataResource[item]">
-            <div v-for="(backupVolumeInfo, idx) in Object.values(dataResource[item])" :key="idx">
+            <div v-for="[volumeUuid, backupVolumeInfo] in Object.entries(dataResource[item])" :key="volumeUuid">
               <span>{{ backupVolumeInfo.volumename }} - {{ backupVolumeInfo.backuppath }}</span>
             </div>
           </div>
