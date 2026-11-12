@@ -918,11 +918,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to create storage pool: " + name);
         }
 
+        boolean refCountIncremented = false;
+        boolean operationSucceeded = false;
+
         try {
             if (!isPrimaryStorage) {
                 // only ref count storage pools for secondary storage, as primary storage is assumed
                 // to be always mounted, as long the primary storage isn't fully deleted.
                 incStoragePoolRefCount(name);
+                refCountIncremented = true;
             }
 
             if (sp.isActive() == 0) {
@@ -934,16 +938,23 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 checkNetfsStoragePoolMounted(name);
             }
 
-            return getStoragePool(name);
+            KVMStoragePool storagePool = getStoragePool(name);
+            operationSucceeded = true;
+            return storagePool;
+
         } catch (LibvirtException e) {
-            decStoragePoolRefCount(name);
             String error = e.toString();
             if (error.contains("Storage source conflict")) {
                 throw new CloudRuntimeException("A pool matching this location already exists in libvirt, " +
-                        " but has a different UUID/Name. Cannot create new pool without first " + " removing it. Check for inactive pools via 'virsh pool-list --all'. " +
+                        " but has a different UUID/Name. Cannot create new pool without first " +
+                        " removing it. Check for inactive pools via 'virsh pool-list --all'. " +
                         error);
             } else {
                 throw new CloudRuntimeException(error);
+            }
+        } finally {
+            if (refCountIncremented && !operationSucceeded) {
+                decStoragePoolRefCount(name);
             }
         }
     }
