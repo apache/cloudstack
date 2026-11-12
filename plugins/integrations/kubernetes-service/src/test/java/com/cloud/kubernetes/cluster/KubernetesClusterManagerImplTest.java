@@ -49,6 +49,11 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermissionEntity;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.BaseCmd;
@@ -63,6 +68,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -117,6 +123,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private RoleService roleService;
 
     @Spy
     @InjectMocks
@@ -912,6 +921,32 @@ public class KubernetesClusterManagerImplTest {
         kubernetesClusterManager.validateNodeAffinityGroups(Arrays.asList(newNodeId), cluster);
 
         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
+    }
+
+    @Test
+    public void testProjectKubernetesAccountRoleAllowsTheProviderApis() {
+        Role role = Mockito.mock(Role.class);
+        Mockito.when(roleService.createRole(Mockito.anyString(), Mockito.any(RoleType.class), Mockito.anyString(), Mockito.anyBoolean())).thenReturn(role);
+
+        kubernetesClusterManager.createProjectKubernetesAccountRole();
+
+        ArgumentCaptor<Rule> rules = ArgumentCaptor.forClass(Rule.class);
+        ArgumentCaptor<RolePermissionEntity.Permission> permissions = ArgumentCaptor.forClass(RolePermissionEntity.Permission.class);
+        Mockito.verify(roleService, Mockito.atLeastOnce()).createRolePermission(Mockito.eq(role), rules.capture(), permissions.capture(), Mockito.anyString());
+        List<String> ruleStrings = new ArrayList<>();
+        for (Rule rule : rules.getAllValues()) {
+            ruleStrings.add(rule.getRuleString());
+        }
+
+        for (String api : Arrays.asList("listCapabilities", "listVPCs", "listNetworkACLLists", "updateNetworkACLItem",
+                "listLBStickinessPolicies", "createLBStickinessPolicy", "deleteLBStickinessPolicy")) {
+            int index = ruleStrings.indexOf(api);
+            Assert.assertTrue(api + " is not in the role: " + ruleStrings, index >= 0);
+            Assert.assertEquals(api, RolePermissionEntity.Permission.ALLOW, permissions.getAllValues().get(index));
+        }
+        int last = ruleStrings.size() - 1;
+        Assert.assertEquals("*", ruleStrings.get(last));
+        Assert.assertEquals(RolePermissionEntity.Permission.DENY, permissions.getAllValues().get(last));
     }
 
 }
