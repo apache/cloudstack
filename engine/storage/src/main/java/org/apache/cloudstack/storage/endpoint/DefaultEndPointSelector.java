@@ -651,7 +651,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
             VirtualMachine attachedVM = volumeInfo.getAttachedVM();
             if (attachedVM.getHostId() != null) {
                 return getEndPointFromHostId(attachedVM.getHostId());
-            } else if (attachedVM.getLastHostId() != null) {
+            }
+            EndPoint clvmEp = tryRouteToClvmLockHolder(volumeInfo, _storagePoolDao.findById(volumeInfo.getPoolId()), "bitmap removal");
+            if (clvmEp != null) {
+                return clvmEp;
+            }
+            if (attachedVM.getLastHostId() != null) {
                 return getEndPointFromHostId(attachedVM.getLastHostId());
             }
         }
