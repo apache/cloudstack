@@ -1158,13 +1158,15 @@ def get_free_vlan(apiclient, zoneid):
     usedVlanIds = []
 
     if isinstance(networks, list) and len(networks) > 0:
+        # skip the networks which are not on a numeric VLAN, e.g. untagged ones or ones with
+        # another broadcast URI like cs-net-207
         usedVlanIds = [int(nw.broadcasturi.split("//")[-1])
-                       for nw in networks if (nw.broadcasturi and nw.broadcasturi.lower() != "vlan://untagged")]
+                       for nw in networks if (nw.broadcasturi and nw.broadcasturi.split("//")[-1].isdigit())]
 
     ipranges = list_vlan_ipranges(apiclient, zoneid=zoneid)
     if isinstance(ipranges, list) and len(ipranges) > 0:
         usedVlanIds += [int(iprange.vlan.split("/")[-1])
-                        for iprange in ipranges if (iprange.vlan and iprange.vlan.split("/")[-1].lower() != "untagged")]
+                        for iprange in ipranges if (iprange.vlan and iprange.vlan.split("/")[-1].isdigit())]
 
     if not hasattr(physical_network, "vlan"):
         while True:
