@@ -82,4 +82,10 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 
     /** Flags the job's cancel as delivered to its worker; true only for the caller that flipped the flag. */
     boolean claimCancelDelivery(long jobId);
+
+    /** Records a cancel request with its result on a job that is still in progress and not yet being cancelled; false once the job completed or is already being cancelled. */
+    boolean requestCancel(long jobId, int resultCode, String result);
+
+    /** Takes a cancel request back from a job that is still in progress, reopening its result; false if there was none to take back. */
+    boolean withdrawCancel(long jobId);
 }
