@@ -33,11 +33,13 @@ public class TakeBackupCommand extends Command {
     private List<PrimaryDataStoreTO> volumePools;
     private List<String> volumePaths;
     private Boolean quiesce;
+    private Integer quiesceTimeout;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
 
     // Incremental backup fields (NAS provider; null/empty for legacy full-only callers).
     private String mode;          // "full" or "incremental"; null => legacy behaviour (script default)
+    private String method;        // "qcow2" (bitmaps, push mode) or "content" (pull mode); null => "qcow2"
     private String bitmapNew;     // Checkpoint/bitmap name to create with this backup (timestamp-based)
     private String bitmapParent;  // Incremental: parent bitmap to read changes since
 
@@ -117,12 +119,28 @@ public class TakeBackupCommand extends Command {
         this.quiesce = quiesce;
     }
 
+    public Integer getQuiesceTimeout() {
+        return quiesceTimeout;
+    }
+
+    public void setQuiesceTimeout(Integer quiesceTimeout) {
+        this.quiesceTimeout = quiesceTimeout;
+    }
+
     public String getMode() {
         return mode;
     }
 
     public void setMode(String mode) {
         this.mode = mode;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
     }
 
     public String getBitmapNew() {

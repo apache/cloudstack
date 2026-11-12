@@ -80,7 +80,8 @@
         <a-auto-complete
           v-model:value="form.group"
           :filterOption="(input, option) => {
-            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return !option.value || !input || input === resource.group ||
+              option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :options="groups.opts" />
       </a-form-item>
@@ -338,6 +339,10 @@ export default {
     fetchInstanceGroups () {
       this.groups.loading = true
       this.groups.opts = []
+      this.groups.opts.push({
+        id: '',
+        value: ''
+      })
       const params = {
         domainid: this.$store.getters.userInfo.domainid,
         listall: true
@@ -411,8 +416,8 @@ export default {
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
         }
-        if (values.group && values.group.length > 0) {
-          params.group = values.group
+        if ((values.group || '') !== (this.resource.group || '')) {
+          params.group = values.group || ''
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)

@@ -39,11 +39,19 @@ cd "$(git rev-parse --show-toplevel)"
 export NEWVAL='${{ needs.pick_copilot_token.outputs.name != '"'"''"'"' && secrets[format('"'"'COPILOT_GITHUB_TOKEN_{0}'"'"', needs.pick_copilot_token.outputs.name)] || secrets.COPILOT_GITHUB_TOKEN }}'
 
 FILES=(
-  ".github/workflows/weekly-repo-status.lock.yml"
   ".github/workflows/daily-issue-triage.lock.yml"
 )
 
 fail() { echo "ERROR: $1" >&2; exit 1; }
+
+# Counts fixed-string matches inside the agent job only (the detection job also has a
+# redact step, and that one must keep the base token).
+agent_count() {
+  awk -v pat="$1" '
+    /^  [A-Za-z0-9_-]+:[ \t]*$/ { inagent = ($0 ~ /^  agent:[ \t]*$/) }
+    inagent && index($0, pat) { c++ }
+    END { print c+0 }' "$2"
+}
 
 # Fixes up `needs:` for the agent and pick_copilot_token jobs only; gh-aw adds
 # pick_copilot_token to several other jobs' needs and those must stay as-is.
@@ -108,14 +116,14 @@ for f in "${FILES[@]}"; do
 
   # Repoint the redact step's SECRET_COPILOT_GITHUB_TOKEN the same way; the line is
   # unique to the agent job's "Redact secrets in logs" step.
-  before=$(grep -cF 'SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}' "$f" || true)
+  before=$(agent_count 'SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}' "$f")
   if [ "$before" -gt 1 ]; then
     fail "$f: expected at most one redact-step SECRET_COPILOT_GITHUB_TOKEN line, found $before"
   fi
   perl -0pi -e \
     's/^([ \t]*)SECRET_COPILOT_GITHUB_TOKEN:[ \t]*\$\{\{[ \t]*secrets\.COPILOT_GITHUB_TOKEN[ \t]*\}\}[ \t]*$/$1."SECRET_COPILOT_GITHUB_TOKEN: ".$ENV{NEWVAL}/me' \
     "$f"
-  after=$(grep -cF 'SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}' "$f" || true)
+  after=$(agent_count 'SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}' "$f")
   if [ "$before" -eq 1 ] && [ "$after" -eq 0 ]; then redact_edit="applied"
   elif [ "$before" -eq 0 ] && grep -qF 'SECRET_COPILOT_GITHUB_TOKEN: ${{ needs.pick_copilot_token.outputs.name' "$f"; then redact_edit="already"
   else fail "$f: redact-step SECRET_COPILOT_GITHUB_TOKEN line not patched (before=$before after=$after)"

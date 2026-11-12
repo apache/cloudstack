@@ -72,6 +72,7 @@ jobs:
         id: grade
         run: bash scripts/coverage-grade.sh client/target/site/jacoco-aggregate/jacoco.xml
       - name: Post Coverage Grade Comment on PR
+        if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -79,7 +80,7 @@ jobs:
             const grade     = '${{ steps.grade.outputs.coverage_grade }}';
             const label     = '${{ steps.grade.outputs.coverage_grade_label }}';
             const linePct   = '${{ steps.grade.outputs.line_coverage }}';
-            const branchPct = '${{ steps.grade.outputs.branch_coverage }}';
+            const branchPct = '${{ steps.grade.outputs.branch_coverage || 'N/A' }}';
             const emojiMap  = { A: '🟢', B: '🟡', C: '🟠', D: '🔴', F: '⛔' };
             const emoji     = emojiMap[grade] ?? '❓';
             const runUrl    = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;

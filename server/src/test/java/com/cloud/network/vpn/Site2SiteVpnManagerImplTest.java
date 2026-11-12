@@ -299,6 +299,7 @@ public class Site2SiteVpnManagerImplTest {
         when(cmd.getIpAddressId()).thenReturn(null);
 
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(true);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
         mockVpcVirtualRouterProvider();
         when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(List.of(ipAddress));

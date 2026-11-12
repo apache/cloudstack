@@ -141,6 +141,7 @@
   <bean id="networkServiceMapDaoImpl" class="com.cloud.network.dao.NetworkServiceMapDaoImpl" />
   <bean id="nicDetailsDaoImpl" class="com.cloud.vm.dao.NicDetailsDaoImpl" />
   <bean id="nicExtraDhcpOptionDaoImpl" class="com.cloud.vm.dao.NicExtraDhcpOptionDaoImpl" />
+  <bean id="nicNetworkMapDaoImpl" class="com.cloud.vm.dao.NicNetworkMapDaoImpl" />
   <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
@@ -283,6 +284,7 @@
   <bean id="internalBackupJoinDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupJoinDaoImpl" />
   <bean id="internalBackupServiceJobDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupServiceJobDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
+  <bean id="backupUsageMetricDaoImpl" class="org.apache.cloudstack.backup.dao.BackupUsageMetricDaoImpl" />
   <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />

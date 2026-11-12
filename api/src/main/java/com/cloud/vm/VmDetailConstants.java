@@ -58,6 +58,9 @@ public interface VmDetailConstants {
     // KVM specific, disk controllers
     String KVM_SKIP_FORCE_DISK_CONTROLLER = "skip.force.disk.controller";
 
+    // KVM specific, configuring special features
+    String KVM_HINT_DEDICATED = "kvm.hint.dedicated";
+
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
     String FIRMWARE = "firmware";

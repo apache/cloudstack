@@ -252,7 +252,7 @@ public class VolumeImportUnmanageManagerImplTest {
         volumeOnStorageTO.setQemuEncryptFormat(encryptFormat);
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null, false);
 
         ListResponse<VolumeForImportResponse> listResponses = volumeImportUnmanageManager.listVolumesForImport(cmd);
         Assert.assertEquals(1, listResponses.getResponses().size());
@@ -285,7 +285,7 @@ public class VolumeImportUnmanageManagerImplTest {
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
 
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null, false);
 
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
@@ -297,7 +297,7 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
         doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
         doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
-                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull());
+                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull(), eq(Storage.ImageFormat.QCOW2));
         when(diskProfile.getVolumeId()).thenReturn(volumeId);
         when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
 
@@ -329,7 +329,7 @@ public class VolumeImportUnmanageManagerImplTest {
                 "raw", size, virtualSize);
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null, false);
 
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
@@ -341,7 +341,7 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
         doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
         doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
-                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull());
+                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull(), any());
         when(diskProfile.getVolumeId()).thenReturn(volumeId);
         when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
 
@@ -359,11 +359,23 @@ public class VolumeImportUnmanageManagerImplTest {
         // imported volume be recorded with RAW format (see VolumeOrchestrator.getSupportedImageFormatForCluster).
         verify(volumeManager).importVolume(eq(Volume.Type.DATADISK), anyString(), any(), eq(virtualSize), isNull(), isNull(),
                 anyLong(), eq(Hypervisor.HypervisorType.KVM), isNull(), isNull(), any(), isNull(), anyLong(),
-                eq(Storage.StoragePoolType.RBD), anyString(), isNull());
+                eq(Storage.StoragePoolType.RBD), anyString(), isNull(), any());
+    }
+
+    @Test
+    public void testGetImageFormat() {
+        Assert.assertNull(volumeImportUnmanageManager.getImageFormat(null));
+        Assert.assertNull(volumeImportUnmanageManager.getImageFormat(""));
+        Assert.assertNull(volumeImportUnmanageManager.getImageFormat("not-a-format"));
+        Assert.assertEquals(Storage.ImageFormat.RAW, volumeImportUnmanageManager.getImageFormat("raw"));
+        Assert.assertEquals(Storage.ImageFormat.QCOW2, volumeImportUnmanageManager.getImageFormat("qcow2"));
     }
 
     @Test
     public void testListVolumesForImportInternal() {
+        // no primary storage driver available for this pool -> fall back to the host command path
+        when(dataStoreManager.getPrimaryDataStore(poolId)).thenReturn(null);
+
         Pair<HostVO, String> hostAndLocalPath = mock(Pair.class);
         doReturn(hostAndLocalPath).when(volumeImportUnmanageManager).findHostAndLocalPathForVolumeImport(storagePoolVO);
         when(hostAndLocalPath.first()).thenReturn(hostVO);
@@ -433,7 +445,7 @@ public class VolumeImportUnmanageManagerImplTest {
         when(volumeVO.getPath()).thenReturn(path);
         VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
                 format, size, virtualSize);
-        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path);
+        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path, true);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
 
@@ -445,6 +457,31 @@ public class VolumeImportUnmanageManagerImplTest {
         verify(resourceLimitService).decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.volume);
         verify(resourceLimitService).decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, virtualSize);
         verify(volumeDao).update(eq(volumeId), any());
+    }
+
+    @Test
+    public void testUnmanageVolumeNotifiesStorageDriverOfUnmanage() {
+        when(volumeVO.getState()).thenReturn(Volume.State.Ready);
+        when(volumeVO.getPoolId()).thenReturn(poolId);
+        when(volumeVO.getInstanceId()).thenReturn(null);
+        when(volumeVO.getPath()).thenReturn(path);
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                format, size, virtualSize);
+        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path, true);
+        doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
+        doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
+
+        DataStore dataStore = mock(DataStore.class);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        when(dataStore.getDriver()).thenReturn(driver);
+        when(dataStoreManager.getPrimaryDataStore(poolId)).thenReturn(dataStore);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignoredtoo = Mockito.mockStatic(ActionEventUtils.class)) {
+            volumeImportUnmanageManager.unmanageVolume(volumeId);
+        }
+
+        verify(driver).volumeManagementChanged(storagePoolVO, volumeVO, false);
     }
 
     @Test

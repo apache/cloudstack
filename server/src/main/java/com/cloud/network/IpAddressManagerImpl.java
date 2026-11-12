@@ -920,7 +920,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if(networkPublicIp != null)
             return null;
         IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(dcId, requestedIp);
-        if (ipAddressVO.getState() != State.Free) {
+        if (ipAddressVO == null || ipAddressVO.getState() != State.Free) {
             throw new InsufficientAddressCapacityException("can not assign to this network", Network.class, networkId);
         }
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, true, true, requestedIp, null, isSystem, null, null, forSystemVms);
@@ -1447,6 +1447,31 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
     }
 
+    /**
+     * When the zone is linked to external provider Netris and no explicit IP was requested:
+     * restrict the candidate pool to the VLANs reserved for Netris, so that generic acquisitions
+     * (e.g. associateIpAddress called by the CloudStack cloud-controller-manager on behalf of a
+     * Kubernetes Service of type LoadBalancer) don't fall back to the VR's public range.
+     * Returns null when the zone has no Netris provider, meaning no restriction is applied.
+     *
+     * returns VLAN IDS tagged with forNetris = true
+     */
+    private List<Long> getNetrisVlanDbIds(DataCenter zone) {
+        long zoneId = zone.getId();
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        if (netrisProvider == null) {
+            return null;
+        }
+        List<Long> vlanIds = _vlanDao.listVlansForExternalNetworkProvider(zoneId, ApiConstants.NETRIS_DETAIL_KEY).stream()
+                .map(VlanVO::getId).collect(Collectors.toList());
+        if (vlanIds.isEmpty()) {
+            throw new CloudRuntimeException(String.format(
+                    "Cannot allocate public IP in zone %s: no VLANs tagged '%s=true' found for the external provider",
+                    zone.getName(), ApiConstants.NETRIS_DETAIL_KEY));
+        }
+        return vlanIds;
+    }
+
     @DB
     @Override
     public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, User callerUser, final DataCenter zone, final Boolean displayIp, final String ipaddress)
@@ -1455,14 +1480,18 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
 
-        checkPublicIpOnExternalProviderZone(zone, ipaddress);
-
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // zone is of type DataCenter. See DataCenterVO.java.
             PermissionDeniedException ex = new PermissionDeniedException(generateErrorMessageForOperationOnDisabledZone("allocate IP addresses", zone));
             ex.addProxyObject(zone.getUuid(), "zoneId");
             throw ex;
         }
+
+        checkPublicIpOnExternalProviderZone(zone, ipaddress);
+
+        // Only steer the range when no explicit IP was requested: an explicit ipaddress is already
+        // validated against the provider's pool above by checkPublicIpOnExternalProviderZone.
+        final List<Long> vlanDbIds = ipaddress == null ? getNetrisVlanDbIds(zone) : null;
 
         PublicIp ip = null;
 
@@ -1491,7 +1520,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
                 @Override
                 public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
-                    PublicIp ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, ipaddress, null, isSystem, null, displayIp, false);
+                    PublicIp ip = fetchNewPublicIp(zone.getId(), null, vlanDbIds, ipOwner, vlanType, null, false, assign, ipaddress, null, isSystem, null, displayIp, false);
 
                     if (ip == null) {
                         InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone

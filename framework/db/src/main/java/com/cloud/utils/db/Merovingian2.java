@@ -127,6 +127,16 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Acquiring lck-" + key + " with wait time of " + timeInSeconds);
         }
+
+        if (timeInSeconds <= 0) {
+            // no wait: try exactly once (the loop below would not try at all)
+            int count = owns(key);
+            if (count >= 1) {
+                return increment(key, threadName, threadId);
+            }
+            return count == 0 && doAcquire(key, threadName, threadId);
+        }
+
         long startTime = InaccurateClock.getTime();
 
         while ((InaccurateClock.getTime() - startTime) < (timeInSeconds * 1000l)) {

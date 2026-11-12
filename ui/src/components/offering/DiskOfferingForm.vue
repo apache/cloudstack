@@ -213,6 +213,28 @@
         </a-radio-button>
       </a-radio-group>
     </a-form-item>
+    <a-form-item name="errorpolicy" ref="errorpolicy">
+      <template #label>
+        <tooltip-label :title="$t('label.errorpolicy')" :tooltip="apiParams.errorpolicy.description"/>
+      </template>
+      <a-radio-group
+        v-model:value="form.errorpolicy"
+        buttonStyle="solid"
+        @change="selected => { handleErrorPolicyChange(selected.target.value) }">
+        <a-radio-button value="report">
+          {{ $t('label.errorpolicy.report') }}
+        </a-radio-button>
+        <a-radio-button value="stop">
+          {{ $t('label.errorpolicy.stop') }}
+        </a-radio-button>
+        <a-radio-button value="ignore">
+          {{ $t('label.errorpolicy.ignore') }}
+        </a-radio-button>
+        <a-radio-button value="enospace">
+          {{ $t('label.errorpolicy.enospace') }}
+        </a-radio-button>
+      </a-radio-group>
+    </a-form-item>
     <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="tags" ref="tags">
       <template #label>
         <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
@@ -350,6 +372,7 @@ export default {
         provisioningtype: 'thin',
         customdisksize: true,
         writecachetype: 'none',
+        errorpolicy: 'report',
         qostype: '',
         ispublic: true,
         disksizestrictness: false,
@@ -421,6 +444,9 @@ export default {
     },
     handleWriteCacheTypeChange (val) {
       this.form.writecachetype = val
+    },
+    handleErrorPolicyChange (val) {
+      this.form.errorpolicy = val
     },
     isDomainAdmin () {
       return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)

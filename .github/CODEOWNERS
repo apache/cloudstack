@@ -17,7 +17,7 @@
 
 /plugins/storage/volume/linstor @rp-
 /plugins/storage/volume/storpool @slavkap
-/plugins/storage/volume/ontap @rajiv-jain-netapp @sandeeplocharla @piyush5netapp @suryag1201
+/plugins/storage/volume/ontap @rajiv-jain-netapp @sandeeplocharla @piyush5netapp @suryag1201 @sathvikaragi @sp16743
 
 .pre-commit-config.yaml @jbampton
 /.github/linters/ @jbampton

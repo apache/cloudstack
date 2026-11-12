@@ -1749,10 +1749,12 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
         final boolean executeInSequence = false;
         DiskTO[] diskTOS = new DiskTO[]{};
+        final NicTO[] nicTOs = new NicTO[]{};
         final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
 
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(vmTO.getDisks()).thenReturn(diskTOS);
+        when(vmTO.getNics()).thenReturn(nicTOs);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
             when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
@@ -3644,6 +3646,15 @@ public class LibvirtComputingResourceTest {
 
             when(vifDriver.plug(nic, "Other PV", "", null)).thenReturn(interfaceDef);
             when(interfaceDef.toString()).thenReturn("Interface");
+
+            // Stub vm.getXMLDesc(0) so findNextAvailablePciSlot can scan the domain XML
+            // for in-use PCI slots. Returning a minimal <domain> with a single NIC at
+            // slot 0x03 exercises the production parser without forcing the production
+            // code into its null-fallback path.
+            when(vm.getXMLDesc(0)).thenReturn(
+                    "<domain><devices><interface type='bridge'>" +
+                    "<address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>" +
+                    "</interface></devices></domain>");
 
             final String interfaceDefStr = interfaceDef.toString();
             doNothing().when(vm).attachDevice(interfaceDefStr);
@@ -7729,5 +7740,37 @@ public class LibvirtComputingResourceTest {
         Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    // getEffectiveGuestBridgeName() must mirror BridgeVifDriver#plugTrunkVlanNic's resolution
+
+    @Test
+    public void getEffectiveGuestBridgeNameFallsBackToGuestNetworkDeviceWhenNoLabelReported() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNamePrefersGuestTrafficLabelOverGuestNetworkDeviceWhenTheyDiffer() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameRevertsToGuestNetworkDeviceOnceLabelIsCleared() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+
+        libvirtComputingResourceSpy.setGuestTrafficLabel(null);
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameTreatsBlankLabelAsNoLabel() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("   ");
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
     }
 }

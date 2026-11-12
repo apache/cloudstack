@@ -88,6 +88,10 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
+    ConfigKey<Boolean> AllowExposeNicVlanMapping = new ConfigKey<>("Advanced", Boolean.class, "account.allow.expose.nic.vlan.mapping",
+            "false", "If set to true, exposes a VM's trunk NIC associated-network VLAN tag mappings via the metadata service, " +
+            "for guest/VNF boot scripts to configure VLAN sub-interfaces. Has no effect on VMs without trunk NICs.", true, ConfigKey.Scope.Account);
+
     ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
             "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
 

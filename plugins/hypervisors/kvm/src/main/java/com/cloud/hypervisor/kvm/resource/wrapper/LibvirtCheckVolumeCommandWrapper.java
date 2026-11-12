@@ -76,14 +76,25 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
                     return checkRbdVolume(command, pool, vol);
                 }
                 final String path = vol.getPath();
-                try {
-                    KVMPhysicalDisk.checkQcow2File(path);
-                } catch (final CloudRuntimeException e) {
-                    return new CheckVolumeAnswer(command, false, "", 0, getVolumeDetails(pool, vol));
+                final boolean isRbd = Storage.StoragePoolType.RBD.equals(storageFilerTO.getType());
+
+                Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, vol);
+                if (MapUtils.isEmpty(volumeDetails)) {
+                    return new Answer(command, false, "Unable to read the volume on the storage pool");
                 }
 
-                long size = KVMPhysicalDisk.getVirtualSizeFromFile(path);
-                return new CheckVolumeAnswer(command, true, "", size, getVolumeDetails(pool, vol));
+                if (!isRbd) {
+                    try {
+                        KVMPhysicalDisk.checkQcow2File(path);
+                    } catch (final CloudRuntimeException e) {
+                        return new CheckVolumeAnswer(command, false, "", 0, volumeDetails);
+                    }
+                }
+
+                // Images on RBD are raw and the path is an image name that qemu-img cannot open
+                // without the rbd: URI, so take the size libvirt already reported for the volume.
+                long size = isRbd ? vol.getVirtualSize() : KVMPhysicalDisk.getVirtualSizeFromFile(path);
+                return new CheckVolumeAnswer(command, true, "", size, volumeDetails);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
