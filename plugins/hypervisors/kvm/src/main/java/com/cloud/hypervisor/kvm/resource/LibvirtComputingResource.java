@@ -1188,18 +1188,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LOGGER.warn("Configured VDDK library dir [{}] is invalid (missing lib64/libvixDiskLib.so), attempting auto-detection", vddkLibDir);
             vddkLibDir = null;
         }
-        if (StringUtils.isBlank(vddkLibDir)) {
-            vddkLibDir = detectVddkLibDir();
-        }
         if (StringUtils.isNotBlank(vddkLibDir)) {
             LOGGER.info("Detected VDDK library dir: {}", vddkLibDir);
+            vddkVersion = detectVddkVersion();
+            if (StringUtils.isNotBlank(vddkVersion)) {
+                LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
+            }
         } else {
             LOGGER.warn("Could not detect a valid VDDK library dir; VDDK conversion will be unavailable");
-        }
-
-        vddkVersion = detectVddkVersion();
-        if (StringUtils.isNotBlank(vddkVersion)) {
-            LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
         }
 
         vddkTransports = StringUtils.trimToNull(
