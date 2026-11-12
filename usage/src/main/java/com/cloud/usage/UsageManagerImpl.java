@@ -50,6 +50,7 @@ import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -1942,12 +1943,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Date created = event.getCreateDate();
         long size = (event.getSize() == null) ? 0 : event.getSize();
 
-        UsageEventDetailsVO detailVO = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.vmSnapshotId.name());
-        Long vmSnapshotId = null;
-        if (detailVO != null) {
-            String snapId = detailVO.getValue();
-            vmSnapshotId = Long.valueOf(snapId);
-        }
+        Long vmSnapshotId = getVmSnapshotIdFromEvent(event);
         logger.debug("Creating usage Instance Snapshot for Instance ID [{}] assigned to Account [{}] domain [{}], zone [{}], and created at [{}].",
                 vmId, accountId, domainId, zoneId, DateUtil.displayDateInTimezone(usageAggregationTimeZone, event.getCreateDate()));
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
@@ -1965,7 +1961,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long diskOfferingId = event.getOfferingId();
         long vmId = event.getResourceId();
         long zoneId = event.getZoneId();
-        List<UsageVMSnapshotVO> usageVMSnapshots = findUsageVMSnapshots(accountId, zoneId, domainId, vmId, diskOfferingId);
+        Long vmSnapshotId = getVmSnapshotIdFromEvent(event);
+        List<UsageVMSnapshotVO> usageVMSnapshots;
+        if (vmSnapshotId != null) {
+            // Only close the entry of the Instance Snapshot (and volume) being deleted; other Instance Snapshots of the same Instance keep accruing usage.
+            usageVMSnapshots = findUsageVMSnapshots(accountId, zoneId, domainId, vmId, event.getTemplateId(), vmSnapshotId);
+        } else {
+            usageVMSnapshots = findUsageVMSnapshots(accountId, zoneId, domainId, vmId, diskOfferingId);
+        }
         if (CollectionUtils.isEmpty(usageVMSnapshots)){
             logger.warn(String.format("No usage entry for Instance Snapshot for Instance ID [%s] assigned to Account [%s] domain [%s] and zone [%s] was found.",
                     vmId, accountId, domainId, zoneId));
@@ -1980,6 +1983,28 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             vmSnapshots.setProcessed(event.getCreateDate());
             _usageVMSnapshotDao.update(vmSnapshots);
         }
+    }
+
+    protected Long getVmSnapshotIdFromEvent(UsageEventVO event) {
+        UsageEventDetailsVO detailVO = _usageEventDetailsDao.findDetail(event.getId(), UsageEventVO.DynamicParameters.vmSnapshotId.name());
+        if (detailVO == null || StringUtils.isBlank(detailVO.getValue())) {
+            return null;
+        }
+        return Long.valueOf(detailVO.getValue());
+    }
+
+    protected List<UsageVMSnapshotVO> findUsageVMSnapshots(long accountId, long zoneId, long domainId, long vmId, Long volumeId, long vmSnapshotId) {
+        SearchCriteria<UsageVMSnapshotVO> sc = _usageVMSnapshotDao.createSearchCriteria();
+        sc.addAnd("zoneId", SearchCriteria.Op.EQ, zoneId);
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+        if (volumeId != null) {
+            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
+        }
+        sc.addAnd("vmSnapshotId", SearchCriteria.Op.EQ, vmSnapshotId);
+        sc.addAnd("processed", SearchCriteria.Op.NULL);
+        return _usageVMSnapshotDao.search(sc, null);
     }
 
     protected List<UsageVMSnapshotVO> findUsageVMSnapshots(long accountId, long zoneId, long domainId, long vmId, Long diskOfferingId) {
