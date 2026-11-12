@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +65,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -332,11 +332,10 @@ public class LoadBalancingRulesManagerImplTest{
 
         when(loadBalancer.getNetworkId()).thenReturn(networkId);
         Nic nic = Mockito.mock(Nic.class);
-        when(nic.getNetworkId()).thenReturn(networkId);
-        List<? extends Nic> nics = Collections.singletonList(nic);
-        Mockito.doReturn(nics).when(_networkModel).getNics(anyLong());
-        Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, null, owner);
-        Assert.assertEquals(nic, nicInLb);
+        Pair<Nic, Network.IpAddresses> nicAndIp = new Pair<>(nic, new Network.IpAddresses("10.1.1.5", null));
+        Mockito.doReturn(nicAndIp).when(_networkModel).getNicAndIpInNetwork(anyLong(), Mockito.eq(networkId));
+        Pair<Nic, Network.IpAddresses> nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, null, owner);
+        Assert.assertEquals(nic, nicInLb.first());
     }
 
     @Test
@@ -358,10 +357,11 @@ public class LoadBalancingRulesManagerImplTest{
         when(networkTier2.getVpcId()).thenReturn(10L);
         when(loadBalancerNetwork.getVpcId()).thenReturn(10L);
         Nic nic = Mockito.mock(Nic.class);
-        when(_networkModel.getNicInNetwork(Mockito.eq(vmId), Mockito.eq(networkTier2Id))).thenReturn(nic);
+        Pair<Nic, Network.IpAddresses> nicAndIp = new Pair<>(nic, new Network.IpAddresses("10.1.1.5", null));
+        when(_networkModel.getNicAndIpInNetwork(Mockito.eq(vmId), Mockito.eq(networkTier2Id))).thenReturn(nicAndIp);
 
-        Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, vmIdNetworkIdMap, owner);
-        Assert.assertEquals(nic, nicInLb);
+        Pair<Nic, Network.IpAddresses> nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, vmIdNetworkIdMap, owner);
+        Assert.assertEquals(nic, nicInLb.first());
     }
 
     @Test(expected = InvalidParameterValueException.class)

@@ -37,16 +37,20 @@ import com.cloud.utils.db.TransactionLegacy;
 public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOfferingVO, Long> implements UsageNetworkOfferingDao {
 
     protected static final String UPDATE_DELETED =
-        "UPDATE usage_network_offering SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND network_offering_id = ? and deleted IS NULL";
+        "UPDATE usage_network_offering SET deleted = ? WHERE id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
-        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " + "FROM usage_network_offering "
+        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted, network_id " + "FROM usage_network_offering "
             + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN =
-        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " + "FROM usage_network_offering "
+        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted, network_id " + "FROM usage_network_offering "
             + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS =
-        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted " + "FROM usage_network_offering "
+        "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted, network_id " + "FROM usage_network_offering "
             + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+    // only ever touches rows created before network_id existed (never backfilled in bulk); scoped to a single
+    // nic so it can safely run the moment that nic is first converted to a multi-VLAN trunk nic
+    protected static final String BACKFILL_NETWORK_ID_FOR_NIC =
+        "UPDATE usage_network_offering SET network_id = ? WHERE nic_id = ? AND network_id IS NULL AND deleted IS NULL";
 
     public UsageNetworkOfferingDaoImpl() {
     }
@@ -59,10 +63,11 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
             if (usage.getDeleted() != null) {
                 try(PreparedStatement pstmt = txn.prepareStatement(UPDATE_DELETED);) {
                     if (pstmt != null) {
+                        // matches by primary key: the caller already identified the exact row(s) to close via
+                        // search(); a broader (account, vm, offering) match would also close a different nic's
+                        // still-open row for the same offering
                         pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-                        pstmt.setLong(2, usage.getAccountId());
-                        pstmt.setLong(3, usage.getVmInstanceId());
-                        pstmt.setLong(4, usage.getNetworkOfferingId());
+                        pstmt.setLong(2, usage.getId());
                         pstmt.executeUpdate();
                     }
                   }catch (SQLException e) {
@@ -120,7 +125,7 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                //zoneId, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted
+                //zoneId, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted, network_id
                 Long zoneId = Long.valueOf(rs.getLong(1));
                 Long acctId = Long.valueOf(rs.getLong(2));
                 Long dId = Long.valueOf(rs.getLong(3));
@@ -132,6 +137,8 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
                 Date deletedDate = null;
                 String createdTS = rs.getString(8);
                 String deletedTS = rs.getString(9);
+                long networkIdValue = rs.getLong(10);
+                Long networkId = rs.wasNull() ? null : Long.valueOf(networkIdValue);
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -140,7 +147,7 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
                     deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
                 }
 
-                usageRecords.add(new UsageNetworkOfferingVO(zoneId, acctId, dId, vmId, noId, nicId, isDefault, createdDate, deletedDate));
+                usageRecords.add(new UsageNetworkOfferingVO(zoneId, acctId, dId, vmId, noId, nicId, networkId, isDefault, createdDate, deletedDate));
             }
         } catch (Exception e) {
             txn.rollback();
@@ -150,5 +157,26 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
         }
 
         return usageRecords;
+    }
+
+    @Override
+    public void backfillNetworkIdForNic(long nicId, long networkId) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            txn.start();
+            try (PreparedStatement pstmt = txn.prepareStatement(BACKFILL_NETWORK_ID_FOR_NIC)) {
+                pstmt.setLong(1, networkId);
+                pstmt.setLong(2, nicId);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                throw new CloudException(String.format("Error backfilling network_id for UsageNetworkOfferingVO: %s", e.getMessage()), e);
+            }
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            logger.warn("Error backfilling network_id for UsageNetworkOfferingVO: {}", e.getMessage(), e);
+        } finally {
+            txn.close();
+        }
     }
 }

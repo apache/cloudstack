@@ -227,6 +227,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                 volResponse.setDiskOfferingName(volume.getDiskOfferingName());
                 volResponse.setDiskOfferingDisplayText(volume.getDiskOfferingDisplayText());
             }
+            DiskOffering diskOffering = computeOnlyDiskOffering != null
+                    ? computeOnlyDiskOffering
+                    : ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+            if (diskOffering != null) {
+                volResponse.setCustomizedIops(diskOffering.isCustomizedIops());
+            }
 
             if (view == ResponseView.Full) {
                 volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());

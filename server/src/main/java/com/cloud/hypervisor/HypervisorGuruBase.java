@@ -67,6 +67,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -97,6 +98,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -126,6 +129,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    private NicNetworkMapDao nicNetworkMapDao;
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
@@ -241,6 +246,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
             }
             to.setNicSecIps(secIps);
+            setTrunkAssociationsOnNicTO(to, nicVO);
         } else {
             logger.warn("Unable to load NicVO for NicProfile {}", profile);
             //Workaround for dynamically created nics
@@ -253,6 +259,33 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         //set nic secondary ip address in NicTO which are used for security group
         // configuration. Use full when vm stop/start
         return to;
+    }
+
+    private void setTrunkAssociationsOnNicTO(final NicTO to, final NicVO nic) {
+        if (!nic.getMultiNetwork()) {
+            return;
+        }
+        final List<NicNetworkMapVO> associations = nicNetworkMapDao.listByNicId(nic.getId());
+        if (associations.isEmpty()) {
+            return;
+        }
+        final List<NetworkTO> associatedNetworks = new ArrayList<>();
+        for (final NicNetworkMapVO association : associations) {
+            final NetworkVO associatedNetwork = networkDao.findById(association.getNetworkId());
+            if (associatedNetwork == null) {
+                continue;
+            }
+            final NetworkTO associatedTo = new NetworkTO();
+            associatedTo.setUuid(associatedNetwork.getUuid());
+            associatedTo.setBroadcastType(associatedNetwork.getBroadcastDomainType());
+            associatedTo.setBroadcastUri(associatedNetwork.getBroadcastUri());
+            associatedTo.setType(associatedNetwork.getTrafficType());
+            associatedNetworks.add(associatedTo);
+        }
+        if (!associatedNetworks.isEmpty()) {
+            to.setTrunkVlan(true);
+            to.setAssociatedNetworks(associatedNetworks);
+        }
     }
 
     private String getNetworkName(long zoneId, long domainId, long accountId, VpcVO vpc, long networkId) {

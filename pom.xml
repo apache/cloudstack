@@ -877,33 +877,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.cyclonedx</groupId>
-                <artifactId>cyclonedx-maven-plugin</artifactId>
-                <version>2.9.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <inherited>false</inherited>
-                        <goals>
-                            <goal>makeAggregateBom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <projectType>application</projectType>
-                    <schemaVersion>1.6</schemaVersion>
-                    <includeBomSerialNumber>true</includeBomSerialNumber>
-                    <includeCompileScope>true</includeCompileScope>
-                    <includeProvidedScope>true</includeProvidedScope>
-                    <includeRuntimeScope>true</includeRuntimeScope>
-                    <includeSystemScope>true</includeSystemScope>
-                    <includeTestScope>false</includeTestScope>
-                    <includeLicenseText>false</includeLicenseText>
-                    <outputFormat>all</outputFormat>
-                    <outputName>ACS.sbom</outputName>
-                </configuration>
-            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -1317,6 +1290,45 @@
             </modules>
         </profile>
         <profile>
+            <id>sbom</id>
+            <activation>
+                <property>
+                    <name>sbom</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.cyclonedx</groupId>
+                        <artifactId>cyclonedx-maven-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <executions>
+                            <execution>
+                                <phase>validate</phase>
+                                <inherited>false</inherited>
+                                <goals>
+                                    <goal>makeAggregateBom</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <projectType>application</projectType>
+                            <schemaVersion>1.6</schemaVersion>
+                            <includeBomSerialNumber>true</includeBomSerialNumber>
+                            <includeCompileScope>true</includeCompileScope>
+                            <includeProvidedScope>true</includeProvidedScope>
+                            <includeRuntimeScope>true</includeRuntimeScope>
+                            <includeSystemScope>true</includeSystemScope>
+                            <includeTestScope>false</includeTestScope>
+                            <includeLicenseText>false</includeLicenseText>
+                            <outputFormat>all</outputFormat>
+                            <outputName>ACS.sbom</outputName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>eclipse</id>
             <properties>
                 <cs.target.dir>target-eclipse</cs.target.dir>
@@ -1423,6 +1435,17 @@
                             <groupId>org.jacoco</groupId>
                             <artifactId>jacoco-maven-plugin</artifactId>
                             <version>${cs.jacoco-plugin.version}</version>
+                            <configuration>
+                                <!-- Plain data/transfer classes carry no logic of their own to cover - excluding
+                                     them keeps the coverage number reflecting actual behavior, not boilerplate
+                                     getters/setters on VOs and agent Command/Answer DTOs. -->
+                                <excludes>
+                                    <exclude>**/*VO.class</exclude>
+                                    <exclude>**/*VO$*.class</exclude>
+                                    <exclude>**/*Command.class</exclude>
+                                    <exclude>**/*Answer.class</exclude>
+                                </excludes>
+                            </configuration>
                             <executions>
                                 <execution>
                                     <id>prepare-coverage-agent</id>
