@@ -2599,6 +2599,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails) {
+        return createBackupResponse(backup, listVmDetails, false);
+    }
+
+    @Override
     public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails, boolean isCallerRootAdmin) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());

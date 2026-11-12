@@ -17,8 +17,14 @@
 
 package org.apache.cloudstack.api.response.helper;
 
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+
 public class BackupVolumeNameAndPath {
+    @SerializedName(ApiConstants.VOLUME_NAME)
     private String volumeName;
+
+    @SerializedName(ApiConstants.BACKUP_PATH)
     private String backupPath;
 
     public BackupVolumeNameAndPath(String volumeName, String backupPath) {

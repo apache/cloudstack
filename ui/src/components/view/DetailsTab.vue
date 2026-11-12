@@ -68,7 +68,7 @@
               <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GiB)
             </div>
           </div>
-          <div v-else-if="$route.meta.name === 'backup' && item === 'backuppaths'">
+          <div v-else-if="$route.meta.name === 'backup' && item === 'backuppaths' && dataResource[item]">
             <div v-for="(backupVolumeInfo, idx) in Object.values(dataResource[item])" :key="idx">
               <span>{{ backupVolumeInfo.volumeName }} - {{ backupVolumeInfo.backupPath }}</span>
             </div>

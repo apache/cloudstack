@@ -259,6 +259,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     String getBackupNameFromVM(VirtualMachine vm);
 
+    BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails);
+
     BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails, boolean isCallerRootAdmin);
 
     Capacity getBackupStorageUsedStats(Long zoneId);

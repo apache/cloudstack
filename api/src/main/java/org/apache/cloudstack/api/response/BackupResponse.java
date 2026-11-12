@@ -101,7 +101,7 @@ public class BackupResponse extends BaseResponse {
     private String backupOfferingName;
 
     @SerializedName(ApiConstants.BACKUP_PATHS)
-    @Param(description = "The backups paths in the secondary storage")
+    @Param(description = "The backup paths in the secondary storage")
     private Map<String, BackupVolumeNameAndPath> backupPaths;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
