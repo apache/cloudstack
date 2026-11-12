@@ -206,6 +206,8 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import static org.apache.commons.lang3.StringUtils.deleteWhitespace;
+
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServer.class.getName());
@@ -1470,12 +1472,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        final Account account = accountMgr.getAccount(user.getAccountId());
-        final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
-
         if (apiSourceCidrChecksEnabled) {
-            logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account.toString(), accessAllowedCidrs);
+            final Account account = accountMgr.getAccount(user.getAccountId());
+            final String accessAllowedCidrs = deleteWhitespace(ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()));
+            logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
                 logger.warn("Request by account '{}' was denied since {} does not match {}", account.toString(), remoteAddress, accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);

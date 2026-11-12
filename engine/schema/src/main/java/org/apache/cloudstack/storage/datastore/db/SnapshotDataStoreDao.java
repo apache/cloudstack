@@ -49,6 +49,13 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long zoneId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType);
 
+    /**
+     * Whether snapshots of this volume are chained on secondary storage through a content diff against
+     * the parent snapshot file (Linstor) instead of qemu checkpoints. Such chains live purely on the
+     * image store, so checkpoint-oriented parent handling must not be applied to them.
+     */
+    boolean usesContentBasedChain(long volumeId);
+
     SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State state);
 
     List<SnapshotDataStoreVO> listBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State... state);

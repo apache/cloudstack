@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +107,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
+    protected SearchBuilder<VMInstanceVO> IdsSearch;
     GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
     GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
     SearchBuilder<VMInstanceVO> DeleteProtectedVmSearchByAccount;
@@ -386,6 +388,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         DeleteProtectedVmSearchByDomainIds.and(ApiConstants.DELETE_PROTECTION, DeleteProtectedVmSearchByDomainIds.entity().isDeleteProtection(), Op.EQ);
         DeleteProtectedVmSearchByDomainIds.and(ApiConstants.REMOVED, DeleteProtectedVmSearchByDomainIds.entity().getRemoved(), Op.NULL);
         DeleteProtectedVmSearchByDomainIds.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), Op.IN);
+        IdsSearch.done();
     }
 
     @Override
@@ -1351,5 +1357,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("host", hostId);
         sc.setParameters("lastHost", hostId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMInstanceVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
     }
 }

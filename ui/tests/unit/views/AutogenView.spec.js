@@ -2609,6 +2609,51 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+      it('API should be called with the option id when currentAction.mapping option is an {id, description} object', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: 1 }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'list' }],
+            paramFields: [{ name: 'column1', type: 'list' }],
+            mapping: {
+              column1: {
+                options: [
+                  { id: 'column-id-1', description: 'label.column.value.one' },
+                  { id: 'column-id-2', description: 'label.column.value.two' }
+                ]
+              }
+            }
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'POST',
+          data: common.createDataParams({
+            command: 'testApiNameCase1',
+            response: 'json',
+            column1: 'column-id-2'
+          })
+        })
+        done()
+      })
+
       it('API should be called when form has input key not exist in currentAction.mapping, type is list and currentAction.params[input] has id', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
         originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
