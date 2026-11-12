@@ -456,6 +456,25 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
         Element root = document.getDocumentElement();
         Node sharesNode = root.getElementsByTagName("shares").item(0);
+
+        if (sharesNode == null) {
+            // CpuTuneDef omits <shares> when the calculated value is 0, so the running domain may not have it.
+            if (newVmCpuShares <= 0) {
+                return xmlDesc;
+            }
+            logger.info(String.format("VM [%s] has no CPU shares defined; setting them to [%s] as part of migration because the cgroups version differs between hosts.",
+                    migrateCommand.getVmName(), newVmCpuShares));
+            Node cputuneNode = root.getElementsByTagName("cputune").item(0);
+            if (cputuneNode == null) {
+                cputuneNode = document.createElement("cputune");
+                root.appendChild(cputuneNode);
+            }
+            sharesNode = document.createElement("shares");
+            cputuneNode.appendChild(sharesNode);
+            sharesNode.setTextContent(String.valueOf(newVmCpuShares));
+            return getXml(document);
+        }
+
         String currentShares = sharesNode.getTextContent();
 
         logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
