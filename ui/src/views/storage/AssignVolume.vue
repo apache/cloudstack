@@ -23,13 +23,13 @@
         <loading-outlined style="color: #1890ff;" />
       </div>
 
-      <ownership-selection @fetch-owner="fetchOwnerOptions" accountId/>
+      <ownership-selection @owner-loading="ownerLoading = $event" @fetch-owner="fetchOwnerOptions" accountId/>
 
       <div class="submit-btn">
         <a-button @click="closeAction">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" @click="submitData" ref="submit">
+        <a-button type="primary" @click="submitData" ref="submit" :disabled="ownerLoading">
           {{ $t('label.submit') }}
         </a-button>
       </div>
@@ -68,7 +68,8 @@ export default {
       selectedAccountId: null,
       selectedProject: null,
       projectError: false,
-      loading: false
+      loading: false,
+      ownerLoading: false
     }
   },
   methods: {
@@ -83,7 +84,7 @@ export default {
       this.$emit('close-action')
     },
     submitData () {
-      if (this.loading) return
+      if (this.loading || this.ownerLoading) return
       let variableKey = ''
       let variableValue = ''
 

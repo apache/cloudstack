@@ -230,8 +230,13 @@ export default {
           this.$notifyError(error)
         })
         .finally(() => {
+          if (currentToken !== this.requestToken) {
+            return
+          }
+
           this.loading = false
           this.initialized = true
+          this.$emit('owner-loading', false)
         })
     },
     handleSelectedAccountId (accountName) {
@@ -273,6 +278,11 @@ export default {
           this.$notifyError(error)
         })
         .finally(() => {
+          if (currentToken !== this.requestToken) {
+            return
+          }
+
+          this.$emit('owner-loading', false)
           this.loading = false
           this.initialized = true
         })
@@ -282,6 +292,15 @@ export default {
       this.fetchOwnerData()
     },
     fetchOwnerData () {
+      this.selectedAccount = null
+      this.selectedAccountId = null
+      this.selectedProject = null
+      this.accounts = []
+      this.projects = []
+
+      this.$emit('owner-loading', true)
+      this.emitChangeEvent()
+
       if (this.selectedAccountType === 'Account') {
         this.fetchAccounts()
       } else {
