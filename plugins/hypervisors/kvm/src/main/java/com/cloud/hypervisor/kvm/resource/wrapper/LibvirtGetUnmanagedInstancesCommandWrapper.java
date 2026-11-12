@@ -191,7 +191,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         return nics;
     }
 
-    private List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<LibvirtVMDef.DiskDef> disksInfo, LibvirtComputingResource libvirtComputingResource, Connect conn, String domainName) {
+    protected List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<LibvirtVMDef.DiskDef> disksInfo, LibvirtComputingResource libvirtComputingResource, Connect conn, String domainName) {
         final ArrayList<UnmanagedInstanceTO.Disk> disks = new ArrayList<>(disksInfo.size());
         int counter = 0;
         for (LibvirtVMDef.DiskDef diskDef : disksInfo) {
@@ -215,18 +215,30 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             disk.setLabel(diskDef.getDiskLabel());
             disk.setController(diskDef.getBusType().toString());
 
-            Pair<String, String> sourceHostPath = getSourceHostPath(libvirtComputingResource, diskDef.getSourcePath());
-            if (sourceHostPath != null) {
-                disk.setDatastoreHost(sourceHostPath.first());
-                disk.setDatastorePath(sourceHostPath.second());
-            } else {
-                int pathEnd = diskDef.getSourcePath().lastIndexOf("/");
-                if (pathEnd >= 0) {
-                    disk.setDatastorePath(diskDef.getSourcePath().substring(0, pathEnd));
-                } else {
-                    disk.setDatastorePath(diskDef.getSourcePath());
-                }
+            if (diskDef.getDiskType() == LibvirtVMDef.DiskDef.DiskType.NETWORK
+                    && diskDef.getDiskProtocol() == LibvirtVMDef.DiskDef.DiskProtocol.RBD) {
+                // RBD disks are not backed by a mounted filesystem, so a mount lookup would match an
+                // unrelated mount. Use the monitor host and the pool name from the source. Other network
+                // disks (Gluster) keep the mount lookup, as their pool path is the mounted volume.
+                String sourcePath = diskDef.getSourcePath();
+                int poolEnd = sourcePath.indexOf("/");
+                String poolName = poolEnd > 0 ? sourcePath.substring(0, poolEnd) : sourcePath;
                 disk.setDatastoreHost(diskDef.getSourceHost());
+                disk.setDatastorePath(poolName);
+            } else {
+                Pair<String, String> sourceHostPath = getSourceHostPath(libvirtComputingResource, diskDef.getSourcePath());
+                if (sourceHostPath != null) {
+                    disk.setDatastoreHost(sourceHostPath.first());
+                    disk.setDatastorePath(sourceHostPath.second());
+                } else {
+                    int pathEnd = diskDef.getSourcePath().lastIndexOf("/");
+                    if (pathEnd >= 0) {
+                        disk.setDatastorePath(diskDef.getSourcePath().substring(0, pathEnd));
+                    } else {
+                        disk.setDatastorePath(diskDef.getSourcePath());
+                    }
+                    disk.setDatastoreHost(diskDef.getSourceHost());
+                }
             }
 
             disk.setDatastoreType(diskDef.getDiskType().toString());
