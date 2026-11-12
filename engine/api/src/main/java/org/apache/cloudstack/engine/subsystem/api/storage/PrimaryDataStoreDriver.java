@@ -18,10 +18,12 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 
 import com.cloud.host.Host;
 import com.cloud.offering.DiskOffering;
@@ -228,4 +230,23 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     }
 
     default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
+
+    /**
+     * intended for storage that can enumerate its own volumes available for import without hypervisor involvement
+     * @param volumePath when not blank, restricts the result to the volume with this path, if found
+     * @param keyword when not blank, restricts the result to volumes whose name contains this keyword
+     * @param forUnmanage when volume will be unmanaged from CloudStack
+     * @return null if the storage driver does not support listing volumes for import on its own,
+     * in which case the caller falls back to querying a host via GetVolumesOnStorageCommand
+    */
+    default List<VolumeOnStorageTO> listVolumesForImport(StoragePool pool, String volumePath, String keyword, boolean forUnmanage) {
+        return null;
+    }
+
+    /**
+     * Called after a volume is imported into or unmanaged from CloudStack, so the driver can
+     * mark/unmark it accordingly (e.g. tag it) for future {@link #listVolumesForImport} calls.
+     */
+    default void volumeManagementChanged(StoragePool pool, Volume volume, boolean imported) {
+    }
 }

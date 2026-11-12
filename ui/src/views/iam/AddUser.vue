@@ -185,6 +185,12 @@ export default {
     ResourceIcon,
     InfiniteScrollSelect
   },
+  props: {
+    resource: {
+      type: Object,
+      default: () => {}
+    }
+  },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
@@ -207,6 +213,11 @@ export default {
     samlEnable (newVal) {
       if (newVal) {
         this.form.passwordChangeRequired = false
+      }
+    },
+    resource (newVal, oldVal) {
+      if (newVal?.id !== oldVal?.id) {
+        this.setAccountContext()
       }
     }
   },
@@ -247,16 +258,20 @@ export default {
       })
     },
     fetchData () {
-      this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
-      this.domainid = this.$route.query && this.$route.query.domainid ? this.$route.query.domainid : null
-      // Set initial domain if provided from route
-      if (this.domainid) {
-        this.form.domainid = this.domainid
-      }
+      this.setAccountContext()
       this.fetchTimeZone()
       if (this.samlAllowed) {
         this.fetchIdps()
       }
+    },
+    setAccountContext () {
+      // Only an account resource identifies the target account, other sections pass e.g. the first listed user
+      const accountResource = this.$route.meta.name === 'account' ? this.resource : null
+      this.account = this.$route.query?.account || accountResource?.name || null
+      this.domainid = this.$route.query?.domainid || accountResource?.domainid || null
+      // The form is reused when reopened, so also clear values left from a previous account
+      this.form.domainid = this.domainid
+      this.form.account = this.account
     },
     handleDomainChange (domainId) {
       this.form.domainid = domainId

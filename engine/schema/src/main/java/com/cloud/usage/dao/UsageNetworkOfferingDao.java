@@ -26,4 +26,10 @@ public interface UsageNetworkOfferingDao extends GenericDao<UsageNetworkOffering
     public void update(UsageNetworkOfferingVO usage);
 
     public List<UsageNetworkOfferingVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page);
+
+    /**
+     * Backfills network_id on a nic's own currently-open, not-yet-populated usage row(s), the moment that nic
+     * is first converted to a multi-VLAN trunk nic. Historic rows are otherwise never backfilled in bulk.
+     */
+    public void backfillNetworkIdForNic(long nicId, long networkId);
 }
