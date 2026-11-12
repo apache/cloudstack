@@ -197,7 +197,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         storageService.updateStorageCapabilities(poolId, false);
 
         if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
-            alertOnSharedSanlockId(pool, host);
+            alertOnSanlockHostId(pool, host);
         }
 
         logger.info("Connection established between storage pool {} and host {}", pool, host);
@@ -205,14 +205,20 @@ public class DefaultHostListener implements HypervisorHostListener {
         return createPersistentNetworkResourcesOnHost(hostId);
     }
 
-    /** CLVM lock holder lookups map a sanlock host id to exactly one host of the pool. */
-    private void alertOnSharedSanlockId(StoragePool pool, HostVO host) {
-        List<Long> otherHostIds = clvmPoolManager.findHostsSharingSanlockId(pool, host.getId());
-        if (otherHostIds.isEmpty()) {
-            return;
+    /** The sanlock host id is needed to check the leases of a host, and must identify exactly one host of the pool. */
+    private void alertOnSanlockHostId(StoragePool pool, HostVO host) {
+        String msg;
+        if (!clvmPoolManager.hasSanlockHostId(host.getId())) {
+            msg = String.format("Host %s reports no %s, so the CLVM leases of storage pool %s cannot be checked and the host cannot be fenced. "
+                    + "Restart its agent and check that lvmlockd is running on it.", host, Host.HOST_SANLOCK_ID, pool);
+        } else {
+            List<Long> otherHostIds = clvmPoolManager.findHostsSharingSanlockId(pool, host.getId());
+            if (otherHostIds.isEmpty()) {
+                return;
+            }
+            msg = String.format("Host %s reports the same %s as hosts %s of CLVM storage pool %s. Set a unique host_id in lvmlocal.conf on each host.",
+                    host, Host.HOST_SANLOCK_ID, otherHostIds, pool);
         }
-        String msg = String.format("Host %s reports the same %s as hosts %s of CLVM storage pool %s. Set a unique host_id in lvmlocal.conf on each host.",
-                host, Host.HOST_SANLOCK_ID, otherHostIds, pool);
         logger.error(msg);
         alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
     }

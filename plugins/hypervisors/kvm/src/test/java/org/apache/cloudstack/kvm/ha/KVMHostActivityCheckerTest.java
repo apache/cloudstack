@@ -23,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,22 +44,22 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
-import com.cloud.host.DetailVO;
+import com.cloud.agent.api.to.HostTO;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Volume;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class KVMHostActivityCheckerTest {
 
     @Mock
-    private HostDetailsDao hostDetailsDao;
+    private ClvmPoolManager clvmPoolManager;
     @Mock
     private StorageManager storageManager;
     @Mock
@@ -75,11 +77,18 @@ public class KVMHostActivityCheckerTest {
     @InjectMocks
     private KVMHostActivityChecker checker;
 
+    private void reportSanlockHostId(Long sanlockHostId) {
+        doAnswer(invocation -> {
+            invocation.<HostTO>getArgument(0).setSanlockHostId(sanlockHostId);
+            return null;
+        }).when(clvmPoolManager).addSanlockHostId(any(HostTO.class), eq(host));
+    }
+
     private void runActivityCheck(StoragePoolType poolType) throws Exception {
         when(pool.getPoolType()).thenReturn(poolType);
         when(host.getId()).thenReturn(8L);
         when(volume.getPath()).thenReturn("vol");
-        when(hostDetailsDao.findDetail(8L, Host.HOST_SANLOCK_ID)).thenReturn(new DetailVO(8L, Host.HOST_SANLOCK_ID, "2"));
+        reportSanlockHostId(2L);
         when(storageManager.sendToPool(any(StoragePool.class), any(long[].class), any(CheckVMActivityOnStoragePoolCommand.class))).thenReturn(new Answer(null));
         HashMap<StoragePool, List<Volume>> poolVolumes = new HashMap<>();
         poolVolumes.put(pool, List.of(volume));
@@ -89,7 +98,7 @@ public class KVMHostActivityCheckerTest {
     @Test
     public void testSanlockHostIdIsNotLookedUpForNonClvmPool() throws Exception {
         runActivityCheck(StoragePoolType.NetworkFilesystem);
-        verify(hostDetailsDao, never()).findDetail(anyLong(), any());
+        verify(clvmPoolManager, never()).addSanlockHostId(any(), any());
     }
 
     @Test
@@ -104,7 +113,7 @@ public class KVMHostActivityCheckerTest {
     public void testHostCheckSendsSanlockHostIdWhenHostReportsOne() throws Exception {
         when(host.getId()).thenReturn(8L);
         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        when(hostDetailsDao.findDetail(8L, Host.HOST_SANLOCK_ID)).thenReturn(new DetailVO(8L, Host.HOST_SANLOCK_ID, "2"));
+        reportSanlockHostId(2L);
         when(agentMgr.easySend(anyLong(), any(CheckOnHostCommand.class))).thenReturn(new Answer(null, false, "down"));
         checker.getHostAgentStatus(host);
         ArgumentCaptor<CheckOnHostCommand> captor = ArgumentCaptor.forClass(CheckOnHostCommand.class);

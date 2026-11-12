@@ -41,6 +41,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.HostTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -544,6 +546,27 @@ public class ClvmPoolManager implements Configurable {
     private String getSanlockId(long hostId) {
         DetailVO detail = _hostDetailsDao.findDetail(hostId, Host.HOST_SANLOCK_ID);
         return detail != null ? detail.getValue() : null;
+    }
+
+    /** Sets the sanlock host id of the host in the command's host, so the agents can check its CLVM leases. */
+    public void addSanlockHostId(HostTO hostTO, Host host) {
+        String sanlockId = getSanlockId(host.getId());
+        if (NumberUtils.isDigits(sanlockId)) {
+            hostTO.setSanlockHostId(Long.valueOf(sanlockId));
+        }
+    }
+
+    public boolean hasSanlockHostId(long hostId) {
+        return NumberUtils.isDigits(getSanlockId(hostId));
+    }
+
+    /** Whether the host can use a CLVM or CLVM_NG pool: one of its cluster or a zone-wide one. */
+    public boolean hasClvmPool(Host host) {
+        List<StoragePoolVO> pools = new ArrayList<>(_storagePoolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), host.getHypervisorType()));
+        if (host.getClusterId() != null) {
+            pools.addAll(_storagePoolDao.findPoolsInClusters(Collections.singletonList(host.getClusterId()), null));
+        }
+        return pools.stream().anyMatch(pool -> isClvmPoolType(pool.getPoolType()));
     }
 
     /**

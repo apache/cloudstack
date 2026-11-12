@@ -20,6 +20,7 @@ package com.cloud.storage;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.HostTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -40,6 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -1507,12 +1509,99 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
+    public void testAddSanlockHostIdSetsReportedId() {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(HOST_ID_1);
+        Mockito.when(hostDetailsDao.findDetail(HOST_ID_1, Host.HOST_SANLOCK_ID)).thenReturn(new DetailVO(HOST_ID_1, Host.HOST_SANLOCK_ID, "4"));
+        HostTO hostTO = new HostTO(host);
+
+        clvmPoolManager.addSanlockHostId(hostTO, host);
+
+        Assert.assertEquals(Long.valueOf(4), hostTO.getSanlockHostId());
+    }
+
+    @Test
+    public void testAddSanlockHostIdLeavesIdUnsetWhenHostReportsNone() {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(HOST_ID_1);
+        HostTO hostTO = new HostTO(host);
+
+        clvmPoolManager.addSanlockHostId(hostTO, host);
+
+        Assert.assertNull(hostTO.getSanlockHostId());
+    }
+
+    @Test
     public void testFindHostsSharingSanlockId() {
         StoragePoolVO pool = prepareLeaseLookup();
         Assert.assertTrue(clvmPoolManager.findHostsSharingSanlockId(pool, HOST_ID_1).isEmpty());
 
         stubSanlockId(HOST_ID_2, "1");
         Assert.assertEquals(Collections.singletonList(HOST_ID_2), clvmPoolManager.findHostsSharingSanlockId(pool, HOST_ID_1));
+    }
+
+    @Test
+    public void testHasSanlockHostId() {
+        stubSanlockId(HOST_ID_1, "3");
+        stubSanlockId(HOST_ID_2, "not-a-number");
+
+        Assert.assertTrue(clvmPoolManager.hasSanlockHostId(HOST_ID_1));
+        Assert.assertFalse(clvmPoolManager.hasSanlockHostId(HOST_ID_2));
+        Assert.assertFalse(clvmPoolManager.hasSanlockHostId(99L));
+    }
+
+    private HostVO mockHostForPoolLookup(Long clusterId) {
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getDataCenterId()).thenReturn(1L);
+        when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(host.getClusterId()).thenReturn(clusterId);
+        return host;
+    }
+
+    private StoragePoolVO mockPoolOfType(Storage.StoragePoolType type) {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        when(pool.getPoolType()).thenReturn(type);
+        return pool;
+    }
+
+    @Test
+    public void testHasClvmPoolFindsClusterPool() {
+        HostVO host = mockHostForPoolLookup(10L);
+        when(storagePoolDao.findZoneWideStoragePoolsByHypervisor(1L, Hypervisor.HypervisorType.KVM)).thenReturn(Collections.emptyList());
+        StoragePoolVO nfsPool = mockPoolOfType(Storage.StoragePoolType.NetworkFilesystem);
+        StoragePoolVO clvmNgPool = mockPoolOfType(Storage.StoragePoolType.CLVM_NG);
+        when(storagePoolDao.findPoolsInClusters(Collections.singletonList(10L), null)).thenReturn(List.of(nfsPool, clvmNgPool));
+
+        Assert.assertTrue(clvmPoolManager.hasClvmPool(host));
+    }
+
+    @Test
+    public void testHasClvmPoolFindsZoneWidePool() {
+        HostVO host = mockHostForPoolLookup(10L);
+        StoragePoolVO clvmPool = mockPoolOfType(Storage.StoragePoolType.CLVM);
+        when(storagePoolDao.findZoneWideStoragePoolsByHypervisor(1L, Hypervisor.HypervisorType.KVM)).thenReturn(List.of(clvmPool));
+        when(storagePoolDao.findPoolsInClusters(Collections.singletonList(10L), null)).thenReturn(Collections.emptyList());
+
+        Assert.assertTrue(clvmPoolManager.hasClvmPool(host));
+    }
+
+    @Test
+    public void testHasClvmPoolFalseWithOnlyOtherPools() {
+        HostVO host = mockHostForPoolLookup(10L);
+        StoragePoolVO nfsPool = mockPoolOfType(Storage.StoragePoolType.NetworkFilesystem);
+        when(storagePoolDao.findZoneWideStoragePoolsByHypervisor(1L, Hypervisor.HypervisorType.KVM)).thenReturn(List.of(nfsPool));
+        when(storagePoolDao.findPoolsInClusters(Collections.singletonList(10L), null)).thenReturn(Collections.emptyList());
+
+        Assert.assertFalse(clvmPoolManager.hasClvmPool(host));
+    }
+
+    @Test
+    public void testHasClvmPoolWithoutClusterOnlyLooksAtZoneWidePools() {
+        HostVO host = mockHostForPoolLookup(null);
+        when(storagePoolDao.findZoneWideStoragePoolsByHypervisor(1L, Hypervisor.HypervisorType.KVM)).thenReturn(Collections.emptyList());
+
+        Assert.assertFalse(clvmPoolManager.hasClvmPool(host));
+        Mockito.verify(storagePoolDao, Mockito.never()).findPoolsInClusters(ArgumentMatchers.anyList(), ArgumentMatchers.any());
     }
 
     private StoragePoolVO mockClusterPool() {

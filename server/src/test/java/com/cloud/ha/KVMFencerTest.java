@@ -21,6 +21,7 @@ package com.cloud.ha;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
+import com.cloud.agent.api.to.HostTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -29,11 +30,13 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.vm.VirtualMachine;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -53,6 +56,8 @@ public class KVMFencerTest {
     AlertManager alertMgr;
     @Mock
     ResourceManager resourceManager;
+    @Mock
+    ClvmPoolManager clvmPoolManager;
 
     KVMFencer fencer;
 
@@ -63,6 +68,7 @@ public class KVMFencerTest {
         fencer._alertMgr = alertMgr;
         fencer._hostDao = hostDao;
         fencer._resourceMgr = resourceManager;
+        fencer._clvmPoolManager = clvmPoolManager;
     }
 
     @Test
@@ -192,4 +198,63 @@ public class KVMFencerTest {
         Assert.assertNull(fencer.fenceOff(virtualMachine, host));
     }
 
+    @Test
+    public void testFenceCommandCarriesSanlockHostIdOfFencedHost() throws AgentUnavailableException, OperationTimedoutException {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getClusterId()).thenReturn(1l);
+        Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.lenient().when(host.getStatus()).thenReturn(Status.Down);
+        Mockito.when(host.getId()).thenReturn(2l);
+        HostVO otherHost = Mockito.mock(HostVO.class);
+        Mockito.when(otherHost.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.when(otherHost.getStatus()).thenReturn(Status.Up);
+        Mockito.when(otherHost.getId()).thenReturn(3l);
+        Mockito.doAnswer(invocation -> {
+            invocation.<HostTO>getArgument(0).setSanlockHostId(7L);
+            return null;
+        }).when(clvmPoolManager).addSanlockHostId(ArgumentMatchers.any(HostTO.class), ArgumentMatchers.eq(host));
+        Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Arrays.asList(host, otherHost));
+        Mockito.when(agentManager.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(FenceCommand.class))).thenReturn(new FenceAnswer(null, true, "ok"));
+
+        Assert.assertTrue(fencer.fenceOff(Mockito.mock(VirtualMachine.class), host));
+
+        ArgumentCaptor<FenceCommand> captor = ArgumentCaptor.forClass(FenceCommand.class);
+        Mockito.verify(agentManager).send(ArgumentMatchers.eq(3l), captor.capture());
+        Assert.assertEquals(Long.valueOf(7), captor.getValue().getHost().getSanlockHostId());
+    }
+
+    private HostVO mockDownHostInCluster(long id) {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getClusterId()).thenReturn(1l);
+        Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.lenient().when(host.getDataCenterId()).thenReturn(1l);
+        Mockito.lenient().when(host.getPodId()).thenReturn(1l);
+        Mockito.lenient().when(host.getStatus()).thenReturn(Status.Down);
+        Mockito.when(host.getId()).thenReturn(id);
+        return host;
+    }
+
+    @Test
+    public void testFailedFenceChecksForClvmPoolWhenHostReportsNoSanlockHostId() {
+        HostVO host = mockDownHostInCluster(2l);
+        Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Collections.singletonList(host));
+
+        Assert.assertFalse(fencer.fenceOff(Mockito.mock(VirtualMachine.class), host));
+
+        Mockito.verify(clvmPoolManager).hasClvmPool(host);
+    }
+
+    @Test
+    public void testFailedFenceDoesNotCheckForClvmPoolWhenHostReportsSanlockHostId() {
+        HostVO host = mockDownHostInCluster(2l);
+        Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Collections.singletonList(host));
+        Mockito.doAnswer(invocation -> {
+            invocation.<HostTO>getArgument(0).setSanlockHostId(7L);
+            return null;
+        }).when(clvmPoolManager).addSanlockHostId(ArgumentMatchers.any(HostTO.class), ArgumentMatchers.eq(host));
+
+        Assert.assertFalse(fencer.fenceOff(Mockito.mock(VirtualMachine.class), host));
+
+        Mockito.verify(clvmPoolManager, Mockito.never()).hasClvmPool(ArgumentMatchers.any());
+    }
 }
