@@ -80,7 +80,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
+import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -590,6 +592,57 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
         }
         firewallManager.applyRules(pfRules, false, true);
+    }
+
+    /**
+     * Revokes the SSH rules of the external nodes of the cluster (nodes added with addNodesToKubernetesCluster)
+     * on the given public IP: each port forwarding rule from a node SSH port to port 22 of an external node,
+     * and the firewall rule for that port. The SSH ports of the external nodes follow the SSH port range of the
+     * other nodes, so these rules have to be removed before the rules are recreated for a new node count.
+     * Otherwise the rebuilt range or the recreated rule of an external node conflicts with an old rule of an
+     * external node. The firewall rule is revoked before the port forwarding rule, so that if a revoke fails,
+     * the port forwarding rule is left and a retry handles the port again.
+     *
+     * @param publicIp the public IP with the SSH rules of the cluster
+     * @throws ManagementServerException if a rule can't be revoked
+     */
+    protected void removeExternalNodeSshRules(final IpAddress publicIp) throws ManagementServerException {
+        List<Long> externalNodeIds = getKubernetesClusterVMMaps().stream()
+                .filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+        try {
+            for (Long vmId : externalNodeIds) {
+                for (PortForwardingRuleVO pfRule : portForwardingRulesDao.listByVm(vmId)) {
+                    if (!isNodeSshPortForwardingRule(pfRule, publicIp)) {
+                        continue;
+                    }
+                    List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposePortsProtocolAndNotRevoked(publicIp.getId(),
+                            pfRule.getSourcePortStart(), pfRule.getSourcePortEnd(), NetUtils.TCP_PROTO, FirewallRule.Purpose.Firewall);
+                    for (FirewallRuleVO firewallRule : firewallRules) {
+                        if (!firewallService.revokeIngressFwRule(firewallRule.getId(), true)) {
+                            throw new ManagementServerException(String.format("Failed to revoke the SSH firewall rule %s of the external node with the id %s",
+                                    firewallRule, vmId));
+                        }
+                        logger.debug("The SSH firewall rule {} of the external node with the id {} was revoked", firewallRule, vmId);
+                    }
+                    rulesService.revokePortForwardingRule(pfRule.getId(), true);
+                    logger.debug("The SSH port forwarding rule {} of the external node with the id {} was revoked", pfRule, vmId);
+                }
+            }
+        } catch (CloudRuntimeException e) {
+            throw new ManagementServerException(String.format("Failed to remove the SSH rules of the external nodes of the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
+    /**
+     * @return true if the rule forwards a port of the node SSH port range on the given public IP (from
+     * CLUSTER_NODES_DEFAULT_START_SSH_PORT up to the SSH ports of the etcd nodes) to port 22, as CKS creates
+     * it for a node
+     */
+    private boolean isNodeSshPortForwardingRule(final PortForwardingRuleVO pfRule, final IpAddress publicIp) {
+        return Objects.equals(pfRule.getSourceIpAddressId(), publicIp.getId())
+                && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT
+                && pfRule.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT
+                && pfRule.getSourcePortStart() < KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
