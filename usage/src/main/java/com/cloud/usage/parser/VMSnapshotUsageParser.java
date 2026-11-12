@@ -18,9 +18,7 @@ package com.cloud.usage.parser;
 
 import java.text.DecimalFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -60,51 +58,29 @@ public class VMSnapshotUsageParser extends UsageParser {
             return true;
         }
 
-        Map<String, UsageVMSnapshotVO> unprocessedUsage = new HashMap<String, UsageVMSnapshotVO>();
         for (UsageVMSnapshotVO usageRec : usageUsageVMSnapshots) {
-            long zoneId = usageRec.getZoneId();
-            Long volId = usageRec.getVolumeId();
-            long vmId = usageRec.getVmId();
-            String key = vmId + ":" + volId + ":" + usageRec.getVmSnapshotId();
-            if (usageRec.getCreated().before(startDate)) {
-                unprocessedUsage.put(key, usageRec);
+            // Every usage_vmsnapshot row represents one volume of one Instance Snapshot. Instance Snapshots of the same
+            // Instance/volume coexist, so each row accrues usage independently, from its creation until it is deleted
+            // ("processed" is set by the delete event) or until the end of the aggregation period.
+            Date effectiveStart = usageRec.getCreated();
+            if (effectiveStart.before(startDate)) {
+                effectiveStart = startDate;
+            }
+
+            Date effectiveEnd = endDate;
+            Date deleted = usageRec.getProcessed();
+            if (deleted != null && deleted.before(endDate)) {
+                effectiveEnd = deleted;
+            }
+
+            if (effectiveEnd.before(effectiveStart)) {
+                logger.debug("Skipping Instance Snapshot usage row [{}] as it was deleted before the period [{} - {}].", usageRec, startDate, endDate);
                 continue;
             }
-            UsageVMSnapshotVO previousEvent = usageVMSnapshotDao.getPreviousUsageRecord(usageRec);
-            if (previousEvent == null || previousEvent.getSize() == 0) {
-                unprocessedUsage.put(key, usageRec);
-                continue;
-            }
 
-            Date previousCreated = previousEvent.getCreated();
-            if (previousCreated.before(startDate)) {
-                previousCreated = startDate;
-            }
-
-            Date createDate = usageRec.getCreated();
-            long duration = (createDate.getTime() - previousCreated.getTime()) + 1;
-
-            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, previousCreated, createDate, account, volId, zoneId, previousEvent.getDiskOfferingId(), vmId,
-                previousEvent.getSize(), previousEvent.getVmSnapshotId());
-            previousEvent.setProcessed(new Date());
-            usageVMSnapshotDao.update(previousEvent);
-
-            if (usageRec.getSize() == 0) {
-                usageRec.setProcessed(new Date());
-                usageVMSnapshotDao.update(usageRec);
-            } else
-                unprocessedUsage.put(key, usageRec);
-        }
-
-        for (String key : unprocessedUsage.keySet()) {
-            UsageVMSnapshotVO usageRec = unprocessedUsage.get(key);
-            Date created = usageRec.getCreated();
-            if (created.before(startDate)) {
-                created = startDate;
-            }
-            long duration = (endDate.getTime() - created.getTime()) + 1;
-            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, created, endDate, account, usageRec.getVolumeId(), usageRec.getZoneId(), usageRec.getDiskOfferingId(),
-                usageRec.getVmId(), usageRec.getSize(), usageRec.getVmSnapshotId());
+            long duration = (effectiveEnd.getTime() - effectiveStart.getTime()) + 1;
+            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, effectiveStart, effectiveEnd, account, usageRec.getVolumeId(), usageRec.getZoneId(),
+                    usageRec.getDiskOfferingId(), usageRec.getVmId(), usageRec.getSize(), usageRec.getVmSnapshotId());
         }
 
         return true;
