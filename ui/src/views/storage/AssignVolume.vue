@@ -67,7 +67,6 @@ export default {
       selectedAccount: null,
       selectedAccountId: null,
       selectedProject: null,
-      accountError: false,
       projectError: false,
       loading: false
     }
@@ -90,7 +89,6 @@ export default {
 
       if (this.selectedAccountType === 'Account') {
         if (!this.selectedAccountId) {
-          this.accountError = true
           return
         }
         variableKey = 'accountid'
