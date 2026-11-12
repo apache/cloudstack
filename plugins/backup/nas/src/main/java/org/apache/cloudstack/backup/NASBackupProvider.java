@@ -158,7 +158,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
-        command.setMountOptions(backupRepository.getMountOptions());
+        command.setMountOptions(BackupRepository.normalizeMountOptions(backupRepository.getMountOptions()));
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -226,7 +226,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
-        restoreCommand.setMountOptions(backupRepository.getMountOptions());
+        restoreCommand.setMountOptions(BackupRepository.normalizeMountOptions(backupRepository.getMountOptions()));
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setVolumePaths(getVolumePaths(volumes));
         restoreCommand.setBackupFiles(getBackupFiles(backedVolumes));
@@ -313,7 +313,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
         restoreCommand.setBackupFiles(Collections.singletonList(matchingVolume.getPath()));
         restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
-        restoreCommand.setMountOptions(backupRepository.getMountOptions());
+        restoreCommand.setMountOptions(BackupRepository.normalizeMountOptions(backupRepository.getMountOptions()));
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
 
@@ -368,7 +368,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final Host host = getLastVMHypervisorHost(vm);
 
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
-                backupRepository.getAddress(), backupRepository.getMountOptions());
+                backupRepository.getAddress(), BackupRepository.normalizeMountOptions(backupRepository.getMountOptions()));
 
         BackupAnswer answer = null;
         try {
