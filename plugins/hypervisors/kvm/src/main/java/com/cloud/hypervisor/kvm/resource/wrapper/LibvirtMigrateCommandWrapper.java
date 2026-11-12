@@ -108,7 +108,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
-        logger.debug("Trying to migrate VM {} to destination host: {}.", vmName, destinationUri);
+        logger.debug("Trying to migrate VM [{}] to destination host: {}.", vmName, destinationUri);
 
         String result = null;
         Command.State commandState = null;
@@ -159,7 +159,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
             if (logger.isDebugEnabled()) {
-                logger.debug("VM {} will be migrated to host {} with the following XML configuration retrieved with flag [{}]: {}.", vmName, target, xmlFlag, maskSensitiveInfoInXML(xmlDesc));
+                logger.debug("VM [{}] will be migrated to host {} with the following XML configuration retrieved with flag [{}]: {}.", vmName, target, xmlFlag, maskSensitiveInfoInXML(xmlDesc));
             }
 
             // Limit the VNC password in case the length is greater than 8 characters
@@ -204,20 +204,20 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             Set<String> migrateDiskLabels = null;
 
             if (migrateStorage) {
-                logger.debug("Changing VM {} volumes during migration to host: {}.", vmName, target);
+                logger.debug("Changing VM [{}] volumes during migration to host: {}.", vmName, target);
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Changed VM {} XML configuration of used storage. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
+                    logger.debug("Changed VM [{}] XML configuration of used storage. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
                 }
                 migrateDiskLabels = getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
             if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
-                logger.trace("Changing VM {} DPDK interfaces during migration to host: {}.", vmName, target);
+                logger.trace("Changing VM [{}] DPDK interfaces during migration to host: {}.", vmName, target);
                 xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Changed VM {} XML configuration of DPDK interfaces. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
+                    logger.debug("Changed VM [{}] XML configuration of DPDK interfaces. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
                 }
             }
 
@@ -295,7 +295,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             logger.debug(result);
                             break;
                         } catch (final LibvirtException e) {
-                            logger.error("Failed to abort the VM migration job of VM {}.", vmName, e);
+                            logger.error("Failed to abort the VM migration job of VM [{}].", vmName, e);
                         }
                     }
                 }
@@ -311,11 +311,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     }
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
-                            logger.info("Pausing VM {} due to property vm.migrate.pauseafter setting to {}ms to complete migration.", vmName, migratePauseAfter);
+                            logger.info("Pausing VM [{}] due to property vm.migrate.pauseafter setting to {}ms to complete migration.", vmName, migratePauseAfter);
                             dm.suspend();
                         } catch (final LibvirtException e) {
                             // pause could be racy if it attempts to pause right when vm is finished, simply warn
-                            logger.warn("Failed to pause vm {}", vmName, e);
+                            logger.warn("Failed to pause VM [{}]", vmName, e);
                         }
                     }
                 }
@@ -343,7 +343,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             logMigrationFailure(vmName, destinationUri, e);
             result = e.getMessage();
             if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
-                logger.debug("Migration failed as connection to destination [{}] was refused. Please check Libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
+                logger.debug("Migration failed as connection to destination [{}] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
                 result = String.format("Failed to migrate domain [%s].", vmName);
             }
         } catch (final InterruptedException
@@ -386,12 +386,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
                 }
             } catch (final LibvirtException e) {
-                logger.trace("Ignoring Libvirt error.", e);
+                logger.trace("Ignoring libvirt error.", e);
             }
         }
 
         if (result == null) {
-            logger.info("Post-migration cleanup for VM {}.", vmName);
+            logger.info("Post-migration cleanup for VM [{}].", vmName);
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             for (final InterfaceDef iface : ifaces) {
                 String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
@@ -405,7 +405,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             commandState = Command.State.COMPLETED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         } else if (commandState == null) {
-            logger.error("Migration of VM {} failed with result: {}.", vmName, result);
+            logger.error("Migration of VM [{}] failed with result: {}.", vmName, result);
             commandState = Command.State.FAILED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         }
@@ -746,7 +746,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     graphElem = graphElem.replaceAll("passwd='([^\\s]+)'", "passwd='" + vncPassword + "'");
                 }
                 xmlDesc = xmlDesc.replaceAll(GRAPHICS_ELEM_START + CONTENTS_WILDCARD + GRAPHICS_ELEM_END, graphElem);
-                logger.debug("Replaced the VNC IP address {} with {} in VM {}.", maskSensitiveInfoInXML(originalGraphElem), maskSensitiveInfoInXML(graphElem), vmName);
+                logger.debug("Replaced the VNC IP address {} with {} in VM [{}].", maskSensitiveInfoInXML(originalGraphElem), maskSensitiveInfoInXML(graphElem), vmName);
             }
         }
         return xmlDesc;
