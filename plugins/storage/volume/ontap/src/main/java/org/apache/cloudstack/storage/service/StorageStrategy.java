@@ -31,7 +31,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
 import org.apache.cloudstack.storage.feign.client.ClusterFeignClient;
-import org.apache.cloudstack.storage.feign.client.EmsFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NASFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
@@ -43,7 +42,6 @@ import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
 import org.apache.cloudstack.storage.feign.model.Cluster;
 import org.apache.cloudstack.storage.feign.model.ClusterNode;
-import org.apache.cloudstack.storage.feign.model.EmsApplicationLog;
 import org.apache.cloudstack.storage.feign.model.IpInterface;
 import org.apache.cloudstack.storage.feign.model.IscsiService;
 import org.apache.cloudstack.storage.feign.model.Job;
@@ -251,29 +249,6 @@ public abstract class StorageStrategy {
             }
         }
         return true;
-    }
-
-    /**
-     * Pushes a single ASUP (AutoSupport) EMS application-log message to the ONTAP cluster.
-     *
-     * <p>This is strictly best-effort telemetry: any failure is logged and swallowed so that
-     * it can never affect a storage operation or the periodic scheduler.</p>
-     *
-     * @param message the EMS message to send
-     */
-    public void sendAsupMessage(EmsApplicationLog message) {
-        if (message == null) {
-            return;
-        }
-        try {
-            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            emsFeignClient.sendEmsApplicationLog(authHeader, message);
-            logger.debug("sendAsupMessage: ASUP EMS message [event-id={}] sent to ONTAP cluster at {}",
-                    message.getEventId(), storage.getStorageIP());
-        } catch (Exception e) {
-            logger.error("sendAsupMessage: failed to send ASUP EMS message [event-id={}] to ONTAP cluster at {}: {}",
-                    message.getEventId(), storage.getStorageIP(), e.getMessage());
-        }
     }
 
     /**

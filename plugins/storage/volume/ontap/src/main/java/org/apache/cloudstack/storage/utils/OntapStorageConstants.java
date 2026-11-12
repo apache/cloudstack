@@ -65,10 +65,14 @@ public class OntapStorageConstants {
     public static final String FIELDS = "fields";
     /** ONTAP volume field: bytes consumed, {@code space.used}. */
     public static final String SPACE_USED = "space.used";
-    public static final String CLUSTER_NODE_ASUP_FIELDS = "model,is_all_flash_optimized,is_capacity_optimized,is_perf_optimized";
     public  static final String INITIATORS = "initiators";
     public static final String AGGREGATES = "aggregates";
     public static final String STATE = "state";
+    public static final String CLUSTER_NODE_ASUP_FIELDS = "model,is_all_flash_optimized,is_capacity_optimized,is_perf_optimized";
+    public static final String ASUP_PLATFORM_TYPE_PERFORMANCE = "performance";
+    public static final String ASUP_PLATFORM_TYPE_CAPACITY = "capacity";
+    public static final String ASUP_PLATFORM_TYPE_FAS = "fas";
+    public static final String ASUP_PLATFORM_TYPE_COMPOSITE = "composite";
     public static final String AGGREGATE_NODE = "node";
     public static final String AGGREGATE_SPACE = "space";
     public static final String DATA_NFS = "data_nfs";
@@ -91,8 +95,8 @@ public class OntapStorageConstants {
     public static final String EQUALS = "=";
     public static final String SEMICOLON = ";";
     public static final String COMMA = ",";
-    public static final String HYPHEN = "-";
     public static final String DOT = ".";
+    public static final String HYPHEN = "-";
 
     public static final String VOLUME_PATH_PREFIX = "/vol/";
 
