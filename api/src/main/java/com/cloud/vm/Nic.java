@@ -146,6 +146,8 @@ public interface Nic extends Identity, InternalIdentity {
 
     boolean getSecondaryIp();
 
+    boolean getMultiNetwork();
+
     //
     // IPv4
     //

@@ -378,6 +378,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -593,6 +594,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     NicDao nicDao;
+
+    @Inject
+    NicNetworkMapDao nicNetworkMapDao;
 
     @Inject
     HostDao hostDao;
@@ -1304,6 +1308,25 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return result;
     }
 
+    SearchBuilder<NicVO> createNicSearchBuilder(Long vpcId, boolean hasAssociatedNics) {
+        SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
+        if (hasAssociatedNics) {
+            // trunk nics list networkId as an association, not as their primary network
+            nicSearch.and().op("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+            nicSearch.or("associatedNicIdIN", nicSearch.entity().getId(), Op.IN);
+            nicSearch.cp();
+        } else {
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+        }
+        nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
+        if (vpcId != null) {
+            SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
+            networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
+            nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        }
+        return nicSearch;
+    }
+
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Pair<List<Long>, Integer> vmIdPage = searchForUserVMIdsAndCount(cmd);
 
@@ -1467,15 +1490,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.and("podId", userVmSearchBuilder.entity().getPodIdToDeployIn(), Op.EQ);
         }
 
+        List<Long> associatedNicIds = networkId != null ? nicNetworkMapDao.listNicIdsByNetworkId(networkId) : new ArrayList<>();
         if (networkId != null || vpcId != null) {
-            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
-            nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
-            if (vpcId != null) {
-                SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
-                networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
-                nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
-            }
+            SearchBuilder<NicVO> nicSearch = createNicSearchBuilder(vpcId, !associatedNicIds.isEmpty());
             userVmSearchBuilder.join("nic", nicSearch, nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
@@ -1707,6 +1724,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkId != null) {
             userVmSearchCriteria.setJoinParameters("nic", "networkId", networkId);
+            if (!associatedNicIds.isEmpty()) {
+                userVmSearchCriteria.setJoinParameters("nic", "associatedNicIdIN", associatedNicIds.toArray());
+            }
         }
 
         if (vpcId != null) {
@@ -1778,6 +1798,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = uniqueVmPair.second();
 
         List<Long> vmIds = uniqueVmPair.first().stream().map(VMInstanceVO::getId).collect(Collectors.toList());
+
         return new Pair<>(vmIds, count);
     }
 

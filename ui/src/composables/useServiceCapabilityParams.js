@@ -41,7 +41,7 @@ export function buildServiceCapabilityParams (params, values, selectedServicePro
   }
   // SourceNat capabilities
   if (supportedServices.includes('SourceNat')) {
-    const isNetrisSourceNat = this.selectedServiceProviderMap.SourceNat === 'Netris'
+    const isNetrisSourceNat = selectedServiceProviderMap.SourceNat === 'Netris'
     if (values.redundantroutercapability === true) {
       params[`serviceCapabilityList[${serviceCapabilityIndex}].service`] = 'SourceNat'
       params[`serviceCapabilityList[${serviceCapabilityIndex}].capabilitytype`] = 'RedundantRouter'

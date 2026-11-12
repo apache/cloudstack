@@ -58,6 +58,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 
@@ -102,6 +103,9 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
 
     @Mock
     NicExtraDhcpOptionDao nicExtraDhcpOptionDao;
+
+    @Mock
+    NicNetworkMapDao nicNetworkMapDao;
 
     private UserVmJoinVO userVm = new UserVmJoinVO();
     private UserVmResponse userVmResponse = new UserVmResponse();
