@@ -104,10 +104,21 @@ export default {
     {
       api: 'createAccount',
       icon: 'plus-outlined',
-      label: 'label.add.account',
+      label: 'label.add.tenant.account',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddAccount.vue')))
+    },
+    {
+      api: 'createUser',
+      icon: 'user-add-outlined',
+      label: 'label.add.user',
+      dataView: true,
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && record.state === 'enabled'
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddUser.vue')))
     },
     {
       api: 'ldapCreateAccount',
