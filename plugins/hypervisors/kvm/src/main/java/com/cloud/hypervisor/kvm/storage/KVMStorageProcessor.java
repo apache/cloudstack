@@ -663,7 +663,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk volume = secondaryStoragePool.getPhysicalDisk(srcVolumeName);
 
-            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
+            // the file tells the format: a volume from RBD or CLVM is RAW, but its copy on secondary storage is qcow2
+            volume.setFormat(srcVolumeName.endsWith(".qcow2") ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.valueOf(srcFormat.toString()));
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
 
