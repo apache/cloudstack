@@ -60,10 +60,13 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -125,9 +128,11 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkService;
@@ -251,6 +256,10 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private NetworkDao networkDao;
     @Mock
+    private VolumeOrchestrationService volumeOrchestrationServiceMock;
+    @Mock
+    private NetworkOrchestrationService networkOrchestrationServiceMock;
+    @Mock
     private AccountDao accountDao;
     @Mock
     private DomainDao domainDao;
@@ -284,6 +293,8 @@ public class VirtualMachineManagerImplTest {
     ExtensionDetailsDao extensionDetailsDao;
     @Mock
     NicDao _nicsDao;
+    @Mock
+    HostDetailsDao hostDetailsDao;
     @Mock
     NetworkService networkService;
     @Mock
@@ -1286,6 +1297,151 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void testOrchestrateStartExcludesHostWithoutVlanFilteringForMultiNetworkNic() throws Exception {
+        VMInstanceVO vmInstance = new VMInstanceVO();
+        ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
+        ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
+        ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
+        ReflectionTestUtils.setField(vmInstance, "hostId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "type", VirtualMachine.Type.User);
+        ReflectionTestUtils.setField(vmInstance, "dataCenterId", 1L);
+        ReflectionTestUtils.setField(vmInstance, "hypervisorType", HypervisorType.KVM);
+
+        VirtualMachineGuru vmGuru = mock(VirtualMachineGuru.class);
+        User user = mock(User.class);
+        Account account = mock(Account.class);
+        Account owner = mock(Account.class);
+        ReservationContext ctx = mock(ReservationContext.class);
+        ItWorkVO work = mock(ItWorkVO.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(template.isDeployAsIs()).thenReturn(false);
+
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        when(plan.getDataCenterId()).thenReturn(1L);
+        when(plan.getPodId()).thenReturn(1L);
+
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        DeploymentPlanner planner = mock(DeploymentPlanner.class);
+
+        when(vmInstanceDaoMock.findByUuid("vm-uuid")).thenReturn(vmInstance);
+        doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
+
+        Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
+
+        when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
+        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
+        when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
+
+        NicVO trunkNic = mock(NicVO.class);
+        when(trunkNic.getMultiNetwork()).thenReturn(true);
+        when(_nicsDao.listByVmId(vmInstance.getId())).thenReturn(java.util.Collections.singletonList(trunkNic));
+
+        Host notReadyHost = mock(Host.class);
+        when(notReadyHost.getId()).thenReturn(1L);
+        when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+
+        Host readyHost = mock(Host.class);
+        when(readyHost.getId()).thenReturn(2L);
+        DetailVO readyDetail = mock(DetailVO.class);
+        when(readyDetail.getValue()).thenReturn("true");
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
+
+        Pod destPod = mock(Pod.class);
+        when(destPod.getId()).thenReturn(2L);
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getId()).thenReturn(1L);
+
+        DeployDestination notReadyDest = mock(DeployDestination.class);
+        when(notReadyDest.getHost()).thenReturn(notReadyHost);
+
+        DeployDestination readyDest = mock(DeployDestination.class);
+        when(readyDest.getHost()).thenReturn(readyHost);
+        when(readyDest.getPod()).thenReturn(destPod);
+        when(readyDest.getCluster()).thenReturn(cluster);
+
+        when(_dpMgr.planDeployment(any(VirtualMachineProfileImpl.class), any(DataCenterDeployment.class), any(ExcludeList.class), any(DeploymentPlanner.class)))
+                .thenReturn(notReadyDest, readyDest);
+
+        doNothing().when(virtualMachineManagerImpl).checkIfTemplateNeededForCreatingVmVolumes(vmInstance);
+
+        when(_workDao.updateStep(any(), any())).thenReturn(true);
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 2L), vmInstanceDaoMock)).thenThrow(new CloudRuntimeException("Error while transitioning"));
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationFailed, new Pair(vmInstance.getHostId(), null), vmInstanceDaoMock)).thenReturn(true);
+
+        doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
+
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(account);
+        when(callContext.getCallingUser()).thenReturn(user);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+
+            try {
+                virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
+            } catch (CloudRuntimeException e) {
+                assertEquals(e.getMessage(), "Error while transitioning");
+            }
+        }
+
+        // first attempt landed on the not-ready host and was excluded without ever touching state transition;
+        // second attempt landed on the ready host and proceeded (reaching the same known stopping point as the
+        // other orchestrateStart tests confirms execution got past the readiness check this time)
+        verify(_dpMgr, Mockito.times(2)).planDeployment(any(VirtualMachineProfileImpl.class), any(DataCenterDeployment.class), any(ExcludeList.class), any(DeploymentPlanner.class));
+        verify(_stateMachine, Mockito.never()).transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 1L), vmInstanceDaoMock);
+        verify(hostDetailsDao, Mockito.atLeastOnce()).findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED);
+        verify(_stateMachine, Mockito.atLeastOnce()).transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 2L), vmInstanceDaoMock);
+        assertEquals(vmInstance.getPodIdToDeployIn(), (Long) destPod.getId());
+    }
+
+    private VMInstanceVO mockVmWithId(long id) {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(id);
+        return vm;
+    }
+
+    private NicVO mockVlanNic(int vlan, boolean multiNetwork) {
+        NicVO nic = mock(NicVO.class);
+        when(nic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(vlan));
+        when(nic.getMultiNetwork()).thenReturn(multiNetwork);
+        return nic;
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipFalseWhenDestSupportsTrunkXml() {
+        DetailVO trunkXmlSupported = mock(DetailVO.class);
+        when(trunkXmlSupported.getValue()).thenReturn("true");
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(trunkXmlSupported);
+
+        Assert.assertFalse(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+        verify(_nicsDao, Mockito.never()).listByVmId(anyLong());
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipTrueForTrunkNicOnNonTrunkXmlDest() {
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+        NicVO trunkNic = mockVlanNic(100, true);
+        when(_nicsDao.listByVmId(1L)).thenReturn(java.util.Collections.singletonList(trunkNic));
+
+        Assert.assertTrue(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipFalseForOrdinaryNicWithoutVlanFilteringDest() {
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+        NicVO ordinaryNic = mockVlanNic(100, false);
+        when(_nicsDao.listByVmId(1L)).thenReturn(java.util.Collections.singletonList(ordinaryNic));
+
+        Assert.assertFalse(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+    }
+
+    @Test
     public void testIsDiskOfferingSuitableForVmSuccess() {
         Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
         List<StoragePool> poolListMock = new ArrayList<>();
@@ -2220,4 +2376,13 @@ public class VirtualMachineManagerImplTest {
         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
     }
 
+    @Test
+    public void cleanupAllocatedResourcesRemovesVolumesAndNics() {
+        when(vmInstanceMock.getId()).thenReturn(1L);
+
+        virtualMachineManagerImpl.cleanupAllocatedResources(vmInstanceMock);
+
+        verify(volumeOrchestrationServiceMock).cleanupVolumes(1L);
+        verify(networkOrchestrationServiceMock).cleanupNics(Mockito.argThat(profile -> profile.getVirtualMachine() == vmInstanceMock));
+    }
 }

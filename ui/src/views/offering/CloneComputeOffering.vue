@@ -111,6 +111,7 @@ export default {
       storageType: 'shared',
       provisioningType: 'thin',
       cacheMode: 'none',
+      errorPolicy: 'report',
       offeringType: 'fixed',
       isCustomizedDiskIops: false,
       isPublic: true,
@@ -187,6 +188,7 @@ export default {
         storagetype: this.storageType,
         provisioningtype: this.provisioningType,
         cachemode: this.cacheMode,
+        errorpolicy: this.errorPolicy,
         qostype: this.qosType,
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
@@ -326,6 +328,10 @@ export default {
       if (r.cachemode) {
         this.cacheMode = r.cachemode
         this.form.cachemode = r.cachemode
+      }
+      if (r.errorpolicy) {
+        this.errorPolicy = r.errorpolicy
+        this.form.errorpolicy = r.errorpolicy
       }
 
       if (r.diskofferingstrictness !== undefined) {
@@ -509,6 +515,7 @@ export default {
           storagetype: values.storagetype,
           provisioningtype: values.provisioningtype,
           cachemode: values.cachemode,
+          errorpolicy: values.errorpolicy,
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
           limitcpuuse: values.limitcpuuse === true,
