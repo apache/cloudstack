@@ -178,6 +178,12 @@
                 <warning-outlined :style="{ color: $config.theme['@warning-color'] }" />
               </a-tooltip>
             </span>
+            <span v-else-if="$route.path.startsWith('/host') && record.vlanfilteringenabled && multiNetworkNicEnabledZones[record.zoneid]">
+              &nbsp;
+              <a-tooltip :title="$t('message.host.vlanfilteringenabled.tooltip')">
+                <a-tag color="blue">{{ $t('label.host.vlanfilteringenabled') }}</a-tag>
+              </a-tooltip>
+            </span>
           </span>
           <span
             v-if="record.leaseduration !== undefined"
@@ -1082,6 +1088,7 @@ import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
 import { timeZoneName } from '@/utils/timezone'
 import { FileTextOutlined } from '@ant-design/icons-vue'
+import { multiNetworkNicEnabledZones, fetchMultiNetworkNicEnabledForZone } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'ListView',
@@ -1182,7 +1189,8 @@ export default {
       },
       usageTypeMap: {},
       resourceIdToValidLinksMap: {},
-      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      multiNetworkNicEnabledZones: multiNetworkNicEnabledZones
     }
   },
   watch: {
@@ -1192,6 +1200,9 @@ export default {
         if (newData === oldData) return
         this.items.forEach(record => {
           this.resourceIdToValidLinksMap[record.id] = validateLinks(this.$router, false, record)
+          if (this.$route.path.startsWith('/host') && record.vlanfilteringenabled && record.zoneid) {
+            fetchMultiNetworkNicEnabledForZone(record.zoneid)
+          }
         })
       }
     }

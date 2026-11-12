@@ -34,6 +34,7 @@ import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
@@ -47,6 +48,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -113,6 +115,10 @@ public class LinstorDataMotionStrategyTest {
     private SnapshotDao _snapshotDao;
     @Mock
     private AgentManager _agentManager;
+    @Mock
+    private HostDetailsDao hostDetailsDao;
+    @Mock
+    private NicDao nicDao;
 
     @InjectMocks
     private LinstorDataMotionStrategy strategy;
