@@ -353,19 +353,26 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String search3 = "-iscsi-";
         String search4 = "-lun-";
 
-        if (!localPath.contains(search3)) {
+        if (localPath == null || !localPath.startsWith(search1) || !localPath.contains(search3)) {
             return false;
         }
 
-        int index = localPath.indexOf(search2);
+        int index = localPath.indexOf(search2, search1.length());
+        int index2 = localPath.indexOf(search3);
+
+        if (index < 0 || index2 < index) {
+            return false;
+        }
 
         String host = localPath.substring(search1.length(), index);
-
-        int index2 = localPath.indexOf(search3);
 
         String port = localPath.substring(index + search2.length(), index2);
 
         index = localPath.indexOf(search4);
+
+        if (index < index2) {
+            return false;
+        }
 
         String iqn = localPath.substring(index2 + search3.length(), index);
 
