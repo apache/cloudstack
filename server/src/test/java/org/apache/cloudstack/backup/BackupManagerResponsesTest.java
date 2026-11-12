@@ -37,9 +37,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.helper.BackupVolumeNameAndPath;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
+import org.apache.cloudstack.backup.dao.InternalBackupDataStoreDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,9 +52,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -85,7 +84,7 @@ public class BackupManagerResponsesTest {
     @Mock
     private BackupDetailsDao backupDetailsDao;
     @Mock
-    private InternalBackupJoinDao internalBackupJoinDaoMock;
+    private InternalBackupDataStoreDao internalBackupDataStoreDao;
 
     // Entities
     private BackupVO backup;
@@ -184,36 +183,39 @@ public class BackupManagerResponsesTest {
     public void createBackupResponseTestKBOSSResponseAdmin() {
         ReflectionTestUtils.setField(backupOffering, "provider", BackupManagerImpl.KBOSS_BACKUP_PROVIDER);
 
-        InternalBackupJoinVO backupJoin = createBackupJoin();
-        Mockito.when(internalBackupJoinDaoMock.listById(Mockito.anyLong())).thenReturn(Collections.singletonList(backupJoin));
+        Map<String, BackupVolumeNameAndPath> backupJoins = getMapOfBackupJoins(1);
+        Mockito.when(internalBackupDataStoreDao.listVolumeNamesAndBackupPaths(Mockito.anyLong())).thenReturn(backupJoins);
 
         BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
         assertFullBackupResponseFields(response);
         Assert.assertFalse(response.getBackupPaths().isEmpty());
-        Assert.assertTrue(response.getBackupPaths().containsKey(backupJoin.getVolumeUuid()));
-        Assert.assertEquals(backupJoin.getImageStorePath(), response.getBackupPaths().get(backupJoin.getVolumeUuid()).getBackupPath());
-        Assert.assertEquals(backupJoin.getVolumeName(), response.getBackupPaths().get(backupJoin.getVolumeUuid()).getVolumeName());
+
+        for (Map.Entry<String, BackupVolumeNameAndPath> backupJoin : backupJoins.entrySet()) {
+            Assert.assertTrue(response.getBackupPaths().containsKey(backupJoin.getKey()));
+            Assert.assertEquals(backupJoin.getValue().getBackupPath(), response.getBackupPaths().get(backupJoin.getKey()).getBackupPath());
+            Assert.assertEquals(backupJoin.getValue().getVolumeName(), response.getBackupPaths().get(backupJoin.getKey()).getVolumeName());
+        }
     }
 
     @Test
     public void createBackupResponseTestKBOSSResponseMultipleEqualNamedVolumes() {
         ReflectionTestUtils.setField(backupOffering, "provider", BackupManagerImpl.KBOSS_BACKUP_PROVIDER);
 
-        int joinsAmount = 3;
-        List<InternalBackupJoinVO> backupJoins = getListOfBackupJoins(joinsAmount);
-        Mockito.when(internalBackupJoinDaoMock.listById(Mockito.anyLong())).thenReturn(backupJoins);
+        int backupAmount = 3;
+        Map<String, BackupVolumeNameAndPath> backupJoins = getMapOfBackupJoins(backupAmount);
+        Mockito.when(internalBackupDataStoreDao.listVolumeNamesAndBackupPaths(Mockito.anyLong())).thenReturn(backupJoins);
 
         BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
         assertFullBackupResponseFields(response);
         Assert.assertFalse(response.getBackupPaths().isEmpty());
-        Assert.assertEquals(joinsAmount, response.getBackupPaths().size());
+        Assert.assertEquals(backupAmount, response.getBackupPaths().size());
 
-        for (InternalBackupJoinVO backupJoin : backupJoins) {
-            Assert.assertTrue(response.getBackupPaths().containsKey(backupJoin.getVolumeUuid()));
-            Assert.assertEquals(backupJoin.getImageStorePath(), response.getBackupPaths().get(backupJoin.getVolumeUuid()).getBackupPath());
-            Assert.assertEquals(backupJoin.getVolumeName(), response.getBackupPaths().get(backupJoin.getVolumeUuid()).getVolumeName());
+        for (Map.Entry<String, BackupVolumeNameAndPath> backupJoin : backupJoins.entrySet()) {
+            Assert.assertTrue(response.getBackupPaths().containsKey(backupJoin.getKey()));
+            Assert.assertEquals(backupJoin.getValue().getBackupPath(), response.getBackupPaths().get(backupJoin.getKey()).getBackupPath());
+            Assert.assertEquals(backupJoin.getValue().getVolumeName(), response.getBackupPaths().get(backupJoin.getKey()).getVolumeName());
         }
     }
 
@@ -263,25 +265,18 @@ public class BackupManagerResponsesTest {
         Assert.assertEquals("test-offering", response.getBackupOffering());
     }
 
-    private List<InternalBackupJoinVO> getListOfBackupJoins(int listSize) {
-        List<InternalBackupJoinVO> backupJoins = new java.util.ArrayList<>();
+    private Map<String, BackupVolumeNameAndPath> getMapOfBackupJoins(int backups) {
+        String basePath = "/backup/path/";
+        String baseName = "VOL-";
+        Map<String, BackupVolumeNameAndPath> backupJoins = new HashMap<>();
 
-        for (int i = 0; i < listSize; i++) {
-            backupJoins.add(createBackupJoin());
+        for (int i = 0; i < backups; i++) {
+            String path = basePath + i;
+            String name = baseName + i;
+
+            backupJoins.put(UUID.randomUUID().toString(), new BackupVolumeNameAndPath(path, name));
         }
 
         return backupJoins;
-    }
-
-    private InternalBackupJoinVO createBackupJoin() {
-        String backupPath = "/backup/path";
-        String volumeName = "ROOT";
-        String volumeUuid = UUID.randomUUID().toString();
-        InternalBackupJoinVO backupJoin = new InternalBackupJoinVO();
-        ReflectionTestUtils.setField(backupJoin, "imageStorePath", backupPath);
-        ReflectionTestUtils.setField(backupJoin, "volumeName", volumeName);
-        ReflectionTestUtils.setField(backupJoin, "volumeUuid", volumeUuid);
-
-        return backupJoin;
     }
 }

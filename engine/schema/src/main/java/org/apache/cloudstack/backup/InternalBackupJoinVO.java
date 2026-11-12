@@ -98,12 +98,6 @@ public class InternalBackupJoinVO {
     @Column(name = "volume_id")
     private long volumeId;
 
-    @Column(name = "volume_uuid")
-    private String volumeUuid;
-
-    @Column(name = "volume_name")
-    private String volumeName;
-
     @Column(name = "isolated")
     private Boolean isolated;
 
@@ -181,21 +175,12 @@ public class InternalBackupJoinVO {
         return volumeId;
     }
 
-    public String getVolumeName() {
-        return volumeName;
-    }
-
     public Boolean getIsolated() {
         return BooleanUtils.isTrue(isolated);
     }
 
     public Backup.CompressionStatus getCompressionStatus() {
         return compressionStatus;
-    }
-
-
-    public String getVolumeUuid() {
-        return volumeUuid;
     }
 
     @Override
