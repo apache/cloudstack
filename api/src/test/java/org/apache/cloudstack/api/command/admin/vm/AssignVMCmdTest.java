@@ -31,9 +31,13 @@ import org.junit.Test;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VirtualMachine;
 
 public class AssignVMCmdTest {
+
+    private static final String VM_UUID = "8f6c1c9e-3a2b-4d5e-9f01-23456789abcd";
 
     private AssignVMCmd assignVMCmd;
     private UserVmService userVmService;
@@ -50,6 +54,10 @@ public class AssignVMCmdTest {
 
         userVmService = mock(UserVmService.class);
         assignVMCmd._userVmService = userVmService;
+
+        UUIDManager uuidMgr = mock(UUIDManager.class);
+        when(uuidMgr.getUuid(VirtualMachine.class, 1L)).thenReturn(VM_UUID);
+        assignVMCmd._uuidMgr = uuidMgr;
 
         configDepot = mock(ConfigDepotImpl.class);
         ConfigKey.init(configDepot);
@@ -75,7 +83,7 @@ public class AssignVMCmdTest {
             fail("Expected a ServerApiException to be thrown");
         } catch (ServerApiException e) {
             assertEquals(ApiErrorCode.PARAM_ERROR, e.getErrorCode());
-            assertEquals("Failed to move Instance [1].", e.getDescription());
+            assertEquals("Failed to move Instance [" + VM_UUID + "].", e.getDescription());
         }
     }
 
@@ -89,7 +97,7 @@ public class AssignVMCmdTest {
             fail("Expected a ServerApiException to be thrown");
         } catch (ServerApiException e) {
             assertEquals(ApiErrorCode.PARAM_ERROR, e.getErrorCode());
-            assertEquals("Failed to move Instance [1]: account over resource limit", e.getDescription());
+            assertEquals("Failed to move Instance [" + VM_UUID + "]: account over resource limit", e.getDescription());
         }
     }
 
@@ -103,7 +111,7 @@ public class AssignVMCmdTest {
             fail("Expected a ServerApiException to be thrown");
         } catch (ServerApiException e) {
             assertEquals(ApiErrorCode.INTERNAL_ERROR, e.getErrorCode());
-            assertEquals("Failed to move Instance [1].", e.getDescription());
+            assertEquals("Failed to move Instance [" + VM_UUID + "].", e.getDescription());
         }
     }
 }

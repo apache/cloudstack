@@ -94,6 +94,10 @@ public class AssignVMCmd extends BaseCmd  {
         return virtualMachineId;
     }
 
+    private String getVmUUID() {
+        return _uuidMgr.getUuid(VirtualMachine.class, getVmId());
+    }
+
     public String getAccountName() {
         return accountName;
     }
@@ -127,10 +131,11 @@ public class AssignVMCmd extends BaseCmd  {
             setResponseObject(response);
         } catch (Exception e) {
             ApiErrorCode errorCode = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
-            String msg = String.format("Failed to move Instance [%s].", getVmId());
+            String vmUuid = getVmUUID();
+            String msg = String.format("Failed to move Instance [%s].", vmUuid);
             logger.error(msg, e);
             if (e instanceof InvalidParameterValueException && Boolean.TRUE.equals(UserVmService.AllowExposingVmAssignFailureDetails.value())) {
-                msg = String.format("Failed to move Instance [%s]: %s", getVmId(), e.getMessage());
+                msg = String.format("Failed to move Instance [%s]: %s", vmUuid, e.getMessage());
             }
             throw new ServerApiException(errorCode, msg);
         }
