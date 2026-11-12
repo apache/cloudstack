@@ -343,6 +343,28 @@ public class ApiServletTest {
         Assert.assertEquals("{\"errorresponse\":{}}", responseWriter.toString());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void processRequestInContextNonLoginUnexpectedExceptionKeepsSessionAndReturnsError() throws UnknownHostException {
+        Mockito.when(request.getMethod()).thenReturn("POST");
+        Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(session);
+        HashMap<String, String[]> params = new HashMap<String, String[]>();
+        params.put(ApiConstants.COMMAND, new String[] { "login" });
+        Mockito.when(request.getParameterMap()).thenReturn(params);
+        Mockito.when(authenticator.getAPIType()).thenReturn(APIAuthenticationType.READONLY_API);
+        Mockito.when(authenticator.authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
+                Mockito.eq(InetAddress.getByName("127.0.0.1")), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletRequest.class), Mockito.isA(HttpServletResponse.class)))
+                .thenThrow(new NullPointerException("test"));
+        Mockito.when(apiServer.getSerializedApiError(Mockito.eq(HttpServletResponse.SC_INTERNAL_SERVER_ERROR), Mockito.anyString(), Mockito.anyMap(), Mockito.anyString()))
+                .thenReturn("{\"errorresponse\":{}}");
+
+        servlet.processRequestInContext(request, response);
+
+        Mockito.verify(session, Mockito.never()).invalidate();
+        Mockito.verify(response).setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        Assert.assertEquals("{\"errorresponse\":{}}", responseWriter.toString());
+    }
+
     @Test
     public void getClientAddressWithXForwardedFor() throws UnknownHostException {
         setConfigValue("proxy.header.verify", "true");
