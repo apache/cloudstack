@@ -576,12 +576,13 @@ public class AsyncJobManagerImplTest {
         // still waiting in the queue: nothing has started
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
         Mockito.lenient().when(asyncJobDao.findById(10L)).thenReturn(job);
+        when(asyncJobDao.requestCancel(Mockito.eq(10L), Mockito.anyInt(), Mockito.anyString())).thenReturn(true);
         try {
             asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
         } catch (CloudRuntimeException e) {
             Assert.assertFalse("Refused although nothing had started: " + e.getMessage(), e.getMessage().contains("is not cancellable"));
         }
-        Assert.assertTrue(job.isCancelRequested());
+        Mockito.verify(asyncJobDao).requestCancel(Mockito.eq(10L), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.contains("Cancelled by admin"));
     }
 
     @Test
@@ -592,7 +593,7 @@ public class AsyncJobManagerImplTest {
         job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
         job.setExecutingMsid(1L);
         when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
-        when(asyncJobDao.findById(10L)).thenReturn(job);
+        when(asyncJobDao.requestCancel(Mockito.eq(10L), Mockito.anyInt(), Mockito.anyString())).thenReturn(true);
         AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
         when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
@@ -605,7 +606,7 @@ public class AsyncJobManagerImplTest {
         } catch (CloudRuntimeException e) {
             Assert.assertTrue(e.getMessage(), e.getMessage().contains("started meanwhile"));
         }
-        Assert.assertFalse(job.isCancelRequested());
+        Mockito.verify(asyncJobDao).withdrawCancel(10L);
     }
 
     @Test
@@ -616,7 +617,8 @@ public class AsyncJobManagerImplTest {
         job.setCmd("org.apache.cloudstack.api.command.user.vm.DeployVMCmd");
         job.setExecutingMsid(1L);
         when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job);
-        when(asyncJobDao.findById(10L)).thenReturn(job);
+        when(asyncJobDao.requestCancel(Mockito.eq(10L), Mockito.anyInt(), Mockito.anyString())).thenReturn(true);
+        when(asyncJobDao.withdrawCancel(10L)).thenReturn(true);
         AsyncJobVO child = childJob(11L, JobInfo.Status.IN_PROGRESS);
         when(asyncJobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(child));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
@@ -630,9 +632,65 @@ public class AsyncJobManagerImplTest {
         } catch (CloudRuntimeException expected) {
             // the cancel was withdrawn
         }
+        Mockito.verify(handler).jobCancelWithdrawn(10L);
+    }
+
+    @Test
+    public void testCancelOfAJobThatCompletedBeforeTheRequestIsRefusedAndKeepsItsResult() {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setUuid("job-uuid");
+        AsyncJobVO completed = childJob(10L, JobInfo.Status.SUCCEEDED);
+        completed.setRelated(null);
+        // in progress when read, completed by the time the flag is written
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job, completed);
+
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+            Assert.fail("A completed job was cancelled");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("is not running. Current job status is SUCCEEDED"));
+        }
+        Mockito.verify(asyncJobDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(asyncJobDao, Mockito.never()).withdrawCancel(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCancelOfAJobThatCompletedWhileItsWorkWasBeingStoppedIsRefused() throws Exception {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setUuid("job-uuid");
+        AsyncJobVO completed = childJob(10L, JobInfo.Status.SUCCEEDED);
+        completed.setRelated(null);
+        when(asyncJobDao.findByIdIncludingRemoved(10L)).thenReturn(job, completed);
+        when(asyncJobDao.requestCancel(Mockito.eq(10L), Mockito.anyInt(), Mockito.anyString())).thenReturn(true);
+        JobCancellationHandler handler = Mockito.mock(JobCancellationHandler.class);
+        when(handler.cancelJobExecution(10L, "Cancelled by admin")).thenReturn(true);
+        setField("jobCancellationHandlers", Collections.singletonList(handler));
+
+        try {
+            asyncJobManager.cancelAsyncJob(10L, "Cancelled by admin");
+            Assert.fail("A job that completed meanwhile was cancelled");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("completed meanwhile"));
+        }
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(10L);
+    }
+
+    @Test
+    public void testCompletionOtherThanCancelledClearsACancelThatDidNotTake() {
+        AsyncJobVO job = childJob(10L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated(null);
+        job.setCancelRequested(true);
+        job.setCancelDelivered(true);
+
+        asyncJobManager.recordCompletion(job, JobInfo.Status.SUCCEEDED, 0, "the volume");
+
+        Assert.assertEquals(JobInfo.Status.SUCCEEDED, job.getStatus());
         Assert.assertFalse(job.isCancelRequested());
         Assert.assertFalse(job.isCancelDelivered());
-        Mockito.verify(handler).jobCancelWithdrawn(10L);
+        Assert.assertEquals("the volume", job.getResult());
+        Mockito.verify(asyncJobDao).update(10L, job);
     }
 
     @Test
@@ -671,7 +729,7 @@ public class AsyncJobManagerImplTest {
         } catch (CloudRuntimeException e) {
             Assert.assertTrue(e.getMessage(), e.getMessage().contains("already being cancelled (Cancelled by admin via mgmt2)"));
         }
-        Mockito.verify(asyncJobDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(asyncJobDao, Mockito.never()).requestCancel(Mockito.anyLong(), Mockito.anyInt(), Mockito.any());
     }
 
     @Test

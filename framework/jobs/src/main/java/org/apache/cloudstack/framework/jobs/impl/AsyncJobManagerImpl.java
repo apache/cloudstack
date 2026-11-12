@@ -55,6 +55,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobDataHelper;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -412,21 +413,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 if (logger.isDebugEnabled()) {
                     logger.debug("Update db status for job-" + jobId);
                 }
-                job.setStatus(jobStatus);
-                job.setResultCode(resultCode);
-
-                if (resultObject != null) {
-                    job.updateResultWithEncryptionIfNeeded(resultObject);
-                } else {
-                    job.updateResultWithEncryptionIfNeeded(null);
-                }
-
-                final Date currentGMTTime = DateUtil.currentGMTTime();
-                job.setLastUpdated(currentGMTTime);
-                job.setCompleteMsid(getMsid());
-                job.setRemoved(currentGMTTime);
-                job.setExecutingMsid(null);
-                _jobDao.update(jobId, job);
+                recordCompletion(job, jobStatus, resultCode, resultObject);
 
                 if (logger.isDebugEnabled()) {
                     logger.debug("Wake up jobs joined with job-" + jobId + " and disjoin all subjobs created from job- " + jobId);
@@ -455,6 +442,24 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
         */
         _messageBus.publish(null, AsyncJob.Topics.JOB_STATE, PublishScope.GLOBAL, jobId);
+    }
+
+    void recordCompletion(final AsyncJobVO job, final Status jobStatus, final int resultCode, final String resultObject) {
+        job.setStatus(jobStatus);
+        job.setResultCode(resultCode);
+        if (jobStatus != JobInfo.Status.CANCELLED) {
+            // a cancel requested after this job's last read did not take: it ended on its own
+            job.setCancelRequested(false);
+            job.setCancelDelivered(false);
+        }
+        job.updateResultWithEncryptionIfNeeded(resultObject);
+
+        final Date currentGMTTime = DateUtil.currentGMTTime();
+        job.setLastUpdated(currentGMTTime);
+        job.setCompleteMsid(getMsid());
+        job.setRemoved(currentGMTTime);
+        job.setExecutingMsid(null);
+        _jobDao.update(job.getId(), job);
     }
 
     private String convertHumanReadableJson(String resultObj) {
@@ -1607,29 +1612,33 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
     }
 
-    private void requestJobCancel(final AsyncJobVO job, final String cancelledBy) {
-        job.setCancelRequested(true);
-        job.setCancelDelivered(false);
-        job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-        job.updateResultWithEncryptionIfNeeded(cancelledResult(cancelledBy));
-        job.setLastUpdated(DateUtil.currentGMTTime());
-        _jobDao.update(job.getId(), job);
+    private boolean requestJobCancel(final AsyncJobVO job, final String cancelledBy) {
+        final String result = AsyncJobDataHelper.encryptResultIfNeeded(job.getCmd(), cancelledResult(cancelledBy));
+        return _jobDao.requestCancel(job.getId(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), result);
     }
 
     private void withdrawJobCancel(final long jobId) {
-        final AsyncJobVO job = _jobDao.findById(jobId);
-        if (job == null || !job.isCancelRequested() || job.getStatus() != JobInfo.Status.IN_PROGRESS) {
+        if (!_jobDao.withdrawCancel(jobId)) {
             return;
         }
-        job.setCancelRequested(false);
-        job.setCancelDelivered(false);
-        job.setResultCode(0);
-        job.updateResultWithEncryptionIfNeeded(null);
-        job.setLastUpdated(DateUtil.currentGMTTime());
-        _jobDao.update(jobId, job);
         for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
             handler.jobCancelWithdrawn(jobId);
         }
+    }
+
+    private CloudRuntimeException refusedByState(final long jobId, final AsyncJobVO job) {
+        if (job == null) {
+            return refused("Cannot cancel, job-" + jobId + " no longer exists.");
+        }
+        if (job.isCancelRequested() && job.getStatus() == JobInfo.Status.IN_PROGRESS) {
+            final String earlier = getJobCancelReasonFromResult(job);
+            return refused("Cannot cancel job-" + jobId + ", it is already being cancelled" + (earlier != null ? " (" + earlier + ")" : "") + ".");
+        }
+        if (job.getStatus() != null && job.getStatus().done()) {
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
+            return refused("Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".");
+        }
+        return null;
     }
 
     @Override
@@ -1731,9 +1740,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             CallContext.current().setEventDetails("Job id: " + job.getUuid() + ". " + cancelledBy);
         }
 
-        if (job.isCancelRequested() && job.getStatus() == JobInfo.Status.IN_PROGRESS) {
-            final String earlier = getJobCancelReasonFromResult(job);
-            throw refused("Cannot cancel job-" + jobId + ", it is already being cancelled" + (earlier != null ? " (" + earlier + ")" : "") + ".");
+        final CloudRuntimeException stateRefusal = refusedByState(jobId, job);
+        if (stateRefusal != null) {
+            throw stateRefusal;
         }
 
         boolean onlyQueuedWork = false;
@@ -1759,11 +1768,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         }
 
-        if (job.getStatus() != null && job.getStatus().done()) {
-            _queueMgr.purgeAsyncJobQueueItemId(jobId);
-            throw refused("Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".");
-        }
-
         // ask before changing state: a job whose work cannot be stopped is refused, not recorded as cancelled
         for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
             final String refusal = handler.checkJobCannotBeCancelled(jobId);
@@ -1773,7 +1777,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         logger.info("Cancellation of job-{} requested: {}", jobId, cancelledBy);
-        requestJobCancel(job, cancelledBy);
+        if (!requestJobCancel(job, cancelledBy)) {
+            // the job completed, or another cancel got in, since it was read: its result is left as it is
+            final CloudRuntimeException lateRefusal = refusedByState(jobId, _jobDao.findByIdIncludingRemoved(jobId));
+            throw lateRefusal != null ? lateRefusal : refused("Cannot cancel job-" + jobId + ", its state changed meanwhile.");
+        }
         // the flag stops a queued work job from starting; one taken by a server before the flag is work under way that cannot be stopped
         if (onlyQueuedWork && !hasOnlyQueuedWork(jobId)) {
             withdrawJobCancel(jobId);
@@ -1793,6 +1801,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
             logger.error(errMessage, t);
             throw new CloudRuntimeException(errMessage, t);
+        }
+
+        final AsyncJobVO current = _jobDao.findByIdIncludingRemoved(jobId);
+        if (current != null && current.getStatus() != null && current.getStatus().done() && current.getStatus() != JobInfo.Status.CANCELLED) {
+            throw refused("Cannot cancel job-" + jobId + ", it completed meanwhile. Current job status is " + current.getStatus() + ".");
         }
 
         final Long executingMsid = job.getExecutingMsid();
