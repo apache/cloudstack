@@ -42,6 +42,7 @@ import time
 import urllib.parse
 
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import FAILED
 from marvin.cloudstackAPI import (listPhysicalNetworks,
                                   listTrafficTypes,
                                   listManagementServers,
@@ -515,6 +516,8 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         # The built-in template is a Debian 13 cloud image with cloud-init,
         # the default user is ``debian``.
         cls.template = get_template(cls.apiclient, cls.zone.id, hypervisor=cls.hv)
+        if cls.template == FAILED:
+            assert False, "failed to get the built-in template"
         cls.logger.info("Using the built-in template: %s", cls.template)
 
         # ---- Download wrapper scripts from GitHub ----
