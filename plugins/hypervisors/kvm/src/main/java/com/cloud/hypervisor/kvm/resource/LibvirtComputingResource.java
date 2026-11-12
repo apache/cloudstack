@@ -368,7 +368,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
-    public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -6009,9 +6008,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (StringUtils.isBlank(effectiveVddkLibDir)) {
             effectiveVddkLibDir = StringUtils.trimToNull(vddkLibDir);
         }
-        if (StringUtils.isBlank(effectiveVddkLibDir) || !isVddkLibDirValid(effectiveVddkLibDir)) {
-            effectiveVddkLibDir = detectVddkLibDir();
-        }
         return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && StringUtils.isNotBlank(detectVddkVersion());
     }
 
@@ -6025,14 +6021,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         File[] libs = libDir.listFiles((dir, name) -> name.startsWith("libvixDiskLib.so"));
         return libs != null && libs.length > 0;
-    }
-
-    protected String detectVddkLibDir() {
-        String detectedPath = StringUtils.trimToNull(Script.runSimpleBashScript(VDDK_AUTODETECT_PATH_CMD));
-        if (StringUtils.isNotBlank(detectedPath) && isVddkLibDirValid(detectedPath)) {
-            return detectedPath;
-        }
-        return null;
     }
 
     protected String detectVddkVersion() {
