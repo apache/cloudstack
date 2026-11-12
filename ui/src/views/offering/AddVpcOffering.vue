@@ -752,7 +752,7 @@ export default {
         }
         params.networkmode = values.networkmode
         params.conservemode = values.conservemode
-        if (values.publicnetworkrate) {
+        if (values.publicnetworkrate !== undefined && values.publicnetworkrate !== null) {
           params.publicnetworkrate = values.publicnetworkrate
         }
         if (!values.forVpc) {
