@@ -54,8 +54,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
 
-@APICommand(name = "addImageStoreS3", description = "Adds S3 Image Store", responseObject = ImageStoreResponse.class, since = "4.7.0",
-        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
+@APICommand(name = "addImageStoreS3", description = "Adds S3 Image Store", responseObject = ImageStoreResponse.class,
+        since = "4.7.0", requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
 
     private static final String s_name = "addImageStoreS3Response";
@@ -72,25 +72,25 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
     @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true, description = "Name of the storage bucket")
     private String bucketName;
 
-    @Parameter(name = S3_SIGNER, type = STRING, required = false, description = "Signer Algorithm to use, either S3SignerType or AWSS3V4SignerType")
+    @Parameter(name = S3_SIGNER, type = STRING, description = "Signer Algorithm to use, either S3SignerType or AWSS3V4SignerType")
     private String signer;
 
-    @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false, description = "Use HTTPS instead of HTTP")
+    @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, description = "Use HTTPS instead of HTTP")
     private Boolean httpsFlag;
 
-    @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false, description = "Connection timeout (milliseconds)")
+    @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, description = "Connection timeout (milliseconds)")
     private Integer connectionTimeout;
 
-    @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false, description = "Maximum number of times to retry on error")
+    @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, description = "Maximum number of times to retry on error")
     private Integer maxErrorRetry;
 
-    @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "Socket timeout (milliseconds)")
+    @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, description = "Socket timeout (milliseconds)")
     private Integer socketTimeout;
 
-    @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, required = false, description = "Connection TTL (milliseconds)")
+    @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, description = "Connection TTL (milliseconds)")
     private Integer connectionTtl;
 
-    @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, required = false, description = "Whether TCP keep-alive is used")
+    @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, description = "Whether TCP keep-alive is used")
     private Boolean useTCPKeepAlive;
 
     @Override
