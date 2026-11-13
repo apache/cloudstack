@@ -38,7 +38,7 @@ public interface BaremetalManager extends Manager, PluggableService {
             "class name for handling external baremetal resource", true);
 
     ConfigKey<Boolean> EnableBaremetalSecurityGroupAgentEcho = new ConfigKey<>("Advanced", Boolean.class, "enable.baremetal.securitygroup.agent.echo", "false",
-            "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully", true);
+            "After starting provision process, periodically echo security agent installed in the template. Treat provisioning as success only if echo successfully", true);
 
     ConfigKey<String> BaremetalIpmiLanInterface = new ConfigKey<>("Advanced", String.class, "baremetal.ipmi.lan.interface", "default",
             "option specified in -I option of ipmitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool", true);
