@@ -61,6 +61,24 @@ public interface VmwareManager {
             "Specify the default network device type for user VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "E1000,PCNet32,Vmxnet2,Vmxnet3");
 
+    ConfigKey<String> VmwareServiceConsole = new ConfigKey<>("Advanced", String.class, "vmware.service.console", "Service Console",
+            "Specify the service console network name(for ESX hosts)", true);
+
+    ConfigKey<String> VmwareManagementPortGroup = new ConfigKey<>("Advanced", String.class, "vmware.management.portgroup", "Management Network",
+            "Specify the management network name(for ESXi hosts)", true);
+
+    ConfigKey<Integer> VmwareAdditionalVncPortRangeStart = new ConfigKey<>("Advanced", Integer.class, "vmware.additional.vnc.portrange.start", "50000",
+            "Start port number of additional VNC port range", true);
+
+    ConfigKey<Integer> VmwareAdditionalVncPortRangeSize = new ConfigKey<>("Advanced", Integer.class, "vmware.additional.vnc.portrange.size", "1000",
+            "Start port number of additional VNC port range", true);
+
+    ConfigKey<Boolean> VmwareRecycleHungWorker = new ConfigKey<>("Advanced", Boolean.class, "vmware.recycle.hung.wokervm", "false",
+            "Specify whether or not to recycle hung worker VMs", true);
+
+    ConfigKey<Long> VmwareVcenterSessionTimeout = new ConfigKey<>("Advanced", Long.class, "vmware.vcenter.session.timeout", "1200",
+            "VMware client timeout in seconds", true);
+
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();

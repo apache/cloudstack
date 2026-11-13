@@ -63,6 +63,18 @@ public interface VolumeApiService {
             true,
             ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> CopyVolumeWait = new ConfigKey<>("Storage", Integer.class, "copy.volume.wait", "10800",
+            "Timeout (in seconds) for the copy volume command", true);
+
+    ConfigKey<Integer> CreateVolumeFromSnapshotWait = new ConfigKey<>("Storage", Integer.class, "create.volume.from.snapshot.wait", "10800",
+            "Timeout (in seconds) for creating a volume from a snapshot", true);
+
+    ConfigKey<Long> MaxUploadVolumeSize = new ConfigKey<>("Storage", Long.class, "storage.max.volume.upload.size", "500",
+            "The maximum size for a uploaded volume(in GB).", true);
+
+    ConfigKey<Integer> StoragePoolMaxWaitSeconds = new ConfigKey<>("Storage", Integer.class, "storage.pool.max.waitseconds", "3600",
+            "Timeout (in seconds) to synchronize storage pool operations.", true);
+
     /**
      * Creates the database object for a volume based on the given criteria
      *

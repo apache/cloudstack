@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.cloudstack.region.gslb.GslbServiceProvider;
@@ -1526,5 +1527,10 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
     public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException,
     ResourceUnavailableException {
         return _netScalerVMManager.stopNetScalerVm(id, forced, callingAccount, callingUserId);
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {DefaultExternalLoadBalancerCapacity, EIPWithMultipleNetScalersEnabled, NCCCmdTimeOut};
     }
 }

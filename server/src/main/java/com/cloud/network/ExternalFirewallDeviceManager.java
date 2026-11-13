@@ -18,6 +18,7 @@ package com.cloud.network;
 
 import java.util.List;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
@@ -33,6 +34,9 @@ import com.cloud.utils.component.Manager;
  */
 
 public interface ExternalFirewallDeviceManager extends Manager {
+
+    ConfigKey<Integer> DefaultExternalFirewallCapacity = new ConfigKey<>("Advanced", Integer.class, "external.firewall.default.capacity", "50",
+            "default number of networks permitted per external load firewall device", true);
 
     /**
      * adds a firewall device in to a physical network

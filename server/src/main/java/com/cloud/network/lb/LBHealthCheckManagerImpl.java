@@ -28,6 +28,8 @@ import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -40,7 +42,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 @Component
-public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthCheckManager, Manager {
+public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthCheckManager, Manager, Configurable {
 
     @Inject
     ConfigurationDao _configDao;
@@ -104,6 +106,16 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
             logger.debug("Error while updating the LB HealtCheck ", e);
         }
         logger.debug("LB HealthCheck Manager is running and getting the updates from LB providers and updating service status");
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return LBHealthCheckManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {LBHealthCheck};
     }
 
 }

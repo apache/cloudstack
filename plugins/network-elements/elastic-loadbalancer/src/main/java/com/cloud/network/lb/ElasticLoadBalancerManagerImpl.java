@@ -33,6 +33,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.userdata.UserDataManager;
@@ -107,7 +109,7 @@ import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRou
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 @Component
-public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
+public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru, Configurable {
 
     @Inject
     private AgentManager _agentMgr;
@@ -624,5 +626,15 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
         _elbVmMapDao.expungeByLbVmList(vmIds, batchSize);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ElasticLoadBalancerManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ElasticLoadBalancerVmMemory, ElasticLoadBalancerVmCpuMhz, ElasticLoadBalancerVmNumVcpu, ElasticLoadBalancerVmGcInterval};
     }
 }
