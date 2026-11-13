@@ -46,9 +46,9 @@ import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.service.dao.ServiceOfferingDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CapacityManagerImplTest {
@@ -182,5 +182,55 @@ public class CapacityManagerImplTest {
         verify(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)),
                 eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
+    }
+
+    /*
+     * scaleToClusterUnits: capacity is counted in cluster-overcommitted units, so a VM started
+     * under a different overcommit ratio to its cluster's has to be scaled before it is charged.
+     */
+    private long scale(long requested, String vmRatio, float clusterRatio) {
+        return capacityManager.scaleToClusterUnits(requested, vmRatio, clusterRatio);
+    }
+
+    @Test
+    public void testScaleToClusterUnitsVmInheritingTheClusterRatioIsChargedAsRequested() {
+        assertEquals(4000L, scale(4000L, "10.0", 10.0f));
+        assertEquals(4000L, scale(4000L, "1.0", 1.0f));
+    }
+
+    @Test
+    public void testScaleToClusterUnitsVmWithoutARatioIsChargedAsRequested() {
+        // no detail is only written when the VM's ratio equals its cluster's and neither
+        // overcommits, in which case the request is already in cluster units
+        assertEquals(4000L, scale(4000L, null, 1.0f));
+    }
+
+    @Test
+    public void testScaleToClusterUnitsUnreadableRatioDoesNotBreakTheCharge() {
+        assertEquals(4000L, scale(4000L, "not a number", 10.0f));
+    }
+
+    @Test
+    public void testScaleToClusterUnitsUnovercommittedVmInAnOvercommittedClusterIsChargedItsFullShare() {
+        // ratio 1 in a cluster overcommitted 10 times: the VM holds its whole request, so it must
+        // occupy ten times the units of an equally sized neighbour running at the cluster ratio
+        assertEquals(40000L, scale(4000L, "1.0", 10.0f));
+    }
+
+    @Test
+    public void testScaleToClusterUnitsVmMoreOvercommittedThanItsClusterIsChargedLess() {
+        assertEquals(2000L, scale(4000L, "20.0", 10.0f));
+    }
+
+    @Test
+    public void testScaleToClusterUnitsRatioLeftOverFromAnEarlierClusterSettingIsRescaled() {
+        // cluster was 4, is now 8: a VM started under 4 must still occupy the same real share
+        assertEquals(8000L, scale(4000L, "4.0", 8.0f));
+    }
+
+    @Test
+    public void testScaleToClusterUnitsNonsenseRatiosFallBackToTheRequestedSize() {
+        assertEquals(4000L, scale(4000L, "0", 10.0f));
+        assertEquals(4000L, scale(4000L, "-1", 10.0f));
     }
 }
