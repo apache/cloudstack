@@ -181,7 +181,6 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -405,6 +404,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private VMSnapshotManager _vmSnapshotMgr;
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    private VirtualMachineManagerOverCommit vmOverCommit;
     @Inject
     private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
@@ -1511,7 +1512,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 long destHostId = dest.getHost().getId();
                 vm.setPodIdToDeployIn(dest.getPod().getId());
                 final Long clusterId = dest.getCluster().getId();
-                updateOverCommitRatioForVmProfile(vmProfile, clusterId);
+                vmOverCommit.updateOverCommitRatioForVmProfile(vmProfile, clusterId);
 
                 StartAnswer startAnswer = null;
 
@@ -1874,27 +1875,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             networkName = String.format("%s-V%s-S%s", networkName, vpc.getId(), networkVO.getId());
         }
         networkToNetworkNameMap.put(networkVO.getId(), networkName);
-    }
-
-    private void updateOverCommitRatioForVmProfile(VirtualMachineProfile vmProfile, long clusterId) {
-        final ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-        final ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
-        final float parsedClusterCpuDetailCpu = Float.parseFloat(clusterDetailCpu.getValue());
-        final float parsedClusterDetailRam = Float.parseFloat(clusterDetailRam.getValue());
-        VMInstanceDetailVO vmDetailCpu = vmInstanceDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-        VMInstanceDetailVO vmDetailRam = vmInstanceDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
-
-        if ((vmDetailCpu == null && parsedClusterCpuDetailCpu > 1f) ||
-                (vmDetailCpu != null && Float.parseFloat(vmDetailCpu.getValue()) != parsedClusterCpuDetailCpu)) {
-            vmInstanceDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
-        }
-        if ((vmDetailRam == null && parsedClusterDetailRam > 1f) ||
-                (vmDetailRam != null && Float.parseFloat(vmDetailRam.getValue()) != parsedClusterDetailRam)) {
-            vmInstanceDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
-        }
-
-        vmProfile.setCpuOvercommitRatio(Float.parseFloat(clusterDetailCpu.getValue()));
-        vmProfile.setMemoryOvercommitRatio(Float.parseFloat(clusterDetailRam.getValue()));
     }
 
     /**
@@ -3200,7 +3180,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _networkMgr.prepareNicForMigration(profile, dest);
         volumeMgr.prepareForMigration(profile, dest);
         profile.setConfigDriveLabel(VmConfigDriveLabel.value());
-        updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
+        vmOverCommit.updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
 
         final VirtualMachineTO to = toVmTO(profile);
 
@@ -4259,7 +4239,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
         Host host = _hostDao.findById(hostId);
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, null);
-        updateOverCommitRatioForVmProfile(vmProfile, host.getClusterId());
+        vmOverCommit.updateOverCommitRatioForVmProfile(vmProfile, host.getClusterId());
         final List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
         Collections.sort(nics, (nic1, nic2) -> {
             Long nicId1 = Long.valueOf(nic1.getDeviceId());
