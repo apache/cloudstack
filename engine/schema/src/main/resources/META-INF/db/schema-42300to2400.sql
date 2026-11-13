@@ -268,3 +268,15 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- Add host_stats table for the host usage history
+CREATE TABLE IF NOT EXISTS `cloud`.`host_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `host_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_host_stats__host_id` (`host_id`),
+  KEY `i_host_stats__timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='historical per-host stats samples';
