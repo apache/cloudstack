@@ -39,6 +39,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -164,6 +165,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMembershipGuard;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -199,6 +201,7 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RestoreVMSnapshotAnswer;
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -274,6 +277,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -422,6 +426,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -451,6 +457,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private ResourceScheduleManager resourceScheduleManager;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao _hostDetailsDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -523,6 +531,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private NetworkDao _networkDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     private RulesManager _rulesMgr;
     @Inject
@@ -656,6 +666,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected SnapshotHelper snapshotHelper;
     @Inject
     private AutoScaleManager autoScaleManager;
+    @Inject
+    private InstanceBootGroupMembershipGuard instanceBootGroupMembershipGuard;
     @Inject
     NsxProviderDao nsxProviderDao;
     @Inject
@@ -1563,6 +1575,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        failIfNativeVlanOnVlanFilteringHost(vmInstance, network);
+        failIfNativeVlanOnVmWithTrunkNic(vmInstance, network);
+
         setNicAsDefaultIfNeeded(vmInstance, profile);
 
         NicProfile guestNic = null;
@@ -1836,14 +1851,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to find a NIC profile for the existing default Network. This is bad and probably means some sort of configuration corruption");
         }
 
-        Network oldDefaultNetwork = null;
-        oldDefaultNetwork = _networkModel.getDefaultNetworkForVm(vmId);
-        String oldNicIdString = Long.toString(_networkModel.getDefaultNic(vmId).getId());
-        long oldNetworkOfferingId = -1L;
-
-        if (oldDefaultNetwork != null) {
-            oldNetworkOfferingId = oldDefaultNetwork.getNetworkOfferingId();
-        }
         NicVO existingVO = _nicDao.findById(existing.id);
         int chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
@@ -1869,16 +1876,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
         } else if (newdefault.getId() == nic.getNetworkId()) {
             logger.debug("successfully set default network to " + network + " for " + vmInstance);
-            String nicIdString = Long.toString(nic.getId());
-            long newNetworkOfferingId = network.getNetworkOfferingId();
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
-                    oldNicIdString, oldNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), nicIdString,
-                    newNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), nicIdString,
-                    newNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
-                    oldNicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
+            // close nic's old row before opening its new one, not after - otherwise the REMOVE below can't tell
+            // the stale row apart from the one just ASSIGNed and closes both
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), existingVO, 1L, vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), nic, 0L, vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), nic, 1L, vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), existingVO, 0L, vmInstance.isDisplay());
 
             if (vmInstance.getState() == State.Running) {
                 try {
@@ -3290,10 +3297,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void generateNetworkUsageForVm(VirtualMachine vm, boolean isDisplay, String eventType) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
-            NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, vm.getClass().getName(), vm.getUuid(), isDisplay);
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                    vm.getClass().getName(), vm.getUuid(), nic, isDefault, isDisplay);
         }
 
     }
@@ -3368,8 +3374,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             osTypeId = vm.getGuestOSId();
         }
 
-        if (group != null) {
+        if (StringUtils.isNotBlank(group)) {
             addInstanceToGroup(id, group);
+        } else if (group != null) {
+            // Allow removing an instance from its group when passing an empty group on update
+            removeInstanceFromInstanceGroup(vm.getId());
         }
 
         if (isDynamicallyScalable == null) {
@@ -3488,6 +3497,60 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.debug("User data successfully updated for vm id:  {}", vm);
         } else {
             throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
+        }
+    }
+
+    // Converges a trunk nic's associated-network DHCP entries with its current nic_network_map rows on start;
+    // no-op for a nic without associations.
+    void syncNicNetworkAssociationDhcpEntries(UserVmVO vm, NicVO nic) {
+        List<NicNetworkMapVO> currentAssociations = _nicNetworkMapDao.listByNicId(nic.getId());
+        Set<Pair<Long, String>> networkIpsCurrentlyOnNic = currentAssociations.stream()
+                .map(a -> new Pair<>(a.getNetworkId(), a.getIp4Address())).collect(Collectors.toSet());
+        networkIpsCurrentlyOnNic.add(new Pair<>(nic.getNetworkId(), nic.getIPv4Address()));
+        for (NicNetworkMapVO association : currentAssociations) {
+            sendAssociationDhcpEntry(vm, nic, association.getNetworkId(), association.getIp4Address(), association.getIp6Address(), false);
+        }
+        for (NicNetworkMapVO removedAssociation : _nicNetworkMapDao.listRemovedByNicId(nic.getId())) {
+            // skip a removal whose (network, ip) is still live on this nic - e.g. changeNicPrimaryNetwork
+            // removes the association row for the network being promoted to primary, same ip
+            if (networkIpsCurrentlyOnNic.contains(new Pair<>(removedAssociation.getNetworkId(), removedAssociation.getIp4Address()))
+                    || isIpHeldByAnotherNic(nic, removedAssociation.getNetworkId(), removedAssociation.getIp4Address())) {
+                continue;
+            }
+            sendAssociationDhcpEntry(vm, nic, removedAssociation.getNetworkId(), removedAssociation.getIp4Address(), removedAssociation.getIp6Address(), true);
+        }
+    }
+
+    // The router keys DHCP entries by ip, so a removal for an ip another nic now holds would delete that nic's entry.
+    private boolean isIpHeldByAnotherNic(NicVO nic, long networkId, String ip4Address) {
+        if (ip4Address == null) {
+            return false;
+        }
+        NicVO holder = _nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+        if (holder != null && holder.getId() != nic.getId()) {
+            return true;
+        }
+        NicNetworkMapVO association = _nicNetworkMapDao.findByNetworkIdAndIp4Address(networkId, ip4Address);
+        return association != null && association.getNicId() != nic.getId();
+    }
+
+    private void sendAssociationDhcpEntry(UserVmVO vm, NicVO nic, long networkId, String ip4Address, String ip6Address, boolean remove) {
+        NetworkVO network = _networkDao.findById(networkId);
+        if (network == null) {
+            return;
+        }
+        for (DomainRouterVO router : _routerDao.findByNetwork(networkId)) {
+            if (router.getState() != State.Running) {
+                continue;
+            }
+            try {
+                Commands commands = new Commands(Command.OnError.Stop);
+                commandSetupHelper.createDhcpEntryCommand(router, vm, nic.getMacAddress(), ip4Address, ip6Address,
+                        network.getGateway(), network.getIp6Gateway(), networkId, false, remove, commands);
+                nwHelper.sendCommandsToRouter(router, commands);
+            } catch (ResourceUnavailableException e) {
+                logger.warn("Failed to sync DHCP entry for nic {} on associated network {}: {}", nic.getUuid(), networkId, e.getMessage(), e);
+            }
         }
     }
 
@@ -3784,6 +3847,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vm.getId());
 
+        // check if vm (directly, or via its instance group) is a member of an instance boot group
+        instanceBootGroupMembershipGuard.validateVmNotInBootGroup(vm);
+
         // check if vm belongs to any plugin resources
         checkPluginsIfVmCanBeDestroyed(vm);
     }
@@ -3879,6 +3945,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
             _groupVMMapDao.expunge(sc);
         }
+        // don't leave a stale instance boot group member pointing at a group that no longer exists
+        instanceBootGroupMembershipGuard.removeInstanceGroupBootGroupMembershipIfPresent(groupId);
 
         if (_vmGroupDao.remove(groupId)) {
             return true;
@@ -3891,6 +3959,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     public boolean addInstanceToGroup(final long userVmId, String groupName) {
         UserVmVO vm = _vmDao.findById(userVmId);
+
+        instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(userVmId);
 
         InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vm.getAccountId(), groupName);
         // Create vm group if the group doesn't exist for this account
@@ -3965,6 +4035,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public void removeInstanceFromInstanceGroup(long vmId) {
         try {
             List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(vmId);
+            if (CollectionUtils.isEmpty(groupVmMaps)) {
+                logger.debug("Vm id: {} does not belong to any group", vmId);
+                return;
+            }
             for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
                 SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao.createSearchCriteria();
                 sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
@@ -5809,8 +5883,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), Long.toString(nic.getId()),
-                    network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                    VirtualMachine.class.getName(), vm.getUuid(), nic, isDefault, vm.isDisplay());
+            syncNicNetworkAssociationDhcpEntries(vm, nic);
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIPv4Address();
                 guestNic = nic;
@@ -6631,6 +6706,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (TemplateType.VNF.equals(template.getTemplateType())) {
             if (!_itMgr.isBlankInstance(template)) {
                 vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds(), cmd.getVmNetworkMap());
+                vnfTemplateManager.validateVnfApplianceTrunkNics(template, cmd.getNicNetworksList());
             }
         } else if (cmd instanceof DeployVnfApplianceCmd) {
             throw new InvalidParameterValueException("Can't deploy VNF appliance from a non-VNF template");
@@ -6736,6 +6812,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
         verifyTemplate(cmd, template, serviceOfferingId);
+        validateNoNativeVlanNicWithTrunkNic(cmd);
 
         Long diskOfferingId = cmd.getDiskOfferingId();
         DiskOffering diskOffering = null;
@@ -6858,6 +6935,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        persistAdditionalNicNetworkAssociationsOrExpunge(cmd, vm);
+
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(template.getId());
         for (VMTemplateVO tmpl: child_templates) {
@@ -6899,6 +6978,82 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    /**
+     * Persists nicnetworkslist's additional (non-primary) networks into nic_network_map for each newly-created nic,
+     * including any per-network requested IPs (nicnetworkslist[N].ip4addresses/ip6addresses) - a network with no
+     * requested IP auto-allocates, same as before this was added. The primary network of each nicnetworkslist entry
+     * already flows through the ordinary networkIds/ipToNetworkMap pipeline above unchanged, so this only handles
+     * the associations that pipeline has no concept of. No live agent update is issued - the vm hasn't started yet,
+     * so its first plug already reads these associations fresh.
+     */
+    /**
+     * Mirrors the check {@link #addAdditionalNetworksToVm} already runs for a nic's primary network, extended to
+     * an associated network as well - carrying a trunk nic's associations across an account move must not grant
+     * the new account reachability into a network it otherwise couldn't use.
+     */
+    private void checkNewAccountAccessToAssociatedNetworks(List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList, Account newAccount) {
+        for (BaseDeployVMCmd.NicNetworkGrouping grouping : nicNetworksList) {
+            for (Long networkId : grouping.getAssociatedNetworkIds()) {
+                NetworkVO network = _networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find specified Network ID: " + networkId);
+                }
+                _networkModel.checkNetworkPermissions(newAccount, network);
+            }
+        }
+    }
+
+    private void persistAdditionalNicNetworkAssociations(BaseDeployVMCmd cmd, UserVm vm)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+        persistAdditionalNicNetworkAssociations(cmd.getNicNetworksList(), vm);
+    }
+
+    /**
+     * nicnetworkslist validation runs after the Instance (and its root volume) are already persisted, so without
+     * this a rejected request (e.g. overlapping subnets) would otherwise leave an orphaned Instance behind.
+     */
+    protected void persistAdditionalNicNetworkAssociationsOrExpunge(BaseDeployVMCmd cmd, UserVm vm)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+        try {
+            persistAdditionalNicNetworkAssociations(cmd, vm);
+        } catch (InsufficientCapacityException | ResourceUnavailableException | RuntimeException e) {
+            UserVmVO vmVO = _vmDao.findById(vm.getId());
+            try {
+                expunge(vmVO);
+            } catch (Exception cleanupException) {
+                logger.debug("Failed to cleanup Instance {} after nicnetworkslist association failed", vm.getId(), cleanupException);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Persists a nicnetworkslist-shaped grouping's additional (non-primary) networks into nic_network_map for
+     * each of the vm's current nics, matched to a grouping by ascending device id. Used both at deploy time
+     * (nics freshly created) and by {@link #moveVmToUser} (nics freshly rebuilt by the account reassignment),
+     * so a trunk nic's associations can be carried across either without being silently flattened.
+     */
+    private void persistAdditionalNicNetworkAssociations(List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList, UserVm vm)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+        if (CollectionUtils.isEmpty(nicNetworksList)) {
+            return;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        nics.sort(Comparator.comparingInt(NicVO::getDeviceId));
+        if (nics.size() != nicNetworksList.size()) {
+            throw new CloudRuntimeException(String.format(
+                    "Instance %s has %d nic(s) but %d %s entries were requested",
+                    vm.getUuid(), nics.size(), nicNetworksList.size(), ApiConstants.NIC_NETWORKS_LIST));
+        }
+        for (int i = 0; i < nics.size(); i++) {
+            BaseDeployVMCmd.NicNetworkGrouping grouping = nicNetworksList.get(i);
+            List<Long> additionalNetworkIds = grouping.getAssociatedNetworkIds();
+            if (!additionalNetworkIds.isEmpty()) {
+                networkService.associateNetworksToNic(nics.get(i), additionalNetworkIds, grouping.getAssociatedNetworkIps());
+            }
+        }
     }
 
     protected void validateLeaseProperties(Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
@@ -7659,6 +7814,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 
+        String vlanFilteringUnsuitableReason = getVlanFilteringUnsuitableReason(vm, destinationHost);
+        if (vlanFilteringUnsuitableReason != null) {
+            throw new InvalidParameterValueException(String.format("Cannot migrate VM to destination host: %s. %s", destinationHost, vlanFilteringUnsuitableReason));
+        }
+
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         _hostDao.loadHostTags(destinationHostVO);
         validateStrictHostTagCheck(vm, destinationHostVO);
@@ -7688,6 +7848,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Found no ongoing snapshots on volumes associated with the vm {}", vm);
 
         return dest;
+    }
+
+    // A multi-VLAN trunk nic needs a VLAN-filtering host and a VLAN 1 nic a legacy one; a VM with neither is ready anywhere.
+    boolean isHostReadyForMultiNetworkNics(VMInstanceVO vm, Host host) {
+        return getVlanFilteringUnsuitableReason(vm, host) == null;
+    }
+
+    private void failIfNativeVlanOnVlanFilteringHost(UserVmVO vm, Network network) {
+        if (vm.getState() != State.Running || vm.getHostId() == null) {
+            return;
+        }
+        String reason = VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, vm.getHostId(), _hostDetailsDao);
+        if (reason != null) {
+            throw new InvalidParameterValueException(String.format("Cannot add network %s to Instance %s: %s", network.getUuid(), vm.getUuid(), reason));
+        }
+    }
+
+    // A trunk nic needs a VLAN-filtering host and a Guest VLAN 1 nic a legacy one, so the Instance could start nowhere.
+    private void failIfNativeVlanOnVmWithTrunkNic(UserVmVO vm, Network network) {
+        if (VlanTrunkMigrationHelper.isNativeVlanGuestNetwork(network) && VlanTrunkMigrationHelper.hasTrunkNic(_nicDao.listByVmId(vm.getId()))) {
+            throw new InvalidParameterValueException(String.format("Cannot add network %s to Instance %s: it is on VLAN 1, the native VLAN of the host uplink, "
+                    + "and the Instance has a trunk nic", network.getUuid(), vm.getUuid()));
+        }
+    }
+
+    private void validateNoNativeVlanNicWithTrunkNic(BaseDeployVMCmd cmd) {
+        List<BaseDeployVMCmd.NicNetworkGrouping> groupings = cmd.getNicNetworksList();
+        if (groupings.stream().allMatch(grouping -> grouping.getAssociatedNetworkIds().isEmpty())) {
+            return;
+        }
+        for (BaseDeployVMCmd.NicNetworkGrouping grouping : groupings) {
+            Network primaryNetwork = _networkDao.findById(grouping.getPrimaryNetworkId());
+            if (primaryNetwork != null && VlanTrunkMigrationHelper.isNativeVlanGuestNetwork(primaryNetwork)) {
+                throw new InvalidParameterValueException(String.format("Network %s is on VLAN 1, the native VLAN of the host uplink, "
+                        + "and cannot be on an Instance that has a trunk nic", primaryNetwork.getUuid()));
+            }
+        }
+    }
+
+    private String getVlanFilteringUnsuitableReason(VMInstanceVO vm, Host host) {
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicDao, _networkDao, _hostDetailsDao);
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {
@@ -8023,6 +8224,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getName(), destinationHost.getUuid()));
         }
 
+        String vlanFilteringUnsuitableReason = getVlanFilteringUnsuitableReason(vm, destinationHost);
+        if (vlanFilteringUnsuitableReason != null) {
+            throw new InvalidParameterValueException(String.format("Cannot migrate VM to destination host: %s. %s", destinationHost, vlanFilteringUnsuitableReason));
+        }
+
         validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
 
         return new Pair<>(srcHost, destinationHost);
@@ -8235,6 +8441,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
         validateIfVmHasNoRules(vm, vmId);
+        validateIfVmHasNicAssociationsRequiringNicNetworksList(vm, cmd);
 
         final List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
         validateIfVolumesHaveNoSnapshots(volumes);
@@ -8251,6 +8458,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Network newNetwork = null;
         if (!cmd.isSkipNetwork()) {
             newNetwork = ensureDestinationNetwork(cmd, vm, newAccount);
+            implementAssociatedNetworksForOwnershipChange(cmd.getNicNetworksList(), vm, caller);
         }
         try {
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -8329,6 +8537,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException(String.format("Snapshots exist for volume [%s]. Detach volume or remove snapshots for the volume before assigning VM to "
                         + "another user.", volume.getName()));
             }
+        }
+    }
+
+    /**
+     * A plain {@code networkids}/{@code iptonetworklist} move rebuilds every nic from scratch and has no way to
+     * express a trunk nic's associated networks, so {@link #cleanupOfOldOwnerNicsForNetwork} would otherwise drop
+     * them silently. Reject the move instead when the caller didn't pass {@code nicnetworkslist} to carry them.
+     */
+    protected void validateIfVmHasNicAssociationsRequiringNicNetworksList(UserVmVO vm, AssignVMCmd cmd) throws InvalidParameterValueException {
+        if (cmd.isSkipNetwork() || CollectionUtils.isNotEmpty(cmd.getNicNetworksList())) {
+            return;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (NicVO nic : nics) {
+            if (!nic.getMultiNetwork()) {
+                continue;
+            }
+            List<Long> associatedNetworkIds = _nicNetworkMapDao.listByNicId(nic.getId()).stream()
+                    .map(NicNetworkMapVO::getNetworkId)
+                    .collect(Collectors.toList());
+            throw new InvalidParameterValueException(String.format(
+                    "Nic [%s] of Instance [%s] is associated with network(s) %s. Assigning this Instance would drop "
+                            + "those associations; a root admin must use %s to carry them to the new account instead of %s.",
+                    nic.getUuid(), vm.getUuid(), associatedNetworkIds, ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS));
         }
     }
 
@@ -8419,6 +8651,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
+     * Implements (deploys a virtual router for, if one doesn't already exist) every network a trunk nic will be
+     * associated with as part of this move, same as {@link #createApplicableNetworkToCreateVm} already does for a
+     * freshly-created primary network. Must run here, before the ownership-change transaction opens: implementing
+     * a network can start a virtual router, which blocks the calling thread on an async VM-work-job outcome that
+     * can never be observed while this thread is holding that transaction open.
+     */
+    protected void implementAssociatedNetworksForOwnershipChange(List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList, UserVmVO vm, Account caller) {
+        if (CollectionUtils.isEmpty(nicNetworksList)) {
+            return;
+        }
+        DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+        for (BaseDeployVMCmd.NicNetworkGrouping grouping : nicNetworksList) {
+            for (Long networkId : grouping.getAssociatedNetworkIds()) {
+                NetworkVO network = _networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find specified Network ID: " + networkId);
+                }
+                if (network.getState() != Network.State.Implemented) {
+                    implementNetwork(caller, zone, network);
+                }
+            }
+        }
+    }
+
+    /**
      * @return a network offering with required availability that will be used to create a new isolated network for the VM
      * assignment process.
      */
@@ -8478,7 +8735,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template);
-        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            if (!cmd.isSkipNetwork()) {
+                checkNewAccountAccessToAssociatedNetworks(cmd.getNicNetworksList(), newAccount);
+                persistAdditionalNicNetworkAssociations(cmd.getNicNetworksList(), vm);
+            }
+        } catch (InsufficientCapacityException | ResourceAllocationException | ResourceUnavailableException | ConcurrentOperationException e) {
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
 
@@ -9888,11 +10149,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             // Ensure template details are loaded so that commitUserVm can copy them into the VM's details map
-            VMTemplateVO vmTemplateVO = _templateDao.findById(template.getId());
-            if (vmTemplateVO == null) {
-                throw new InvalidParameterValueException("Unable to find template with id " + template.getId() + " for virtual machine import");
+            if (template instanceof VMTemplateVO) {
+                VMTemplateVO vmTemplateVO = (VMTemplateVO) template;
+                _templateDao.loadDetails(vmTemplateVO);
             }
-            _templateDao.loadDetails(vmTemplateVO);
 
             final long id = _vmDao.getNextInSequence(Long.class, "id");
             String instanceName = StringUtils.isBlank(instanceNameInternal) ?
@@ -9906,13 +10166,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
             final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
-            final boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, vmTemplateVO, zone.getId());
-            return commitUserVm(true, zone, host, lastHost, vmTemplateVO, hostName, displayName, owner,
+            final boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
+            return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                     null, null, userData, null, null, isDisplayVm, keyboard,
                     accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), guestOsId, sshPublicKeys, networkNicMap,
                     id, instanceName, uuidName, hypervisorType, customParameters,
                     null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null, null, null, null, null);
         });
+    }
+
+    // Unmanage drops nic_network_map rows without closing their usage records, leaking billed associations; reject until that's fixed.
+    private void validateVmHasNoTrunkNicForUnmanage(UserVmVO vm) {
+        for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
+            if (nic.getMultiNetwork()) {
+                throw new InvalidParameterValueException(String.format(
+                        "Instance [%s] has a trunk nic [%s] with network associations; unmanaging such instances is not supported.",
+                        vm.getUuid(), nic.getUuid()));
+            }
+        }
     }
 
     @Override
@@ -9935,6 +10206,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new UnsupportedServiceException("Unmanaging a VM is currently not supported on hypervisor " +
                         vm.getHypervisorType().toString());
             }
+
+            validateVmHasNoTrunkNicForUnmanage(vm);
 
             List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
             checkUnmanagingVMOngoingVolumeSnapshots(vm);
@@ -10041,6 +10314,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         verifyTemplate(cmd, template, serviceOffering.getId());
+        validateNoNativeVlanNicWithTrunkNic(cmd);
 
         Long size = cmd.getSize();
 

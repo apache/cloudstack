@@ -62,6 +62,7 @@ import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ASNumberResponse;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
@@ -120,7 +121,6 @@ import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv4RouteResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
-import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -247,6 +247,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.api.query.ResourceIdSupport;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -263,7 +264,6 @@ import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
-import com.cloud.api.query.ResourceIdSupport;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -569,6 +569,18 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     @Inject
     private DomainDao domainDao;
+
+    @Inject
+    private com.cloud.vm.dao.InstanceBootGroupDao instanceBootGroupDao;
+
+    @Inject
+    private com.cloud.vm.dao.InstanceBootGroupMemberDao instanceBootGroupMemberDao;
+
+    @Inject
+    private com.cloud.vm.dao.UserVmDao userVmDao;
+
+    @Inject
+    private com.cloud.vm.dao.InstanceGroupDao instanceGroupDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1261,7 +1273,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
     }
 
-    private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
+    protected void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
         if (!forVirtualNetworks) {
             NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
 
@@ -1292,11 +1304,19 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                     }
                 }
             } else if (nic.getVmType() == Type.DomainRouter) {
-                VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
-                if (vm != null) {
-                    ipResponse.setVirtualMachineId(vm.getUuid());
-                    ipResponse.setVirtualMachineName(vm.getHostName());
-                    ipResponse.setVirtualMachineType(vm.getType().toString());
+                ipResponse.setIsSystem(true);
+                // The lookup above returns either the router's nic or its placeholder, whichever the db returns first.
+                NicVO routerNic = nic;
+                if (nic.getReservationStrategy() == Nic.ReservationStrategy.PlaceHolder) {  // found a placeholder nic, get the router's real nic
+                    routerNic = ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+                }
+                if (routerNic != null) {  // continue if we have the router's real nic, i.e. the router exists
+                    VirtualMachine vm = ApiDBUtils.findVMInstanceById(routerNic.getInstanceId());
+                    if (vm != null) {
+                        ipResponse.setVirtualMachineId(vm.getUuid());
+                        ipResponse.setVirtualMachineName(vm.getHostName());
+                        ipResponse.setVirtualMachineType(vm.getType().toString());
+                    }
                 }
             } else if (nic.getVmType().isUsedBySystem()) {
                 ipResponse.setIsSystem(true);
@@ -1567,7 +1587,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     public InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group) {
         InstanceGroupJoinVO vgroup = ApiDBUtils.newInstanceGroupView(group);
         return ApiDBUtils.newInstanceGroupResponse(vgroup);
-
     }
 
     @Override
@@ -4808,6 +4827,16 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
      */
     @Override
     public NicResponse createNicResponse(Nic result) {
+        return createNicResponse(result, null);
+    }
+
+    /**
+     * Same as {@link #createNicResponse(Nic)}, but when {@code networkId} is given (a {@code listNics?networkid=}
+     * query), the trunk nic's {@code associatednetworks} is narrowed to that one network instead of every
+     * network the nic trunks - callers that asked about one specific network shouldn't get every other one back.
+     */
+    @Override
+    public NicResponse createNicResponse(Nic result, Long networkId) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
@@ -4879,6 +4908,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 }
                 response.setSecondaryIps(ipList);
             }
+        }
+        /*trunked / associatednetworks - multi-VLAN trunk nic, if any*/
+        response.setTrunked(result.getMultiNetwork());
+        if (result.getMultiNetwork()) {
+            response.setAssociatedNetworks(ApiDBUtils.findAssociatedNetworkResponses(result.getId(), networkId));
         }
         /*18: extra dhcp options */
         List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs

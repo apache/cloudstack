@@ -180,4 +180,8 @@ public abstract class BaseViewWithTagInformationVO extends BaseViewVO implements
         return id;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+
 }

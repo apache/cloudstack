@@ -48,6 +48,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CertificateHelper {
+    private static final String[] PRIVATE_KEY_ALGORITHMS = {"RSA", "EC", "DSA"};
+
     public static byte[] buildAndSaveKeystore(final String alias, final String cert, final String privateKey, final String storePassword) throws KeyStoreException, CertificateException,
     NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         Preconditions.checkArgument(StringUtils.isNotEmpty(alias), "Certificate alias cannot be blank");
@@ -133,9 +135,16 @@ public class CertificateHelper {
     public static Key buildPrivateKey(final String base64EncodedKeyContent) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         Preconditions.checkNotNull(base64EncodedKeyContent);
 
-        final KeyFactory kf = KeyFactory.getInstance("RSA");
         final PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(Base64.decodeBase64(base64EncodedKeyContent));
-        return kf.generatePrivate(keysp);
+        InvalidKeySpecException lastException = null;
+        for (final String algorithm : PRIVATE_KEY_ALGORITHMS) {
+            try {
+                return KeyFactory.getInstance(algorithm).generatePrivate(keysp);
+            } catch (final InvalidKeySpecException e) {
+                lastException = e;
+            }
+        }
+        throw new InvalidKeySpecException("Private key is not one of the supported types: " + String.join(", ", PRIVATE_KEY_ALGORITHMS), lastException);
     }
 
     public static List<Certificate> parseChain(final String chain) throws IOException, CertificateException {
