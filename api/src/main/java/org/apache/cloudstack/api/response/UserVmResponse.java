@@ -448,6 +448,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "User VM type", since = "4.20.0")
     private String vmType;
 
+    @SerializedName("kubernetesclustertype")
+    @Param(description = "Management type of the Kubernetes cluster containing this instance")
+    private String kubernetesClusterType;
+
     @SerializedName(ApiConstants.ARCH)
     @Param(description = "CPU arch of the VM", since = "4.20.1")
     private String arch;
@@ -1324,6 +1328,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setVmType(String vmType) {
         this.vmType = vmType;
+    }
+
+    public void setKubernetesClusterType(String kubernetesClusterType) {
+        this.kubernetesClusterType = kubernetesClusterType;
+    }
+
+    public String getKubernetesClusterType() {
+        return kubernetesClusterType;
     }
 
     public String getVmType() {

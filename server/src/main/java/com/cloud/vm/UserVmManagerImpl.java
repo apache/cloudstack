@@ -1312,6 +1312,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
+        checkPluginsIfVmServiceOfferingCanBeChanged(_vmDao.findById(vmId));
+
         upgradeStoppedVirtualMachine(vmId, svcOffId, cmd.getDetails());
 
         // Generate usage event for VM upgrade
@@ -2127,6 +2129,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
                     vm.getName()));
         }
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        checkPluginsIfVmServiceOfferingCanBeChanged(_vmDao.findById(vmId));
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
         Map<String, String> cmdDetails = cmd.getDetails();
@@ -3730,6 +3734,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } catch (PermissionDeniedException ex) {
             logger.error(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
             throw new PermissionDeniedException("Account does not have permission for expunging.");
+        }
+    }
+
+    // API boundary only: CKS scaling calls the internal upgradeVirtualMachine overloads.
+    protected void checkPluginsIfVmServiceOfferingCanBeChanged(UserVm vm) {
+        try {
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(vm);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No KubernetesClusterHelper bean found");
         }
     }
 

@@ -104,6 +104,57 @@ public class KubernetesServiceHelperImplTest {
     }
 
     @Test
+    public void testOfferingChangeAllowedForOrdinaryVm() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(vm);
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testOfferingChangeAllowedForUnmappedCksVm() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(vm);
+    }
+
+    private UserVm mappedVm(KubernetesCluster.ClusterType type) {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(map.getClusterId()).thenReturn(2L);
+        Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+        if (type != null) {
+            KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+            Mockito.when(cluster.getClusterType()).thenReturn(type);
+            Mockito.when(kubernetesClusterDao.findById(2L)).thenReturn(cluster);
+        }
+        return vm;
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testOfferingChangeBlockedForCloudManagedNode() {
+        UserVm vm = mappedVm(KubernetesCluster.ClusterType.CloudManaged);
+        // The VM type is deliberately not consulted: membership is authoritative.
+        kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(vm);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testOfferingChangeBlockedForAdoptedCloudManagedNode() {
+        kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(mappedVm(KubernetesCluster.ClusterType.CloudManaged));
+    }
+
+    @Test
+    public void testOfferingChangeAllowedForExternalManagedNode() {
+        kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(mappedVm(KubernetesCluster.ClusterType.ExternalManaged));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testOfferingChangeBlockedForMissingMappedCluster() {
+        kubernetesServiceHelper.checkVmServiceOfferingCanBeChanged(mappedVm(null));
+    }
+
+    @Test
     public void testIsValidNodeTypeEmptyNodeType() {
         Assert.assertFalse(kubernetesServiceHelper.isValidNodeType(null));
     }
