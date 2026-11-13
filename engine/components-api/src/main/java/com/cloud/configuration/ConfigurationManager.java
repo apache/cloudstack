@@ -82,6 +82,8 @@ public interface ConfigurationManager {
 
     Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId);
 
+    Integer getVpcOfferingNetworkRate(long vpcOfferingId, Long dataCenterId);
+
     /**
      * Updates a configuration entry with a new value
      */

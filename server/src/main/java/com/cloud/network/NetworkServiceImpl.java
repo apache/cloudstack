@@ -4474,6 +4474,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     UsageEventUtils.publishUsageEventWithDetails(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString, networkOfferingId,
                                             null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), usageDetails, vm.isDisplay());
                                 }
+                                Integer rate = _configMgr.getNetworkOfferingNetworkRate(networkOfferingId, network.getDataCenterId());
+                                _networkDetailsDao.addDetail(networkId, ApiConstants.NETWORKRATE, String.valueOf(rate), true);
                             }
                         });
                     } else {
@@ -4872,6 +4874,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 migrateNetworkToPhysicalNetwork(tier, oldNtwkOff, newNtwkOff, vpcId, vpcCopyId, newPhysicalNetworkId, account, callerUser);
             }
         }
+        _networkMigrationManager.copyVpcDetails(vpcId, vpcCopyId);
         _networkMigrationManager.deleteCopyOfVpc(vpcId, vpcCopyId);
         return _vpcDao.findById(vpcCopyId);
     }

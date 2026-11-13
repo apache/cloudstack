@@ -77,6 +77,7 @@ select
     nics.isolation_uri isolation_uri,
     nics.mtu mtu,
     nics.enabled is_nic_enabled,
+    nics.network_rate nic_network_rate,
     vpc.id vpc_id,
     vpc.uuid vpc_uuid,
     vpc.name vpc_name,
