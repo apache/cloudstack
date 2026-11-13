@@ -268,3 +268,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- Custom DHCP (guest IP allocation) range for isolated guest networks
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_start_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''start of the custom DHCP range for an isolated network, within its CIDR'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_end_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''end of the custom DHCP range for an isolated network, within its CIDR'' ');
