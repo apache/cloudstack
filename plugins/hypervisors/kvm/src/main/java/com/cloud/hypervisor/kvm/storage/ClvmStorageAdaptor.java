@@ -413,7 +413,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         return getPhysicalDiskViaDirectBlockDevice(volumeUuid, pool);
     }
 
-    private String getVgName(String sourceDir) {
+    static String getVgName(String sourceDir) {
         String vgName = sourceDir;
         if (vgName.startsWith("/")) {
             String[] parts = vgName.split("/");
@@ -962,8 +962,12 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
             String checkResult = checkLvs.execute();
 
             if (checkResult != null) {
-                logger.info("CLVM volume {} does not exist in LVM (check returned: {}), considering it as already deleted", uuid, checkResult);
-                return true;
+                if (isLvNotFound(checkResult)) {
+                    logger.info("CLVM volume {} does not exist in LVM (check returned: {}), considering it as already deleted", uuid, checkResult);
+                    return true;
+                }
+                logger.warn("Cannot check CLVM volume {}: {}", uuid, checkResult);
+                return false;
             }
 
             logger.info("Volume {} exists, proceeding with cleanup", uuid);
@@ -990,7 +994,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
                 return true;
             } else {
                 logger.warn("Command 'lvremove -f {}' returned error: {}", lvPath, removeResult);
-                if (removeResult.contains("not found") || removeResult.contains("Failed to find")) {
+                if (isLvNotFound(removeResult)) {
                     logger.info("CLVM volume {} not found during cleanup, considering it as already deleted", uuid);
                     return true;
                 }
@@ -998,8 +1002,12 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
             }
         } catch (Exception ex) {
             logger.error("Exception during CLVM volume cleanup for {}: {}", uuid, ex.getMessage(), ex);
-            return true;
+            return false;
         }
+    }
+
+    private boolean isLvNotFound(String lvmError) {
+        return lvmError.contains("not found") || lvmError.contains("Failed to find");
     }
 
     private boolean shouldSecureZeroFill(KVMStoragePool pool) {

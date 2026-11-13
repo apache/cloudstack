@@ -31,7 +31,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.mockito.InOrder;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -99,6 +102,8 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
@@ -275,6 +280,15 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     private UserDataVO userDataMock;
+
+    @Mock
+    ClvmPoolManager clvmPoolManager;
+
+    @Mock
+    StorageManager storageManagerMock;
+
+    @Mock
+    TemplateDataFactory templateDataFactoryMock;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -1486,5 +1500,91 @@ public class TemplateManagerImplTest extends TestCase {
 
             Assert.assertEquals(Arrays.asList(3L, 4L), disks.stream().map(DiskTO::getDiskSeq).collect(java.util.stream.Collectors.toList()));
         });
+    }
+
+    private VMTemplateStoragePoolVO mockClvmTemplateRef(long refId, long poolId, String installPath) {
+        VMTemplateStoragePoolVO ref = mock(VMTemplateStoragePoolVO.class);
+        Mockito.lenient().when(ref.getId()).thenReturn(refId);
+        Mockito.lenient().when(ref.getPoolId()).thenReturn(poolId);
+        Mockito.lenient().when(ref.getTemplateId()).thenReturn(202L);
+        Mockito.lenient().when(ref.getInstallPath()).thenReturn(installPath);
+        Mockito.lenient().when(ref.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        return ref;
+    }
+
+    private PrimaryDataStore mockClvmEviction(VMTemplateStoragePoolVO ref) {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        when(primaryDataStoreDao.findById(2L)).thenReturn(pool);
+        when(clvmPoolManager.findPoolIdsSharingVg(pool)).thenReturn(Set.of(2L, 3L));
+        PrimaryDataStore store = mock(PrimaryDataStore.class);
+        Mockito.lenient().when(store.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        when(vmTemplatePoolDao.acquireInLockTable(ref.getId())).thenReturn(ref);
+        when(dataStoreManager.getPrimaryDataStore(2L)).thenReturn(store);
+        return store;
+    }
+
+    @Test
+    public void evictClvmTemplateKeepsLvReferencedByPoolOnSameVg() throws Exception {
+        VMTemplateStoragePoolVO ref = mockClvmTemplateRef(5L, 2L, "template-abc");
+        VMTemplateStoragePoolVO otherRef = mockClvmTemplateRef(6L, 3L, "template-abc");
+        mockClvmEviction(ref);
+        when(vmTemplatePoolDao.listByTemplateId(202L, List.of(3L))).thenReturn(List.of(otherRef));
+
+        templateManager.evictTemplateFromStoragePool(ref);
+
+        Mockito.verify(vmTemplatePoolDao).remove(5L);
+        Mockito.verify(storageManagerMock, Mockito.never()).sendToPool(any(StoragePool.class), any(DestroyCommand.class));
+        Mockito.verify(clvmPoolManager, Mockito.never()).deactivateOnAllHosts(any(), any());
+    }
+
+    @Test
+    public void evictClvmTemplateDeactivatesEverywhereBeforeRemovingLv() throws Exception {
+        VMTemplateStoragePoolVO ref = mockClvmTemplateRef(5L, 2L, "template-abc");
+        PrimaryDataStore store = mockClvmEviction(ref);
+        when(vmTemplatePoolDao.listByTemplateId(202L, List.of(3L))).thenReturn(Collections.emptyList());
+        com.cloud.agent.api.Answer answer = mock(com.cloud.agent.api.Answer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(storageManagerMock.sendToPool(any(StoragePool.class), any(DestroyCommand.class))).thenReturn(answer);
+
+        templateManager.evictTemplateFromStoragePool(ref);
+
+        InOrder order = Mockito.inOrder(clvmPoolManager, storageManagerMock);
+        order.verify(clvmPoolManager).deactivateOnAllHosts(store, "template-abc");
+        order.verify(storageManagerMock).sendToPool(any(StoragePool.class), any(DestroyCommand.class));
+        Mockito.verify(vmTemplatePoolDao).remove(5L);
+    }
+
+    @Test
+    public void evictClvmTemplateKeepsRecordWhenLvRemovalFails() throws Exception {
+        VMTemplateStoragePoolVO ref = mockClvmTemplateRef(5L, 2L, "template-abc");
+        mockClvmEviction(ref);
+        when(vmTemplatePoolDao.listByTemplateId(202L, List.of(3L))).thenReturn(Collections.emptyList());
+        com.cloud.agent.api.Answer answer = mock(com.cloud.agent.api.Answer.class);
+        when(answer.getResult()).thenReturn(false);
+        when(storageManagerMock.sendToPool(any(StoragePool.class), any(DestroyCommand.class))).thenReturn(answer);
+
+        templateManager.evictTemplateFromStoragePool(ref);
+
+        Mockito.verify(vmTemplatePoolDao, Mockito.never()).remove(5L);
+    }
+
+    @Test
+    public void clvmTemplateUsedAsBackingOnPoolWithSameVgIsNotUnused() {
+        VMTemplateStoragePoolVO ref = mockClvmTemplateRef(5L, 2L, "template-abc");
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getId()).thenReturn(2L);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        when(primaryDataStoreDao.findById(2L)).thenReturn(pool);
+        when(clvmPoolManager.findPoolIdsSharingVg(pool)).thenReturn(Set.of(2L, 3L));
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getId()).thenReturn(202L);
+        when(template.getTemplateType()).thenReturn(Storage.TemplateType.USER);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(vmTemplateDao.findByIdIncludingRemoved(202L)).thenReturn(template);
+        when(vmTemplatePoolDao.listByPoolId(2L)).thenReturn(List.of(ref));
+        when(volumeDao.isAnyVolumeActivelyUsingTemplateOnPool(202L, 3L)).thenReturn(true);
+
+        Assert.assertTrue(templateManager.getUnusedTemplatesInPool(pool).isEmpty());
     }
 }

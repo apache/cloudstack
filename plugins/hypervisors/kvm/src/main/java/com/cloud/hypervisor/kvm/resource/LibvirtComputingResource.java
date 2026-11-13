@@ -27,6 +27,7 @@ import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
 import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
+import static com.cloud.host.Host.HOST_SANLOCK_ID;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
@@ -234,6 +235,7 @@ import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceE
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
+import com.cloud.hypervisor.kvm.storage.clvm.ClvmSanlockHaChecker;
 import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -4479,6 +4481,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
         cmd.setIqn(getIqn());
+        addSanlockHostId(cmd);
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
         cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
         cmd.setHostTags(getHostTags());
@@ -6288,6 +6291,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
+    }
+
+    private void addSanlockHostId(StartupRoutingCommand cmd) {
+        Long sanlockHostId = ClvmSanlockHaChecker.readLocalHostId();
+        if (sanlockHostId != null) {
+            cmd.getHostDetails().put(HOST_SANLOCK_ID, String.valueOf(sanlockHostId));
+        }
     }
 
     /**

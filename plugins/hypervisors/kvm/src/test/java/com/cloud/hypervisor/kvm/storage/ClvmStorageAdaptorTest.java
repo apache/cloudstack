@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -819,6 +820,38 @@ public class ClvmStorageAdaptorTest {
         boolean result = (boolean) method.invoke(clvmStorageAdaptor, volumeUuid, mockPool);
 
         assert result : "Should return true when volume not found (already deleted)";
+    }
+
+    @Test
+    public void testCleanupCLVMVolume_LockedByOtherHost() throws Exception {
+        Mockito.when(mockPool.getLocalPath()).thenReturn("testvg");
+        Mockito.when(mockPool.getUuid()).thenReturn(UUID.randomUUID().toString());
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            boolean lvremove = "lvremove".equals(context.arguments().get(0));
+            when(mock.execute()).thenReturn(lvremove ? "  LV locked by other host: testvg/template-1" : null);
+        });
+
+        Method method = ClvmStorageAdaptor.class.getDeclaredMethod(
+            "cleanupCLVMVolume", String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        Assert.assertFalse((boolean) method.invoke(clvmStorageAdaptor, "template-1", mockPool));
+    }
+
+    @Test
+    public void testCleanupCLVMVolume_CheckFailsForOtherReason() throws Exception {
+        Mockito.when(mockPool.getLocalPath()).thenReturn("testvg");
+        Mockito.when(mockPool.getUuid()).thenReturn(UUID.randomUUID().toString());
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn("  Lock manager lvmlockd is not running"));
+
+        Method method = ClvmStorageAdaptor.class.getDeclaredMethod(
+            "cleanupCLVMVolume", String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        Assert.assertFalse((boolean) method.invoke(clvmStorageAdaptor, "template-1", mockPool));
     }
 
     @Test
