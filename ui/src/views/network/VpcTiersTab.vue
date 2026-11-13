@@ -194,7 +194,7 @@
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-               >
+              dropdownClassName="select-wrap-options">
               <a-select-option
                 v-for="item in networkOfferings"
                 :key="item.id"

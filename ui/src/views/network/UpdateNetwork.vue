@@ -120,8 +120,9 @@
             }"
             :loading="networkOfferingLoading"
             :placeholder="apiParams.networkofferingid.description"
+            dropdownClassName="select-wrap-options"
             @change="val => { networkOffering = networkOfferings[val] }">
-            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name">
+            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name" :title="opt.displaytext || opt.name">
               {{ opt.displaytext || opt.name }}
             </a-select-option>
           </a-select>
