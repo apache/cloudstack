@@ -40,7 +40,7 @@ public class NetworkProtocolResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "the details of the protocol parameter")
-    private Map details;
+    private Map<String, String> details;
 
     public NetworkProtocolResponse(Integer index, String name, String description) {
         this.index = index;
@@ -72,17 +72,17 @@ public class NetworkProtocolResponse extends BaseResponse {
         this.description = description;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         return details;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
         this.details = details;
     }
 
     public void addDetail(String key, String value) {
         if (this.details == null) {
-            this.details = new LinkedHashMap();
+            this.details = new LinkedHashMap<>();
         }
         this.details.put(key, value);
     }

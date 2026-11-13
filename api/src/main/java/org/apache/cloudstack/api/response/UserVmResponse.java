@@ -346,7 +346,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Instance details in key/value pairs.", since = "4.2.1")
-    private Map details;
+    private Map<String, String> details;
 
     @SerializedName("readonlydetails")
     @Param(description = "List of read-only Instance details as comma separated string.", since = "4.16.0")
@@ -1115,7 +1115,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.serviceState = state;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
         this.details = details;
     }
 
@@ -1143,7 +1143,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.tagIds = tagIds;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         return details;
     }
 

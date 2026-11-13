@@ -29,7 +29,7 @@ public class TemplateUploadParams extends UploadParamsBase {
                                 Boolean isExtractable, String format, Long guestOSId,
                                 Long zoneId, Hypervisor.HypervisorType hypervisorType, String chksum,
                                 String templateTag, long templateOwnerId,
-                                Map details, Boolean sshkeyEnabled,
+                                Map<String, String> details, Boolean sshkeyEnabled,
                                 Boolean isDynamicallyScalable, Boolean isRoutingType, boolean deployAsIs,
                                 boolean forCks, String templateType) {
         super(userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, isPublic, featured, isExtractable,
