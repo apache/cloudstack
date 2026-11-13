@@ -33,7 +33,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
-import com.cloud.configuration.Config;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.NumbersUtil;
@@ -62,7 +61,7 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
             logger.info(format("Configuring LBHealthCheck Manager %1$s", name));
         }
         this.name = name;
-        _interval = NumbersUtil.parseLong(_configs.get(Config.LBHealthCheck.key()), 600);
+        _interval = NumbersUtil.parseLong(_configs.get(LBHealthCheck.key()), 600);
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("LBHealthCheck"));
         return true;
     }

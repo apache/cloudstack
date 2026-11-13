@@ -84,6 +84,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -309,11 +310,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             throw new ConfigurationException(msg);
         }
 
-        String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        String enabled = ManagementServer.ElasticLoadBalancerEnabled.value();
         _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
         logger.info("Elastic Load balancer enabled: " + _enabled);
         if (_enabled) {
-            String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+            String traffType = ManagementServer.ElasticLoadBalancerNetwork.value();
             if ("guest".equalsIgnoreCase(traffType)) {
                 _frontendTrafficType = TrafficType.Guest;
             } else if ("public".equalsIgnoreCase(traffType)) {
@@ -321,7 +322,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             } else
                 throw new ConfigurationException("ELB: Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
             logger.info("ELB: Elastic Load Balancer: will balance on " + traffType);
-            int gcIntervalMinutes = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
+            int gcIntervalMinutes = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmGcInterval.key()), 5);
             if (gcIntervalMinutes < 5)
                 gcIntervalMinutes = 5;
             logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes");
@@ -485,7 +486,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (defaultDns2 != null) {
             buf.append(" dns2=").append(defaultDns2);
         }
-        String msPublicKey = _configDao.getValue("ssh.publickey");
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
