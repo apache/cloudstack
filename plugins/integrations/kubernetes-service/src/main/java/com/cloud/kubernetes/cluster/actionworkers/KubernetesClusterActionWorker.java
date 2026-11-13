@@ -1090,7 +1090,10 @@ public class KubernetesClusterActionWorker {
             }
         }
 
-        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
+        final String registryEnabledKey = "{{ registry.enabled }}";
+        boolean registryEnabled = StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl);
+        k8sConfig = k8sConfig.replace(registryEnabledKey, String.valueOf(registryEnabled));
+        if (registryEnabled) {
             // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
             String runCmd = "- bash -x /opt/bin/setup-containerd";
 
