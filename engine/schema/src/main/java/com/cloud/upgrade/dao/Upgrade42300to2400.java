@@ -38,20 +38,27 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
 
     @Override
     public void performDataMigration(Connection conn) {
-        encryptUserData(conn, "user_vm");
-        encryptUserData(conn, "user_data");
-        encryptUserData(conn, "autoscale_vmprofiles");
+        encryptUserData(conn, "user_vm",
+                "SELECT `id`, `user_data` FROM `cloud`.`user_vm` WHERE `user_data` IS NOT NULL",
+                "UPDATE `cloud`.`user_vm` SET `user_data` = ? WHERE `id` = ?");
+        encryptUserData(conn, "user_data",
+                "SELECT `id`, `user_data` FROM `cloud`.`user_data` WHERE `user_data` IS NOT NULL",
+                "UPDATE `cloud`.`user_data` SET `user_data` = ? WHERE `id` = ?");
+        encryptUserData(conn, "autoscale_vmprofiles",
+                "SELECT `id`, `user_data` FROM `cloud`.`autoscale_vmprofiles` WHERE `user_data` IS NOT NULL",
+                "UPDATE `cloud`.`autoscale_vmprofiles` SET `user_data` = ? WHERE `id` = ?");
     }
 
-    private void encryptUserData(Connection conn, String table) {
-        try (PreparedStatement selectStatement = conn.prepareStatement(String.format("SELECT `id`, `user_data` FROM `cloud`.`%s` WHERE `user_data` IS NOT NULL", table));
+    private void encryptUserData(Connection conn, String table, String selectSql, String updateSql) {
+        try (PreparedStatement selectStatement = conn.prepareStatement(selectSql);
              ResultSet resultSet = selectStatement.executeQuery();
-             PreparedStatement updateStatement = conn.prepareStatement(String.format("UPDATE `cloud`.`%s` SET `user_data` = ? WHERE `id` = ?", table))) {
+             PreparedStatement updateStatement = conn.prepareStatement(updateSql)) {
             while (resultSet.next()) {
                 updateStatement.setString(1, DBEncryptionUtil.encrypt(resultSet.getString(2)));
                 updateStatement.setLong(2, resultSet.getLong(1));
-                updateStatement.executeUpdate();
+                updateStatement.addBatch();
             }
+            updateStatement.executeBatch();
         } catch (SQLException e) {
             throw new CloudRuntimeException(String.format("Failed to encrypt user_data in table %s", table), e);
         }
