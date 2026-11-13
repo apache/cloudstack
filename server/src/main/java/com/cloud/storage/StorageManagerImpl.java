@@ -28,7 +28,6 @@ import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -143,8 +142,8 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -670,6 +669,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long capacityBytes = poolInfos.get("capacityBytes") != null ? Long.parseLong(poolInfos.get("capacityBytes").toString()) : 0;
 
+        @SuppressWarnings("unchecked") // the local storage configuration is parsed into untyped maps
+        Map<String, String> poolDetails = (Map<String, String>) poolInfos.get("details");
         StoragePoolInfo pInfo = new StoragePoolInfo(poolInfos.get("uuid").toString(),
                                                     host.getPrivateIpAddress(),
                                                     hostPath,
@@ -677,7 +678,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                                     StoragePoolType.Filesystem,
                                                     capacityBytes,
                                                     0,
-                                                    (Map<String,String>)poolInfos.get("details"),
+                                                    poolDetails,
                                                     poolInfos.get("name").toString());
 
         return createLocalStorage(host, pInfo);
@@ -1030,18 +1031,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return uriParams;
     }
 
-    private Map<String, String> extractApiParamAsMap(Map ds) {
+    private Map<String, String> extractApiParamAsMap(Map<String, ? extends Map<String, String>> ds) {
         Map<String, String> details = new HashMap<>();
         if (ds != null) {
-            Collection detailsCollection = ds.values();
-            Iterator it = detailsCollection.iterator();
-            while (it.hasNext()) {
-                HashMap d = (HashMap)it.next();
-                Iterator it2 = d.entrySet().iterator();
-                while (it2.hasNext()) {
-                    Map.Entry entry = (Map.Entry)it2.next();
-                    details.put((String)entry.getKey(), (String)entry.getValue());
-                }
+            for (Map<String, String> d : ds.values()) {
+                details.putAll(d);
             }
         }
         return details;
@@ -1421,9 +1415,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         String storageAccessGroupsOnZone = zoneVO.getStorageAccessGroups();
         List<String> zoneTagsList = parseTags(storageAccessGroupsOnZone);
-        List<String> newTags = storageAccessGroups;
 
-        List<String> existingTagsOnZone = (List<String>) CollectionUtils.intersection(newTags, zoneTagsList);
+        List<String> existingTagsOnZone = new ArrayList<>(CollectionUtils.intersection(storageAccessGroups, zoneTagsList));
 
         if (CollectionUtils.isNotEmpty(existingTagsOnZone)) {
             throw new CloudRuntimeException(String.format("access groups already exist on the zone: %s", existingTagsOnZone));
@@ -1439,10 +1432,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         List<String> podTagsList = parseTags(storageAccessGroupsOnPod);
         List<String> zoneTagsList = parseTags(storageAccessGroupsOnZone);
-        List<String> newTags = storageAccessGroups;
 
-        List<String> existingTagsOnPod = (List<String>) CollectionUtils.intersection(newTags, podTagsList);
-        List<String> existingTagsOnZone = (List<String>) CollectionUtils.intersection(newTags, zoneTagsList);
+        List<String> existingTagsOnPod = new ArrayList<>(CollectionUtils.intersection(storageAccessGroups, podTagsList));
+        List<String> existingTagsOnZone = new ArrayList<>(CollectionUtils.intersection(storageAccessGroups, zoneTagsList));
 
         if (CollectionUtils.isNotEmpty(existingTagsOnPod) || CollectionUtils.isNotEmpty(existingTagsOnZone)) {
             String message = "access groups already exist ";
@@ -1473,11 +1465,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<String> podTagsList = parseTags(storageAccessGroupsOnPod);
         List<String> zoneTagsList = parseTags(storageAccessGroupsOnZone);
         List<String> clusterTagsList = parseTags(storageAccessGroupsOnCluster);
-        List<String> newTags = storageAccessGroups;
 
-        List<String> existingTagsOnCluster = (List<String>) CollectionUtils.intersection(newTags, clusterTagsList);
-        List<String> existingTagsOnPod = (List<String>) CollectionUtils.intersection(newTags, podTagsList);
-        List<String> existingTagsOnZone = (List<String>) CollectionUtils.intersection(newTags, zoneTagsList);
+        List<String> existingTagsOnCluster = new ArrayList<>(CollectionUtils.intersection(storageAccessGroups, clusterTagsList));
+        List<String> existingTagsOnPod = new ArrayList<>(CollectionUtils.intersection(storageAccessGroups, podTagsList));
+        List<String> existingTagsOnZone = new ArrayList<>(CollectionUtils.intersection(storageAccessGroups, zoneTagsList));
 
         if (CollectionUtils.isNotEmpty(existingTagsOnCluster) || CollectionUtils.isNotEmpty(existingTagsOnPod) || CollectionUtils.isNotEmpty(existingTagsOnZone)) {
             String message = "access groups already exist ";
@@ -1573,14 +1564,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details) {
         boolean details_added = false;
-        if (!pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
-            return new Pair<>(details, details_added);
-        }
-
-        StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
-        if (nfsMountOpts != null) {
-            if (details == null) {
-                details = new HashMap<>();
+        if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+            StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
+            if (nfsMountOpts != null) {
+                if (details == null) {
+                    details = new HashMap<>();
+                }
+                details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
+                details_added = true;
             }
             details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
             details_added = true;
@@ -4483,7 +4474,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_OBJECT_STORE_CREATE, eventDescription = "creating object storage")
-    public ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details)
+    public ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map<String, String> details)
             throws IllegalArgumentException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
