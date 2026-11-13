@@ -76,6 +76,7 @@ public final class LibvirtCreateCommandWrapper extends CommandWrapper<CreateComm
             volume.setIopsReadRate(dskch.getIopsReadRate());
             volume.setIopsWriteRate(dskch.getIopsWriteRate());
             volume.setCacheMode(dskch.getCacheMode());
+            volume.setErrorPolicy(dskch.getErrorPolicy());
             return new CreateAnswer(command, volume);
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to create volume: " + e.toString());

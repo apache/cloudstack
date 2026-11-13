@@ -152,6 +152,10 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "The cache mode to use for this disk offering. none, writeback or writethrough", since = "4.4")
     private String cacheMode;
 
+    @SerializedName("errorpolicy")
+    @Param(description = "The disk error policy to use for this disk offering. report, stop, ignore or enospace", since = "24.0.0")
+    private String errorPolicy;
+
     @SerializedName("displayoffering")
     @Param(description = "Whether to display the offering to the end user or not.")
     private Boolean displayOffering;
@@ -320,6 +324,14 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
+    }
+
+    public void setErrorPolicy(String errorPolicy) {
+        this.errorPolicy = errorPolicy;
     }
 
     public String getStorageType() {
