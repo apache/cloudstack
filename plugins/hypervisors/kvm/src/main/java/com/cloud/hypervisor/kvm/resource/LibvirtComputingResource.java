@@ -37,6 +37,9 @@ import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_SUPPORT;
+import static com.cloud.host.Host.HOST_GUEST_BRIDGE_STP_ENABLED;
+import static com.cloud.host.Host.HOST_VLAN_FILTERING_ENABLED;
+import static com.cloud.host.Host.HOST_VLAN_TRUNK_XML_SUPPORTED;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
@@ -141,6 +144,7 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
+import org.libvirt.Error;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
@@ -371,6 +375,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE = 9000;
     /**
+     * Libvirt supports multi-tag trunk mode (&lt;vlan trunk='yes'&gt;) on a standard Linux bridge since 11.0.0.
+     */
+    private static final long MIN_LIBVIRT_VERSION_FOR_VLAN_TRUNK = 11000000;
+    /**
      * Constant that defines ARM64 (aarch64) guest architectures.
      */
     private static final String AARCH64 = "aarch64";
@@ -524,6 +532,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String linkLocalBridgeName;
     protected String publicBridgeName;
     protected String guestBridgeName;
+    // Guest traffic label (BridgeVifDriver#plugTrunkVlanNic prefers it over guestBridgeName)
+    protected String guestTrafficLabel;
     protected String privateIp;
     protected String pool;
     protected String localGateway;
@@ -638,8 +648,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
-    public static final String AGENT_IS_NOT_CONNECTED = "QEMU guest agent is not connected";
-
+    public static final org.libvirt.Error.ErrorNumber AGENT_UNRESPONSIVE_ERROR = Error.ErrorNumber.VIR_ERR_AGENT_UNRESPONSIVE;
     /**
      * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
      * 1st parameter: VM's name;<br>
@@ -4477,6 +4486,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
         cmd.getHostDetails().put(HOST_CDROM_MAX_COUNT, String.valueOf(LibvirtVMDef.MAX_CDROMS_PER_VM));
+        cmd.getHostDetails().put(HOST_VLAN_FILTERING_ENABLED, String.valueOf(hostSupportsVlanFiltering()));
+        cmd.getHostDetails().put(HOST_GUEST_BRIDGE_STP_ENABLED, String.valueOf(isGuestBridgeStpEnabled()));
+        cmd.getHostDetails().put(HOST_VLAN_TRUNK_XML_SUPPORTED, String.valueOf(hostSupportsVlanTrunkXml()));
         cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_SUPPORT, String.valueOf(hostSupportsVddkBlockCopy()));
         cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyInPlaceFinalization()));
         cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyRbd()));
@@ -6330,6 +6342,69 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
+    /**
+     * Static capability: whether this host's libvirt understands multi-tag trunk vlan XML
+     * (&lt;vlan trunk='yes'&gt;) on a standard Linux bridge interface.
+     */
+    public boolean hostSupportsVlanTrunkXml() {
+        return hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_VLAN_TRUNK;
+    }
+
+    /**
+     * Live state: whether vlan_filtering is currently enabled on this host's guest bridge.
+     * A vlan_filtering=0 bridge floods every tagged frame to every port regardless of tag,
+     * so this must be true before any multi-VLAN trunk nic can be placed on this host.
+     */
+    public boolean hostSupportsVlanFiltering() {
+        return isBridgeVlanFilteringEnabled(getEffectiveGuestBridgeName());
+    }
+
+    public void setGuestTrafficLabel(String guestTrafficLabel) {
+        this.guestTrafficLabel = guestTrafficLabel;
+    }
+
+    // Mirrors BridgeVifDriver#plugTrunkVlanNic's bridge resolution
+    protected String getEffectiveGuestBridgeName() {
+        return StringUtils.isNotBlank(guestTrafficLabel) ? guestTrafficLabel : guestBridgeName;
+    }
+
+    protected boolean isBridgeVlanFilteringEnabled(String bridgeName) {
+        if (StringUtils.isBlank(bridgeName)) {
+            return false;
+        }
+        File vlanFilteringFile = new File("/sys/class/net/" + bridgeName + "/bridge/vlan_filtering");
+        if (!vlanFilteringFile.exists()) {
+            return false;
+        }
+        try {
+            return "1".equals(FileUtils.readFileToString(vlanFilteringFile).trim());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to read vlan_filtering state for bridge " + bridgeName, e);
+            return false;
+        }
+    }
+
+    // whether STP is enabled on this host's guest bridge - delays new ports (vm start, nic plug, migration) ~2x the forward delay before they forward traffic
+    public boolean isGuestBridgeStpEnabled() {
+        return isBridgeStpEnabled(getEffectiveGuestBridgeName());
+    }
+
+    protected boolean isBridgeStpEnabled(String bridgeName) {
+        if (StringUtils.isBlank(bridgeName)) {
+            return false;
+        }
+        File stpStateFile = new File("/sys/class/net/" + bridgeName + "/bridge/stp_state");
+        if (!stpStateFile.exists()) {
+            return false;
+        }
+        try {
+            return !"0".equals(FileUtils.readFileToString(stpStateFile).trim());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to read stp_state for bridge " + bridgeName, e);
+            return false;
+        }
+    }
+
     public boolean hostSupportsVddk() {
         return hostSupportsVddk(null);
     }
@@ -7465,7 +7540,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (LibvirtException e) {
             String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
             boolean isVmConsistent = false;
-            if (e.getMessage().contains(AGENT_IS_NOT_CONNECTED)) {
+            if (isGuestAgentUnresponsive(e)) {
                 errorMsg = "QEMU guest agent is not connected. If the VM has been recently started, it might connect soon. Otherwise the VM does not have the" +
                         " guest agent installed; thus the QuiesceVM parameter is not supported.";
                 isVmConsistent = true;
@@ -7481,6 +7556,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
         }
+    }
+
+    public static boolean isGuestAgentUnresponsive(LibvirtException e) {
+        return AGENT_UNRESPONSIVE_ERROR.equals(e.getError().getCode());
     }
 
     public Map<String, Long> createDiskOnlyVMSnapshotOfStoppedVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName) {
