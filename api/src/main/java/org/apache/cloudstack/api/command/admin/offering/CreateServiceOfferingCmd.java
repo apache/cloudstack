@@ -67,9 +67,16 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
-    @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    @Parameter(
+        name = ApiConstants.PROVISIONINGTYPE,
+        type = CommandType.STRING,
+        description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.",
+        allowedValues = {
+                "thin",
+                "sparse",
+                "fat"
+        })
     private String provisioningType = Storage.ProvisioningType.THIN.toString();
-
     @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "The total memory of the service offering in MB")
     private Integer memory;
 

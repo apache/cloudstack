@@ -85,9 +85,15 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "The storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
-    @Parameter(name = ApiConstants.PROVISIONINGTYPE,
-            type = CommandType.STRING,
-            description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    @Parameter(
+        name = ApiConstants.PROVISIONINGTYPE,
+        type = CommandType.STRING,
+        description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.",
+        allowedValues = {
+                "thin",
+                "sparse",
+                "fat"
+        })
     private String provisioningType = ProvisioningType.THIN.toString();
 
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,
