@@ -268,3 +268,13 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+--- Recalculate the allocated size in bytes for each Object Storage provider
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) * 1024 * 1024 * 1024 AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
