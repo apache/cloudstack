@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.URI;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -999,6 +1000,25 @@ public class LibvirtMigrateCommandWrapperTest {
         Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
         Mockito.doReturn(false).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertEquals(vlanNicDomainXml, result);
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesLeavesDirectRoutedNicUntouchedOnFilteringHosts()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        // a SystemVM public NIC on a routed range carries the Public network's Vlan type with a routed:// URI;
+        // its bridge is the per-network routed bridge on both hosts and must never be rewritten
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        nic.setBroadcastUri(URI.create("routed://600"));
+        nic.setMac(vlanNicMac);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.lenient().doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
 
         String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
 
