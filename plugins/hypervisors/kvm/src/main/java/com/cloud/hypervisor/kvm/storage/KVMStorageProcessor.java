@@ -3394,6 +3394,16 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new DirectDownloadAnswer(true, template.getSize(), template.getName());
     }
 
+    /**
+     * CLVM and CLVM_NG volumes are named after the logical volume, without a file extension. The name of an RBD image
+     * survives an online migration to a file based pool, where the block copy writes a qcow2 file, so a ".raw"
+     * extension would outlive the format it names.
+     */
+    protected String generateVolumeName(StoragePoolType poolType, ImageFormat format) {
+        String volumeName = UUID.randomUUID().toString();
+        return ClvmPoolManager.isClvmPoolType(poolType) || StoragePoolType.RBD.equals(poolType) ? volumeName : volumeName + "." + format.getFileExtension();
+    }
+
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         final DataTO srcData = cmd.getSrcTO();
@@ -3447,10 +3457,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
                 destFormat = getFormat(destPoolDefaultFormat);
-                final String volumeName = UUID.randomUUID().toString();
-                // The name of an RBD image survives an online migration to a file based pool, where the block copy
-                // writes a qcow2 file, so a ".raw" extension would outlive the format it names.
-                destVolumeName = StoragePoolType.RBD.equals(destPrimaryStore.getPoolType()) ? volumeName : volumeName + "." + destFormat.getFileExtension();
+                destVolumeName = generateVolumeName(destPrimaryStore.getPoolType(), destFormat);
 
                 // Update path in the command for reconciliation
                 if (StringUtils.isBlank(destVolumePath)) {

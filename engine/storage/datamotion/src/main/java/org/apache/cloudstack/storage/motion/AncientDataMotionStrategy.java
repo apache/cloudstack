@@ -96,7 +96,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             StoragePoolType.NetworkFilesystem,
             StoragePoolType.Filesystem,
             StoragePoolType.SharedMountPoint,
-            StoragePoolType.RBD
+            StoragePoolType.RBD,
+            StoragePoolType.CLVM,
+            StoragePoolType.CLVM_NG
     );
 
     @Inject
