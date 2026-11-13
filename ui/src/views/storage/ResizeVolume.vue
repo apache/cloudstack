@@ -65,7 +65,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI, postAPI } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -83,10 +83,9 @@ export default {
   },
   data () {
     return {
-      offerings: [],
-      customDiskOffering: false,
       loading: false,
-      customDiskOfferingIops: false
+      customDiskOfferingIops: false,
+      initialSize: null
     }
   },
   created () {
@@ -104,24 +103,24 @@ export default {
       })
     },
     fetchData () {
-      this.loading = true
-      getAPI('listDiskOfferings', {
-        zoneid: this.resource.zoneid,
-        listall: true
-      }).then(json => {
-        this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.form.diskofferingid = this.offerings[0].id || ''
-        this.customDiskOffering = this.offerings[0].iscustomized || false
-        this.customDiskOfferingIops = this.offerings[0].iscustomizediops || false
-      }).finally(() => {
-        this.loading = false
-      })
+      if (this.resource.size != null) {
+        this.form.size = this.resource.size / (1024 * 1024 * 1024)
+        this.initialSize = this.form.size
+      }
+      this.customDiskOfferingIops = this.resource.iscustomizediops
+      if (this.customDiskOfferingIops) {
+        this.form.miniops = this.resource.miniops
+        this.form.maxiops = this.resource.maxiops
+      }
     },
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        if (this.initialSize != null && values.size != null && Number(values.size) === Number(this.initialSize)) {
+          delete values.size
+        }
         this.loading = true
         values.id = this.resource.id
         postAPI('resizeVolume', values).then(response => {
@@ -144,11 +143,7 @@ export default {
           })
           this.closeModal()
         }).catch(error => {
-          this.$notification.error({
-            message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.errorresponse.errortext,
-            duration: 0
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })

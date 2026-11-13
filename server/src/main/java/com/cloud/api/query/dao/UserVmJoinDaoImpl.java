@@ -104,6 +104,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VmIsoMapDao;
@@ -121,6 +123,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private UserDao _userDao;
     @Inject
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -440,6 +444,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     nicResponse.setPublicIp(publicIp.getAddress().toString());
                 }
 
+                populateTrunkNicResponse(nicResponse, nic_id);
+
                 nicResponse.setObjectName("nic");
 
                 List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id).stream()
@@ -630,6 +636,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
     }
 
+    /**
+     * The join view backing UserVmJoinVO doesn't select nics.multi_network, so trunk status is derived directly
+     * from whether nic_network_map has any rows for this nic, rather than adding a column to that wide,
+     * heavily-used view.
+     */
+    private void populateTrunkNicResponse(NicResponse nicResponse, long nicId) {
+        List<NicNetworkMapVO> associations = _nicNetworkMapDao.listByNicId(nicId);
+        nicResponse.setTrunked(!associations.isEmpty());
+        if (associations.isEmpty()) {
+            return;
+        }
+        nicResponse.setAssociatedNetworks(ApiDBUtils.findAssociatedNetworkResponses(nicId));
+    }
+
     private void addVmRxTxDataToResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {
         Long bytesReceived = 0L;
         Long bytesSent = 0L;
@@ -736,6 +756,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 nicResponse.setPublicIpId(publicIp.getUuid());
                 nicResponse.setPublicIp(publicIp.getAddress().toString());
             }
+
+            populateTrunkNicResponse(nicResponse, nic_id);
 
             /* 18: extra dhcp options */
             nicResponse.setObjectName("nic");

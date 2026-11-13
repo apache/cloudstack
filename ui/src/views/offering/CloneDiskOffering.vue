@@ -102,6 +102,9 @@ export default {
       if (r.cachemode) {
         this.form.writecachetype = r.cachemode
       }
+      if (r.errorpolicy) {
+        this.form.errorpolicy = r.errorpolicy
+      }
 
       if (r.disksizestrictness !== undefined) {
         this.form.disksizestrictness = r.disksizestrictness
@@ -157,6 +160,9 @@ export default {
         }
         if (values.writecachetype) {
           params.cachemode = values.writecachetype
+        }
+        if (values.errorpolicy) {
+          params.errorpolicy = values.errorpolicy
         }
         if (values.provisioningtype) {
           params.provisioningtype = values.provisioningtype

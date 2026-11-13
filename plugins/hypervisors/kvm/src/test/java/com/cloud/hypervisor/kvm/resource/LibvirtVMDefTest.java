@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -138,6 +139,68 @@ public class LibvirtVMDefTest extends TestCase {
                         + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
+    }
+
+    @Test
+    public void testInterfaceLegacySingleVlanTag() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setVlanTag(123);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<vlan trunk='no'>\n<tag id='123'/>\n</vlan>"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+        assertFalse(ifDef.isVlanTrunk());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTags() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300), 100);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='cloudbr1'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<vlan trunk='yes'>\n<tag id='100' nativeMode='untagged'/>\n<tag id='200'/>\n<tag id='300'/>\n</vlan>"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+        assertTrue(ifDef.isVlanTrunk());
+        assertEquals(Arrays.asList(100, 200, 300), ifDef.getTrunkVlanTags());
+        assertEquals(Integer.valueOf(100), ifDef.getNativeVlanTag());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTagsWithoutNativeVlan() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300), null);
+
+        String content = ifDef.toString();
+        assertFalse(content.contains("nativeMode"));
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTagsTakesPrecedenceOverLegacyVlanTag() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setVlanTag(50);
+        ifDef.setTrunkVlanTags(Arrays.asList(50, 60), 50);
+
+        String content = ifDef.toString();
+        assertTrue(content.contains("<vlan trunk='yes'>"));
+        assertFalse(content.contains("trunk='no'"));
     }
 
     @Test
@@ -261,6 +324,51 @@ public class LibvirtVMDefTest extends TestCase {
                              "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
 
         assertEquals(expectedXml, xmlDef);
+    }
+
+    @Test
+    public void testDiskDefWithErrorPolicy() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+        DiskDef.DiskCacheMode cacheMode = DiskDef.DiskCacheMode.WRITEBACK;
+        DiskOffering.DiskErrorPolicy errorPolicy = DiskOffering.DiskErrorPolicy.STOP;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+        disk.setCacheMode(cacheMode);
+        disk.setErrorPolicy(errorPolicy);
+
+        assertEquals(filePath, disk.getDiskPath());
+        assertEquals(diskLabel, disk.getDiskLabel());
+        assertEquals(bus, disk.getBusType());
+        assertEquals(DiskDef.DeviceType.DISK, disk.getDeviceType());
+        assertEquals(errorPolicy, disk.getErrorPolicy());
+
+        String xmlDef = disk.toString();
+        String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' error_policy='" + errorPolicy.toString() + "' />\n" +
+                             "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
+
+        assertEquals(expectedXml, xmlDef);
+    }
+
+    @Test
+    public void testDiskDefWithoutErrorPolicy() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+
+        assertNull(disk.getErrorPolicy());
+
+        String xmlDef = disk.toString();
+        assertFalse(xmlDef.contains("error_policy"));
     }
 
     @Test
