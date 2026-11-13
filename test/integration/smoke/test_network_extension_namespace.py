@@ -42,6 +42,7 @@ import time
 import urllib.parse
 
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import FAILED
 from marvin.cloudstackAPI import (listPhysicalNetworks,
                                   listTrafficTypes,
                                   listManagementServers,
@@ -71,7 +72,6 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              SSHKeyPair,
                              StaticNATRule,
-                             Template,
                              VirtualMachine,
                              VPC,
                              VpcOffering)
@@ -511,34 +511,14 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         cls.logger.info("KVM hosts from config: %s",
                         [h['ip'] for h in cls.kvm_host_configs if h.get('ip')])
 
-        # ---- Cloud-init template (Ubuntu 22.04) ----
+        # ---- Cloud-init template (built-in Debian 13) ----
         # Used for hardware tests that verify actual SSH connectivity.
-        # Falls back to the default test template when the cloud-init entry
-        # is absent from the services config (e.g. on simulator).
-        try:
-            tpl_data = (cls.services
-                        .get("test_templates_cloud_init", {})
-                        .get(cls.hv.lower()))
-            if tpl_data:
-                cls.logger.info("Registering cloud-init template for %s", cls.hv)
-                tpl = Template.register(
-                    cls.apiclient,
-                    tpl_data,
-                    zoneid=cls.zone.id,
-                    hypervisor=cls.hv,
-                )
-                tpl.download(cls.apiclient)
-                cls._cleanup.append(tpl)
-                cls.template = tpl
-                cls.logger.info("Cloud-init template registered: %s", tpl.id)
-            else:
-                cls.logger.info("No cloud-init template for %s; using default",
-                                cls.hv)
-                cls.template = get_template(cls.apiclient, cls.zone.id, cls.hv)
-        except Exception as e:
-            cls.logger.warning("Cloud-init template registration failed: %s; "
-                               "falling back to default", e)
-            cls.template = get_template(cls.apiclient, cls.zone.id, cls.hv)
+        # The built-in template is a Debian 13 cloud image with cloud-init,
+        # the default user is ``debian``.
+        cls.template = get_template(cls.apiclient, cls.zone.id, hypervisor=cls.hv)
+        if cls.template == FAILED:
+            assert False, "failed to get the built-in template"
+        cls.logger.info("Using the built-in template: %s", cls.template)
 
         # ---- Download wrapper scripts from GitHub ----
         try:
@@ -737,8 +717,8 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
     def _verify_vm_ssh_access(self, ip, port=22, timeout=30, retries=10):
         """Return True if SSH to *ip*:*port* succeeds using the active keypair.
 
-        The VM is expected to run Ubuntu 22.04 (cloud-init) with username
-        ``ubuntu``.  Returns False if no keypair is available or if the
+        The VM is expected to run the built-in Debian 13 template (cloud-init)
+        with username ``debian``.  Returns False if no keypair is available or if the
         connection fails.
         """
         key_file = self._ssh_private_key_file
@@ -750,7 +730,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             return False
         try:
             ssh = SshClient(
-                ip, int(port), "ubuntu", None,
+                ip, int(port), "debian", None,
                 keyPairFiles=key_file,
                 timeout=timeout,
                 retries=retries,
@@ -1057,7 +1037,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """Create an account, an isolated network, and deploy a cloud-init VM.
 
         The VM is deployed with an account-scoped SSH keypair so that SSH
-        access can be tested directly.  Username is ``ubuntu``.
+        access can be tested directly.  Username is ``debian``.
 
         Returns ``(account, network, vm)``.
         """
@@ -1309,8 +1289,8 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
     def test_05_isolated_network_full_lifecycle(self):
         """Full isolated-network lifecycle with SSH connectivity verification.
 
-        Uses a single cloud-init VM (Ubuntu 22.04, SSH keypair, username
-        ``ubuntu``) throughout.
+        Uses a single cloud-init VM (built-in Debian 13, SSH keypair, username
+        ``debian``) throughout.
 
         Sub-tests in order
         ------------------
@@ -2178,7 +2158,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         # This tests that the ACL egress rules work and inter-tier routing is OK
         try:
             ssh_vm2 = SshClient(
-                tier2_public_ip, 22, "ubuntu", None,
+                tier2_public_ip, 22, "debian", None,
                 keyPairFiles=self._ssh_private_key_file,
                 timeout=30, retries=10
             )

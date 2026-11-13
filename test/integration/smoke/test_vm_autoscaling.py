@@ -220,11 +220,14 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls.templateUserdata = UserData.register(
             cls.apiclient,
             name="TemplateUserdata",
-            userdata="IyMgdGVtcGxhdGU6IGppbmphCiNjbG91ZC1jb25maWcKcnVuY21kOgogICAgLSBlY2hvICdrZXkge3sgZHMubWV0YV9kYXRhLmtleTEgfX0nID4+IC9yb290L2luc3RhbmNlX21ldGFkYXRhCgo=",
+            userdata="IyMgdGVtcGxhdGU6IGppbmphCiNjbG91ZC1jb25maWcKcnVuY21kOgogICAgLSBlY2hvICdrZXkge3sgZHMubWV0YV9kYXRhLmtleTEgfX0nID4+IC9yb290L2luc3RhbmNlX21ldGFkYXRhCiAgICAtIG5vaHVwIHNoIC1jICd3aGlsZSB0cnVlOyBkbyA6OyBkb25lJyA+IC9kZXYvbnVsbCAyPiYxICYKCg==",
             #    ## template: jinja
             #    #cloud-config
             #    runcmd:
             #        - echo 'key {{ ds.meta_data.key1 }}' >> /root/instance_metadata
+            #        - nohup sh -c 'while true; do :; done' > /dev/null 2>&1 &
+            #    (the CPU loop keeps the VM above the 1 percent CPU threshold of the scale up condition,
+            #     an idle Debian 13 VM only uses about 0.4 percent)
             #
             account=cls.regular_user.name,
             domainid=cls.regular_user.domainid

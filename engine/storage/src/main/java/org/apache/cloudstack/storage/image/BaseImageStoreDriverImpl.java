@@ -52,6 +52,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -229,7 +230,11 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             updateBuilder.setErrorString(answer.getErrorString());
             updateBuilder.setJobId(answer.getJobId());
             updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
-            updateBuilder.setInstallPath(answer.getInstallPath());
+            if (StringUtils.isNotEmpty(answer.getInstallPath())) {
+                // an error answer, like a timeout, has no install path. Do not clear the install path of the entry with it,
+                // as the next download of the template would use no install path and go to a directory named "null".
+                updateBuilder.setInstallPath(answer.getInstallPath());
+            }
             if (!VMTemplateStorageResourceAssoc.ERROR_DOWNLOAD_STATES.contains(answer.getDownloadStatus())) {
                 updateBuilder.setSize(answer.getTemplateSize());
                 updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());

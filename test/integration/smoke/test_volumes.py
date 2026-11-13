@@ -38,8 +38,7 @@ from marvin.lib.base import (ServiceOffering,
                              Host,
                              DiskOffering,
                              StoragePool)
-from marvin.lib.common import (get_domain,
-                               get_suitable_test_template,
+from marvin.lib.common import (get_template, get_domain,
                                get_zone,
                                find_storage_pool_type,
                                get_pod,
@@ -94,14 +93,9 @@ class TestCreateVolume(cloudstackTestCase):
         )
         cls._cleanup.append(cls.custom_disk_offering)
 
-        template = get_suitable_test_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.services["ostype"],
-            cls.hypervisor
-        )
+        template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         if template == FAILED:
-            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -115,9 +109,10 @@ class TestCreateVolume(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
+        # the Debian 13 built-in template does not boot with the 128 MiB of the tiny offering
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offerings"]["big"]
         )
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -307,15 +302,9 @@ class TestVolumes(cloudstackTestCase):
         )
         cls._cleanup.append(cls.custom_resized_disk_offering)
 
-        cls.template = get_suitable_test_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.services["ostype"],
-            cls.hypervisor,
-            deploy_as_is=cls.hypervisor.lower() == "vmware"
-        )
+        cls.template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         if cls.template == FAILED:
-            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -331,9 +320,10 @@ class TestVolumes(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
+        # the Debian 13 built-in template does not boot with the 128 MiB of the tiny offering
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offerings"]["big"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
@@ -1121,14 +1111,9 @@ class TestVolumeEncryption(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
 
         # Get template
-        template = get_suitable_test_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.services["ostype"],
-            cls.hypervisor
-        )
+        template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         if template == FAILED:
-            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["template"] = template.id
         cls.services["diskname"] = cls.services["volume"]["diskname"]
@@ -1146,14 +1131,14 @@ class TestVolumeEncryption(cloudstackTestCase):
         # Create Service Offering
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"]
+            cls.services["service_offerings"]["big"]
         )
         cls._cleanup.append(cls.service_offering)
 
         # Create Service Offering with encryptRoot true
         cls.service_offering_encrypt = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["small"],
+            cls.services["service_offerings"]["big"],
             name="Small Encrypted Instance",
             encryptroot=True
         )

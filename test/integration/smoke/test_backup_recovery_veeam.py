@@ -20,7 +20,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import wait_until
 from marvin.lib.base import (Account, ServiceOffering, DiskOffering, Volume, VirtualMachine,
                              BackupOffering, Configurations, Backup, BackupSchedule)
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (get_domain, get_zone, get_suitable_test_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
 
@@ -39,9 +39,9 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
-        cls.template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
+        cls.template = get_suitable_test_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
         cls._cleanup = []

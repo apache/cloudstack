@@ -22,10 +22,11 @@ import random
 import time
 
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import FAILED
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
-    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, Template, ASNRange, \
+    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, ASNRange, \
     BgpPeer, Router
-from marvin.lib.common import get_domain, get_zone, list_routers, list_hosts
+from marvin.lib.common import get_domain, get_zone, get_test_template, list_routers, list_hosts
 from marvin.lib.utils import get_host_credentials, get_process_status
 
 from nose.plugins.attrib import attr
@@ -167,11 +168,10 @@ class TestIpv4Routing(cloudstackTestCase):
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
 
-        # 0. register template
-        cls.template = Template.register(cls.apiclient, cls.services["test_templates"][cls.hypervisor.lower()],
-                                         zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
-        cls.template.download(cls.apiclient)
-        cls._cleanup.append(cls.template)
+        # 0. get the shared public test template
+        cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template"
 
         # 1.1 create subnet for zone
         cls.subnet_1 = ZoneIpv4Subnet.create(

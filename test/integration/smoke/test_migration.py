@@ -31,7 +31,7 @@ from marvin.lib.base import (
 )
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                list_virtual_machines)
 
 from marvin.lib.utils import (get_hypervisor_type,
@@ -90,7 +90,7 @@ class TestNetworkMigration(cloudstackTestCase):
             cls.zone = get_zone(
                     cls.api_client,
                     cls.testClient.getZoneForTests())
-            cls.template = get_template(
+            cls.template = get_suitable_test_template(
                     cls.api_client,
                     cls.zone.id,
                     cls.test_data["ostype"]

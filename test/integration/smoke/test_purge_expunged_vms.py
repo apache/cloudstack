@@ -33,7 +33,7 @@ from marvin.lib.base import (Account,
                              Configurations)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_suitable_test_template)
 from marvin.lib.utils import (random_gen)
 from marvin.lib.decoratorGenerators import skipTestIf
 from marvin.sshClient import SshClient
@@ -75,12 +75,12 @@ class TestPurgeExpungedVms(cloudstackTestCase):
         cls.logger = logging.getLogger('TestPurgeExpungedVms')
         cls.logger.setLevel(logging.DEBUG)
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"])
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id

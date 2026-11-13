@@ -18,7 +18,7 @@
 #Import Local Modules
 from marvin.cloudstackAPI import *
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (validateList)
+from marvin.lib.utils import (validateList, wait_for_xen_pv_tools)
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
                              Host,
@@ -27,9 +27,8 @@ from marvin.lib.base import (ServiceOffering,
                              Volume,
                              DiskOffering,
                              )
-from marvin.lib.common import (get_domain,
+from marvin.lib.common import (get_template, get_domain,
                                get_zone,
-                               get_suitable_test_template,
                                find_storage_pool_type)
 from marvin.codes import (
     PASS,
@@ -69,13 +68,9 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                     )
         cls._cleanup.append(cls.disk_offering)
 
-        template = get_suitable_test_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.services["ostype"],
-            cls.hypervisor)
+        template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         if template == FAILED:
-            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -154,6 +149,12 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                    domainid=cls.account.domainid
                                    )
         cls._cleanup.append(cls.volume6)
+
+        if cls.hypervisor.lower() == "xenserver":
+            # XenServer refuses to attach a volume until the PV tools of the guest are detected
+            host_config = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+                0].__dict__
+            wait_for_xen_pv_tools(cls.apiclient, cls.virtual_machine, host_config["username"], host_config["password"])
 
     @classmethod
     def tearDownClass(cls):
