@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetes
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
@@ -88,6 +89,13 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "The number of retries if fail to upgrade kubernetes cluster due to some reasons (e.g. drain node, etcdserver leader changed)",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterNodeDrainTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.node.drain.timeout",
+            "300",
+            "Timeout interval (in seconds) for draining a Kubernetes node before it is removed from a cluster or upgraded. " +
+                    "A drain that does not finish in time, for example because a PodDisruptionBudget does not allow an eviction, is retried, and the node is uncordoned if it still fails. Must be at least 1, smaller values use the default",
+            true,
+            KubernetesServiceEnabled.key());
     static final ConfigKey<Long> KubernetesClusterAddNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
             "cloud.kubernetes.cluster.add.node.timeout",
             "3600",
@@ -98,6 +106,13 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "cloud.kubernetes.cluster.remove.node.timeout",
             "900",
             "Timeout interval (in seconds) in which an external node (VM / baremetal host) removal from a cluster should be completed",
+            true,
+            KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterUpdateNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.update.node.timeout",
+            "1800",
+            "Timeout interval (in seconds) in which a rollout of updateKubernetesCluster should be done with a node, or a batch of worker nodes, " +
+                    "from the drain to the nodes being Ready again. Nodes that are not done in time fail the rollout. Must be at least 1, smaller values use the default",
             true,
             KubernetesServiceEnabled.key());
     static final ConfigKey<Boolean> KubernetesClusterExperimentalFeaturesEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
@@ -173,6 +188,8 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean updateKubernetesClusterAffinityGroups(UpdateKubernetesClusterAffinityGroupCmd cmd) throws CloudRuntimeException;
+
+    boolean updateKubernetesCluster(UpdateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
 

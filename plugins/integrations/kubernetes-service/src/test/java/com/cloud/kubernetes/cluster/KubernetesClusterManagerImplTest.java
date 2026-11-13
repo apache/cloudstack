@@ -27,9 +27,13 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
+import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
+import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRule;
@@ -51,12 +55,15 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.commons.collections.MapUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -101,6 +108,12 @@ public class KubernetesClusterManagerImplTest {
     KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
 
     @Mock
+    KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+
+    @Mock
+    KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
+
+    @Mock
     VMInstanceDao vmInstanceDao;
 
     @Mock
@@ -117,6 +130,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private AsyncJobDao asyncJobDao;
 
     @Spy
     @InjectMocks
@@ -914,4 +930,202 @@ public class KubernetesClusterManagerImplTest {
         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
     }
 
+    private static final String CLUSTER_TYPE = ApiCommandResourceType.KubernetesCluster.toString();
+
+    private KubernetesClusterVO mockClusterInState(long id, KubernetesCluster.State state) {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.lenient().when(cluster.getId()).thenReturn(id);
+        Mockito.lenient().when(cluster.getState()).thenReturn(state);
+        Mockito.lenient().when(cluster.getUuid()).thenReturn("uuid-" + id);
+        Mockito.lenient().when(kubernetesClusterDao.findById(id)).thenReturn(cluster);
+        return cluster;
+    }
+
+    private AsyncJobVO mockPendingJob(Long instanceId) {
+        AsyncJobVO job = Mockito.mock(AsyncJobVO.class);
+        Mockito.when(job.getInstanceId()).thenReturn(instanceId);
+        return job;
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesFailsOnlyOperationsWithoutJob() {
+        KubernetesClusterVO orphaned = mockClusterInState(1L, KubernetesCluster.State.Upgrading);
+        KubernetesClusterVO busy = mockClusterInState(2L, KubernetesCluster.State.Scaling);
+        Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInStates(KubernetesClusterManagerImpl.OPERATION_STATES)).thenReturn(List.of(orphaned, busy));
+        AsyncJobVO job = mockPendingJob(2L);
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJobs(CLUSTER_TYPE, null)).thenReturn(List.of(job));
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJob(CLUSTER_TYPE, 2L)).thenReturn(job);
+        Mockito.when(kubernetesClusterDao.updateState(KubernetesCluster.State.Upgrading, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, orphaned, null)).thenReturn(true);
+
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verify(kubernetesClusterDao, Mockito.times(1)).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesLeavesClusterNamedByJobOfOlderManagementServer() {
+        KubernetesClusterVO named = mockClusterInState(1L, KubernetesCluster.State.Starting);
+        KubernetesClusterVO orphaned = mockClusterInState(2L, KubernetesCluster.State.Upgrading);
+        Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInStates(KubernetesClusterManagerImpl.OPERATION_STATES)).thenReturn(List.of(named, orphaned));
+        AsyncJobVO job = mockPendingJob(null);
+        Mockito.when(job.getCmdInfo()).thenReturn("{\"id\":\"uuid-1\"}");
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJobs(CLUSTER_TYPE, null)).thenReturn(List.of(job));
+        Mockito.when(kubernetesClusterDao.updateState(KubernetesCluster.State.Upgrading, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, orphaned, null)).thenReturn(true);
+
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verify(kubernetesClusterDao, Mockito.times(1)).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(kubernetesClusterDao).updateState(KubernetesCluster.State.Upgrading, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, orphaned, null);
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesLeavesEveryClusterForJobOfOlderManagementServerWithoutParameters() {
+        KubernetesClusterVO cluster = mockClusterInState(1L, KubernetesCluster.State.Starting);
+        Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInStates(KubernetesClusterManagerImpl.OPERATION_STATES)).thenReturn(List.of(cluster));
+        AsyncJobVO job = mockPendingJob(null);
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJobs(CLUSTER_TYPE, null)).thenReturn(List.of(job));
+
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStatesSkipsJobLookupWithoutClusters() {
+        kubernetesClusterManager.recoverOrphanedOperationStates();
+
+        Mockito.verifyNoInteractions(asyncJobDao);
+    }
+
+    @Test
+    public void recoverOrphanedOperationStateLeavesClusterWhoseOperationEnded() throws Exception {
+        mockClusterInState(1L, KubernetesCluster.State.Running);
+
+        kubernetesClusterManager.recoverOrphanedOperationState(1L);
+
+        Mockito.verifyNoInteractions(asyncJobDao);
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStateLeavesClusterWithJobStartedSinceTheScan() throws Exception {
+        mockClusterInState(1L, KubernetesCluster.State.Scaling);
+        Mockito.when(asyncJobDao.findInstancePendingAsyncJob(CLUSTER_TYPE, 1L)).thenReturn(Mockito.mock(AsyncJobVO.class));
+
+        kubernetesClusterManager.recoverOrphanedOperationState(1L);
+
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void recoverOrphanedOperationStateFailsStart() throws Exception {
+        KubernetesClusterVO cluster = mockClusterInState(1L, KubernetesCluster.State.Starting);
+        Mockito.when(kubernetesClusterDao.updateState(KubernetesCluster.State.Starting, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, cluster, null)).thenReturn(true);
+
+        kubernetesClusterManager.recoverOrphanedOperationState(1L);
+
+        Mockito.verify(kubernetesClusterDao).updateState(KubernetesCluster.State.Starting, KubernetesCluster.Event.OperationFailed,
+                KubernetesCluster.State.Alert, cluster, null);
+    }
+
+    private KubernetesCluster mockClusterForUpgradeRetry(String... nodeVersions) {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(10L);
+        List<KubernetesClusterVmMapVO> vmMaps = new ArrayList<>();
+        for (String nodeVersion : nodeVersions) {
+            KubernetesClusterVmMapVO vmMap = Mockito.mock(KubernetesClusterVmMapVO.class);
+            Mockito.when(vmMap.getNodeVersion()).thenReturn(nodeVersion);
+            vmMaps.add(vmMap);
+        }
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(1L)).thenReturn(vmMaps);
+        mockClusterVersion("1.28.9");
+        return cluster;
+    }
+
+    private void mockClusterVersion(String semanticVersion) {
+        KubernetesSupportedVersionVO clusterVersion = Mockito.mock(KubernetesSupportedVersionVO.class);
+        Mockito.when(clusterVersion.getSemanticVersion()).thenReturn(semanticVersion);
+        Mockito.when(kubernetesSupportedVersionDao.findById(10L)).thenReturn(clusterVersion);
+    }
+
+    private KubernetesSupportedVersion mockUpgradeVersion(long id) {
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(version.getId()).thenReturn(id);
+        Mockito.lenient().when(version.getSemanticVersion()).thenReturn("1.29.2");
+        return version;
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeWithNodeAtTargetVersion() {
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("v1.29.2", "1.28.9", "1.28.9");
+        Assert.assertTrue(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeWithNoNodeAtTargetVersion() {
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("1.28.9", "v1.28.9");
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeIgnoresManuallyUpgradedNodes() {
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("1.28.9");
+        KubernetesClusterVmMapVO manualNode = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(manualNode.isManualUpgrade()).thenReturn(true);
+        Mockito.lenient().when(manualNode.getNodeVersion()).thenReturn("v1.29.2");
+        List<KubernetesClusterVmMapVO> vmMaps = new ArrayList<>(kubernetesClusterVmMapDao.listByClusterId(1L));
+        vmMaps.add(manualNode);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(1L)).thenReturn(vmMaps);
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeToCurrentVersion() {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(10L);
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(version.getId()).thenReturn(10L);
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, version));
+        Mockito.verifyNoInteractions(kubernetesClusterVmMapDao);
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeUsesRecordedUpgradeVersion() {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(10L);
+        Mockito.when(kubernetesClusterDetailsDao.findDetail(1L, KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL))
+                .thenReturn(new KubernetesClusterDetailsVO(1L, KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL, "11", false));
+        mockClusterVersion("1.28.9");
+        KubernetesSupportedVersion sameVersion = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(sameVersion.getId()).thenReturn(11L);
+        Mockito.when(sameVersion.getSemanticVersion()).thenReturn("1.29.2");
+        KubernetesSupportedVersion otherVersion = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(otherVersion.getId()).thenReturn(12L);
+        Mockito.when(otherVersion.getSemanticVersion()).thenReturn("1.29.3");
+        // No node has to be at the version, for example when the first control node failed
+        KubernetesSupportedVersionVO failedVersion = Mockito.mock(KubernetesSupportedVersionVO.class);
+        Mockito.when(failedVersion.getSemanticVersion()).thenReturn("1.29.2");
+        Mockito.when(kubernetesSupportedVersionDao.findByIdIncludingRemoved(11L)).thenReturn(failedVersion);
+        KubernetesSupportedVersion equivalentVersion = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(equivalentVersion.getId()).thenReturn(13L);
+        Mockito.when(equivalentVersion.getSemanticVersion()).thenReturn("1.29.2");
+        Assert.assertTrue(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, sameVersion));
+        Assert.assertTrue(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, equivalentVersion));
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, otherVersion));
+        Mockito.verifyNoInteractions(kubernetesClusterVmMapDao);
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeToSameSemanticVersion() {
+        // Another version row with the cluster's own semantic version, with every node recorded at it
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("1.29.2", "1.29.2");
+        mockClusterVersion("1.29.2");
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
 }

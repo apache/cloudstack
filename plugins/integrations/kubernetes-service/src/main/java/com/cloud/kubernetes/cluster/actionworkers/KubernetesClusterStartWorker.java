@@ -260,7 +260,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             serverIp = controlNodeIp;
         }
         Network.IpAddresses addrs = new Network.IpAddresses(controlNodeIp, null);
-        long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
+        long rootDiskSize = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, CONTROL);
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
@@ -442,7 +442,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
-        long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
+        long rootDiskSize = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, CONTROL);
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
@@ -512,6 +512,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         List<Long> affinityGroupIds = getMergedAffinityGroupIds(ETCD, domainId, accountId);
         String hostName = etcdNodeHostnames.get(etcdNodeIndex);
         Map<String, String> customParameterMap = new HashMap<String, String>();
+        long rootDiskSize = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, ETCD);
+        if (rootDiskSize > 0) {
+            customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
+        }
         if (zone.isSecurityGroupEnabled()) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
@@ -542,8 +546,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlVMAndControlIP = createKubernetesControlNode(network, publicIpAddress, etcdIps, domainId, accountId, asNumber);
         k8sControlVM = k8sControlVMAndControlIP.first();
         addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId(), true, false, false, false);
-        if (kubernetesCluster.getNodeRootDiskSize() > 0) {
-            resizeNodeVolume(k8sControlVM);
+        if (KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, CONTROL) > 0) {
+            resizeNodeVolume(k8sControlVM, CONTROL);
         }
         startKubernetesVM(k8sControlVM, domainId, accountId, CONTROL);
         k8sControlVM = userVmDao.findById(k8sControlVM.getId());
@@ -565,8 +569,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 UserVm vm = null;
                 vm = createKubernetesAdditionalControlNode(controlIpAddress, i, domainId, accountId);
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true, false, false, false);
-                if (kubernetesCluster.getNodeRootDiskSize() > 0) {
-                    resizeNodeVolume(vm);
+                if (KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, CONTROL) > 0) {
+                    resizeNodeVolume(vm, CONTROL);
                 }
                 startKubernetesVM(vm, domainId, accountId, CONTROL);
                 vm = userVmDao.findById(vm.getId());
@@ -701,9 +705,11 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             try {
-                resizeNodeVolume(vm);
                 KubernetesClusterVmMapVO map = kubernetesClusterVmMapDao.findByVmId(vm.getId());
-                KubernetesServiceHelper.KubernetesClusterNodeType nodeType = getNodeTypeFromClusterVMMapRecord(map);
+                KubernetesServiceHelper.KubernetesClusterNodeType nodeType = KubernetesClusterUtil.getNodeType(map);
+                // an existing node keeps the cluster wide size, as before: the size of its node type is only
+                // brought to it by a rollout of updateKubernetesCluster
+                resizeNodeVolume(vm, null);
                 startKubernetesVM(vm, domainId, accountId, nodeType);
             } catch (ManagementServerException ex) {
                 logger.warn("Failed to start VM: {} in Kubernetes cluster: {} due to {}", vm, kubernetesCluster, ex);
@@ -715,16 +721,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             if (vm == null || !vm.getState().equals(VirtualMachine.State.Running)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
-        }
-    }
-
-    private KubernetesServiceHelper.KubernetesClusterNodeType getNodeTypeFromClusterVMMapRecord(KubernetesClusterVmMapVO map) {
-        if (map.isControlNode()) {
-            return CONTROL;
-        } else if (map.isEtcdNode()) {
-            return ETCD;
-        } else {
-            return WORKER;
         }
     }
 
@@ -774,7 +770,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logger.info("Starting Kubernetes cluster: {}", kubernetesCluster);
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
+        transitToOperationState(KubernetesCluster.Event.StartRequested);
         DeployDestination dest = null;
         try {
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
@@ -907,7 +903,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logger.info("Starting Kubernetes cluster: {}", kubernetesCluster);
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
+        // a cluster in Error, whose create failed, is started without taking a state, so that it stays in Error if the
+        // start fails too, rather than going to Alert where it could be marked Running without being set up
+        transitToOperationState(KubernetesCluster.Event.StartRequested, KubernetesCluster.State.Error);
         startKubernetesClusterVMs(domainId, accountId);
         try {
             InetAddress address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
@@ -978,8 +976,11 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
             return false;
         }
-        // mark the cluster to be running
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested);
+        // mark the cluster to be running, unless an operation started on it while the checks above ran: the
+        // operation now owns the cluster's state, and completing it here would end that state early
+        if (!stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.RecoveryRequested)) {
+            return false;
+        }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
     }

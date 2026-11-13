@@ -271,3 +271,8 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VAR
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+
+-- CKS: root disk size per node type. When not set, the cluster wide node_root_disk_size is used, as before.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'control_node_root_disk_size', 'bigint unsigned DEFAULT NULL COMMENT "root disk size in GB of the control nodes, node_root_disk_size when not set"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'worker_node_root_disk_size', 'bigint unsigned DEFAULT NULL COMMENT "root disk size in GB of the worker nodes, node_root_disk_size when not set"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'etcd_node_root_disk_size', 'bigint unsigned DEFAULT NULL COMMENT "root disk size in GB of the etcd nodes, the size of the template when not set"');

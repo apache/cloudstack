@@ -148,6 +148,15 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "csi_enabled")
     private boolean csiEnabled;
 
+    @Column(name = "control_node_root_disk_size")
+    private Long controlNodeRootDiskSize;
+
+    @Column(name = "worker_node_root_disk_size")
+    private Long workerNodeRootDiskSize;
+
+    @Column(name = "etcd_node_root_disk_size")
+    private Long etcdNodeRootDiskSize;
+
     @Override
     public long getId() {
         return id;
@@ -523,6 +532,33 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     public void setCniConfigDetails(String cniConfigDetails) {
         this.cniConfigDetails = cniConfigDetails;
+    }
+
+    @Override
+    public Long getControlNodeRootDiskSize() {
+        return controlNodeRootDiskSize;
+    }
+
+    public void setControlNodeRootDiskSize(Long controlNodeRootDiskSize) {
+        this.controlNodeRootDiskSize = controlNodeRootDiskSize;
+    }
+
+    @Override
+    public Long getWorkerNodeRootDiskSize() {
+        return workerNodeRootDiskSize;
+    }
+
+    public void setWorkerNodeRootDiskSize(Long workerNodeRootDiskSize) {
+        this.workerNodeRootDiskSize = workerNodeRootDiskSize;
+    }
+
+    @Override
+    public Long getEtcdNodeRootDiskSize() {
+        return etcdNodeRootDiskSize;
+    }
+
+    public void setEtcdNodeRootDiskSize(Long etcdNodeRootDiskSize) {
+        this.etcdNodeRootDiskSize = etcdNodeRootDiskSize;
     }
 
 }
