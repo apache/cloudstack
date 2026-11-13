@@ -25,30 +25,38 @@ import com.vmware.nsx.model.ClusterStatus;
 import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
+import com.vmware.nsx_policy.Infra;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
+import com.vmware.nsx_policy.infra.IpDiscoveryProfiles;
 import com.vmware.nsx_policy.infra.LbAppProfiles;
 import com.vmware.nsx_policy.infra.LbMonitorProfiles;
 import com.vmware.nsx_policy.infra.LbPools;
 import com.vmware.nsx_policy.infra.LbServices;
 import com.vmware.nsx_policy.infra.LbVirtualServers;
+import com.vmware.nsx_policy.infra.MacDiscoveryProfiles;
+import com.vmware.nsx_policy.infra.SegmentSecurityProfiles;
 import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.domains.SecurityPolicies;
-import com.vmware.nsx_policy.infra.domains.groups.members.SegmentPorts;
 import com.vmware.nsx_policy.infra.domains.security_policies.Rules;
+import com.vmware.nsx_policy.infra.segments.Ports;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
 import com.vmware.nsx_policy.model.ApiError;
+import com.vmware.nsx_policy.model.ChildSegment;
+import com.vmware.nsx_policy.model.ChildSegmentDiscoveryProfileBindingMap;
+import com.vmware.nsx_policy.model.ChildSegmentSecurityProfileBindingMap;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPoint;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
+import com.vmware.nsx_policy.model.IPDiscoveryProfile;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBIcmpMonitorProfile;
@@ -61,14 +69,18 @@ import com.vmware.nsx_policy.model.LBTcpMonitorProfile;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
+import com.vmware.nsx_policy.model.MacDiscoveryProfile;
 import com.vmware.nsx_policy.model.PathExpression;
-import com.vmware.nsx_policy.model.PolicyGroupMembersListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
-import com.vmware.nsx_policy.model.PolicyGroupMemberDetails;
 import com.vmware.nsx_policy.model.Rule;
 import com.vmware.nsx_policy.model.SecurityPolicy;
 import com.vmware.nsx_policy.model.Segment;
+import com.vmware.nsx_policy.model.SegmentDiscoveryProfileBindingMap;
+import com.vmware.nsx_policy.model.SegmentPort;
+import com.vmware.nsx_policy.model.SegmentPortListResult;
+import com.vmware.nsx_policy.model.SegmentSecurityProfile;
+import com.vmware.nsx_policy.model.SegmentSecurityProfileBindingMap;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.ServiceListResult;
 import com.vmware.nsx_policy.model.Site;
@@ -90,9 +102,10 @@ import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -128,6 +141,11 @@ public class NsxApiClient {
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
     private static final String TIER_1_LOCALE_SERVICE_ID = "default";
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
+    private static final String INFRA_RESOURCE_TYPE = "Infra";
+    private static final String SEGMENT_DISCOVERY_PROFILE_BINDING_RESOURCE_TYPE = "SegmentDiscoveryProfileBindingMap";
+    private static final String SEGMENT_SECURITY_PROFILE_BINDING_RESOURCE_TYPE = "SegmentSecurityProfileBindingMap";
+    private static final String SEGMENT_DISCOVERY_PROFILE_BINDING_ID = "cloudstack-discovery-profile-binding";
+    private static final String SEGMENT_SECURITY_PROFILE_BINDING_ID = "cloudstack-security-profile-binding";
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
     protected static final String SEGMENTS_PATH = "/infra/segments";
@@ -466,8 +484,16 @@ public class NsxApiClient {
 
     public void createSegment(String segmentName, String tier1GatewayName, String gatewayAddress, String enforcementPointPath,
                               List<TransportZone> transportZones) {
+        createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones, null, null, null);
+    }
+
+    public void createSegment(String segmentName, String tier1GatewayName, String gatewayAddress, String enforcementPointPath,
+                              List<TransportZone> transportZones, String ipDiscoveryProfileId, String macDiscoveryProfileId,
+                              String segmentSecurityProfileId) {
         try {
-            Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            String ipDiscoveryProfilePath = getIpDiscoveryProfilePath(ipDiscoveryProfileId);
+            String macDiscoveryProfilePath = getMacDiscoveryProfilePath(macDiscoveryProfileId);
+            String segmentSecurityProfilePath = getSegmentSecurityProfilePath(segmentSecurityProfileId);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
                     .setGatewayAddress(gatewayAddress)
                     .build();
@@ -480,7 +506,24 @@ public class NsxApiClient {
                     .setSubnets(List.of(subnet))
                     .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())
                     .build();
-            segmentService.patch(segmentName, segment);
+            List<Structure> profileBindings = getSegmentProfileBindings(ipDiscoveryProfilePath, macDiscoveryProfilePath,
+                    segmentSecurityProfilePath);
+            if (profileBindings.isEmpty()) {
+                Segments segmentService = (Segments) nsxService.apply(Segments.class);
+                segmentService.patch(segmentName, segment);
+            } else {
+                segment.setChildren(profileBindings);
+                ChildSegment childSegment = new ChildSegment.Builder()
+                        .setId(segmentName)
+                        .setSegment(segment)
+                        .build();
+                com.vmware.nsx_policy.model.Infra infra = new com.vmware.nsx_policy.model.Infra.Builder()
+                        .setResourceType(INFRA_RESOURCE_TYPE)
+                        .setChildren(List.of(childSegment))
+                        .build();
+                Infra infraService = (Infra) nsxService.apply(Infra.class);
+                infraService.patch(infra, false);
+            }
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error creating segment %s: %s", segmentName, ae.getErrorMessage());
@@ -489,18 +532,96 @@ public class NsxApiClient {
         }
     }
 
+    protected String getIpDiscoveryProfilePath(String profileId) {
+        if (StringUtils.isBlank(profileId)) {
+            return null;
+        }
+        IpDiscoveryProfiles profiles = (IpDiscoveryProfiles) nsxService.apply(IpDiscoveryProfiles.class);
+        IPDiscoveryProfile profile = profiles.get(profileId);
+        return validateProfile(profileId, profile.getId(), profile.getPath(), "/infra/ip-discovery-profiles/", profile.getMarkedForDelete());
+    }
+
+    protected String getMacDiscoveryProfilePath(String profileId) {
+        if (StringUtils.isBlank(profileId)) {
+            return null;
+        }
+        MacDiscoveryProfiles profiles = (MacDiscoveryProfiles) nsxService.apply(MacDiscoveryProfiles.class);
+        MacDiscoveryProfile profile = profiles.get(profileId);
+        return validateProfile(profileId, profile.getId(), profile.getPath(), "/infra/mac-discovery-profiles/", profile.getMarkedForDelete());
+    }
+
+    protected String getSegmentSecurityProfilePath(String profileId) {
+        if (StringUtils.isBlank(profileId)) {
+            return null;
+        }
+        SegmentSecurityProfiles profiles = (SegmentSecurityProfiles) nsxService.apply(SegmentSecurityProfiles.class);
+        SegmentSecurityProfile profile = profiles.get(profileId);
+        return validateProfile(profileId, profile.getId(), profile.getPath(), "/infra/segment-security-profiles/", profile.getMarkedForDelete());
+    }
+
+    protected String validateProfile(String requestedId, String resolvedId, String profilePath,
+                                     String expectedPathPrefix, Boolean markedForDelete) {
+        if (!Objects.equals(requestedId, resolvedId)) {
+            throw new CloudRuntimeException(String.format("NSX returned profile %s while resolving requested profile %s", resolvedId, requestedId));
+        }
+        if (!Objects.equals(expectedPathPrefix + requestedId, profilePath)) {
+            throw new CloudRuntimeException(String.format("NSX profile %s did not return a canonical resource path of the expected type", requestedId));
+        }
+        if (Boolean.TRUE.equals(markedForDelete)) {
+            throw new CloudRuntimeException(String.format("NSX profile %s is marked for deletion", requestedId));
+        }
+        return profilePath;
+    }
+
+    protected List<Structure> getSegmentProfileBindings(String ipDiscoveryProfilePath, String macDiscoveryProfilePath,
+                                                        String segmentSecurityProfilePath) {
+        List<Structure> bindings = new ArrayList<>();
+        if (StringUtils.isNotBlank(ipDiscoveryProfilePath) || StringUtils.isNotBlank(macDiscoveryProfilePath)) {
+            SegmentDiscoveryProfileBindingMap binding = new SegmentDiscoveryProfileBindingMap.Builder()
+                    .setResourceType(SEGMENT_DISCOVERY_PROFILE_BINDING_RESOURCE_TYPE)
+                    .setId(SEGMENT_DISCOVERY_PROFILE_BINDING_ID)
+                    .setIpDiscoveryProfilePath(ipDiscoveryProfilePath)
+                    .setMacDiscoveryProfilePath(macDiscoveryProfilePath)
+                    .build();
+            bindings.add(new ChildSegmentDiscoveryProfileBindingMap.Builder()
+                    .setId(SEGMENT_DISCOVERY_PROFILE_BINDING_ID)
+                    .setSegmentDiscoveryProfileBindingMap(binding)
+                    .build());
+        }
+        if (StringUtils.isNotBlank(segmentSecurityProfilePath)) {
+            SegmentSecurityProfileBindingMap binding = new SegmentSecurityProfileBindingMap.Builder()
+                    .setResourceType(SEGMENT_SECURITY_PROFILE_BINDING_RESOURCE_TYPE)
+                    .setId(SEGMENT_SECURITY_PROFILE_BINDING_ID)
+                    .setSegmentSecurityProfilePath(segmentSecurityProfilePath)
+                    .build();
+            bindings.add(new ChildSegmentSecurityProfileBindingMap.Builder()
+                    .setId(SEGMENT_SECURITY_PROFILE_BINDING_ID)
+                    .setSegmentSecurityProfileBindingMap(binding)
+                    .build());
+        }
+        return bindings;
+    }
+
     public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
             removeSegmentDistributedFirewallRules(segmentName);
             if (Objects.isNull(vpcId)) {
                 String t1GatewayName = getTier1GatewayName(domainId, accountId, zoneId, networkId, false);
-                deleteLoadBalancer(getLoadBalancerName(t1GatewayName));
+                try {
+                    deleteLoadBalancer(getLoadBalancerName(t1GatewayName));
+                } catch (NotFound e) {
+                    logger.debug("Load balancer for segment {} is already absent", segmentName);
+                }
             }
             removeSegment(segmentName, zoneId);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
             logger.debug("Removing the DHCP relay config with ID {}", dhcpRelayConfigId);
-            dhcpRelayConfig.delete(dhcpRelayConfigId);
+            try {
+                dhcpRelayConfig.delete(dhcpRelayConfigId);
+            } catch (NotFound e) {
+                logger.debug("DHCP relay config {} is already absent", dhcpRelayConfigId);
+            }
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error deleting segment %s: %s", segmentName, ae.getErrorMessage());
@@ -519,22 +640,38 @@ public class NsxApiClient {
                 logger.warn(errMsg);
                 return;
             }
-        } catch (Exception e) {
+        } catch (NotFound e) {
             logger.warn(errMsg);
             return;
         }
-        String siteId = getDefaultSiteId();
-        String enforcementPointPath = getDefaultEnforcementPointPath(siteId);
-        SegmentPorts segmentPortsService = (SegmentPorts) nsxService.apply(SegmentPorts.class);
-        PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
+        Ports segmentPortsService = (Ports) nsxService.apply(Ports.class);
+        SegmentPortListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName);
         Long portCount = segmentPortsList.getResultCount();
         if (portCount > 0L) {
-            portCount = retrySegmentDeletion(segmentPortsService, segmentName, enforcementPointPath, zoneId);
+            portCount = retrySegmentDeletion(segmentPortsService, segmentName, zoneId);
         }
         if (portCount == 0L) {
             logger.debug("Removing the segment with ID {}", segmentName);
             removeGroupForSegment(segmentName);
-            segmentService.delete(segmentName);
+            Segment segment = new Segment.Builder()
+                    .setResourceType(SEGMENT_RESOURCE_TYPE)
+                    .setId(segmentName)
+                    .build();
+            ChildSegment childSegment = new ChildSegment.Builder()
+                    .setId(segmentName)
+                    .setSegment(segment)
+                    .setMarkedForDelete(true)
+                    .build();
+            com.vmware.nsx_policy.model.Infra infra = new com.vmware.nsx_policy.model.Infra.Builder()
+                    .setResourceType(INFRA_RESOURCE_TYPE)
+                    .setChildren(List.of(childSegment))
+                    .build();
+            Infra infraService = (Infra) nsxService.apply(Infra.class);
+            try {
+                infraService.patch(infra, false);
+            } catch (NotFound e) {
+                logger.debug("Segment {} is already absent", segmentName);
+            }
         } else {
             String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, portCount);
             logger.error(msg);
@@ -542,14 +679,13 @@ public class NsxApiClient {
         }
     }
 
-    private PolicyGroupMembersListResult getSegmentPortList(SegmentPorts segmentPortsService, String segmentName, String enforcementPointPath) {
+    private SegmentPortListResult getSegmentPortList(Ports segmentPortsService, String segmentName) {
         return PagedFetcher.
-                <PolicyGroupMembersListResult, PolicyGroupMemberDetails>withPageFetcher(
-                cursor -> segmentPortsService.list(DEFAULT_DOMAIN, segmentName, cursor, enforcementPointPath,
-                        false, null, 50L, false, null)
+                <SegmentPortListResult, SegmentPort>withPageFetcher(
+                cursor -> segmentPortsService.list(segmentName, cursor, false, null, 50L, false, null)
                 )
-                .cursorExtractor(PolicyGroupMembersListResult::getCursor)
-                .itemsExtractor(PolicyGroupMembersListResult::getResults)
+                .cursorExtractor(SegmentPortListResult::getCursor)
+                .itemsExtractor(SegmentPortListResult::getResults)
                 .itemsSetter((page, allItems) -> {
                     page.setResults(allItems);
                     page.setResultCount((long) allItems.size());
@@ -557,7 +693,7 @@ public class NsxApiClient {
                 .fetchAll();
     }
 
-    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, String segmentName, String enforcementPointPath, long zoneId) {
+    private Long retrySegmentDeletion(Ports segmentPortsService, String segmentName, long zoneId) {
         int retries = NsxService.NSX_API_FAILURE_RETRIES.valueIn(zoneId);
         int waitingSecs = NsxService.NSX_API_FAILURE_INTERVAL.valueIn(zoneId);
         int count = 1;
@@ -567,7 +703,7 @@ public class NsxApiClient {
                 logger.info("Waiting for all port groups to be unlinked from the segment {} - " +
                         "Attempt: {}. Waiting for {} secs", segmentName, count++, waitingSecs);
                 Thread.sleep(waitingSecs * 1000L);
-                portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
+                portCount = getSegmentPortList(segmentPortsService, segmentName).getResultCount();
                 retries--;
             } catch (InterruptedException e) {
                 throw new CloudRuntimeException(String.format("Unable to delete segment %s due to: %s", segmentName, e.getLocalizedMessage()));
@@ -1101,13 +1237,19 @@ public class NsxApiClient {
     private void removeGroupForSegment(String segmentName) {
         logger.info(String.format("Removing Group for Segment %s", segmentName));
         Groups service = (Groups) nsxService.apply(Groups.class);
-        service.delete(DEFAULT_DOMAIN, segmentName, true, false);
+        try {
+            service.delete(DEFAULT_DOMAIN, segmentName, true, false);
+        } catch (NotFound e) {
+            logger.debug("Group for segment {} is already absent", segmentName);
+        }
     }
 
     private void removeSegmentDistributedFirewallRules(String segmentName) {
         try {
             SecurityPolicies services = (SecurityPolicies) nsxService.apply(SecurityPolicies.class);
             services.delete(DEFAULT_DOMAIN, segmentName);
+        } catch (NotFound e) {
+            logger.debug("Distributed firewall policy for segment {} is already absent", segmentName);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to remove NSX distributed firewall policy for segment %s, due to: %s", segmentName, ae.getErrorMessage());

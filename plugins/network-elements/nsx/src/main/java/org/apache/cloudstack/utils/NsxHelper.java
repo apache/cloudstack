@@ -41,8 +41,14 @@ public class NsxHelper {
     }
 
     public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, String vpcName, NetworkVO networkVO) {
+        return createNsxSegmentCommand(domain, account, zone, vpcName, networkVO, null, null, null);
+    }
+
+    public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, String vpcName, NetworkVO networkVO,
+                                                                   String ipDiscoveryProfileId, String macDiscoveryProfileId, String segmentSecurityProfileId) {
         return new CreateNsxSegmentCommand(domain.getId(), account.getId(), zone.getId(),
-                networkVO.getVpcId(), vpcName, networkVO.getId(), networkVO.getName(), networkVO.getGateway(), networkVO.getCidr());
+                networkVO.getVpcId(), vpcName, networkVO.getId(), networkVO.getName(), networkVO.getGateway(), networkVO.getCidr(),
+                ipDiscoveryProfileId, macDiscoveryProfileId, segmentSecurityProfileId);
     }
 
     public static CreateOrUpdateNsxTier1NatRuleCommand createOrUpdateNsxNatRuleCommand(long domainId, long accountId, long zoneId,

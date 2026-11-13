@@ -41,7 +41,9 @@ import com.cloud.network.element.NsxProviderVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
@@ -71,6 +73,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -180,6 +183,8 @@ public class ConfigurationManagerImplTest {
     ConfigurationDao configDao;
     @Mock
     NetworkOfferingDao networkOfferingDao;
+    @Mock
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
     @Mock
     NetworkService networkService;
     @Mock
@@ -1409,5 +1414,113 @@ public class ConfigurationManagerImplTest {
         Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsAcceptsNsxSegmentProfilesForNsxOffering() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "cloudstack-ip-discovery",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "cloudstack-mac-discovery",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "cloudstack-segment-security");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap);
+    }
+
+    @Test
+    public void testCreateNsxSegmentProfilesWithActualOfferingCommands() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "ip-discovery",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "mac-discovery",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "segment-security");
+        List<NetworkOfferingServiceMapVO> savedServices = new ArrayList<>();
+        when(networkModel.resolveProvider(anyString())).thenAnswer(invocation -> Network.Provider.getProvider(invocation.getArgument(0)));
+        when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(networkOfferingServiceMapDao.persist(any(NetworkOfferingServiceMapVO.class))).thenAnswer(invocation -> {
+            NetworkOfferingServiceMapVO service = invocation.getArgument(0);
+            savedServices.add(service);
+            return service;
+        });
+
+        String originalRoutedDefault = RoutedIpv4Manager.RoutedNetworkVpcEnabled.defaultValue();
+        ReflectionTestUtils.setField(RoutedIpv4Manager.RoutedNetworkVpcEnabled, "_defaultValue", "true");
+        CallContext context = mock(CallContext.class);
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(context);
+            for (NetworkOffering.NetworkMode mode : NetworkOffering.NetworkMode.values()) {
+                for (boolean forVpc : List.of(false, true)) {
+                    CreateNetworkOfferingCmd command = new CreateNetworkOfferingCmd();
+                    ReflectionTestUtils.setField(command, "networkOfferingName", "nsx-profiles");
+                    ReflectionTestUtils.setField(command, "traffictype", Networks.TrafficType.Guest.name());
+                    ReflectionTestUtils.setField(command, "guestIptype", Network.GuestType.Isolated.name());
+                    ReflectionTestUtils.setField(command, "provider", "NSX");
+                    ReflectionTestUtils.setField(command, "networkMode", mode.name());
+                    ReflectionTestUtils.setField(command, "forVpc", forVpc);
+                    ReflectionTestUtils.setField(command, "details", Map.of("0", Map.of(
+                            "nsxipdiscoveryprofileid", "ip-discovery",
+                            "nsxmacdiscoveryprofileid", "mac-discovery",
+                            "nsxsegmentsecurityprofileid", "segment-security")));
+                    savedServices.clear();
+                    Mockito.clearInvocations(networkOfferingDao);
+
+                    NetworkOfferingVO offering = (NetworkOfferingVO) configurationManagerImplSpy.createNetworkOffering(command);
+
+                    Assert.assertEquals(mode, offering.getNetworkMode());
+                    Assert.assertEquals(forVpc, offering.isForVpc());
+                    verify(networkOfferingDao).persist(Mockito.same(offering), Mockito.eq(details));
+                    if (mode == NetworkOffering.NetworkMode.ROUTED) {
+                        Assert.assertTrue(savedServices.stream().anyMatch(service ->
+                                Network.Service.Gateway.getName().equals(service.getService())
+                                        && Network.Provider.Nsx.getName().equals(service.getProvider())));
+                    }
+                }
+            }
+        } finally {
+            ReflectionTestUtils.setField(RoutedIpv4Manager.RoutedNetworkVpcEnabled, "_defaultValue", originalRoutedDefault);
+        }
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsWhitespaceInNsxProfileId() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, " mac-profile ");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsNsxSegmentProfileForNonNsxOffering() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "cloudstack-ip-discovery");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.VPCVirtualRouter));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsBlankNsxSegmentProfile() {
+        Map<NetworkOffering.Detail, String> details = Map.of(NetworkOffering.Detail.NsxMacDiscoveryProfileId, " ");
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
+    }
+
+    @Test
+    public void testValidateNetworkOfferingDetailsRejectsOversizedNsxSegmentProfile() {
+        Map<NetworkOffering.Detail, String> details = Map.of(
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "x".repeat(256));
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = Map.of(
+                Network.Service.Connectivity, Set.of(Network.Provider.Nsx));
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> configurationManagerImplSpy.validateNtwkOffDetails(details, serviceProviderMap));
     }
 }

@@ -58,6 +58,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -66,6 +67,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -302,6 +304,29 @@ public class NsxGuestNetworkGuruTest {
         guru.createNsxSegment(networkVO, dataCenter);
         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
                 anyLong());
+    }
+
+    @Test
+    public void testCreateNsxSegmentPassesNetworkOfferingProfiles() {
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        when(networkVO.getAccountId()).thenReturn(1L);
+        when(networkVO.getNetworkOfferingId()).thenReturn(42L);
+        when(networkModel.getNtwkOffDetails(42L)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "ip-profile",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "mac-profile",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "security-profile"));
+        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong()))
+                .thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+        ArgumentCaptor<CreateNsxSegmentCommand> commandCaptor = ArgumentCaptor.forClass(CreateNsxSegmentCommand.class);
+
+        guru.createNsxSegment(networkVO, dataCenter);
+
+        verify(nsxControllerUtils).sendNsxCommand(commandCaptor.capture(), anyLong());
+        CreateNsxSegmentCommand command = commandCaptor.getValue();
+        assertEquals("ip-profile", command.getIpDiscoveryProfileId());
+        assertEquals("mac-profile", command.getMacDiscoveryProfileId());
+        assertEquals("security-profile", command.getSegmentSecurityProfileId());
     }
 
 

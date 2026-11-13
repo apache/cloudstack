@@ -5012,6 +5012,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
         NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
 
+        if (!haveMatchingNsxSegmentProfiles(oldNetworkOfferingId, newNetworkOfferingId)) {
+            logger.debug("Network offerings {} and {} have different NSX segment profile bindings, can't upgrade",
+                    oldNetworkOffering, newNetworkOffering);
+            return false;
+        }
+
         // can move only Isolated networks for now
         if (oldNetworkOffering.getGuestType() != GuestType.Isolated) {
             throw new InvalidParameterValueException("NetworkOfferingId can be upgraded only for the network of type " + GuestType.Isolated);
@@ -5098,6 +5104,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         return canMoveToPhysicalNetwork(network, oldNetworkOfferingId, newNetworkOfferingId);
+    }
+
+    protected boolean haveMatchingNsxSegmentProfiles(long oldNetworkOfferingId, long newNetworkOfferingId) {
+        Map<NetworkOffering.Detail, String> oldDetails = _networkModel.getNtwkOffDetails(oldNetworkOfferingId);
+        Map<NetworkOffering.Detail, String> newDetails = _networkModel.getNtwkOffDetails(newNetworkOfferingId);
+        for (NetworkOffering.Detail detail : NetworkOffering.NSX_SEGMENT_PROFILE_DETAILS) {
+            String oldProfileId = oldDetails == null ? null : oldDetails.get(detail);
+            String newProfileId = newDetails == null ? null : newDetails.get(detail);
+            if (!Objects.equals(oldProfileId, newProfileId)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

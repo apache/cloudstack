@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -62,6 +64,13 @@ public class CloneNetworkOfferingCmd extends NetworkOfferingBaseCmd {
                     "If specified along with 'supportedservices', this parameter is ignored.")
     private List<String> dropServices;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "Whether to omit network offering details from the clone. If true, source details are not copied " +
+                    "and the details parameter is ignored. If false or omitted, details are inherited unless explicitly supplied.",
+            since = "24.0")
+    private Boolean cleanupDetails;
+
     @Parameter(name = ApiConstants.TRAFFIC_TYPE,
             type = CommandType.STRING,
             description = "The traffic type for the network offering. Supported type in current release is GUEST only")
@@ -85,6 +94,15 @@ public class CloneNetworkOfferingCmd extends NetworkOfferingBaseCmd {
 
     public List<String> getDropServices() {
         return dropServices;
+    }
+
+    public boolean isCleanupDetails() {
+        return Boolean.TRUE.equals(cleanupDetails);
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return isCleanupDetails() ? Collections.emptyMap() : super.getDetails();
     }
 
     public String getGuestIpType() {

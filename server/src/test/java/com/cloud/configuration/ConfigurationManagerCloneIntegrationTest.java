@@ -26,6 +26,7 @@ import com.cloud.network.Networks;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -63,6 +64,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -728,6 +730,96 @@ public class ConfigurationManagerCloneIntegrationTest {
         when(networkOfferingDao.findById(999L)).thenReturn(null);
 
         configurationManager.cloneNetworkOffering(cmd);
+    }
+
+    @Test
+    public void testCloneNetworkOfferingInheritsNsxProfilesWhenDetailsAreOmitted() {
+        Map<NetworkOffering.Detail, String> sourceDetails = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "source-ip-profile",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "source-mac-profile",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "source-security-profile");
+
+        Map<String, String> details = cloneNetworkOfferingAndCaptureDetails(sourceDetails, null, null);
+
+        Assert.assertEquals(Map.of("NsxIpDiscoveryProfileId", "source-ip-profile",
+                "NsxMacDiscoveryProfileId", "source-mac-profile",
+                "NsxSegmentSecurityProfileId", "source-security-profile"), details);
+    }
+
+    @Test
+    public void testCloneNetworkOfferingClearsNsxProfilesWithoutInheritingSourceDetails() {
+        Map<NetworkOffering.Detail, String> sourceDetails = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "source-ip-profile",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "source-mac-profile",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "source-security-profile");
+
+        Map<String, String> details = cloneNetworkOfferingAndCaptureDetails(sourceDetails, null, true);
+
+        Assert.assertTrue(details.isEmpty());
+    }
+
+    @Test
+    public void testCloneNetworkOfferingExplicitDetailsRemoveOtherSourceProfiles() {
+        Map<NetworkOffering.Detail, String> sourceDetails = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "source-ip-profile",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "source-mac-profile",
+                NetworkOffering.Detail.RelatedNetworkOffering, "related-offering");
+        Map<String, String> requestedDetails = Map.of("nsxmacdiscoveryprofileid", "source-mac-profile",
+                "RelatedNetworkOffering", "related-offering");
+
+        Map<String, String> details = cloneNetworkOfferingAndCaptureDetails(sourceDetails, requestedDetails, false);
+
+        Assert.assertEquals(requestedDetails, details);
+    }
+
+    private Map<String, String> cloneNetworkOfferingAndCaptureDetails(Map<NetworkOffering.Detail, String> sourceDetails,
+            Map<String, String> requestedDetails, Boolean cleanupDetails) {
+        long sourceId = 1L;
+        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+        when(sourceOffering.getId()).thenReturn(sourceId);
+        when(sourceOffering.getName()).thenReturn("source-network-offering");
+        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(sourceOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+        when(networkOfferingDao.findById(sourceId)).thenReturn(sourceOffering);
+        when(_networkModel.getNetworkOfferingServiceProvidersMap(sourceId)).thenReturn(
+                Map.of(Network.Service.Firewall, Collections.singleton(Network.Provider.Nsx)));
+
+        List<NetworkOfferingDetailsVO> sourceDetailRows = new ArrayList<>();
+        sourceDetails.forEach((key, value) -> sourceDetailRows.add(new NetworkOfferingDetailsVO(sourceId, key, value, true)));
+        sourceDetailRows.add(new NetworkOfferingDetailsVO(sourceId, NetworkOffering.Detail.internetProtocol, "ipv4", true));
+        sourceDetailRows.add(new NetworkOfferingDetailsVO(sourceId, NetworkOffering.Detail.domainid, "11", true));
+        sourceDetailRows.add(new NetworkOfferingDetailsVO(sourceId, NetworkOffering.Detail.zoneid, "22", true));
+        when(networkOfferingDetailsDao.listDetails(sourceId)).thenReturn(sourceDetailRows);
+        when(networkOfferingDetailsDao.getDetail(sourceId, NetworkOffering.Detail.internetProtocol)).thenReturn("ipv4");
+        when(networkOfferingDetailsDao.findDomainIds(sourceId)).thenReturn(new ArrayList<>(List.of(11L)));
+        when(networkOfferingDetailsDao.findZoneIds(sourceId)).thenReturn(new ArrayList<>(List.of(22L)));
+
+        CloneNetworkOfferingCmd cmd = new CloneNetworkOfferingCmd();
+        ReflectionTestUtils.setField(cmd, "sourceOfferingId", sourceId);
+        ReflectionTestUtils.setField(cmd, "networkOfferingName", "cloned-network-offering");
+        ReflectionTestUtils.setField(cmd, "cleanupDetails", cleanupDetails);
+        if (requestedDetails != null) {
+            ReflectionTestUtils.setField(cmd, "details", Map.of("0", requestedDetails));
+        }
+        cmd.setFullUrlParams(new HashMap<>());
+
+        Map<String, String> capturedDetails = new HashMap<>();
+        NetworkOfferingVO clonedOffering = mock(NetworkOfferingVO.class);
+        Mockito.doAnswer(invocation -> {
+            CloneNetworkOfferingCmd resolvedCmd = invocation.getArgument(0);
+            if (resolvedCmd.getDetails() != null) {
+                capturedDetails.putAll(resolvedCmd.getDetails());
+            }
+            Assert.assertEquals("ipv4", resolvedCmd.getInternetProtocol());
+            Assert.assertEquals(List.of(11L), resolvedCmd.getDomainIds());
+            Assert.assertEquals(List.of(22L), resolvedCmd.getZoneIds());
+            return clonedOffering;
+        }).when(configurationManager).createNetworkOffering(cmd);
+
+        Assert.assertSame(clonedOffering, configurationManager.cloneNetworkOffering(cmd));
+        verify(configurationManager).createNetworkOffering(cmd);
+        return capturedDetails;
     }
 
     @Test(expected = InvalidParameterValueException.class)
