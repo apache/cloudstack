@@ -244,6 +244,20 @@ public class Script implements Callable<String> {
         }
     }
 
+    /**
+     * Builds the error result of a failed process whose output was drained by the interpreter task.
+     * Draining interpreters (e.g. {@link OutputInterpreter.AllLinesParser}) return null from interpret(),
+     * and callers treat a null result as success, so a non-null value must always be returned here:
+     * the task result, otherwise the output captured by the parser, otherwise the process exit value.
+     */
+    private String getDrainedErrorResult(Task task, OutputInterpreter interpreter) throws InterruptedException {
+        String result = task.getResult();
+        if (StringUtils.isBlank(result) && interpreter instanceof OutputInterpreter.AllLinesParser) {
+            result = ((OutputInterpreter.AllLinesParser) interpreter).getLines();
+        }
+        return StringUtils.isNotBlank(result) ? result.trim() : String.valueOf(_process.exitValue());
+    }
+
     public String execute(OutputInterpreter interpreter) {
         return executeInternal(interpreter, null);
     }
@@ -371,7 +385,7 @@ public class Script implements Callable<String> {
 
             String error;
             if (interpreter != null) {
-                error = interpreter.processError(reader);
+                error = interpreter.drain() ? getDrainedErrorResult(task, interpreter) : interpreter.processError(reader);
             } else {
                 error = String.valueOf(_process.exitValue());
             }
@@ -494,7 +508,7 @@ public class Script implements Callable<String> {
 
             String error;
             if (interpreter != null) {
-                error = interpreter.processError(reader);
+                error = interpreter.drain() ? getDrainedErrorResult(task, interpreter) : interpreter.processError(reader);
             } else {
                 error = String.valueOf(_process.exitValue());
             }
