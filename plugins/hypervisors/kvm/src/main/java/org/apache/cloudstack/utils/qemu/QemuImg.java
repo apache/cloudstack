@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtCompressBackupCommandWrapper;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -134,26 +136,42 @@ public class QemuImg {
      */
     public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
-            final Script s = new Script(_qemuImgPath, timeout);
-            s.add("--help");
-
-            final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-            final String result = s.execute(parser);
-
-            // Older Qemu returns output in result due to --help reporting error status
-            if (result != null) {
-                if (result.contains(TARGET_ZERO_FLAG)) {
-                    this.skipZero = true;
-                }
-            } else {
-                if (parser.getLines().contains(TARGET_ZERO_FLAG)) {
-                    this.skipZero = true;
-                }
-            }
+            this.skipZero = isTargetZeroFlagSupported(timeout);
         }
         this.timeout = timeout;
         this.noCache = noCache;
         this.version = LibvirtConnection.getConnection().getVersion();
+    }
+
+    /**
+     * Detects support for the convert --target-is-zero flag. The flag used to be
+     * discovered via "qemu-img --help", but newer qemu (observed with 10.x on EL9)
+     * no longer lists it in the help text while still supporting it - which
+     * silently disabled zero-skipping and fully allocated thin block-device
+     * targets. Probe the option directly instead: a recognized option fails with
+     * "--target-is-zero requires use of -n flag", an unknown one with
+     * "unrecognized option".
+     */
+    private boolean isTargetZeroFlagSupported(final long timeout) {
+        // Fast path for older qemu that documents the flag in --help.
+        final Script help = new Script(_qemuImgPath, timeout);
+        help.add("--help");
+        final OutputInterpreter.AllLinesParser helpParser = new OutputInterpreter.AllLinesParser();
+        final String helpResult = help.execute(helpParser);
+        final String helpOutput = (helpResult != null ? helpResult : "") + StringUtils.defaultString(helpParser.getLines());
+        if (helpOutput.contains(TARGET_ZERO_FLAG)) {
+            return true;
+        }
+
+        final Script probe = new Script(_qemuImgPath, timeout);
+        probe.add("convert");
+        probe.add(TARGET_ZERO_FLAG);
+        final OutputInterpreter.AllLinesParser probeParser = new OutputInterpreter.AllLinesParser();
+        final String probeResult = probe.execute(probeParser);
+        final String probeOutput = (probeResult != null ? probeResult : "") + StringUtils.defaultString(probeParser.getLines());
+        return probeOutput.contains(TARGET_ZERO_FLAG)
+                && !probeOutput.contains("unrecognized option")
+                && !probeOutput.contains("invalid option");
     }
 
     /**
@@ -261,14 +279,12 @@ public class QemuImg {
             Shouldn't this be -o backing_file=filename instead?
          */
         s.add("-f");
+        s.add(file.getFormat().toString());
         if (backingFile != null) {
-            s.add(backingFile.getFormat().toString());
             s.add("-F");
             s.add(backingFile.getFormat().toString());
             s.add("-b");
             s.add(backingFile.getFileName());
-        } else {
-            s.add(file.getFormat().toString());
         }
 
         s.add(file.getFileName());
@@ -1117,6 +1133,34 @@ public class QemuImg {
 
     public long getVersion() {
         return this.version;
+    }
+
+    /**
+     * Sets the compression type option if qemu-img is at least in version 5.1. Otherwise, will not set it and qemu will use zlib.
+     * */
+    public void setCompressionTypeOptionIfAvailable(Map<String, String> options, Backup.CompressionLibrary compressionLib) {
+        if (compressionLib == null) {
+            logger.debug("No compression lib informed, using the default.");
+            return;
+        }
+        if (getVersion() >= QemuImg.QEMU_5_1) {
+            options.put(LibvirtCompressBackupCommandWrapper.COMPRESSION_TYPE, compressionLib.name());
+            return;
+        }
+        logger.warn("Qemu is at a lower version than 5.1, we will not be able to use zstd to compress backups. Only zlib is supported for this version. Current version is [{}].",
+                getVersion());
+    }
+
+    public Integer validateAndGetRateLimit(Integer rateLimit) throws QemuImgException {
+        if (rateLimit == null || rateLimit < 1) {
+            return null;
+        }
+
+        if (getVersion() < QemuImg.QEMU_5_2) {
+            throw new QemuImgException("Qemu version is lower than 5.2.0, unable to set the rate limit.");
+        }
+
+        return rateLimit;
     }
 
 }

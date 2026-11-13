@@ -36,6 +36,8 @@ public interface Ipv4GuestSubnetNetworkMap extends Identity, InternalIdentity {
 
     Long getParentId();
 
+    Long getDataCenterId();
+
     String getSubnet();
 
     Long getVpcId();

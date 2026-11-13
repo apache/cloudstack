@@ -74,6 +74,7 @@ import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.network.NetworkService;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
@@ -148,6 +149,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject GuestOSDao _guestOSDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject VirtualMachineManager _itMgr;
+    @Inject NetworkService _networkService;
     @Inject ConfigurationDao _configDao;
     @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
@@ -927,6 +929,14 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
     }
 
+    // A memory revert recreates the VM's taps without going through start, so their VLAN membership is lost on hosts that set it manually.
+    private void reapplyVlanMembershipAfterMemoryRevert(UserVmVO userVm, VMSnapshotVO vmSnapshotVo) throws ResourceUnavailableException {
+        if (vmSnapshotVo.getType() != VMSnapshot.Type.DiskAndMemory || userVm.getHypervisorType() != HypervisorType.KVM) {
+            return;
+        }
+        _networkService.reapplyLiveVlanMembership(_userVMDao.findById(userVm.getId()));
+    }
+
     private UserVm orchestrateRevertToVMSnapshot(Long vmSnapshotId) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
 
         // check if VM snapshot exists in DB
@@ -992,6 +1002,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         try {
             VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshotVo);
             strategy.revertVMSnapshot(vmSnapshotVo);
+            reapplyVlanMembershipAfterMemoryRevert(userVm, vmSnapshotVo);
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {

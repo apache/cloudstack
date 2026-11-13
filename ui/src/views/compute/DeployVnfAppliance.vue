@@ -362,7 +362,10 @@
                       :items="templateVnfNics"
                       :templateNics="templateNics"
                       :networks="networks"
-                      @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
+                      :canTrunkNics="canTrunkNics"
+                      :zoneId="zoneId"
+                      @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)"
+                      @update-vnf-trunk-groups="($event) => updateVnfTrunkGroups($event)" />
                   </div>
                   <div style="margin-top: 15px" v-if="showVnfConfigureManagement">
                     <a-form-item name="vnfconfiguremanagement" ref="vnfconfiguremanagement">
@@ -985,6 +988,7 @@ export default {
       templateProperties: {},
       templateVnfNics: [],
       vnfNicNetworks: {},
+      vnfTrunkGroups: {},
       selectedTemplateConfiguration: {},
       iso: {},
       hypervisor: '',
@@ -992,6 +996,8 @@ export default {
       diskOffering: {},
       affinityGroups: [],
       networks: [],
+      // networks seen across all pages, keyed by id - options.networks only holds the current page
+      networksCache: {},
       networksAdd: [],
       zone: {},
       sshKeyPairs: [],
@@ -1054,6 +1060,9 @@ export default {
   computed: {
     rootDiskSize () {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
+    },
+    canTrunkNics () {
+      return this.hypervisor === 'KVM' && ('associateNetworkToNic' in this.$store.getters.apis)
     },
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
@@ -1434,7 +1443,7 @@ export default {
         }
         this.zone = _.find(this.options.zones, (option) => option.id === vnfAppConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(vnfAppConfig.affinitygroupids, option.id))
-        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(vnfAppConfig.networkids, option.id)))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(Object.values(this.networksCache), (option) => _.includes(vnfAppConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === vnfAppConfig.diskofferingid)
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === vnfAppConfig.keypair)
@@ -1944,6 +1953,9 @@ export default {
     updateVnfNicNetworks (vnfNicNetworks) {
       this.vnfNicNetworks = vnfNicNetworks || {}
     },
+    updateVnfTrunkGroups (vnfTrunkGroups) {
+      this.vnfTrunkGroups = vnfTrunkGroups || {}
+    },
     updateSshKeyPairs (names) {
       this.form.keypairs = names
       this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
@@ -2264,9 +2276,32 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               if (this.templateVnfNics && this.templateVnfNics.length > 0) {
+                const hasVnfTrunkGroups = this.vnfTrunkGroups && Object.values(this.vnfTrunkGroups).some(ids => ids && ids.length > 0)
+                let k = 0
                 for (const templateVnfNic of this.templateVnfNics) {
                   const vnfNicNetworkId = this.vnfNicNetworks[String(templateVnfNic.deviceid)]?.id || null
-                  if (vnfNicNetworkId) {
+                  if (!vnfNicNetworkId) {
+                    continue
+                  }
+                  if (hasVnfTrunkGroups) {
+                    // one or more VNF nics group several networks onto a single nic (multi-VLAN trunk) -
+                    // mutually exclusive with iptonetworklist at the API level, so every nic (grouped or
+                    // not) goes through nicnetworkslist here instead.
+                    const assocIds = this.vnfTrunkGroups[String(templateVnfNic.deviceid)] || []
+                    createVnfAppData['nicnetworkslist[' + k + '].networkids'] = [vnfNicNetworkId, ...assocIds].join(',')
+                    if (this.networkConfig.length > 0) {
+                      const networkConfig = this.networkConfig.filter((item) => item.key === vnfNicNetworkId)
+                      if (networkConfig && networkConfig.length > 0) {
+                        if (networkConfig[0].ipAddress) {
+                          createVnfAppData['nicnetworkslist[' + k + '].ip4address'] = networkConfig[0].ipAddress
+                        }
+                        if (networkConfig[0].macAddress) {
+                          createVnfAppData['nicnetworkslist[' + k + '].macaddress'] = networkConfig[0].macAddress
+                        }
+                      }
+                    }
+                    k++
+                  } else {
                     const ipToNetwork = {
                       networkid: vnfNicNetworkId
                     }
@@ -2512,6 +2547,12 @@ export default {
                 }
                 param.opts = response
                 this.options[name] = response
+
+                if (name === 'networks') {
+                  for (const network of response) {
+                    this.networksCache[network.id] = network
+                  }
+                }
 
                 if (name === 'hypervisors') {
                   const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null

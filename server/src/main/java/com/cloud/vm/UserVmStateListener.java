@@ -36,7 +36,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentContext;
@@ -99,9 +98,8 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
           generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_STOP);
           List<NicVO> nics = _nicDao.listByVmId(vo.getId());
           for (NicVO nic : nics) {
-            NetworkVO network = _networkDao.findById(nic.getNetworkId());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, vo.getClass().getName(), vo.getUuid(), vo.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
+                    vo.getClass().getName(), vo.getUuid(), nic, 0L, vo.isDisplay());
           }
         } else if (newState == State.Destroyed || newState == State.Error || newState == State.Expunging) {
           generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_DESTROY);

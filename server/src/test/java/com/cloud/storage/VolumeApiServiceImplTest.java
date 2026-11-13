@@ -37,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -54,6 +55,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -128,6 +130,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -163,6 +166,8 @@ public class VolumeApiServiceImplTest {
     private SnapshotManager snapshotManagerMock;
     @Mock
     private VolumeDataStoreDao volumeDataStoreDaoMock;
+    @Mock
+    private TemplateManager templateManagerMock;
     @Mock
     private VolumeDao volumeDaoMock;
     @Mock
@@ -2054,6 +2059,75 @@ public class VolumeApiServiceImplTest {
             verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
         }
     }
+
+    @Test
+    public void testResizeVolumeNoChangeSkipsDriver() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+
+        testResizeVolumeSetup();
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            Volume result = volumeApiServiceImpl.resizeVolume(cmd);
+
+            Assert.assertSame(volumeVoMock, result);
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+            verify(volumeDaoMock, times(0)).updateDiskOffering(anyLong(), anyLong());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeSameDiskOfferingSkipsDriver() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+        when(newDiskOfferingMock.getDiskSize()).thenReturn(volumeSizeMock);
+        when(diskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(newDiskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            Volume result = volumeApiServiceImpl.resizeVolume(cmd);
+
+            Assert.assertSame(volumeVoMock, result);
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+            verify(volumeDaoMock, times(0)).updateDiskOffering(anyLong(), anyLong());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeNewDiskOfferingSameSizeUpdatesOfferingWithoutResize() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+        when(newDiskOfferingMock.getDiskSize()).thenReturn(volumeSizeMock);
+        when(diskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(newDiskOfferingMock.getId()).thenReturn(newDiskOfferingMockId);
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        DataStore offeringStore = Mockito.mock(DataStore.class);
+        PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+        when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(offeringStore);
+        when(offeringStore.getDriver()).thenReturn(driver);
+        when(driver.informStorageForDiskOfferingChange()).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            Mockito.clearInvocations(volumeDaoMock);
+            Volume result = volumeApiServiceImpl.resizeVolume(cmd);
+
+            Assert.assertSame(volumeVoMock, result);
+            verify(volumeDaoMock).updateDiskOffering(volumeMockId, newDiskOfferingMockId);
+            verify(volumeDaoMock, times(2)).findById(volumeMockId);
+            verify(driver).updateStorageWithTheNewDiskOffering(volumeVoMock, newDiskOfferingMock);
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+        }
+    }
+
     private UserVmVO getMockedVm() {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);
@@ -2895,5 +2969,115 @@ public class VolumeApiServiceImplTest {
                     "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
+    }
+
+    private Long invokeGetDeviceId(UserVmVO vm, Long deviceId) throws Exception {
+        java.lang.reflect.Method method = VolumeApiServiceImpl.class.getDeclaredMethod("getDeviceId", UserVmVO.class, Long.class);
+        method.setAccessible(true);
+        try {
+            return (Long) method.invoke(volumeApiServiceImpl, vm, deviceId);
+        } catch (InvocationTargetException e) {
+            throw (Exception) e.getCause();
+        }
+    }
+
+    private void mockCdromDeviceIds(UserVmVO vm, Long... deviceIds) {
+        lenient().when(templateManagerMock.getCdromDeviceIds(vm)).thenReturn(new HashSet<>(Arrays.asList(deviceIds)));
+    }
+
+    private List<VolumeVO> mockVmVolumes(UserVmVO vm, long... deviceIds) {
+        List<VolumeVO> volumes = new ArrayList<>();
+        for (long deviceId : deviceIds) {
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            lenient().when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+        lenient().when(volumeDaoMock.findByInstance(vm.getId())).thenReturn(volumes);
+        return volumes;
+    }
+
+    @Test
+    public void getReservedDeviceIdsReturnsTheDeviceIdsOfTheCdroms() {
+        UserVmVO vm = getMockedVm();
+
+        mockCdromDeviceIds(vm, 3L);
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+
+        // e.g. the CD-ROM and the config drive ISO, which is attached as the CD-ROM following the ones of the ISOs
+        mockCdromDeviceIds(vm, 3L, 4L);
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+
+        mockCdromDeviceIds(vm, 3L, 4L, 5L);
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+    }
+
+    @Test
+    public void getDeviceIdUsesDeviceId4WhenVmHasOneCdrom() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L);
+        mockVmVolumes(vm, 0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(4L), invokeGetDeviceId(vm, null));
+        Assert.assertEquals(Long.valueOf(4L), invokeGetDeviceId(vm, 4L));
+    }
+
+    @Test
+    public void getDeviceIdSkipsDeviceIdsOfAllCdroms() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L, 4L);
+        mockVmVolumes(vm, 0L, 1L, 2L);
+
+        Assert.assertEquals(Long.valueOf(5L), invokeGetDeviceId(vm, null));
+    }
+
+    @Test
+    public void getDeviceIdRejectsReservedDeviceIds() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L, 4L);
+        mockVmVolumes(vm, 0L);
+
+        for (long reservedDeviceId : new long[] {3L, 4L}) {
+            try {
+                invokeGetDeviceId(vm, reservedDeviceId);
+                fail("deviceId " + reservedDeviceId + " should be rejected");
+            } catch (RuntimeException e) {
+                Assert.assertTrue(e.getMessage(), e.getMessage().contains("deviceId should be 0 or between 1 and"));
+            }
+        }
+    }
+
+    @Test
+    public void getDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockCdromDeviceIds(vm, 3L, 4L);
+        List<VolumeVO> volumes = mockVmVolumes(vm, 0L);
+
+        // 6 data volumes are supported by default
+        List<Long> allocated = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            Long deviceId = invokeGetDeviceId(vm, null);
+            allocated.add(deviceId);
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            lenient().when(volume.getDeviceId()).thenReturn(deviceId);
+            volumes.add(volume);
+        }
+
+        Assert.assertEquals(Arrays.asList(1L, 2L, 5L, 6L, 7L, 8L), allocated);
+        try {
+            invokeGetDeviceId(vm, null);
+            fail("All device ids are used, an exception is expected");
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("All device Ids are used"));
+        }
+    }
+
+    @Test
+    public void getReservedDeviceIdsWithConfigDriveReservesTheCdromOfConfigDrive() {
+        UserVmVO vm = getMockedVm();
+        when(templateManagerMock.getCdromDeviceIds(vm, false)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L)));
+        when(templateManagerMock.getCdromDeviceIds(vm, true)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L, 5L)));
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm, false));
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm, true));
     }
 }
