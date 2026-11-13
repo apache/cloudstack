@@ -7686,12 +7686,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!isOnSupportedHypevisorForMigration(vm)) {
-            logger.error(vm + " is not XenServer/VMware/KVM/Ovm, cannot migrate this VM from hypervisor type " + vm.getHypervisorType());
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Ovm3 only");
+            logger.error(vm + " is not XenServer/VMware/KVM, cannot migrate this VM from hypervisor type " + vm.getHypervisorType());
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
         }
 
         if (vm.getType().equals(VirtualMachine.Type.User) && vm.getHypervisorType().equals(HypervisorType.LXC)) {
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Ovm3 only");
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM only");
         }
 
         if (isVMUsingLocalStorage(vm)) {
@@ -7895,10 +7895,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return (vm.getHypervisorType().equals(HypervisorType.XenServer) ||
                 vm.getHypervisorType().equals(HypervisorType.VMware) ||
                 vm.getHypervisorType().equals(HypervisorType.KVM) ||
-                vm.getHypervisorType().equals(HypervisorType.Ovm) ||
                 vm.getHypervisorType().equals(HypervisorType.LXC) ||
-                vm.getHypervisorType().equals(HypervisorType.Simulator) ||
-                vm.getHypervisorType().equals(HypervisorType.Ovm3));
+                vm.getHypervisorType().equals(HypervisorType.Simulator));
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {

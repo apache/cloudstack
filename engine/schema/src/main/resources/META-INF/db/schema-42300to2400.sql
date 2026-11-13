@@ -272,3 +272,8 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VAR
 -- UCS and Hyper-V hypervisor plugins are no longer built
 DELETE FROM `cloud`.`configuration` WHERE name = 'ucs.sync.blade.interval';
 DELETE FROM `cloud`.`configuration` WHERE name IN ('hyperv.public.network.device', 'hyperv.private.network.device', 'hyperv.guest.network.device', 'router.template.hyperv');
+
+-- OVM and OVM3 hypervisor plugins are no longer built
+DELETE FROM `cloud`.`configuration` WHERE name IN ('ovm.public.network.device', 'ovm.private.network.device', 'ovm.guest.network.device',
+    'ovm3.public.network.device', 'ovm3.private.network.device', 'ovm3.guest.network.device', 'ovm3.storage.network.device',
+    'ovm3.heartbeat.timeout', 'ovm3.heartbeat.interval', 'router.template.ovm3');
