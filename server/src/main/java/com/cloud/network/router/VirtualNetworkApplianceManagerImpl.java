@@ -2368,8 +2368,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return;
         }
 
-        final String serviceMonitoringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
-        final boolean isMonitoringServicesEnabled = serviceMonitoringSet != null && serviceMonitoringSet.equalsIgnoreCase("true");
+        final boolean isMonitoringServicesEnabled = EnableServiceMonitoring.value();
         final NetworkVO network = _networkDao.findById(networkId);
 
         logger.debug("Creating  monitoring services on " + router + " start...");
