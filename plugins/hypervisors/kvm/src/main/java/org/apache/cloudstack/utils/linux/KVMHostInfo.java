@@ -175,7 +175,7 @@ public class KVMHostInfo {
                 LOGGER.info("Retrieved value [{}] from file [{}]. This corresponds to a CPU speed of [{}] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000);
                 return cpuInfoFreq / 1000;
             } catch (IOException | NumberFormatException e) {
-                LOGGER.error("Unable to retrieve the CPU speed from file [{}]", cpuInfoFreqFileName, e);
+                LOGGER.debug("Unable to retrieve the CPU speed from file [{}]", cpuInfoFreqFileName, e);
             }
         }
         return 0L;
@@ -268,6 +268,6 @@ public class KVMHostInfo {
 
     private static void logFailureToGetCpuSpeedAndException(String command, Exception e) {
         LOGGER.debug("Unable to retrieve the CPU speed from command [{}]. Trying another way to retrieve the CPU speed.", command);
-        LOGGER.trace(e);
+        LOGGER.trace("Exception while retrieving CPU speed from command [{}].", command, e);
     }
 }
