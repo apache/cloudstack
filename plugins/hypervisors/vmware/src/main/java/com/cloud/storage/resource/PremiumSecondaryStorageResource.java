@@ -26,6 +26,7 @@ import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.Hypervisor;
 
@@ -38,6 +39,9 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
 
     @Override
     public Answer executeRequest(Command cmd) {
+        if (cmd instanceof CancelCommand) {
+            return cancel((CancelCommand) cmd);
+        }
         String hypervisor = cmd.getContextParam("hypervisor");
         if (hypervisor != null) {
             Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
@@ -62,6 +66,41 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
         return super.executeRequest(cmd);
     }
 
+    /** Can another request in flight here be stopped (checkOnly), or stop it; only the hypervisor handlers run anything that can be. */
+    private Answer cancel(CancelCommand cmd) {
+        final long sequence = cmd.getSequence();
+        if (cmd.isCheckOnly()) {
+            final String reason = checkRequestSequenceIsNotCancellable(sequence);
+            return new Answer(cmd, reason == null, reason == null ? "request sequence " + sequence + " can be cancelled" : reason);
+        }
+        final boolean cancelled = cancelRequestSequence(sequence);
+        return new Answer(cmd, cancelled, cancelled
+                ? "request sequence " + sequence + " cancelled (" + cmd.getReason() + ")"
+                : "request sequence " + sequence + " could not be cancelled on this host");
+    }
+
+    @Override
+    public String checkRequestSequenceIsNotCancellable(long sequence) {
+        String reason = "no handler on this host is running request sequence " + sequence;
+        for (SecondaryStorageResourceHandler handler : _handlers.values()) {
+            reason = handler.checkRequestSequenceIsNotCancellable(sequence);
+            if (reason == null) {
+                return null;
+            }
+        }
+        return reason;
+    }
+
+    @Override
+    public boolean cancelRequestSequence(long sequence) {
+        for (SecondaryStorageResourceHandler handler : _handlers.values()) {
+            if (handler.cancelRequestSequence(sequence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void ensureOutgoingRuleForAddress(String address) {
         if (address == null || address.isEmpty() || address.startsWith("0.0.0.0")) {
             if (logger.isInfoEnabled())
@@ -84,7 +123,7 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
         }
     }
 
-    private void registerHandler(Hypervisor.HypervisorType hypervisorType, SecondaryStorageResourceHandler handler) {
+    void registerHandler(Hypervisor.HypervisorType hypervisorType, SecondaryStorageResourceHandler handler) {
         _handlers.put(hypervisorType, handler);
     }
 

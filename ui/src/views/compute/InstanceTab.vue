@@ -110,6 +110,9 @@
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.jobs')" key="jobs" v-if="'listAsyncJobs' in $store.getters.apis">
+        <async-jobs-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="vm"
@@ -154,6 +157,7 @@ import ResourceLayout from '@/layouts/ResourceLayout'
 import DetailsTab from '@/components/view/DetailsTab'
 import StatsTab from '@/components/view/StatsTab'
 import EventsTab from '@/components/view/EventsTab'
+import AsyncJobsTab from '@/views/infra/AsyncJobsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import CreateVolume from '@/views/storage/CreateVolume'
 import NicsTab from '@/views/network/NicsTab'
@@ -173,6 +177,7 @@ export default {
     DetailsTab,
     StatsTab,
     EventsTab,
+    AsyncJobsTab,
     DetailSettings,
     CreateVolume,
     NicsTab,

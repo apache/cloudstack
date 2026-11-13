@@ -221,6 +221,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass, new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
         response.setAsync(isAsync);
+        response.setCancellable(isAsync && apiCmdAnnotation.cancellable());
 
         for (Field field : fields) {
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);

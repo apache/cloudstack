@@ -51,6 +51,9 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import com.cloud.storage.dao.VMTemplateDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -100,6 +103,12 @@ public class VolumeServiceTest extends TestCase{
 
     @Mock
     DiskOfferingDao diskOfferingDaoMock;
+
+    @Mock
+    VolumeDataStoreDao volumeStoreDaoMock;
+
+    @Mock
+    VMTemplateDao templateDaoMock;
 
     @Before
     public void setup(){
@@ -358,5 +367,26 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(diskOffering.getEncrypt()).thenReturn(encryption);
         Mockito.when(diskOfferingDaoMock.findByIdIncludingRemoved(diskOfferingId)).thenReturn(diskOffering);
         Mockito.when(diskOfferingDaoMock.findById(diskOfferingId)).thenReturn(diskOffering);
+    }
+
+    @Test
+    public void testExpungeOfANeverCreatedVolumeWithoutATemplateRemovesTheRow() throws Exception {
+        DataStore primary = Mockito.mock(DataStore.class);
+        Mockito.doReturn(primary).when(volumeInfoMock).getDataStore();
+        Mockito.doReturn(7L).when(volumeInfoMock).getId();
+        Mockito.doReturn(null).when(volumeStoreDaoMock).findByVolume(7L);
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(7L);
+        Mockito.doReturn(7L).when(volumeVoMock).getId();
+        // no path and no pool: nothing was ever created on primary storage; from a snapshot, so no template either
+        Mockito.doReturn(null).when(volumeVoMock).getPoolId();
+        Mockito.doReturn(null).when(volumeVoMock).getTemplateId();
+        volumeServiceImplSpy._volumeStoreDao = volumeStoreDaoMock;
+        volumeServiceImplSpy.templateDao = templateDaoMock;
+
+        volumeServiceImplSpy.expungeVolumeAsync(volumeInfoMock);
+
+        Mockito.verify(snapshotManagerMock).deletePoliciesForVolume(7L);
+        Mockito.verify(volumeDaoMock).remove(7L);
+        Mockito.verify(volumeInfoMock, Mockito.never()).processEvent(Mockito.any());
     }
 }

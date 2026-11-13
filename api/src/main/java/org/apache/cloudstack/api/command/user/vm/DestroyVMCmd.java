@@ -43,7 +43,8 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "destroyVirtualMachine", description = "Destroys  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = true)
+            responseHasSensitiveInfo = true,
+            cancellable = true)
 public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
 
     private static final String s_name = "destroyvirtualmachineresponse";

@@ -1158,10 +1158,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public VolumeVO createVolume(long volumeId, Long vmId, Long snapshotId, Long storageId, Boolean display) {
         VolumeVO volume = _volsDao.findById(volumeId);
         boolean created = true;
+        boolean usageRecorded = snapshotId == null && volume.isDisplayVolume();
 
         try {
             if (snapshotId != null) {
                 volume = createVolumeFromSnapshot(volume, snapshotId, vmId);
+                usageRecorded = volume.isDisplayVolume();
                 if (volume.getState() != Volume.State.Ready) {
                     created = false;
                 }
@@ -1194,6 +1196,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (e instanceof InvalidParameterValueException) {
                 throw (InvalidParameterValueException) e;
             }
+            if (isCurrentJobCancelled()) {
+                expungeCancelledVolume(volumeId, usageRecorded);
+            }
             throw new CloudRuntimeException(String.format("Failed to create volume: %s", volume), e);
         } finally {
             if (!created) {
@@ -1202,6 +1207,37 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), display,
                         volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
             }
+        }
+    }
+
+    protected boolean isCurrentJobCancelled() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        return context != null && context.getJob() != null && _jobMgr.getCancellationReason(context.getJob().getId()) != null;
+    }
+
+    protected void removeSnapshotIfCancelledBeforeItRan(final long snapshotId) {
+        if (isCurrentJobCancelled()) {
+            logger.info("Snapshot {} was cancelled before its work started, removing it", snapshotId);
+            _snapshotMgr.removeAllocatedSnapshot(snapshotId);
+        }
+    }
+
+    protected void expungeCancelledVolume(long volumeId, boolean usageRecorded) {
+        final VolumeInfo volume = volFactory.getVolume(volumeId);
+        if (volume == null) {
+            return;
+        }
+        logger.info("Creation of volume {} was cancelled, expunging it", volume);
+        if (usageRecorded && volume.getState() == Volume.State.Destroy) {
+            volume.stateTransit(Volume.Event.OperationSucceeded);
+        }
+        try {
+            final VolumeApiResult result = volService.expungeVolumeAsync(volume).get();
+            if (result.isFailed()) {
+                logger.warn("Could not expunge volume {} whose creation was cancelled: {}", volume, result.getResult());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not expunge volume {} whose creation was cancelled", volume, e);
         }
     }
 
@@ -4315,6 +4351,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
                 if (jobResult != null) {
+                    removeSnapshotIfCancelledBeforeItRan(snapshotId);
                     if (jobResult instanceof ConcurrentOperationException) {
                         throw (ConcurrentOperationException)jobResult;
                     } else if (jobResult instanceof ResourceAllocationException) {

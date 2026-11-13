@@ -116,6 +116,8 @@ public class Request {
     protected String _content;
     protected String _agentName;
 
+    private volatile boolean _cancelled = false;
+
     protected Request() {
     }
 
@@ -260,6 +262,14 @@ public class Request {
             }
         }
         return _cmds;
+    }
+
+    public void cancel() {
+        _cancelled = true;
+    }
+
+    public boolean isCancelled() {
+        return _cancelled;
     }
 
     protected String getType() {

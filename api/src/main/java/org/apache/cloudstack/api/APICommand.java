@@ -52,4 +52,6 @@ public @interface APICommand {
     Class<?>[] entityType() default {};
 
     String httpMethod() default "";
+
+    boolean cancellable() default false;
 }

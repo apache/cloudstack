@@ -74,6 +74,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
@@ -1644,7 +1645,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 String volToString = getReflectOnlySelectedFields(vol.getVolume());
 
                 String msg = String.format("Volume [%s] migration failed due to [%s].", volToString, result.getResult());
-                logger.error(msg);
+                if (currentJobCancellationReason() != null) {
+                    logger.info("Volume [{}] migration was cancelled: {}", volToString, result.getResult());
+                } else {
+                    logger.error(msg);
+                }
 
                 if (result.getResult() != null && result.getResult().contains("[UNSUPPORTED]")) {
                     throw new CloudRuntimeException(msg);
@@ -1730,7 +1735,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             CommandResult result = future.get();
             if (result.isFailed()) {
                 String msg = String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, result.getResult());
-                logger.error(msg);
+                final String cancelReason = currentJobCancellationReason();
+                if (cancelReason != null) {
+                    logger.info("Migration of VM [{}] along with its volumes was cancelled ({}): [{}].", vm, cancelReason, result.getResult());
+                } else {
+                    logger.error(msg);
+                }
                 throw new CloudRuntimeException(msg);
             }
             for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
@@ -1753,6 +1763,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             logger.error("Failed to migrate VM [{}] along with its volumes due to [{}].", vm, e.getMessage());
             logger.debug("Exception: ", e);
         }
+    }
+
+    private String currentJobCancellationReason() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (context == null || context.getJob() == null) {
+            return null;
+        }
+        return _jobMgr.getCancellationReason(context.getJob().getId());
     }
 
     @Override

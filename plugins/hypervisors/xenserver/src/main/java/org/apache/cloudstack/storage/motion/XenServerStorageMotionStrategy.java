@@ -57,6 +57,7 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -126,6 +127,9 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             } else {
                 throw new CloudRuntimeException("Unsupported operation requested for moving data.");
             }
+        } catch (OperationCancelledException e) {
+            logger.info("Migration of {} with its volumes was cancelled: {}", vmTo.getName(), e.getMessage());
+            errMsg = e.toString();
         } catch (Exception e) {
             logger.error("copy failed", e);
             errMsg = e.toString();

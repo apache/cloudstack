@@ -268,3 +268,10 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- Link every action event to the API job that raised it, so a job can be traced to its events
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event', 'async_job_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT ''The async job that raised this event'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_event__async_job_id', 'cloud.event', '(`async_job_id`)');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.async_job', 'cancel_requested', 'TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Cancel requested flag'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.async_job', 'cancel_delivered', 'TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Set once the cancel stopped or refused a command of the job, on any management server'' ');

@@ -43,6 +43,8 @@ shutdown.
 public abstract class DisconnectHook extends Thread {
     // Default timeout is 10 seconds
     long timeoutMs = 10000;
+    // null until the hook says otherwise: a hook that does not report is taken at its word once it ran
+    private volatile Boolean stoppedTheWork;
 
     public DisconnectHook(String name) {
         super();
@@ -56,4 +58,12 @@ public abstract class DisconnectHook extends Thread {
 
     public long getTimeoutMs(){ return timeoutMs; }
 
+    /** For a cancellation: whether run() actually stopped the work. A libvirt job that had already finished cannot be aborted, and must not be reported as cancelled. */
+    public boolean stoppedTheWork() {
+        return stoppedTheWork == null || stoppedTheWork;
+    }
+
+    protected void setStoppedTheWork(boolean stopped) {
+        stoppedTheWork = stopped;
+    }
 }

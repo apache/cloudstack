@@ -129,15 +129,21 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             if (eventType.equals(""))
                 return;
 
+            final String cancelReason = ActionEventUtils.cancellationReasonOfCurrentJob();
+            // a refusal (a cancel the work cannot honour) is an answer, not a fault
+            final Object refusal = ctx.getContextParameter(CallContext.REFUSAL_REASON_PARAM);
+            final String level = cancelReason != null || refusal != null ? EventVO.LEVEL_WARN : EventVO.LEVEL_ERROR;
             if (actionEvent.create()) {
-                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType,
-                        isEventDisplayEnabled, "Error while creating entity for " + eventDescription,
-                        eventResourceId, eventResourceType);
+                final String description = cancelReason != null ? "Cancelled while creating entity for " + eventDescription + ": " + cancelReason
+                        : refusal != null ? "Refused creating entity for " + eventDescription + ": " + refusal : "Error while creating entity for " + eventDescription;
+                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, level, eventType,
+                        isEventDisplayEnabled, description, eventResourceId, eventResourceType);
                 ctx.setStartEventId(eventId);
             } else {
-                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, isEventDisplayEnabled,
-                        "Error while " + eventDescription,
-                        eventResourceId, eventResourceType, startEventId);
+                final String description = cancelReason != null ? getEventDescription(actionEvent, ctx, true) + " cancelled: " + cancelReason
+                        : refusal != null ? getEventDescription(actionEvent, ctx, true) + " refused: " + refusal : "Error while " + eventDescription;
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, level, eventType, isEventDisplayEnabled,
+                        description, eventResourceId, eventResourceType, startEventId);
             }
         }
     }

@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -36,6 +37,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
 
@@ -50,6 +52,11 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> byIdResourceIdResourceTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> asyncJobTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> pendingNonPseudoAsyncJobsSearch;
+    private final SearchBuilder<AsyncJobVO> relatedAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> cancelledAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> runningWorkJobSearch;
+    private final SearchBuilder<AsyncJobVO> undeliveredCancelSearch;
+    private final SearchBuilder<AsyncJobVO> cancelRequestSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -116,6 +123,37 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pendingNonPseudoAsyncJobsSearch.and("instanceTypeNEQ", pendingNonPseudoAsyncJobsSearch.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         pendingNonPseudoAsyncJobsSearch.and("jobStatusEQ", pendingNonPseudoAsyncJobsSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         pendingNonPseudoAsyncJobsSearch.and("executingMsidIN", pendingNonPseudoAsyncJobsSearch.entity().getExecutingMsid(), SearchCriteria.Op.IN);
+
+        relatedAsyncJobSearch = createSearchBuilder();
+        relatedAsyncJobSearch.and("related", relatedAsyncJobSearch.entity().getRelated(), SearchCriteria.Op.EQ);
+        relatedAsyncJobSearch.done();
+
+        cancelledAsyncJobSearch = createSearchBuilder();
+        cancelledAsyncJobSearch.and("status", cancelledAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.and("cancelRequested", cancelledAsyncJobSearch.entity().isCancelRequested(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.and("completeMsId", cancelledAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
+        cancelledAsyncJobSearch.and("executingMsid", cancelledAsyncJobSearch.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.done();
+
+        runningWorkJobSearch = createSearchBuilder();
+        runningWorkJobSearch.and("status", runningWorkJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        runningWorkJobSearch.and("executingMsid", runningWorkJobSearch.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+        runningWorkJobSearch.and("related", runningWorkJobSearch.entity().getRelated(), SearchCriteria.Op.NNULL);
+        runningWorkJobSearch.done();
+
+        undeliveredCancelSearch = createSearchBuilder();
+        undeliveredCancelSearch.and("id", undeliveredCancelSearch.entity().getId(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.and("cancelDelivered", undeliveredCancelSearch.entity().isCancelDelivered(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.and().op("cancelRequested", undeliveredCancelSearch.entity().isCancelRequested(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.or("status", undeliveredCancelSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        undeliveredCancelSearch.cp();
+        undeliveredCancelSearch.done();
+
+        cancelRequestSearch = createSearchBuilder();
+        cancelRequestSearch.and("id", cancelRequestSearch.entity().getId(), SearchCriteria.Op.EQ);
+        cancelRequestSearch.and("status", cancelRequestSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        cancelRequestSearch.and("cancelRequested", cancelRequestSearch.entity().isCancelRequested(), SearchCriteria.Op.EQ);
+        cancelRequestSearch.done();
     }
 
     @Override
@@ -308,5 +346,79 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("accountId", accountId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public AsyncJobVO getRelatedJob(String jobId) {
+        SearchCriteria<AsyncJobVO> sc = relatedAsyncJobSearch.create();
+        sc.setParameters("related", jobId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> listChildJobs(long parentJobId) {
+        SearchCriteria<AsyncJobVO> sc = relatedAsyncJobSearch.create();
+        sc.setParameters("related", String.valueOf(parentJobId));
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> getCancelRequestedJobs(long executingMsid) {
+        SearchCriteria<AsyncJobVO> sc = cancelledAsyncJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("cancelRequested", true);
+        sc.setParameters("executingMsid", executingMsid);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> getRunningWorkJobs(long executingMsid) {
+        SearchCriteria<AsyncJobVO> sc = runningWorkJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("executingMsid", executingMsid);
+        return listBy(sc);
+    }
+
+    @Override
+    public boolean claimCancelDelivery(long jobId) {
+        AsyncJobVO delivered = createForUpdate();
+        delivered.setCancelDelivered(true);
+        UpdateBuilder ub = getUpdateBuilder(delivered);
+        SearchCriteria<AsyncJobVO> sc = undeliveredCancelSearch.create();
+        sc.setParameters("id", jobId);
+        sc.setParameters("cancelDelivered", false);
+        sc.setParameters("cancelRequested", true);
+        sc.setParameters("status", JobInfo.Status.CANCELLED);
+        return update(ub, sc, null) == 1;
+    }
+
+    @Override
+    public boolean requestCancel(long jobId, int resultCode, String result) {
+        AsyncJobVO requested = createForUpdate();
+        requested.setCancelRequested(true);
+        requested.setCancelDelivered(false);
+        requested.setResultCode(resultCode);
+        requested.setResult(result);
+        requested.setLastUpdated(DateUtil.currentGMTTime());
+        return update(getUpdateBuilder(requested), inProgressWithCancelRequested(jobId, false), null) == 1;
+    }
+
+    @Override
+    public boolean withdrawCancel(long jobId) {
+        AsyncJobVO withdrawn = createForUpdate();
+        withdrawn.setCancelRequested(false);
+        withdrawn.setCancelDelivered(false);
+        withdrawn.setResultCode(0);
+        withdrawn.setResult(null);
+        withdrawn.setLastUpdated(DateUtil.currentGMTTime());
+        return update(getUpdateBuilder(withdrawn), inProgressWithCancelRequested(jobId, true), null) == 1;
+    }
+
+    private SearchCriteria<AsyncJobVO> inProgressWithCancelRequested(long jobId, boolean cancelRequested) {
+        SearchCriteria<AsyncJobVO> sc = cancelRequestSearch.create();
+        sc.setParameters("id", jobId);
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("cancelRequested", cancelRequested);
+        return sc;
     }
 }

@@ -21,6 +21,10 @@ package com.cloud.hypervisor.xenserver.resource;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Connection;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -109,5 +113,30 @@ public class XenServerStorageProcessorTest {
         Assert.assertEquals("unexpected param.", isISCSI.toString(), params.get(17));
         Assert.assertEquals("unexpected param.", "storagepolicy", params.get(18));
         Assert.assertEquals("unexpected param.", "sample-storagepolicy", params.get(19));
+    }
+
+    @Test
+    public void testDestroySnapshotOnPrimaryWaitsForTheCancelledCopyToLetGoOfIt() throws Exception {
+        CitrixResourceBase resource = Mockito.mock(CitrixResourceBase.class);
+        XenServerStorageProcessor processor = Mockito.spy(new XenServerStorageProcessor(resource));
+        Connection conn = Mockito.mock(Connection.class);
+        VDI snapshot = Mockito.mock(VDI.class);
+        Mockito.doReturn(snapshot).when(processor).getVDIbyUuid(conn, "snap-uuid");
+        // the cancelled VDI.copy still holds the snapshot on the first attempt
+        Mockito.doThrow(Mockito.mock(Types.OtherOperationInProgress.class)).doNothing().when(snapshot).destroy(conn);
+        when(snapshot.getCurrentOperations(conn)).thenReturn(Collections.singletonMap("OpaqueRef:copy", Types.VdiOperations.COPY));
+
+        Assert.assertTrue(processor.destroySnapshotOnPrimaryStorage(conn, "snap-uuid"));
+        Mockito.verify(snapshot, Mockito.times(2)).destroy(conn);
+    }
+
+    @Test
+    public void testDestroySnapshotOnPrimaryReportsAMissingSnapshot() {
+        CitrixResourceBase resource = Mockito.mock(CitrixResourceBase.class);
+        XenServerStorageProcessor processor = Mockito.spy(new XenServerStorageProcessor(resource));
+        Connection conn = Mockito.mock(Connection.class);
+        Mockito.doReturn(null).when(processor).getVDIbyUuid(conn, "gone");
+
+        Assert.assertFalse(processor.destroySnapshotOnPrimaryStorage(conn, "gone"));
     }
 }

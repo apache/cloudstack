@@ -45,6 +45,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.EventTypes;
+import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -80,6 +84,8 @@ public class StorageSystemDataMotionStrategyTest {
     private ImageStore destinationStore;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    private VolumeService volumeService;
 
     @Mock
     StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
@@ -650,5 +656,36 @@ public class StorageSystemDataMotionStrategyTest {
                 volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
 
         Assert.assertEquals(StrategyPriority.HIGHEST, result);
+    }
+
+    @Test
+    public void testDestroyingMigrationCopyClosesItsUsageRecord() {
+        VolumeInfo copy = mock(VolumeInfo.class);
+        Mockito.when(copy.getId()).thenReturn(16L);
+        Mockito.when(copy.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+
+        try (MockedStatic<UsageEventUtils> usage = Mockito.mockStatic(UsageEventUtils.class)) {
+            strategy.destroyMigrationCopy(copy);
+            // the Destroy to Destroy transition in destroyVolume publishes VOLUME.DELETE for a data disk
+            Mockito.verify(volumeService).destroyVolume(16L);
+            usage.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    public void testDestroyingRootMigrationCopyPublishesTheDeleteTheListenerSkips() {
+        VolumeInfo copy = mock(VolumeInfo.class);
+        Mockito.when(copy.getId()).thenReturn(15L);
+        Mockito.when(copy.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        Mockito.when(copy.getAccountId()).thenReturn(2L);
+        Mockito.when(copy.getDataCenterId()).thenReturn(1L);
+        Mockito.when(copy.getName()).thenReturn("ROOT-5");
+        Mockito.when(copy.getUuid()).thenReturn("copy-uuid");
+
+        try (MockedStatic<UsageEventUtils> usage = Mockito.mockStatic(UsageEventUtils.class)) {
+            strategy.destroyMigrationCopy(copy);
+            Mockito.verify(volumeService).destroyVolume(15L);
+            usage.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, 2L, 1L, 15L, "ROOT-5", Volume.class.getName(), "copy-uuid"));
+        }
     }
 }

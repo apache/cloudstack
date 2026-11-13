@@ -19,16 +19,23 @@
 
 package com.cloud.agent.api;
 
+/** Asks the executor of a request sequence to stop it; between management servers as a control request, to an agent as an ordinary command (checkOnly = just ask). */
 public class CancelCommand extends Command {
     protected long sequence;
     protected String reason;
+    protected boolean checkOnly;
 
     protected CancelCommand() {
     }
 
     public CancelCommand(long sequence, String reason) {
+        this(sequence, reason, false);
+    }
+
+    public CancelCommand(long sequence, String reason, boolean checkOnly) {
         this.sequence = sequence;
         this.reason = reason;
+        this.checkOnly = checkOnly;
     }
 
     public long getSequence() {
@@ -37,6 +44,10 @@ public class CancelCommand extends Command {
 
     public String getReason() {
         return reason;
+    }
+
+    public boolean isCheckOnly() {
+        return checkOnly;
     }
 
     @Override
