@@ -157,7 +157,6 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource;
@@ -2361,7 +2360,7 @@ public class ApiDBUtils {
     }
 
     public static String getDnsNameConfiguredForGslb() {
-        String providerDnsName = s_configDao.getValue(Config.CloudDnsName.key());
+        String providerDnsName = ManagementServer.CloudDnsName.value();
         return providerDnsName;
     }
 

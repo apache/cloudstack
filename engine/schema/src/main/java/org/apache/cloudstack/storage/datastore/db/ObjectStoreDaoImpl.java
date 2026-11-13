@@ -26,10 +26,9 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +36,11 @@ import java.util.Map;
 
 @Component
 public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> implements ObjectStoreDao {
+    // Registered/owned by ManagementServer; declared here too so this lower-layer module can read it without depending on the server module.
+    private static final ConfigKey<Integer> DetailBatchQuerySize = new ConfigKey<>("Advanced", Integer.class, "detail.batch.query.size", "2000",
+            "Default entity detail batch query size for listing", true);
     private SearchBuilder<ObjectStoreVO> nameSearch;
     private SearchBuilder<ObjectStoreVO> providerSearch;
-    @Inject
-    private ConfigurationDao _configDao;
     private final SearchBuilder<ObjectStoreVO> osSearch;
 
     private SearchBuilder<ObjectStoreVO> urlSearch;
@@ -100,11 +100,7 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
     @Override
     public List<ObjectStoreVO> searchByIds(Long[] osIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = DetailBatchQuerySize.value();
         // query details by batches
         List<ObjectStoreVO> osList = new ArrayList<>();
         // query details by batches

@@ -22,6 +22,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageStats;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -116,11 +117,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
     @Override
     public List<ImageStoreJoinVO> searchByIds(Long... spIds) {
         // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
+        int DETAILS_BATCH_SIZE = ManagementServer.DetailBatchQuerySize.value();
         // query details by batches
         List<ImageStoreJoinVO> uvList = new ArrayList<ImageStoreJoinVO>();
         // query details by batches
