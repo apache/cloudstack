@@ -33,6 +33,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -45,6 +47,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -55,8 +61,6 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -80,6 +84,11 @@ public class StorageSystemDataMotionStrategyTest {
     private ImageStore destinationStore;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Mock
+    private VolumeDao volumeDao;
+    @Mock
+    private VolumeService volumeService;
 
     @Mock
     StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
@@ -650,5 +659,61 @@ public class StorageSystemDataMotionStrategyTest {
                 volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
 
         Assert.assertEquals(StrategyPriority.HIGHEST, result);
+    }
+
+    private VolumeVO volumeInState(Volume.State state) {
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        doReturn(state).when(volumeVO).getState();
+        return volumeVO;
+    }
+
+    @Test
+    public void cleanUpDestVolumesOfFailedMigrationExpungesVolumeStillInTheDatabase() {
+        VolumeInfo destVolume = mock(VolumeInfo.class);
+        doReturn(75L).when(destVolume).getId();
+        doReturn(volumeInState(Volume.State.Ready)).when(volumeDao).findById(75L);
+
+        strategy.cleanUpDestVolumesOfFailedMigration(Arrays.asList(destVolume), mock(VirtualMachineTO.class));
+
+        Mockito.verify(destVolume).processEvent(Event.OperationFailed);
+        Mockito.verify(destVolume).processEvent(Event.DestroyRequested);
+        Mockito.verify(volumeService).expungeVolumeAsync(destVolume);
+    }
+
+    @Test
+    public void cleanUpDestVolumesOfFailedMigrationExpungesVolumeInDestroyState() {
+        VolumeInfo destVolume = mock(VolumeInfo.class);
+        doReturn(78L).when(destVolume).getId();
+        doReturn(volumeInState(Volume.State.Destroy)).when(volumeDao).findById(78L);
+
+        strategy.cleanUpDestVolumesOfFailedMigration(Arrays.asList(destVolume), mock(VirtualMachineTO.class));
+
+        Mockito.verify(volumeService).expungeVolumeAsync(destVolume);
+    }
+
+    @Test
+    public void cleanUpDestVolumesOfFailedMigrationSkipsVolumeAlreadyExpunged() {
+        VolumeInfo destVolume = mock(VolumeInfo.class);
+        doReturn(76L).when(destVolume).getId();
+        doReturn(null).when(volumeDao).findById(76L);
+
+        strategy.cleanUpDestVolumesOfFailedMigration(Arrays.asList(destVolume), mock(VirtualMachineTO.class));
+
+        Mockito.verify(destVolume, Mockito.never()).processEvent(Mockito.any(Event.class));
+        Mockito.verify(volumeService, Mockito.never()).expungeVolumeAsync(Mockito.any());
+    }
+
+    @Test
+    public void cleanUpDestVolumesOfFailedMigrationSkipsVolumeBeingRemoved() {
+        for (Volume.State state : new Volume.State[] {Volume.State.Expunging, Volume.State.Expunged}) {
+            VolumeInfo destVolume = mock(VolumeInfo.class);
+            doReturn(77L).when(destVolume).getId();
+            doReturn(volumeInState(state)).when(volumeDao).findById(77L);
+
+            strategy.cleanUpDestVolumesOfFailedMigration(Arrays.asList(destVolume), mock(VirtualMachineTO.class));
+
+            Mockito.verify(destVolume, Mockito.never()).processEvent(Mockito.any(Event.class));
+        }
+        Mockito.verify(volumeService, Mockito.never()).expungeVolumeAsync(Mockito.any());
     }
 }

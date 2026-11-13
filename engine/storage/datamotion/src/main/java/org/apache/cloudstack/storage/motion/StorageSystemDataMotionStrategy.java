@@ -2245,12 +2245,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(errMsg);
         } finally {
             if (!success && !srcVolumeInfoToDestVolumeInfo.isEmpty()) {
-                for (VolumeInfo destVolumeInfo : srcVolumeInfoToDestVolumeInfo.values()) {
-                    logger.info(String.format("Expunging dest volume [id: %s, state: %s] as part of failed VM migration with volumes command for VM [%s].", destVolumeInfo.getId(), destVolumeInfo.getState(), vmTO.getId()));
-                    destVolumeInfo.processEvent(Event.OperationFailed);
-                    destVolumeInfo.processEvent(Event.DestroyRequested);
-                    _volumeService.expungeVolumeAsync(destVolumeInfo);
-                }
+                cleanUpDestVolumesOfFailedMigration(srcVolumeInfoToDestVolumeInfo.values(), vmTO);
             }
 
             CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
@@ -2260,6 +2255,25 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             result.setResult(errMsg);
 
             callback.complete(result);
+        }
+    }
+
+    /**
+     * Expunges the destination volumes created for a failed VM migration with volumes. When the migrate command itself failed,
+     * {@link #handlePostMigration} has already destroyed and expunged them, so volumes which are gone (or being removed) are skipped:
+     * sending more events to a volume whose row is already removed ends in a NullPointerException in the volume object.
+     */
+    protected void cleanUpDestVolumesOfFailedMigration(Collection<VolumeInfo> destVolumeInfos, VirtualMachineTO vmTO) {
+        for (VolumeInfo destVolumeInfo : destVolumeInfos) {
+            VolumeVO destVolumeVO = _volumeDao.findById(destVolumeInfo.getId());
+            if (destVolumeVO == null || Arrays.asList(Volume.State.Expunging, Volume.State.Expunged).contains(destVolumeVO.getState())) {
+                logger.debug("Dest volume [id: {}] is already cleaned up after the failed VM migration with volumes command for VM [{}].", destVolumeInfo.getId(), vmTO.getId());
+                continue;
+            }
+            logger.info("Expunging dest volume [id: {}, state: {}] as part of failed VM migration with volumes command for VM [{}].", destVolumeInfo.getId(), destVolumeVO.getState(), vmTO.getId());
+            destVolumeInfo.processEvent(Event.OperationFailed);
+            destVolumeInfo.processEvent(Event.DestroyRequested);
+            _volumeService.expungeVolumeAsync(destVolumeInfo);
         }
     }
 
