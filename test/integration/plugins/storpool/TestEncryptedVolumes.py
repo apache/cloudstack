@@ -58,9 +58,11 @@ from marvin.cloudstackAPI import (listOsTypes,
                                   migrateVirtualMachine,
                                   findHostsForMigration,
                                   revertSnapshot,
-                                  deleteSnapshot)
+                                  deleteSnapshot,
+                                  detachVolume)
 from marvin.sshClient import SshClient
 
+import math
 import time
 import pprint
 import random
@@ -72,6 +74,10 @@ import unittest
 import uuid
 from sp_util import (TestData, StorPoolHelper)
 
+# space added on the StorPool volume for the LUKS header of encrypted volumes
+LUKS_HEADER_SIZE = 2097152
+GiB = 1024 ** 3
+
 class TestEncryptedVolumes(cloudstackTestCase):
 
     @classmethod
@@ -80,7 +86,10 @@ class TestEncryptedVolumes(cloudstackTestCase):
         try:
             cls.setUpCloudStack()
         except Exception:
-            cls.cleanUpCloudStack()
+            try:
+                cls.cleanUpCloudStack()
+            except Exception as e:
+                cls.debug("Cleanup after failed setup: %s" % e)
             raise
 
     @classmethod
@@ -188,6 +197,16 @@ class TestEncryptedVolumes(cloudstackTestCase):
         else:
             cls.disk_offering_ssd_encrypted = cls.disk_offering_ssd_encrypted[0]
 
+        cls.disk_offering_encrypted_custom = list_disk_offering(
+            cls.apiclient,
+            name=cls.testdata[TestData.diskOfferingEncryptedCustom]["name"]
+        )
+
+        if cls.disk_offering_encrypted_custom is None:
+            cls.disk_offering_encrypted_custom = DiskOffering.create(cls.apiclient, cls.testdata[TestData.diskOfferingEncryptedCustom], custom=True, encrypt=True)
+        else:
+            cls.disk_offering_encrypted_custom = cls.disk_offering_encrypted_custom[0]
+
         template = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -197,6 +216,8 @@ class TestEncryptedVolumes(cloudstackTestCase):
         if template == FAILED:
             assert False, "get_template() failed to return template\
                      with description %s" % cls.services["ostype"]
+
+        cls.root_disk_size = int(math.ceil(template.size / GiB))
 
         cls.services["domainid"] = cls.domain.id
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -225,6 +246,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid,
         )
+        cls._cleanup.append(cls.volume_1)
 
         cls.volume_2 = Volume.create(
             cls.apiclient,
@@ -234,6 +256,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid,
         )
+        cls._cleanup.append(cls.volume_2)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -244,8 +267,9 @@ class TestEncryptedVolumes(cloudstackTestCase):
             templateid=template.id,
             serviceofferingid=cls.service_offering.id,
             hypervisor=cls.hypervisor,
-            rootdisksize=10
+            rootdisksize=cls.root_disk_size
         )
+        cls._cleanup.append(cls.virtual_machine)
 
         cls.virtual_machine2 = VirtualMachine.create(
             cls.apiclient,
@@ -256,8 +280,9 @@ class TestEncryptedVolumes(cloudstackTestCase):
             templateid=template.id,
             serviceofferingid=cls.service_offering.id,
             hypervisor=cls.hypervisor,
-            rootdisksize=10
+            rootdisksize=cls.root_disk_size
         )
+        cls._cleanup.append(cls.virtual_machine2)
 
         cls.virtual_machine3 = VirtualMachine.create(
             cls.apiclient,
@@ -268,8 +293,9 @@ class TestEncryptedVolumes(cloudstackTestCase):
             templateid=template.id,
             serviceofferingid=cls.service_offering.id,
             hypervisor=cls.hypervisor,
-            rootdisksize=10
+            rootdisksize=cls.root_disk_size
         )
+        cls._cleanup.append(cls.virtual_machine3)
 
         cls.template = template
         cls.hostid = cls.virtual_machine.hostid
@@ -284,12 +310,33 @@ class TestEncryptedVolumes(cloudstackTestCase):
 
     @classmethod
     def cleanUpCloudStack(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
+        errors = []
+        for obj in reversed(getattr(cls, "_cleanup", [])):
+            try:
+                cls.delete_object(obj)
+            except Exception as e:
+                cls.debug("Could not clean up %s %s: %s" % (obj.__class__.__name__, obj.id, e))
+                errors.append("%s %s: %s" % (obj.__class__.__name__, obj.id, e))
+        if errors:
+            raise Exception("Warning: Exceptions during cleanup: %s" % "; ".join(errors))
 
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+    @classmethod
+    def delete_object(cls, obj):
+        if isinstance(obj, Volume):
+            volume = list_volumes(cls.apiclient, id=obj.id, listall=True)
+            if volume is None:
+                return
+            if getattr(volume[0], "virtualmachineid", None):
+                cmd = detachVolume.detachVolumeCmd()
+                cmd.id = obj.id
+                cls.apiclient.detachVolume(cmd)
+        obj.delete(cls.apiclient)
+
+    def forget_object(self, id):
+        '''
+            Removes an object deleted by a test from the cleanup list
+        '''
+        self.__class__._cleanup = [o for o in self._cleanup if o.id != id]
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -388,6 +435,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
             "TestSnapshot",
             "Display Text"
         )
+        self._cleanup.append(vm_snapshot)
         self.assertEqual(
             vm_snapshot.state,
             "Ready",
@@ -499,6 +547,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
         VmSnapshot.deleteVMSnapshot(
             self.apiclient,
             list_snapshot_response[0].id)
+        self.forget_object(list_snapshot_response[0].id)
 
         time.sleep(30)
 
@@ -512,7 +561,6 @@ class TestEncryptedVolumes(cloudstackTestCase):
         self.assertIsNone(list_snapshot_response, "snapshot is already deleted")
 
 # Take volume snapshot
-    @unittest.expectedFailure
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_05_snapshot_volume_with_secondary(self):
         '''
@@ -534,6 +582,20 @@ class TestEncryptedVolumes(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid,
             )
+        self._cleanup.append(snapshot)
+        self.assertIsNotNone(snapshot, "Could not create snapshot")
+        self.assertEqual("BackedUp", snapshot.state, "Snapshot %s is in state %s" % (snapshot.id, snapshot.state))
+
+        snapshot_stores = list_snapshots(
+            self.apiclient,
+            id = snapshot.id,
+            showunique = False,
+            listall = True,
+        )
+        self.assertIsNotNone(snapshot_stores, "Could not list the storages of snapshot %s" % snapshot.id)
+        self.assertTrue(any(s.datastoretype == "Image" and s.datastorestate == "Ready" for s in snapshot_stores),
+            "Snapshot %s is not copied to secondary storage, it is on %s" % (snapshot.id,
+                [(s.datastorename, s.datastoretype, s.datastorestate) for s in snapshot_stores]))
 
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -556,6 +618,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid,
             )
+        self._cleanup.append(snapshot)
         try:
             cmd = getVolumeSnapshotDetails.getVolumeSnapshotDetailsCmd()
             cmd.snapshotid = snapshot.id
@@ -608,6 +671,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
         cmd = deleteSnapshot.deleteSnapshotCmd()
         cmd.id = snapshot.id
         self.apiclient.deleteSnapshot(cmd)
+        self.forget_object(snapshot.id)
 
 # Live migrate encrypted volume
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -620,3 +684,142 @@ class TestEncryptedVolumes(cloudstackTestCase):
                         )[0]
 
         Volume.migrate(self.apiclient, volumeid=volume.id, storageid=self.primary_storage2.id, livemigrate=True)
+
+# Resize encrypted data volume attached to a running VM
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_10_resize_encrypted_volume_on_running_vm(self):
+        '''
+            Live resize of an encrypted volume keeps the LUKS header allowance on StorPool
+            and the guest sees the full requested size
+        '''
+        self.ensure_vm_is_running(self.virtual_machine2)
+        size = self.get_unused_disk_size(self.virtual_machine2)
+        new_size = size + 2
+        volume = Volume.create(
+            self.apiclient,
+            {"diskname": "StorPoolEncryptedDiskLiveResize"},
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering_encrypted_custom.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            size=size
+        )
+        self._cleanup.append(volume)
+        self.virtual_machine2.attach_volume(self.apiclient, volume)
+        self.check_volume_size(volume.id, size * GiB)
+        self.check_guest_disk_size(self.virtual_machine2, size * GiB)
+
+        volume.resize(self.apiclient, size=new_size)
+
+        self.check_volume_size(volume.id, new_size * GiB)
+        self.check_guest_disk_size(self.virtual_machine2, new_size * GiB, old_size=size * GiB)
+
+# Resize detached encrypted data volume
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_11_resize_detached_encrypted_volume(self):
+        '''
+            Offline resize of an encrypted volume keeps the LUKS header allowance on StorPool
+            and the guest sees the full requested size after attach
+        '''
+        self.ensure_vm_is_running(self.virtual_machine2)
+        size = self.get_unused_disk_size(self.virtual_machine2)
+        new_size = size + 2
+        volume = Volume.create(
+            self.apiclient,
+            {"diskname": "StorPoolEncryptedDiskOfflineResize"},
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering_encrypted_custom.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            size=size
+        )
+        self._cleanup.append(volume)
+        self.virtual_machine2.attach_volume(self.apiclient, volume)
+        self.check_volume_size(volume.id, size * GiB)
+        self.check_guest_disk_size(self.virtual_machine2, size * GiB)
+        self.virtual_machine2.detach_volume(self.apiclient, volume)
+
+        volume.resize(self.apiclient, size=new_size)
+        self.check_volume_size(volume.id, new_size * GiB)
+
+        self.virtual_machine2.attach_volume(self.apiclient, volume)
+        self.check_guest_disk_size(self.virtual_machine2, new_size * GiB, old_size=size * GiB)
+
+# Resize encrypted ROOT volume of a running VM
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_12_resize_encrypted_root_volume_on_running_vm(self):
+        '''
+            Live resize of an encrypted ROOT volume keeps the LUKS header allowance on StorPool
+            and the guest sees the full requested size
+        '''
+        self.ensure_vm_is_running(self.virtual_machine)
+        root = list_volumes(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type="ROOT",
+            listall=True,
+        )[0]
+        self.check_volume_size(root.id, root.size)
+        old_size = root.size
+        new_size = self.get_unused_disk_size(self.virtual_machine)
+
+        cmd = resizeVolume.resizeVolumeCmd()
+        cmd.id = root.id
+        cmd.size = new_size
+        self.apiclient.resizeVolume(cmd)
+
+        self.check_volume_size(root.id, new_size * GiB)
+        self.check_guest_disk_size(self.virtual_machine, new_size * GiB, old_size=old_size)
+
+    def ensure_vm_is_running(self, vm):
+        state = VirtualMachine.list(self.apiclient, id=vm.id, listall=True)[0].state
+        if state != RUNNING:
+            vm.start(self.apiclient)
+
+    def check_volume_size(self, volume_id, expected_size):
+        '''
+            Checks the size in CloudStack is the requested one and
+            the StorPool volume has additional space for the LUKS header
+        '''
+        volume = list_volumes(self.apiclient, id=volume_id, listall=True)[0]
+        self.assertEqual(expected_size, volume.size,
+            "CloudStack volume size %s is not the expected %s" % (volume.size, expected_size))
+        name = volume.path.split("/")[3]
+        try:
+            sp_volume = self.spapi.volumeList(volumeName="~" + name)[0]
+        except spapi.ApiError as err:
+            raise Exception(err)
+        self.assertEqual(expected_size + LUKS_HEADER_SIZE, sp_volume.size,
+            "StorPool volume size %s is not the CloudStack size %s plus the LUKS header %s" % (sp_volume.size, expected_size, LUKS_HEADER_SIZE))
+
+    def get_unused_disk_size(self, vm):
+        '''
+            Returns a size in GiB bigger than all the disks of the VM,
+            so the disks used in the resize tests can be told apart in the guest OS
+        '''
+        volumes = list_volumes(self.apiclient, virtualmachineid=vm.id, listall=True)
+        return max(int(math.ceil(v.size / GiB)) for v in volumes) + 1
+
+    def check_guest_disk_size(self, vm, expected_size, old_size=None, retries=12, interval=5):
+        '''
+            Checks that one of the disks in the guest OS has the expected size.
+            The sizes used in the tests are unique among the VM disks, so after a resize
+            no disk should be left with the old size.
+            The LUKS header created by QEMU for ROOT disks is a bit smaller than the reserved
+            space, so after a VM start the guest may see a size slightly bigger than the requested one.
+        '''
+        def has_size(sizes, size):
+            return any(size <= s < size + LUKS_HEADER_SIZE for s in sizes)
+
+        sizes = []
+        for _ in range(retries):
+            try:
+                ssh_client = vm.get_ssh_client(reconnect=True)
+                result = ssh_client.execute("for d in /sys/block/*; do cat $d/size; done")
+            except Exception:
+                self.fail("SSH failed for Virtual machine: %s" % vm.ipaddress)
+            sizes = [int(s) * 512 for s in result if s.strip().isdigit()]
+            if has_size(sizes, expected_size) and (old_size is None or not has_size(sizes, old_size)):
+                return
+            time.sleep(interval)
+        self.fail("Expected a disk with size %s (and none with the old size %s) in the guest of VM %s, the guest sees %s" % (expected_size, old_size, vm.name, sizes))

@@ -18,9 +18,17 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionAnswer;
+import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionCommand;
+import com.cloud.agent.api.storage.StorPoolResizeVolumeCommand;
 import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
@@ -36,7 +44,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -47,6 +58,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.junit.After;
 import org.junit.Assert;
@@ -62,6 +74,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -71,6 +84,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -94,6 +108,18 @@ public class StorPoolPrimaryDataStoreDriverTest {
     private StoragePool importPool;
     @Mock
     private DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Mock
+    private StorageManager storageMgr;
+    @Mock
+    private AsyncCompletionCallback<CreateCmdResult> resizeCallback;
+    @Mock
+    private AsyncCompletionCallback<CreateCmdResult> createCallback;
+    @Mock
+    private EndPointSelector selector;
+
+    private static final long GiB = 1024L * 1024 * 1024;
+    private static final String VOLUME_PATH = "/dev/storpool-byid/t.t.t";
+    private StoragePoolVO resizedPool;
 
     DataStore srcStore;
     DataStore destStore;
@@ -578,6 +604,255 @@ public class StorPoolPrimaryDataStoreDriverTest {
         StorPoolUtil.SpApiResponse resp = new StorPoolUtil.SpApiResponse();
         resp.fullJson = new JsonParser().parse(root.toString());
         return resp;
+    }
+
+    @Test
+    public void testResizeEncryptedVolumeAddsLuksHeaderToStorPoolSize() throws Exception {
+        VolumeObject vol = mockVolumeForResize(10 * GiB, 20 * GiB, 1L);
+        mockStorPoolVolumeUpdate(new StorPoolUtil.SpApiResponse());
+        mockResizeAnswer(true);
+
+        storPoolPrimaryDataStoreDriver.resize(vol, resizeCallback);
+
+        Assert.assertEquals(Long.valueOf(20 * GiB + StorPoolPrimaryDataStoreDriver.LUKS_HEADER_SIZE), captureStorPoolVolumeUpdate().getSize());
+        StorPoolResizeVolumeCommand cmd = captureResizeCommand();
+        Assert.assertEquals(10 * GiB, cmd.getCurrentSize());
+        Assert.assertEquals(20 * GiB, cmd.getNewSize());
+        verify(vol).setSize(20 * GiB);
+        verify(resizedPool).setUsedBytes(10 * GiB);
+        utilities.verify(() -> StorPoolUtil.volumeUpdate(any(String.class), anyLong(), any(Boolean.class), any(), any()), times(0));
+    }
+
+    @Test
+    public void testResizeNotEncryptedVolumeUsesRequestedSize() throws Exception {
+        VolumeObject vol = mockVolumeForResize(10 * GiB, 20 * GiB, null);
+        mockStorPoolVolumeUpdate(new StorPoolUtil.SpApiResponse());
+        mockResizeAnswer(true);
+
+        storPoolPrimaryDataStoreDriver.resize(vol, resizeCallback);
+
+        Assert.assertEquals(Long.valueOf(20 * GiB), captureStorPoolVolumeUpdate().getSize());
+        Assert.assertEquals(20 * GiB, captureResizeCommand().getNewSize());
+        verify(vol).setSize(20 * GiB);
+        verify(resizedPool).setUsedBytes(10 * GiB);
+    }
+
+    @Test
+    public void testResizeEncryptedVolumeRollbackKeepsLuksHeader() throws Exception {
+        VolumeObject vol = mockVolumeForResize(10 * GiB, 20 * GiB, 1L);
+        mockStorPoolVolumeUpdate(new StorPoolUtil.SpApiResponse());
+        mockResizeAnswer(false);
+        when(StorPoolUtil.volumeUpdate(any(String.class), anyLong(), any(Boolean.class), any(), eq(conn))).thenReturn(new StorPoolUtil.SpApiResponse());
+
+        storPoolPrimaryDataStoreDriver.resize(vol, resizeCallback);
+
+        utilities.verify(() -> StorPoolUtil.volumeUpdate("~t.t.t", 10 * GiB + StorPoolPrimaryDataStoreDriver.LUKS_HEADER_SIZE, true, null, conn), times(1));
+        verify(vol, times(0)).setSize(anyLong());
+    }
+
+    @Test
+    public void testResizeRollbackWhenAgentReturnsGenericAnswer() throws Exception {
+        VolumeObject vol = mockVolumeForResize(10 * GiB, 20 * GiB, 1L);
+        mockStorPoolVolumeUpdate(new StorPoolUtil.SpApiResponse());
+        when(storageMgr.sendToPool(any(StoragePool.class), any(), any(StorPoolResizeVolumeCommand.class)))
+                .thenReturn(new Answer(null, false, "Unable to detach volume"));
+        when(StorPoolUtil.volumeUpdate(any(String.class), anyLong(), any(Boolean.class), any(), eq(conn))).thenReturn(new StorPoolUtil.SpApiResponse());
+
+        storPoolPrimaryDataStoreDriver.resize(vol, resizeCallback);
+
+        utilities.verify(() -> StorPoolUtil.volumeUpdate("~t.t.t", 10 * GiB + StorPoolPrimaryDataStoreDriver.LUKS_HEADER_SIZE, true, null, conn), times(1));
+        verify(vol, times(0)).setSize(anyLong());
+    }
+
+    @Test
+    public void testResizeRollbackWhenSendingToAgentFails() throws Exception {
+        VolumeObject vol = mockVolumeForResize(10 * GiB, 20 * GiB, 1L);
+        mockStorPoolVolumeUpdate(new StorPoolUtil.SpApiResponse());
+        when(storageMgr.sendToPool(any(StoragePool.class), any(), any(StorPoolResizeVolumeCommand.class)))
+                .thenThrow(new StorageUnavailableException("No host is available", 1L));
+        when(StorPoolUtil.volumeUpdate(any(String.class), anyLong(), any(Boolean.class), any(), eq(conn))).thenReturn(new StorPoolUtil.SpApiResponse());
+
+        storPoolPrimaryDataStoreDriver.resize(vol, resizeCallback);
+
+        utilities.verify(() -> StorPoolUtil.volumeUpdate("~t.t.t", 10 * GiB + StorPoolPrimaryDataStoreDriver.LUKS_HEADER_SIZE, true, null, conn), times(1));
+        verify(vol, times(0)).setSize(anyLong());
+    }
+
+    @Test
+    public void testResizeNotEncryptedVolumeRollbackUsesOldSize() throws Exception {
+        VolumeObject vol = mockVolumeForResize(10 * GiB, 20 * GiB, null);
+        StorPoolUtil.SpApiResponse resp = new StorPoolUtil.SpApiResponse();
+        setResponseError(resp);
+        mockStorPoolVolumeUpdate(resp);
+        when(StorPoolUtil.volumeUpdate(any(String.class), anyLong(), any(Boolean.class), any(), eq(conn))).thenReturn(new StorPoolUtil.SpApiResponse());
+
+        storPoolPrimaryDataStoreDriver.resize(vol, resizeCallback);
+
+        utilities.verify(() -> StorPoolUtil.volumeUpdate("~t.t.t", 10 * GiB, true, null, conn), times(1));
+        verify(storageMgr, times(0)).sendToPool(any(StoragePool.class), any(), any());
+        verify(vol, times(0)).setSize(anyLong());
+    }
+
+    @Test
+    public void testGetStorPoolVolumeSize() {
+        VolumeInfo encrypted = mock(VolumeInfo.class);
+        when(encrypted.getPassphraseId()).thenReturn(1L);
+        VolumeInfo notEncrypted = mock(VolumeInfo.class);
+        when(notEncrypted.getPassphraseId()).thenReturn(null);
+
+        Assert.assertEquals(Long.valueOf(5 * GiB + StorPoolPrimaryDataStoreDriver.LUKS_HEADER_SIZE), StorPoolPrimaryDataStoreDriver.getStorPoolVolumeSize(encrypted, 5 * GiB));
+        Assert.assertEquals(Long.valueOf(5 * GiB), StorPoolPrimaryDataStoreDriver.getStorPoolVolumeSize(notEncrypted, 5 * GiB));
+        Assert.assertNull(StorPoolPrimaryDataStoreDriver.getStorPoolVolumeSize(encrypted, null));
+    }
+
+    @Test
+    public void testCreateEncryptedVolumeSucceeds() {
+        VolumeInfo vinfo = mockEncryptedVolumeForCreate();
+        EndPoint ep = mock(EndPoint.class);
+        when(selector.select(vinfo, true)).thenReturn(ep);
+        when(ep.sendMessage(any(StorPoolSetVolumeEncryptionCommand.class))).thenReturn(new StorPoolSetVolumeEncryptionAnswer(new VolumeObjectTO()));
+
+        storPoolPrimaryDataStoreDriver.createAsync(destStore, vinfo, createCallback);
+
+        Assert.assertTrue(captureCreateResult().isSuccess());
+        utilities.verify(() -> StorPoolUtil.volumeDelete(any(String.class), any()), times(0));
+        verify(storagePool, times(1)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    @Test
+    public void testCreateEncryptedVolumeDeletesVolumeWhenEncryptionFails() {
+        VolumeInfo vinfo = mockEncryptedVolumeForCreate();
+        EndPoint ep = mock(EndPoint.class);
+        when(selector.select(vinfo, true)).thenReturn(ep);
+        when(ep.sendMessage(any(StorPoolSetVolumeEncryptionCommand.class))).thenReturn(new StorPoolSetVolumeEncryptionAnswer(null, false, "luksFormat failed"));
+
+        storPoolPrimaryDataStoreDriver.createAsync(destStore, vinfo, createCallback);
+
+        CreateCmdResult result = captureCreateResult();
+        Assert.assertFalse(result.isSuccess());
+        Assert.assertEquals("luksFormat failed", result.getResult());
+        utilities.verify(() -> StorPoolUtil.volumeDelete("~t.t.t", conn), times(1));
+        verify(storagePool, times(0)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    @Test
+    public void testCreateEncryptedVolumeDeletesVolumeWhenAnswerIsNotEncryptionAnswer() {
+        VolumeInfo vinfo = mockEncryptedVolumeForCreate();
+        EndPoint ep = mock(EndPoint.class);
+        when(selector.select(vinfo, true)).thenReturn(ep);
+        when(ep.sendMessage(any(StorPoolSetVolumeEncryptionCommand.class))).thenReturn(new Answer(null, false, "host is not available"));
+
+        storPoolPrimaryDataStoreDriver.createAsync(destStore, vinfo, createCallback);
+
+        CreateCmdResult result = captureCreateResult();
+        Assert.assertFalse(result.isSuccess());
+        Assert.assertEquals("host is not available", result.getResult());
+        utilities.verify(() -> StorPoolUtil.volumeDelete("~t.t.t", conn), times(1));
+        verify(storagePool, times(0)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    @Test
+    public void testCreateEncryptedVolumeDeletesVolumeWhenNullAnswer() {
+        VolumeInfo vinfo = mockEncryptedVolumeForCreate();
+        EndPoint ep = mock(EndPoint.class);
+        when(selector.select(vinfo, true)).thenReturn(ep);
+
+        storPoolPrimaryDataStoreDriver.createAsync(destStore, vinfo, createCallback);
+
+        Assert.assertFalse(captureCreateResult().isSuccess());
+        utilities.verify(() -> StorPoolUtil.volumeDelete("~t.t.t", conn), times(1));
+        verify(storagePool, times(0)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    @Test
+    public void testCreateEncryptedVolumeDeletesVolumeWhenNoHostSupportsEncryption() {
+        VolumeInfo vinfo = mockEncryptedVolumeForCreate();
+        when(selector.select(vinfo, true)).thenReturn(null);
+
+        storPoolPrimaryDataStoreDriver.createAsync(destStore, vinfo, createCallback);
+
+        Assert.assertFalse(captureCreateResult().isSuccess());
+        utilities.verify(() -> StorPoolUtil.volumeDelete("~t.t.t", conn), times(1));
+        verify(storagePool, times(0)).update(anyLong(), any(StoragePoolVO.class));
+    }
+
+    private VolumeInfo mockEncryptedVolumeForCreate() {
+        VolumeInfo vinfo = mock(VolumeInfo.class);
+        when(vinfo.getType()).thenReturn(DataObjectType.VOLUME);
+        when(vinfo.getSize()).thenReturn(10 * GiB);
+        when(vinfo.getPassphraseId()).thenReturn(1L);
+        when(vinfo.getInstanceId()).thenReturn(null);
+        when(vinfo.getDiskOfferingId()).thenReturn(null);
+        when(vinfo.getDeviceId()).thenReturn(null);
+        when(vinfo.getMaxIops()).thenReturn(null);
+        when(vinfo.getTO()).thenReturn(new VolumeObjectTO());
+        when(destStore.getUuid()).thenReturn("SP_API_HTTP=1.1.1.1:81;SP_AUTH_TOKEN=token;SP_TEMPLATE=template_name");
+        when(destStore.getId()).thenReturn(1L);
+        when(StorPoolUtil.getSpConnection(destStore.getUuid(), destStore.getId(), detailsDao, storagePool)).thenReturn(conn);
+
+        StorPoolUtil.SpApiResponse createResponse = new StorPoolUtil.SpApiResponse();
+        when(StorPoolUtil.volumeCreate(any(StorPoolVolumeDef.class), eq(conn))).thenReturn(createResponse);
+        when(StorPoolUtil.getNameFromResponse(createResponse, false)).thenReturn("t.t.t");
+        when(StorPoolUtil.devPath("t.t.t")).thenReturn(VOLUME_PATH);
+        Mockito.lenient().when(StorPoolUtil.volumeDelete("~t.t.t", conn)).thenReturn(new StorPoolUtil.SpApiResponse());
+        when(volumeDao.findById(anyLong())).thenReturn(mock(VolumeVO.class));
+        Mockito.lenient().when(storagePool.findById(anyLong())).thenReturn(mock(StoragePoolVO.class));
+        return vinfo;
+    }
+
+    private CreateCmdResult captureCreateResult() {
+        ArgumentCaptor<CreateCmdResult> result = ArgumentCaptor.forClass(CreateCmdResult.class);
+        verify(createCallback).complete(result.capture());
+        return result.getValue();
+    }
+
+    private VolumeObject mockVolumeForResize(long oldSize, long newSize, Long passphraseId) {
+        VolumeObject vol = mock(VolumeObject.class);
+        PrimaryDataStore store = mock(PrimaryDataStore.class, withSettings().extraInterfaces(StoragePool.class));
+        when(store.getUuid()).thenReturn("SP_API_HTTP=1.1.1.1:81;SP_AUTH_TOKEN=token;SP_TEMPLATE=template_name");
+        when(store.getId()).thenReturn(1L);
+        when(vol.getType()).thenReturn(DataObjectType.VOLUME);
+        when(vol.getPath()).thenReturn(VOLUME_PATH);
+        AtomicLong size = new AtomicLong(oldSize);
+        when(vol.getSize()).thenAnswer(invocation -> size.get());
+        Mockito.lenient().doAnswer(invocation -> {
+            size.set(invocation.getArgument(0));
+            return null;
+        }).when(vol).setSize(anyLong());
+        when(vol.getPassphraseId()).thenReturn(passphraseId);
+        when(vol.getMaxIops()).thenReturn(null);
+        when(vol.getDataStore()).thenReturn(store);
+        when(vol.getpayload()).thenReturn(new ResizeVolumePayload(newSize, null, null, null, false, "i-2-3-VM", null, false));
+        when(StorPoolUtil.getSpConnection(store.getUuid(), store.getId(), detailsDao, storagePool)).thenReturn(conn);
+        resizedPool = mock(StoragePoolVO.class);
+        Mockito.lenient().when(resizedPool.getCapacityBytes()).thenReturn(100 * GiB);
+        Mockito.lenient().when(storagePool.findById(anyLong())).thenReturn(resizedPool);
+        return vol;
+    }
+
+    private void mockStorPoolVolumeUpdate(StorPoolUtil.SpApiResponse resp) {
+        when(StorPoolUtil.volumeUpdate(any(StorPoolVolumeDef.class), eq(conn))).thenReturn(resp);
+    }
+
+    private void mockResizeAnswer(boolean result) throws Exception {
+        ResizeVolumeAnswer answer = mock(ResizeVolumeAnswer.class);
+        when(answer.getResult()).thenReturn(result);
+        if (!result) {
+            when(answer.getDetails()).thenReturn("Cannot grow device files");
+        }
+        when(storageMgr.sendToPool(any(StoragePool.class), any(), any(StorPoolResizeVolumeCommand.class))).thenReturn(answer);
+    }
+
+    private StorPoolVolumeDef captureStorPoolVolumeUpdate() {
+        ArgumentCaptor<StorPoolVolumeDef> captor = ArgumentCaptor.forClass(StorPoolVolumeDef.class);
+        utilities.verify(() -> StorPoolUtil.volumeUpdate(captor.capture(), eq(conn)), times(1));
+        return captor.getValue();
+    }
+
+    private StorPoolResizeVolumeCommand captureResizeCommand() throws Exception {
+        ArgumentCaptor<StorPoolResizeVolumeCommand> captor = ArgumentCaptor.forClass(StorPoolResizeVolumeCommand.class);
+        verify(storageMgr).sendToPool(any(StoragePool.class), any(), captor.capture());
+        return captor.getValue();
     }
 
     private void setReturnsWhenSourceAndDestinationAreVolumes(DataStore srcStore, DataStore destStore, DataObject srcObj, DataObject destObj, VolumeObjectTO srcTO, VolumeObjectTO dstTO, PrimaryDataStoreTO dstPrimaryTo, VMInstanceVO vm) {
