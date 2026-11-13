@@ -173,6 +173,51 @@ public class DefaultEndPointSelectorTest {
         Mockito.verify(defaultEndPointSelectorSpy, Mockito.times(1)).select(volumeInfoMock, false);
     }
 
+    private void mockClvmVolumeOfStoppedVm(Long lockHostId) {
+        Mockito.doReturn(STORE_ID).when(volumeInfoMock).getPoolId();
+        Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
+        Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
+        Mockito.doReturn(lockHostId).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
+        Mockito.doReturn(true).when(volumeInfoMock).isAttachedVM();
+        Mockito.doReturn(virtualMachineMock).when(volumeInfoMock).getAttachedVM();
+        Mockito.doReturn(null).when(virtualMachineMock).getHostId();
+        Mockito.doReturn(HOST_ID).when(virtualMachineMock).getLastHostId();
+    }
+
+    @Test
+    public void getEndPointForBitmapRemovalTestClvmVolumeOfStoppedVmRoutesToLockHolderInsteadOfLastHost() {
+        mockClvmVolumeOfStoppedVm(DEST_HOST_ID);
+        Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(DEST_HOST_ID);
+
+        EndPoint result = defaultEndPointSelectorSpy.getEndPointForBitmapRemoval(snapshotInfoMock, false);
+
+        assertEquals(endPointMock, result);
+        Mockito.verify(defaultEndPointSelectorSpy, Mockito.never()).getEndPointFromHostId(HOST_ID);
+    }
+
+    @Test
+    public void getEndPointForBitmapRemovalTestClvmVolumeOfStoppedVmWithoutLockHolderFallsBackToLastHost() {
+        mockClvmVolumeOfStoppedVm(null);
+        Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(HOST_ID);
+
+        EndPoint result = defaultEndPointSelectorSpy.getEndPointForBitmapRemoval(snapshotInfoMock, false);
+
+        assertEquals(endPointMock, result);
+    }
+
+    @Test
+    public void getEndPointForBitmapRemovalTestClvmVolumeOfRunningVmUsesVmHostWithoutLockLookup() {
+        Mockito.doReturn(true).when(volumeInfoMock).isAttachedVM();
+        Mockito.doReturn(virtualMachineMock).when(volumeInfoMock).getAttachedVM();
+        Mockito.doReturn(HOST_ID).when(virtualMachineMock).getHostId();
+        Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(HOST_ID);
+
+        EndPoint result = defaultEndPointSelectorSpy.getEndPointForBitmapRemoval(snapshotInfoMock, false);
+
+        assertEquals(endPointMock, result);
+        Mockito.verify(defaultEndPointSelectorSpy, Mockito.never()).getClvmLockHostId(volumeInfoMock);
+    }
+
     @Test
     public void getEndPointForSnapshotOperationsInKvmTestVolumeIsNotAttachedToVMAndSnapshotOnPrimary() {
         Mockito.doReturn(null).when(volumeInfoMock).getAttachedVM();
