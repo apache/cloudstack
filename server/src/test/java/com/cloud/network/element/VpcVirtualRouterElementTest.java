@@ -21,17 +21,21 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.cloudstack.network.topology.AdvancedNetworkTopology;
 import org.apache.cloudstack.network.topology.BasicNetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,9 +45,12 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -213,5 +220,81 @@ public class VpcVirtualRouterElementTest {
         assertTrue(vpcVirtualRouterElement.canHandle(network, Network.Service.Firewall));
         verify(_networkMdl).isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
         verify(_vpcMgr, never()).isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
+    }
+
+    private Network mockVpcTier() {
+        final Network network = Mockito.mock(Network.class);
+        when(_networkMdl.getPhysicalNetworkId(network)).thenReturn(1L);
+        when(network.getId()).thenReturn(200L);
+        when(network.getVpcId()).thenReturn(100L);
+        when(_networkMdl.isProviderEnabledInPhysicalNetwork(1L, Network.Provider.VPCVirtualRouter.getName())).thenReturn(true);
+        return network;
+    }
+
+    private VpcVO mockVpc(final boolean vpcProvidesFirewall) {
+        final VpcVO vpc = Mockito.mock(VpcVO.class);
+        when(vpc.getId()).thenReturn(100L);
+        when(vpc.getZoneId()).thenReturn(1L);
+        when(_vpcDao.findById(100L)).thenReturn(vpc);
+        when(_networkMdl.isProviderEnabledInZone(1L, Network.Provider.VPCVirtualRouter.getName())).thenReturn(true);
+        when(_vpcMgr.isProviderSupportServiceInVpc(100L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(vpcProvidesFirewall);
+        return vpc;
+    }
+
+    private Set<Network.Service> lbAndFirewall() {
+        final Set<Network.Service> services = new LinkedHashSet<>();
+        services.add(Network.Service.Lb);
+        services.add(Network.Service.Firewall);
+        return services;
+    }
+
+    @Test
+    public void testApplyIpsAssociatesTierIpsWhenTheVpcProvidesFirewall() throws ResourceUnavailableException {
+        final Network network = mockVpcTier();
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Lb, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(false);
+        mockVpc(true);
+
+        final DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        when(_routerDao.listByNetworkAndRole(200L, VirtualRouter.Role.VIRTUAL_ROUTER)).thenReturn(List.of(router));
+        final DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(_dcDao.findById(1L)).thenReturn(dc);
+        final NetworkTopology topology = Mockito.mock(NetworkTopology.class);
+        when(networkTopologyContext.retrieveNetworkTopology(dc)).thenReturn(topology);
+        final List<PublicIpAddress> ips = List.of(Mockito.mock(PublicIpAddress.class));
+        when(topology.associatePublicIP(network, ips, router)).thenReturn(true);
+
+        assertTrue(vpcVirtualRouterElement.applyIps(network, ips, lbAndFirewall()));
+        verify(topology).associatePublicIP(network, ips, router);
+    }
+
+    @Test
+    public void testApplyIpsSkipsAssociationWhenNeitherTierNorVpcProvidesFirewall() throws ResourceUnavailableException {
+        final Network network = mockVpcTier();
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Lb, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(false);
+        mockVpc(false);
+
+        assertTrue(vpcVirtualRouterElement.applyIps(network, List.of(Mockito.mock(PublicIpAddress.class)), lbAndFirewall()));
+        verify(_routerDao, never()).listByNetworkAndRole(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void testCanHandleIpServiceUsesTheVpcOnlyForFirewall() {
+        final Network network = mockVpcTier();
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.PortForwarding, Network.Provider.VPCVirtualRouter)).thenReturn(false);
+
+        assertFalse(vpcVirtualRouterElement.canHandleIpService(network, Network.Service.PortForwarding));
+        verify(_vpcDao, never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCanHandleIpServiceKeepsTierFirewall() {
+        final Network network = mockVpcTier();
+        when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+
+        assertTrue(vpcVirtualRouterElement.canHandleIpService(network, Network.Service.Firewall));
+        verify(_vpcDao, never()).findById(Mockito.anyLong());
     }
 }

@@ -539,7 +539,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     public boolean applyIps(final Network network, final List<? extends PublicIpAddress> ipAddress, final Set<Service> services) throws ResourceUnavailableException {
         boolean canHandle = true;
         for (final Service service : services) {
-            if (!canHandle(network, service)) {
+            if (!canHandleIpService(network, service)) {
+                logger.debug("{} element can't handle service {} in the network {}; skipping IP association", getName(), service.getName(), network);
                 canHandle = false;
                 break;
             }
@@ -561,6 +562,22 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             }
         }
         return result;
+    }
+
+    /**
+     * The Firewall service for public IPs is a VPC service: the VPC offering provides it, while the
+     * tier's network offering does not list it. Once a public IP of the tier has a firewall rule,
+     * Firewall is part of the services passed to {@link #applyIps}, so it is checked on the VPC
+     * here. Otherwise no public IP of that tier could be associated with the VPC virtual router.
+     */
+    protected boolean canHandleIpService(final Network network, final Service service) {
+        if (canHandle(network, service)) {
+            return true;
+        }
+        if (Service.Firewall.equals(service) && network.getVpcId() != null) {
+            return canHandle(_vpcDao.findById(network.getVpcId()), service);
+        }
+        return false;
     }
 
     @Override

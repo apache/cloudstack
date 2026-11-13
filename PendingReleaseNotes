@@ -140,3 +140,8 @@ example.ver.1 > example.ver.2:
     Also fixes a latent accounting bug: capacity was charged raw when a VM started and stopped, but
     recalculated with the VM's overcommit ratio applied. These agreed only while every VM shared
     its cluster's ratio.
+
+KVM console:
+  * Added the global setting `consoleproxy.kvm.multiple.viewers.enabled` to allow
+    multiple users to simultaneously access the console of the same KVM user VM.
+    The setting defaults to false to preserve the existing single-viewer behavior.
