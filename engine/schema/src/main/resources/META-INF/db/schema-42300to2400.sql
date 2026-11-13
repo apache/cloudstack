@@ -268,3 +268,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- UCS and Hyper-V hypervisor plugins are no longer built
+DELETE FROM `cloud`.`configuration` WHERE name = 'ucs.sync.blade.interval';
+DELETE FROM `cloud`.`configuration` WHERE name IN ('hyperv.public.network.device', 'hyperv.private.network.device', 'hyperv.guest.network.device', 'router.template.hyperv');

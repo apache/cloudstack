@@ -1842,7 +1842,6 @@ public class ManagementServerImplTest {
             HypervisorType.VMware,
             HypervisorType.KVM,
             HypervisorType.Ovm,
-            HypervisorType.Hyperv,
             HypervisorType.Ovm3
         };
 
