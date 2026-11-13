@@ -19,12 +19,16 @@
 
 package com.cloud.hypervisor.kvm.storage;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -42,10 +46,13 @@ import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMStoragePoolManagerTest {
@@ -123,6 +130,80 @@ public class KVMStoragePoolManagerTest {
 
         verify(monitor, never()).unregisterStoragePool(any());
         verify(adaptor, never()).deleteStoragePool(POOL_UUID);
+    }
+
+    private KVMHABase.HAStoragePool monitoredPool() {
+        KVMHABase.HAStoragePool haPool = mock(KVMHABase.HAStoragePool.class);
+        when(monitor.getStoragePool(POOL_UUID)).thenReturn(haPool);
+        return haPool;
+    }
+
+    @Test
+    public void testPoolWhichIsNotDeletedIsMonitoredForHaAgain() {
+        for (StoragePoolType type : new StoragePoolType[] {StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint, StoragePoolType.RBD}) {
+            reset(adaptor, monitor);
+            KVMHABase.HAStoragePool haPool = monitoredPool();
+            // the pool is still there, so the heartbeat of the host on it must go on
+            when(adaptor.deleteStoragePool(POOL_UUID)).thenReturn(false);
+            when(adaptor.deleteStoragePool(POOL_UUID, details)).thenReturn(false);
+
+            assertFalse(manager.deleteStoragePool(type, POOL_UUID));
+            assertFalse(manager.deleteStoragePool(type, POOL_UUID, details));
+
+            verify(monitor, times(2)).unregisterStoragePool(POOL_UUID);
+            verify(monitor, times(2)).addStoragePool(haPool);
+        }
+    }
+
+    @Test
+    public void testPoolWhichDeleteThrowsIsMonitoredForHaAgain() {
+        KVMHABase.HAStoragePool haPool = monitoredPool();
+        when(adaptor.deleteStoragePool(POOL_UUID, details)).thenThrow(new CloudRuntimeException("busy"));
+
+        try {
+            manager.deleteStoragePool(StoragePoolType.RBD, POOL_UUID, details);
+            fail("The exception of the delete is not for the manager to hide");
+        } catch (CloudRuntimeException expected) {
+            assertEquals("busy", expected.getMessage());
+        }
+
+        verify(monitor).unregisterStoragePool(POOL_UUID);
+        verify(monitor).addStoragePool(haPool);
+    }
+
+    @Test
+    public void testPoolWhichIsDeletedIsNotMonitoredForHaAgain() {
+        monitoredPool();
+        when(adaptor.deleteStoragePool(POOL_UUID, details)).thenReturn(true);
+
+        assertTrue(manager.deleteStoragePool(StoragePoolType.RBD, POOL_UUID, details));
+
+        verify(monitor).unregisterStoragePool(POOL_UUID);
+        verify(monitor, never()).addStoragePool(any());
+    }
+
+    @Test
+    public void testPoolWhichWasNotMonitoredIsNotMonitoredForHaAfterAFailedDelete() {
+        // e.g. the Python bindings of Ceph are not installed, so the pool was not registered with the HA monitor
+        when(monitor.getStoragePool(POOL_UUID)).thenReturn(null);
+        when(adaptor.deleteStoragePool(POOL_UUID, details)).thenReturn(false);
+
+        assertFalse(manager.deleteStoragePool(StoragePoolType.RBD, POOL_UUID, details));
+
+        verify(monitor, never()).addStoragePool(any());
+    }
+
+    @Test
+    public void testPoolIsUnregisteredBeforeItIsDeleted() {
+        monitoredPool();
+        when(adaptor.deleteStoragePool(POOL_UUID, details)).thenReturn(true);
+
+        manager.deleteStoragePool(StoragePoolType.RBD, POOL_UUID, details);
+
+        // no heartbeat is written while the pool is removed
+        InOrder order = inOrder(monitor, adaptor);
+        order.verify(monitor).unregisterStoragePool(POOL_UUID);
+        order.verify(adaptor).deleteStoragePool(POOL_UUID, details);
     }
 
     private KVMStoragePool mockCreatedPool(String prerequisiteError) {
