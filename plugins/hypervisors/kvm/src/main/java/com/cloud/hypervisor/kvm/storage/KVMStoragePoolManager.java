@@ -472,11 +472,14 @@ public class KVMStoragePoolManager {
      * Deletes a storage pool after it is no longer monitored for HA. The monitor writes the heartbeats while it holds its lock,
      * so none is on going when the pool is unregistered, and none is written while the pool is removed, which could fail
      * and fence the host. If the pool is not deleted (the delete does not succeed or throws) it is still there, so it is
-     * monitored for HA again: the heartbeat of the host on it must go on.
+     * monitored for HA again: the heartbeat of the host on it must go on, and it stays known to the manager as well.
+     * The types with HA support are libvirt storage pools, which are only not deleted if they are still there. For the
+     * other types a delete which does not succeed means that the adaptor has no such pool, so it is forgotten as before.
      */
     private boolean deleteStoragePoolWithoutHaMonitoring(StoragePoolType type, String uuid, BooleanSupplier delete) {
+        boolean haSupported = HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
         KVMHABase.HAStoragePool haPool = null;
-        if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type)) {
+        if (haSupported) {
             haPool = _haMonitor.getStoragePool(uuid);
             _haMonitor.unregisterStoragePool(uuid);
         }
@@ -489,8 +492,10 @@ public class KVMStoragePoolManager {
                 _haMonitor.addStoragePool(haPool);
             }
         }
-        synchronized (_storagePools) {
-            _storagePools.remove(uuid);
+        if (deleteStatus || !haSupported) {
+            synchronized (_storagePools) {
+                _storagePools.remove(uuid);
+            }
         }
         return deleteStatus;
     }
