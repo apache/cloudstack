@@ -92,8 +92,14 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
 
     @Override
     public boolean update(Long id, NetworkACLItemVO item) {
+        // the rule and its CIDRs are written together, so that a failure on the CIDRs does not leave the rule half updated
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+
         boolean result = super.update(id, item);
         _networkACLItemCidrsDao.updateCidrs(item.getId(), item.getSourceCidrList());
+
+        txn.commit();
         return result;
     }
 

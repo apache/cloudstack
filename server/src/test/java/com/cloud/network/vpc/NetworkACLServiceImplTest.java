@@ -815,28 +815,72 @@ public class NetworkACLServiceImplTest {
         Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(false);
 
         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn(null);
+
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock));
+
+        Assert.assertEquals("The protocol, cidrlist and traffictype must be given when the ACL rule is updated with partialupgrade=false", e.getMessage());
+        Mockito.verify(networkAclItemVoMock, Mockito.never()).setProtocol(nullable(String.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.never()).setSourceCidrList(nullable(List.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.never()).setTrafficType(nullable(TrafficType.class));
+    }
+
+    @Test
+    public void transferDataToNetworkAclRulePojoTestNotPartialUpgradeWithoutCidrListOrTrafficType() {
+        Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(false);
+        Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn("tcp");
+
+        String expected = "The protocol, cidrlist and traffictype must be given when the ACL rule is updated with partialupgrade=false";
+
+        Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(null);
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock));
+        Assert.assertEquals(expected, e.getMessage());
+
+        Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(List.of("10.1.1.0/24"));
+        Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(null);
+        e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock));
+        Assert.assertEquals(expected, e.getMessage());
+        Mockito.verify(updateNetworkACLItemCmdMock).getTrafficType();
+
+        Mockito.verify(networkAclItemVoMock, Mockito.never()).setSourceCidrList(nullable(List.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.never()).setTrafficType(nullable(TrafficType.class));
+    }
+
+    @Test
+    public void transferDataToNetworkAclRulePojoTestNotPartialUpgradeRequiredValuesOnly() {
+        Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(false);
+
+        List<String> cidrs = List.of("10.1.1.0/24");
+        Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(null);
-        Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(null);
-        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(cidrs);
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn("tcp");
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpCode()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpType()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getAction()).thenReturn(null);
-        Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(TrafficType.Egress);
         Mockito.when(updateNetworkACLItemCmdMock.getCustomId()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getReason()).thenReturn(null);
 
         Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(false);
-        Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("");
+        Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
 
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
 
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setNumber(nullable(Integer.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortStart(nullable(Integer.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortEnd(nullable(Integer.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourceCidrList(nullable(List.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setProtocol(nullable(String.class));
-        Mockito.verify(networkAclServiceImpl).updateIcmpCodeAndType(Mockito.any(Boolean.class), Mockito.any(), Mockito.any());
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setAction(nullable(Action.class));
-        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setTrafficType(nullable(TrafficType.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortStart(null);
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortEnd(null);
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourceCidrList(cidrs);
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setProtocol("tcp");
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpCode(null);
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpType(null);
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setAction(Action.Allow);
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setTrafficType(TrafficType.Egress);
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setUuid(nullable(String.class));
         Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setReason(nullable(String.class));
         Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setDisplay(nullable(Boolean.class));
@@ -944,8 +988,67 @@ public class NetworkACLServiceImplTest {
 
         networkAclServiceImpl.updateIcmpCodeAndType(false, updateNetworkACLItemCmdMock, networkAclItemVoMock);
 
-        Mockito.verify(networkAclItemVoMock).setIcmpCode(null);
-        Mockito.verify(networkAclItemVoMock).setIcmpType(null);
+        Mockito.verify(networkAclItemVoMock).setIcmpCode(5);
+        Mockito.verify(networkAclItemVoMock).setIcmpType(5);
+    }
+
+    private void setUpNotPartialUpgradeToTcp() {
+        Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(false);
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn("tcp");
+        Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpCode()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(List.of("10.1.1.0/24"));
+        Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(TrafficType.Ingress);
+    }
+
+    private TrafficType trafficTypeOf(String trafficType) {
+        UpdateNetworkACLItemCmd cmd = new UpdateNetworkACLItemCmd();
+        org.springframework.test.util.ReflectionTestUtils.setField(cmd, "trafficType", trafficType);
+        return cmd.getTrafficType();
+    }
+
+    @Test
+    public void updateNetworkACLItemCmdGetTrafficTypeTest() {
+        Assert.assertNull(trafficTypeOf(null));
+        Assert.assertNull(trafficTypeOf(""));
+        Assert.assertEquals(TrafficType.Egress, trafficTypeOf("egress"));
+        Assert.assertEquals(TrafficType.Ingress, trafficTypeOf("Ingress"));
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class, () -> trafficTypeOf("egres"));
+        Assert.assertEquals("Invalid traffic type egres", e.getMessage());
+    }
+
+    @Test
+    public void transferDataToNetworkAclRulePojoTestNotPartialUpgradeTcpWithIcmpTypeIsRefused() {
+        NetworkACLItemVO rule = new NetworkACLItemVO(null, null, NetUtils.ICMP_PROTO, networkAclMockId, List.of("10.1.1.0/24"), 0, 8,
+                TrafficType.Ingress, Action.Allow, 10, null);
+        setUpNotPartialUpgradeToTcp();
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpType()).thenReturn(8);
+        Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(true);
+
+        networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, rule, networkAclMock);
+
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class, () -> networkAclServiceImpl.validateNetworkACLItem(rule));
+        Assert.assertEquals("Can specify icmpCode and icmpType for ICMP protocol only", e.getMessage());
+    }
+
+    @Test
+    public void transferDataToNetworkAclRulePojoTestNotPartialUpgradeIcmpToTcpClearsIcmpFields() {
+        NetworkACLItemVO rule = new NetworkACLItemVO(null, null, NetUtils.ICMP_PROTO, networkAclMockId, List.of("10.1.1.0/24"), 0, 8,
+                TrafficType.Ingress, Action.Allow, 10, null);
+        setUpNotPartialUpgradeToTcp();
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpType()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(true);
+
+        networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, rule, networkAclMock);
+        networkAclServiceImpl.validateNetworkACLItem(rule);
+
+        Assert.assertEquals("tcp", rule.getProtocol());
+        Assert.assertNull(rule.getIcmpType());
+        Assert.assertNull(rule.getIcmpCode());
+        Assert.assertEquals(List.of("10.1.1.0/24"), rule.getSourceCidrList());
+        Assert.assertEquals(TrafficType.Ingress, rule.getTrafficType());
     }
 
     @Test

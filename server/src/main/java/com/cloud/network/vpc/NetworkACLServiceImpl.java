@@ -875,6 +875,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      *  All of the parameters in {@link UpdateNetworkACLItemCmd} that are not null will be set to their corresponding fields in {@link NetworkACLItemVO}.
      *  If the parameter {@link UpdateNetworkACLItemCmd#isPartialUpgrade()} returns false, we will use null parameters, which will allow us to completely update the ACL rule.
      *  However, the number and custom Uuid will never be set to null. Therefore, if it is not a partial upgrade, these values will remain the same.
+     *  A complete update requires the protocol, the CIDR list and the traffic type: a rule cannot be stored without them, and defaulting them could widen the rule
+     *  or change its direction without the caller noticing.
      *
      *  We use {@link #validateAndCreateNetworkAclRuleAction(String)} when converting an action as {@link String} to its Enum corresponding value.
      */
@@ -888,6 +890,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             networkACLItemVo.setNumber(number);
         }
         boolean isPartialUpgrade = updateNetworkACLItemCmd.isPartialUpgrade();
+        if (!isPartialUpgrade && (StringUtils.isBlank(updateNetworkACLItemCmd.getProtocol()) || updateNetworkACLItemCmd.getSourceCidrList() == null
+                || updateNetworkACLItemCmd.getTrafficType() == null)) {
+            throw new InvalidParameterValueException("The protocol, cidrlist and traffictype must be given when the ACL rule is updated with partialupgrade=false");
+        }
 
         Integer sourcePortStart = updateNetworkACLItemCmd.getSourcePortStart();
         if (!isPartialUpgrade || sourcePortStart != null) {
@@ -950,8 +956,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             networkACLItemVo.setIcmpCode(icmpCode != null ? icmpCode : -1);
             networkACLItemVo.setIcmpType(icmpType != null ? icmpType : -1);
         } else {
-            networkACLItemVo.setIcmpCode(null);
-            networkACLItemVo.setIcmpType(null);
+            // keep what was given, so that validateProtocol() refuses an ICMP type or code on another protocol, as on create
+            networkACLItemVo.setIcmpCode(icmpCode);
+            networkACLItemVo.setIcmpType(icmpType);
         }
     }
 
