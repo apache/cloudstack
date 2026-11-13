@@ -82,6 +82,7 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
+import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.backup.BackupVO;
@@ -89,7 +90,9 @@ import org.apache.cloudstack.backup.ImageTransfer.Direction;
 import org.apache.cloudstack.backup.ImageTransfer.Format;
 import org.apache.cloudstack.backup.ImageTransferVO;
 import org.apache.cloudstack.backup.KVMBackupExportService;
+import org.apache.cloudstack.backup.VmCheckpointVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.VmCheckpointDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
@@ -321,6 +324,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     BackupDao backupDao;
+
+    @Inject
+    VmCheckpointDao vmCheckpointDao;
 
     @Inject
     ResourceTagDao resourceTagDao;
@@ -2016,6 +2022,9 @@ public class ServerAdapter extends ManagerBase {
             params.put(ApiConstants.VIRTUAL_MACHINE_ID, vmVo.getUuid());
             params.put(ApiConstants.NAME, request.getName());
             params.put(ApiConstants.DESCRIPTION, request.getDescription());
+            if (StringUtils.isNotBlank(request.getFromCheckpointId())) {
+                params.put(ApiConstants.FROM_CHECKPOINT_ID, request.getFromCheckpointId());
+            }
             ApiServerService.AsyncCmdResult result = processAsyncCmdWithContext(cmd, params);
             if (result == null || result.objectId == null) {
                 throw new CloudRuntimeException("Unexpected backup ID returned");
@@ -2059,6 +2068,12 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry,
                 false, backup);
+        // The finalize runs as an asynchronous job whose failure the client never sees, so a backup that is not
+        // ready (still starting, already being finalized or finished) is refused here, before the job is dispatched.
+        if (backup.getStatus() != org.apache.cloudstack.backup.Backup.Status.ReadyForImageTransfer) {
+            throw new CloudRuntimeException(String.format("Backup %s is %s and cannot be finalized", backup.getUuid(),
+                    backup.getStatus()));
+        }
         try {
             FinalizeBackupCmd cmd = new FinalizeBackupCmd();
             ComponentContext.inject(cmd);
@@ -2092,14 +2107,18 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
-        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vo.getId());
-        Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(
-                details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID),
-                details.get(VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME));
-        if (checkpoint == null) {
-            return Collections.emptyList();
+        List<Checkpoint> checkpoints = new ArrayList<>();
+        for (CheckpointResponse response : kvmBackupExportService.listVmCheckpoints(vo.getId())) {
+            VmCheckpointVO row = vmCheckpointDao.findByVmIdAndCheckpointId(vo.getId(), response.getId());
+            BackupVO backup = row != null && row.getBackupId() != null ? backupDao.findByIdIncludingRemoved(row.getBackupId()) : null;
+            Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(vo.getUuid(), response.getId(),
+                    response.getCreated() != null ? String.valueOf(response.getCreated().getTime() / 1000) : null,
+                    backup != null ? backup.getDescription() : null, backup != null ? backup.getFromCheckpointId() : null);
+            if (checkpoint != null) {
+                checkpoints.add(checkpoint);
+            }
         }
-        return List.of(checkpoint);
+        return checkpoints;
     }
 
     @ApiAccess(command = DeleteVmCheckpointCmd.class)
@@ -2109,17 +2128,15 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, vo);
-        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vo.getId());
-        if (!Objects.equals(details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID), checkpointId)) {
-            logger.warn("Checkpoint ID {} does not match active checkpoint for VM {}", checkpointId, vmUuid);
-            return;
-        }
         try {
             DeleteVmCheckpointCmd cmd = new DeleteVmCheckpointCmd();
             ComponentContext.inject(cmd);
             cmd.setVmId(vo.getId());
             cmd.setCheckpointId(checkpointId);
             kvmBackupExportService.deleteVmCheckpoint(cmd);
+        } catch (InvalidParameterValueException e) {
+            // An unknown checkpoint is reported as such, not silently accepted, so that the client knows its chain is gone.
+            throw e;
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete checkpoint: " + e.getMessage(), e);
         }

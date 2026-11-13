@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.api.command.admin.backup.CreateImageTransferCmd;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.backup.dao.VmCheckpointDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -79,42 +81,41 @@ import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkJobHandler;
 import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
 public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService, VmWorkJobHandler {
     public static final String VM_WORK_JOB_HANDLER = KVMBackupExportServiceImpl.class.getSimpleName();
     private static final long BACKUP_FINALIZE_WAIT_CHECK_INTERVAL = 15 * 1000L;
+    // States of a backup that still holds the VM: a libvirt backup job, an NBD export, or the work queue.
+    private static final Set<Backup.Status> IN_PROGRESS_STATUSES = Set.of(Backup.Status.Queued, Backup.Status.BackingUp,
+            Backup.Status.ReadyForImageTransfer, Backup.Status.FinalizingImageTransfer);
     private static Set<String> COMPATIBLE_BACKUP_PROVIDERS = Set.of("veeam", "dummy");
 
     @Inject
     private VMInstanceDao vmInstanceDao;
 
-    @Inject
-    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     private BackupDao backupDao;
 
     @Inject
     private ImageTransferDao imageTransferDao;
+    @Inject
+    private VmCheckpointDao vmCheckpointDao;
 
     @Inject
     private VolumeDao volumeDao;
@@ -197,9 +198,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("Instance must be running or stopped to start Backup");
         }
 
-        Backup existingBackup = backupDao.findByVmId(vmId);
-        if (existingBackup != null && existingBackup.getStatus() == Backup.Status.BackingUp) {
-            throw new CloudRuntimeException("Backup already in progress for Instance: " + vm.getUuid());
+        // An export backup keeps its row only until it is finalized or fails; libvirt runs one backup job per
+        // domain, so a second one would fail on the host with a less helpful error.
+        for (Backup existingBackup : backupDao.listByVmId(null, vmId)) {
+            if (IN_PROGRESS_STATUSES.contains(existingBackup.getStatus())) {
+                throw new CloudRuntimeException(String.format("Backup %s is already in progress for Instance %s", existingBackup.getUuid(), vm.getUuid()));
+            }
         }
 
         validateVmVolumesForBackup(vm);
@@ -229,15 +233,30 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         backup.setDate(new Date());
 
         String toCheckpointId = "ckp-" + UUID.randomUUID().toString().substring(0, 8);
-        Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
-        String fromCheckpointId = vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID);
+        String fromCheckpointId = resolveFromCheckpointId(vm, cmd.getFromCheckpointId());
 
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
-        backup.setType("FULL");
+        backup.setType(fromCheckpointId == null ? "FULL" : "INCREMENTAL");
         backup.setHostId(hostId);
 
         return backupDao.persist(backup);
+    }
+
+    // Any checkpoint CloudStack recorded for the VM can start a backup, so several clients keep their own chains. An
+    // unknown one is rejected, so the client falls back to a full instead of silently continuing from another one.
+    protected String resolveFromCheckpointId(VMInstanceVO vm, String requestedCheckpointId) {
+        if (StringUtils.isBlank(requestedCheckpointId)) {
+            return null;
+        }
+        VmCheckpointVO checkpoint = vmCheckpointDao.findByVmIdAndCheckpointId(vm.getId(), requestedCheckpointId);
+        if (checkpoint == null) {
+            logger.warn("Rejecting backup of Instance {} from checkpoint {}: the Instance has {} checkpoints and none by that id",
+                    vm.getUuid(), requestedCheckpointId, vmCheckpointDao.listByVmId(vm.getId()).size());
+            throw new CloudRuntimeException(String.format("Checkpoint %s doesn't exist for Instance %s",
+                    requestedCheckpointId, vm.getUuid()));
+        }
+        return checkpoint.getCheckpointId();
     }
 
     protected void removeFailedBackup(BackupVO backup) {
@@ -297,24 +316,23 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             }
         }
         Long hostId = backup.getHostId();
-
-        VMInstanceDetailVO lastCheckpointId = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID);
-        if (lastCheckpointId != null) {
-            try {
-                sendDeleteCheckpointCommand(vm, lastCheckpointId.getValue());
-            } catch (CloudRuntimeException e) {
-                logger.warn("Failed to delete last checkpoint {} for VM {}, proceeding with backup start", lastCheckpointId.getValue(), vmId, e);
-            }
-        }
         if (hostId == null) {
             removeFailedBackup(backup);
             throw new CloudRuntimeException("Host cannot be found for Backup: " + backup.getUuid());
         }
 
         Host host = hostDao.findById(hostId);
-        Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
-        String activeCkpCreateTimeStr = vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME);
-        Long fromCheckpointCreateTime = activeCkpCreateTimeStr != null ? NumbersUtil.parseLong(activeCkpCreateTimeStr, 0L) : null;
+        Long fromCheckpointCreateTime = null;
+        if (backup.getFromCheckpointId() != null) {
+            VmCheckpointVO fromCheckpoint = vmCheckpointDao.findByVmIdAndCheckpointId(vmId, backup.getFromCheckpointId());
+            if (fromCheckpoint == null) {
+                // Deleted between the request and the start.
+                removeFailedBackup(backup);
+                throw new CloudRuntimeException(String.format("Checkpoint %s doesn't exist for Instance %s",
+                        backup.getFromCheckpointId(), vm.getUuid()));
+            }
+            fromCheckpointCreateTime = fromCheckpoint.getCreateTime();
+        }
         StartBackupCommand startCmd = new StartBackupCommand(
             vm.getInstanceName(),
             backup.getToCheckpointId(),
@@ -353,22 +371,20 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         backupDao.update(backup.getId(), backup);
     }
 
-    private void updateVmCheckpoints(Long vmId, BackupVO backup) {
-        Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
-        String oldCheckpointId = vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID);
-        String oldCreateTimeStr = vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME);
-        if (oldCheckpointId != null && oldCreateTimeStr != null) {
-            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID, oldCheckpointId, false);
-            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_CREATE_TIME, oldCreateTimeStr, false);
-        }
+    // The checkpoint a finalized backup created joins the VM's checkpoints. The one it started from stays: another
+    // client may still need it, and checkpoints are only removed when a client deletes them.
+    private void recordCheckpoint(VMInstanceVO vm, BackupVO backup) {
         String newCheckpointId = backup.getToCheckpointId();
         Long newCreateTime = backup.getCheckpointCreateTime();
-        if (newCheckpointId != null && newCreateTime != null) {
-            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_ID, backup.getToCheckpointId(), false);
-            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME, String.valueOf(newCreateTime), false);
-        } else {
-            logger.error("New checkpoint details are missing for backup {} and vm {}", backup.getId(), vmId);
+        if (newCheckpointId == null || newCreateTime == null) {
+            logger.error("New checkpoint details are missing for backup {} and vm {}", backup.getId(), vm.getId());
+            return;
         }
+        if (vmCheckpointDao.findByVmIdAndCheckpointId(vm.getId(), newCheckpointId) != null) {
+            logger.warn("Checkpoint {} of VM {} is already recorded, not recording it again for backup {}", newCheckpointId, vm.getId(), backup.getId());
+            return;
+        }
+        vmCheckpointDao.persist(new VmCheckpointVO(vm.getId(), newCheckpointId, newCreateTime, backup.getId()));
     }
 
     @Override
@@ -391,13 +407,26 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
+        if (backup.getStatus() == Backup.Status.Queued) {
+            // The start job has not run yet: there is nothing on the host to stop and no checkpoint to record.
+            throw new CloudRuntimeException(String.format("Backup %s has not started yet and cannot be finalized", backup.getUuid()));
+        }
+
         updateBackupState(backup, Backup.Status.FinalizingImageTransfer);
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
         for (ImageTransferVO transfer : transfers) {
-            if (transfer.getPhase() != ImageTransferVO.Phase.finished) {
-                logger.warn("Finalize called for backup {} while Image transfer {} is not finalized, attempting to finalize it", backup.getUuid(), transfer.getUuid());
+            if (transfer.getPhase() == ImageTransferVO.Phase.finished) {
+                continue;
+            }
+            logger.warn("Finalize called for backup {} while Image transfer {} is not finalized, attempting to finalize it", backup.getUuid(), transfer.getUuid());
+            try {
                 finalizeImageTransfer(transfer.getId());
+            } catch (RuntimeException e) {
+                // Nothing has been stopped on the host yet, so the backup goes back to ready and the finalize can be retried.
+                updateBackupState(backup, Backup.Status.ReadyForImageTransfer);
+                throw new CloudRuntimeException(String.format("Failed to finalize image transfer %s of backup %s, the backup can be finalized again: %s",
+                        transfer.getUuid(), backup.getUuid(), e.getMessage()), e);
             }
         }
 
@@ -418,13 +447,19 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             }
         }
 
-        updateVmCheckpoints(vmId, backup);
-
-        updateBackupState(backup, Backup.Status.BackedUp);
-        backupDao.remove(backup.getId());
+        try {
+            recordCheckpoint(vm, backup);
+            updateBackupState(backup, Backup.Status.BackedUp);
+            backupDao.remove(backup.getId());
+        } catch (RuntimeException e) {
+            // The host side is done; a backup left in FinalizingImageTransfer would hold the VM work queue
+            // until the wait job times out, so it is failed explicitly and the client retries with a full.
+            logger.error("Failed to finalize {} after stopping it on the host", backup, e);
+            removeFailedBackup(backup);
+            throw new CloudRuntimeException("Failed to finalize backup: " + e.getMessage(), e);
+        }
 
         return backup;
-
     }
 
     private ImageTransferVO createDownloadImageTransfer(Long backupId, VolumeVO volume, ImageTransfer.Backend backend) {
@@ -442,7 +477,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         String socket = backup.getUuid();
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
         if (vm.getState() == State.Stopped) {
-            Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(backup.getVmId());
             String volumePath = getVolumePathForFileBasedBackend(volume);
             VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
             startNBDServer(transferId,
@@ -450,7 +484,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     backup.getHostId(),
                     volume.getUuid(),
                     volumePath,
-                    vmDetails.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID),
+                    backup.getFromCheckpointId(),
                     volumeInfo.getPassphrase());
             socket = transferId;
         }
@@ -830,11 +864,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return transfers.stream().map(this::toImageTransferResponse).collect(Collectors.toList());
     }
 
-    private CheckpointResponse createCheckpointResponse(String checkpointId, String createTime, boolean isActive) {
+    private CheckpointResponse createCheckpointResponse(VmCheckpointVO checkpoint, boolean isActive) {
         CheckpointResponse response = new CheckpointResponse();
         response.setObjectName("checkpoint");
-        response.setId(checkpointId);
-        Long createTimeSeconds = createTime != null ? NumbersUtil.parseLong(createTime, 0L) : 0L;
+        response.setId(checkpoint.getCheckpointId());
+        long createTimeSeconds = checkpoint.getCreateTime() != null ? checkpoint.getCreateTime() : 0L;
         response.setCreated(Date.from(Instant.ofEpochSecond(createTimeSeconds)));
         response.setIsActive(isActive);
         return response;
@@ -847,28 +881,32 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
-        List<CheckpointResponse> responses = new ArrayList<>();
+        return listVmCheckpoints(vmId);
+    }
 
-        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
-        String activeCheckpointId = details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID);
-        if (activeCheckpointId != null) {
-            responses.add(createCheckpointResponse(activeCheckpointId, details.get(VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME), true));
-        }
-        String lastCheckpointId = details.get(VmDetailConstants.LAST_CHECKPOINT_ID);
-        if (lastCheckpointId != null) {
-            responses.add(createCheckpointResponse(lastCheckpointId, details.get(VmDetailConstants.LAST_CHECKPOINT_CREATE_TIME), false));
+    @Override
+    public List<CheckpointResponse> listVmCheckpoints(long vmId) {
+        List<VmCheckpointVO> checkpoints = vmCheckpointDao.listByVmId(vmId);
+        List<CheckpointResponse> responses = new ArrayList<>();
+        for (int i = 0; i < checkpoints.size(); i++) {
+            responses.add(createCheckpointResponse(checkpoints.get(i), i == checkpoints.size() - 1));
         }
         return responses;
     }
 
-    private void sendDeleteCheckpointCommand(VMInstanceVO vm, String checkpointId) {
+    private void sendDeleteCheckpointCommand(VMInstanceVO vm, VmCheckpointVO checkpoint) {
+        String checkpointId = checkpoint.getCheckpointId();
         Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
         Map<String, String> diskPathUuidMap = new HashMap<>();
+        Map<String, byte[]> diskPathPassphraseMap = new HashMap<>();
         if (vm.getState() == State.Stopped) {
             List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
             for (Volume vol : volumes) {
-                diskPathUuidMap.put(getVolumePathForFileBasedBackend(vol), vol.getUuid());
+                String volumePath = getVolumePathForFileBasedBackend(vol);
+                diskPathUuidMap.put(volumePath, vol.getUuid());
+                // An encrypted image can only be opened for writing with its passphrase.
+                diskPathPassphraseMap.put(volumePath, volumeDataFactory.getVolume(vol.getId()).getPassphrase());
             }
         }
 
@@ -876,7 +914,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 vm.getInstanceName(),
                 checkpointId,
                 diskPathUuidMap,
-                vm.getState() == State.Stopped);
+                diskPathPassphraseMap,
+                vm.getState() == State.Stopped,
+                checkpoint.getCreateTime());
 
         Answer answer;
         try {
@@ -896,7 +936,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     public boolean deleteVmCheckpoint(DeleteVmCheckpointCmd cmd) {
         VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
         if (vm == null) {
-            throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
+            throw new InvalidParameterValueException("VM not found: " + cmd.getVmId());
         }
 
         verifyKVMBackupExportServiceSupported(vm.getDataCenterId());
@@ -905,17 +945,14 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM must be running or stopped to delete checkpoint");
         }
 
-        long vmId = cmd.getVmId();
-        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
-        String activeCheckpointId = details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID);
-        if (activeCheckpointId == null || !activeCheckpointId.equals(cmd.getCheckpointId())) {
-            logger.error("Checkpoint ID {} to delete does not match active checkpoint ID for VM {}", cmd.getCheckpointId(), vmId);
-            return true;
+        String checkpointId = cmd.getCheckpointId();
+        VmCheckpointVO checkpoint = checkpointId != null ? vmCheckpointDao.findByVmIdAndCheckpointId(cmd.getVmId(), checkpointId) : null;
+        if (checkpoint == null) {
+            throw new InvalidParameterValueException(String.format("Checkpoint %s not found for Instance %s", checkpointId, vm.getUuid()));
         }
 
-        sendDeleteCheckpointCommand(vm, activeCheckpointId);
-        revertVmCheckpointDetailsAfterActiveDelete(vmId, details);
-
+        sendDeleteCheckpointCommand(vm, checkpoint);
+        vmCheckpointDao.remove(checkpoint.getId());
         return true;
     }
 
@@ -924,20 +961,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return dataCenterDao.listAllIds().stream()
                 .filter(this::isZoneCompatible)
                 .collect(Collectors.toList());
-    }
-
-    private void revertVmCheckpointDetailsAfterActiveDelete(long vmId, Map<String, String> detailsBeforeDelete) {
-        String lastId = detailsBeforeDelete.get(VmDetailConstants.LAST_CHECKPOINT_ID);
-        String lastTime = detailsBeforeDelete.get(VmDetailConstants.LAST_CHECKPOINT_CREATE_TIME);
-        if (lastId != null) {
-            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_ID, lastId, false);
-            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME, lastTime, false);
-            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID);
-            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_CREATE_TIME);
-        } else {
-            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_ID);
-            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME);
-        }
     }
 
     @Override

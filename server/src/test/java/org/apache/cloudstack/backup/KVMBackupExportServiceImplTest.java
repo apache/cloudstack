@@ -18,26 +18,30 @@ package org.apache.cloudstack.backup;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.backup.dao.VmCheckpointDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -46,6 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -55,6 +60,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
@@ -69,7 +75,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
@@ -87,6 +92,8 @@ public class KVMBackupExportServiceImplTest {
 
     @Mock
     VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Mock
+    VmCheckpointDao vmCheckpointDao;
 
     @Mock
     BackupDao backupDao;
@@ -173,10 +180,15 @@ public class KVMBackupExportServiceImplTest {
     }
 
     private StartBackupCmd mockCmd(Long vmId, String name, String description) {
+        return mockCmd(vmId, name, description, null);
+    }
+
+    private StartBackupCmd mockCmd(Long vmId, String name, String description, String fromCheckpointId) {
         StartBackupCmd cmd = mock(StartBackupCmd.class);
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getName()).thenReturn(name);
         when(cmd.getDescription()).thenReturn(description);
+        when(cmd.getFromCheckpointId()).thenReturn(fromCheckpointId);
         return cmd;
     }
 
@@ -186,11 +198,9 @@ public class KVMBackupExportServiceImplTest {
         when(vmInstance.getDataCenterId()).thenReturn(10L);
         when(vmInstance.getAccountId()).thenReturn(100L);
         when(vmInstance.getDomainId()).thenReturn(200L);
-        when(backupDao.findByVmId(vmId)).thenReturn(null);
         when(volumeDao.findByInstanceAndNotStates(vmId, Volume.State.Ready)).thenReturn(Collections.emptyList());
         when(virtualMachineManager.findClusterAndHostIdForVm(vmInstance, false))
                 .thenReturn(new Pair<>(5L, hostId));
-        when(vmInstanceDetailsDao.listDetailsKeyPairs(vmId)).thenReturn(new HashMap<>());
     }
 
     @Test
@@ -213,15 +223,23 @@ public class KVMBackupExportServiceImplTest {
 
     @Test
     public void createBackup_backupAlreadyInProgress_throws() {
+        // An export backup waiting for its download, next to an older finished NAS backup of the same VM.
         when(vmInstanceDao.findById(1L)).thenReturn(vm);
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(10L);
-        BackupVO existing = mock(BackupVO.class);
-        when(existing.getStatus()).thenReturn(Backup.Status.BackingUp);
-        when(backupDao.findByVmId(1L)).thenReturn(existing);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        BackupVO finished = mock(BackupVO.class);
+        when(finished.getStatus()).thenReturn(Backup.Status.BackedUp);
+        BackupVO exporting = mock(BackupVO.class);
+        when(exporting.getStatus()).thenReturn(Backup.Status.ReadyForImageTransfer);
+        when(exporting.getUuid()).thenReturn("backup-uuid");
+        when(backupDao.listByVmId(null, 1L)).thenReturn(List.of(finished, exporting));
 
-        assertThrows(CloudRuntimeException.class,
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
                 () -> service.createBackup(mockCmd(1L, "backup", null)));
+
+        assertEquals("Backup backup-uuid is already in progress for Instance vm-uuid", ex.getMessage());
+        verify(backupDao, never()).persist(any(BackupVO.class));
     }
 
     @Test
@@ -272,10 +290,9 @@ public class KVMBackupExportServiceImplTest {
         when(vm.getDomainId()).thenReturn(200L);
         BackupVO existing = mock(BackupVO.class);
         when(existing.getStatus()).thenReturn(Backup.Status.BackedUp);
-        when(backupDao.findByVmId(1L)).thenReturn(existing);
+        when(backupDao.listByVmId(null, 1L)).thenReturn(List.of(existing));
         when(volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready)).thenReturn(Collections.emptyList());
         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(5L, 42L));
-        when(vmInstanceDetailsDao.listDetailsKeyPairs(1L)).thenReturn(new HashMap<>());
         when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
 
         Backup result = service.createBackup(mockCmd(1L, "backup", null));
@@ -283,40 +300,350 @@ public class KVMBackupExportServiceImplTest {
         assertNotNull(result);
     }
 
-    @Test
-    public void createBackup_withActiveCheckpoint_setsFromCheckpointId() {
-        when(vmInstanceDao.findById(1L)).thenReturn(vm);
-        when(vm.getState()).thenReturn(State.Running);
-        when(vm.getDataCenterId()).thenReturn(10L);
-        when(vm.getAccountId()).thenReturn(100L);
-        when(vm.getDomainId()).thenReturn(200L);
-        when(backupDao.findByVmId(1L)).thenReturn(null);
-        when(volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready)).thenReturn(Collections.emptyList());
-        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(5L, 42L));
-        Map<String, String> details = new HashMap<>();
-        details.put("active.checkpoint.id", "ckp-abc123");
-        when(vmInstanceDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
-        when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
-
-        service.createBackup(mockCmd(1L, "backup", null));
-
-        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
-        verify(backupDao).persist(captor.capture());
-        assertEquals("ckp-abc123", captor.getValue().getFromCheckpointId());
+    private VmCheckpointVO checkpoint(long id, long vmId, String checkpointId, long createTime) {
+        VmCheckpointVO vo = new VmCheckpointVO(vmId, checkpointId, createTime, null);
+        ReflectionTestUtils.setField(vo, "id", id);
+        return vo;
     }
 
     @Test
-    public void createBackup_noActiveCheckpoint_fromCheckpointIdIsNull() {
+    public void createBackup_requestedCheckpointExists_startsIncrementalFromIt() {
         stubVmRunningWithHost(1L, vm, 42L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-a1")).thenReturn(checkpoint(1L, 1L, "ckp-a1", 100L));
         when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
 
-        service.createBackup(mockCmd(1L, "backup", null));
+        service.createBackup(mockCmd(1L, "backup", null, "ckp-a1"));
 
         ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
         verify(backupDao).persist(captor.capture());
-        assert captor.getValue().getFromCheckpointId() == null;
-        assertNotNull(captor.getValue().getToCheckpointId());
-        assert captor.getValue().getToCheckpointId().startsWith("ckp-");
+        assertEquals("ckp-a1", captor.getValue().getFromCheckpointId());
+        assertEquals("INCREMENTAL", captor.getValue().getType());
+    }
+
+    @Test
+    public void createBackup_requestedCheckpointOfAnotherClient_isAcceptedToo() {
+        // Two clients keep their own chains on one VM: client A's checkpoint is older than client B's.
+        stubVmRunningWithHost(1L, vm, 42L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-a1")).thenReturn(checkpoint(1L, 1L, "ckp-a1", 100L));
+        when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
+
+        service.createBackup(mockCmd(1L, "backup", null, "ckp-a1"));
+
+        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
+        verify(backupDao).persist(captor.capture());
+        assertEquals("ckp-a1", captor.getValue().getFromCheckpointId());
+    }
+
+    @Test
+    public void createBackup_requestedCheckpointMatchedLoosely_usesTheRecordedId() {
+        // MySQL matches regardless of case and trailing spaces; the host knows the bitmap by the recorded name only.
+        stubVmRunningWithHost(1L, vm, 42L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "CKP-A1 ")).thenReturn(checkpoint(1L, 1L, "ckp-a1", 100L));
+        when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
+
+        service.createBackup(mockCmd(1L, "backup", null, "CKP-A1 "));
+
+        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
+        verify(backupDao).persist(captor.capture());
+        assertEquals("ckp-a1", captor.getValue().getFromCheckpointId());
+    }
+
+    @Test
+    public void createBackup_noCheckpointRequested_isFullEvenWithCheckpoints() {
+        stubVmRunningWithHost(1L, vm, 42L);
+        when(backupDao.persist(any(BackupVO.class))).thenReturn(mock(BackupVO.class));
+
+        service.createBackup(mockCmd(1L, "backup", null, " "));
+
+        ArgumentCaptor<BackupVO> captor = ArgumentCaptor.forClass(BackupVO.class);
+        verify(backupDao).persist(captor.capture());
+        assertNull(captor.getValue().getFromCheckpointId());
+        assertEquals("FULL", captor.getValue().getType());
+        verify(vmCheckpointDao, never()).findByVmIdAndCheckpointId(any(Long.class), any());
+    }
+
+    @Test
+    public void createBackup_requestedCheckpointUnknown_throws() {
+        // Issue 51: client A asks for a checkpoint that was deleted; it must not be served from another one.
+        stubVmRunningWithHost(1L, vm, 42L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-a1ad9f35")).thenReturn(null);
+        when(vmCheckpointDao.listByVmId(1L)).thenReturn(List.of(checkpoint(2L, 1L, "ckp-baac90c5", 200L)));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> service.createBackup(mockCmd(1L, "backup", null, "ckp-a1ad9f35")));
+
+        assert ex.getMessage().contains("ckp-a1ad9f35");
+        assert ex.getMessage().contains("doesn't exist");
+        verify(backupDao, never()).persist(any(BackupVO.class));
+    }
+
+    private org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd deleteCmd(long vmId, String checkpointId) {
+        org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd cmd =
+                mock(org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getCheckpointId()).thenReturn(checkpointId);
+        return cmd;
+    }
+
+    private void stubRunningVmForCheckpointDelete() throws Exception {
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Running);
+        when(vm.getDataCenterId()).thenReturn(10L);
+        when(vm.getHostId()).thenReturn(802L);
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new Answer(null, true, "Checkpoint deleted"));
+    }
+
+    private DeleteVmCheckpointCommand sentDeleteCommand() throws Exception {
+        ArgumentCaptor<Command> sent = ArgumentCaptor.forClass(Command.class);
+        verify(agentManager).send(eq(802L), sent.capture());
+        return (DeleteVmCheckpointCommand) sent.getValue();
+    }
+
+    @Test
+    public void deleteVmCheckpoint_known_deletesOnHostAndRemovesRow() throws Exception {
+        stubRunningVmForCheckpointDelete();
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-b")).thenReturn(checkpoint(7L, 1L, "ckp-b", 200L));
+
+        service.deleteVmCheckpoint(deleteCmd(1L, "ckp-b"));
+
+        DeleteVmCheckpointCommand sent = sentDeleteCommand();
+        assertEquals("ckp-b", sent.getCheckpointId());
+        assertEquals(Long.valueOf(200L), sent.getCheckpointCreateTime());
+        verify(vmCheckpointDao).remove(7L);
+    }
+
+    @Test
+    public void deleteVmCheckpoint_unknown_throwsAndTouchesNothing() throws Exception {
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Running);
+        when(vm.getDataCenterId()).thenReturn(10L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-z")).thenReturn(null);
+
+        InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
+                () -> service.deleteVmCheckpoint(deleteCmd(1L, "ckp-z")));
+
+        assert ex.getMessage().contains("ckp-z not found");
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(vmCheckpointDao, never()).remove(any(Long.class));
+    }
+
+    @Test
+    public void deleteVmCheckpoint_stoppedVm_sendsDiskPathsAndPassphrases() throws Exception {
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getId()).thenReturn(1L);
+        when(vm.getState()).thenReturn(State.Stopped);
+        when(vm.getDataCenterId()).thenReturn(10L);
+        when(vm.getHostId()).thenReturn(null);
+        when(vm.getLastHostId()).thenReturn(802L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-b")).thenReturn(checkpoint(7L, 1L, "ckp-b", 200L));
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(volume));
+        when(volume.getId()).thenReturn(602L);
+        when(volume.getUuid()).thenReturn("vol-602");
+        when(volume.getPoolId()).thenReturn(702L);
+        when(volume.getPath()).thenReturn("vol-602.qcow2");
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(702L);
+        pool.setScope(ScopeType.ZONE);
+        pool.setDataCenterId(1L);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        pool.setUuid("pool-702");
+        when(primaryDataStoreDao.findById(702L)).thenReturn(pool);
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volumeInfo.getPassphrase()).thenReturn("secret".getBytes());
+        when(volumeDataFactory.getVolume(602L)).thenReturn(volumeInfo);
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new Answer(null, true, "removed"));
+
+        service.deleteVmCheckpoint(deleteCmd(1L, "ckp-b"));
+
+        DeleteVmCheckpointCommand sent = sentDeleteCommand();
+        assertEquals(true, sent.isStoppedVM());
+        assertEquals("vol-602", sent.getDiskPathUuidMap().get("/mnt/pool-702/vol-602.qcow2"));
+        assertEquals("secret", new String(sent.getDiskPathPassphraseMap().get("/mnt/pool-702/vol-602.qcow2")));
+        verify(vmCheckpointDao).remove(7L);
+    }
+
+    @Test
+    public void deleteVmCheckpoint_hostFailure_keepsRow() throws Exception {
+        stubRunningVmForCheckpointDelete();
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-b")).thenReturn(checkpoint(7L, 1L, "ckp-b", 200L));
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new Answer(null, false, "bitmap is busy"));
+
+        assertThrows(CloudRuntimeException.class, () -> service.deleteVmCheckpoint(deleteCmd(1L, "ckp-b")));
+
+        verify(vmCheckpointDao, never()).remove(any(Long.class));
+    }
+
+    private KVMBackupExportServiceImpl stubStartBackupOfRunningVm(String fromCheckpointId) throws Exception {
+        KVMBackupExportServiceImpl spyService = spy(service);
+        doNothing().when(spyService).queueBackupFinalizeWaitWorkJob(any(), any());
+        when(backupDao.findById(20L)).thenReturn(backup);
+        when(backup.getHostId()).thenReturn(802L);
+        when(backup.getFromCheckpointId()).thenReturn(fromCheckpointId);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Running);
+        when(volumeDao.findByInstance(1L)).thenReturn(Collections.emptyList());
+        when(hostDao.findById(802L)).thenReturn(hostVO);
+        return spyService;
+    }
+
+    @Test
+    public void startBackup_usesCreateTimeOfFromCheckpoint_andDeletesNothing() throws Exception {
+        KVMBackupExportServiceImpl spyService = stubStartBackupOfRunningVm("ckp-a1");
+        StartBackupCmd cmd = mockCmd(1L, "backup", null);
+        when(cmd.getEntityId()).thenReturn(20L);
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-a1")).thenReturn(checkpoint(1L, 1L, "ckp-a1", 555L));
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new StartBackupAnswer(null, true, "started", 777L));
+
+        spyService.startBackup(cmd);
+
+        ArgumentCaptor<Command> sent = ArgumentCaptor.forClass(Command.class);
+        verify(agentManager, times(1)).send(eq(802L), sent.capture());
+        StartBackupCommand startCmd = (StartBackupCommand) sent.getValue();
+        assertEquals("ckp-a1", startCmd.getFromCheckpointId());
+        assertEquals(Long.valueOf(555L), startCmd.getFromCheckpointCreateTime());
+        verify(backup).setCheckpointCreateTime(777L);
+        verify(backup).setStatus(Backup.Status.ReadyForImageTransfer);
+        verify(vmCheckpointDao, never()).remove(any(Long.class));
+    }
+
+    @Test
+    public void startBackup_fromCheckpointDeletedMeanwhile_fails() throws Exception {
+        KVMBackupExportServiceImpl spyService = stubStartBackupOfRunningVm("ckp-a1");
+        StartBackupCmd cmd = mockCmd(1L, "backup", null);
+        when(cmd.getEntityId()).thenReturn(20L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-a1")).thenReturn(null);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> spyService.startBackup(cmd));
+
+        assert ex.getMessage().contains("ckp-a1 doesn't exist");
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(backup).setStatus(Backup.Status.Error);
+    }
+
+    private org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd finalizeCmd(long vmId, long backupId) {
+        org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd cmd =
+                mock(org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getBackupId()).thenReturn(backupId);
+        return cmd;
+    }
+
+    private void stubFinalizeOfRunningVm() throws Exception {
+        when(backupDao.findById(20L)).thenReturn(backup);
+        when(backup.getId()).thenReturn(20L);
+        when(backup.getVmId()).thenReturn(1L);
+        when(backup.getHostId()).thenReturn(802L);
+        when(backup.getToCheckpointId()).thenReturn("ckp-new");
+        when(backup.getCheckpointCreateTime()).thenReturn(999L);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        when(vm.getId()).thenReturn(1L);
+        when(vm.getState()).thenReturn(State.Running);
+        when(imageTransferDao.listByBackupId(20L)).thenReturn(Collections.emptyList());
+    }
+
+    @Test
+    public void finalizeBackup_transferFinalizeFailure_putsTheBackupBackToReadyAndStopsNothing() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(backup.getUuid()).thenReturn("backup-uuid");
+        ImageTransferVO transfer = new ImageTransferVO("tx-open", 11L, 20L, 31L, "sock",
+                ImageTransferVO.Phase.transferring, ImageTransfer.Direction.download, 1L, 1L, 1L);
+        when(imageTransferDao.listByBackupId(20L)).thenReturn(List.of(transfer));
+        when(imageTransferDao.findById(transfer.getId())).thenReturn(null);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.finalizeBackup(finalizeCmd(1L, 20L)));
+
+        assert ex.getMessage().contains("can be finalized again");
+        InOrder order = inOrder(backup);
+        order.verify(backup).setStatus(Backup.Status.FinalizingImageTransfer);
+        order.verify(backup).setStatus(Backup.Status.ReadyForImageTransfer);
+        verify(backup, never()).setStatus(Backup.Status.Error);
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(vmCheckpointDao, never()).persist(any(VmCheckpointVO.class));
+        verify(backupDao, never()).remove(any(Long.class));
+    }
+
+    @Test
+    public void finalizeBackup_checkpointAlreadyRecorded_isNotRecordedTwice() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new StopBackupAnswer(null, true, "stopped"));
+        when(vmCheckpointDao.findByVmIdAndCheckpointId(1L, "ckp-new")).thenReturn(mock(VmCheckpointVO.class));
+
+        service.finalizeBackup(finalizeCmd(1L, 20L));
+
+        verify(vmCheckpointDao, never()).persist(any(VmCheckpointVO.class));
+        verify(backup).setStatus(Backup.Status.BackedUp);
+    }
+
+    @Test
+    public void finalizeBackup_recordsNewCheckpoint_andDeletesNothing() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new StopBackupAnswer(null, true, "stopped"));
+
+        service.finalizeBackup(finalizeCmd(1L, 20L));
+
+        ArgumentCaptor<VmCheckpointVO> row = ArgumentCaptor.forClass(VmCheckpointVO.class);
+        verify(vmCheckpointDao).persist(row.capture());
+        assertEquals("ckp-new", row.getValue().getCheckpointId());
+        assertEquals(Long.valueOf(999L), row.getValue().getCreateTime());
+        assertEquals(Long.valueOf(20L), row.getValue().getBackupId());
+        verify(vmCheckpointDao, never()).remove(any(Long.class));
+        verify(agentManager, times(1)).send(eq(802L), any(Command.class));
+        verify(backup).setStatus(Backup.Status.BackedUp);
+    }
+
+    @Test
+    public void finalizeBackup_notStartedYet_isRejectedAndTouchesNothing() throws Exception {
+        // Finalize racing the start job: nothing is on the host yet and no checkpoint exists to record.
+        when(backupDao.findById(20L)).thenReturn(backup);
+        when(backup.getVmId()).thenReturn(1L);
+        when(backup.getUuid()).thenReturn("backup-uuid");
+        when(backup.getStatus()).thenReturn(Backup.Status.Queued);
+        when(vmInstanceDao.findById(1L)).thenReturn(vm);
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.finalizeBackup(finalizeCmd(1L, 20L)));
+
+        assert ex.getMessage().contains("has not started yet");
+        verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        verify(backup, never()).setStatus(any());
+        verify(vmCheckpointDao, never()).persist(any(VmCheckpointVO.class));
+    }
+
+    @Test
+    public void finalizeBackup_failureAfterStop_marksBackupErrorSoTheWaitJobEnds() throws Exception {
+        stubFinalizeOfRunningVm();
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(new StopBackupAnswer(null, true, "stopped"));
+        when(vmCheckpointDao.persist(any(VmCheckpointVO.class))).thenThrow(new CloudRuntimeException("db down"));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.finalizeBackup(finalizeCmd(1L, 20L)));
+
+        assert ex.getMessage().contains("db down");
+        verify(backup).setStatus(Backup.Status.Error);
+        verify(backup, never()).setStatus(Backup.Status.BackedUp);
+        verify(backupDao).remove(20L);
+    }
+
+    @Test
+    public void deleteVmCheckpoint_unknownVm_isNotFound() {
+        when(vmInstanceDao.findById(1L)).thenReturn(null);
+
+        assertThrows(InvalidParameterValueException.class, () -> service.deleteVmCheckpoint(deleteCmd(1L, "ckp-b")));
+    }
+
+    @Test
+    public void listVmCheckpoints_returnsAllOldestFirst_newestActive() {
+        when(vmCheckpointDao.listByVmId(1L)).thenReturn(List.of(checkpoint(1L, 1L, "ckp-a1", 100L),
+                checkpoint(2L, 1L, "ckp-b1", 200L), checkpoint(3L, 1L, "ckp-a2", 300L)));
+
+        List<CheckpointResponse> responses = service.listVmCheckpoints(1L);
+
+        assertEquals(List.of("ckp-a1", "ckp-b1", "ckp-a2"),
+                responses.stream().map(CheckpointResponse::getId).collect(java.util.stream.Collectors.toList()));
+        assertEquals(List.of(false, false, true),
+                responses.stream().map(CheckpointResponse::getIsActive).collect(java.util.stream.Collectors.toList()));
+        assertEquals(100000L, responses.get(0).getCreated().getTime());
     }
 
     @Test
@@ -438,7 +765,6 @@ public class KVMBackupExportServiceImplTest {
             when(backup.getZoneId()).thenReturn(1L);
             when(vmInstanceDao.findById(55L)).thenReturn(vm);
             when(vm.getState()).thenReturn(State.Stopped);
-            when(vmInstanceDetailsDao.listDetailsKeyPairs(55L)).thenReturn(Map.of(VmDetailConstants.ACTIVE_CHECKPOINT_ID, "ckp-active"));
             when(hostDao.findById(802L)).thenReturn(hostVO);
             when(hostVO.getDataCenterId()).thenReturn(1L);
             when(volumeDataFactory.getVolume(602L)).thenReturn(mock(VolumeInfo.class));
@@ -461,7 +787,15 @@ public class KVMBackupExportServiceImplTest {
             assertNotNull(created);
             assertEquals(902L, created.getId());
             assertEquals(ImageTransfer.Direction.download, created.getDirection());
-            verify(agentManager, times(2)).send(eq(802L), any(Command.class));
+            ArgumentCaptor<Command> sent = ArgumentCaptor.forClass(Command.class);
+            verify(agentManager, times(2)).send(eq(802L), sent.capture());
+            // Both the NBD export and the transfer use the checkpoint this backup started from,
+            // not whatever checkpoint is active on the VM by now.
+            StartNBDServerCommand nbdCmd = (StartNBDServerCommand) sent.getAllValues().get(0);
+            assertEquals("ckp-prev", nbdCmd.getFromCheckpointId());
+            CreateImageTransferCommand transferCmd = (CreateImageTransferCommand) sent.getAllValues().get(1);
+            assertEquals("ckp-prev", transferCmd.getCheckpointId());
+            verify(vmInstanceDetailsDao, never()).listDetailsKeyPairs(55L);
         }
     }
 }

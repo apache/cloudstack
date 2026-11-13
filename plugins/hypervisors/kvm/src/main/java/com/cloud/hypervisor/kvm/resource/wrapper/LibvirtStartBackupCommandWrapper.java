@@ -27,6 +27,7 @@ import org.apache.cloudstack.backup.StartBackupAnswer;
 import org.apache.cloudstack.backup.StartBackupCommand;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuCommand;
+import org.apache.cloudstack.utils.qemu.QemuImageFilename;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
@@ -61,7 +62,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
 
         try {
             if (StringUtils.isNotBlank(fromCheckpointId)) {
-                Answer redefineAnswer = ensureFromCheckpointExists(cmd, fromCheckpointId, fromCheckpointCreateTime);
+                Answer redefineAnswer = ensureFromCheckpointExists(cmd, fromCheckpointId, fromCheckpointCreateTime, resource);
                 if (redefineAnswer != null) {
                     return redefineAnswer;
                 }
@@ -111,7 +112,10 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         }
     }
 
-    private Answer ensureFromCheckpointExists(StartBackupCommand cmd, String fromCheckpointId, Long fromCheckpointCreateTime) {
+    // CloudStack domains are transient, so a stop/start forgets every checkpoint while the bitmaps stay in the images.
+    // A forgotten from-checkpoint is redefined with the disks that carry its bitmap, so libvirt can later delete it.
+    private Answer ensureFromCheckpointExists(StartBackupCommand cmd, String fromCheckpointId, Long fromCheckpointCreateTime,
+            LibvirtComputingResource resource) {
         String vmName = cmd.getVmName();
         Script dumpScript = new Script("/bin/bash");
         dumpScript.add("-c");
@@ -124,38 +128,22 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             return new StartBackupAnswer(cmd, false, "From checkpoint create time is null for checkpoint " + fromCheckpointId);
         }
 
-        String redefineXml = createCheckpointXmlForRedefine(fromCheckpointId, fromCheckpointCreateTime);
-        File redefineFile;
+        Map<String, Boolean> diskHasBitmap;
         try {
-            redefineFile = File.createTempFile("checkpoint-redefine-", ".xml");
+            diskHasBitmap = LibvirtDeleteVmCheckpointCommandWrapper.findDisksWithBitmap(resource, vmName, fromCheckpointId);
         } catch (Exception e) {
-            return new StartBackupAnswer(cmd, false, "Failed to create temp file for checkpoint redefine: " + e.getMessage());
+            return new StartBackupAnswer(cmd, false, "Failed to look up the bitmap of from-checkpoint " + fromCheckpointId
+                    + " on the disks: " + e.getMessage());
         }
-        try (FileWriter writer = new FileWriter(redefineFile)) {
-            writer.write(redefineXml);
-        } catch (Exception e) {
-            redefineFile.delete();
-            return new StartBackupAnswer(cmd, false, "Failed to write checkpoint redefine XML: " + e.getMessage());
+        if (!diskHasBitmap.containsValue(Boolean.TRUE)) {
+            logger.warn("No disk of VM {} carries the bitmap of from-checkpoint {}; the backup will be a full one", vmName, fromCheckpointId);
+            return null;
         }
-        String createCmd = String.format(LibvirtComputingResource.CHECKPOINT_CREATE_COMMAND, vmName, redefineFile.getAbsolutePath());
-        Script createScript = new Script("/bin/bash");
-        createScript.add("-c");
-        createScript.add(createCmd);
-        String result = createScript.execute();
-        redefineFile.delete();
+        String result = LibvirtDeleteVmCheckpointCommandWrapper.redefineCheckpoint(vmName, fromCheckpointId, fromCheckpointCreateTime, diskHasBitmap);
         if (result != null) {
             return new StartBackupAnswer(cmd, false, "Failed to redefine from-checkpoint " + fromCheckpointId + ": " + result);
         }
         return null;
-    }
-
-    private String createCheckpointXmlForRedefine(String checkpointName, Long createTime) {
-        StringBuilder xml = new StringBuilder();
-        xml.append("<domaincheckpoint>\n");
-        xml.append("  <name>").append(checkpointName).append("</name>\n");
-        xml.append("  <creationTime>").append(createTime).append("</creationTime>\n");
-        xml.append("</domaincheckpoint>");
-        return xml.toString();
     }
 
     private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, String socket, LibvirtComputingResource resource) throws LibvirtException {
@@ -228,23 +216,24 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             script.add("bitmap");
             script.add("--add");
 
+            String result;
             if (passphrase != null && passphrase.length > 0) {
-                KeyFile srcKey;
-                try {
-                    srcKey = new KeyFile(passphrase);
+                // The key file holds the plaintext passphrase, so it only lives for the duration of the call.
+                try (KeyFile srcKey = new KeyFile(passphrase)) {
+                    script.add("--object");
+                    script.add(String.format("secret,id=sec0,file=%s", srcKey));
+                    script.add("--image-opts");
+                    script.add(String.format("driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", diskPath));
+                    script.add(toCheckpointId);
+                    result = script.execute();
                 } catch (IOException ex) {
                     return new StartBackupAnswer(cmd, false, "Failed to create KeyFile while adding bitmap " + toCheckpointId + " to disk " + diskPath);
                 }
-                script.add("--object");
-                script.add(String.format("secret,id=sec0,file=%s", srcKey));
-                script.add("--image-opts");
-                script.add(String.format("driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", diskPath));
             } else {
                 script.add(diskPath);
+                script.add(toCheckpointId);
+                result = script.execute();
             }
-
-            script.add(toCheckpointId);
-            String result = script.execute();
             if (result != null) {
                 return new StartBackupAnswer(cmd, false,
                     "Failed to add bitmap " + toCheckpointId + " to disk " + diskPath + ": " + result);
@@ -274,7 +263,8 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             if (inserted == null) {
                 continue;
             }
-            String file = inserted.optString("file");
+            // An encrypted image is reported under a json: pseudo-filename, not its path.
+            String file = QemuImageFilename.plain(inserted.optString("file"));
             if (StringUtils.isBlank(file)) {
                 continue;
             }

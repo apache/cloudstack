@@ -268,3 +268,42 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- VM checkpoints
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_checkpoint`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `vm_id` bigint unsigned NOT NULL COMMENT 'Instance ID',
+    `checkpoint_id` varchar(64) NOT NULL COMMENT 'Checkpoint name, used for the libvirt checkpoint and the disk bitmaps',
+    `create_time` bigint unsigned COMMENT 'Creation time on the host, epoch seconds',
+    `backup_id` bigint unsigned COMMENT 'Backup that created the checkpoint',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    INDEX `i_vm_checkpoint__vm_id`(`vm_id`),
+    CONSTRAINT `fk_vm_checkpoint__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- The previous checkpoint first, so that it gets the lower id.
+INSERT INTO `cloud`.`vm_checkpoint` (`vm_id`, `checkpoint_id`, `create_time`, `created`)
+SELECT i.`vm_id`, i.`value`, CAST(t.`value` AS UNSIGNED), NOW()
+FROM `cloud`.`vm_instance_details` i
+         JOIN `cloud`.`vm_instance` v ON v.`id` = i.`vm_id` AND v.`removed` IS NULL
+         LEFT JOIN `cloud`.`vm_instance_details` t ON t.`vm_id` = i.`vm_id` AND t.`name` = 'last.checkpoint.create.time'
+WHERE i.`name` = 'last.checkpoint.id'
+  AND NOT EXISTS (SELECT 1 FROM `cloud`.`vm_checkpoint` c
+                  WHERE c.`vm_id` = i.`vm_id` AND c.`checkpoint_id` = i.`value` AND c.`removed` IS NULL);
+
+-- The active checkpoint. Skipped when it has the same id as the previous one.
+INSERT INTO `cloud`.`vm_checkpoint` (`vm_id`, `checkpoint_id`, `create_time`, `created`)
+SELECT i.`vm_id`, i.`value`, CAST(t.`value` AS UNSIGNED), NOW()
+FROM `cloud`.`vm_instance_details` i
+         JOIN `cloud`.`vm_instance` v ON v.`id` = i.`vm_id` AND v.`removed` IS NULL
+         LEFT JOIN `cloud`.`vm_instance_details` t ON t.`vm_id` = i.`vm_id` AND t.`name` = 'active.checkpoint.create.time'
+WHERE i.`name` = 'active.checkpoint.id'
+  AND NOT EXISTS (SELECT 1 FROM `cloud`.`vm_checkpoint` c
+                  WHERE c.`vm_id` = i.`vm_id` AND c.`checkpoint_id` = i.`value` AND c.`removed` IS NULL);
+
+-- The details are not read any more.
+DELETE FROM `cloud`.`vm_instance_details`
+WHERE `name` IN ('active.checkpoint.id', 'active.checkpoint.create.time',
+                 'last.checkpoint.id', 'last.checkpoint.create.time');

@@ -50,4 +50,16 @@ public class CheckpointResponse extends BaseResponse {
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
 }

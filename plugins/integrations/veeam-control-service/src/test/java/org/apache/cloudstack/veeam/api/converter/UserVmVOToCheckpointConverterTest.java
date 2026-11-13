@@ -53,4 +53,18 @@ public class UserVmVOToCheckpointConverterTest {
         final long creation = Long.parseLong(checkpoint.getCreationDate());
         assertTrue(creation >= before && creation <= after);
     }
+
+    @Test
+    public void testToCheckpoint_CarriesTheBackupDescriptionParentAndVm() {
+        final Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint("vm-1", "chk-3", "1700000000", "{\"job_uuid\":\"j\"}", "chk-2");
+
+        assertNotNull(checkpoint);
+        assertEquals("chk-3", checkpoint.getId());
+        assertEquals("{\"job_uuid\":\"j\"}", checkpoint.getDescription());
+        assertEquals("chk-2", checkpoint.getParentId());
+        assertEquals("vm-1", checkpoint.getVm().getId());
+        assertTrue(checkpoint.getHref().endsWith("/vms/vm-1/checkpoints/chk-3"));
+        assertTrue(checkpoint.getVm().getHref().endsWith("/vms/vm-1"));
+        assertNull(UserVmVOToCheckpointConverter.toCheckpoint("vm-1", null, "1700000000", "d", "chk-2"));
+    }
 }

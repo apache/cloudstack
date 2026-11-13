@@ -20,21 +20,32 @@ package org.apache.cloudstack.backup;
 import java.util.Map;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.LogLevel;
 
 public class DeleteVmCheckpointCommand extends Command {
     private String vmName;
     private String checkpointId;
     private Map<String, String> diskPathUuidMap;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private Map<String, byte[]> diskPathPassphraseMap;
     private boolean stoppedVM;
+    private Long checkpointCreateTime;
 
     public DeleteVmCheckpointCommand() {
     }
 
     public DeleteVmCheckpointCommand(String vmName, String checkpointId, Map<String, String> diskPathUuidMap, boolean stoppedVM) {
+        this(vmName, checkpointId, diskPathUuidMap, null, stoppedVM, null);
+    }
+
+    public DeleteVmCheckpointCommand(String vmName, String checkpointId, Map<String, String> diskPathUuidMap,
+                                     Map<String, byte[]> diskPathPassphraseMap, boolean stoppedVM, Long checkpointCreateTime) {
         this.vmName = vmName;
         this.checkpointId = checkpointId;
         this.diskPathUuidMap = diskPathUuidMap;
+        this.diskPathPassphraseMap = diskPathPassphraseMap;
         this.stoppedVM = stoppedVM;
+        this.checkpointCreateTime = checkpointCreateTime;
     }
 
     public String getVmName() {
@@ -45,8 +56,17 @@ public class DeleteVmCheckpointCommand extends Command {
         return checkpointId;
     }
 
+    // Creation time of the checkpoint on the host in epoch seconds, needed to redefine it in libvirt.
+    public Long getCheckpointCreateTime() {
+        return checkpointCreateTime;
+    }
+
     public Map<String, String> getDiskPathUuidMap() {
         return diskPathUuidMap;
+    }
+
+    public Map<String, byte[]> getDiskPathPassphraseMap() {
+        return diskPathPassphraseMap;
     }
 
     public boolean isStoppedVM() {
