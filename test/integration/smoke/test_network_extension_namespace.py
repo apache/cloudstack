@@ -408,6 +408,8 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
       test_09 — VPC source NAT IP update without VPC restart
       test_10 — custom-action smoke for Policy-Based Routing (PBR) actions on VPC tier network
       test_11 — IPv6 dualstack isolated network: namespace IPv6 address + radvd
+      test_12 — service of a deleted network offering can be removed from the extension
+      test_13 — service of a deleted VPC offering can be removed from the extension
     """
 
     @staticmethod
@@ -1251,6 +1253,152 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         self.extension        = None
         self.physical_network = None
         self.logger.info("test_03 PASSED")
+
+    def _register_extension_without_hosts(self, ext_name_prefix):
+        """Create a NetworkOrchestrator extension, register it to the guest
+        physical network without any hosts and enable its NSP.
+
+        Returns the extension (= provider) name.
+        """
+        self.physical_network = self._get_physical_network()
+        ext_name = "%s-%s" % (ext_name_prefix, random_gen())
+        self.extension = Extension.create(
+            self.apiclient,
+            name=ext_name,
+            type='NetworkOrchestrator',
+            details=[
+                {"network.services": NETWORK_SERVICES},
+                {"network.service.capabilities": NETWORK_SERVICE_CAPABILITIES_JSON},
+            ]
+        )
+        self.extension.register(self.apiclient, self.physical_network.id,
+                                'PhysicalNetwork')
+        provider = self._find_provider(self.physical_network.id, ext_name)
+        self.assertIsNotNone(provider,
+                             "NSP '%s' not found after registration" % ext_name)
+        self.provider_id = provider.id
+        if provider.state != 'Enabled':
+            self._update_provider_state(provider.id, 'Enabled')
+        return ext_name
+
+    def _count_service_map_rows(self, map_table, offering_column,
+                                offering_table, offering_uuid, provider):
+        """Count CustomAction rows in an offering service map for *provider*."""
+        rows = self.dbclient.execute(
+            "SELECT COUNT(*) FROM %s m JOIN %s o ON o.id = m.%s "
+            "WHERE o.uuid = '%s' AND m.service = 'CustomAction' "
+            "AND m.provider = '%s'"
+            % (map_table, offering_table, offering_column, offering_uuid,
+               provider))
+        return int(rows[0][0])
+
+    def _remove_custom_action_from_extension(self):
+        """Drop CustomAction from the extension's network.services detail."""
+        reduced_services = ",".join(
+            s for s in NETWORK_SERVICES.split(",") if s != "CustomAction")
+        self.extension.update(
+            self.apiclient,
+            details=[
+                {"network.services": reduced_services},
+                {"network.service.capabilities": NETWORK_SERVICE_CAPABILITIES_JSON},
+            ]
+        )
+
+    def _get_extension_services(self):
+        ext = Extension.list(self.apiclient, id=self.extension.id)[0]
+        d = (ext.details.__dict__
+             if not isinstance(ext.details, dict) else ext.details)
+        return d["network.services"].split(",")
+
+    def _get_provider_services(self, ext_name):
+        return self._find_provider(self.physical_network.id,
+                                   ext_name).servicelist
+
+    def _assert_custom_action_removable_after_offering_deleted(
+            self, ext_name, offering, map_table, offering_column,
+            offering_table):
+        """Removing CustomAction from the extension must be refused while
+        *offering* exists and allowed once it has been deleted, even though
+        deleting the offering leaves its service map rows behind."""
+        # While the offering exists the service is in use: refuse removal and
+        # leave both the extension detail and the NSP untouched.
+        with self.assertRaises(Exception) as ctx:
+            self._remove_custom_action_from_extension()
+        self.assertIn("Cannot remove service CustomAction", str(ctx.exception))
+        self.assertIn("CustomAction", self._get_extension_services())
+        self.assertIn("CustomAction", self._get_provider_services(ext_name))
+
+        offering.delete(self.apiclient)
+
+        # Deleting an offering only marks it removed; the service map rows that
+        # tie CustomAction to this provider are kept.
+        self.assertEqual(
+            1,
+            self._count_service_map_rows(map_table, offering_column,
+                                         offering_table, offering.id,
+                                         ext_name),
+            "Expected the %s row of the deleted offering to remain"
+            % map_table)
+
+        # The only offering using CustomAction is gone, so removal must succeed.
+        self._remove_custom_action_from_extension()
+        self.assertNotIn("CustomAction", self._get_extension_services())
+        self.assertNotIn("CustomAction", self._get_provider_services(ext_name))
+
+    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    def test_12_remove_service_used_by_deleted_network_offering(self):
+        """A service whose only network offering was deleted can be removed
+        from the extension."""
+        self.dbclient = self.testClient.getDbConnection()
+        ext_name = self._register_extension_without_hosts("extnet-rmsvc-nw")
+        offering = None
+        try:
+            svc = ISOLATED_NETWORK_SERVICES
+            offering = NetworkOffering.create(self.apiclient, {
+                "name":              "ExtNet-RmSvc-%s" % random_gen(),
+                "displaytext":       "ExtNet remove service offering",
+                "guestiptype":       "Isolated",
+                "traffictype":       "GUEST",
+                "supportedservices": svc,
+                "serviceProviderList": {s: ext_name for s in svc.split(',')},
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                },
+            })
+            self._assert_custom_action_removable_after_offering_deleted(
+                ext_name, offering, "ntwk_offering_service_map",
+                "network_offering_id", "network_offerings")
+            offering = None
+        finally:
+            if offering:
+                offering.delete(self.apiclient)
+            self._teardown_extension()
+        self.logger.info("test_12 PASSED")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    def test_13_remove_service_used_by_deleted_vpc_offering(self):
+        """A service whose only VPC offering was deleted can be removed from
+        the extension."""
+        self.dbclient = self.testClient.getDbConnection()
+        ext_name = self._register_extension_without_hosts("extnet-rmsvc-vpc")
+        offering = None
+        try:
+            svc = VPC_NETWORK_SERVICES
+            offering = VpcOffering.create(self.apiclient, {
+                "name":              "ExtNet-RmSvc-VPC-%s" % random_gen(),
+                "displaytext":       "ExtNet remove service VPC offering",
+                "supportedservices": svc,
+                "serviceProviderList": {s: ext_name for s in svc.split(',')},
+            })
+            self._assert_custom_action_removable_after_offering_deleted(
+                ext_name, offering, "vpc_offering_service_map",
+                "vpc_offering_id", "vpc_offerings")
+            offering = None
+        finally:
+            if offering:
+                offering.delete(self.apiclient)
+            self._teardown_extension()
+        self.logger.info("test_13 PASSED")
 
     # ------------------------------------------------------------------
     # Tests — hardware required
