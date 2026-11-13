@@ -16,37 +16,80 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import com.vmware.vim25.ParaVirtualSCSIController;
+import com.vmware.vim25.VirtualAHCIController;
+import com.vmware.vim25.VirtualBusLogicController;
+import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualLsiLogicSASController;
+import com.vmware.vim25.VirtualNVMEController;
+
+import java.util.List;
+
 public enum DiskControllerType {
-    ide,
-    scsi,
-    osdefault,
-    lsilogic,
-    lsisas1068,
-    buslogic,
-    pvscsi,
-    none;
-    public static DiskControllerType getType(String diskController) {
-        if (diskController == null || diskController.equalsIgnoreCase("osdefault")) {
-            return DiskControllerType.osdefault;
-        } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualLsiLogicSASController") || diskController.equalsIgnoreCase("VirtualLsiLogicSASController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSILOGIC_SAS_1068)
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSILOGIC_SAS)) {
-            return DiskControllerType.lsisas1068;
-        } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualLsiLogicController") || diskController.equalsIgnoreCase("VirtualLsiLogicController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSILOGIC_PARALLEL) || diskController.equalsIgnoreCase("scsi")) {
-            return DiskControllerType.lsilogic;
-        } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualIDEController") || diskController.equalsIgnoreCase("VirtualIDEController")
-                || diskController.equalsIgnoreCase("ide")) {
-            return DiskControllerType.ide;
-        } else if (diskController.equalsIgnoreCase("vim.vm.device.ParaVirtualSCSIController") || diskController.equalsIgnoreCase("ParaVirtualSCSIController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.VMWARE_PARAVIRTUAL)
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.VIRTUAL_SCSI)) {
-            return DiskControllerType.pvscsi;
-        } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualBusLogicController") || diskController.equalsIgnoreCase("VirtualBusLogicController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.BUSLOGIC)) {
-            return DiskControllerType.buslogic;
-        } else {
-            return DiskControllerType.none;
-        }
+    osdefault(null, null, null, null, null, null),
+    ide(VirtualIDEController.class.getName(), "ide", 2, 2, VmdkAdapterType.ide, null),
+    // The canonical controller type for VirtualLsiLogicController is "lsilogic"; "scsi" is kept as an alias.
+    lsilogic(VirtualLsiLogicController.class.getName(), "scsi", 16, 4, VmdkAdapterType.lsilogic, null),
+    scsi(VirtualLsiLogicController.class.getName(), "scsi", 16, 4, VmdkAdapterType.lsilogic, null),
+    buslogic(VirtualBusLogicController.class.getName(), "scsi", 16, 4, VmdkAdapterType.buslogic, null),
+    lsisas1068(VirtualLsiLogicSASController.class.getName(), "scsi", 16, 4, VmdkAdapterType.lsilogic, null),
+    pvscsi(ParaVirtualSCSIController.class.getName(), "scsi", 16, 4, VmdkAdapterType.lsilogic, "7"),
+    // The canonical controller type for VirtualAHCIController is "ahci"; "sata" is kept as an alias.
+    ahci(VirtualAHCIController.class.getName(), "sata", 30, 4, VmdkAdapterType.ide, "10"),
+    sata(VirtualAHCIController.class.getName(), "sata", 30, 4, VmdkAdapterType.ide, "10"),
+    nvme(VirtualNVMEController.class.getName(), "nvme", 15, 4, VmdkAdapterType.ide, "13"),
+    none(null, null, null, null, null, null);
+
+    private static final List<DiskControllerType> SUPPORTED_DISK_CONTROLLERS = List.of(
+            osdefault, ide, lsilogic, scsi, buslogic, lsisas1068, pvscsi, ahci, sata, nvme);
+
+    private final String controllerReference;
+    private final String busName;
+    private final Integer maxDeviceCount;
+    private final Integer maxControllerCount;
+    private final VmdkAdapterType vmdkAdapterType;
+    private final String minHardwareVersion;
+
+    DiskControllerType(String controllerReference, String busName, Integer maxDeviceCount, Integer maxControllerCount,
+                       VmdkAdapterType vmdkAdapterType, String minHardwareVersion) {
+        this.controllerReference = controllerReference;
+        this.busName = busName;
+        this.maxDeviceCount = maxDeviceCount;
+        this.maxControllerCount = maxControllerCount;
+        this.vmdkAdapterType = vmdkAdapterType;
+        this.minHardwareVersion = minHardwareVersion;
+    }
+
+    public static List<DiskControllerType> getSupportedDiskControllerTypes() {
+        return SUPPORTED_DISK_CONTROLLERS;
+    }
+
+    public String getName() {
+        return name();
+    }
+
+    public String getControllerReference() {
+        return controllerReference;
+    }
+
+    public String getBusName() {
+        return busName;
+    }
+
+    public Integer getMaxDeviceCount() {
+        return maxDeviceCount;
+    }
+
+    public Integer getMaxControllerCount() {
+        return maxControllerCount;
+    }
+
+    public VmdkAdapterType getVmdkAdapterType() {
+        return vmdkAdapterType;
+    }
+
+    public String getMinHardwareVersion() {
+        return minHardwareVersion;
     }
 }

@@ -261,8 +261,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
     private String _rootDiskController = DiskControllerType.ide.toString();
 
-    private final String _dataDiskController = DiskControllerType.osdefault.toString();
-
     private final Map<String, String> _storageMounts = new HashMap<>();
 
     private final Random _rand = new Random(System.currentTimeMillis());
@@ -635,8 +633,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         params.put("vm.instancename.flag", _instanceNameFlag);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managementPortGroupName);
-        params.put("vmware.root.disk.controller", _rootDiskController);
-        params.put("vmware.data.disk.controller", _dataDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
         params.put("ports.per.dvportgroup", _portsPerDvPortGroup);
     }
@@ -1093,11 +1089,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getRootDiskController() {
         return _rootDiskController;
-    }
-
-    @Override
-    public String getDataDiskController() {
-        return _dataDiskController;
     }
 
     @Override
