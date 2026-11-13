@@ -54,6 +54,7 @@ import org.apache.commons.collections.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerAddressUtil;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.event.ActionEvent;
@@ -466,9 +467,11 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         boolean ignoreMaintenanceHosts = ManagementServerMaintenanceIgnoreMaintenanceHosts.value();
         if (indirectAgentLB.haveAgentBasedHosts(msHost.getMsid(), ignoreMaintenanceHosts)) {
             List<String> indirectAgentMsList = indirectAgentLB.getManagementServerList();
-            indirectAgentMsList.remove(msHost.getServiceIP());
-            List<String> nonUpMsList = msHostDao.listNonUpStateMsIPs();
-            indirectAgentMsList.removeAll(nonUpMsList);
+            // the configured list may hold IPs, the persisted hostnames or aliases of them
+            indirectAgentMsList.removeAll(ManagementServerAddressUtil.getConfiguredAddresses(msHost.getName(), msHost.getServiceIP()));
+            indirectAgentMsList.removeAll(ManagementServerAddressUtil.getConfiguredAddresses(
+                    msHostDao.listNonUpStateMsHostnames(), msHostDao.listNonUpStateMsIPs()));
+
             if (CollectionUtils.isEmpty(indirectAgentMsList)) {
                 throw new CloudRuntimeException(String.format("Cannot prepare for maintenance, no other active management servers found from '%s' setting", ApiServiceConfiguration.ManagementServerAddresses.key()));
             }

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.management;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -34,4 +35,15 @@ public interface ManagementServerHost extends InternalIdentity, Identity, Contro
     String getVersion();
 
     String getServiceIP();
+
+    /**
+     * Returns the node's hostname when set, otherwise falls back to the service IP, so log and
+     * alert messages always carry a usable identifier even though the name column is nullable.
+     *
+     * @return the hostname if not blank, else the service IP
+     */
+    default String getHostIdentifier() {
+        String name = getName();
+        return StringUtils.isNotBlank(name) ? name : getServiceIP();
+    }
 }
