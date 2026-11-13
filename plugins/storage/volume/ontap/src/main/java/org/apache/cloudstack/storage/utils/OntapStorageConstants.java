@@ -127,6 +127,7 @@ public class OntapStorageConstants {
     public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
     public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
     public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
+    /** Retry settings for FlexVolume create/resize/delete job polling. */
     public static final int ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS = 2000;
     public static final int ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES = 30;
 
