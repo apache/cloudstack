@@ -78,8 +78,9 @@ get_usage () {
     chain=NETWORK_STATS
   fi
   iptables -L $chain -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  get_ipv6_usage ${1:-stats}
   # The following code are NOT in use any more
-  if [ -f /root/removedVifs ] ; then iptables -Z NETWORK_STATS ; fi; > /dev/null
+  if [ -f /root/removedVifs ] ; then iptables -Z NETWORK_STATS ; reset_ipv6_usage stats ; fi; > /dev/null
   /root/clearUsageRules.sh > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then
@@ -89,6 +90,7 @@ get_usage () {
 }
 
 reset_usage () {
+  reset_ipv6_usage stats
   iptables -Z NETWORK_STATS > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then

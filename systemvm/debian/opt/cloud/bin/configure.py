@@ -33,6 +33,7 @@ from fcntl import flock, LOCK_EX, LOCK_UN
 
 from cs.CsDatabag import CsDataBag
 from cs.CsNetfilter import CsNetfilters
+from cs.CsIpv6Usage import CsIpv6Usage
 from cs.CsDhcp import CsDhcp
 from cs.CsRedundant import *
 from cs.CsFile import CsFile
@@ -1746,6 +1747,9 @@ class IpTablesExecutor:
         logging.debug("Configuring iptables rules")
         nf = CsNetfilters()
         nf.compare(self.config.get_fw())
+
+        logging.debug("Configuring IPv6 usage counters")
+        CsIpv6Usage(self.config).process()
 
         logging.info("Configuring nftables IPv4 firewall rules %s" % self.config.get_nft_ipv4_fw())
         acls.flushAllIpv4RoutingRules()

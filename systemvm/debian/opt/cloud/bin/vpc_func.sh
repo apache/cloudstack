@@ -66,3 +66,23 @@ removeRulesForIp() {
     sudo iptables -t filter $rule
   done
 }
+
+# IPv6 usage counts, kept as named nftables counters by CsIpv6Usage.py. $1 is the counter prefix: "stats" for the
+# global NETWORK_STATS chain, or a device such as eth2. get_ipv6_usage prints the bytes in the same order as the
+# iptables usage rules (out, in, tcp_out, tcp_in), or nothing if the counters don't exist yet.
+get_ipv6_usage () {
+  nft list counters table ip6 cloudstack_usage 2> /dev/null | awk -v p="$1" '
+    $1 == "counter" { name = $2 }
+    $1 == "packets" { bytes[name] = $4 }
+    END { if ((p "_out") in bytes) printf "%s:%s:%s:%s:", bytes[p "_out"], bytes[p "_in"], bytes[p "_tcp_out"], bytes[p "_tcp_in"] }'
+}
+
+reset_ipv6_usage () {
+  nft -f - > /dev/null 2>&1 <<NFT
+reset counter ip6 cloudstack_usage $1_out
+reset counter ip6 cloudstack_usage $1_in
+reset counter ip6 cloudstack_usage $1_tcp_out
+reset counter ip6 cloudstack_usage $1_tcp_in
+NFT
+  return 0
+}
