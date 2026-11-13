@@ -28,6 +28,7 @@ import javax.persistence.Table;
 import java.util.Date;
 import java.util.UUID;
 
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -55,6 +56,7 @@ public class UserDataVO implements UserData {
     @Column(name = "name")
     private String name;
 
+    @Encrypt
     @Column(name = "user_data", updatable = true, length = 1048576)
     @Basic(fetch = FetchType.LAZY)
     private String userData;
