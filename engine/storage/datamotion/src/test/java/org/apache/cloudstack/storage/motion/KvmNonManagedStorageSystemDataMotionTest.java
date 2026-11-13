@@ -282,7 +282,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     }
 
     @Test
-    public void shouldMigrateVolumeTestRbdSourceToOtherRbdAndFilePools() {
+    public void shouldMigrateVolumeTestRbdSourceToOtherRbdFileAndClvmPools() {
         StoragePoolVO sourceStoragePool = Mockito.spy(new StoragePoolVO());
         Mockito.doReturn(StoragePoolType.RBD).when(sourceStoragePool).getPoolType();
         Mockito.doReturn(1L).when(sourceStoragePool).getId();
@@ -292,7 +292,8 @@ public class KvmNonManagedStorageSystemDataMotionTest {
             Mockito.doReturn(destType).when(destStoragePool).getPoolType();
             Mockito.doReturn(2L).when(destStoragePool).getId();
             boolean expected = destType == StoragePoolType.RBD || destType == StoragePoolType.NetworkFilesystem
-                    || destType == StoragePoolType.SharedMountPoint || destType == StoragePoolType.Filesystem;
+                    || destType == StoragePoolType.SharedMountPoint || destType == StoragePoolType.Filesystem
+                    || destType == StoragePoolType.CLVM || destType == StoragePoolType.CLVM_NG;
             assertEquals(destType.name(), expected, kvmNonManagedStorageDataMotionStrategy.shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool));
         }
     }

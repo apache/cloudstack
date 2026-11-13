@@ -44,6 +44,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -98,7 +99,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     }
 
     /**
-     * True if the volume lives on an RBD pool and goes to an RBD, NFS, SharedMountPoint or local pool, which can be in
+     * True if the volume lives on an RBD pool and goes to an RBD, NFS, SharedMountPoint, local or CLVM/CLVM_NG pool, which can be in
      * another cluster. The Instance is live migrated with its disk copied over NBD to an image or file on the
      * destination pool. A volume which stays on its
      * pool is not copied (see {@link #shouldMigrateVolume}).
@@ -108,7 +109,15 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             return false;
         }
         StoragePoolVO destPool = _storagePoolDao.findById(destDataStore.getId());
-        return destPool != null && (destPool.getPoolType() == StoragePoolType.RBD || supportStoragePoolType(destPool.getPoolType(), StoragePoolType.Filesystem));
+        return destPool != null && isDestinationOfRbdSource(destPool.getPoolType());
+    }
+
+    /**
+     * An RBD volume can be copied to an RBD, NFS, SharedMountPoint, local or CLVM/CLVM_NG pool.
+     */
+    protected boolean isDestinationOfRbdSource(StoragePoolType destPoolType) {
+        return destPoolType == StoragePoolType.RBD || ClvmPoolManager.isClvmPoolType(destPoolType)
+                || supportStoragePoolType(destPoolType, StoragePoolType.Filesystem);
     }
 
     /**
@@ -230,7 +239,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
         return supportStoragePoolType(sourceStoragePool.getPoolType())
                 || (sourceStoragePool.getPoolType() == StoragePoolType.RBD && sourceStoragePool.getId() != destStoragePool.getId()
-                && (destStoragePool.getPoolType() == StoragePoolType.RBD || supportStoragePoolType(destStoragePool.getPoolType(), StoragePoolType.Filesystem)));
+                && isDestinationOfRbdSource(destStoragePool.getPoolType()));
     }
 
     /**
