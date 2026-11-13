@@ -28,6 +28,7 @@ public class PhysicalNetworkSetupInfo {
     String publicNetworkName;
     String guestNetworkName;
     String storageNetworkName;
+    String migrationNetworkName;
     String mgmtVlan;
 
     public PhysicalNetworkSetupInfo() {
@@ -47,6 +48,14 @@ public class PhysicalNetworkSetupInfo {
 
     public String getStorageNetworkName() {
         return storageNetworkName;
+    }
+
+    public String getMigrationNetworkName() {
+        return migrationNetworkName;
+    }
+
+    public void setMigrationNetworkName(String migrationNetworkName) {
+        this.migrationNetworkName = migrationNetworkName;
     }
 
     public void setPrivateNetworkName(String privateNetworkName) {
