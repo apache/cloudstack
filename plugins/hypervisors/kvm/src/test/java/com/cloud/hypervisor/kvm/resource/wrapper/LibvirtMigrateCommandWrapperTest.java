@@ -60,6 +60,8 @@ import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.storage.StoragePoolInformation;
+import com.cloud.storage.Storage;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DiskType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DriverType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
@@ -875,6 +877,97 @@ public class LibvirtMigrateCommandWrapperTest {
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
         assertXpath(doc, "/domain/devices/disk/encryption/secret/@uuid", expectedSecretUuid);
+    }
+
+    private Document parseXml(String xml) throws Exception {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(IOUtils.toInputStream(xml, "UTF-8"));
+    }
+
+    private MigrateDiskInfo rbdDestination(String path, String srcPath) {
+        MigrateDiskInfo info = new MigrateDiskInfo("serial", DiskType.NETWORK, DriverType.RAW, Source.NETWORK, path);
+        info.setDestPoolInformation(new StoragePoolInformation("pool-uuid", "10.0.0.1,10.0.0.2", 6789, "destpool", "cephuser", Storage.StoragePoolType.RBD, null, true));
+        info.setSourcePoolType(Storage.StoragePoolType.RBD);
+        info.setDestPoolType(Storage.StoragePoolType.RBD);
+        return info;
+    }
+
+    @Test
+    public void testReplaceStorageRbdToRbd() throws Exception {
+        final String xmlDesc =
+            "<domain type='kvm' id='3'><devices>" +
+            "    <disk type='network' device='disk'>\n" +
+            "      <driver name='qemu' type='raw' cache='none'/>\n" +
+            "      <auth username='olduser'><secret type='ceph' uuid='old-uuid'/></auth>\n" +
+            "      <source protocol='rbd' name='srcpool/srcimage'><host name='192.168.0.1' port='6789'/></source>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "</devices></domain>";
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<>();
+        mapMigrateStorage.put("srcimage", rbdDestination("destpool/destimage", "srcimage"));
+
+        Document doc = parseXml(libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false));
+
+        assertXpath(doc, "/domain/devices/disk/@type", "network");
+        assertXpath(doc, "/domain/devices/disk/driver/@type", "raw");
+        assertXpath(doc, "/domain/devices/disk/source/@protocol", "rbd");
+        assertXpath(doc, "/domain/devices/disk/source/@name", "destpool/destimage");
+        assertXpath(doc, "count(/domain/devices/disk/source/host)", "2");
+        assertXpath(doc, "/domain/devices/disk/source/host[1]/@name", "10.0.0.1");
+        assertXpath(doc, "/domain/devices/disk/source/host[2]/@port", "6789");
+        assertXpath(doc, "count(/domain/devices/disk/auth)", "1");
+        assertXpath(doc, "/domain/devices/disk/auth/@username", "cephuser");
+        assertXpath(doc, "/domain/devices/disk/auth/secret/@uuid", "pool-uuid");
+    }
+
+    @Test
+    public void testReplaceStorageFileWithBackingStoreToRbd() throws Exception {
+        final String xmlDesc =
+            "<domain type='kvm' id='3'><devices>" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/pool/srcfile'/>\n" +
+            "      <backingStore type='file' index='1'><format type='raw'/><source file='/mnt/pool/template'/><backingStore/></backingStore>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "</devices></domain>";
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<>();
+        MigrateDiskInfo info = rbdDestination("destpool/destimage", "srcfile");
+        info.setSourcePoolType(Storage.StoragePoolType.NetworkFilesystem);
+        mapMigrateStorage.put("srcfile", info);
+
+        Document doc = parseXml(libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false));
+
+        assertXpath(doc, "/domain/devices/disk/@type", "network");
+        assertXpath(doc, "/domain/devices/disk/driver/@type", "raw");
+        assertXpath(doc, "/domain/devices/disk/source/@name", "destpool/destimage");
+        assertXpath(doc, "count(/domain/devices/disk/source/@file)", "0");
+        assertXpath(doc, "count(/domain/devices/disk/backingStore)", "0");
+    }
+
+    @Test
+    public void testReplaceStorageRbdToFile() throws Exception {
+        final String xmlDesc =
+            "<domain type='kvm' id='3'><devices>" +
+            "    <disk type='network' device='disk'>\n" +
+            "      <driver name='qemu' type='raw' cache='none'/>\n" +
+            "      <auth username='olduser'><secret type='ceph' uuid='old-uuid'/></auth>\n" +
+            "      <source protocol='rbd' name='srcpool/srcimage'><host name='192.168.0.1' port='6789'/></source>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "</devices></domain>";
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<>();
+        MigrateDiskInfo info = new MigrateDiskInfo("srcimage", DiskType.FILE, DriverType.QCOW2, Source.FILE, "/mnt/dest/destfile");
+        info.setSourcePoolType(Storage.StoragePoolType.RBD);
+        info.setDestPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        mapMigrateStorage.put("srcimage", info);
+
+        Document doc = parseXml(libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false));
+
+        assertXpath(doc, "/domain/devices/disk/@type", "file");
+        assertXpath(doc, "/domain/devices/disk/driver/@type", "qcow2");
+        assertXpath(doc, "/domain/devices/disk/source/@file", "/mnt/dest/destfile");
+        assertXpath(doc, "count(/domain/devices/disk/source/host)", "0");
+        assertXpath(doc, "count(/domain/devices/disk/auth)", "0");
     }
 
     @Test

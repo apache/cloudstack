@@ -46,6 +46,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.StoragePoolInformation;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -807,6 +808,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                             diskNodeAttribute.setTextContent(migrateDiskInfo.getDiskType().toString());
 
+                            boolean networkDestination = MigrateCommand.MigrateDiskInfo.DiskType.NETWORK.equals(migrateDiskInfo.getDiskType());
+                            if (networkDestination) {
+                                replaceDiskSourceWithRbd(doc, diskNode, migrateDiskInfo);
+                            }
+
                             NodeList diskChildNodes = diskNode.getChildNodes();
 
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
@@ -822,7 +828,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     Node driverNodeAttribute = driverNodeAttributes.getNamedItem("type");
 
                                     driverNodeAttribute.setTextContent(migrateDiskInfo.getDriverType().toString());
-                                } else if ("source".equals(diskChildNode.getNodeName())) {
+                                } else if (!networkDestination && "source".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
 
                                     Element newChildSourceNode = doc.createElement("source");
@@ -830,7 +836,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     newChildSourceNode.setAttribute(migrateDiskInfo.getSource().toString(), migrateDiskInfo.getSourceText());
 
                                     diskNode.appendChild(newChildSourceNode);
-                                } else if (migrateStorageManaged && "auth".equals(diskChildNode.getNodeName())) {
+                                } else if ((migrateStorageManaged || !networkDestination) && "auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
                                 } else if ("backingStore".equals(diskChildNode.getNodeName()) && migrateDiskInfo.getBackingStoreText() != null) {
                                     for (int b = 0; b < diskChildNode.getChildNodes().getLength(); b++) {
@@ -862,6 +868,48 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return LibvirtXMLParser.getXml(doc);
+    }
+
+    /**
+     * Points the disk at an image on a Ceph RBD pool: the source is "pool/image" with the monitors of the destination pool,
+     * and the Ceph authentication of the source pool is replaced by the one of the destination pool (the secret is
+     * defined on the destination host, which is where the Instance will open the image).
+     */
+    protected void replaceDiskSourceWithRbd(Document doc, Node diskNode, MigrateCommand.MigrateDiskInfo migrateDiskInfo) {
+        List<Node> toRemove = new ArrayList<>();
+        NodeList diskChildNodes = diskNode.getChildNodes();
+        for (int i = 0; i < diskChildNodes.getLength(); i++) {
+            Node child = diskChildNodes.item(i);
+            // a backing chain of the source (a qcow2 volume cloned from a template) is flattened into the raw image
+            if ("source".equals(child.getNodeName()) || "auth".equals(child.getNodeName()) || "backingStore".equals(child.getNodeName())) {
+                toRemove.add(child);
+            }
+        }
+        toRemove.forEach(diskNode::removeChild);
+
+        StoragePoolInformation destPool = migrateDiskInfo.getDestPoolInformation();
+        Element sourceNode = doc.createElement("source");
+        sourceNode.setAttribute("protocol", "rbd");
+        sourceNode.setAttribute("name", migrateDiskInfo.getSourceText());
+        for (String monitorHost : StringUtils.split(destPool.getHost(), ',')) {
+            Element hostNode = doc.createElement("host");
+            hostNode.setAttribute("name", monitorHost.trim());
+            if (destPool.getPort() > 0) {
+                hostNode.setAttribute("port", String.valueOf(destPool.getPort()));
+            }
+            sourceNode.appendChild(hostNode);
+        }
+        diskNode.appendChild(sourceNode);
+
+        if (StringUtils.isNotBlank(destPool.getUserInfo())) {
+            Element authNode = doc.createElement("auth");
+            authNode.setAttribute("username", destPool.getUserInfo());
+            Element secretNode = doc.createElement("secret");
+            secretNode.setAttribute("type", "ceph");
+            secretNode.setAttribute("uuid", destPool.getName());
+            authNode.appendChild(secretNode);
+            diskNode.appendChild(authNode);
+        }
     }
 
     private  String getOldVolumePath(List<DiskDef> disks, String vmName) {
@@ -1138,7 +1186,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         boolean destIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getDestPoolType() ||
                 Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getDestPoolType();
 
+        // an RBD image is raw, whereas a volume on a file based pool is qcow2
+        boolean isRbdRelatedMigration = Storage.StoragePoolType.RBD == migrateDiskInfo.getSourcePoolType() ||
+                Storage.StoragePoolType.RBD == migrateDiskInfo.getDestPoolType();
+
         boolean isClvmRelatedMigration = sourceIsClvm || destIsClvm;
-        return migrateStorageManaged || isClvmRelatedMigration;
+        return migrateStorageManaged || isClvmRelatedMigration || isRbdRelatedMigration;
     }
 }

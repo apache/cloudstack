@@ -181,7 +181,8 @@ public class KvmNonManagedStorageSystemDataMotionTest {
             Map<VolumeInfo, DataStore> volumeMap = configureTestInternalCanHandle(false, storagePoolTypeArray[i]);
             StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.internalCanHandle(volumeMap, new HostVO("sourceHostUuid"), new HostVO("destHostUuid"));
 
-            if (supportStoragePoolType(storagePoolTypeArray[i])) {
+            // the test maps the volumes to a pool of their own type, which for RBD is a live copy to another RBD pool
+            if (supportStoragePoolType(storagePoolTypeArray[i]) || StoragePoolType.RBD.equals(storagePoolTypeArray[i])) {
                 Assert.assertEquals(StrategyPriority.HYPERVISOR, strategyPriority);
             } else {
                 Assert.assertEquals(StrategyPriority.CANT_HANDLE, strategyPriority);
@@ -278,6 +279,63 @@ public class KvmNonManagedStorageSystemDataMotionTest {
                 Assert.assertFalse(result);
             }
         }
+    }
+
+    @Test
+    public void shouldMigrateVolumeTestRbdSourceToOtherRbdAndFilePools() {
+        StoragePoolVO sourceStoragePool = Mockito.spy(new StoragePoolVO());
+        Mockito.doReturn(StoragePoolType.RBD).when(sourceStoragePool).getPoolType();
+        Mockito.doReturn(1L).when(sourceStoragePool).getId();
+        HostVO destHost = new HostVO("guid");
+        for (StoragePoolType destType : StoragePoolType.values()) {
+            StoragePoolVO destStoragePool = Mockito.spy(new StoragePoolVO());
+            Mockito.doReturn(destType).when(destStoragePool).getPoolType();
+            Mockito.doReturn(2L).when(destStoragePool).getId();
+            boolean expected = destType == StoragePoolType.RBD || destType == StoragePoolType.NetworkFilesystem
+                    || destType == StoragePoolType.SharedMountPoint || destType == StoragePoolType.Filesystem;
+            assertEquals(destType.name(), expected, kvmNonManagedStorageDataMotionStrategy.shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool));
+        }
+    }
+
+    @Test
+    public void shouldMigrateVolumeTestRbdVolumeStaysOnItsPool() {
+        StoragePoolVO pool = Mockito.spy(new StoragePoolVO());
+        Mockito.doReturn(StoragePoolType.RBD).when(pool).getPoolType();
+        Mockito.doReturn(1L).when(pool).getId();
+        assertFalse(kvmNonManagedStorageDataMotionStrategy.shouldMigrateVolume(pool, new HostVO("guid"), pool));
+    }
+
+    @Test
+    public void generateDestPathTestRbdDestination() {
+        StoragePoolVO destStoragePool = Mockito.spy(new StoragePoolVO());
+        Mockito.doReturn(StoragePoolType.RBD).when(destStoragePool).getPoolType();
+        Mockito.doReturn("cephpool").when(destStoragePool).getPath();
+        VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
+        Mockito.doReturn("vol-uuid").when(destVolumeInfo).getUuid();
+        assertEquals("cephpool/vol-uuid", kvmNonManagedStorageDataMotionStrategy.generateDestPath(new HostVO("guid"), destStoragePool, destVolumeInfo));
+    }
+
+    @Test
+    public void configureMigrateDiskInfoForRbdTest() {
+        StoragePoolVO destStoragePool = Mockito.spy(new StoragePoolVO());
+        Mockito.doReturn("10.0.0.1,10.0.0.2").when(destStoragePool).getHostAddress();
+        Mockito.doReturn(6789).when(destStoragePool).getPort();
+        Mockito.doReturn("cephuser:secretkey").when(destStoragePool).getUserInfo();
+        Mockito.doReturn("pool-uuid").when(destStoragePool).getUuid();
+        Mockito.doReturn("cephpool").when(destStoragePool).getPath();
+        VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
+
+        MigrateCommand.MigrateDiskInfo info = kvmNonManagedStorageDataMotionStrategy.configureMigrateDiskInfoForRbd(srcVolumeInfo, "cephpool/vol", destStoragePool);
+
+        assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.NETWORK, info.getDiskType());
+        assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, info.getDriverType());
+        assertEquals("cephpool/vol", info.getSourceText());
+        assertEquals("volume path", info.getSerialNumber());
+        assertEquals("10.0.0.1,10.0.0.2", info.getDestPoolInformation().getHost());
+        assertEquals(6789, info.getDestPoolInformation().getPort());
+        assertEquals("cephuser", info.getDestPoolInformation().getUserInfo());
+        assertEquals("pool-uuid", info.getDestPoolInformation().getName());
     }
 
     @Test
