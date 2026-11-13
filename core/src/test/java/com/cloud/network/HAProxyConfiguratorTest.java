@@ -31,6 +31,9 @@ import org.junit.Test;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.utils.Pair;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 
 import java.util.List;
@@ -156,6 +159,176 @@ public class HAProxyConfiguratorTest {
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L);
         String result = genConfig(hpg, cmd);
         Assert.assertTrue(result.contains("bind 10.2.0.1:443 ssl crt /etc/cloudstack/ssl/10_2_0_1-443.pem"));
+    }
+
+    @Test
+    public void generateConfigurationTestKeepAliveWithSslOffloading() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 443, "ssl", "roundrobin", false, false, false, null);
+        lb.setLbSslCert(new LbSslCert("cert", "key", "password", "chain", "fingerprint", false));
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", true, 0L);
+        String result = genConfig(hpg, cmd);
+        Assert.assertFalse("'forceclose' is rejected by HAProxy 2.0 and later", result.contains("forceclose"));
+        Assert.assertTrue("keepalive should be requested explicitly", result.contains("\toption http-keep-alive"));
+    }
+
+    @Test
+    public void generateConfigurationTestKeepAliveDoesNotLeakToNextConfig() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "bla", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+
+        genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", true, 0L));
+
+        String result = genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L));
+        Assert.assertFalse("keepalive from an earlier config should not survive into this one",
+                result.contains("\tno option httpclose"));
+    }
+
+    @Test
+    public void generateConfigurationTestIdleTimeoutDoesNotLeakToNextConfig() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "bla", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+
+        genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 1234L));
+
+        String result = genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, -1L));
+        assertTrue("an unset idle timeout should fall back to the default", result.contains("\ttimeout client     50000"));
+        assertTrue("an unset idle timeout should fall back to the default", result.contains("\ttimeout server     50000"));
+    }
+
+    private LoadBalancerConfigCommand cmdFor(LoadBalancerTO lb, boolean offeringKeepAlive) {
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        return new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", offeringKeepAlive, 50000L);
+    }
+
+    private LoadBalancerTO httpRule() {
+        return new LoadBalancerTO("1", "10.2.0.1", 80, "http", "roundrobin", false, false, false, null);
+    }
+
+    /** Just the "listen" block for this rule, so assertions cannot match the defaults or stats sections. */
+    private String poolSection(String config, String poolName) {
+        int start = config.indexOf("listen " + poolName + "\n");
+        Assert.assertTrue("no listen block for " + poolName, start >= 0);
+        int next = config.indexOf("\nlisten ", start + 1);
+        return next < 0 ? config.substring(start) : config.substring(start, next);
+    }
+
+    @Test
+    public void generateConfigurationTestPerRuleKeepAliveKeepsHttpMode() {
+        LoadBalancerTO lb = httpRule();
+        lb.setKeepAlive(true);
+        String pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(lb, false)), "10_2_0_1-80");
+        assertTrue("the rule should stay in http mode so forwardfor still works", pool.contains("\tmode http"));
+        assertTrue(pool.contains("\toption http-keep-alive"));
+        Assert.assertFalse(pool.contains("\toption httpclose"));
+    }
+
+    @Test
+    public void generateConfigurationTestPerRuleKeepAliveOverridesTheOffering() {
+        LoadBalancerTO lb = httpRule();
+        lb.setKeepAlive(false);
+        String pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(lb, true)), "10_2_0_1-80");
+        assertTrue("the rule should win over the offering", pool.contains("\toption httpclose"));
+        Assert.assertFalse(pool.contains("\toption http-keep-alive"));
+    }
+
+    @Test
+    public void generateConfigurationTestUnsetKeepAliveLeavesOldBehaviourAlone() {
+        String pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(httpRule(), true)), "10_2_0_1-80");
+        Assert.assertFalse("keepalive from the offering still drops to tcp mode", pool.contains("\tmode http"));
+
+        pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(httpRule(), false)), "10_2_0_1-80");
+        assertTrue(pool.contains("\tmode http"));
+        assertTrue(pool.contains("\toption httpclose"));
+    }
+
+    @Test
+    public void generateConfigurationTestKeepAliveTimeout() {
+        LoadBalancerTO lb = httpRule();
+        lb.setKeepAlive(true);
+        lb.setKeepAliveTimeout(15000L);
+        String pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(lb, false)), "10_2_0_1-80");
+        assertTrue(pool.contains("\ttimeout http-keep-alive 15000"));
+    }
+
+    @Test
+    public void generateConfigurationTestKeepAliveTimeoutNeedsKeepAlive() {
+        LoadBalancerTO lb = httpRule();
+        lb.setKeepAliveTimeout(15000L);
+        String pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(lb, false)), "10_2_0_1-80");
+        Assert.assertFalse("without keepalive there is no idle connection to time out", pool.contains("timeout http-keep-alive"));
+    }
+
+    @Test
+    public void generateConfigurationTestIdleTimeoutOverridesTheGlobalPerRule() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 3306, "tcp", "roundrobin", false, false, false, null);
+        lb.setIdleTimeout(600000L);
+        String config = genConfig(new HAProxyConfigurator(), cmdFor(lb, false));
+        String pool = poolSection(config, "10_2_0_1-3306");
+        assertTrue("a tcp rule gets the timeouts too", pool.contains("\ttimeout client     600000"));
+        assertTrue(pool.contains("\ttimeout server     600000"));
+        assertTrue("the global still sets the defaults", config.contains("\ttimeout client     50000"));
+    }
+
+    @Test
+    public void generateConfigurationTestNegativeTimeoutsAreDropped() {
+        LoadBalancerTO lb = httpRule();
+        lb.setKeepAlive(true);
+        lb.setIdleTimeout(-1L);
+        lb.setKeepAliveTimeout(-5L);
+        String pool = poolSection(genConfig(new HAProxyConfigurator(), cmdFor(lb, false)), "10_2_0_1-80");
+        Assert.assertFalse("a negative timeout is a fatal haproxy parse error", pool.contains("-1"));
+        Assert.assertFalse("a negative timeout is a fatal haproxy parse error", pool.contains("-5"));
+        Assert.assertFalse(pool.contains("timeout client"));
+        Assert.assertFalse(pool.contains("timeout http-keep-alive"));
+    }
+
+    @Test
+    public void generateConfigurationTestPerRuleSettingsDoNotCrossContaminate() {
+        LoadBalancerTO tuned = httpRule();
+        tuned.setKeepAlive(true);
+        tuned.setIdleTimeout(600000L);
+        tuned.setKeepAliveTimeout(15000L);
+        LoadBalancerTO plain = new LoadBalancerTO("2", "10.2.0.1", 8080, "tcp", "roundrobin", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[] {tuned, plain};
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 50000L);
+        String config = genConfig(new HAProxyConfigurator(), cmd);
+
+        String tunedPool = poolSection(config, "10_2_0_1-80");
+        assertTrue(tunedPool.contains("\toption http-keep-alive"));
+        assertTrue(tunedPool.contains("\ttimeout client     600000"));
+
+        String plainPool = poolSection(config, "10_2_0_1-8080");
+        Assert.assertFalse("the other rule's settings must not leak here", plainPool.contains("http-keep-alive"));
+        Assert.assertFalse("the other rule's settings must not leak here", plainPool.contains("timeout client"));
+    }
+
+    @Test
+    public void generateConfigurationTestAppCookieStickinessUsesAStickTable() {
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("cookie-name", "JSESSIONID"));
+        params.add(new Pair<>("length", "52"));
+        params.add(new Pair<>("holdtime", "3h"));
+        List<LbStickinessPolicy> policies = new ArrayList<>();
+        policies.add(new LbStickinessPolicy(StickinessMethodType.AppCookieBased.getName(), params));
+        List<LbDestination> dests = new ArrayList<>();
+        dests.add(new LbDestination(80, 80, "10.1.10.2", false));
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "roundrobin", false, false, false, dests, policies);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        String result = genConfig(new HAProxyConfigurator(),
+                new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 50000L));
+        Assert.assertFalse("appsession was removed in haproxy 1.6", result.contains("appsession"));
+        assertTrue(result.contains("stick-table type string len 52 size 10k expire 3h"));
+        assertTrue(result.contains("stick store-response res.cook(JSESSIONID)"));
+        assertTrue(result.contains("stick match req.cook(JSESSIONID)"));
     }
 
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {
