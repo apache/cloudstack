@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -37,6 +38,7 @@ import org.reflections.Reflections;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
@@ -428,8 +430,14 @@ public class KVMStoragePoolManager {
 
         // LibvirtStorageAdaptor-specific statement
         if (pool.isPoolSupportHA() && primaryStorage) {
-            KVMHABase.HAStoragePool storagePool = new KVMHABase.HAStoragePool(pool, host, path, PoolType.PrimaryStorage);
-            _haMonitor.addStoragePool(storagePool);
+            String heartBeatPrerequisiteError = pool.getHeartBeatPrerequisiteError();
+            if (heartBeatPrerequisiteError == null) {
+                KVMHABase.HAStoragePool storagePool = new KVMHABase.HAStoragePool(pool, host, path, PoolType.PrimaryStorage);
+                _haMonitor.addStoragePool(storagePool);
+            } else {
+                // without the heartbeat the host would fail to write it at each cycle, and would be fenced
+                logger.error("The storage pool {} is not monitored for HA on this host, as its heartbeat can not be used: {}", pool.getUuid(), heartBeatPrerequisiteError);
+            }
         }
         StoragePoolInformation info = new StoragePoolInformation(name, host, port, path, userInfo, type, details, primaryStorage);
         addStoragePool(pool.getUuid(), info);
@@ -445,27 +453,49 @@ public class KVMStoragePoolManager {
 
     public synchronized boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        if (type == StoragePoolType.NetworkFilesystem) {
-            _haMonitor.unregisterStoragePool(uuid);
-        }
-        boolean deleteStatus = adaptor.deleteStoragePool(uuid);
-        synchronized (_storagePools) {
-            _storagePools.remove(uuid);
-        }
-        return deleteStatus;
+        return deleteStoragePoolWithoutHaMonitoring(type, uuid, () -> adaptor.deleteStoragePool(uuid));
     }
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        boolean deleteStatus;
-        if (type == StoragePoolType.NetworkFilesystem) {
+        return deleteStoragePoolWithoutHaMonitoring(type, uuid, () -> {
+            if (type == StoragePoolType.NetworkFilesystem) {
+                return adaptor.deleteStoragePool(uuid);
+            }
+            // the other pool types, also RBD and SharedMountPoint, keep the delete which takes the details: it does not
+            // destroy the libvirt pool of a pool which is still used by the VMs, e.g. in maintenance of the pool
+            return adaptor.deleteStoragePool(uuid, details);
+        });
+    }
+
+    /**
+     * Deletes a storage pool after it is no longer monitored for HA. The monitor writes the heartbeats while it holds its lock,
+     * so none is on going when the pool is unregistered, and none is written while the pool is removed, which could fail
+     * and fence the host. If the pool is not deleted (the delete does not succeed or throws) it is still there, so it is
+     * monitored for HA again: the heartbeat of the host on it must go on, and it stays known to the manager as well.
+     * The types with HA support are libvirt storage pools, which are only not deleted if they are still there. For the
+     * other types a delete which does not succeed means that the adaptor has no such pool, so it is forgotten as before.
+     */
+    private boolean deleteStoragePoolWithoutHaMonitoring(StoragePoolType type, String uuid, BooleanSupplier delete) {
+        boolean haSupported = HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
+        KVMHABase.HAStoragePool haPool = null;
+        if (haSupported) {
+            haPool = _haMonitor.getStoragePool(uuid);
             _haMonitor.unregisterStoragePool(uuid);
-            deleteStatus = adaptor.deleteStoragePool(uuid);
-        } else {
-            deleteStatus = adaptor.deleteStoragePool(uuid, details);
         }
-        synchronized (_storagePools) {
-            _storagePools.remove(uuid);
+        boolean deleteStatus = false;
+        try {
+            deleteStatus = delete.getAsBoolean();
+        } finally {
+            if (!deleteStatus && haPool != null) {
+                logger.warn("The storage pool {} was not deleted, so it is monitored for HA again.", uuid);
+                _haMonitor.addStoragePool(haPool);
+            }
+        }
+        if (deleteStatus || !haSupported) {
+            synchronized (_storagePools) {
+                _storagePools.remove(uuid);
+            }
         }
         return deleteStatus;
     }
