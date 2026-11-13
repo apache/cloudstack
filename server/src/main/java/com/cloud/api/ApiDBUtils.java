@@ -320,6 +320,7 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -1516,9 +1517,7 @@ public class ApiDBUtils {
     }
 
     public static boolean isExtractionDisabled() {
-        String disableExtractionString = s_configDao.getValue(Config.DisableExtraction.toString());
-        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
-        return disableExtraction;
+        return SecondaryStorageVmManager.DisableExtraction.value();
     }
 
     public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {

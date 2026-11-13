@@ -221,6 +221,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
@@ -545,10 +546,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        int routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
+        int routerRamSize = RouterRamSize.value();
         int routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
+        _routerExtraPublicNics = RouterExtraPublicNics.value();
 
         String value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
@@ -576,12 +577,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         NetworkHelperImpl.setVMInstanceName(instance);
 
-        final String rpValue = configs.get("network.disable.rpfilter");
-        if (rpValue != null && rpValue.equalsIgnoreCase("true")) {
-            _disableRpFilter = true;
-        }
+        _disableRpFilter = NetworkRouterRpFilter.value();
 
-        _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(Config.DnsBasicZoneUpdates.key()));
+        _dnsBasicZoneUpdates = DnsBasicZoneUpdates.value();
 
         logger.info("Router configurations: " + "ramsize=" + routerRamSize);
 
@@ -1920,10 +1918,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
 
-        if (Boolean.parseBoolean(_configDao.getValue("system.vm.random.password"))) {
-            buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+        if (SecondaryStorageVmManager.SystemVMRandomPassword.value()) {
+            buf.append(" vmpassword=").append(ManagementServer.SystemVMPassword.value());
         }
-        String msPublicKey = _configDao.getValue("ssh.publickey");
+        String msPublicKey = ManagementServer.SshPublicKey.value();
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         NicProfile controlNic = null;
@@ -2011,8 +2009,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Didn't start a control port");
         }
 
-        final String rpValue = _configDao.getValue(Config.NetworkRouterRpFilter.key());
-        _disableRpFilter = rpValue != null && rpValue.equalsIgnoreCase("true");
+        _disableRpFilter = NetworkRouterRpFilter.value();
 
         String rpFilter = " ";
         String type;
@@ -2192,7 +2189,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
 
-            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            final int advertInt = RedundantRouterVrrpInterval.value();
             buf.append(" advert_int=").append(advertInt);
         }
 
@@ -2235,7 +2232,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (isRedundant) {
             buf.append(" redundant_router=1");
 
-            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            final int advertInt = RedundantRouterVrrpInterval.value();
             buf.append(" advert_int=").append(advertInt);
 
             final Long vpcId = router.getVpcId();

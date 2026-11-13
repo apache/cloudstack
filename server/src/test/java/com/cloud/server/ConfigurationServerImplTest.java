@@ -31,6 +31,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Test;
@@ -110,16 +112,22 @@ public class ConfigurationServerImplTest {
         //setup
         String realusername = System.getProperty("user.name");
         System.setProperty("user.name", "cloud");
-        Mockito.when(_configDao.getValue("system.vm.random.password")).thenReturn(String.valueOf(true));
+        ConfigDepotImpl configDepot = Mockito.mock(ConfigDepotImpl.class);
+        Mockito.when(configDepot.getConfigStringValue("system.vm.random.password", ConfigKey.Scope.Global, null)).thenReturn(String.valueOf(true));
+        ConfigKey.init(configDepot);
         TransactionLegacy.open("cloud");
         Mockito.when(_mgrService.generateRandomPassword()).thenReturn("randomPassword");
 
-        //call the method to test
-        configurationServer.updateSystemvmPassword();
+        try {
+            //call the method to test
+            configurationServer.updateSystemvmPassword();
 
-        //verify that generateRandomPassword() is called
-        Mockito.verify(_mgrService, Mockito.times(1)).generateRandomPassword();
-        //teardown
-        System.setProperty("user.name", realusername);
+            //verify that generateRandomPassword() is called
+            Mockito.verify(_mgrService, Mockito.times(1)).generateRandomPassword();
+        } finally {
+            //teardown
+            ConfigKey.init(null);
+            System.setProperty("user.name", realusername);
+        }
     }
 }

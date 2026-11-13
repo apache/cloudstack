@@ -150,6 +150,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
@@ -313,13 +314,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             throw new ConfigurationException("Vmware component can only run under premium distribution");
         }
 
-        _instance = _configDao.getValue(Config.InstanceName.key());
+        _instance = AgentManager.InstanceName.value();
         if (_instance == null) {
             _instance = "DEFAULT";
         }
         logger.info("VmwareManagerImpl config - instance.name: " + _instance);
 
-        _mountParent = _configDao.getValue(Config.MountParent.key());
+        _mountParent = SecondaryStorageVmManager.MountParent.value();
         if (_mountParent == null) {
             _mountParent = File.separator + "mnt";
         }

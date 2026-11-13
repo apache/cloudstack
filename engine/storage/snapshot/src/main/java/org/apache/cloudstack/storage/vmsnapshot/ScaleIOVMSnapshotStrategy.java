@@ -47,7 +47,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
-import com.cloud.server.ManagementServerImpl;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -170,7 +170,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             long virtual_size=0;
             for (VolumeObjectTO volume : volumeTOs) {
                 String volumeSnapshotName = String.format("%s-%s-%s-%s-%s", ScaleIOUtil.VMSNAPSHOT_PREFIX, vmSnapshotVO.getId(), volume.getId(),
-                        storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                        storagePool.getUuid().split("-")[0].substring(4), ManagementServer.customCsIdentifier.value());
                 srcVolumeDestSnapshotMap.put(ScaleIOUtil.getVolumePath(volume.getPath()), volumeSnapshotName);
 
                 virtual_size += volume.getSize();

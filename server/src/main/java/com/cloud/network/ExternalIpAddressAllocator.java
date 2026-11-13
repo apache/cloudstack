@@ -29,17 +29,13 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAllocator {
-    @Inject
-    ConfigurationDao _configDao = null;
     @Inject
     IPAddressDao _ipAddressDao = null;
     @Inject
@@ -131,8 +127,8 @@ public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAll
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _isExternalIpAllocatorEnabled = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
-        _externalIpAllocatorUrl = _configDao.getValue("direct.attach.network.externalIpAllocator.url");
+        _isExternalIpAllocatorEnabled = VirtualNetworkApplianceManager.DirectAttachNetworkEnabled.value();
+        _externalIpAllocatorUrl = VirtualNetworkApplianceManager.DirectAttachNetworkExternalAPIURL.value();
         _name = name;
 
         return true;
