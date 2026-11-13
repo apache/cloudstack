@@ -47,6 +47,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -216,6 +218,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             logger.info("Implementation Version is " + _version);
         }
 
+        // the usage server has no ConfigDepot, so ConfigKey.value() would only return the defaults here
         Map<String, String> configs;
         try {
             configs = _configDao.getConfiguration(params);
@@ -229,14 +232,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             throw new CloudRuntimeException("Unhandled configuration exception", e);
         }
 
-        String execTime = configs.get("usage.stats.job.exec.time");
-        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        String execTimeZone = configs.get("usage.execution.timezone");
-        String aggregationTimeZone = configs.get("usage.aggregation.timezone");
-        String sanityCheckInterval = configs.get("usage.sanity.check.interval");
-        String quotaEnable = configs.get("quota.enable.service");
+        String execTime = configs.get(UsageService.UsageStatsJobExecTime.key());
+        String aggregationRange = configs.get(UsageService.UsageStatsJobAggregationRange.key());
+        String execTimeZone = configs.get(UsageService.UsageExecutionTimezone.key());
+        String aggregationTimeZone = configs.get(UsageService.UsageAggregationTimezone.key());
+        String sanityCheckInterval = configs.get(UsageService.UsageSanityCheckInterval.key());
+        String quotaEnable = configs.get(QuotaConfig.QuotaPluginEnabled.key());
         _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
-        usageSnapshotSelection  = Boolean.valueOf(configs.get("usage.snapshot.virtualsize.select"));
+        usageSnapshotSelection  = Boolean.valueOf(configs.get(UsageService.UsageSnapshotVirtualSizeSelect.key()));
         if (sanityCheckInterval != null) {
             _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
