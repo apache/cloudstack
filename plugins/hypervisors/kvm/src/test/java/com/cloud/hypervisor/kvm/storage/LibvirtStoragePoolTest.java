@@ -187,6 +187,14 @@ public class LibvirtStoragePoolTest extends TestCase {
     }
 
     @Test
+    public void testHeartBeatScriptEnvironmentNeedsTheUserAndTheKey() {
+        // as the connection arguments, the key is not given without its user, and the user is not given without a key
+        assertNull(getRbdPool(null, "cephkey").getHeartBeatScriptEnvironment());
+        assertNull(getRbdPool("", "cephkey").getHeartBeatScriptEnvironment());
+        assertNull(getRbdPool("cephuser", null).getHeartBeatScriptEnvironment());
+    }
+
+    @Test
     public void testHeartBeatScriptEnvironmentOfOtherPoolTypes() {
         LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.NetworkFilesystem,
                 Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));

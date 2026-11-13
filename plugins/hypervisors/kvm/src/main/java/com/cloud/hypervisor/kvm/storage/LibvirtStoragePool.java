@@ -389,7 +389,8 @@ public class LibvirtStoragePool implements KVMStoragePool {
      * Ceph key, which is not an argument of the script as it would be visible in the process list.
      */
     protected Map<String, String> getHeartBeatScriptEnvironment() {
-        if (StoragePoolType.RBD.equals(type) && StringUtils.isNotBlank(authSecret)) {
+        // the key is only given with its user, as addRbdConnectionArgs requires
+        if (StoragePoolType.RBD.equals(type) && StringUtils.isNotBlank(authUsername) && StringUtils.isNotBlank(authSecret)) {
             return Map.of(RBD_KEY_ENVIRONMENT_VARIABLE, authSecret);
         }
         return null;
