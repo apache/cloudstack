@@ -31,4 +31,6 @@ public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
     BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
 
     List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
+
+    List<BackupScheduleVO> getSchedulesToExecuteForDomainAndAccount(Date currentTimestamp, Long zoneId, Long domainId, Long accountId);
 }
