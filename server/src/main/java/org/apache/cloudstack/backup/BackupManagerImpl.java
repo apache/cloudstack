@@ -86,6 +86,7 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.backup.dao.BackupUsageMetricDao;
+import org.apache.cloudstack.backup.dao.InternalBackupDataStoreDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
@@ -258,6 +259,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private DomainHelper domainHelper;
     @Inject
     ReservationDao reservationDao;
+    @Inject
+    private InternalBackupDataStoreDao internalBackupDataStoreDao;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -2655,12 +2658,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails) {
+        return createBackupResponse(backup, listVmDetails, false);
+    }
+
+    @Override
+    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails, boolean isCallerRootAdmin) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());
         DomainVO domain = domainDao.findByIdIncludingRemoved(backup.getDomainId());
         DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(backup.getZoneId());
         Long offeringId = backup.getBackupOfferingId();
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
+        logger.trace("Got offering [{}] for backup [{}].", offering, backup);
 
         BackupResponse response = new BackupResponse();
         response.setId(backup.getUuid());
@@ -2694,6 +2703,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         if (backup.getBackupScheduleId() != null) {
             BackupScheduleVO scheduleVO = backupScheduleDao.findById(backup.getBackupScheduleId());
+            logger.trace("Got backup schedule [{}] for backup [{}].", scheduleVO, backup);
             if (scheduleVO != null) {
                 response.setIntervalType(scheduleVO.getScheduleType().toString());
             }
@@ -2734,6 +2744,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         if (backup.getToCheckpointId() != null) {
             response.setToCheckpointId(backup.getToCheckpointId());
+        }
+
+        if (offering != null && KBOSS_BACKUP_PROVIDER.equals(offering.getProvider()) && isCallerRootAdmin) {
+            response.setBackupPaths(internalBackupDataStoreDao.listVolumeNamesAndBackupPaths(backup.getId()));
         }
 
         response.setObjectName("backup");

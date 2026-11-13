@@ -79,7 +79,9 @@ public class FinalizeBackupCmd extends BaseAsyncCmd implements AdminCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Backup");
         }
 
-        BackupResponse response = backupManager.createBackupResponse(backup, null);
+        boolean isCallerRootAdmin = _accountService.isRootAdmin(CallContext.current().getCallingAccountId());
+
+        BackupResponse response = backupManager.createBackupResponse(backup, null, isCallerRootAdmin);
 
         response.setResponseName(getCommandName());
         setResponseObject(response);

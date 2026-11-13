@@ -68,6 +68,11 @@
               <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GiB)
             </div>
           </div>
+          <div v-else-if="$route.meta.name === 'backup' && item === 'backuppaths' && dataResource[item]">
+            <div v-for="[volumeUuid, backupVolumeInfo] in Object.entries(dataResource[item])" :key="volumeUuid">
+              <span>{{ backupVolumeInfo.volumename }} - {{ backupVolumeInfo.backuppath }}</span>
+            </div>
+          </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
             <div>
               {{ dataResource.rootdisksize }} GB

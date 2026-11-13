@@ -17,9 +17,11 @@
 package org.apache.cloudstack.backup.dao;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.helper.BackupVolumeNameAndPath;
 import org.apache.cloudstack.backup.InternalBackupDataStoreVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface InternalBackupDataStoreDao extends GenericDao<InternalBackupDataStoreVO, Long> {
 
@@ -30,4 +32,6 @@ public interface InternalBackupDataStoreDao extends GenericDao<InternalBackupDat
     void expungeByBackupId(long backupId);
 
     void updateVolumeId(long oldVolumeId, long newVolumeId);
+
+    Map<String, BackupVolumeNameAndPath> listVolumeNamesAndBackupPaths(long backupId);
 }
