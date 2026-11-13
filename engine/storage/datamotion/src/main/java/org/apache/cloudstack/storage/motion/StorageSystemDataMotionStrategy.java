@@ -2142,7 +2142,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
                 migrateDiskInfo.setSourcePoolType(sourceStoragePool.getPoolType());
                 migrateDiskInfo.setDestPoolType(destVolumeInfo.getStoragePoolType());
-                prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
+                prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath(), destStoragePool.getPoolType());
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
 
@@ -2736,10 +2736,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     /**
-     * Include some destination volume info in vmTO, required for some PrepareForMigrationCommand processing
+     * Include some destination volume info in vmTO, required for some PrepareForMigrationCommand processing.
      *
+     * @param destPoolType the disk's destination pool, passed through as {@link DiskTO#MIGRATION_DEST_POOL_TYPE} since
+     *                     the disk's own VolumeObjectTO still reports its source pool at this point.
      */
-    protected void prepareDiskWithSecretConsumerDetail(VirtualMachineTO vmTO, VolumeInfo srcVolume, String destPath) {
+    protected void prepareDiskWithSecretConsumerDetail(VirtualMachineTO vmTO, VolumeInfo srcVolume, String destPath, StoragePoolType destPoolType) {
         if (vmTO.getDisks() != null) {
             logger.debug(String.format("Preparing VM TO '%s' disks with migration data", vmTO));
             Arrays.stream(vmTO.getDisks()).filter(diskTO -> diskTO.getData().getId() == srcVolume.getId()).forEach( diskTO -> {
@@ -2747,6 +2749,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     diskTO.setDetails(new HashMap<>());
                 }
                 diskTO.getDetails().put(DiskTO.SECRET_CONSUMER_DETAIL, destPath);
+                if (destPoolType != null) {
+                    diskTO.getDetails().put(DiskTO.MIGRATION_DEST_POOL_TYPE, destPoolType.toString());
+                }
             });
         }
     }

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.MapUtils;
 import org.libvirt.Connect;
@@ -43,8 +44,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -106,6 +109,11 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                     final VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
 
                     if (volumeObjectTO.requiresEncryption()) {
+                        Answer refusal = refuseIfDestinationCannotHotplugEncryptedRbd(command, vm, volume, volumeObjectTO, libvirtComputingResource);
+                        if (refusal != null) {
+                            return refusal;
+                        }
+
                         String secretConsumer = volumeObjectTO.getPath();
                         if (volume.getDetails() != null && volume.getDetails().containsKey(DiskTO.SECRET_CONSUMER_DETAIL)) {
                             secretConsumer = volume.getDetails().get(DiskTO.SECRET_CONSUMER_DETAIL);
@@ -168,6 +176,29 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         answer.setNewVmCpuShares(newCpuShares);
 
         return answer;
+    }
+
+    /**
+     * Refuses the migration if {@code volumeObjectTO} is encrypted, lands on RBD, and this (destination) host's
+     * libvirt is too old to hot-plug an encrypted RBD volume (checked before its libvirt secret is even created).
+     * Prefers {@link DiskTO#MIGRATION_DEST_POOL_TYPE} over the volume's own pool, which still reports its source
+     * pool here if it is migrating to a new one.
+     *
+     * @return a failed {@link PrepareForMigrationAnswer}, or {@code null} if the migration may proceed.
+     */
+    protected Answer refuseIfDestinationCannotHotplugEncryptedRbd(PrepareForMigrationCommand command, VirtualMachineTO vm, DiskTO volume,
+            VolumeObjectTO volumeObjectTO, LibvirtComputingResource libvirtComputingResource) {
+        String destPoolTypeDetail = volume.getDetails() != null ? volume.getDetails().get(DiskTO.MIGRATION_DEST_POOL_TYPE) : null;
+        Storage.StoragePoolType destPoolType = destPoolTypeDetail != null ? Storage.StoragePoolType.valueOf(destPoolTypeDetail)
+                : volumeObjectTO.getDataStore() instanceof PrimaryDataStoreTO ? ((PrimaryDataStoreTO) volumeObjectTO.getDataStore()).getPoolType() : null;
+        if (!Storage.StoragePoolType.RBD.equals(destPoolType)
+                || libvirtComputingResource.getHypervisorLibvirtVersion() >= KVMStorageProcessor.MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
+            return null;
+        }
+        return new PrepareForMigrationAnswer(command, String.format("Libvirt version %s required on this host to migrate Instance %s into an"
+                        + " encrypted RBD volume, but version %s detected. Stop the Instance to migrate it, or upgrade libvirt on this host.",
+                LibvirtComputingResource.prettyVersion(KVMStorageProcessor.MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG), vm.getName(),
+                LibvirtComputingResource.prettyVersion(libvirtComputingResource.getHypervisorLibvirtVersion())));
     }
 
     private Answer handleRollback(PrepareForMigrationCommand command, LibvirtComputingResource libvirtComputingResource) {
