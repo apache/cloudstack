@@ -51,6 +51,7 @@ assert_eq "legacy: VERSION" "4.22.0" "$VERSION"
 assert_eq "legacy: FULL_VERSION keeps the 4th (security) component" "4.22.0.0" "$FULL_VERSION"
 
 getTemplateVersion "4.23.0.1-SNAPSHOT"
+assert_eq "legacy with -SNAPSHOT suffix: CS_VERSION" "4.23" "$CS_VERSION"
 assert_eq "legacy with -SNAPSHOT suffix: VERSION" "4.23.0" "$VERSION"
 assert_eq "legacy with -SNAPSHOT suffix: FULL_VERSION" "4.23.0.1" "$FULL_VERSION"
 
@@ -62,16 +63,18 @@ assert_eq "legacy 3-component (no security): FULL_VERSION has no trailing dot" "
 # --- getTemplateVersion: new versioning (major >= 24, post-cutover) ---
 
 getTemplateVersion "24.0.0"
-assert_eq "cutover: CS_VERSION" "24.0" "$CS_VERSION"
-assert_eq "cutover: VERSION" "24.0.0" "$VERSION"
+assert_eq "cutover: CS_VERSION (directory) is the major version" "24" "$CS_VERSION"
+assert_eq "cutover: VERSION (file names) is major.minor" "24.0" "$VERSION"
 assert_eq "cutover: FULL_VERSION has no trailing dot (patch dropped)" "24.0.0" "$FULL_VERSION"
 
 getTemplateVersion "24.1.2-SNAPSHOT"
-assert_eq "cutover with -SNAPSHOT suffix: VERSION" "24.1.2" "$VERSION"
+assert_eq "cutover with -SNAPSHOT suffix: CS_VERSION" "24" "$CS_VERSION"
+assert_eq "cutover with -SNAPSHOT suffix: VERSION" "24.1" "$VERSION"
 assert_eq "cutover with -SNAPSHOT suffix: FULL_VERSION" "24.1.2" "$FULL_VERSION"
 
 getTemplateVersion "99.9.9"
-assert_eq "future major: VERSION" "99.9.9" "$VERSION"
+assert_eq "future major: CS_VERSION" "99" "$CS_VERSION"
+assert_eq "future major: VERSION" "99.9" "$VERSION"
 assert_eq "future major: FULL_VERSION" "99.9.9" "$FULL_VERSION"
 
 # A 4-component major.minor.patch.security value is invalid at/after the cutover (matches
@@ -96,7 +99,7 @@ run_create_metadata_file() {
   : > "$METADATAFILE"
 
   createMetadataFile
-  grep '^version = ' "$METADATAFILE" | head -1 | cut -d' ' -f3
+  grep "^${2:-version} = " "$METADATAFILE" | head -1 | cut -d' ' -f3
 
   rm -rf "$workdir"
 }
@@ -106,6 +109,26 @@ assert_eq "metadata.ini legacy 'version' line" "4.22.0.0" "$actual"
 
 actual="$(run_create_metadata_file "24.0.0")"
 assert_eq "metadata.ini cutover 'version' line has no trailing dot" "24.0.0" "$actual"
+
+# --- createMetadataFile: file names, directory, template name and checksum ---
+
+actual="$(run_create_metadata_file "4.22.0.0" downloadurl)"
+assert_eq "metadata.ini legacy downloadurl" "https://download.cloudstack.org/systemvm//4.22/systemvmtemplate-4.22.0-x86_64-kvm.qcow2.bz2" "$actual"
+actual="$(run_create_metadata_file "4.22.0.0" templatename)"
+assert_eq "metadata.ini legacy templatename" "systemvm-kvm-4.22.0-x86_64" "$actual"
+actual="$(run_create_metadata_file "4.22.0.0" checksum)"
+assert_eq "metadata.ini legacy checksum is found" "abc123" "$actual"
+
+actual="$(run_create_metadata_file "24.0.0" downloadurl)"
+assert_eq "metadata.ini cutover downloadurl" "https://download.cloudstack.org/systemvm//24/systemvmtemplate-24.0-x86_64-kvm.qcow2.bz2" "$actual"
+actual="$(run_create_metadata_file "24.0.0" filename)"
+assert_eq "metadata.ini cutover filename" "systemvmtemplate-24.0-x86_64-kvm.qcow2.bz2" "$actual"
+actual="$(run_create_metadata_file "24.0.0" templatename)"
+assert_eq "metadata.ini cutover templatename" "systemvm-kvm-24.0-x86_64" "$actual"
+actual="$(run_create_metadata_file "24.0.0" checksum)"
+assert_eq "metadata.ini cutover checksum is found" "abc123" "$actual"
+actual="$(run_create_metadata_file "24.0.1" downloadurl)"
+assert_eq "metadata.ini cutover security release uses the same template" "https://download.cloudstack.org/systemvm//24/systemvmtemplate-24.0-x86_64-kvm.qcow2.bz2" "$actual"
 
 echo ""
 echo "${pass} passed, ${fail} failed"

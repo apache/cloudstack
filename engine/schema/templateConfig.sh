@@ -28,9 +28,7 @@ function getTemplateVersion() {
   subversion2="$(cut -d'.' -f2 <<<"$version")"
   minorversion="$(cut -d'.' -f3 <<<"$version")"
   fourthversion="$(cut -d'.' -f4 <<<"$version")"
-  export CS_VERSION="${subversion1}"."${subversion2}"
   export CS_MINOR_VERSION="${minorversion}"
-  export VERSION="${CS_VERSION}.${CS_MINOR_VERSION}"
   if [[ "$subversion1" -ge "$NEW_VERSIONING_CUTOVER_MAJOR_VERSION" ]]; then
     # New versioning (major.minor.security): the third component is the
     # security release itself, there is no separate patch component. A
@@ -40,11 +38,17 @@ function getTemplateVersion() {
       echo "Invalid version '${projVersion}': major versions at or above ${NEW_VERSIONING_CUTOVER_MAJOR_VERSION} do not support a 4-component major.minor.patch.security format" >&2
       exit 1
     fi
-    export FULL_VERSION="${VERSION}"
+    # The templates are in the directory named after the major version (24),
+    # and the file names contain major.minor (24.0), like 4.22 and 4.22.0 before
+    export CS_VERSION="${subversion1}"
+    export VERSION="${subversion1}.${subversion2}"
+    export FULL_VERSION="${subversion1}.${subversion2}.${minorversion}"
   else
     # Legacy versioning: major.minor.patch, or major.minor.patch.security when a 4th
     # component is present. Without a 4th component, VERSION is already correct as-is;
     # appending an empty security component would leave a dangling trailing dot.
+    export CS_VERSION="${subversion1}"."${subversion2}"
+    export VERSION="${CS_VERSION}.${CS_MINOR_VERSION}"
     if [[ -n "$fourthversion" ]]; then
       export FULL_VERSION="${VERSION}.${fourthversion}"
     else
