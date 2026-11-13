@@ -295,6 +295,20 @@ class VolumeMigrationRbdNfsBase(cloudstackTestCase):
         if None in pools:
             self.skipTest("Skipping test: requires a second NFS (\"nfs2\" in the test data) or RBD storage pool")
 
+    def require_rbd_encrypted_hotplug(self):
+        """libvirt < 10.1.0 cannot hot-plug or live migrate an encrypted RBD volume of a running Instance
+        (the agent refuses it), so the tests that do so are skipped on such hosts"""
+        hosts = Host.list(self.apiclient, zoneid=self.zone.id, type='Routing', hypervisor='KVM', state='Up') or []
+        for host in hosts:
+            ssh = SshClient(host=host.ipaddress, port=22, user=self.host_config['username'],
+                            passwd=self.host_config['password'])
+            out = ssh.execute("virsh version | awk '/Using library/{print $NF}'")
+            version = [int(v) for v in re.findall(r'\d+', (out[-1] if out else "0.0.0"))[:3]]
+            if version < [10, 1, 0]:
+                self.skipTest("Skipping test: libvirt %s on host %s cannot attach or live migrate an encrypted "
+                              "RBD volume of a running Instance (libvirt 10.1.0 is required)"
+                              % (".".join(map(str, version)), host.name))
+
     # Instances and volumes
 
     def deploy_instance(self, pool):
@@ -614,11 +628,13 @@ class TestEncryptedVolumeMigrationRbdNfs(VolumeMigrationRbdNfsBase):
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
     def test_01_encrypted_online_migration_from_rbd(self):
         """Online migration of encrypted volumes: RBD (ROOT with chain) -> NFS -> NFS -> RBD -> RBD"""
+        self.require_rbd_encrypted_hotplug()
         self.online_migration_from_rbd()
 
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
     def test_02_encrypted_online_migration_from_nfs_to_rbd(self):
         """Online migration of encrypted volumes: NFS (ROOT with chain) -> RBD"""
+        self.require_rbd_encrypted_hotplug()
         self.online_migration_from_nfs(self.rbd_pool)
 
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
@@ -630,6 +646,7 @@ class TestEncryptedVolumeMigrationRbdNfs(VolumeMigrationRbdNfsBase):
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
     def test_04_encrypted_offline_migration_from_rbd(self):
         """Offline migration of encrypted volumes: RBD (ROOT with chain) -> NFS -> NFS -> RBD -> RBD"""
+        self.require_rbd_encrypted_hotplug()
         self.offline_migration_from_rbd()
 
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
@@ -646,4 +663,5 @@ class TestEncryptedVolumeMigrationRbdNfs(VolumeMigrationRbdNfsBase):
     @attr(tags=["advanced", "advancedns", "smoke", "diskencrypt"], required_hardware="true")
     def test_07_encrypted_detached_volume_migration(self):
         """Migration of a detached encrypted DATA volume: RBD -> NFS -> NFS -> RBD -> RBD"""
+        self.require_rbd_encrypted_hotplug()
         self.detached_volume_migration()
