@@ -22,6 +22,28 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface ObjectStore extends Identity, InternalIdentity {
 
     /**
+     * Prefix of the account details that hold the credentials CloudStack keeps for an account on
+     * an object store, one set per store. They are CloudStack's own credentials for the backend
+     * rather than the account's, so they are never returned in API responses.
+     */
+    String ACCOUNT_DETAIL_PREFIX = "objectstore-";
+
+    /** Prefix shared by the account details of one object store. */
+    static String accountDetailPrefix(long storeId) {
+        return ACCOUNT_DETAIL_PREFIX + storeId + "-";
+    }
+
+    /** Key of an account detail holding an object store credential for one store. */
+    static String accountDetailKey(long storeId, String name) {
+        return accountDetailPrefix(storeId) + name;
+    }
+
+    /** Whether an account detail key holds an object store credential CloudStack keeps internally. */
+    static boolean isInternalAccountDetail(String key) {
+        return key != null && key.startsWith(ACCOUNT_DETAIL_PREFIX);
+    }
+
+    /**
      * @return name of the object store.
      */
     String getName();

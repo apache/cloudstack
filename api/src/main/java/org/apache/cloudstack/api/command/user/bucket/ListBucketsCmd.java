@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.bucket;
 
 import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.BucketCredential;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -27,7 +28,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 
 import java.util.List;
 
@@ -51,9 +52,14 @@ public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCm
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the bucket")
     private String bucketName;
 
-    @Parameter(name = ApiConstants.OBJECT_STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "the ID of the object storage pool, available to ROOT admin only", authorized = {
+    @Parameter(name = ApiConstants.OBJECT_STORAGE_ID, type = CommandType.UUID, entityType = ObjectStoreResponse.class, description = "the ID of the object storage pool, available to ROOT admin only", authorized = {
             RoleType.Admin})
     private Long objectStorageId;
+
+    @Parameter(name = ApiConstants.CREDENTIAL_SCOPE, type = CommandType.STRING, description = "filter by credential scope: '"
+            + BucketCredential.SCOPE_BUCKET + "' lists buckets that have their own credential, '"
+            + BucketCredential.SCOPE_ACCOUNT + "' lists buckets still using the account credential", since = "24.0.0")
+    private String credentialScope;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,6 +71,10 @@ public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     public String getBucketName() {
         return bucketName;
+    }
+
+    public String getCredentialScope() {
+        return credentialScope;
     }
 
     public Long getObjectStorageId() {

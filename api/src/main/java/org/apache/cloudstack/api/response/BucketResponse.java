@@ -25,6 +25,7 @@ import org.apache.cloudstack.storage.object.Bucket;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @EntityReference(value = Bucket.class)
@@ -103,12 +104,24 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     private String accessKey;
 
     @SerializedName(ApiConstants.USER_SECRET_KEY)
-    @Param(description = "Bucket Secret Key")
+    @Param(description = "Bucket Secret Key", isSensitive = true)
     private String secretKey;
 
     @SerializedName(ApiConstants.PROVIDER)
     @Param(description = "Object storage provider")
     private String provider;
+
+    @SerializedName("accountcredentialscope")
+    @Param(description = "whether the owning account is set up for per-bucket credentials on this object store: 'bucket' when it is, 'account' when its buckets still share one credential. Only a bucket whose account is set up for them can be given its own credential.", since = "24.0.0")
+    private String accountCredentialScope;
+
+    @SerializedName(ApiConstants.CREDENTIAL_SCOPE)
+    @Param(description = "scope of the bucket's credential: 'bucket' when the bucket has a dedicated credential, 'account' when it shares the account's credential", since = "24.0.0")
+    private String credentialScope;
+
+    @SerializedName(ApiConstants.CREDENTIAL_KEYS)
+    @Param(description = "the key slots of the bucket's dedicated credential", responseObject = BucketKeyResponse.class, since = "24.0.0")
+    private List<BucketKeyResponse> keys;
 
     public BucketResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -298,5 +311,25 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public String getCredentialScope() {
+        return credentialScope;
+    }
+
+    public void setAccountCredentialScope(String accountCredentialScope) {
+        this.accountCredentialScope = accountCredentialScope;
+    }
+
+    public void setCredentialScope(String credentialScope) {
+        this.credentialScope = credentialScope;
+    }
+
+    public List<BucketKeyResponse> getKeys() {
+        return keys;
+    }
+
+    public void setKeys(List<BucketKeyResponse> keys) {
+        this.keys = keys;
     }
 }
