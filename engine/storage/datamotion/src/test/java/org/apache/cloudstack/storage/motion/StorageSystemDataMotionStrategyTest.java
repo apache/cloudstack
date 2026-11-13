@@ -681,13 +681,17 @@ public class StorageSystemDataMotionStrategyTest {
     }
 
     @Test
-    public void cleanUpDestVolumesOfFailedMigrationExpungesVolumeInDestroyState() {
+    public void cleanUpDestVolumesOfFailedMigrationExpungesVolumeInDestroyStateWithoutProcessingEvents() {
+        // Destroy has no transition for DestroyRequested; sending it throws NoTransitionException and masks the
+        // real migration error, so a Destroy-state volume skips straight to expungeVolumeAsync (which sends
+        // ExpungeRequested instead, and Destroy -> Expunging is a valid transition).
         VolumeInfo destVolume = mock(VolumeInfo.class);
         doReturn(78L).when(destVolume).getId();
         doReturn(volumeInState(Volume.State.Destroy)).when(volumeDao).findById(78L);
 
         strategy.cleanUpDestVolumesOfFailedMigration(Arrays.asList(destVolume), mock(VirtualMachineTO.class));
 
+        Mockito.verify(destVolume, Mockito.never()).processEvent(Mockito.any(Event.class));
         Mockito.verify(volumeService).expungeVolumeAsync(destVolume);
     }
 
