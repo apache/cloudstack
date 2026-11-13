@@ -179,9 +179,6 @@ public class NetworkVO implements Network {
     @Column(name = "streched_l2")
     boolean strechedL2Network = false;
 
-    @Column(name = "external_id")
-    String externalId;
-
     @Transient
     String routerIp;
 
@@ -243,7 +240,7 @@ public class NetworkVO implements Network {
     }
 
     public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText,
-            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId, final boolean isRedundant, String externalId) {
+            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId, final boolean isRedundant) {
         this(id,
             that.getTrafficType(),
             that.getMode(),
@@ -287,7 +284,6 @@ public class NetworkVO implements Network {
         if (StringUtils.isNotBlank(that.getIp6Dns2())) {
             this.ip6Dns2 = that.getIp6Dns2();
         }
-        this.externalId = externalId;
         this.publicMtu = that.getPublicMtu();
         this.privateMtu = that.getPrivateMtu();
     }
@@ -703,14 +699,6 @@ public class NetworkVO implements Network {
 
     public void setVpcId(Long vpcId) {
         this.vpcId = vpcId;
-    }
-
-    public String getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
     }
 
     public String getVlanIdAsUUID() {

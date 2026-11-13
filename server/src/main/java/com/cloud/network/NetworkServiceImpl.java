@@ -2376,7 +2376,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean displayNetwork = ! Boolean.FALSE.equals(cmd.getDisplayNetwork());
         Long aclId = cmd.getAclId();
         String isolatedPvlan = cmd.getIsolatedPvlan();
-        String externalId = cmd.getExternalId();
         String isolatedPvlanType = cmd.getIsolatedPvlanType();
         Long associatedNetworkId = cmd.getAssociatedNetworkId();
         Integer publicMtu = cmd.getPublicMtu();
@@ -2684,7 +2683,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
+                routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
 
         // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
@@ -2756,7 +2755,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return _networkMgr.createGuestNetwork(networkOfferingId, name, displayText,
                 null, null, null, false, null, owner, null, physicalNetwork, zoneId,
                 aclType, null, null, null, null, true, null,
-                null, null, null, null, null, null, null, null, null, null);
+                 null, null, null, null, null, null, null, null, null);
     }
 
     @Override
@@ -2768,7 +2767,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return _networkMgr.createGuestNetwork(networkOfferingId, name, displayText,
                 null, null, null, false, null, owner, null, physicalNetwork, zoneId,
                 aclType, null, null, null, null, true, null,
-                null, null, null, null, null, null, null, null, vrIfaceMTUs, null);
+                null, null, null, null, null, null, null, null, null);
     }
 
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
@@ -3148,7 +3147,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
-                                  final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
+                                  final String cidr, final boolean createVlan, String routerIp, String routerIpv6,
                                   final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs,
                                   final Integer networkCidrSize, final boolean keepMacAddressOnPublicNic) throws InsufficientCapacityException, ResourceAllocationException {
         try {
@@ -3206,7 +3205,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -3215,7 +3214,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
                         }
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2,
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, routerIp, routerIpv6, ip4Dns1, ip4Dns2,
                                 ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
                     }
 
