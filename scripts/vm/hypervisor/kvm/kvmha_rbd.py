@@ -50,6 +50,10 @@ MAX_OBJECT_SIZE = 1024 * 1024
 # (connecting and writing take up to TIMEOUT seconds each), so the heartbeat of a host which is alive can be older than
 # the interval. The agent stops a write after heartbeat.update.timeout (60 seconds by default), which is the longest a
 # write can take, and the agent gives it to the scripts with -w.
+#
+# The margin covers one slow write. The agent writes its pools one after another, so with several RBD pools on the same
+# slow cluster the gap between two heartbeats of a pool can be longer: an edge case, as a host is dead only if its
+# heartbeat is stale on all its pools (on one, if kvm.ha.fence.on.storage.heartbeat.failure is set).
 DEFAULT_WRITE_TIMEOUT = 2 * TIMEOUT
 
 
