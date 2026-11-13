@@ -47,6 +47,11 @@ class TestVmSnapshot(cloudstackTestCase):
             cls.unsupportedHypervisor = True
             return
 
+        list_volume_pool_response = list_storage_pools(cls.apiclient)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type == "RBD":
+            cls.skipTest(cls, reason="VM snapshot is unsupported for VMs on RBD storage pool")
+
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
