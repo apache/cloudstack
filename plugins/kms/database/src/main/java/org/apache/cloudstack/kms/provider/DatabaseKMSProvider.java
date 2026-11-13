@@ -49,9 +49,10 @@ import java.util.List;
  * Database-backed KMS provider that stores master KEKs in a PKCS#11-like object table.
  * Uses AES-256-GCM for all cryptographic operations.
  * <p>
- * This provider is suitable for deployments that don't have access to HSM hardware.
- * The master KEKs are stored encrypted in the kms_database_kek_objects table using
- * CloudStack's existing DBEncryptionUtil, with PKCS#11-compatible attributes.
+ * This provider is intended for testing and simulator use only. It is not a substitute for an HSM:
+ * the master KEKs are stored in the CloudStack database (kms_database_kek_objects table), protected
+ * only by CloudStack's existing DBEncryptionUtil, so anyone with access to the database and the
+ * management server's database encryption key can recover them.
  */
 public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(DatabaseKMSProvider.class);
@@ -62,7 +63,7 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     private static final String CKO_SECRET_KEY = "CKO_SECRET_KEY";
     private static final String CKK_AES = "CKK_AES";
 
-    private static final String DEFAULT_PROFILE_NAME = "HSM Database Provider";
+    private static final String DEFAULT_PROFILE_NAME = "Database Provider";
     private static final long SYSTEM_ACCOUNT_ID = 1L;
     private static final long ROOT_DOMAIN_ID = 1L;
 
@@ -82,6 +83,11 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     @Override
     public String getProviderName() {
         return PROVIDER_NAME;
+    }
+
+    @Override
+    public String getWrapAlgorithm(Long hsmProfileId) {
+        return ALGORITHM;
     }
 
     @Override

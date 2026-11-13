@@ -391,6 +391,25 @@ public class VolumeServiceImpl implements VolumeService {
 
     }
 
+    @Override
+    public void releaseKeysOfRemovedVolumes() {
+        // Each release keeps the key while another volume or a snapshot still needs it
+        for (VolumeVO volume : volDao.listRemovedOrExpungedWithKmsWrappedKey()) {
+            try {
+                kmsManager.deleteKMSWrappedKey(volume);
+            } catch (Exception e) {
+                logger.warn("Failed to release the KMS wrapped key of volume {}: {}", volume, e.getMessage(), e);
+            }
+        }
+        for (VolumeVO volume : volDao.listRemovedOrExpungedWithPassphrase()) {
+            try {
+                ((VolumeObject) volFactory.getVolume(volume.getId())).deletePassphrase();
+            } catch (Exception e) {
+                logger.warn("Failed to release the passphrase of volume {}: {}", volume, e.getMessage(), e);
+            }
+        }
+    }
+
     @DB
     @Override
     public AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume) {

@@ -70,7 +70,7 @@ class TestKMSLifecycle(cloudstackTestCase):
         cls._cleanup = []
 
         # The built-in database provider is seeded as a public, system-owned profile named
-        # "HSM Database Provider". listHSMProfiles has no server-side name filter, and a root
+        # "Database Provider". listHSMProfiles has no server-side name filter, and a root
         # admin's listing without listall is restricted to admin-owned profiles, so we must
         # pass listall=True and match the name client-side.
         cls.default_profile = cls._find_default_profile(cls.apiclient)
@@ -82,12 +82,12 @@ class TestKMSLifecycle(cloudstackTestCase):
 
     @staticmethod
     def _find_default_profile(apiclient):
-        """Locate the seeded public 'HSM Database Provider' profile."""
+        """Locate the seeded public 'Database Provider' profile."""
         profiles = HSMProfile.list(
-            apiclient, listall=True, keyword="HSM Database Provider"
+            apiclient, listall=True, keyword="Database Provider"
         ) or []
         for profile in profiles:
-            if profile.name == "HSM Database Provider":
+            if profile.name == "Database Provider":
                 return profile
         return None
 
@@ -219,7 +219,7 @@ class TestKMSLifecycle(cloudstackTestCase):
     def test_04_create_kms_key_admin(self):
         """Test: admin creates a KMS key in the zone, verifies fields."""
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         key_name = _random_name("kms-key")
@@ -239,7 +239,7 @@ class TestKMSLifecycle(cloudstackTestCase):
     def test_05_list_kms_keys(self):
         """Test: list KMS keys filtered by zone and by id."""
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         key = self._create_kms_key(name=_random_name("key"), profile_id=profile.id)
@@ -261,7 +261,7 @@ class TestKMSLifecycle(cloudstackTestCase):
     def test_06_update_kms_key(self):
         """Test: update key name, description, and enabled status."""
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         key = self._create_kms_key(name=_random_name("key-upd"), profile_id=profile.id)
@@ -286,7 +286,7 @@ class TestKMSLifecycle(cloudstackTestCase):
         """Test: domain user creates their own KMS key; verifies ownership."""
         # Admin creates the system HSM profile first
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         key_name = _random_name("user-key")
@@ -304,7 +304,7 @@ class TestKMSLifecycle(cloudstackTestCase):
     def test_08_list_kms_keys_user_isolation(self):
         """Test: User A's keys are NOT visible to User B."""
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         # User A key (self.user_account)
@@ -348,7 +348,7 @@ class TestKMSLifecycle(cloudstackTestCase):
     def test_09_delete_kms_key(self):
         """Test: delete a KMS key that is not in use; verify it is gone."""
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         key = self._create_kms_key(name=_random_name("key-del"), profile_id=profile.id)
@@ -372,7 +372,7 @@ class TestKMSLifecycle(cloudstackTestCase):
     def test_10_rotate_kms_key(self):
         """Test: rotate a KMS key; verify the key version increments."""
         if not self.default_profile:
-            self.skipTest("Default HSM profile 'default' not found")
+            self.skipTest("Default HSM profile 'Database Provider' not found")
         profile = self.default_profile
 
         key = self._create_kms_key(name=_random_name("key-rot"), profile_id=profile.id)

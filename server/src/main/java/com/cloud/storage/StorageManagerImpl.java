@@ -2275,6 +2275,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
                     }
                     cleanupInactiveTemplates();
+
+                    try {
+                        volService.releaseKeysOfRemovedVolumes();
+                    } catch (Exception e) {
+                        logger.error("Failed to release the encryption keys of removed volumes", e);
+                    }
                 } finally {
                     scanLock.unlock();
                 }
