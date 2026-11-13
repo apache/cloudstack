@@ -59,6 +59,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -68,6 +69,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMStorageProcessorTest {
@@ -764,5 +766,224 @@ public class KVMStorageProcessorTest {
         // The libvirt hot-plug apply-order bug is RBD-specific; other pool types are not gated, and the libvirt
         // version is not even consulted for them.
         storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.NetworkFilesystem);
+    }
+
+    private File tempMarkerDir;
+
+    private void setUpMarkerDir() throws Exception {
+        tempMarkerDir = Files.createTempDirectory("snapshot_markers_test").toFile();
+        java.lang.reflect.Field field = KVMStorageProcessor.class.getDeclaredField("SNAPSHOT_MARKER_DIR");
+        field.setAccessible(true);
+
+        java.lang.reflect.Field modifiers = java.lang.reflect.Field.class.getDeclaredField("modifiers");
+        modifiers.setAccessible(true);
+        modifiers.setInt(field, field.getModifiers() & ~java.lang.reflect.Modifier.FINAL);
+        field.set(null, tempMarkerDir.getAbsolutePath());
+    }
+
+    private void cleanUpMarkerDir() {
+        if (tempMarkerDir != null && tempMarkerDir.exists()) {
+            File[] files = tempMarkerDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    f.delete();
+                }
+            }
+            tempMarkerDir.delete();
+        }
+    }
+
+    @Test
+    public void testWriteSnapshotMarkerCreatesFile() throws Exception {
+        File markerDir = Files.createTempDirectory("marker_test").toFile();
+        try {
+            Mockito.when(kvmStoragePoolMock.getUuid()).thenReturn("pool-uuid-1");
+            storageProcessorSpy.writeSnapshotMarker(kvmStoragePoolMock, "/mnt/pool/vol1", "snap1");
+
+            File[] files = new File("/var/cache/cloudstack/snapshot_markers").listFiles(
+                    (dir, name) -> name.contains("pool-uuid-1") && name.contains("snap1"));
+            if (files != null && files.length > 0) {
+                String content = new String(Files.readAllBytes(files[0].toPath()));
+                Assert.assertTrue(content.contains("pool-uuid-1"));
+                Assert.assertTrue(content.contains("snap1"));
+                files[0].delete();
+            }
+        } finally {
+            markerDir.delete();
+        }
+    }
+
+    @Test
+    public void testWriteAndRemoveSnapshotMarker() throws Exception {
+        File markerDir = new File("/tmp/test_snapshot_markers_" + System.currentTimeMillis());
+        markerDir.mkdirs();
+        try {
+            java.lang.reflect.Field field = KVMStorageProcessor.class.getDeclaredField("SNAPSHOT_MARKER_DIR");
+            field.setAccessible(true);
+            String originalDir = (String) field.get(null);
+
+            Mockito.when(kvmStoragePoolMock.getUuid()).thenReturn("test-pool");
+
+            storageProcessorSpy.writeSnapshotMarker(kvmStoragePoolMock, "/mnt/pool/vol", "snap");
+
+            File[] written = markerDir.listFiles();
+
+            storageProcessorSpy.removeSnapshotMarker(kvmStoragePoolMock, "/mnt/pool/vol", "snap");
+        } finally {
+            File[] remaining = markerDir.listFiles();
+            if (remaining != null) {
+                for (File f : remaining) f.delete();
+            }
+            markerDir.delete();
+        }
+    }
+
+    @Test
+    public void testReconcileSnapshotMarkersNoMarkerDir() {
+        storageProcessorSpy.reconcileSnapshotMarkers();
+    }
+
+    @Test
+    public void testReconcileSingleMarkerOverlayGone() throws Exception {
+        File tempDir = Files.createTempDirectory("reconcile_test").toFile();
+        try {
+            File marker = new File(tempDir, ".snapshot_marker_test");
+            String content = "pool-uuid|/mnt/vol|snap|||| " + System.currentTimeMillis();
+            try (FileOutputStream fos = new FileOutputStream(marker)) {
+                fos.write(content.getBytes());
+            }
+
+            Mockito.when(resource.getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString()))
+                    .thenReturn("/nonexistent/overlay/path");
+
+            storageProcessorSpy.reconcileSingleMarker(marker);
+
+            Assert.assertFalse("Marker should be removed when overlay is gone", marker.exists());
+        } finally {
+            File[] files = tempDir.listFiles();
+            if (files != null) for (File f : files) f.delete();
+            tempDir.delete();
+        }
+    }
+
+    @Test
+    public void testReconcileSingleMarkerInvalidFormat() throws Exception {
+        File tempDir = Files.createTempDirectory("reconcile_invalid_test").toFile();
+        try {
+            File marker = new File(tempDir, ".snapshot_marker_invalid");
+            try (FileOutputStream fos = new FileOutputStream(marker)) {
+                fos.write("invalid".getBytes());
+            }
+
+            storageProcessorSpy.reconcileSingleMarker(marker);
+
+            Assert.assertTrue("Marker with invalid format should not be deleted", marker.exists());
+        } finally {
+            File[] files = tempDir.listFiles();
+            if (files != null) for (File f : files) f.delete();
+            tempDir.delete();
+        }
+    }
+
+    @Test
+    public void testGetVmBlockJobLockReturnsSameLockForSameVm() throws Exception {
+        java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod("getVmBlockJobLock", String.class);
+        method.setAccessible(true);
+
+        ReentrantLock lock1 = (ReentrantLock) method.invoke(storageProcessorSpy, "vm-1");
+        ReentrantLock lock2 = (ReentrantLock) method.invoke(storageProcessorSpy, "vm-1");
+        ReentrantLock lock3 = (ReentrantLock) method.invoke(storageProcessorSpy, "vm-2");
+
+        Assert.assertSame("Same VM should return same lock", lock1, lock2);
+        Assert.assertNotSame("Different VMs should return different locks", lock1, lock3);
+    }
+
+    @Test
+    public void testReconcileOfflineBaseModifiedSinceMarker() throws Exception {
+        File tempDir = Files.createTempDirectory("reconcile_offline_test").toFile();
+        try {
+            File baseFile = new File(tempDir, "base.qcow2");
+            File overlayFile = new File(tempDir, "overlay.qcow2");
+
+            try (FileOutputStream fos = new FileOutputStream(baseFile)) { fos.write("base".getBytes()); }
+            try (FileOutputStream fos = new FileOutputStream(overlayFile)) { fos.write("overlay".getBytes()); }
+
+            long markerTimestamp = System.currentTimeMillis() - 60000;
+
+            baseFile.setLastModified(System.currentTimeMillis());
+
+            File marker = new File(tempDir, ".snapshot_marker_test");
+            String content = String.join("|",
+                    "pool-uuid", baseFile.getAbsolutePath(), "snap", "vm1", "vda",
+                    overlayFile.getAbsolutePath(), String.valueOf(markerTimestamp));
+            try (FileOutputStream fos = new FileOutputStream(marker)) {
+                fos.write(content.getBytes());
+            }
+
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "reconcileOffline", String.class, String.class, File.class);
+            method.setAccessible(true);
+            method.invoke(storageProcessorSpy, baseFile.getAbsolutePath(), overlayFile.getAbsolutePath(), marker);
+
+            Assert.assertTrue("Marker should be kept when base was modified after marker", marker.exists());
+        } finally {
+            File[] files = tempDir.listFiles();
+            if (files != null) for (File f : files) f.delete();
+            tempDir.delete();
+        }
+    }
+
+    @Test
+    public void testReconcileOfflineBaseDoesNotExist() throws Exception {
+        File tempDir = Files.createTempDirectory("reconcile_nobase_test").toFile();
+        try {
+            File overlayFile = new File(tempDir, "overlay.qcow2");
+            try (FileOutputStream fos = new FileOutputStream(overlayFile)) { fos.write("overlay".getBytes()); }
+
+            File marker = new File(tempDir, ".snapshot_marker_test");
+            try (FileOutputStream fos = new FileOutputStream(marker)) { fos.write("marker".getBytes()); }
+
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "reconcileOffline", String.class, String.class, File.class);
+            method.setAccessible(true);
+            method.invoke(storageProcessorSpy, "/nonexistent/base.qcow2", overlayFile.getAbsolutePath(), marker);
+
+            Assert.assertTrue("Marker should be kept when base does not exist", marker.exists());
+        } finally {
+            File[] files = tempDir.listFiles();
+            if (files != null) for (File f : files) f.delete();
+            tempDir.delete();
+        }
+    }
+
+    @Test
+    public void testReconcileOfflineOverlayDoesNotExist() throws Exception {
+        File tempDir = Files.createTempDirectory("reconcile_nooverlay_test").toFile();
+        try {
+            File marker = new File(tempDir, ".snapshot_marker_test");
+            try (FileOutputStream fos = new FileOutputStream(marker)) { fos.write("marker".getBytes()); }
+
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "reconcileOffline", String.class, String.class, File.class);
+            method.setAccessible(true);
+            method.invoke(storageProcessorSpy, "/some/base.qcow2", "/nonexistent/overlay.qcow2", marker);
+
+            Assert.assertFalse("Marker should be removed when overlay does not exist", marker.exists());
+        } finally {
+            File[] files = tempDir.listFiles();
+            if (files != null) for (File f : files) f.delete();
+            tempDir.delete();
+        }
+    }
+
+    @Test
+    public void testUpdateSnapshotMarkerDelegatesToWrite() throws Exception {
+        Mockito.doNothing().when(storageProcessorSpy).writeSnapshotMarker(
+                Mockito.any(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+
+        storageProcessorSpy.updateSnapshotMarker(kvmStoragePoolMock, "/vol", "snap", "vm", "vda", "/overlay");
+
+        Mockito.verify(storageProcessorSpy).writeSnapshotMarker(kvmStoragePoolMock, "/vol", "snap", "vm", "vda", "/overlay");
     }
 }

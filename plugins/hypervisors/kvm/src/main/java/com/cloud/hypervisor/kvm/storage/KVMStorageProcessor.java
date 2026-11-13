@@ -18,11 +18,8 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
-import com.cloud.offering.DiskOffering;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
-
-import com.cloud.template.TemplateManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,6 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
@@ -56,12 +57,63 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rados.exceptions.ErrorCode;
+import com.ceph.rados.exceptions.RadosException;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
+import com.ceph.rbd.jna.RbdSnapInfo;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
+import com.cloud.offering.DiskOffering;
+import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageLayer;
+import com.cloud.storage.Volume;
 import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.storage.resource.StorageProcessor;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.template.TemplateManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.S3.S3Utils;
+import com.cloud.vm.VmDetailConstants;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -114,55 +166,6 @@ import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
-
-import com.ceph.rados.IoCTX;
-import com.ceph.rados.Rados;
-import com.ceph.rados.exceptions.ErrorCode;
-import com.ceph.rados.exceptions.RadosException;
-import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdException;
-import com.ceph.rbd.RbdImage;
-import com.ceph.rbd.jna.RbdSnapInfo;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
-import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
-import com.cloud.storage.JavaStorageLayer;
-import com.cloud.storage.MigrationOptions;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageLayer;
-import com.cloud.storage.Volume;
-import com.cloud.storage.resource.StorageProcessor;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.utils.Pair;
-import com.cloud.utils.UriUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.S3.S3Utils;
-import com.cloud.vm.VmDetailConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -216,6 +219,18 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private static final String DOMJOBABORT_COMMAND = "virsh domjobabort --domain %s";
 
+    private static final String SNAPSHOT_MARKER_PREFIX = ".snapshot_marker_";
+    private static final String SNAPSHOT_MARKER_DIR = "/var/cache/cloudstack/snapshot_markers";
+
+    /**
+     * Per-VM lock to serialize NAS backups (virsh backup-begin) with volume snapshots (virsh blockcommit).
+     * Both operations use libvirt block jobs on the same domain and can conflict with "disk already in active block job".
+     */
+    private final ConcurrentMap<String, ReentrantLock> vmBlockJobLocks = new ConcurrentHashMap<>();
+
+    private ReentrantLock getVmBlockJobLock(String vmName) {
+        return vmBlockJobLocks.computeIfAbsent(vmName, k -> new ReentrantLock());
+    }
     private static final String DUMMY_VM_XML = "<domain type='qemu'>\n" +
             "  <name>%s</name>\n" +
             "  <memory unit='MiB'>256</memory>\n" +
@@ -2243,9 +2258,25 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         createFolderOnCorrectStorage(primaryPool, secondaryPool, fullSnapshotPathAndDirPath);
 
-        if (Script.runSimpleBashScript(backupCommand) == null) {
-            throw new CloudRuntimeException(String.format("Error backing up using backupXML [%s], checkpointXML [%s] for volume [%s].", backupXml, checkpointXml,
-                    volumeObjectTo));
+        ReentrantLock vmLock = getVmBlockJobLock(vmName);
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = vmLock.tryLock(incrementalSnapshotTimeout, TimeUnit.MILLISECONDS);
+            if (!lockAcquired) {
+                throw new CloudRuntimeException(String.format("Could not acquire block job lock for VM [%s] within timeout [%d ms]. Another block job (snapshot/backup) may be in progress.", vmName, incrementalSnapshotTimeout));
+            }
+
+            if (Script.runSimpleBashScript(backupCommand) == null) {
+                throw new CloudRuntimeException(String.format("Error backing up using backupXML [%s], checkpointXML [%s] for volume [%s].", backupXml, checkpointXml,
+                        volumeObjectTo));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException("Interrupted while waiting for block job lock for VM [" + vmName + "]", e);
+        } finally {
+            if (lockAcquired) {
+                vmLock.unlock();
+            }
         }
 
         try {
@@ -2516,9 +2547,15 @@ public class KVMStorageProcessor implements StorageProcessor {
                 ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
 
         validateAvailableSizeOnPoolToTakeVolumeSnapshot(primaryPool, disk);
+
+        writeSnapshotMarker(primaryPool, diskPath, snapshotName);
+
         String relativePath = null;
         try {
             String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
+
+            String overlayPath = resource.getSnapshotTemporaryPath(diskPath, snapshotName);
+            updateSnapshotMarker(primaryPool, diskPath, snapshotName, vmName, diskLabel, overlayPath);
 
             Pair<String, String> fullSnapPathAndDirPath = getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(primaryPool, secondaryPool, snapshotName, volume, false);
 
@@ -2528,10 +2565,29 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
-            resource.mergeDeltaIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
+            ReentrantLock vmLock = getVmBlockJobLock(vmName);
+            boolean lockAcquired = false;
+            try {
+                lockAcquired = vmLock.tryLock(incrementalSnapshotTimeout, TimeUnit.MILLISECONDS);
+                if (!lockAcquired) {
+                    throw new CloudRuntimeException(String.format("Could not acquire block job lock for VM [%s] within timeout [%d ms]. Another block job (snapshot/backup) may be in progress.", vmName, incrementalSnapshotTimeout));
+                }
+
+                resource.mergeDeltaIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CloudRuntimeException("Interrupted while waiting for block job lock for VM [" + vmName + "]", e);
+            } finally {
+                if (lockAcquired) {
+                    vmLock.unlock();
+                }
+            }
+
+            removeSnapshotMarker(primaryPool, diskPath, snapshotName);
 
             validateConvertResult(convertResult, snapshotPath);
         } catch (LibvirtException e) {
+            removeSnapshotMarker(primaryPool, diskPath, snapshotName);
             if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
                 throw e;
             }
@@ -3608,5 +3664,232 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         return storagePoolMgr.getStoragePool(migrationOptions.getSrcPoolType(), migrationOptions.getSrcPoolUuid());
+    }
+
+    /**
+     * Write a marker file before creating a snapshot overlay.
+     * Marker format: poolUuid|volumePath|snapshotName|vmName|diskLabel|overlayPath|timestamp
+     */
+    protected void writeSnapshotMarker(KVMStoragePool pool, String volumePath, String snapshotName) {
+        writeSnapshotMarker(pool, volumePath, snapshotName, null, null, null);
+    }
+
+    protected void writeSnapshotMarker(KVMStoragePool pool, String volumePath, String snapshotName,
+                                       String vmName, String diskLabel, String overlayPath) {
+        try {
+            File markerDir = new File(SNAPSHOT_MARKER_DIR);
+            if (!markerDir.exists()) {
+                markerDir.mkdirs();
+            }
+            String markerName = SNAPSHOT_MARKER_PREFIX + pool.getUuid() + "_" + volumePath.replace("/", "_") + "_" + snapshotName;
+            File markerFile = new File(markerDir, markerName);
+            String content = String.join("|",
+                    pool.getUuid(),
+                    volumePath,
+                    snapshotName,
+                    StringUtils.defaultString(vmName),
+                    StringUtils.defaultString(diskLabel),
+                    StringUtils.defaultString(overlayPath),
+                    String.valueOf(System.currentTimeMillis()));
+            try (FileOutputStream fos = new FileOutputStream(markerFile)) {
+                fos.write(content.getBytes());
+            }
+            logger.debug("Wrote snapshot marker: {}", markerFile.getAbsolutePath());
+        } catch (IOException e) {
+            logger.warn("Failed to write snapshot marker for volume {} snapshot {}: {}", volumePath, snapshotName, e.getMessage());
+        }
+    }
+
+    protected void updateSnapshotMarker(KVMStoragePool pool, String volumePath, String snapshotName,
+                                        String vmName, String diskLabel, String overlayPath) {
+        writeSnapshotMarker(pool, volumePath, snapshotName, vmName, diskLabel, overlayPath);
+    }
+
+    /**
+     * Remove the snapshot marker after successful merge.
+     */
+    protected void removeSnapshotMarker(KVMStoragePool pool, String volumePath, String snapshotName) {
+        try {
+            String markerName = SNAPSHOT_MARKER_PREFIX + pool.getUuid() + "_" + volumePath.replace("/", "_") + "_" + snapshotName;
+            File markerFile = new File(SNAPSHOT_MARKER_DIR, markerName);
+            if (markerFile.exists()) {
+                markerFile.delete();
+                logger.debug("Removed snapshot marker: {}", markerFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to remove snapshot marker for volume {} snapshot {}: {}", volumePath, snapshotName, e.getMessage());
+        }
+    }
+
+    /**
+     * Reconcile incomplete snapshots by checking for marker files on agent startup.
+     * If a marker exists, the agent died during a snapshot and the merge may not have completed.
+     *
+     * Strategy per marker:
+     * - Overlay gone: snapshot completed or was cleaned up, remove marker
+     * - VM still running on overlay: blockcommit --active --pivot back to base
+     * - VM already on base: overlay is orphaned, remove marker
+     * - Domain gone, overlay exists: offline qemu-img commit
+     * - Base modified since marker: cannot safely commit, alert and keep marker
+     */
+    protected void reconcileSnapshotMarkers() {
+        File markerDir = new File(SNAPSHOT_MARKER_DIR);
+        if (!markerDir.exists() || !markerDir.isDirectory()) {
+            return;
+        }
+
+        File[] markers = markerDir.listFiles((dir, name) -> name.startsWith(SNAPSHOT_MARKER_PREFIX));
+        if (markers == null || markers.length == 0) {
+            return;
+        }
+
+        logger.info("Found {} snapshot marker(s) to reconcile", markers.length);
+        for (File marker : markers) {
+            reconcileSingleMarker(marker);
+        }
+    }
+
+    protected void reconcileSingleMarker(File marker) {
+        try {
+            String content = new String(Files.readAllBytes(marker.toPath())).trim();
+            String[] parts = content.split("\\|", -1);
+            if (parts.length < 3) {
+                logger.error("Invalid snapshot marker format in {}: {}", marker.getName(), content);
+                return;
+            }
+
+            String poolUuid = parts[0];
+            String volumePath = parts[1];
+            String snapshotName = parts[2];
+            String vmName = parts.length > 3 ? parts[3] : "";
+            String diskLabel = parts.length > 4 ? parts[4] : "";
+            String overlayPath = parts.length > 5 ? parts[5] : "";
+
+            if (StringUtils.isEmpty(overlayPath)) {
+                overlayPath = resource.getSnapshotTemporaryPath(volumePath, snapshotName);
+            }
+
+            logger.warn("Reconciling incomplete snapshot: pool={}, volume={}, snapshot={}, vm={}, disk={}, overlay={}",
+                    poolUuid, volumePath, snapshotName, vmName, diskLabel, overlayPath);
+
+            File overlayFile = new File(overlayPath);
+            if (!overlayFile.exists()) {
+                logger.info("Overlay file {} no longer exists. Snapshot may have completed or been cleaned up. Removing marker.", overlayPath);
+                marker.delete();
+                return;
+            }
+
+            if (StringUtils.isNotEmpty(vmName)) {
+                if (reconcileWithRunningDomain(vmName, diskLabel, volumePath, overlayPath, marker)) {
+                    return;
+                }
+            }
+
+            reconcileOffline(volumePath, overlayPath, marker);
+
+        } catch (IOException e) {
+            logger.error("Failed to read snapshot marker {}: {}", marker.getName(), e.getMessage());
+        }
+    }
+
+    private boolean reconcileWithRunningDomain(String vmName, String diskLabel, String volumePath,
+                                               String overlayPath, File marker) {
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            Domain vm = conn.domainLookupByName(vmName);
+            if (vm == null) {
+                return false;
+            }
+
+            String xmlDesc = vm.getXMLDesc(0);
+            LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+            parser.parseDomainXML(xmlDesc);
+
+            for (DiskDef disk : parser.getDisks()) {
+                String currentSource = disk.getDiskPath();
+                if (currentSource != null && currentSource.equals(overlayPath)) {
+                    logger.warn("VM [{}] disk [{}] is still on overlay [{}]. Attempting blockcommit to merge back to base [{}].",
+                            vmName, disk.getDiskLabel(), overlayPath, volumePath);
+
+                    String actualDiskLabel = StringUtils.isNotEmpty(diskLabel) ? diskLabel : disk.getDiskLabel();
+                    try {
+                        resource.mergeDeltaIntoBaseFile(vm, actualDiskLabel, volumePath, null, true, "reconcile", null, conn);
+                        logger.info("Successfully reconciled overlay [{}] back to base [{}] for VM [{}].", overlayPath, volumePath, vmName);
+                        marker.delete();
+                        return true;
+                    } catch (Exception e) {
+                        logger.error("Failed to blockcommit overlay [{}] for VM [{}]: {}. Manual intervention required.",
+                                overlayPath, vmName, e.getMessage(), e);
+                        return true;
+                    }
+                }
+
+                if (currentSource != null && currentSource.equals(volumePath)) {
+                    logger.info("VM [{}] disk [{}] is already on base [{}]. Overlay [{}] is orphaned. Removing marker.",
+                            vmName, disk.getDiskLabel(), volumePath, overlayPath);
+                    marker.delete();
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (LibvirtException e) {
+            logger.debug("VM [{}] not found or not running: {}. Will attempt offline reconciliation.", vmName, e.getMessage());
+            return false;
+        }
+    }
+
+    private void reconcileOffline(String volumePath, String overlayPath, File marker) {
+        File baseFile = new File(volumePath);
+        File overlayFile = new File(overlayPath);
+
+        if (!overlayFile.exists()) {
+            logger.info("Overlay [{}] no longer exists. Removing marker.", overlayPath);
+            marker.delete();
+            return;
+        }
+
+        if (!baseFile.exists()) {
+            logger.error("Base file [{}] does not exist but overlay [{}] does. Cannot reconcile. Manual intervention required.", volumePath, overlayPath);
+            return;
+        }
+
+        long markerTimestamp = 0;
+        try {
+            String content = new String(Files.readAllBytes(marker.toPath())).trim();
+            String[] parts = content.split("\\|", -1);
+            if (parts.length > 6) {
+                markerTimestamp = Long.parseLong(parts[6]);
+            }
+        } catch (Exception e) {
+            logger.debug("Could not parse marker timestamp", e);
+        }
+
+        if (markerTimestamp > 0 && baseFile.lastModified() > markerTimestamp) {
+            logger.error("Base file [{}] has been modified since snapshot marker was written (base modified={}, marker={}). "
+                    + "The overlay [{}] cannot be safely committed. Manual intervention required — keeping marker.",
+                    volumePath, baseFile.lastModified(), markerTimestamp, overlayPath);
+            return;
+        }
+
+        try {
+            logger.warn("Attempting offline qemu-img commit of overlay [{}] into base [{}].", overlayPath, volumePath);
+            String commitCommand = String.format("qemu-img commit %s", overlayPath);
+            String result = Script.runSimpleBashScript(commitCommand);
+            if (result != null) {
+                logger.warn("qemu-img commit output: {}", result);
+            }
+
+            logger.info("Successfully committed overlay [{}] into base [{}]. Removing marker.", overlayPath, volumePath);
+            marker.delete();
+
+            if (overlayFile.exists()) {
+                overlayFile.delete();
+                logger.debug("Deleted orphan overlay file [{}].", overlayPath);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to offline-commit overlay [{}] into base [{}]: {}. Manual intervention required.",
+                    overlayPath, volumePath, e.getMessage(), e);
+        }
     }
 }

@@ -22,10 +22,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -253,5 +255,44 @@ public class AgentTest {
         verify(mockConnection).stop();
         verify(mockConnection).cleanUp();
         verify(mockBackoff, times(3)).waitBeforeRetry();
+    }
+
+    @Test
+    public void testWaitForCommandsAndReconnectNoCommandsInProgress() throws ConfigurationException {
+        Agent spyAgent = spy(new Agent(shell, 1, serverResource));
+        ReflectionTestUtils.setField(spyAgent, "logger", logger);
+        doNothing().when(spyAgent).reconnect(any(Link.class));
+
+        Link mockLink = mock(Link.class);
+        spyAgent.commandsInProgress.set(0);
+        spyAgent.waitForCommandsAndReconnect(mockLink);
+
+        verify(spyAgent).reconnect(mockLink);
+        verify(logger).info(eq("Reconnecting instead of exiting to avoid losing in-flight work (e.g. snapshot overlays)."));
+    }
+
+    @Test
+    public void testWaitForCommandsAndReconnectCommandsCompleteBeforeTimeout() throws ConfigurationException {
+        Agent spyAgent = spy(new Agent(shell, 1, serverResource));
+        ReflectionTestUtils.setField(spyAgent, "logger", logger);
+        doNothing().when(spyAgent).reconnect(any(Link.class));
+
+        Link mockLink = mock(Link.class);
+        spyAgent.commandsInProgress.set(1);
+
+        Thread decrementThread = new Thread(() -> {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            spyAgent.commandsInProgress.set(0);
+        });
+        decrementThread.start();
+
+        spyAgent.waitForCommandsAndReconnect(mockLink);
+
+        verify(spyAgent).reconnect(mockLink);
+        verify(logger).info(eq("All in-progress commands completed. Proceeding with reconnect."));
     }
 }
