@@ -33,6 +33,8 @@ public class ResizeVolumeCommand extends Command {
     private boolean shrinkOk;
     private String vmInstance;
     private String chainInfo;
+    private Long newReadRateIops;
+    private Long newWriteRateIops;
 
     /* For managed storage */
     private boolean managed;
@@ -70,9 +72,15 @@ public class ResizeVolumeCommand extends Command {
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
                                boolean isManaged, String iScsiName) {
         this(path, pool, currentSize, newSize, shrinkOk, vmInstance);
-
         this.iScsiName = iScsiName;
         this.managed = isManaged;
+    }
+
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
+                               String chainInfo, byte[] passphrase, String encryptFormat, Long newReadRateIops, Long newWriteRateIops) {
+        this(path, pool, currentSize, newSize, shrinkOk, vmInstance, chainInfo, passphrase, encryptFormat);
+        this.newReadRateIops = newReadRateIops;
+        this.newWriteRateIops = newWriteRateIops;
     }
 
     public String getPath() {
@@ -119,5 +127,13 @@ public class ResizeVolumeCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public Long getNewReadRateIops() {
+        return newReadRateIops;
+    }
+
+    public Long getNewWriteRateIops() {
+        return newWriteRateIops;
     }
 }
