@@ -158,6 +158,8 @@ public class KubernetesClusterActionWorker {
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
     public static final String CKS_SECURITY_GROUP_DESCRIPTION = "Security group for CKS nodes";
     public static final String CKS_CONFIG_PATH = "/usr/share/cloudstack-management/cks";
+    public static final String KUBE_CONFIG_DATA_DETAIL = "kubeConfigData";
+    protected static final long KUBE_CONFIG_REFRESH_TIMEOUT_MS = 2 * 60 * 1000L;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -754,6 +756,83 @@ public class KubernetesClusterActionWorker {
             }
         }
         return vmList;
+    }
+
+    /**
+     * @return the control node VMs of the cluster, ordered by VM ID, which is the order they were created and
+     * received their SSH port forwarding rules in
+     */
+    protected List<UserVm> getControlNodeVMs() {
+        List<UserVm> controlVms = new ArrayList<>();
+        List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), CONTROL);
+        List<Long> controlVmIds;
+        if (CollectionUtils.isNotEmpty(vmMaps)) {
+            controlVmIds = vmMaps.stream().map(KubernetesClusterVmMapVO::getVmId).sorted().collect(Collectors.toList());
+        } else {
+            // clusters created before the control node flag was recorded: by position, after any etcd nodes
+            List<KubernetesClusterVmMapVO> allVmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+            if (CollectionUtils.isEmpty(allVmMaps)) {
+                return controlVms;
+            }
+            long etcdNodes = Objects.requireNonNullElse(kubernetesCluster.getEtcdNodeCount(), 0L);
+            controlVmIds = allVmMaps.stream().map(KubernetesClusterVmMapVO::getVmId).sorted()
+                    .skip(etcdNodes).limit(Math.max(1, kubernetesCluster.getControlNodeCount())).collect(Collectors.toList());
+        }
+        for (Long vmId : controlVmIds) {
+            UserVm vm = userVmDao.findById(vmId);
+            if (vm != null) {
+                controlVms.add(vm);
+            }
+        }
+        return controlVms;
+    }
+
+    /**
+     * Returns the address and port to SSH to one control node. {@link #publicIpAddress} and {@link #sshPort} must be
+     * set. On directly reachable (shared or routed) networks it is the VM's own address. Otherwise it is the cluster's
+     * public IP with the port of the SSH port forwarding rule of the VM, falling back to the port assigned by position
+     * (control nodes are the first nodes behind {@link #CLUSTER_NODES_DEFAULT_START_SSH_PORT}) when there is no rule,
+     * e.g. behind an external load balancer.
+     */
+    protected Pair<String, Integer> getControlNodeSshEndpoint(UserVm vm, int controlNodeIndex) {
+        if (sshPort == DEFAULT_SSH_PORT) {
+            return new Pair<>(vm.getPrivateIpAddress(), DEFAULT_SSH_PORT);
+        }
+        List<PortForwardingRuleVO> rules = portForwardingRulesDao.listByVm(vm.getId());
+        if (CollectionUtils.isNotEmpty(rules)) {
+            for (PortForwardingRuleVO rule : rules) {
+                if (rule.getDestinationPortStart() != DEFAULT_SSH_PORT || rule.getState() == FirewallRule.State.Revoke) {
+                    continue;
+                }
+                // only the cluster's own rule, not one a user added on another public IP
+                IPAddressVO ruleIp = ipAddressDao.findById(rule.getSourceIpAddressId());
+                if (ruleIp != null && publicIpAddress.equals(ruleIp.getAddress().addr())) {
+                    return new Pair<>(publicIpAddress, rule.getSourcePortStart());
+                }
+            }
+        }
+        return new Pair<>(publicIpAddress, sshPort + controlNodeIndex);
+    }
+
+    /**
+     * Reads the kubeconfig from the control node reachable at {@link #publicIpAddress}:{@link #sshPort}, points it at
+     * {@link #apiPublicIpAddress} and stores it as the cluster's kubeConfigData, which getKubernetesClusterConfig
+     * returns. Called after every operation that can issue a new admin certificate (start, upgrade, certificate
+     * rotation), as the stored copy otherwise keeps the old certificate until it expires.
+     * @return true if a kubeconfig was read and stored
+     */
+    protected boolean refreshKubeConfigData(final long timeoutTime) {
+        String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, getControlNodeLoginUser(), getManagementServerSshPublicKeyFile(), timeoutTime);
+        if (StringUtils.isEmpty(kubeConfig)) {
+            return false;
+        }
+        final String controlVMPrivateIpAddress = getControlVmPrivateIp();
+        if (StringUtils.isNotEmpty(controlVMPrivateIpAddress) && StringUtils.isNotEmpty(apiPublicIpAddress)) {
+            kubeConfig = kubeConfig.replace(String.format("server: https://%s:%d", controlVMPrivateIpAddress, CLUSTER_API_PORT),
+                    String.format("server: https://%s:%d", apiPublicIpAddress, CLUSTER_API_PORT));
+        }
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), KUBE_CONFIG_DATA_DETAIL, Base64.encodeBase64String(kubeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset())), false);
+        return true;
     }
 
     protected void updateLoginUserDetails(List<Long> clusterVMs) {

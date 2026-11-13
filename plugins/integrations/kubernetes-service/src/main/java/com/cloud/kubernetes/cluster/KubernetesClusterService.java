@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesCl
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RotateKubernetesClusterCertificatesCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
@@ -143,6 +144,43 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Start port for Port forwarding rules for etcd nodes",
             true,
             KubernetesServiceEnabled.key());
+    ConfigKey<Integer> KubernetesClusterCertificateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
+            "cloud.kubernetes.cluster.certificate.check.interval",
+            "6",
+            "Interval (in hours) at which the control plane certificate expiry of each running CloudManaged Kubernetes cluster " +
+                    "is checked with 'kubeadm certs check-expiration'. 0 disables the check and the automatic renewal",
+            true,
+            KubernetesServiceEnabled.key());
+    ConfigKey<String> KubernetesClusterCertificateExpiryAlertDays = new ConfigKey<>("Advanced", String.class,
+            "cloud.kubernetes.cluster.certificate.expiry.alert.days",
+            "60,30",
+            "Comma-separated list of days before a Kubernetes cluster control plane certificate (or certificate authority) " +
+                    "expires at which an alert and an event are raised. Each threshold alerts once per expiry date",
+            true,
+            KubernetesServiceEnabled.key());
+    ConfigKey<Boolean> KubernetesClusterCertificateAutoRenewEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "cloud.kubernetes.cluster.certificate.auto.renew.enabled",
+            "true",
+            "Indicates whether the control plane certificates of a CloudManaged Kubernetes cluster are renewed automatically, " +
+                    "one control node at a time, when they are about to expire. Requires Kubernetes 1.20 or later",
+            true,
+            ConfigKey.Scope.Account,
+            KubernetesServiceEnabled.key());
+    ConfigKey<Integer> KubernetesClusterCertificateAutoRenewDays = new ConfigKey<>("Advanced", Integer.class,
+            "cloud.kubernetes.cluster.certificate.auto.renew.days",
+            "30",
+            "Number of days before the first control plane certificate of a Kubernetes cluster expires at which the " +
+                    "certificates are renewed automatically, when cloud.kubernetes.cluster.certificate.auto.renew.enabled is true. " +
+                    "Values above 180 are treated as 180",
+            true,
+            ConfigKey.Scope.Account,
+            KubernetesServiceEnabled.key());
+    ConfigKey<Long> KubernetesClusterCertificateRotationTimeout = new ConfigKey<>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.certificate.rotation.timeout",
+            "3600",
+            "Timeout interval (in seconds) in which the certificate rotation of a Kubernetes cluster should be completed",
+            true,
+            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 
@@ -171,6 +209,8 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean rotateKubernetesClusterCertificates(RotateKubernetesClusterCertificatesCmd cmd) throws CloudRuntimeException;
 
     boolean updateKubernetesClusterAffinityGroups(UpdateKubernetesClusterAffinityGroupCmd cmd) throws CloudRuntimeException;
 
