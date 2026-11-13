@@ -25,16 +25,19 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.MacAddress;
 
+// Holds the management server ID and shares it with other CloudStack components
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 
-    private static final long s_nodeId = MacAddress.getMacAddress().toLong();
+    // Load the ID once and keep the same value for the life of this process
+    private static final long s_nodeId = ManagementServerId.get();
 
+    // Register this component to run early during CloudStack startup
     public ManagementServerNode() {
         setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
 
+    // A valid server ID must be greater than zero
     @Override
     public void check() {
         if (s_nodeId <= 0) {
@@ -42,10 +45,12 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
         }
     }
 
+    // Other components call this to get the same server ID
     public static long getManagementServerId() {
         return s_nodeId;
     }
 
+    // Check the ID during startup. Log an error and stop if the check fails
     @Override
     public boolean start() {
         try {

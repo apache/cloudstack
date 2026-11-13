@@ -862,7 +862,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.security.CertificateHelper;
 import com.cloud.utils.ssh.SSHKeysHelper;
@@ -1209,9 +1208,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return _detailsDao.findDetail(hostId, name);
     }
 
+    // Return the persistent server ID shared by the other CloudStack components
     @Override
     public long getId() {
-        return MacAddress.getMacAddress().toLong();
+        return ManagementServerNode.getManagementServerId();
     }
 
     protected void checkPortParameters(final String publicPort, final String privatePort, final String privateIp, final String proto) {
