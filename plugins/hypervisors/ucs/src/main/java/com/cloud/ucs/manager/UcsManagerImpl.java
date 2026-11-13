@@ -46,7 +46,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -175,7 +174,7 @@ public class UcsManagerImpl implements UcsManager, Configurable {
     @Override
     public boolean start() {
         try {
-            syncBladeInterval = Integer.parseInt(configDao.getValue(Config.UCSSyncBladeInterval.key()));
+            syncBladeInterval = UCSSyncBladeInterval.value();
         } catch (NumberFormatException e) {
             syncBladeInterval = 600;
         }

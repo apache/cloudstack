@@ -37,15 +37,14 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.server.ManagementServer;
 
 public class SshKeysDistriMonitor implements Listener {
     protected Logger logger = LogManager.getLogger(getClass());
     AgentManager _agentMgr;
-    private ConfigurationDao _configDao;
 
     public SshKeysDistriMonitor(AgentManager mgr, HostDao host, ConfigurationDao config) {
         _agentMgr = mgr;
-        _configDao = config;
     }
 
     @Override
@@ -93,8 +92,8 @@ public class SshKeysDistriMonitor implements Listener {
                 ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
             /*TODO: Get the private/public keys here*/
 
-            String pubKey = _configDao.getValue("ssh.publickey");
-            String prvKey = _configDao.getValue("ssh.privatekey");
+            String pubKey = ManagementServer.SshPublicKey.value();
+            String prvKey = ManagementServer.SshPrivateKey.value();
 
             try {
                 ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
