@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -935,7 +936,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("status", Status.Up);
         sc.setParameters("resourceState", ResourceState.Enabled);
 
-        return listBy(sc);
+        // The tag join carries no DISTINCT, so a host comes back once per non-rule tag it holds.
+        // Callers read this as a set of candidate hosts, so collapse the repeats here rather than
+        // leave each of them to cope with the same host arriving more than once.
+        Map<Long, HostVO> distinctHosts = new LinkedHashMap<>();
+        for (HostVO host : listBy(sc)) {
+            distinctHosts.putIfAbsent(host.getId(), host);
+        }
+        return new ArrayList<>(distinctHosts.values());
     }
 
     @Override

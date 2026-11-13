@@ -122,6 +122,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd implements DomainAndZoneIdRes
     @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "The cache mode to use for this disk offering", since = "4.15")
     private String cacheMode;
 
+    @Parameter(name = ApiConstants.ERROR_POLICY, type = CommandType.STRING, description = "The disk error policy to use for this disk offering. Only applicable to KVM", since = "24.0.0")
+    private String errorPolicy;
+
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the disk offering")
     private String diskOfferingState;
 
@@ -163,6 +166,10 @@ public class UpdateDiskOfferingCmd extends BaseCmd implements DomainAndZoneIdRes
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
     }
 
     public Long getBytesReadRate() {

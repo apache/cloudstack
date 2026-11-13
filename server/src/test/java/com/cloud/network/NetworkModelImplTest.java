@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -71,7 +72,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
@@ -451,5 +456,55 @@ public class NetworkModelImplTest {
 
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
+    }
+
+    @Test
+    public void getNicAndIpInNetworkReturnsPrimaryNicWhenItMatches() {
+        NicDao nicDao = mock(NicDao.class);
+        networkModel._nicDao = nicDao;
+        NicVO nic = mock(NicVO.class);
+        when(nic.getIPv4Address()).thenReturn("10.1.1.5");
+        when(nic.getIPv6Address()).thenReturn(null);
+        when(nicDao.findByNtwkIdAndInstanceId(205L, 5L)).thenReturn(nic);
+
+        Pair<Nic, Network.IpAddresses> result = networkModel.getNicAndIpInNetwork(5L, 205L);
+
+        assertEquals(nic, result.first());
+        assertEquals("10.1.1.5", result.second().getIp4Address());
+    }
+
+    @Test
+    public void getNicAndIpInNetworkFallsBackToTrunkAssociationWhenNoPrimaryMatch() {
+        NicDao nicDao = mock(NicDao.class);
+        NicNetworkMapDao nicNetworkMapDao = mock(NicNetworkMapDao.class);
+        networkModel._nicDao = nicDao;
+        networkModel._nicNetworkMapDao = nicNetworkMapDao;
+
+        when(nicDao.findByNtwkIdAndInstanceId(206L, 5L)).thenReturn(null);
+        NicVO trunkNic = mock(NicVO.class);
+        when(trunkNic.getId()).thenReturn(11L);
+        when(nicDao.listByVmId(5L)).thenReturn(Collections.singletonList(trunkNic));
+        NicNetworkMapVO association = mock(NicNetworkMapVO.class);
+        when(association.getIp4Address()).thenReturn("10.1.1.60");
+        when(association.getIp6Address()).thenReturn(null);
+        when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(association);
+
+        Pair<Nic, Network.IpAddresses> result = networkModel.getNicAndIpInNetwork(5L, 206L);
+
+        assertEquals(trunkNic, result.first());
+        assertEquals("10.1.1.60", result.second().getIp4Address());
+    }
+
+    @Test
+    public void getNicAndIpInNetworkReturnsNullWhenVmHasNoNicInNetworkAtAll() {
+        NicDao nicDao = mock(NicDao.class);
+        NicNetworkMapDao nicNetworkMapDao = mock(NicNetworkMapDao.class);
+        networkModel._nicDao = nicDao;
+        networkModel._nicNetworkMapDao = nicNetworkMapDao;
+
+        when(nicDao.findByNtwkIdAndInstanceId(207L, 5L)).thenReturn(null);
+        when(nicDao.listByVmId(5L)).thenReturn(new ArrayList<>());
+
+        assertNull(networkModel.getNicAndIpInNetwork(5L, 207L));
     }
 }

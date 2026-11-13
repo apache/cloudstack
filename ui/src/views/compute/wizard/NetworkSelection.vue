@@ -219,13 +219,17 @@ export default {
         return {
           type: 'radio',
           selectedRowKeys: this.selectedRowKeys,
+          // without this, antd drops any selected key not in the current page's dataSource on every change
+          preserveSelectedRowKeys: true,
           onChange: this.onSelectRow
         }
       } else {
         return {
           type: 'checkbox',
           selectedRowKeys: this.selectedRowKeys,
+          preserveSelectedRowKeys: true,
           onChange: (rows) => {
+            this.selectedRowKeys = rows
             this.$emit('select-network-item', rows)
           }
         }
