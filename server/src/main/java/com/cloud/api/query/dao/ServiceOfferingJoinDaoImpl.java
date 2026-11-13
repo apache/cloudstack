@@ -171,6 +171,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
+        offeringResponse.setErrorPolicy(offering.getErrorPolicy());
         offeringResponse.setDynamicScalingEnabled(offering.isDynamicScalingEnabled());
         offeringResponse.setEncryptRoot(offering.getEncryptRoot());
 

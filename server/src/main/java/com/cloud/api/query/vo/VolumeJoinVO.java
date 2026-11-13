@@ -222,6 +222,9 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "cache_mode")
     String cacheMode;
 
+    @Column(name = "error_policy")
+    String errorPolicy;
+
     @Column(name = "pool_id")
     private long poolId;
 
@@ -500,6 +503,10 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
     }
 
     public long getPoolId() {

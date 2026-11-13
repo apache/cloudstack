@@ -156,11 +156,18 @@ then
   exit 0
 elif [ "$cflag" == "1" ]
 then
-  /usr/bin/logger -t heartbeat "kvmheartbeat.sh will reboot system because it was unable to write the heartbeat to the storage."
-  sync &
-  sleep 5
-  echo b > /proc/sysrq-trigger
-  exit $?
+  # If the shared helper cannot be loaded (missing file, no permission, partial upgrade),
+  # fall back to the original hard-reboot so a failed heartbeat still fences the host.
+  # shellcheck disable=SC1091
+  if ! . "$(dirname "$0")/kvmha-fence.sh" || ! declare -F fence_action > /dev/null; then
+    "${FENCE_LOGGER:-/usr/bin/logger}" -t heartbeat "kvmheartbeat.sh: ERROR could not load kvmha-fence.sh; falling back to hard-reboot."
+    "${FENCE_LOGGER:-/usr/bin/logger}" -t heartbeat "kvmheartbeat.sh will reboot system because it was unable to write the heartbeat to the storage."
+    sync &
+    sleep 5
+    echo b > "${FENCE_SYSRQ_TRIGGER:-/proc/sysrq-trigger}"
+    exit $?
+  fi
+  fence_action "kvmheartbeat.sh"
 else
   write_hbLog
   exit $?
