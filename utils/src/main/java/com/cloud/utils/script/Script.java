@@ -898,8 +898,11 @@ public class Script implements Callable<String> {
 
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
-        if (script.execute(parser) != null) {
-            throw new CloudRuntimeException(String.format("Error executing command [%s]", script));
+        String executeResult = script.execute(parser);
+        if (executeResult != null) {
+            String output = parser.getLines();
+            String errorDetail = (output != null && !output.trim().isEmpty()) ? output.trim() : executeResult;
+            throw new CloudRuntimeException(String.format("Error executing command [%s]: %s", script, errorDetail));
         }
         return parser.getLines();
     }
