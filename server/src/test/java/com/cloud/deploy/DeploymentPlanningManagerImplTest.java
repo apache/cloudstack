@@ -1148,7 +1148,7 @@ public class DeploymentPlanningManagerImplTest {
     }
 
     /**
-     * Issue #5803: A regular user in the same domain as a domain-dedicated pod
+     * A regular user in the same domain as a domain-dedicated pod
      * must be allowed to deploy on that pod (i.e., the pod must NOT appear in the avoid list).
      */
     @Test
@@ -1316,7 +1316,7 @@ public class DeploymentPlanningManagerImplTest {
     }
 
     /**
-     * Issue #5803: the same domain-dedication rule applied to pods above must also apply to
+     * The same domain-dedication rule applied to pods above must also apply to
      * clusters and hosts, since findAvoidSetForNonExplicitUserVM handles all three resource types.
      */
     @Test
@@ -1368,7 +1368,7 @@ public class DeploymentPlanningManagerImplTest {
     }
 
     /**
-     * Issue #5803: the same account-dedication rule applied to pods above must also apply to
+     * The same account-dedication rule applied to pods above must also apply to
      * clusters and hosts, since findAvoidSetForNonExplicitUserVM handles all three resource types.
      */
     @Test

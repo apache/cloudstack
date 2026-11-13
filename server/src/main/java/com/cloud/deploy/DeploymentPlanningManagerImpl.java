@@ -199,6 +199,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
+    private static final String EXPLICIT_DEDICATION_AFFINITY_GROUP_TYPE = "ExplicitDedication";
     protected long _nodeId = -1;
     protected static final List<HypervisorType> DEPLOYMENT_PLANNING_SKIP_HYPERVISORS = Arrays.asList(
             HypervisorType.BareMetal, HypervisorType.External);
@@ -977,7 +978,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // check affinity group of type Explicit dedication exists. If No put
         // dedicated pod/cluster/host in avoid list
-        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), "ExplicitDedication");
+        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), EXPLICIT_DEDICATION_AFFINITY_GROUP_TYPE);
 
         if (vmGroupMappings != null && !vmGroupMappings.isEmpty()) {
             isExplicit = true;
@@ -1091,45 +1092,51 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         long vmAccountId = vm.getAccountId();
         long vmDomainId = vm.getDomainId();
 
-        List<Long> allowedDedicatedPodIds = new ArrayList<>();
-        List<Long> allowedDedicatedClusterIds = new ArrayList<>();
-        List<Long> allowedDedicatedHostIds = new ArrayList<>();
-
         // If the VM owner's domain has an ExplicitDedication domain-level affinity group,
-        // resources dedicated to that domain are accessible to the VM owner (fixes issue #5803).
+        // resources dedicated to that domain are accessible to the VM owner as well.
         boolean hasDomainExplicitDedicationGroup =
-                _affinityGroupDao.findDomainLevelGroupByType(vmDomainId, "ExplicitDedication") != null;
+                _affinityGroupDao.findDomainLevelGroupByType(vmDomainId, EXPLICIT_DEDICATION_AFFINITY_GROUP_TYPE) != null;
 
         // Sort by id ascending, no pagination — retrieve all dedicated resources for this domain/account
         Filter filter = new Filter(DedicatedResourceVO.class, "id", true);
 
-        // Always allow resources dedicated to the VM owner's account.
-        for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, filter).first()) {
-            allowedDedicatedPodIds.add(vo.getPodId());
-        }
-        for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, filter).first()) {
-            allowedDedicatedClusterIds.add(vo.getClusterId());
-        }
-        for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, filter).first()) {
-            allowedDedicatedHostIds.add(vo.getHostId());
-        }
-
-        if (hasDomainExplicitDedicationGroup) {
-            // Domain has explicit dedication affinity groups: also allow resources dedicated to this domain
-            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, filter).first()) {
+        // Only query the resource types that have dedicated entries in this DC.
+        if (!allPodsInDc.isEmpty()) {
+            Set<Long> allowedDedicatedPodIds = new HashSet<>();
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, filter).first()) {
                 allowedDedicatedPodIds.add(vo.getPodId());
             }
-            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null, filter).first()) {
+            if (hasDomainExplicitDedicationGroup) {
+                for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, filter).first()) {
+                    allowedDedicatedPodIds.add(vo.getPodId());
+                }
+            }
+            allPodsInDc.removeAll(allowedDedicatedPodIds);
+        }
+        if (!allClustersInDc.isEmpty()) {
+            Set<Long> allowedDedicatedClusterIds = new HashSet<>();
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, filter).first()) {
                 allowedDedicatedClusterIds.add(vo.getClusterId());
             }
-            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null, filter).first()) {
+            if (hasDomainExplicitDedicationGroup) {
+                for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null, filter).first()) {
+                    allowedDedicatedClusterIds.add(vo.getClusterId());
+                }
+            }
+            allClustersInDc.removeAll(allowedDedicatedClusterIds);
+        }
+        if (!allHostsInDc.isEmpty()) {
+            Set<Long> allowedDedicatedHostIds = new HashSet<>();
+            for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, filter).first()) {
                 allowedDedicatedHostIds.add(vo.getHostId());
             }
+            if (hasDomainExplicitDedicationGroup) {
+                for (DedicatedResourceVO vo : _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null, filter).first()) {
+                    allowedDedicatedHostIds.add(vo.getHostId());
+                }
+            }
+            allHostsInDc.removeAll(allowedDedicatedHostIds);
         }
-
-        allPodsInDc.removeAll(allowedDedicatedPodIds);
-        allClustersInDc.removeAll(allowedDedicatedClusterIds);
-        allHostsInDc.removeAll(allowedDedicatedHostIds);
 
         logger.debug(() -> LogUtils.logGsonWithoutException("Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of user VM [%s], "
                         + "because this VM is not dedicated to these components.", allPodsInDc, allClustersInDc, allHostsInDc, vm));
