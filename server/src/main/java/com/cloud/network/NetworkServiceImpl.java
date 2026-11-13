@@ -858,6 +858,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RELEASE, eventDescription = "disassociating portable Ip", async = true)
     public boolean releasePortableIpAddress(long ipAddressId) {
         try {
@@ -2098,6 +2099,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "releasing Reserved Ip", async = false)
     public boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
         IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
@@ -2114,6 +2116,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
     public boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
         return releaseIpAddressInternal(ipAddressId);
@@ -2121,6 +2124,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @DB
     private boolean releaseIpAddressInternal(long ipAddressId) throws InsufficientAddressCapacityException {
+        IPAddressVO ip = _ipAddressDao.acquireInLockTable(ipAddressId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find or lock IP address by id");
+        }
+        try {
+            return releaseIpAddressLocked(ipAddressId);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipAddressId);
+        }
+    }
+
+    private boolean releaseIpAddressLocked(long ipAddressId) throws InsufficientAddressCapacityException {
         Long userId = CallContext.current().getCallingUserId();
         Account caller = CallContext.current().getCallingAccount();
 
@@ -2138,6 +2153,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, true, ipVO);
+        }
+
+        if (_networkModel.isIpAddressReserved(ipVO)) {
+            throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be released");
         }
 
         Network guestNetwork = null;
@@ -4800,9 +4819,48 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    @DB
     public Vpc migrateVpcNetwork(long vpcId, long vpcOfferingId, Map<String, String> networkToOffering, Account account, User callerUser, boolean resume) {
-        //Check if a previous migration run failed and try to resume if resume = true
         ResourceTag relatedVpc = _resourceTagDao.findByKey(vpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION);
+        long originalVpcId = relatedVpc != null && resume ? Long.parseLong(relatedVpc.getValue()) : vpcId;
+        List<Long> vpcIds = Arrays.asList(vpcId, originalVpcId).stream().distinct().sorted().collect(Collectors.toList());
+        List<Long> lockedVpcIds = new ArrayList<>();
+        try {
+            // Exclude gateway creation on both VPCs without holding the numeric VPC locks
+            // needed by router workers during tier implementation and cleanup.
+            for (Long id : vpcIds) {
+                if (!_vpcDao.lockInLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + id)) {
+                    throw new CloudRuntimeException("Unable to lock VPC for migration");
+                }
+                lockedVpcIds.add(id);
+                Vpc vpc = _vpcDao.findById(id);
+                if (vpc == null) {
+                    throw new InvalidParameterValueException("Unable to find VPC for migration");
+                }
+                _accountMgr.checkAccess(account, null, true, vpc);
+                for (IPAddressVO ip : _ipAddressDao.listByAssociatedVpc(id, null)) {
+                    if (_networkModel.isIpAddressReserved(ip)) {
+                        throw new InvalidParameterValueException("VPC has an IP reserved by a network provider; remove the provider endpoint before migration");
+                    }
+                }
+            }
+            ResourceTag currentRelatedVpc = _resourceTagDao.findByKey(vpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION);
+            if (!Objects.equals(relatedVpc == null ? null : relatedVpc.getValue(),
+                    currentRelatedVpc == null ? null : currentRelatedVpc.getValue())) {
+                throw new CloudRuntimeException("VPC migration state changed while acquiring its lock; retry the operation");
+            }
+            return migrateVpcNetworkLocked(vpcId, vpcOfferingId, networkToOffering, account, callerUser, resume, currentRelatedVpc);
+        } finally {
+            Collections.reverse(lockedVpcIds);
+            for (Long id : lockedVpcIds) {
+                _vpcDao.unlockFromLockTable(NetworkMigrationManager.VPC_MIGRATION_LOCK_PREFIX + id);
+            }
+        }
+    }
+
+    private Vpc migrateVpcNetworkLocked(long vpcId, long vpcOfferingId, Map<String, String> networkToOffering,
+                                        Account account, User callerUser, boolean resume, ResourceTag relatedVpc) {
+        //Check if a previous migration run failed and try to resume if resume = true
         long vpcCopyId = 0;
 
         /*

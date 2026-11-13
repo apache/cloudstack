@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
@@ -69,6 +70,8 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnTunnelInterface;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
@@ -80,6 +83,7 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
@@ -140,6 +144,9 @@ public class ApiResponseHelperTest {
 
     @Mock
     ResourceIconManager resourceIconManager;
+
+    @Mock
+    Site2SiteVpnManager site2SiteVpnManager;
 
     @Mock
     private ConsoleSessionVO consoleSessionMock;
@@ -256,6 +263,24 @@ public class ApiResponseHelperTest {
         ApiResponseHelper.setResponseIpAddress(result, response);
 
         assertTrue(response.getIpAddr().equals("ipv4"));
+    }
+
+    @Test
+    public void createSite2SiteVpnConnectionResponseIncludesTunnelInterfaceConfiguration() {
+        Site2SiteVpnConnection connection = Mockito.mock(Site2SiteVpnConnection.class);
+        when(connection.getUuid()).thenReturn("connection-uuid");
+        when(connection.getState()).thenReturn(Site2SiteVpnConnection.State.Connected);
+        when(site2SiteVpnManager.getSite2SiteVpnTunnelInterface(connection)).thenReturn(
+                new Site2SiteVpnTunnelInterface("169.254.64.21", "169.254.64.22", 30));
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            Site2SiteVpnConnectionResponse response =
+                    apiResponseHelper.createSite2SiteVpnConnectionResponse(connection);
+
+            assertEquals("169.254.64.21", response.getLocalVtiIp());
+            assertEquals("169.254.64.22", response.getPeerVtiIp());
+            assertEquals(Integer.valueOf(30), response.getVtiPrefixLength());
+        }
     }
 
     private void setResult(NicSecondaryIp result, String ipv4, String ipv6) {

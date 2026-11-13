@@ -352,6 +352,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
             validateFirewallRuleForVpc(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type, resolvedVpcId, trafficType);
 
+            if (ipAddress != null && _networkModel.isIpAddressReserved(ipAddress)) {
+                throw new InvalidParameterValueException("IP address is reserved by a network provider and cannot be used for " + Service.Firewall.getName());
+            }
+
             if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
                 throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
             }
