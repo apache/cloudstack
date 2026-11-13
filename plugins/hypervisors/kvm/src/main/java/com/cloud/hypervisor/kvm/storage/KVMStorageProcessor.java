@@ -188,7 +188,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
     // "No secret with id '...-format-encryption-secret0'". Booting a VM from an encrypted disk is unaffected (the
     // QEMU command line resolves all -object before -blockdev). See qemuBlockStorageSourceAttachApply() in libvirt.
-    private static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
+    public static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
     /**
      * Time interval before rechecking virsh commands
      */
@@ -664,7 +664,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk volume = secondaryStoragePool.getPhysicalDisk(srcVolumeName);
 
-            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
+            // the file tells the format: a volume from RBD or CLVM is RAW, but its copy on secondary storage is qcow2
+            volume.setFormat(srcVolumeName.endsWith(".qcow2") ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.valueOf(srcFormat.toString()));
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
 
@@ -1817,7 +1818,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         if (poolType == StoragePoolType.RBD
                 && resource.getHypervisorLibvirtVersion() < MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
             throw new CloudRuntimeException("Libvirt version 10.1.0 required to attach an encrypted RBD volume to a running VM, but version "
-                    + resource.getHypervisorLibvirtVersion() + " detected. Booting a VM from an encrypted RBD disk is not affected.");
+                    + LibvirtComputingResource.prettyVersion(resource.getHypervisorLibvirtVersion()) + " detected. Booting a VM from an encrypted RBD disk is not affected.");
         }
     }
 
@@ -3399,6 +3400,16 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new DirectDownloadAnswer(true, template.getSize(), template.getName());
     }
 
+    /**
+     * CLVM and CLVM_NG volumes are named after the logical volume, without a file extension. The name of an RBD image
+     * survives an online migration to a file based pool, where the block copy writes a qcow2 file, so a ".raw"
+     * extension would outlive the format it names.
+     */
+    protected String generateVolumeName(StoragePoolType poolType, ImageFormat format) {
+        String volumeName = UUID.randomUUID().toString();
+        return ClvmPoolManager.isClvmPoolType(poolType) || StoragePoolType.RBD.equals(poolType) ? volumeName : volumeName + "." + format.getFileExtension();
+    }
+
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         final DataTO srcData = cmd.getSrcTO();
@@ -3452,8 +3463,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
                 destFormat = getFormat(destPoolDefaultFormat);
-                final String volumeName = UUID.randomUUID().toString();
-                destVolumeName = volumeName + "." + destFormat.getFileExtension();
+                destVolumeName = generateVolumeName(destPrimaryStore.getPoolType(), destFormat);
 
                 // Update path in the command for reconciliation
                 if (StringUtils.isBlank(destVolumePath)) {
@@ -3496,7 +3506,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setPath(path);
             ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
             newVol.setFormat(newVolumeFormat);
-            newVol.setEncryptFormat(destVol.getEncryptFormat());
+            // an encrypted volume copied to another kind of pool is encrypted differently (librbd LUKS2 on RBD, qemu LUKS otherwise)
+            newVol.setEncryptFormat(newVolume.getQemuEncryptFormat() != null ? newVolume.getQemuEncryptFormat().toString() : destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);

@@ -56,6 +56,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected StoragePool _pool;
     protected String authUsername;
     protected String authSecret;
+    protected String authSecretUUID;
     protected String sourceHost;
     protected int sourcePort;
     protected String sourceDir;
@@ -307,6 +308,15 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     public void setType(StoragePoolType type) {
         this.type = type;
+    }
+
+    @Override
+    public String getAuthSecretUUID() {
+        return authSecretUUID;
+    }
+
+    public void setAuthSecretUUID(String authSecretUUID) {
+        this.authSecretUUID = authSecretUUID;
     }
 
     public StoragePool getPool() {

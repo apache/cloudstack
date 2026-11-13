@@ -44,6 +44,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -90,11 +91,33 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
         Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
         for (VolumeInfo volumeInfo : volumeInfoSet) {
             StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-            if (!supportStoragePoolType(storagePoolVO.getPoolType())) {
+            if (!supportStoragePoolType(storagePoolVO.getPoolType()) && !isRbdSourceSupported(storagePoolVO, volumeMap.get(volumeInfo))) {
                 return StrategyPriority.CANT_HANDLE;
             }
         }
         return StrategyPriority.HYPERVISOR;
+    }
+
+    /**
+     * True if the volume lives on an RBD pool and goes to an RBD, NFS, SharedMountPoint, local or CLVM/CLVM_NG pool, which can be in
+     * another cluster. The Instance is live migrated with its disk copied over NBD to an image or file on the
+     * destination pool. A volume which stays on its
+     * pool is not copied (see {@link #shouldMigrateVolume}).
+     */
+    protected boolean isRbdSourceSupported(StoragePoolVO sourcePool, DataStore destDataStore) {
+        if (sourcePool == null || destDataStore == null || sourcePool.getPoolType() != StoragePoolType.RBD) {
+            return false;
+        }
+        StoragePoolVO destPool = _storagePoolDao.findById(destDataStore.getId());
+        return destPool != null && isDestinationOfRbdSource(destPool.getPoolType());
+    }
+
+    /**
+     * An RBD volume can be copied to an RBD, NFS, SharedMountPoint, local or CLVM/CLVM_NG pool.
+     */
+    protected boolean isDestinationOfRbdSource(StoragePoolType destPoolType) {
+        return destPoolType == StoragePoolType.RBD || ClvmPoolManager.isClvmPoolType(destPoolType)
+                || supportStoragePoolType(destPoolType, StoragePoolType.Filesystem);
     }
 
     /**
@@ -173,6 +196,10 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             return String.format("/dev/%s/%s", vgName, destVolumeInfo.getUuid());
         }
 
+        if (destStoragePool.getPoolType() == StoragePoolType.RBD) {
+            return String.format("%s/%s", destStoragePool.getPath(), destVolumeInfo.getUuid());
+        }
+
         return new File(destStoragePool.getPath(), destVolumeInfo.getUuid()).getAbsolutePath();
     }
 
@@ -210,7 +237,9 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      */
     @Override
     protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
-        return supportStoragePoolType(sourceStoragePool.getPoolType());
+        return supportStoragePoolType(sourceStoragePool.getPoolType())
+                || (sourceStoragePool.getPoolType() == StoragePoolType.RBD && sourceStoragePool.getId() != destStoragePool.getId()
+                && isDestinationOfRbdSource(destStoragePool.getPoolType()));
     }
 
     /**

@@ -124,6 +124,14 @@ public class MigrateVolumeCommand extends Command {
         return destData;
     }
 
+    public void setSrcData(DataTO srcData) {
+        this.srcData = srcData;
+    }
+
+    public void setDestData(DataTO destData) {
+        this.destData = destData;
+    }
+
     public void setSrcDetails(Map<String, String> details) {
         srcDetails = details;
     }
