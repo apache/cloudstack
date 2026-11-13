@@ -5432,6 +5432,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public void validateRootDiskResize(final HypervisorType hypervisorType, Long rootDiskSize, VMTemplateVO templateVO, UserVmVO vm, final Map<String, String> customParameters) throws InvalidParameterValueException
     {
+        if (_itMgr.isBlankInstanceDefaultTemplate(templateVO)) {
+            logger.debug("{} is the default blank Instance template, skipping root disk size validation", templateVO);
+            return;
+        }
         // rootdisksize must be larger than template.
         boolean isIso = ImageFormat.ISO == templateVO.getFormat();
         if ((rootDiskSize << 30) < templateVO.getSize()) {

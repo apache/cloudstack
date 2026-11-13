@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.veeam.api.request;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -79,6 +80,47 @@ public class ListQueryTest {
 
         // Only page key is extracted from search clause in oVirt format "page N"
         org.junit.Assert.assertEquals(Long.valueOf(3L), query.getPage());
+    }
+
+    private ListQuery queryWithSearch(String search) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameterMap()).thenReturn(Map.of("search", new String[]{search}));
+        when(request.getParameter("search")).thenReturn(search);
+        return ListQuery.fromRequest(request);
+    }
+
+    @Test
+    public void testFromRequest_SearchParserExtractsNameAndPage() {
+        final ListQuery query = queryWithSearch("name=data* page 2");
+
+        assertEquals("data*", query.getSearchName());
+        assertEquals("data%", query.getSearchNameLikePattern());
+        assertEquals(Long.valueOf(2L), query.getPage());
+    }
+
+    @Test
+    public void testFromRequest_SearchParserExtractsQuotedName() {
+        assertEquals("my pool", queryWithSearch("name = \"my pool\"").getSearchName());
+    }
+
+    @Test
+    public void testFromRequest_SortByNameIsNotANameClause() {
+        assertNull(queryWithSearch("sortby name page 3").getSearchName());
+    }
+
+    @Test
+    public void testFromRequest_IgnoresQualifiedNameClause() {
+        assertNull(queryWithSearch("vms.name=vm1").getSearchName());
+    }
+
+    @Test
+    public void testGetSearchNameLikePattern_MatchAllWildcardReturnsNull() {
+        assertNull(queryWithSearch("name=*").getSearchNameLikePattern());
+    }
+
+    @Test
+    public void testGetSearchNameLikePattern_EscapesLikeSpecialChars() {
+        assertEquals("pool\\_1\\%%", queryWithSearch("name=pool_1%*").getSearchNameLikePattern());
     }
 
     @Test

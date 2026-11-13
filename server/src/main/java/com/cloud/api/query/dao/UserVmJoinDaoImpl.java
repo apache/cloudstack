@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -957,6 +958,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             return Collections.emptyList();
         }
         SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
+        // The view has a row per VM volume, NIC, tag, etc., so select distinct VM ids to page over VMs
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId());
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
         if (CollectionUtils.isNotEmpty(excludeTypes)) {
@@ -984,6 +987,18 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (domainPathNotBlank) {
             sc.setParameters("domainPath", domainPath + "%");
         }
-        return listBy(sc, filter);
+        List<Long> vmIds = listBy(sc, filter).stream().map(UserVmJoinVO::getId).collect(Collectors.toList());
+        return listOneRowPerVm(vmIds);
+    }
+
+    protected List<UserVmJoinVO> listOneRowPerVm(List<Long> vmIds) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return Collections.emptyList();
+        }
+        Map<Long, UserVmJoinVO> vmsById = new HashMap<>();
+        for (UserVmJoinVO vm : searchByIds(vmIds.toArray(new Long[0]))) {
+            vmsById.putIfAbsent(vm.getId(), vm);
+        }
+        return vmIds.stream().map(vmsById::get).filter(Objects::nonNull).collect(Collectors.toList());
     }
 }
