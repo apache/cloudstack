@@ -239,7 +239,7 @@ public class RbdEncryption {
             secretParams.put(QemuObject.ObjectParameter.FILE, passFile.toString());
             QemuObject luksSecret = new QemuObject(QemuObject.ObjectType.SECRET, secretParams);
 
-            QemuImg qemu = createQemuImg();
+            QemuImg qemu = createQemuImg(0);
             qemu.convertIntoExistingTarget(srcQemuFile, null, List.of(luksSecret), srcImageOpts, destImageOpts, forceSourceFormat);
             logger.debug("Imported template into encrypted RBD image {}", imageSpec);
         } catch (IOException | QemuImgException | LibvirtException ex) {
@@ -251,10 +251,48 @@ public class RbdEncryption {
     }
 
     /**
+     * Rewrite an RBD image from one of its snapshots, writing out the zero ranges too ({@code -S 0}),
+     * so the image has no holes. Used on a template before taking the snapshot encrypted roots are
+     * cloned from: a hole in that parent reads as garbage through the clone's encryption once a
+     * guest write copies up the object around it.
+     *
+     * @param timeout qemu-img timeout in milliseconds; the copy writes the whole virtual size of the image
+     */
+    public void copyTemplateDense(String monHost, int monPort, String authUser, String authSecret,
+                                  String cephPool, String image, String srcSnapshot, long timeout) {
+        Path conf = null;
+        Path keyring = null;
+        try {
+            final FileAttribute<?> ownerOnly = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"));
+            keyring = Files.createTempFile("cs-ceph-", ".keyring", ownerOnly);
+            Files.writeString(keyring, "[client." + authUser + "]\n\tkey = " + authSecret + "\n");
+            conf = Files.createTempFile("cs-ceph-", ".conf", ownerOnly);
+            Files.writeString(conf, "[global]\nmon_host = " + monSpec(monHost, monPort) + "\nkeyring = " + keyring + "\n");
+
+            QemuImgFile srcQemuFile = new QemuImgFile(cephPool + "/" + image + "@" + srcSnapshot, QemuImg.PhysicalDiskFormat.RAW);
+            Map<String, String> srcParams = rbdImageOptions(cephPool, image, conf.toString(), authUser);
+            srcParams.put("snapshot", srcSnapshot);
+            QemuImageOptions srcImageOpts = new QemuImageOptions(srcParams);
+            srcImageOpts.setImageOptsFlag(true);
+            QemuImageOptions destImageOpts = new QemuImageOptions(rbdImageOptions(cephPool, image, conf.toString(), authUser));
+
+            QemuImg qemu = createQemuImg(timeout);
+            qemu.setWriteZeroRanges(true);
+            qemu.convertIntoExistingTarget(srcQemuFile, null, null, srcImageOpts, destImageOpts, false);
+            logger.debug("Rewrote RBD image {}/{} from @{} without holes", cephPool, image, srcSnapshot);
+        } catch (IOException | QemuImgException | LibvirtException ex) {
+            throw new CloudRuntimeException(String.format("Failed to rewrite RBD image %s/%s from @%s", cephPool, image, srcSnapshot), ex);
+        } finally {
+            deleteQuietly(conf);
+            deleteQuietly(keyring);
+        }
+    }
+
+    /**
      * Seam for unit tests; {@link QemuImg} probes the qemu version through libvirt on construction.
      */
-    protected QemuImg createQemuImg() throws QemuImgException, LibvirtException {
-        return new QemuImg(0);
+    protected QemuImg createQemuImg(long timeout) throws QemuImgException, LibvirtException {
+        return new QemuImg(timeout);
     }
 
     /** qemu image options addressing an RBD image (as used with --image-opts / --target-image-opts). */

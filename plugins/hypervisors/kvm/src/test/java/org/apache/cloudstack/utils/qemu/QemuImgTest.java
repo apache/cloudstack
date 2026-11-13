@@ -343,6 +343,41 @@ public class QemuImgTest {
     }
 
     @Test
+    public void testConvertWriteZeroRangesAllocatesTheWholeDestination() throws QemuImgException, LibvirtException {
+        // qemu-img skips the source's zero ranges by default, so the destination keeps its holes.
+        // That is wrong for an image whose unallocated ranges are not read as zeros - an RBD image
+        // with a librbd LUKS header, cloned, is the case setWriteZeroRanges exists for.
+        String srcPath = "/tmp/" + UUID.randomUUID() + ".raw";
+        String sparsePath = "/tmp/" + UUID.randomUUID() + ".raw";
+        String densePath = "/tmp/" + UUID.randomUUID() + ".raw";
+        long size = 16L * 1024 * 1024;
+
+        QemuImgFile srcFile = new QemuImgFile(srcPath, size, PhysicalDiskFormat.RAW);
+        QemuImg qemu = new QemuImg(0);
+        qemu.create(srcFile);
+        // data in the first MiB only: the remaining 15 MiB of the source are zeros
+        Script.runSimpleBashScript(String.format("dd if=/dev/urandom of=%s bs=1M count=1 conv=notrunc 2>/dev/null", srcPath));
+
+        qemu.convert(srcFile, new QemuImgFile(sparsePath, PhysicalDiskFormat.RAW));
+        qemu.setWriteZeroRanges(true);
+        qemu.convert(srcFile, new QemuImgFile(densePath, PhysicalDiskFormat.RAW));
+
+        long apparent = Long.parseLong(Script.runSimpleBashScript(String.format("stat -c %%s %s", densePath)));
+        long sparseAllocated = Long.parseLong(Script.runSimpleBashScript(String.format("du --block-size=1 %s | cut -f1", sparsePath)));
+        long denseAllocated = Long.parseLong(Script.runSimpleBashScript(String.format("du --block-size=1 %s | cut -f1", densePath)));
+
+        assertEquals(size, apparent);
+        assertTrue("the default convert should have left the zero ranges unallocated, allocated " + sparseAllocated,
+                sparseAllocated < size);
+        assertTrue("-S 0 should have written every zero range, allocated " + denseAllocated,
+                denseAllocated >= size);
+
+        assertTrue(new File(srcPath).delete());
+        assertTrue(new File(sparsePath).delete());
+        assertTrue(new File(densePath).delete());
+    }
+
+    @Test
     public void testConvertBasic() throws QemuImgException, LibvirtException {
         long srcSize = 20480;
         String srcFileName = "/tmp/" + UUID.randomUUID() + ".qcow2";

@@ -1401,7 +1401,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     && srcPool.getSourceHost().equals(destPool.getSourceHost())
                     && srcPool.getSourceDir().equals(destPool.getSourceDir());
             if (sameClusterRbd) {
-                return createEncryptedRootCoWClone(template, destPool, newUuid, disk, passphrase);
+                return createEncryptedRootCoWClone(template, destPool, newUuid, disk, passphrase, timeout);
             }
             return createEncryptedRootFullCopy(srcPool, template, destPool, newUuid, disk, passphrase);
         }
@@ -1563,6 +1563,64 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     /**
+     * Create and protect a snapshot of a template image. Fine if another host created it at the same time.
+     */
+    private void createProtectedSnapshot(RbdImage templateImage, String snapshotName) throws RbdException {
+        try {
+            templateImage.snapCreate(snapshotName);
+            templateImage.snapProtect(snapshotName);
+        } catch (RbdException e) {
+            if (!templateImage.snapIsProtected(snapshotName)) {
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Prepare the template snapshot encrypted roots are cloned from, once per template per pool: grow the
+     * template by {@link #LUKS2_HEADER_RESERVE_BYTES}, rewrite it without holes and take the snapshot.
+     * Nothing to do if the snapshot exists. If this fails before the snapshot is taken, the next deploy
+     * from the template starts over.
+     *
+     * @param timeout limit for the rewrite of the template, which writes its whole virtual size
+     */
+    void prepareLuksTemplateSnapshot(RbdImage templateImage, KVMPhysicalDisk template, KVMStoragePool destPool,
+            String luksSnapshotName, long timeout) throws RbdException {
+        boolean luksSnapshotExists = false;
+        boolean baseSnapshotExists = false;
+        for (RbdSnapInfo snapshotInfo : templateImage.snapList()) {
+            if (luksSnapshotName.equals(snapshotInfo.name)) {
+                luksSnapshotExists = true;
+            } else if (rbdTemplateSnapName.equals(snapshotInfo.name)) {
+                baseSnapshotExists = true;
+            }
+        }
+        if (luksSnapshotExists) {
+            return;
+        }
+        // the rewrite below reads the template from its base snapshot, which only the plaintext clone path
+        // creates: take it here when the first deploy from this template is encrypted
+        if (!baseSnapshotExists) {
+            createProtectedSnapshot(templateImage, rbdTemplateSnapName);
+        }
+        templateImage.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
+        // fill the template's holes first: an encrypted clone reads a hole in its parent as
+        // garbage once a guest write copies up the object around it
+        createRbdEncryption().copyTemplateDense(destPool.getSourceHost(), destPool.getSourcePort(),
+                destPool.getAuthUserName(), destPool.getAuthSecret(), destPool.getSourceDir(),
+                template.getName(), rbdTemplateSnapName, timeout);
+        createProtectedSnapshot(templateImage, luksSnapshotName);
+        logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), luksSnapshotName);
+    }
+
+    /**
+     * Seam for unit tests.
+     */
+    protected RbdEncryption createRbdEncryption() {
+        return new RbdEncryption();
+    }
+
+    /**
      * Option A (thin CoW encrypted root), used when the template already lives on the same RBD cluster
      * as the destination pool. Per the Ceph "Image Encryption" clone recipe: grow the template base to
      * reserve LUKS2-header space, snapshot+protect that grown state, clone from it, apply a LUKS2 header,
@@ -1572,8 +1630,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * @return the encrypted CoW clone, or {@code null} if the Ceph operations failed
      */
     private KVMPhysicalDisk createEncryptedRootCoWClone(KVMPhysicalDisk template, KVMStoragePool destPool,
-            String newUuid, KVMPhysicalDisk disk, byte[] passphrase) {
-        String luksReservedSnapshotName = rbdTemplateSnapName + "-luks";
+            String newUuid, KVMPhysicalDisk disk, byte[] passphrase, long timeout) {
+        // not "-luks": templates prepared before carry a snapshot of that name that still has holes
+        String luksReservedSnapshotName = rbdTemplateSnapName + "-luks2";
         Rados radosConnection = null;
         IoCTX ioContext = null;
         Rbd rbdClient = null;
@@ -1587,19 +1646,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
             rbdClient = new Rbd(ioContext);
             templateImage = rbdClient.open(template.getName());
-            boolean luksSnapshotExists = false;
-            for (RbdSnapInfo snapshotInfo : templateImage.snapList()) {
-                if (luksReservedSnapshotName.equals(snapshotInfo.name)) {
-                    luksSnapshotExists = true;
-                    break;
-                }
-            }
-            if (!luksSnapshotExists) {
-                templateImage.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
-                templateImage.snapCreate(luksReservedSnapshotName);
-                templateImage.snapProtect(luksReservedSnapshotName);
-                logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), luksReservedSnapshotName);
-            }
+            prepareLuksTemplateSnapshot(templateImage, template, destPool, luksReservedSnapshotName, timeout);
             rbdClient.clone(template.getName(), luksReservedSnapshotName, ioContext, newUuid, RBD_FEATURES, rbdOrder);
         } catch (RadosException | RbdException e) {
             logger.error("Failed to create encrypted CoW clone {}: {}", newUuid, e.getMessage());
