@@ -651,3 +651,6 @@ WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;
 -- usage records introduced in 4.22.1 (cumulative and per-VM) can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
 CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
+-- Index event lookups by resource, e.g. the latest snapshot outcome events of a volume
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_event__resource_id__resource_type__type', 'cloud.event', '(`resource_id`, `resource_type`, `type`, `created`)');
