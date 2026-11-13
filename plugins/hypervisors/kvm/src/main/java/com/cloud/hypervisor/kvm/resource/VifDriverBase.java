@@ -31,6 +31,7 @@ import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.utils.script.Script;
 
 public abstract class VifDriverBase implements VifDriver {
 
@@ -79,6 +80,18 @@ public abstract class VifDriverBase implements VifDriver {
 
     public boolean isExistingBridge(String bridgeName) {
         return false;
+    }
+
+    /**
+     * Enable IPv6 on the control network bridge so the host can reach the
+     * IPv6 link-local address system VMs listen on. Only link-local is wanted,
+     * so Router Advertisements and SLAAC are disabled on the bridge.
+     */
+    protected void enableBridgeIpv6LinkLocal(String bridgeName) {
+        logger.info("Enabling IPv6 link-local on bridge {}", bridgeName);
+        Script.runSimpleBashScript("sysctl -qw net.ipv6.conf." + bridgeName + ".accept_ra=0" +
+                " net.ipv6.conf." + bridgeName + ".autoconf=0" +
+                " net.ipv6.conf." + bridgeName + ".disable_ipv6=0");
     }
 
     protected static int getNetworkRateKbps(NicTO nic) {
