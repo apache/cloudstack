@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
+import org.apache.cloudstack.api.command.LdapTestConfigurationCmd;
 import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.command.UnlinkDomainFromLdapCmd;
@@ -40,6 +41,8 @@ public interface LdapManager extends PluggableService {
     LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException;
 
     LdapConfigurationResponse addConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
+
+    void testConnection(LdapTestConfigurationCmd cmd) throws InvalidParameterValueException;
 
     boolean canAuthenticate(String principal, String password, final Long domainId);
 

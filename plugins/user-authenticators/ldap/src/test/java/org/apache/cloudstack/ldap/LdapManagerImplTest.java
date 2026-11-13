@@ -18,13 +18,17 @@ package org.apache.cloudstack.ldap;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.api.command.LdapTestConfigurationCmd;
 import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
+import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.junit.After;
 import org.junit.Before;
@@ -36,12 +40,16 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.naming.NamingException;
 import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -51,6 +59,11 @@ import static org.mockito.Mockito.when;
  * Tests {@link LdapManagerImpl#linkAccountToLdap}: re-linking an account replaces its own
  * mapping, refuses a group already claimed by another live account, and leaves no mapping
  * persisted if clearing the old one fails.
+ * <p>
+ * Tests {@link LdapManagerImpl#testConnection} and {@link LdapManagerImpl#addConfiguration}:
+ * testing a connection binds to the LDAP server (defaulting the port to 389 when omitted) but
+ * never persists a configuration, whether the bind succeeds or fails; adding a configuration
+ * still binds before persisting, and does not persist when the bind fails.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class LdapManagerImplTest {
@@ -75,21 +88,34 @@ public class LdapManagerImplTest {
     @Mock
     private RoleService roleServiceMock;
 
+    @Mock
+    private LdapConfigurationDao ldapConfigurationDaoMock;
+
+    @Mock
+    private LdapContextFactory ldapContextFactoryMock;
+
+    @Mock
+    private AccountManager accountManagerMock;
+
     @Before
     public void setup() {
         ldapConfigurationMockedStatic = Mockito.mockStatic(LdapConfiguration.class, Mockito.CALLS_REAL_METHODS);
-        when(LdapConfiguration.getBaseDn(DOMAIN_ID)).thenReturn("dc=my,dc=domain,dc=com");
+        // lenient: the connection tests do not use the link-account stubs
+        lenient().when(LdapConfiguration.getBaseDn(DOMAIN_ID)).thenReturn("dc=my,dc=domain,dc=com");
 
         ldapManager = new LdapManagerImpl();
         ldapManager._ldapTrustMapDao = ldapTrustMapDaoMock;
         ReflectionTestUtils.setField(ldapManager, "domainDao", domainDaoMock);
         ReflectionTestUtils.setField(ldapManager, "accountDao", accountDaoMock);
-        when(domainDaoMock.findById(DOMAIN_ID)).thenReturn(new DomainVO());
+        ReflectionTestUtils.setField(ldapManager, "_ldapConfigurationDao", ldapConfigurationDaoMock);
+        ReflectionTestUtils.setField(ldapManager, "_ldapContextFactory", ldapContextFactoryMock);
+        ReflectionTestUtils.setField(ldapManager, "accountManager", accountManagerMock);
+        lenient().when(domainDaoMock.findById(DOMAIN_ID)).thenReturn(new DomainVO());
 
         AccountVO existingAccount = new AccountVO("jdoe", DOMAIN_ID, null, Account.Type.NORMAL, null, "acct-uuid");
         ReflectionTestUtils.setField(existingAccount, "id", ACCOUNT_ID);
-        when(accountDaoMock.findActiveAccount("jdoe", DOMAIN_ID)).thenReturn(existingAccount);
-        when(ldapTrustMapDaoMock.persist(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(accountDaoMock.findActiveAccount("jdoe", DOMAIN_ID)).thenReturn(existingAccount);
+        lenient().when(ldapTrustMapDaoMock.persist(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @After
@@ -172,6 +198,77 @@ public class LdapManagerImplTest {
         verify(ldapTrustMapDaoMock, never()).persist(any());
     }
 
+    @Test
+    public void testConnectionDoesNotPersistOnSuccess() throws Exception {
+        LdapTestConfigurationCmd cmd = buildTestCmd("ldap.example.com", 389);
+
+        ldapManager.testConnection(cmd);
+
+        verify(ldapContextFactoryMock).createBindContext("ldap://ldap.example.com:389", DOMAIN_ID);
+        verify(ldapConfigurationDaoMock, never()).persist(any());
+    }
+
+    @Test
+    public void testConnectionDefaultsPortWhenNotGiven() throws Exception {
+        LdapTestConfigurationCmd cmd = buildTestCmd("ldap.example.com", 0);
+
+        ldapManager.testConnection(cmd);
+
+        verify(ldapContextFactoryMock).createBindContext("ldap://ldap.example.com:389", DOMAIN_ID);
+    }
+
+    @Test
+    public void testConnectionThrowsOnBindFailure() throws Exception {
+        LdapTestConfigurationCmd cmd = buildTestCmd("ldap.example.com", 389);
+        doThrow(new NamingException("bind failed")).when(ldapContextFactoryMock).createBindContext(any(), anyLong());
+
+        assertThrows(InvalidParameterValueException.class, () -> ldapManager.testConnection(cmd));
+
+        verify(ldapConfigurationDaoMock, never()).persist(any());
+    }
+
+    @Test
+    public void testConnectionReportsInvalidTruststore() throws Exception {
+        LdapTestConfigurationCmd cmd = buildTestCmd("ldap.example.com", 636);
+        doThrow(new RuntimeException("Invalid truststore")).when(ldapContextFactoryMock).createBindContext(any(), anyLong());
+
+        InvalidParameterValueException e = assertThrows(InvalidParameterValueException.class, () -> ldapManager.testConnection(cmd));
+
+        assertEquals("Invalid truststore or truststore password", e.getMessage());
+    }
+
+    @Test
+    public void testConnectionRethrowsRuntimeExceptionWithoutMessage() throws Exception {
+        LdapTestConfigurationCmd cmd = buildTestCmd("ldap.example.com", 389);
+        IllegalStateException cause = new IllegalStateException();
+        doThrow(cause).when(ldapContextFactoryMock).createBindContext(any(), anyLong());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> ldapManager.testConnection(cmd));
+
+        assertSame(cause, e);
+    }
+
+    @Test
+    public void addConfigurationStillBindsBeforePersisting() throws Exception {
+        when(ldapConfigurationDaoMock.find("ldap.example.com", 389, DOMAIN_ID)).thenReturn(null);
+        when(ldapConfigurationDaoMock.persist(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ldapManager.addConfiguration("ldap.example.com", 389, DOMAIN_ID);
+
+        verify(ldapContextFactoryMock).createBindContext("ldap://ldap.example.com:389", DOMAIN_ID);
+        verify(ldapConfigurationDaoMock).persist(any());
+    }
+
+    @Test
+    public void addConfigurationDoesNotPersistOnBindFailure() throws Exception {
+        when(ldapConfigurationDaoMock.find("ldap.example.com", 389, DOMAIN_ID)).thenReturn(null);
+        doThrow(new NamingException("bind failed")).when(ldapContextFactoryMock).createBindContext(any(), anyLong());
+
+        assertThrows(InvalidParameterValueException.class, () -> ldapManager.addConfiguration("ldap.example.com", 389, DOMAIN_ID));
+
+        verify(ldapConfigurationDaoMock, never()).persist(any());
+    }
+
     private LinkAccountToLdapCmd buildCmd(String ldapDomain) {
         LinkAccountToLdapCmd cmd = new LinkAccountToLdapCmd();
         cmd.roleService = roleServiceMock;
@@ -180,6 +277,14 @@ public class LdapManagerImplTest {
         ReflectionTestUtils.setField(cmd, "ldapDomain", ldapDomain);
         ReflectionTestUtils.setField(cmd, "accountName", "jdoe");
         ReflectionTestUtils.setField(cmd, "accountType", Account.Type.NORMAL.ordinal());
+        return cmd;
+    }
+
+    private LdapTestConfigurationCmd buildTestCmd(String hostname, int port) {
+        LdapTestConfigurationCmd cmd = new LdapTestConfigurationCmd();
+        ReflectionTestUtils.setField(cmd, "hostname", hostname);
+        ReflectionTestUtils.setField(cmd, "port", port);
+        ReflectionTestUtils.setField(cmd, "domainId", DOMAIN_ID);
         return cmd;
     }
 }

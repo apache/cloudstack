@@ -17,6 +17,16 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 
+// shared by the list view action (enter a server to test) and the data view action (test the selected configuration)
+const testLdapConfigurationAction = {
+  api: 'ldapTestConfiguration',
+  icon: 'ExperimentOutlined',
+  label: 'label.test.ldap.configuration',
+  successMessage: 'message.success.test.ldap.configuration',
+  docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+  args: ['hostname', 'port', 'domainid']
+}
+
 export default {
   name: 'config',
   title: 'label.configuration',
@@ -51,6 +61,25 @@ export default {
           args: [
             'hostname', 'port', 'domainid'
           ]
+        },
+        {
+          ...testLdapConfigurationAction,
+          listView: true
+        },
+        {
+          ...testLdapConfigurationAction,
+          dataView: true,
+          mapping: {
+            hostname: {
+              value: (record) => { return record.hostname }
+            },
+            port: {
+              value: (record) => { return record.port }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
         },
         {
           api: 'deleteLdapConfiguration',
