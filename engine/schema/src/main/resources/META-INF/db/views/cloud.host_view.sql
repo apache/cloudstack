@@ -78,8 +78,8 @@ SELECT
     ha_config.enabled AS `ha_enabled`,
     ha_config.ha_state AS `ha_state`,
     ha_config.provider AS `ha_provider`,
-    `last_annotation_view`.`annotation` AS `annotation`,
-    `last_annotation_view`.`created` AS `last_annotated`,
+    last_annotated.annotation AS `annotation`,
+    last_annotated.created AS `last_annotated`,
     `user`.`username` AS `username`
 FROM
     `cloud`.`host`
@@ -116,8 +116,10 @@ FROM
     `cloud`.`ha_config` ON ha_config.resource_id=host.id
         and ha_config.resource_type='Host'
         LEFT JOIN
-    `cloud`.`last_annotation_view` ON `last_annotation_view`.`entity_uuid` = `host`.`uuid`
+    (SELECT `annotations`.`annotation`, `annotations`.`entity_uuid`, `annotations`.`user_uuid`, `annotations`.`created` FROM `annotations` WHERE `annotations`.`created` IN
+        (SELECT MAX(`annotations`.`created`) FROM `annotations` WHERE `annotations`.`removed` IS NULL GROUP BY `annotations`.`entity_uuid`)) AS last_annotated
+        ON last_annotated.entity_uuid = host.uuid
         LEFT JOIN
-    `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
+    `cloud`.`user` ON `user`.`uuid` = last_annotated.user_uuid
 GROUP BY
     `host`.`id`;
