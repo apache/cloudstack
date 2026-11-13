@@ -112,8 +112,9 @@ def main():
             check(ceph, heartbeat_object, args.pool, int(args.interval), write_timeout)
             return
         try:
-            ceph.write(heartbeat_object, "%d\n" % time.time())
-        except CephError:
+            ceph.write(heartbeat_object, "%d\n" % int(time.time()))
+        except CephError as error:
+            print("=====> Unable to write the RADOS object [%s] in pool [%s]: %s <======" % (heartbeat_object, args.pool, error))
             sys.exit(1)
     finally:
         ceph.close()
@@ -129,10 +130,10 @@ def check(ceph, heartbeat_object, pool, interval, write_timeout):
         print("=====> Unable to tell whether the host is alive, the RADOS object [%s] in pool [%s] does not exist <======"
               % (heartbeat_object, pool))
         sys.exit(2)
-    except CephError:
+    except CephError as error:
         # Ceph can not be reached from this host, which says nothing about the host which is checked, as for the
         # VM activity check
-        print("=====> Unable to read the RADOS object [%s] in pool [%s] <======" % (heartbeat_object, pool))
+        print("=====> Unable to read the RADOS object [%s] in pool [%s]: %s <======" % (heartbeat_object, pool, error))
         sys.exit(2)
     if not re.fullmatch(r"[0-9]+", heartbeat):
         print("=====> Unable to tell whether the host is alive, the RADOS object [%s] in pool [%s] does not hold a heartbeat <======"

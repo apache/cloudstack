@@ -73,7 +73,7 @@ class BindingsError(Exception):
 
 
 class CephError(Exception):
-    """The cluster could not be connected, or an object could not be read, written or found out if it exists."""
+    """The cluster could not be connected, or an object could not be read, written or found out if it exists. The message is the reason."""
 
 
 class ObjectNotFoundError(CephError):
@@ -81,7 +81,7 @@ class ObjectNotFoundError(CephError):
 
 
 class WatchersError(Exception):
-    """The watchers of a volume could not be listed: it is not known whether the host is alive."""
+    """The watchers of a volume could not be listed: it is not known whether the host is alive. The message is the reason."""
 
 
 def check_bindings(watchers=False):
@@ -100,7 +100,9 @@ def check_bindings(watchers=False):
 class Ceph:
     def __init__(self, mon_hosts, pool, user, key, watchers=False):
         """
-        Connects to the cluster. Raises BindingsError if the bindings can not be used (see check_bindings). If the cluster can not be connected, the operations raise CephError.
+        Connects to the cluster. Raises BindingsError if the bindings can not be used (see check_bindings). If the cluster can
+        not be connected, or the pool can not be opened, this does not raise: the operations raise CephError (or WatchersError)
+        and name the reason, so that the scripts report it and give the exit status which they have for a failed operation.
 
         :param watchers: whether the watchers of volumes are listed, which needs librbd
         """
@@ -108,6 +110,7 @@ class Ceph:
         self.pool = pool
         self.cluster = None
         self.ioctx = None
+        self.error = None
         conf = {"mon_host": mon_hosts, "rados_osd_op_timeout": str(TIMEOUT), "rados_mon_op_timeout": str(TIMEOUT),
                 "client_mount_timeout": str(TIMEOUT), "log_to_stderr": "false", "err_to_stderr": "false"}
         if user:
@@ -117,7 +120,8 @@ class Ceph:
             cluster.connect(timeout=TIMEOUT)
             self.ioctx = cluster.open_ioctx(pool)
             self.cluster = cluster
-        except rados.Error:
+        except rados.Error as error:
+            self.error = error
             cluster.shutdown()
 
     def close(self):
@@ -128,40 +132,45 @@ class Ceph:
         self.ioctx = None
         self.cluster = None
 
-    def _connected(self, name):
+    def _unreachable(self):
+        """Why there is no connection: the reason is the one of librados, which does not hold the key."""
+        return "unable to connect to the cluster or to open the pool [%s]: %s" % (
+            self.pool, self.error if self.error is not None else "not connected")
+
+    def _connected(self):
         if self.ioctx is None:
-            raise CephError(name)
+            raise CephError(self._unreachable())
         return self.ioctx
 
     def exists(self, name):
         """Returns whether the object exists, or raises CephError if it is not known."""
-        ioctx = self._connected(name)
+        ioctx = self._connected()
         try:
             ioctx.stat(name)
             return True
         except rados.ObjectNotFound:
             return False
-        except rados.Error:
-            raise CephError(name)
+        except rados.Error as error:
+            raise CephError(str(error))
 
     def read(self, name):
         """Returns the content of the object, or raises ObjectNotFoundError or CephError."""
-        ioctx = self._connected(name)
+        ioctx = self._connected()
         try:
             size = min(ioctx.stat(name)[0], MAX_OBJECT_SIZE)
             return ioctx.read(name, size).decode("utf-8", "replace") if size else ""
         except rados.ObjectNotFound:
             raise ObjectNotFoundError(name)
-        except rados.Error:
-            raise CephError(name)
+        except rados.Error as error:
+            raise CephError(str(error))
 
     def write(self, name, content):
         """Writes the object, or raises CephError."""
-        ioctx = self._connected(name)
+        ioctx = self._connected()
         try:
             ioctx.write_full(name, content.encode("utf-8"))
-        except rados.Error:
-            raise CephError(name)
+        except rados.Error as error:
+            raise CephError(str(error))
 
     def has_watcher(self, image):
         """
@@ -169,7 +178,7 @@ class Ceph:
         deleted but still in the list of the management server), or raises WatchersError.
         """
         if self.ioctx is None:
-            raise WatchersError(image)
+            raise WatchersError(self._unreachable())
         try:
             # read_only is needed: a volume which is not opened read-only gets a watcher of this script, which
             # would make every host look alive
@@ -177,5 +186,5 @@ class Ceph:
                 return any(True for _ in volume.watchers_list())
         except rbd.ImageNotFound:
             return None
-        except (rados.Error, rbd.Error):
-            raise WatchersError(image)
+        except (rados.Error, rbd.Error) as error:
+            raise WatchersError(str(error))

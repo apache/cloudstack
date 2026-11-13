@@ -53,8 +53,9 @@ DEFAULT_HEARTBEAT_INTERVAL = 60
 
 class Parser(argparse.ArgumentParser):
     def error(self, message):
+        # as the other arguments which are not valid: the exit status 2 says that it is not known whether the host is alive
         self.print_usage(sys.stderr)
-        sys.exit(1)
+        sys.exit(2)
 
 
 def alive():
@@ -174,7 +175,7 @@ def check(ceph, pool, host, volumes, suspect_time, interval, write_timeout):
     except WatchersError as error:
         # when the watchers can not be listed, it is unknown whether the host is alive: the script fails,
         # which is not a DEAD host
-        fail("Unable to get the watchers of the image [%s/%s]" % (pool, error))
+        fail("Unable to get the watchers of the image [%s/%s]: %s" % (pool, image, error))
     if existing == 0:
         # none of the images could be looked at, maybe the names are wrong: it is not known whether the host is alive
         fail("None of the images of the volumes in pool [%s] exists" % pool)
@@ -184,17 +185,17 @@ def check(ceph, pool, host, volumes, suspect_time, interval, write_timeout):
     try:
         if ceph.exists(activity_object):
             state = ceph.read(activity_object)
-    except CephError:
-        fail("Unable to read the RADOS object [%s]" % activity_object)
+    except CephError as error:
+        fail("Unable to read the RADOS object [%s]: %s" % (activity_object, error))
     # a state which is not "<suspect time>:<update time>" (with an optional third field of older versions)
     # is ignored, as if there was none
     match = re.fullmatch(r"([0-9]+):([0-9]+)(:[0-9]+)?", state.strip())
 
     try:
         ceph.write(activity_object, "%d:%d\n" % (suspect_time, latest_update_time))
-    except CephError:
+    except CephError as error:
         # without the new state the next check would use an old one, so it is not known whether the host is alive
-        fail("Unable to write the RADOS object [%s]" % activity_object)
+        fail("Unable to write the RADOS object [%s]: %s" % (activity_object, error))
 
     if not match:
         if latest_update_time > suspect_time:
