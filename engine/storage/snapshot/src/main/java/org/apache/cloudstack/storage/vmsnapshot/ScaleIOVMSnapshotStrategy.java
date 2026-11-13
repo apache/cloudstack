@@ -257,7 +257,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
 
                     String subject = "Take snapshot failed for Instance: " + userVm.getDisplayName();
-                    String message = "Snapshot operation failed for Instance: " + userVm.getDisplayName() + ", Please check and delete if any stale volumes created with Instance Snapshot id: " + vmSnapshot.getVmId();
+                    String message = "Snapshot operation failed for Instance: " + userVm.getDisplayName() + ", Please check and delete if any stale volumes created with " + vmSnapshot;
                     alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT, userVm.getDataCenterId(), userVm.getPodIdToDeployIn(), subject, message);
                 } catch (NoTransitionException e1) {
                     logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
