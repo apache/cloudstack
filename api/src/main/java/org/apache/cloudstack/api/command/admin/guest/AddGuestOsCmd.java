@@ -58,7 +58,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     private String osName;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name="forDisplay", type=CommandType.BOOLEAN, description="whether this guest OS is available for end users", authorized = {RoleType.Admin})
     private Boolean display;
@@ -79,7 +79,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
         return osName;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         Map<String, String> detailsMap = new HashMap<>();
         if (!MapUtils.isEmpty(details)) {
             Collection<?> servicesCollection = details.values();

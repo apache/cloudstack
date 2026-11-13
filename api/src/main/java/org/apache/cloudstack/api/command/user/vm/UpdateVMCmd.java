@@ -98,7 +98,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     private Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "Used to specify the parameters values for the variables in userdata.", since = "4.18")
-    private Map userdataDetails;
+    private Map<Integer, Map<String, String>> userdataDetails;
 
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the Instance to the end User or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;

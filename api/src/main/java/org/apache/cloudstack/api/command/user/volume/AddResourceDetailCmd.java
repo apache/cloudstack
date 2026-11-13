@@ -38,7 +38,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
@@ -53,7 +53,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         return TaggedResources.parseKeyValueMap(details, true);
     }
 

@@ -33,6 +33,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RegisterTemplateCmdTest {
@@ -148,5 +150,23 @@ public class RegisterTemplateCmdTest {
         String netName = "net-template";
         ReflectionTestUtils.setField(registerTemplateCmd , "templateName", netName);
         Assert.assertEquals(registerTemplateCmd.getDisplayText(), netName);
+    }
+
+    @Test
+    public void testGetDetailsEmpty() {
+        registerTemplateCmd = new RegisterTemplateCmd();
+        Assert.assertNull(registerTemplateCmd.getDetails());
+        ReflectionTestUtils.setField(registerTemplateCmd, "details", new HashMap<>());
+        Assert.assertNull(registerTemplateCmd.getDetails());
+    }
+
+    @Test
+    public void testGetDetailsReturnsFirstEntry() {
+        registerTemplateCmd = new RegisterTemplateCmd();
+        Map<String, String> entry = Map.of("hypervisortoolsversion", "xenserver61");
+        Map<Integer, Map<String, String>> details = new HashMap<>();
+        details.put(0, entry);
+        ReflectionTestUtils.setField(registerTemplateCmd, "details", details);
+        Assert.assertEquals(entry, registerTemplateCmd.getDetails());
     }
 }

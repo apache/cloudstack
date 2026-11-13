@@ -72,7 +72,7 @@ public class VolumeForImportResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "volume details in key/value pairs.")
-    private Map details;
+    private Map<VolumeOnStorageTO.Detail, String> details;
 
     @SerializedName(ApiConstants.CHAIN_INFO)
     @Param(description = "the chain info of the volume")
@@ -158,11 +158,11 @@ public class VolumeForImportResponse extends BaseResponse {
         this.storagePoolType = storagePoolType;
     }
 
-    public Map getDetails() {
+    public Map<VolumeOnStorageTO.Detail, String> getDetails() {
         return details;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<VolumeOnStorageTO.Detail, String> details) {
         this.details = details;
     }
 

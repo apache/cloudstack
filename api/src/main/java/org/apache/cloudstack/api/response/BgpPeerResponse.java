@@ -84,7 +84,7 @@ public class BgpPeerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "additional key/value details of the bgp peer")
-    private Map details;
+    private Map<BgpPeer.Detail, String> details;
 
     public void setId(String id) {
         this.id = id;
@@ -138,7 +138,7 @@ public class BgpPeerResponse extends BaseResponse {
         this.domainName = domainName;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<BgpPeer.Detail, String> details) {
         this.details = details;
     }
 
@@ -194,7 +194,7 @@ public class BgpPeerResponse extends BaseResponse {
         return projectName;
     }
 
-    public Map getDetails() {
+    public Map<BgpPeer.Detail, String> getDetails() {
         return details;
     }
 }

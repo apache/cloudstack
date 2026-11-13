@@ -58,7 +58,7 @@ public class AddImageStoreCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.MAP,
                description = "The details for the image store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,7 +108,7 @@ public class AddImageStoreCmd extends BaseCmd {
         this.providerName = providerName;
     }
 
-    public void setDetails(Map<String, String> details) {
+    public void setDetails(Map<Integer, Map<String, String>> details) {
         this.details = details;
     }
 

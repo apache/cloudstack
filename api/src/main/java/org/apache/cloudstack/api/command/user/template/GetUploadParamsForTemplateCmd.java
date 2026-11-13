@@ -19,7 +19,6 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import java.net.MalformedURLException;
-import java.util.Collection;
 import java.util.Map;
 
 import com.cloud.cpu.CPU;
@@ -65,7 +64,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     private Integer bits;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs.")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "True if Template contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory")
     private Boolean isDynamicallyScalable;
@@ -125,13 +124,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
         return bits;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {
             return null;
         }
-        Collection paramsCollection = details.values();
-        Map params = (Map)(paramsCollection.toArray())[0];
-        return params;
+        return details.values().iterator().next();
     }
 
     public Boolean isDynamicallyScalable() {

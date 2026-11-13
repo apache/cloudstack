@@ -52,7 +52,7 @@ public class UpdateVnfTemplateCmd extends UpdateTemplateCmd implements UserCmd {
             type = CommandType.MAP,
             description = "VNF details in key/value pairs using format vnfdetails[i].keyname=keyvalue. "
                     + "Example: vnfdetails[0].vendor=xxx&&vnfdetails[0].version=2.0")
-    protected Map vnfDetails;
+    protected Map<Integer, Map<String, String>> vnfDetails;
 
     @Parameter(name = ApiConstants.CLEAN_UP_VNF_DETAILS,
             type = CommandType.BOOLEAN,

@@ -50,7 +50,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     private Long clusterId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "The details for the storage pool")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name for the storage pool")
     private String storagePoolName;
@@ -103,7 +103,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
         return clusterId;
     }
 
-    public Map getDetails() {
+    public Map<Integer, Map<String, String>> getDetails() {
         return details;
     }
 
