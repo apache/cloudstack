@@ -114,6 +114,12 @@ public interface ResourceLimitAndCountResponse {
 
     void setObjectStorageAvailable(String objectStorageAvailable);
 
+    public void setInstanceSnapshotLimit(String instanceSnapshotLimit);
+
+    public void setInstanceSnapshotTotal(Long instanceSnapshotTotal);
+
+    public void setInstanceSnapshotAvailable(String instanceSnapshotAvailable);
+
     public void setTemplateLimit(String templateLimit);
 
     public void setTemplateTotal(Long templateTotal);
