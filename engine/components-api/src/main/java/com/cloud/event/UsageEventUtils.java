@@ -34,8 +34,8 @@ import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.NicNetworkMapVO;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventDistributor;
@@ -58,8 +58,12 @@ public class UsageEventUtils {
     private static NicNetworkMapDao s_nicNetworkMapDao;
     protected static Logger LOGGER = LogManager.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
-    protected static ConfigurationDao s_configDao;
     private static EventDistributor eventDistributor;
+
+    // Registered/owned by com.cloud.server.ManagementServer#PublishUsageEvent; declared here too so this
+    // module can read it without a reverse dependency on the server module.
+    private static final ConfigKey<Boolean> PublishUsageEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.usage.events", "true",
+            "enable or disable publishing of usage events on the event bus", true);
 
     @Inject
     UsageEventDao usageEventDao;
@@ -67,8 +71,6 @@ public class UsageEventUtils {
     AccountDao accountDao;
     @Inject
     DataCenterDao dcDao;
-    @Inject
-    ConfigurationDao configDao;
     @Inject
     NetworkDao networkDao;
     @Inject
@@ -82,7 +84,6 @@ public class UsageEventUtils {
         s_usageEventDao = usageEventDao;
         s_accountDao = accountDao;
         s_dcDao = dcDao;
-        s_configDao = configDao;
         s_networkDao = networkDao;
         s_nicNetworkMapDao = nicNetworkMapDao;
     }
@@ -275,9 +276,7 @@ public class UsageEventUtils {
     }
 
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
-        String configKey = "publish.usage.events";
-        String value = s_configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = PublishUsageEvent.value();
         if( !configValue)
             return;
         try {

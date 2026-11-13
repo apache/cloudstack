@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,10 +39,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -65,7 +64,6 @@ public class ActionEventUtils {
     protected static UserDao s_userDao;
     private static EventDistributor eventDistributor;
     protected static EntityManager s_entityMgr;
-    protected static ConfigurationDao s_configDao;
 
     public static final String EventDetails = "event_details";
     public static final String EventId = "event_id";
@@ -83,8 +81,6 @@ public class ActionEventUtils {
     ProjectDao projectDao;
     @Inject
     EntityManager entityMgr;
-    @Inject
-    ConfigurationDao configDao;
 
     public ActionEventUtils() {
     }
@@ -96,7 +92,6 @@ public class ActionEventUtils {
         s_userDao = userDao;
         s_projectDao = projectDao;
         s_entityMgr = entityMgr;
-        s_configDao = configDao;
     }
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description, Long resourceId, String resourceType) {
@@ -208,9 +203,7 @@ public class ActionEventUtils {
     private static void publishOnEventBus(Event eventRecord, long userId, long accountId, Long domainId,
           String eventCategory, String eventType, Event.State state, String description, String resourceUuid,
           String resourceType) {
-        String configKey = Config.PublishActionEvent.key();
-        String value = s_configDao.getValue(configKey);
-        boolean configValue = Boolean.parseBoolean(value);
+        boolean configValue = ManagementServer.PublishActionEvent.value();
         if(!configValue)
             return;
 
