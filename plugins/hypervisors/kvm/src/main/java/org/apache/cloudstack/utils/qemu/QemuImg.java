@@ -55,7 +55,7 @@ public class QemuImg {
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
     private String cloudQemuImgPath = "cloud-qemu-img";
-    private int timeout;
+    private long timeout;
     private boolean skipZero = false;
     private boolean noCache = false;
     private long version;
@@ -118,7 +118,7 @@ public class QemuImg {
      * @param skipZeroIfSupported Don't write zeroes to target device during convert, if supported by qemu-img
      * @param noCache Ensure we flush writes to target disk (useful for block device targets)
      */
-    public QemuImg(final int timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
+    public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
             final Script s = new Script(_qemuImgPath, timeout);
             s.add("--help");
@@ -148,7 +148,7 @@ public class QemuImg {
      * @param timeout
      *            The timeout of scripts executed by this QemuImg object.
      */
-    public QemuImg(final int timeout) throws LibvirtException, QemuImgException {
+    public QemuImg(final long timeout) throws LibvirtException, QemuImgException {
         this(timeout, false, false);
     }
 

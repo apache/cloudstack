@@ -112,6 +112,9 @@ public interface NetworkOrchestrationService {
     static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
+            "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 

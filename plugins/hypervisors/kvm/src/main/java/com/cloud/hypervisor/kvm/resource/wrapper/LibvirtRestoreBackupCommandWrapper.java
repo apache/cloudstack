@@ -19,6 +19,20 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+
+import org.apache.cloudstack.backup.BackupAnswer;
+import org.apache.cloudstack.backup.RestoreBackupCommand;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -27,26 +41,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.backup.BackupAnswer;
-import org.apache.cloudstack.backup.RestoreBackupCommand;
-import org.apache.commons.lang3.RandomStringUtils;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 
 @ResourceWrapper(handles = RestoreBackupCommand.class)
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
-    private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
-    private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
-    private static final String ATTACH_DISK_COMMAND = " virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --cache none";
-    private static final String CURRRENT_DEVICE = "virsh domblklist --domain %s | tail -n 3 | head -n 1 | awk '{print $1}'";
-    private static final String RSYNC_COMMAND = "rsync -az %s %s";
 
     @Override
     public Answer execute(RestoreBackupCommand command, LibvirtComputingResource serverResource) {
@@ -155,18 +154,26 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String mountDirectory = String.format("%s.%s",BACKUP_TEMP_FILE_PREFIX , randomChars);
         try {
             mountDirectory = Files.createTempDirectory(mountDirectory).toString();
-            String mount = String.format(MOUNT_COMMAND, backupRepoType, backupRepoAddress, mountDirectory);
+            String mountPath = Script.getExecutableAbsolutePath("mount");
+            List<String> mountCmd = new ArrayList<>();
+            mountCmd.add("sudo");
+            mountCmd.add(mountPath);
+            mountCmd.add("-t");
+            mountCmd.add(backupRepoType);
+            mountCmd.add(backupRepoAddress);
+            mountCmd.add(mountDirectory);
             if ("cifs".equals(backupRepoType)) {
-                if (Objects.isNull(mountOptions) || mountOptions.trim().isEmpty()) {
+                if (StringUtils.isBlank(mountOptions)) {
                     mountOptions = "nobrl";
                 } else {
                     mountOptions += ",nobrl";
                 }
             }
-            if (Objects.nonNull(mountOptions) && !mountOptions.trim().isEmpty()) {
-                mount += " -o " + mountOptions;
+            if (StringUtils.isNotBlank(mountOptions)) {
+                mountCmd.add("-o");
+                mountCmd.add(mountOptions);
             }
-            Script.runSimpleBashScript(mount);
+            Script.executeCommand(mountCmd.toArray(new String[0]));
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to mount %s to %s", backupRepoType, backupRepoAddress), e);
         }
@@ -175,8 +182,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private void unmountBackupDirectory(String backupDirectory) {
         try {
-            String umountCmd = String.format(UMOUNT_COMMAND, backupDirectory);
-            Script.runSimpleBashScript(umountCmd);
+            String umountPath = Script.getExecutableAbsolutePath("umount");
+            String[] umountCmd = new String[] { "sudo", umountPath, backupDirectory };
+            Script.executeCommand(umountCmd);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to unmount backup directory: %s", backupDirectory), e);
         }
@@ -198,18 +206,26 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private boolean replaceVolumeWithBackup(String volumePath, String backupPath) {
-        int exitValue = Script.runSimpleBashScriptForExitValue(String.format(RSYNC_COMMAND, backupPath, volumePath));
+        String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
+        int exitValue = Script.executeCommandForExitValue(rsyncCmd);
         return exitValue == 0;
     }
 
     private boolean attachVolumeToVm(String vmName, String volumePath) {
         String deviceToAttachDiskTo = getDeviceToAttachDisk(vmName);
-        int exitValue = Script.runSimpleBashScriptForExitValue(String.format(ATTACH_DISK_COMMAND, vmName, volumePath, deviceToAttachDiskTo));
+        String[] attachCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "attach-disk", vmName, volumePath, deviceToAttachDiskTo,
+                "--driver", "qemu", "--subdriver", "qcow2", "--cache", "none" };
+        int exitValue = Script.executeCommandForExitValue(attachCmd);
         return exitValue == 0;
     }
 
     private String getDeviceToAttachDisk(String vmName) {
-        String currentDevice = Script.runSimpleBashScript(String.format(CURRRENT_DEVICE, vmName));
+        String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName };
+        String[] tailCmd = new String[] { Script.getExecutableAbsolutePath("tail"), "-n", "3" };
+        String[] headCmd = new String[] { Script.getExecutableAbsolutePath("head"), "-n", "1" };
+        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "'{print $1}'" };
+        Pair<Integer, String> result = Script.executePipedCommands(Arrays.asList(domblkCmd, tailCmd, headCmd, awkCmd), 0);
+        String currentDevice = result.second();
         char lastChar = currentDevice.charAt(currentDevice.length() - 1);
         char incrementedChar = (char) (lastChar + 1);
         return currentDevice.substring(0, currentDevice.length() - 1) + incrementedChar;

@@ -1706,7 +1706,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress systemIp = null;
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        if (srcPortStart == DNS_PORT && ipVO.isSourceNat()) {
+        if (srcPortStart == DNS_PORT && ipVO != null && ipVO.isSourceNat()) {
             List<NetworkOfferingServiceMapVO> offeringServices = _networkOfferingServiceDao.listByNetworkOfferingId(network.getNetworkOfferingId());
             for (NetworkOfferingServiceMapVO serviceMapVo: offeringServices) {
                 if (serviceMapVo.getService().equals(Service.Dns.getName())) {

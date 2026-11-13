@@ -1210,7 +1210,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkCreateVMSnapshot workInfo = new VmWorkCreateVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId, quiesceVm);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1242,7 +1242,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkDeleteVMSnapshot workInfo = new VmWorkDeleteVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1274,7 +1274,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkRevertToVMSnapshot workInfo = new VmWorkRevertToVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1306,7 +1306,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkDeleteAllVMSnapshots workInfo = new VmWorkDeleteAllVMSnapshots(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, type);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1352,7 +1352,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
         workJob.setCmd("");
-        workJob.setCmdInfo("");
+        workJob.updateCmdInfoWithEncryptionIfNeeded("");
 
         workJob.setAccountId(0);
         workJob.setUserId(0);

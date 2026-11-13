@@ -58,7 +58,7 @@ RUN mvn -Pdeveloper -Dsimulator -DskipTests clean install
 RUN find /var/lib/mysql -type f -exec touch {} \; && \
     (/usr/bin/mysqld_safe &) && \
     sleep 5; \
-    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password by ''" --connect-expired-password; \
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password by ''" --connect-expired-password; \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
     MARVIN_FILE=`find /root/tools/marvin/dist/ -name "Marvin*.tar.gz"`; \

@@ -1259,6 +1259,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
+        buf.append(" consoleproxy.session.timeout=").append(proxySessionTimeoutValue);
         if (disableRpFilter) {
             buf.append(" disable_rp_filter=true");
         }
@@ -1525,12 +1526,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
 
-        List<ConsoleProxyVO> l = consoleProxyDao.getProxyListInStates(State.Starting, State.Stopping);
-        if (l.size() > 0) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Zone {} has {} console proxy VM(s) in transition state", zone, l.size());
-            }
-
+        List<ConsoleProxyVO> consoleProxiesInTransitionStates = consoleProxyDao.getProxyListInStates(dataCenterId, State.Starting, State.Stopping);
+        if (!consoleProxiesInTransitionStates.isEmpty()) {
+            logger.debug("Zone {} has {} console proxy VM(s) in transition state.", zone, consoleProxiesInTransitionStates.size());
             return false;
         }
 

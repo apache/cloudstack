@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-
-import com.cloud.serializer.Param;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.ldap.LdapConfiguration;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = LdapConfiguration.class)
 public class LdapConfigurationResponse extends BaseResponse {
@@ -33,7 +32,7 @@ public class LdapConfigurationResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.PORT)
     @Param(description = "Port the LDAP server is running on")
-    private int port;
+    private Integer port;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "Linked domain")
@@ -53,16 +52,11 @@ public class LdapConfigurationResponse extends BaseResponse {
         setPort(port);
     }
 
-    public LdapConfigurationResponse(final String hostname, final int port, final String domainId) {
-        this(hostname, port);
-        setDomainId(domainId);
-    }
-
     public String getHostname() {
         return hostname;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 

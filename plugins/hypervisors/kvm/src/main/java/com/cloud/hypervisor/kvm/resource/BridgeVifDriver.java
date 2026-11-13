@@ -186,9 +186,16 @@ public class BridgeVifDriver extends VifDriverBase {
 
     protected String createStorageVnetBridgeIfNeeded(NicTO nic, String trafficLabel,
                  String storageBrName) throws InternalErrorException {
-        if (!Networks.BroadcastDomainType.Storage.equals(nic.getBroadcastType()) || nic.getBroadcastUri() == null) {
+        if (nic.getBroadcastUri() == null) {
             return storageBrName;
         }
+
+        boolean isStorageBroadcast = Networks.BroadcastDomainType.Storage.equals(nic.getBroadcastType()) ||
+                Networks.BroadcastDomainType.Storage.equals(Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()));
+        if (!isStorageBroadcast) {
+            return storageBrName;
+        }
+
         String vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
         String protocol = Networks.BroadcastDomainType.Vlan.scheme();
         if (!isValidProtocolAndVnetId(vNetId, protocol))  {

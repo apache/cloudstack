@@ -16,13 +16,29 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <span v-if="uploadPercentage > 0">
+  <div class="form-layout">
+    <span v-if="uploading">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
-    <a-spin :spinning="loading" v-else>
+    <div v-else-if="ssvmCertUntrusted" class="ssvm-cert-warning">
+      <a-alert
+        type="warning"
+        show-icon
+        :message="$t('message.ssvm.cert.untrusted')"
+        :description="$t('message.ssvm.cert.trust.instructions')" />
+      <div :span="24" class="action-button">
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
+          {{ $t('label.ssvm.open.cert.page') }}
+        </a-button>
+        <a-button type="primary" :loading="loading" @click="retryUpload">
+          {{ $t('label.retry.upload') }}
+        </a-button>
+      </div>
+    </div>
+    <a-spin :spinning="loading" v-else v-ctrl-enter="handleSubmit">
       <a-form
         :ref="formRef"
         :model="form"
@@ -156,6 +172,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
+import { probeSsvmCert } from '@/utils/ssvmProbe'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
@@ -178,7 +195,10 @@ export default {
       customDiskOffering: false,
       isCustomizedDiskIOps: false,
       loading: false,
-      uploadPercentage: 0
+      uploading: false,
+      uploadPercentage: 0,
+      ssvmCertUntrusted: false,
+      ssvmOrigin: ''
     }
   },
   beforeCreate () {
@@ -267,6 +287,63 @@ export default {
       this.form.account = accountName
       this.account = accountName
     },
+    async retryUpload () {
+      this.loading = true
+      const reachable = await probeSsvmCert(this.ssvmOrigin)
+      this.loading = false
+      if (!reachable) {
+        this.$message.warning(this.$t('message.ssvm.unreachable.retry'))
+        return
+      }
+      this.ssvmCertUntrusted = false
+      this.handleUpload()
+    },
+    handleUpload () {
+      if (this.fileList.length > 1) {
+        this.$notification.error({
+          message: this.$t('message.upload.volume.failed'),
+          description: this.$t('message.upload.file.limit'),
+          duration: 0
+        })
+        return
+      }
+      const { fileList } = this
+      const formData = new FormData()
+      fileList.forEach(file => {
+        formData.append('files[]', file)
+      })
+      this.uploading = true
+      this.uploadPercentage = 0
+      axios.post(this.uploadParams.postURL,
+        formData,
+        {
+          headers: {
+            'content-type': 'multipart/form-data',
+            'x-signature': this.uploadParams.signature,
+            'x-expires': this.uploadParams.expires,
+            'x-metadata': this.uploadParams.metadata
+          },
+          onUploadProgress: (progressEvent) => {
+            this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
+          },
+          timeout: 86400000
+        }).then((json) => {
+        this.$notification.success({
+          message: this.$t('message.success.upload'),
+          description: this.$t('message.success.upload.volume.description')
+        })
+        this.closeAction()
+      }).catch(e => {
+        this.$notification.error({
+          message: this.$t('message.upload.failed'),
+          description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
+          duration: 0
+        })
+      }).finally(() => {
+        this.uploading = false
+        this.loading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -286,49 +363,15 @@ export default {
         }
         params.domainId = this.domainId
         this.loading = true
-        api('getUploadParamsForVolume', params).then(json => {
+        api('getUploadParamsForVolume', params).then(async json => {
           this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
-          const { fileList } = this
-          if (this.fileList.length > 1) {
-            this.$notification.error({
-              message: this.$t('message.upload.volume.failed'),
-              description: this.$t('message.upload.file.limit'),
-              duration: 0
-            })
+          this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
+          const trusted = await probeSsvmCert(this.ssvmOrigin)
+          if (!trusted) {
+            this.ssvmCertUntrusted = true
+            return
           }
-          const formData = new FormData()
-          fileList.forEach(file => {
-            formData.append('files[]', file)
-          })
-          this.uploadPercentage = 0
-          axios.post(this.uploadParams.postURL,
-            formData,
-            {
-              headers: {
-                'content-type': 'multipart/form-data',
-                'x-signature': this.uploadParams.signature,
-                'x-expires': this.uploadParams.expires,
-                'x-metadata': this.uploadParams.metadata
-              },
-              onUploadProgress: (progressEvent) => {
-                this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
-              },
-              timeout: 86400000
-            }).then((json) => {
-            this.$notification.success({
-              message: this.$t('message.success.upload'),
-              description: this.$t('message.success.upload.volume.description')
-            })
-            this.closeAction()
-          }).catch(e => {
-            this.$notification.error({
-              message: this.$t('message.upload.failed'),
-              description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
-              duration: 0
-            })
-          }).finally(() => {
-            this.loading = false
-          })
+          this.handleUpload()
         }).catch(e => {
           this.$notification.error({
             message: this.$t('message.upload.failed'),

@@ -34,6 +34,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     private static final String MICROSOFT_AD_MEMBERS_FILTER = "memberOf";
 
     @Override
+    @SuppressWarnings("BanJNDI")
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException {
         if (StringUtils.isBlank(groupName)) {
             throw new IllegalArgumentException("ldap group name cannot be blank");

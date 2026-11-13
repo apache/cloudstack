@@ -18,6 +18,7 @@ package com.cloud.configuration.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 import org.apache.commons.collections.CollectionUtils;
@@ -38,6 +39,8 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
     private SearchBuilder<ResourceLimitVO> IdTypeTagSearch;
     private SearchBuilder<ResourceLimitVO> IdTypeNullTagSearch;
     private SearchBuilder<ResourceLimitVO> NonMatchingTagsSearch;
+    private SearchBuilder<ResourceLimitVO> DomainsLimitTagSearch;
+    private SearchBuilder<ResourceLimitVO> DomainsLimitNullTagSearch;
 
     public ResourceLimitDaoImpl() {
         IdTypeTagSearch = createSearchBuilder();
@@ -60,6 +63,18 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
         NonMatchingTagsSearch.and("tagNotNull", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NNULL);
         NonMatchingTagsSearch.and("tags", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NIN);
         NonMatchingTagsSearch.done();
+
+        DomainsLimitTagSearch = createSearchBuilder();
+        DomainsLimitTagSearch.and("type", DomainsLimitTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        DomainsLimitTagSearch.and("domainIds", DomainsLimitTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        DomainsLimitTagSearch.and("tag", DomainsLimitTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
+        DomainsLimitTagSearch.done();
+
+        DomainsLimitNullTagSearch = createSearchBuilder();
+        DomainsLimitNullTagSearch.and("type", DomainsLimitNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        DomainsLimitNullTagSearch.and("domainIds", DomainsLimitNullTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        DomainsLimitNullTagSearch.and("tag", DomainsLimitNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+        DomainsLimitNullTagSearch.done();
     }
 
     @Override
@@ -149,5 +164,21 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
             sc.setParameters("tags", tags.toArray());
         }
         remove(sc);
+    }
+
+    @Override
+    public List<ResourceLimitVO> listByDomainIdsAndTypeAndTag(Set<Long> domainIds, ResourceType type, String tag) {
+        if (CollectionUtils.isEmpty(domainIds)) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<ResourceLimitVO> sc = (tag != null)
+                ? DomainsLimitTagSearch.create()
+                : DomainsLimitNullTagSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("domainIds", domainIds.toArray());
+        if (tag != null) {
+            sc.setParameters("tag", tag);
+        }
+        return listBy(sc);
     }
 }

@@ -208,7 +208,8 @@
         <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'serviceofferingname'">
-        <router-link :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
+        <router-link v-if="$route.path === '/networkoffering'" :to="{ path: '/systemoffering/' + record.serviceofferingid, query:{issystem:'true'} }">{{ text }}</router-link>
+        <router-link v-else :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
@@ -425,6 +426,9 @@
       <template v-if="column.key === 'enabled'">
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
+      </template>
+      <template v-if="column.key === 'egressdefaultpolicy'">
+        <span> {{ record.egressdefaultpolicy ? 'Allow' : 'Deny' }} </span>
       </template>
       <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
         {{ text && $toLocaleDate(text) }}
