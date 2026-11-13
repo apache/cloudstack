@@ -51,6 +51,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -59,6 +60,7 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
@@ -107,10 +109,12 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.VpcService;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.projects.ProjectService;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -214,11 +218,15 @@ public class KubernetesClusterActionWorker {
     @Inject
     public VpcService vpcService;
     @Inject
+    protected VpcServiceMapDao vpcServiceMapDao;
+    @Inject
     public PortForwardingRulesDao portForwardingRulesDao;
     @Inject
     protected RulesService rulesService;
     @Inject
     protected FirewallService firewallService;
+    @Inject
+    protected FirewallRulesDao firewallRulesDao;
     @Inject
     private NicDao nicDao;
     @Inject
@@ -1111,6 +1119,49 @@ public class KubernetesClusterActionWorker {
             k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
         }
         return k8sConfig;
+    }
+
+    /**
+     * When the VPC virtual router provides the Firewall service of a VPC, it drops ingress traffic to
+     * public IPs that has no firewall rule (in addition to the network ACL of each tier). The ports
+     * used by CKS must then be opened on the cluster public IP, as for isolated networks. This is the
+     * same check that sets vpc_firewall_enabled for the VPC virtual router.
+     *
+     * @param network the network of the Kubernetes cluster
+     * @return true if the network is a VPC tier and the VPC virtual router provides the Firewall service
+     */
+    protected boolean isVpcFirewallEnabled(Network network) {
+        if (network == null || network.getVpcId() == null) {
+            return false;
+        }
+        return vpcServiceMapDao.canProviderSupportServiceInVpc(network.getVpcId(), Network.Service.Firewall, Network.Provider.VPCVirtualRouter);
+    }
+
+    /**
+     * @param network the network of the Kubernetes cluster
+     * @return true if ingress firewall rules are needed on the cluster public IP: always for isolated
+     * networks, and for VPC tiers when the VPC uses the Firewall service
+     */
+    protected boolean isPublicIpFirewallRequired(Network network) {
+        return network.getVpcId() == null || isVpcFirewallEnabled(network);
+    }
+
+    /**
+     * Finds the ingress firewall rule for the given public port range of the cluster. Firewall rules on a
+     * public IP of a VPC are stored with the VPC and without a network, so they are looked up by the IP.
+     *
+     * @return the rule, or null if none exists
+     */
+    protected FirewallRuleVO findIngressFirewallRuleForPorts(Network network, Long publicIpId, int startPort, int endPort) {
+        if (network.getVpcId() == null) {
+            return firewallRulesDao.findByNetworkIdAndPorts(network.getId(), startPort, endPort);
+        }
+        if (publicIpId == null) {
+            return null;
+        }
+        List<FirewallRuleVO> rules = firewallRulesDao.listByIpPurposePortsProtocolAndNotRevoked(publicIpId, startPort, endPort,
+                NetUtils.TCP_PROTO, FirewallRule.Purpose.Firewall);
+        return CollectionUtils.isEmpty(rules) ? null : rules.get(0);
     }
 
     public Map<Long, Integer> addFirewallRulesForNodes(IpAddress publicIp, int size) throws ManagementServerException {
