@@ -73,9 +73,10 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     private Integer privateStartPort;
 
     @Parameter(name = ApiConstants.PROTOCOL,
-               type = CommandType.STRING,
-               required = true,
-            description = "The protocol for the port forwarding rule. Valid values are TCP or UDP.")
+                type = CommandType.STRING,
+                allowedValues = {"TCP", "UDP"},
+                required = true,
+                description = "The protocol for the port forwarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.PRIVATE_END_PORT,

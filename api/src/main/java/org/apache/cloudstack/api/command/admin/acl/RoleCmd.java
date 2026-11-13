@@ -31,7 +31,10 @@ public abstract class RoleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of the role, valid options are: Admin, ResourceAdmin, DomainAdmin, User")
+    @Parameter(name = ApiConstants.TYPE,
+            type = CommandType.STRING,
+            allowedValues = {"Admin", "ResourceAdmin", "DomainAdmin", "User"},
+            description = "The type of the role, valid options are: Admin, ResourceAdmin, DomainAdmin, User")
     private String roleType;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the role")
