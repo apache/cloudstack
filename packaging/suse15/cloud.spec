@@ -120,6 +120,7 @@ Requires: cifs-utils
 Requires: (edk2-ovmf or qemu-ovmf-x86_64)
 Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
+Suggests: ceph-common
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
 Requires: cryptsetup
