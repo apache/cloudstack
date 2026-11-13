@@ -59,7 +59,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.PortableIp;
@@ -221,8 +220,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     DomainDao _domainDao;
     @Inject
     UserDao _userDao;
-    @Inject
-    ConfigurationDao _configDao;
     @Inject
     UserVmDao _userVmDao;
     @Inject
@@ -566,7 +563,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AssignIpAddressFromPodVlanSearch.join("vlan", podVlanSearch, podVlanSearch.entity().getId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(), JoinType.INNER);
         AssignIpAddressFromPodVlanSearch.done();
 
-        Network.State.getStateMachine().registerListener(new NetworkStateListener(_configDao));
+        Network.State.getStateMachine().registerListener(new NetworkStateListener());
 
         if (RulesContinueOnError.value() != null) {
             rulesContinueOnErrFlag = RulesContinueOnError.value();
