@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.server.ResourceManagerUtil;
 import org.apache.cloudstack.api.ResourceDetail;
@@ -179,6 +180,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_CREATE, eventDescription = "creating resource meta data")
     public boolean addResourceMetaData(final String resourceId, final ResourceObjectType resourceType, final Map<String, String> details, final boolean forDisplay) {
+        if (resourceType == ResourceObjectType.NetworkOffering) {
+            details.keySet().forEach(this::validateMutableNetworkOfferingDetail);
+        }
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -204,6 +208,14 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key) {
         long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
 
+        if (resourceType == ResourceObjectType.NetworkOffering) {
+            validateMutableNetworkOfferingDetail(key);
+            // Use the same database name matching as removal, including collation aliases.
+            List<? extends ResourceDetail> details = key == null ? _networkOfferingDetailsDao.listDetails(id)
+                    : _networkOfferingDetailsDao.findDetails(id, key);
+            details.forEach(detail -> validateMutableNetworkOfferingDetail(detail.getName()));
+        }
+
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
         if (key != null) {
             newDetailDaoHelper.removeDetail(id, key);
@@ -212,6 +224,14 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         }
 
         return true;
+    }
+
+    private void validateMutableNetworkOfferingDetail(String key) {
+        for (NetworkOffering.Detail detail : NetworkOffering.NSX_SEGMENT_PROFILE_DETAILS) {
+            if (detail.name().equalsIgnoreCase(key)) {
+                throw new InvalidParameterValueException("NSX segment profile selections can only be configured when creating or cloning a network offering");
+            }
+        }
     }
 
     private class DetailDaoHelper {

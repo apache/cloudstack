@@ -40,7 +40,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.cloud.network.Network.Service.Dhcp;
 import static com.cloud.network.Network.Service.Dns;
@@ -167,7 +166,9 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
-            + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
+            + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup."
+            + " NSX offerings also support nsxipdiscoveryprofileid, nsxmacdiscoveryprofileid, and nsxsegmentsecurityprofileid."
+            + " Values are IDs of existing operator-managed NSX profiles to bind to segments created from the offering.")
     protected Map details;
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
@@ -382,18 +383,18 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
                 VirtualRouterProvider.Type.VirtualRouter.name();
         List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "Gateway", "SecurityGroup", "Connectivity", "BaremetalPxeService"));
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
-        List<String> allServices = Network.Service.listAllServices().stream().map(Network.Service::getName).collect(Collectors.toList());
         if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {
             unsupportedServices.add("Firewall");
         } else {
             unsupportedServices.add("NetworkACL");
         }
-        for (String service : allServices) {
+        for (String service : getSupportedServices()) {
             if (unsupportedServices.contains(service))
                 continue;
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(routerProvider));
-            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)) {
+            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)
+                    || (isForNsx() && Firewall.getName().equalsIgnoreCase(service))) {
                 serviceProviderMap.put(service, List.of(provider));
             }
             if (isNsxWithoutLb(getProvider(), getNsxSupportsLbService()) || isNetrisRouted(getProvider(), getNetworkMode())) {
