@@ -42,11 +42,13 @@ import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -58,6 +60,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -119,6 +122,10 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
     private SnapshotDao _snapshotDao;
     @Inject
     private AgentManager _agentManager;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    private NicDao nicDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
 
@@ -522,6 +529,8 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
+            VlanTrunkMigrationHelper.populateVlanTrunkMigrationDetails(migrateCommand, (PrepareForMigrationAnswer) pfma, hostDetailsDao, destHost.getId());
+
             // once the migrate command is sent, the VM may end up running on the new volumes,
             // so they are only removed if the source host reports the migration as failed
             migrateCommandSent = true;
@@ -550,6 +559,8 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
+
+            VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger);
         } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in LinstorDataMotionStrategy.copyAsync. Error message: [%s].",

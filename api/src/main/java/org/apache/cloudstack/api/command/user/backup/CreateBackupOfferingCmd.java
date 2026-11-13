@@ -35,6 +35,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -92,6 +93,10 @@ public class CreateBackupOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = DomainResponse.class,
             description = "Restrict the backup offering to the Domains identified by these IDs.")
     private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.COMPRESS_ASYNC, type = CommandType.BOOLEAN, description = "Set to false to compress synchronously during backup creation; conversely, set to true to compress asynchronously later. " +
+            "Default true.")
+    private Boolean compressAsync;
 
     @Parameter(name = ApiConstants.MAX_SCHEDULES, type = CommandType.MAP,
             description = "Maximum number of schedules, values lower than 0 disable the limit. By default, all allowed schedule types have a limit of 1. Accepts a map of " +
@@ -170,6 +175,10 @@ public class CreateBackupOfferingCmd extends BaseCmd {
 
     public Boolean getUserDrivenBackups() {
         return userDrivenBackups;
+    }
+
+    public boolean isCompressAsync() {
+        return BooleanUtils.toBooleanDefaultIfNull(this.compressAsync, true);
     }
 
     public Map<String, String> getMaxSchedules() {

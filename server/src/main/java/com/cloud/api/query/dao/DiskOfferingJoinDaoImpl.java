@@ -137,6 +137,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setIopsWriteRateMax(offering.getIopsWriteRateMax());
         diskOfferingResponse.setIopsWriteRateMaxLength(offering.getIopsWriteRateMaxLength());
         diskOfferingResponse.setCacheMode(offering.getCacheMode());
+        diskOfferingResponse.setErrorPolicy(offering.getErrorPolicy());
         diskOfferingResponse.setObjectName("diskoffering");
         Map<String, String> offeringDetails = ApiDBUtils.getResourceDetails(offering.getId(), ResourceTag.ResourceObjectType.DiskOffering);
         diskOfferingResponse.setDetails(offeringDetails);
