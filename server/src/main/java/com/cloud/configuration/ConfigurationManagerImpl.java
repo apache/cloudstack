@@ -1152,7 +1152,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     encryptEventValueIfConfigIsEncrypted(config, value),
                     scope != null ? scope : ConfigKey.Scope.Global.name());
 
-            return _configDao.findByName(name);
+            ConfigurationVO updatedConfig = _configDao.findByName(name);
+            if (updatedConfig != null && scope != null) {
+                // The configuration table holds the global value. Report the value just set in the
+                // requested scope instead. This object is only used for the response; it is not persisted.
+                updatedConfig.setValue(updatedValue);
+            }
+            return updatedConfig;
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
