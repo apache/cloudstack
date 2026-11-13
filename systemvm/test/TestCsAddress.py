@@ -27,6 +27,8 @@ class FakeConfig:
         self.fw = []
         self.nft_ipv4_fw = []
         self.nft_ipv4_acl = []
+        self.usage_exempt_cidrs = []
+        self.vpc = True
 
     def get_fw(self):
         return self.fw
@@ -43,13 +45,19 @@ class FakeConfig:
         return cl
 
     def is_vpc(self):
-        return True
+        return self.vpc
 
     def is_routed(self):
         return False
 
+    def is_dhcp(self):
+        return False
+
     def has_public_network(self):
         return True
+
+    def get_usage_exempt_cidrs(self):
+        return self.usage_exempt_cidrs
 
 
 class TestCsAddress(unittest.TestCase):
@@ -112,6 +120,49 @@ class TestCsAddress(unittest.TestCase):
         rules = self.acl_outbound_rules({"nw_type": "public", "is_private_gateway": True, "network": "172.16.0.0/24",
                                          "gateway": "172.16.0.1", "public_ip": "172.16.0.10", "source_nat": False})
         self.assertEqual(rules, [["mangle", "", "-A ACL_OUTBOUND_eth3 -j RETURN"]])
+
+    def usage_rules(self, exempt_cidrs, vpc=True):
+        config = FakeConfig()
+        config.usage_exempt_cidrs = exempt_cidrs
+        config.vpc = vpc
+        with mock.patch.object(CsIP, "list"):
+            ip = CsIP("eth3", config)
+        ip.setAddress({"nw_type": "public", "public_ip": "203.0.113.10", "network": "203.0.113.0/24",
+                       "gateway": "203.0.113.1", "source_nat": True})
+        with mock.patch("cs.CsAddress.CsStaticRoutes"):
+            if vpc:
+                ip.fw_vpcrouter()
+            else:
+                ip.fw_router()
+        return [fw for fw in config.fw if fw[0] == "" and "NETWORK_STATS" in fw[2]]
+
+    def test_usage_jump_unchanged_without_exempt_cidrs(self):
+        rules = self.usage_rules([])
+        self.assertIn(["", "front", "-A FORWARD -j NETWORK_STATS_eth3"], rules)
+        self.assertFalse(any("_EXEMPT" in fw[2] for fw in rules))
+
+    def test_vpc_usage_jump_goes_through_exempt_chain(self):
+        rules = self.usage_rules(["192.0.2.5/32"])
+        self.assertNotIn(["", "front", "-A FORWARD -j NETWORK_STATS_eth3"], rules)
+        exempt = [fw for fw in rules if "NETWORK_STATS_eth3_EXEMPT" in fw[2]]
+        self.assertEqual(exempt, [
+            ["", "front", "-A FORWARD -j NETWORK_STATS_eth3_EXEMPT"],
+            ["", "", "-A NETWORK_STATS_eth3_EXEMPT -j NETWORK_STATS_eth3"],
+            ["", "front", "-A NETWORK_STATS_eth3_EXEMPT -d 192.0.2.5/32 -j RETURN"],
+            ["", "front", "-A NETWORK_STATS_eth3_EXEMPT -s 192.0.2.5/32 -j RETURN"],
+        ])
+
+    def test_usage_counting_chain_unchanged_with_exempt_cidrs(self):
+        # the agent reads these counters by position, so the usage chain has to stay exactly the same
+        counting = lambda rules: [fw for fw in rules if fw[2].startswith("-A NETWORK_STATS_eth3 ")]
+        self.assertEqual(counting(self.usage_rules(["192.0.2.5/32"])), counting(self.usage_rules([])))
+
+    def test_isolated_usage_jumps_go_through_exempt_chains(self):
+        rules = self.usage_rules(["192.0.2.5/32"], vpc=False)
+        forward = [fw[2] for fw in rules if fw[2].startswith("-A FORWARD")]
+        self.assertEqual(sorted(forward), ["-A FORWARD -j NETWORK_STATS_EXEMPT", "-A FORWARD -j NETWORK_STATS_eth3_EXEMPT"])
+        self.assertIn(["", "", "-A NETWORK_STATS_EXEMPT -j NETWORK_STATS"], rules)
+        self.assertIn(["", "front", "-A NETWORK_STATS_EXEMPT -d 192.0.2.5/32 -j RETURN"], rules)
 
 
 if __name__ == '__main__':
