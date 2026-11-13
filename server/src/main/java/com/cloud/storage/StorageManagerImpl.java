@@ -406,6 +406,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
+    protected SearchBuilder<CapacityVO> PoolCapacitySearch;
+    protected SearchBuilder<StoragePoolVO> PoolUsedStatsSearch;
 
     ScheduledExecutorService _executor = null;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
@@ -599,6 +601,20 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         LocalStorageSearch.join("poolHost", storageHostSearch, storageHostSearch.entity().getPoolId(), LocalStorageSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         LocalStorageSearch.and("type", LocalStorageSearch.entity().getPoolType(), SearchCriteria.Op.IN);
         LocalStorageSearch.done();
+
+        PoolCapacitySearch = _capacityDao.createSearchBuilder();
+        PoolCapacitySearch.and("hostOrPoolId", PoolCapacitySearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
+        PoolCapacitySearch.and("dataCenterId", PoolCapacitySearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        PoolCapacitySearch.and("capacityType", PoolCapacitySearch.entity().getCapacityType(), SearchCriteria.Op.EQ);
+        PoolCapacitySearch.done();
+
+        PoolUsedStatsSearch = _storagePoolDao.createSearchBuilder();
+        PoolUsedStatsSearch.and("dataCenterId", PoolUsedStatsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        PoolUsedStatsSearch.and("podId", PoolUsedStatsSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        PoolUsedStatsSearch.and("clusterId", PoolUsedStatsSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        PoolUsedStatsSearch.and("ids", PoolUsedStatsSearch.entity().getId(), SearchCriteria.Op.IN);
+        PoolUsedStatsSearch.and("parent", PoolUsedStatsSearch.entity().getParent(), SearchCriteria.Op.EQ);
+        PoolUsedStatsSearch.done();
 
         Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao, _vmInstanceDao));
 
@@ -1802,10 +1818,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
-        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
-        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
-        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
+        SearchCriteria<CapacityVO> capacitySC = PoolCapacitySearch.create();
+        capacitySC.setParameters("hostOrPoolId", storagePool.getId());
+        capacitySC.setParameters("dataCenterId", storagePool.getDataCenterId());
+        capacitySC.setParameters("capacityType", capacityType);
 
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
@@ -2952,11 +2968,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId) {
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-        if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        }
-
         List<Long> hosts = new ArrayList<>();
         if (hostId != null) {
             hosts.add(hostId);
@@ -2983,28 +2994,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private CapacityVO getStoragePoolUsedStatsInternal(Long zoneId, Long podId, Long clusterId, List<Long> poolIds, Long poolId) {
-        SearchCriteria<StoragePoolVO> sc = _storagePoolDao.createSearchCriteria();
         List<StoragePoolVO> pools = new ArrayList<>();
-
-        if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        }
-        if (podId != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-        }
-        if (clusterId != null) {
-            sc.addAnd("clusterId", SearchCriteria.Op.EQ, clusterId);
-        }
-        if (CollectionUtils.isNotEmpty(poolIds)) {
-            sc.addAnd("id", SearchCriteria.Op.IN, poolIds.toArray());
-        }
-        if (poolId != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, poolId);
-        }
-        sc.addAnd("parent", SearchCriteria.Op.EQ, 0L);
         if (poolId != null) {
             pools.add(_storagePoolDao.findById(poolId));
         } else {
+            SearchCriteria<StoragePoolVO> sc = PoolUsedStatsSearch.create();
+            if (zoneId != null) {
+                sc.setParameters("dataCenterId", zoneId);
+            }
+            if (podId != null) {
+                sc.setParameters("podId", podId);
+            }
+            if (clusterId != null) {
+                sc.setParameters("clusterId", clusterId);
+            }
+            if (CollectionUtils.isNotEmpty(poolIds)) {
+                sc.setParameters("ids", poolIds.toArray());
+            }
+            sc.setParameters("parent", 0L);
             pools = _storagePoolDao.search(sc, null);
         }
 
