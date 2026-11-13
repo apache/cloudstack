@@ -83,6 +83,9 @@ public class Lun {
     @JsonProperty("name")
     private String name = null;
 
+    @JsonProperty("qos_policy")
+    private VolumeQosPolicy qosPolicy = null;
+
     @JsonProperty("clone")
     private Clone clone = null;
 
@@ -202,6 +205,14 @@ public class Lun {
         this.name = name;
     }
 
+    public VolumeQosPolicy getQosPolicy() {
+        return qosPolicy;
+    }
+
+    public void setQosPolicy(VolumeQosPolicy qosPolicy) {
+        this.qosPolicy = qosPolicy;
+    }
+
     public Lun osType(OsTypeEnum osType) {
         this.osType = osType;
         return this;
@@ -308,6 +319,7 @@ public class Lun {
     }
 
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Clone {
         @JsonProperty("source")
         private Source source = null;
@@ -319,6 +331,7 @@ public class Lun {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Source {
         @JsonProperty("name")
         private String name = null;

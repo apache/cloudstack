@@ -19,9 +19,15 @@
 
 package org.apache.cloudstack.storage.feign.client;
 
+import java.util.Map;
+
 import org.apache.cloudstack.storage.feign.model.Cluster;
+import org.apache.cloudstack.storage.feign.model.ClusterNode;
+import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+
 import feign.Headers;
 import feign.Param;
+import feign.QueryMap;
 import feign.RequestLine;
 
 public interface ClusterFeignClient {
@@ -29,4 +35,9 @@ public interface ClusterFeignClient {
     @RequestLine("GET /api/cluster")
     @Headers({"Authorization: {authHeader}", "return_records: {returnRecords}"})
     Cluster getCluster(@Param("authHeader") String authHeader, @Param("returnRecords") boolean returnRecords);
+
+    @RequestLine("GET /api/cluster/nodes")
+    @Headers({"Authorization: {authHeader}"})
+    OntapResponse<ClusterNode> getClusterNodes(@Param("authHeader") String authHeader,
+            @QueryMap Map<String, Object> queryMap);
 }

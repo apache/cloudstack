@@ -49,6 +49,8 @@ public class FileInfo {
   private Boolean overwriteEnabled = null;
   @JsonProperty("path")
   private String path = null;
+  @JsonProperty("qos_policy")
+  private VolumeQosPolicy qosPolicy = null;
   @JsonProperty("size")
   private Long size = null;
   @JsonProperty("target")
@@ -178,6 +180,15 @@ public class FileInfo {
   public void setPath(String path) {
     this.path = path;
   }
+
+  public VolumeQosPolicy getQosPolicy() {
+    return qosPolicy;
+  }
+
+  public void setQosPolicy(VolumeQosPolicy qosPolicy) {
+    this.qosPolicy = qosPolicy;
+  }
+
   public Long getSize() {
     return size;
   }
