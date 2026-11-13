@@ -184,7 +184,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 logger.info("Setting NFS path for storage pool: " + path + ", port: " + port + " with mount option: vers=3");
                 break;
             case ISCSI:
-                parameters.setType(Storage.StoragePoolType.Iscsi);
+                parameters.setType(Storage.StoragePoolType.OntapiSCSI);
                 path = storageStrategy.getStoragePath();
                 port = OntapStorageConstants.ISCSI_PORT;
                 logger.info("Setting iSCSI path for storage pool: " + path + ", port: " + port);

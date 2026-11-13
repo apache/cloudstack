@@ -49,6 +49,7 @@ public class StorageTest {
         Assert.assertTrue(StoragePoolType.ManagedNFS.isShared());
         Assert.assertTrue(StoragePoolType.DatastoreCluster.isShared());
         Assert.assertTrue(StoragePoolType.Linstor.isShared());
+        Assert.assertTrue(StoragePoolType.OntapiSCSI.isShared());
     }
 
     @Test
@@ -73,6 +74,7 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.ManagedNFS.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.Linstor.supportsOverProvisioning());
+        Assert.assertTrue(StoragePoolType.OntapiSCSI.supportsOverProvisioning());
     }
 
     @Test

@@ -268,3 +268,26 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- Re-tag NetApp ONTAP iSCSI storage pools to the dedicated 'OntapiSCSI' pool type.
+UPDATE  `cloud`.`storage_pool`
+SET     `pool_type` = 'OntapiSCSI'
+WHERE   `storage_provider_name` = 'NetApp ONTAP'
+  AND   `pool_type`              = 'Iscsi';
+
+-- The denormalized copy on every volume that lives on such a pool.
+UPDATE  `cloud`.`volumes` v
+    JOIN    `cloud`.`storage_pool` sp ON sp.`id` = v.`pool_id`
+    SET     v.`pool_type` = 'OntapiSCSI'
+WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
+  AND   sp.`pool_type`             IN ('Iscsi', 'OntapiSCSI')
+  AND   v.`pool_type`              = 'Iscsi';
+
+-- Volume format realignment.
+UPDATE  `cloud`.`volumes` v
+    JOIN    `cloud`.`storage_pool` sp ON sp.`id` = v.`pool_id`
+    SET     v.`format` = 'RAW'
+WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
+  AND   sp.`pool_type`             IN ('Iscsi', 'OntapiSCSI')
+  AND   (v.`format` IS NULL OR v.`format` <> 'RAW');
+
