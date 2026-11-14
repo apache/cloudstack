@@ -291,3 +291,5 @@ SELECT uuid(), role_id, 'importLdapUsers', permission, sort_order
 FROM cloud.role_permissions rp
 WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'importLdapUsers');
 
+-- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
+UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
