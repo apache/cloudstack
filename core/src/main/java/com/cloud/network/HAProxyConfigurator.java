@@ -50,7 +50,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         "\tuser haproxy", "\tgroup haproxy", "\tstats socket /run/haproxy/admin.sock", "\tdaemon"};
 
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
-        "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
+        "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000",
+        "", ""};
+
+    private static final long MAX_FIN_TIMEOUT = 50000;
 
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
 
@@ -635,9 +638,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (lbCmd.keepAliveEnabled) {
             dSection.set(7, "\tno option httpclose");
         }
+        long finTimeout = MAX_FIN_TIMEOUT;
         if (lbCmd.idleTimeout > 0) {
             dSection.set(9, "\ttimeout client     " + Long.toString(lbCmd.idleTimeout));
             dSection.set(10, "\ttimeout server     " + Long.toString(lbCmd.idleTimeout));
+            finTimeout = Math.min(lbCmd.idleTimeout, MAX_FIN_TIMEOUT);
         } else if (lbCmd.idleTimeout == 0) {
             // .remove() is not allowed, only .set() operations are allowed as the list
             // is a fixed size.  So lets just mark the entry as blank.
@@ -648,6 +653,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             // default HAProxy timeout values from defaultsSection for predictability.
             logger.warn("Negative idleTimeout ({}) configured; retaining default HAProxy timeouts.", lbCmd.idleTimeout);
         }
+        dSection.set(11, "\ttimeout client-fin " + Long.toString(finTimeout));
+        dSection.set(12, "\ttimeout server-fin " + Long.toString(finTimeout));
 
         if (logger.isDebugEnabled()) {
             for (final String s : dSection) {
