@@ -25,6 +25,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -719,5 +720,50 @@ public class StorageSystemDataMotionStrategyTest {
             Mockito.verify(destVolume, Mockito.never()).processEvent(Mockito.any(Event.class));
         }
         Mockito.verify(volumeService, Mockito.never()).expungeVolumeAsync(Mockito.any());
+    }
+
+    private VolumeVO invokeDuplicateVolumeOnAnotherStorage(VolumeVO sourceVolume, StoragePoolVO destPool) throws Exception {
+        sourceVolume.setSize(1073741824L);
+        Mockito.doAnswer(invocation -> invocation.getArgument(0)).when(volumeDao).persist(Mockito.any(VolumeVO.class));
+        Method method = StorageSystemDataMotionStrategy.class.getDeclaredMethod("duplicateVolumeOnAnotherStorage", Volume.class, StoragePoolVO.class);
+        method.setAccessible(true);
+        return (VolumeVO) method.invoke(strategy, sourceVolume, destPool);
+    }
+
+    @Test
+    public void duplicateVolumeOnAnotherStorageSetsLuks2WhenDestinationIsRbd() throws Exception {
+        VolumeVO sourceVolume = new VolumeVO() {};
+        sourceVolume.setPassphraseId(99L);
+        sourceVolume.setEncryptFormat("luks");
+
+        doReturn(StoragePoolType.RBD).when(destinationStoragePoolVoMock).getPoolType();
+
+        VolumeVO result = invokeDuplicateVolumeOnAnotherStorage(sourceVolume, destinationStoragePoolVoMock);
+
+        Assert.assertEquals("luks2", result.getEncryptFormat());
+    }
+
+    @Test
+    public void duplicateVolumeOnAnotherStorageSetsLuksWhenDestinationIsNotRbd() throws Exception {
+        VolumeVO sourceVolume = new VolumeVO() {};
+        sourceVolume.setPassphraseId(99L);
+        sourceVolume.setEncryptFormat("luks2");
+
+        doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
+
+        VolumeVO result = invokeDuplicateVolumeOnAnotherStorage(sourceVolume, destinationStoragePoolVoMock);
+
+        Assert.assertEquals("luks", result.getEncryptFormat());
+    }
+
+    @Test
+    public void duplicateVolumeOnAnotherStorageLeavesEncryptFormatNullWhenNotEncrypted() throws Exception {
+        VolumeVO sourceVolume = new VolumeVO() {};
+
+        doReturn(StoragePoolType.RBD).when(destinationStoragePoolVoMock).getPoolType();
+
+        VolumeVO result = invokeDuplicateVolumeOnAnotherStorage(sourceVolume, destinationStoragePoolVoMock);
+
+        Assert.assertNull(result.getEncryptFormat());
     }
 }

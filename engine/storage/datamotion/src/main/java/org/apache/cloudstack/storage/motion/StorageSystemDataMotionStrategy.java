@@ -2643,13 +2643,15 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             newVol.setFormat(ImageFormat.QCOW2);
         }
 
+        // librbd encrypts an RBD volume natively (LUKS2), a volume on any other pool with qemu (LUKS)
+        String newEncryptFormat = storagePoolVO.getPoolType() == StoragePoolType.RBD ? "luks2" : "luks";
         if (volume.getKmsKeyId() != null) {
             newVol.setKmsKeyId(volume.getKmsKeyId());
             newVol.setKmsWrappedKeyId(volume.getKmsWrappedKeyId());
-            newVol.setEncryptFormat(volume.getEncryptFormat());
+            newVol.setEncryptFormat(newEncryptFormat);
         } else if (volume.getPassphraseId() != null) {
             newVol.setPassphraseId(volume.getPassphraseId());
-            newVol.setEncryptFormat(volume.getEncryptFormat());
+            newVol.setEncryptFormat(newEncryptFormat);
         }
 
         return _volumeDao.persist(newVol);
