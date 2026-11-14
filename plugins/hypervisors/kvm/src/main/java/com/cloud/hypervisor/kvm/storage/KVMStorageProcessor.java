@@ -1929,12 +1929,18 @@ public class KVMStorageProcessor implements StorageProcessor {
     protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
         long size = volume.getSize();
         if (volume.requiresEncryption() && migrationOptions.getSrcPoolType() != null) {
-            // the LUKS2 header of an RBD-encrypted volume is carved out of its declared size, while a file based
-            // (LUKS1) encrypted volume keeps its declared size as the guest-visible size; re-derive the declared
-            // size for the destination pool so both ends of the migration agree on the guest-visible size
-            boolean srcOnRbd = StoragePoolType.RBD.equals(migrationOptions.getSrcPoolType());
+            // The declared volume size does not track the source's actual current guest-visible size: a volume
+            // that already migrated through RBD once keeps a smaller real container size on its current,
+            // file-based pool (the LUKS2 header reserve was never added back since that pool doesn't need it).
+            // Measure the source disk directly instead of trusting the declared size, mirroring the destination
+            // sizing logic in LibvirtMigrateVolumeCommandWrapper's live single-volume migration path.
+            KVMStoragePool srcPool = getTemplateSourcePoolUsingMigrationOptions(primaryPool, migrationOptions);
+            KVMPhysicalDisk srcDisk = srcPool.getPhysicalDisk(migrationOptions.getSrcVolumeUuid());
+            long guestSize = srcDisk.getVirtualSize();
+            if (StoragePoolType.RBD.equals(srcPool.getType())) {
+                guestSize -= LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
+            }
             boolean destOnRbd = StoragePoolType.RBD.equals(primaryPool.getType());
-            long guestSize = srcOnRbd ? size - LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES : size;
             size = destOnRbd ? guestSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES : guestSize;
         }
         logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(size) + " and format: " + format);
