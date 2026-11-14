@@ -28,6 +28,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.mockito.ArgumentCaptor;
@@ -207,6 +209,78 @@ public class KVMStorageProcessorTest {
 
         storageProcessor.validateAvailableSizeOnPoolToTakeVolumeSnapshot(kvmStoragePoolMock, kvmPhysicalDiskMock);
         storageProcessor.validateAvailableSizeOnPoolToTakeVolumeSnapshot(kvmStoragePoolMock, kvmPhysicalDiskMock);
+    }
+
+    private MigrationOptions createFullCloneMigrationOptionsMock(StoragePoolType srcPoolType) {
+        return new MigrationOptions("srcPoolUuid", srcPoolType, "srcVolumeUuid", ScopeType.CLUSTER, 1L);
+    }
+
+    private void setUpVolumeForCreateFullCloneVolume(boolean requiresEncryption, long size) {
+        Mockito.doReturn(requiresEncryption).when(volumeObjectToMock).requiresEncryption();
+        Mockito.doReturn(size).when(volumeObjectToMock).getSize();
+        Mockito.doReturn("volumeUuid").when(volumeObjectToMock).getUuid();
+        Mockito.doReturn(Storage.ProvisioningType.THIN).when(volumeObjectToMock).getProvisioningType();
+        Mockito.doReturn(null).when(volumeObjectToMock).getPassphrase();
+    }
+
+    @Test
+    public void createFullCloneVolumeNotEncryptedKeepsDeclaredSize() {
+        long declaredSize = 2147483648L;
+        setUpVolumeForCreateFullCloneVolume(false, declaredSize);
+        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.NetworkFilesystem);
+
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
+
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, declaredSize, null);
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedNfsToRbdAddsLuksHeaderReserve() {
+        long declaredSize = 2147483648L;
+        setUpVolumeForCreateFullCloneVolume(true, declaredSize);
+        Mockito.doReturn(StoragePoolType.RBD).when(kvmStoragePoolMock).getType();
+        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.NetworkFilesystem);
+
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
+
+        long expectedSize = declaredSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, expectedSize, null);
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedRbdToNfsSubtractsLuksHeaderReserve() {
+        long declaredSize = 1073741824L;
+        setUpVolumeForCreateFullCloneVolume(true, declaredSize);
+        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(kvmStoragePoolMock).getType();
+        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.RBD);
+
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.QCOW2);
+
+        long expectedSize = declaredSize - LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.QCOW2, Storage.ProvisioningType.THIN, expectedSize, null);
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedRbdToRbdKeepsDeclaredSize() {
+        long declaredSize = 1073741824L;
+        setUpVolumeForCreateFullCloneVolume(true, declaredSize);
+        Mockito.doReturn(StoragePoolType.RBD).when(kvmStoragePoolMock).getType();
+        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.RBD);
+
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
+
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, declaredSize, null);
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedNullSrcPoolTypeKeepsDeclaredSize() {
+        long declaredSize = 1073741824L;
+        setUpVolumeForCreateFullCloneVolume(true, declaredSize);
+        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(null);
+
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
+
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, declaredSize, null);
     }
 
     private List<LibvirtVMDef.DiskDef> createDiskDefs(int iterations, boolean duplicatePath) {

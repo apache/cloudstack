@@ -1927,8 +1927,18 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Create full clone volume from VM snapshot
      */
     protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
-            logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(volume.getSize()) + " and format: " + format);
-        return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), volume.getSize(), volume.getPassphrase());
+        long size = volume.getSize();
+        if (volume.requiresEncryption() && migrationOptions.getSrcPoolType() != null) {
+            // the LUKS2 header of an RBD-encrypted volume is carved out of its declared size, while a file based
+            // (LUKS1) encrypted volume keeps its declared size as the guest-visible size; re-derive the declared
+            // size for the destination pool so both ends of the migration agree on the guest-visible size
+            boolean srcOnRbd = StoragePoolType.RBD.equals(migrationOptions.getSrcPoolType());
+            boolean destOnRbd = StoragePoolType.RBD.equals(primaryPool.getType());
+            long guestSize = srcOnRbd ? size - LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES : size;
+            size = destOnRbd ? guestSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES : guestSize;
+        }
+        logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(size) + " and format: " + format);
+        return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), size, volume.getPassphrase());
     }
 
     @Override
