@@ -848,7 +848,19 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                             diskChildNode.appendChild(newChildBackingElement);
                                         }
                                     }
-                                } else if ("encryption".equals(diskChildNode.getNodeName())) {
+                                } else if ("encryption".equals(diskChildNode.getNodeName()) && diskChildNode instanceof Element) {
+                                    // librbd encrypts an RBD image natively (LUKS2); a file or block pool is encrypted by
+                                    // qemu's own, generic LUKS (version 1) reader instead. Left at its source value, a
+                                    // volume migrating onto RBD keeps whichever of the two the source pool needed, and
+                                    // qemu's generic reader may not support every KDF a librbd-written LUKS2 header can use.
+                                    Element encryptionElement = (Element) diskChildNode;
+                                    if (Storage.StoragePoolType.RBD.equals(migrateDiskInfo.getDestPoolType())) {
+                                        encryptionElement.setAttribute("format", "luks2");
+                                        encryptionElement.setAttribute("engine", "librbd");
+                                    } else {
+                                        encryptionElement.setAttribute("format", "luks");
+                                        encryptionElement.removeAttribute("engine");
+                                    }
                                     for (int s = 0; s < diskChildNode.getChildNodes().getLength(); s++) {
                                         Node encryptionChild = diskChildNode.getChildNodes().item(s);
                                         if ("secret".equals(encryptionChild.getNodeName())) {

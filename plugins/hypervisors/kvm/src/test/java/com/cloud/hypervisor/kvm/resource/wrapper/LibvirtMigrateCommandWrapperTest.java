@@ -879,6 +879,43 @@ public class LibvirtMigrateCommandWrapperTest {
         assertXpath(doc, "/domain/devices/disk/encryption/secret/@uuid", expectedSecretUuid);
     }
 
+    private static final String ENCRYPTED_FILE_DISK_XML =
+        "<domain type='kvm' id='3'>" +
+        "  <devices>" +
+        "    <disk type='file' device='disk'>\n" +
+        "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+        "      <source file='/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048'/>\n" +
+        "      <target dev='vdb' bus='virtio'/>\n" +
+        "      <serial>bf8621b3027c497d963b</serial>\n" +
+        "      <encryption format='luks'>\n" +
+        "        <secret type='passphrase' uuid='5644d664-a238-3a9b-811c-961f609d29f4'/>\n" +
+        "      </encryption>\n" +
+        "    </disk>\n" +
+        "  </devices>" +
+        "</domain>";
+
+    @Test
+    public void testReplaceStorageSetsTheLibrbdEncryptionEngineWhenMigratingOntoRbd() throws Exception {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<>();
+        mapMigrateStorage.put("bf8621b3-027c-497d-963b-06319650f048", rbdDestination("destpool/destimage", "bf8621b3-027c-497d-963b-06319650f048"));
+
+        Document doc = parseXml(libvirtMigrateCmdWrapper.replaceStorage(ENCRYPTED_FILE_DISK_XML, mapMigrateStorage, false));
+
+        assertXpath(doc, "/domain/devices/disk/encryption/@format", "luks2");
+        assertXpath(doc, "/domain/devices/disk/encryption/@engine", "librbd");
+    }
+
+    @Test
+    public void testReplaceStorageKeepsTheGenericLuksEncryptionWhenNotMigratingOntoRbd() throws Exception {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("3530f749-82fd-458e-9485-a357e6e541db",
+                "/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048");
+
+        Document doc = parseXml(libvirtMigrateCmdWrapper.replaceStorage(ENCRYPTED_FILE_DISK_XML, mapMigrateStorage, false));
+
+        assertXpath(doc, "/domain/devices/disk/encryption/@format", "luks");
+        assertXpath(doc, "/domain/devices/disk/encryption/@engine", "");
+    }
+
     private Document parseXml(String xml) throws Exception {
         return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(IOUtils.toInputStream(xml, "UTF-8"));
     }
