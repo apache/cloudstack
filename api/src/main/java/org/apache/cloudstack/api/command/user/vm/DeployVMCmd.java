@@ -91,7 +91,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     public void execute() {
         UserVm result;
 
-        CallContext.current().setEventDetails("VM Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("VM ID: " + getEntityUuid());
         if (getStartVm()) {
             try {
                 result = _userVmService.startVirtualMachine(this);
