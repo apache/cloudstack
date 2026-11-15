@@ -241,7 +241,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         if (nic.getBroadCastUri() == null) {
             nic.setBroadcastUri(network.getBroadcastUri());
         }
-        if (nic.getMacAddress() == null) {
+        if (nic.getMacAddress() == null || !_networkModel.isMACUnique(nic.getMacAddress(), network.getId())) {
             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
         }
     }

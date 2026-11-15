@@ -36,33 +36,33 @@ import java.util.List;
 
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
-        description = "Updates a port forwarding rule. Only the private port and the virtual machine can be updated.", entityType = {PortForwardingRule.class},
+        description = "Updates a port forwarding rule. Only the private port and the  Instance can be updated.", entityType = {PortForwardingRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the port forwarding rule", since = "4.4")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of the port forwarding rule", since = "4.4")
     private Long id;
 
-    @Parameter(name=ApiConstants.PRIVATE_START_PORT, type=CommandType.INTEGER, description="the private start port of the port forwarding rule")
+    @Parameter(name=ApiConstants.PRIVATE_START_PORT, type=CommandType.INTEGER, description = "The private start port of the port forwarding rule")
     private Integer privatePort;
 
 
-    @Parameter(name=ApiConstants.PRIVATE_END_PORT, type=CommandType.INTEGER, description="the private end port of the port forwarding rule")
+    @Parameter(name=ApiConstants.PRIVATE_END_PORT, type=CommandType.INTEGER, description = "The private end port of the port forwarding rule")
     private Integer privateEndPort;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the ID of the virtual machine for the port forwarding rule")
+               description = "The ID of the  Instance for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false, description = "VM guest nic Secondary ip address for the port forwarding rule", since = "4.5")
+    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false, description = "Instance guest NIC Secondary IP address for the port forwarding rule", since = "4.5")
     private String vmGuestIp;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.CIDR_LIST,

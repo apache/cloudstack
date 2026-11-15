@@ -31,8 +31,8 @@ public interface Ipv4GuestSubnetNetworkMapDao extends GenericDao<Ipv4GuestSubnet
     Ipv4GuestSubnetNetworkMapVO findFirstAvailable(long parentId, long cidrSize);
     Ipv4GuestSubnetNetworkMapVO findByNetworkId(long networkId);
     Ipv4GuestSubnetNetworkMapVO findByVpcId(long vpcId);
-    Ipv4GuestSubnetNetworkMapVO findBySubnet(String subnet);
+    Ipv4GuestSubnetNetworkMapVO findBySubnetAndDataCenterId(String subnet, Long dataCenterId);
     List<Ipv4GuestSubnetNetworkMapVO> findSubnetsInStates(Ipv4GuestSubnetNetworkMap.State... states);
     void deleteByParentId(long parentId);
-    List<Ipv4GuestSubnetNetworkMapVO> listAllNoParent();
+    List<Ipv4GuestSubnetNetworkMapVO> listAllNoParentByDataCenterId(Long dataCenterId);
 }

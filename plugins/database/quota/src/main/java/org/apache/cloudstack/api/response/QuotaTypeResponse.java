@@ -26,11 +26,11 @@ import com.cloud.serializer.Param;
 public class QuotaTypeResponse extends BaseResponse {
 
     @SerializedName("quotatypeid")
-    @Param(description = "quota type")
+    @Param(description = "Quota type")
     private Integer quotaType;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description of usage type")
+    @Param(description = "Description of usage type")
     private String description;
 
     public String getDescription() {

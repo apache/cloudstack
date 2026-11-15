@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "recoverVirtualMachine", description = "Recovers a virtual machine.", responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "recoverVirtualMachine", description = "Recovers  an Instance.", responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RecoverVMCmd extends BaseCmd {
 
@@ -44,7 +44,7 @@ public class RecoverVMCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ public class RecoverVMCmd extends BaseCmd {
             recoverVmResponse.setResponseName(getCommandName());
             setResponseObject(recoverVmResponse);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to recover vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to recover Instance");
         }
 
     }

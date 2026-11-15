@@ -29,31 +29,31 @@ import com.cloud.serializer.Param;
 public class TrafficTypeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "id of the network provider")
+    @Param(description = "ID of the Network provider")
     private String id;
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE)
-    @Param(description = "the trafficType to be added to the physical network")
+    @Param(description = "The trafficType to be added to the physical Network")
     private String trafficType;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network this belongs to")
+    @Param(description = "The physical Network this belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.XENSERVER_NETWORK_LABEL)
-    @Param(description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
+    @Param(description = "The Network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenNetworkLabel;
 
     @SerializedName(ApiConstants.KVM_NETWORK_LABEL)
-    @Param(description = "The network name label of the physical device dedicated to this traffic on a KVM host")
+    @Param(description = "The Network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmNetworkLabel;
 
     @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL)
-    @Param(description = "The network name label of the physical device dedicated to this traffic on a VMware host")
+    @Param(description = "The Network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
 
     @SerializedName(ApiConstants.HYPERV_NETWORK_LABEL)
-    @Param(description = "The network name label of the physical device dedicated to this traffic on a HyperV host")
+    @Param(description = "The Network name label of the physical device dedicated to this traffic on a HyperV host")
     private String hypervNetworkLabel;
 
     @SerializedName(ApiConstants.VLAN)
@@ -65,7 +65,7 @@ public class TrafficTypeResponse extends BaseResponse {
     private String isolationMethods;
 
     @SerializedName(ApiConstants.OVM3_NETWORK_LABEL)
-    @Param(description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
+    @Param(description = "The Network name of the physical device dedicated to this traffic on an OVM3 host")
     private String ovm3NetworkLabel;
 
     @Override

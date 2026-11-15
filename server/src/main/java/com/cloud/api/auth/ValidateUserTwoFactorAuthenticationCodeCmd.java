@@ -64,7 +64,7 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CODE_FOR_2FA, type = CommandType.STRING, description = "two factor authentication code", required = true)
+    @Parameter(name = ApiConstants.CODE_FOR_2FA, type = CommandType.STRING, description = "Two factor authentication code", required = true)
     private String codeFor2fa;
 
     /////////////////////////////////////////////////////

@@ -43,7 +43,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be suspended")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "ID of the project to be suspended")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Project Id: " + id);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.ID));
         Project project = _projectService.suspendProject(id);
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
@@ -78,7 +78,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Suspending project: " + id;
+        return "Suspending project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

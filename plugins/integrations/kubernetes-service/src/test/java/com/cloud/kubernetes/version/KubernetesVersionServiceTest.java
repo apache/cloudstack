@@ -17,6 +17,9 @@
 
 package com.cloud.kubernetes.version;
 
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -25,6 +28,11 @@ import java.util.List;
 import java.util.UUID;
 
 import com.cloud.cpu.CPU;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.AddKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.DeleteKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.UpdateKubernetesSupportedVersionCmd;
@@ -63,17 +71,15 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesVersionServiceTest {
@@ -94,7 +100,11 @@ public class KubernetesVersionServiceTest {
     @Mock
     private DataCenterDao dataCenterDao;
     @Mock
+    private ImageStoreDao imageStoreDao;
+    @Mock
     private TemplateApiService templateService;
+    @Mock
+    private Account accountMock;
 
     AutoCloseable closeable;
 
@@ -123,7 +133,12 @@ public class KubernetesVersionServiceTest {
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
 
+        List<ImageStoreVO> imageStores = new ArrayList<>();
+        imageStores.add(Mockito.mock(ImageStoreVO.class));
+        when(imageStoreDao.listStoresByZoneId(Mockito.anyLong())).thenReturn(imageStores);
+
         TemplateJoinVO templateJoinVO = Mockito.mock(TemplateJoinVO.class);
+        when(templateJoinVO.getUrl()).thenReturn("https://download.cloudstack.com");
         when(templateJoinVO.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
         when(templateJoinVO.getArch()).thenReturn(CPU.CPUArch.getDefault());
         when(templateJoinDao.findById(Mockito.anyLong())).thenReturn(templateJoinVO);
@@ -140,19 +155,66 @@ public class KubernetesVersionServiceTest {
 
     @Test
     public void listKubernetesSupportedVersionsTest() {
-        ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
-        List<KubernetesSupportedVersionVO> versionVOs = new ArrayList<>();
-        KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
-        when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
-        versionVOs.add(versionVO);
-        when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
-        when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(SearchCriteria.class),
-                Mockito.any(Filter.class))).thenReturn(new Pair<>(versionVOs, versionVOs.size()));
-        ListResponse<KubernetesSupportedVersionResponse> versionsResponse =
-                kubernetesVersionService.listKubernetesSupportedVersions(cmd);
-        Assert.assertEquals(versionVOs.size(), versionsResponse.getCount().intValue());
-        Assert.assertTrue(CollectionUtils.isNotEmpty(versionsResponse.getResponses()));
-        Assert.assertEquals(versionVOs.size(), versionsResponse.getResponses().size());
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            final SearchCriteria<KubernetesSupportedVersionVO> versionSearchCriteria = Mockito.mock(SearchCriteria.class);
+            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+            List<KubernetesSupportedVersionVO> versionVOs = new ArrayList<>();
+            KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+            when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
+            versionVOs.add(versionVO);
+            when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+            when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class)))
+                    .thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+            ListResponse<KubernetesSupportedVersionResponse> versionsResponse =
+                    kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+            Assert.assertEquals(versionVOs.size(), versionsResponse.getCount().intValue());
+            Assert.assertTrue(CollectionUtils.isNotEmpty(versionsResponse.getResponses()));
+            Assert.assertEquals(versionVOs.size(), versionsResponse.getResponses().size());
+        }
+    }
+
+    @Test
+    public void listKubernetesSupportedVersionsTestWhenAdmin() {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+            List<KubernetesSupportedVersionVO> versionVOs = new ArrayList<>();
+            KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+            when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
+            versionVOs.add(versionVO);
+            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+            when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class)))
+                    .thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+            when(accountManager.isRootAdmin(anyLong())).thenReturn(true);
+            ListResponse<KubernetesSupportedVersionResponse> response = kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+            assertNotNull(response.getResponses().get(0).getIsoUrl());
+        }
+    }
+
+    @Test
+    public void listKubernetesSupportedVersionsTestWhenOtherUser() {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+            List<KubernetesSupportedVersionVO> versionVOs = new ArrayList<>();
+            KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+            when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
+            versionVOs.add(versionVO);
+            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+            when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class)))
+                    .thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+            when(accountManager.isRootAdmin(anyLong())).thenReturn(false);
+            when(accountMock.getId()).thenReturn(2L);
+            ListResponse<KubernetesSupportedVersionResponse> response = kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+            assertNull(response.getResponses().get(0).getIsoUrl());
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -224,7 +286,6 @@ public class KubernetesVersionServiceTest {
             mockedComponentContext.when(() -> ComponentContext.inject(Mockito.any(RegisterIsoCmd.class))).thenReturn(
                     new RegisterIsoCmd());
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
-
             when(templateService.registerIso(Mockito.any(RegisterIsoCmd.class))).thenReturn(
                     Mockito.mock(VirtualMachineTemplate.class));
             VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);

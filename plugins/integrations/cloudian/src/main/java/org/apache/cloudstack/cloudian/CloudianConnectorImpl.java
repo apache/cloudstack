@@ -253,10 +253,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                     final Domain domain = domainDao.findById(account.getDomainId());
 
                     if (!addUserAccount(account, domain)) {
-                        logger.warn(String.format("Failed to add account in Cloudian while adding CloudStack account=%s in domain=%s", account.getAccountName(), domain.getPath()));
+                        logger.warn(String.format("Failed to add Account in Cloudian while adding CloudStack account=%s in domain=%s", account.getAccountName(), domain.getPath()));
                     }
                 } catch (final Exception e) {
-                    logger.error("Caught exception while adding account in Cloudian: ", e);
+                    logger.error("Caught exception while adding Account in Cloudian: ", e);
                 }
             }
         });
@@ -267,10 +267,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                 try {
                     final Account account = accountDao.findByIdIncludingRemoved((Long) args);
                     if(!removeUserAccount(account))    {
-                        logger.warn("Failed to remove account to Cloudian while removing CloudStack account {}", account);
+                        logger.warn("Failed to remove Account to Cloudian while removing CloudStack account {}", account);
                     }
                 } catch (final Exception e) {
-                    logger.error("Caught exception while removing account in Cloudian: ", e);
+                    logger.error("Caught exception while removing Account in Cloudian: ", e);
                 }
             }
         });

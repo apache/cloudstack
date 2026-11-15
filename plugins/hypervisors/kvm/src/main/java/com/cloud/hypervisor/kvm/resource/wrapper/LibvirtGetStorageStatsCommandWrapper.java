@@ -36,7 +36,7 @@ public final class LibvirtGetStorageStatsCommandWrapper extends CommandWrapper<G
     public Answer execute(final GetStorageStatsCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-            final KVMStoragePool sp = storagePoolMgr.getStoragePool(command.getPooltype(), command.getStorageId(), true);
+            final KVMStoragePool sp = storagePoolMgr.getStoragePool(command.getPooltype(), command.getStorageId(), true, true);
             if (sp == null) {
                 return new GetStorageStatsAnswer(command, "no storage pool to get statistics from");
             }

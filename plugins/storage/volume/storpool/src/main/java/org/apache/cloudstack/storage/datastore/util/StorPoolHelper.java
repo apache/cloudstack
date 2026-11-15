@@ -105,7 +105,7 @@ public class StorPoolHelper {
         if (snapshotDetails != null) {
             return StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetails.getValue(), true);
         } else {
-            List<SnapshotDataStoreVO> snapshots = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> snapshots = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             if (!CollectionUtils.isEmpty(snapshots)) {
                 for (SnapshotDataStoreVO snapshotDataStoreVO : snapshots) {
                     String name = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDataStoreVO.getInstallPath(), true);

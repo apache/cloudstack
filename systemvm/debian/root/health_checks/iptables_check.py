@@ -41,13 +41,14 @@ def main():
 
         fetchIpTableEntriesCmd = "iptables-save | grep " + destIp
         pout = Popen(fetchIpTableEntriesCmd, shell=True, stdout=PIPE)
-        if pout.wait() != 0:
+        stdout, _ = pout.communicate()
+        if pout.returncode != 0:
             failedCheck = True
             failureMessage = failureMessage + "Unable to execute iptables-save command " \
                                               "for fetching rules by " + fetchIpTableEntriesCmd + "\n"
             continue
 
-        ipTablesMatchingEntries = pout.communicate()[0].decode().strip().split('\n')
+        ipTablesMatchingEntries = stdout.decode().strip().split('\n')
         for pfEntryListExpected in entriesExpected:
             foundPfEntryList = False
             for ipTableEntry in ipTablesMatchingEntries:

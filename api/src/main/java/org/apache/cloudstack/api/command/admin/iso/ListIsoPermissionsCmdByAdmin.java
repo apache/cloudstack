@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 @APICommand(name = "listIsoPermissions",
-        description = "List iso visibility and all accounts that have permissions to view this iso.",
+        description = "List ISO visibility and all accounts that have permissions to view this ISO.",
         responseObject = TemplatePermissionsResponse.class,
         responseView = ResponseView.Full,
         requestHasSensitiveInfo = false,

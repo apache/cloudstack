@@ -43,7 +43,7 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the Zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the Zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -81,6 +81,6 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated zone";
+        return "Releasing dedicated zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 }

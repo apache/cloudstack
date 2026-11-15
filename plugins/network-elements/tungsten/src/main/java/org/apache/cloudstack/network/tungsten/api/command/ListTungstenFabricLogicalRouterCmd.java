@@ -42,7 +42,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricLogicalRouterCmd.APINAME, description = "list Tungsten-Fabric logical router",
+@APICommand(name = ListTungstenFabricLogicalRouterCmd.APINAME, description = "List Tungsten-Fabric logical router",
     responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class ListTungstenFabricLogicalRouterCmd extends BaseListCmd {
@@ -51,13 +51,13 @@ public class ListTungstenFabricLogicalRouterCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric network")
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric network")
     private String networkUuid;
 
-    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric logical router")
+    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric logical router")
     private String logicalRouterUuid;
 
     @Override

@@ -91,6 +91,9 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "specify_as_number")
     private Boolean specifyAsNumber = false;
 
+    @Column(name = "conserve_mode")
+    private boolean conserveMode;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -241,5 +244,14 @@ public class VpcOfferingVO implements VpcOffering {
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {
         this.specifyAsNumber = specifyAsNumber;
+    }
+
+    @Override
+    public boolean isConserveMode() {
+        return conserveMode;
+    }
+
+    public void setConserveMode(boolean conserveMode) {
+        this.conserveMode = conserveMode;
     }
 }

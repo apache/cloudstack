@@ -244,7 +244,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
             Domain domain = searchDomain(cmd.getNetworkDomain(), false);
             if (domain == null) {
                 domain = _globoDns.getDomainAPI().createDomain(cmd.getNetworkDomain(), cmd.getReverseTemplateId(), DEFAULT_AUTHORITY_TYPE);
-                logger.warn("Domain " + cmd.getNetworkDomain() + " doesn't exist, maybe someone removed it. It was automatically created with template "
+                logger.warn("Domain " + cmd.getNetworkDomain() + " doesn't exist, maybe someone removed it. It was automatically created with Template "
                         + cmd.getReverseTemplateId());
             }
 
@@ -264,7 +264,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
                 needsExport = true;
             } else {
                 if (!cmd.isOverride()) {
-                    String msg = "Unable to create reverse record " + cmd.getRecordName() + " for ip " + cmd.getRecordIp();
+                    String msg = "Unable to create reverse record " + cmd.getRecordName() + " for IP " + cmd.getRecordIp();
                     msg += ". Override record option is false, maybe record already exist.";
                     return new Answer(cmd, false, msg);
                 }
@@ -285,7 +285,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
         Domain reverseDomain = searchDomain(reverseDomainName, true);
         if (reverseDomain == null) {
             reverseDomain = _globoDns.getDomainAPI().createReverseDomain(reverseDomainName, templateId, DEFAULT_AUTHORITY_TYPE);
-            logger.info("Created reverse domain " + reverseDomainName + " with template " + templateId);
+            logger.info("Created reverse domain " + reverseDomainName + " with Template " + templateId);
         }
 
         // create reverse
@@ -301,7 +301,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
             if (domain == null) {
                 // create
                 domain = _globoDns.getDomainAPI().createDomain(cmd.getDomainName(), cmd.getTemplateId(), DEFAULT_AUTHORITY_TYPE);
-                logger.info("Created domain " + cmd.getDomainName() + " with template " + cmd.getTemplateId());
+                logger.info("Created domain " + cmd.getDomainName() + " with Template " + cmd.getTemplateId());
                 if (domain == null) {
                     return new Answer(cmd, false, "Unable to create domain " + cmd.getDomainName());
                 } else {

@@ -93,7 +93,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "preparing storage pool: " + getId() + " for maintenance";
+        return "Preparing storage pool with ID: " + getResourceUuid(ApiConstants.ID) + " for maintenance";
     }
 
     @Override

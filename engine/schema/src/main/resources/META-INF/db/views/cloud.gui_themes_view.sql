@@ -27,6 +27,7 @@ SELECT
     `cloud`.`gui_themes`.`description` AS `description`,
     `cloud`.`gui_themes`.`css` AS `css`,
     `cloud`.`gui_themes`.`json_configuration` AS `json_configuration`,
+    `cloud`.`gui_themes`.`login_base_domain` AS `login_base_domain`,
     (SELECT group_concat(gtd.`value` separator ',') FROM `cloud`.`gui_themes_details` gtd WHERE gtd.`type` = 'commonName' AND gtd.gui_theme_id = `cloud`.`gui_themes`.`id`) common_names,
     (SELECT group_concat(gtd.`value` separator ',') FROM `cloud`.`gui_themes_details` gtd WHERE gtd.`type` = 'domain' AND gtd.gui_theme_id = `cloud`.`gui_themes`.`id`) domains,
     (SELECT group_concat(gtd.`value` separator ',') FROM `cloud`.`gui_themes_details` gtd WHERE gtd.`type` = 'account' AND gtd.gui_theme_id = `cloud`.`gui_themes`.`id`) accounts,

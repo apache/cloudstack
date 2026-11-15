@@ -29,6 +29,11 @@ public interface DataStoreProvider {
     String SAMPLE_IMAGE = "Sample";
     String SMB = "NFS";
     String DEFAULT_PRIMARY = "DefaultPrimary";
+    /**
+     * Primary storage provider name for NetApp ONTAP ({@code OntapPrimaryDatastoreProvider#getName}).
+     * Single canonical value; use this instead of duplicating the string across modules.
+     */
+    String ONTAP_PLUGIN_NAME = "NetApp ONTAP";
 
     enum DataStoreProviderType {
         PRIMARY, IMAGE, ImageCache, OBJECT

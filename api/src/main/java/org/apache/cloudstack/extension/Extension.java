@@ -24,7 +24,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Extension extends InternalIdentity, Identity {
     enum Type {
-        Orchestrator
+        Orchestrator,
+        NetworkOrchestrator
     }
     enum State {
         Enabled, Disabled;

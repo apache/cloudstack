@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "listInstanceGroups", description = "Lists vm groups", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
+@APICommand(name = "listInstanceGroups", description = "Lists Instance groups", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
@@ -35,10 +35,10 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "list instance groups by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "List Instance groups by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list instance groups by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List Instance groups by name")
     private String groupName;
 
     /////////////////////////////////////////////////////

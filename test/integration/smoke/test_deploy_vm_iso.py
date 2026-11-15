@@ -20,7 +20,6 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -38,49 +37,42 @@ class TestDeployVMFromISO(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestDeployVMFromISO, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
+        cls.apiclient = cls.testClient.getApiClient()
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         cls.template = get_test_template(
-            cls.api_client,
+            cls.apiclient,
             cls.zone.id,
             cls.hypervisor
         )
 
         # Create service, disk offerings  etc
         cls.service_offering = ServiceOffering.create(
-            cls.api_client,
+            cls.apiclient,
             cls.testdata["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.disk_offering = DiskOffering.create(
-            cls.api_client,
+            cls.apiclient,
             cls.testdata["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering
-        ]
         return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
         self.testdata["virtual_machine"]["zoneid"] = self.zone.id
         self.testdata["virtual_machine"]["template"] = self.template.id
         self.testdata["iso"]["zoneid"] = self.zone.id
@@ -89,16 +81,8 @@ class TestDeployVMFromISO(cloudstackTestCase):
             self.testdata["account"],
             domainid=self.domain.id
         )
-        self.cleanup = [self.account]
+        self.cleanup.append(self.account)
         return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
 
     @attr(
         tags=[
@@ -106,21 +90,18 @@ class TestDeployVMFromISO(cloudstackTestCase):
             "eip",
             "advancedns",
             "basic",
-            "sg"],
-        required_hardware="true")
+            "sg"
+        ],
+        required_hardware="true"
+    )
     def test_deploy_vm_from_iso(self):
         """Test Deploy Virtual Machine from ISO
         """
 
         # Validate the following:
-        # 1. deploy VM using ISO
-        # 2. listVM command should return the deployed VM. State of this VM
-        #    should be "Running".
-        self.hypervisor = self.testClient.getHypervisorInfo()
-        if self.hypervisor.lower() in ['lxc']:
-            self.skipTest(
-                "vm deploy from ISO feature is not supported on %s" %
-                self.hypervisor.lower())
+        # 1. Create an ISO
+        # 2. Deploy a VM from the ISO
+        # 3. VM should be in 'Running' state
 
         self.iso = Iso.create(
             self.apiclient,
@@ -129,6 +110,19 @@ class TestDeployVMFromISO(cloudstackTestCase):
             domainid=self.account.domainid,
             zoneid=self.zone.id
         )
+        self.cleanup.append(self.iso)
+
+        self.debug("ISO created with ID: %s" % self.iso.id)
+        list_iso_response = Iso.list(
+            self.apiclient,
+            id=self.iso.id
+        )
+        while not isinstance(list_iso_response, list):
+            list_iso_response = Iso.list(
+                self.apiclient,
+                id=self.iso.id
+            )
+
         try:
             # Download the ISO
             self.iso.download(self.apiclient)
@@ -136,9 +130,8 @@ class TestDeployVMFromISO(cloudstackTestCase):
             raise Exception("Exception while downloading ISO %s: %s"
                             % (self.iso.id, e))
 
-        self.debug("Registered ISO: %s" % self.iso.name)
-        self.debug("Deploying instance in the account: %s" %
-                   self.account.name)
+        self.debug(f"Registered ISO: {self.iso.name}")
+        self.debug(f"Deploying instance in the account: {self.account.name}")
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.testdata["virtual_machine"],
@@ -149,9 +142,34 @@ class TestDeployVMFromISO(cloudstackTestCase):
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor
         )
+        self.cleanup.append(self.virtual_machine)
+
+        self.debug("VM created with ID: %s" % self.virtual_machine.id)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id
+        )
+
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        vm_response = list_vm_response[0]
+        vm_state = self.virtual_machine.getState(
+            self.apiclient,
+            VirtualMachine.RUNNING
+        )
 
         response = self.virtual_machine.getState(
             self.apiclient,
             VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
+
+        self.assertEqual(
+            vm_response.isoid,
+            self.iso.id,
+            "Check virtual machine is booted from the ISO"
+        )
         return

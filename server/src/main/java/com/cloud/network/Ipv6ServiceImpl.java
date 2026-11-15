@@ -616,7 +616,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 if (!firewallDao.setStateToAdd(newRule)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
-                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                CallContext.current().setEventDetails("Rule ID: " + newRule.getUuid());
 
                 return newRule;
             }

@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -264,6 +265,51 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testDiskDefWithErrorPolicy() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+        DiskDef.DiskCacheMode cacheMode = DiskDef.DiskCacheMode.WRITEBACK;
+        DiskOffering.DiskErrorPolicy errorPolicy = DiskOffering.DiskErrorPolicy.STOP;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+        disk.setCacheMode(cacheMode);
+        disk.setErrorPolicy(errorPolicy);
+
+        assertEquals(filePath, disk.getDiskPath());
+        assertEquals(diskLabel, disk.getDiskLabel());
+        assertEquals(bus, disk.getBusType());
+        assertEquals(DiskDef.DeviceType.DISK, disk.getDeviceType());
+        assertEquals(errorPolicy, disk.getErrorPolicy());
+
+        String xmlDef = disk.toString();
+        String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' error_policy='" + errorPolicy.toString() + "' />\n" +
+                             "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
+
+        assertEquals(expectedXml, xmlDef);
+    }
+
+    @Test
+    public void testDiskDefWithoutErrorPolicy() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+
+        assertNull(disk.getErrorPolicy());
+
+        String xmlDef = disk.toString();
+        assertFalse(xmlDef.contains("error_policy"));
+    }
+
+    @Test
     public void testDiskDefWithEncryption() {
         String passphraseUuid = UUID.randomUUID().toString();
         DiskDef disk = new DiskDef();
@@ -465,6 +511,21 @@ public class LibvirtVMDefTest extends TestCase {
 
     @Test
     public void memBalloonDefTestVirtio() {
+        LibvirtVMDef.setGlobalQemuVersion(5001000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(6009000L);
+        String expectedXml = "<memballoon model='virtio' autodeflate='on' freePageReporting='on'>\n<stats period='60'/>\n</memballoon>";
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("60");
+
+        String xmlDef = memBalloonDef.toString();
+
+        assertEquals(expectedXml, xmlDef);
+    }
+
+    @Test
+    public void memBalloonDefTestVirtioOld() {
+        LibvirtVMDef.setGlobalQemuVersion(2006000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(9008L);
         String expectedXml = "<memballoon model='virtio'>\n<stats period='60'/>\n</memballoon>";
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("60");
@@ -581,5 +642,26 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals("<tpm model='tpm-tis'>\n" +
                 "<backend type='emulator' version='2.0'/>\n" +
                 "</tpm>\n", tpmDef.toString());
+    }
+
+    @Test
+    public void testIsoDiskDefOnIdeBusForTheIdeCdromSlots() {
+        for (int[] slot : new int[][] {{3, 'c'}, {4, 'd'}}) {
+            DiskDef cdrom = new DiskDef();
+            cdrom.defISODisk(null, slot[0], false, DiskDef.DiskType.FILE);
+
+            assertEquals(DiskDef.DiskBus.IDE, cdrom.getBusType());
+            assertEquals("hd" + (char) slot[1], cdrom.getDiskLabel());
+        }
+    }
+
+    @Test
+    public void testIsoDiskDefBeyondTheIdeCdromSlotsIsOnSataBus() {
+        // e.g. the config drive ISO following the ISOs: IDE only has the hdc and hdd slots for CD-ROMs
+        DiskDef cdrom = new DiskDef();
+        cdrom.defISODisk("/mnt/pool/configdrive/i-2-3-VM.iso", 5, false, DiskDef.DiskType.FILE);
+
+        assertEquals(DiskDef.DiskBus.SATA, cdrom.getBusType());
+        assertEquals("sdf", cdrom.getDiskLabel());
     }
 }

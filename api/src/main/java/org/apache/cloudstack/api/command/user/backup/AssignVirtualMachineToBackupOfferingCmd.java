@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -40,7 +41,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "assignVirtualMachineToBackupOffering",
-        description = "Assigns a VM to a backup offering",
+        description = "Assigns an Instance to a backup offering",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
@@ -56,7 +57,7 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the virtual machine")
+            description = "ID of the  Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
@@ -90,7 +91,7 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VM to backup offering");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Instance to backup offering");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -103,12 +104,22 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return vmId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN;
     }
 
     @Override
     public String getEventDescription() {
-        return "Assigning VM to backup offering ID: " + offeringId;
+        return "Assigning Instance with ID " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to backup offering with ID: " + getResourceUuid(ApiConstants.BACKUP_OFFERING_ID);
     }
 }

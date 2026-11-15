@@ -229,7 +229,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (logger.isDebugEnabled()) {
-            logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+            logger.debug("Public Network deallocate Network: " + nic.getNetworkId() + ", IP: " + nic.getIPv4Address());
         }
 
         final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());

@@ -41,7 +41,7 @@ public class LdapUserSearchCmd extends BaseListCmd {
     @Inject
     private LdapManager _ldapManager;
 
-    @Parameter(name = "query", type = CommandType.STRING, entityType = LdapUserResponse.class, required = true, description = "query to search using")
+    @Parameter(name = "query", type = CommandType.STRING, entityType = LdapUserResponse.class, required = true, description = "Query to search using")
     private String query;
 
     public LdapUserSearchCmd() {
@@ -54,7 +54,7 @@ public class LdapUserSearchCmd extends BaseListCmd {
     }
 
     private List<LdapUserResponse> createLdapUserResponse(final List<LdapUser> users) {
-        final List<LdapUserResponse> ldapUserResponses = new ArrayList<LdapUserResponse>();
+        final List<LdapUserResponse> ldapUserResponses = new ArrayList<>();
         if (users != null) {
             for (final LdapUser user : users) {
                 final LdapUserResponse ldapUserResponse = _ldapManager.createLdapUserResponse(user);
@@ -67,7 +67,7 @@ public class LdapUserSearchCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
+        final ListResponse<LdapUserResponse> response = new ListResponse<>();
         List<LdapUser> users = null;
 
         try {

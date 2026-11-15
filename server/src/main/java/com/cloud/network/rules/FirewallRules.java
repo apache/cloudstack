@@ -36,6 +36,7 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.net.Ip;
 
 public class FirewallRules extends RuleApplier {
@@ -47,6 +48,16 @@ public class FirewallRules extends RuleApplier {
 
     public FirewallRules(final Network network, final List<? extends FirewallRule> rules) {
         super(network);
+        _rules = rules;
+    }
+
+    public FirewallRules(final Network network, final Vpc vpc, final List<? extends FirewallRule> rules) {
+        super(network, vpc);
+        _rules = rules;
+    }
+
+    public FirewallRules(final Vpc vpc, final List<? extends FirewallRule> rules) {
+        super(null, vpc);
         _rules = rules;
     }
 

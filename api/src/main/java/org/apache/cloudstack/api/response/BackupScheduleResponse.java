@@ -33,28 +33,32 @@ public class BackupScheduleResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
-    @Param(description = "name of the VM")
+    @Param(description = "Name of the Instance")
     private String vmName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of the VM")
+    @Param(description = "ID of the Instance")
     private String vmId;
 
     @SerializedName(ApiConstants.SCHEDULE)
-    @Param(description = "time the backup is scheduled to be taken.")
+    @Param(description = "The time the backup is scheduled to be taken.")
     private String schedule;
 
     @SerializedName(ApiConstants.INTERVAL_TYPE)
-    @Param(description = "the interval type of the backup schedule")
+    @Param(description = "The interval type of the backup schedule")
     private DateUtil.IntervalType intervalType;
 
     @SerializedName(ApiConstants.TIMEZONE)
-    @Param(description = "the time zone of the backup schedule")
+    @Param(description = "The time zone of the backup schedule")
     private String timezone;
 
     @SerializedName(ApiConstants.MAX_BACKUPS)
     @Param(description = "maximum number of backups retained")
     private Integer maxBackups;
+
+    @SerializedName(ApiConstants.ISOLATED)
+    @Param(description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS)
+    private boolean isolated;
 
     public void setId(String id) {
         this.id = id;
@@ -110,5 +114,9 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setQuiesceVM(Boolean quiesceVM) {
         this.quiesceVM = quiesceVM;
+    }
+
+    public void setIsolated(boolean isolated) {
+        this.isolated = isolated;
     }
 }

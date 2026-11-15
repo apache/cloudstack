@@ -35,6 +35,12 @@
             <tooltip-label :title="$t('label.use.backup.ip.address')" :tooltip="$t('label.use.backup.ip.address.tooltip')"/>
           </template>
         </a-form-item>
+        <a-form-item name="quickRestore" ref="quickRestore" >
+          <template #label>
+            <tooltip-label :title="$t('label.quickrestore')" :tooltip="apiParams.quickrestore?.description"/>
+          </template>
+          <a-switch v-model:checked="form.quickRestore" />
+        </a-form-item>
       </a-form>
       <div class="card-footer">
         <a-button @click="closeAction">
@@ -81,6 +87,7 @@ export default {
       loading: true,
       form: {
         name: '',
+        quickRestore: false,
         preserveIpAddresses: false
       }
     }
@@ -91,11 +98,15 @@ export default {
       required: true
     }
   },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createVMFromBackup')
+  },
   async created () {
-    await Promise.all[(
+    await Promise.all([
       this.fetchServiceOffering(),
-      this.fetchBackupOffering()
-    )]
+      this.fetchBackupOffering(),
+      this.fetchBackupArch()
+    ])
     this.loading = false
   },
   methods: {
@@ -118,6 +129,23 @@ export default {
         this.backupOffering = backupOfferings[0]
       })
     },
+    fetchBackupArch () {
+      const isIso = this.resource.vmdetails.isiso === 'true'
+      const api = isIso ? 'listIsos' : 'listTemplates'
+      const responseKey = isIso ? 'listisosresponse' : 'listtemplatesresponse'
+      const itemKey = isIso ? 'iso' : 'template'
+
+      return getAPI(api, {
+        id: this.resource.vmdetails.templateid,
+        listall: true,
+        ...(isIso ? {} : { templatefilter: 'all' })
+      }).then(response => {
+        const items = response?.[responseKey]?.[itemKey] || []
+        this.backupArch = items[0]?.arch || 'x86_64'
+      }).catch(() => {
+        this.backupArch = 'x86_64'
+      })
+    },
     populatePreFillData () {
       this.vmdetails = this.resource.vmdetails
       this.dataPreFill.zoneid = this.resource.zoneid
@@ -128,6 +156,7 @@ export default {
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.backupArch = this.backupArch
       this.dataPreFill.allowtemplateisoselection = true
       this.dataPreFill.isoid = this.vmdetails.templateid
       this.dataPreFill.allowIpAddressesFetch = this.resource.isbackupvmexpunged
@@ -184,7 +213,7 @@ export default {
         args.name = this.form.name
         args.displayname = this.form.name
       }
-
+      args.quickRestore = this.form.quickRestore
       if (this.form.preserveIpAddresses) {
         args.preserveip = this.form.preserveIpAddresses
       }

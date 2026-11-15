@@ -66,7 +66,7 @@ public class ConfigKeyScheduledExecutionWrapper implements Runnable {
         this.unit = unit;
     }
 
-    protected ConfigKeyScheduledExecutionWrapper(ScheduledExecutorService executorService, Runnable command,
+    public ConfigKeyScheduledExecutionWrapper(ScheduledExecutorService executorService, Runnable command,
             ConfigKey<?> configKey, int enableIntervalSeconds, TimeUnit unit) {
         validateArgs(executorService, command, configKey);
         this.executorService = executorService;

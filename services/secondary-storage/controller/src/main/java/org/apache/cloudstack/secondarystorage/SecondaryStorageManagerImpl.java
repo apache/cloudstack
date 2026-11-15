@@ -682,7 +682,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
                 ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
-            throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", dc));
+            throw new CloudRuntimeException(String.format("Unable to find the system Templates or it was not downloaded in %s.", dc));
         }
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
@@ -851,7 +851,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     HypervisorType.Any, null);
             if (CollectionUtils.isEmpty(templates)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("System VM template is not ready at zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
+                    logger.debug(String.format("System VM Template is not ready at zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
                 }
                 return false;
             }
@@ -1132,7 +1132,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         List<DataStore> secStores= _dataStoreMgr.listImageStoresWithFreeCapacity(dest.getDataCenter().getId());
         if (CollectionUtils.isEmpty(secStores)) {
-            logger.warn(String.format("Unable to finalize virtual machine profile [%s] as it has no secondary storage available to satisfy storage needs for zone [%s].", profile.toString(), dest.getDataCenter().getUuid()));
+            logger.warn(String.format("Unable to finalize Instance profile [%s] as it has no secondary storage available to satisfy storage needs for zone [%s].", profile.toString(), dest.getDataCenter().getUuid()));
             return false;
         }
         Collections.shuffle(secStores);
@@ -1229,8 +1229,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
-        String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStores.get(0).getId()) : null;
-        buf.append(" nfsVersion=").append(nfsVersion);
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(secStores.get(0).getId());
+        if (StringUtils.isNotBlank(nfsVersion)) {
+            buf.append(" nfsVersion=").append(nfsVersion);
+        }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
@@ -1250,7 +1252,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));
         }
 
-        boolean useHttpsToUpload = BooleanUtils.toBooleanDefaultIfNull(VolumeApiService.UseHttpsToUpload.value(), true);
+        boolean useHttpsToUpload = VolumeApiService.UseHttpsToUpload.valueIn(dc.getId());
         logger.debug(String.format("Setting UseHttpsToUpload config on cmdline with [%s] value.", useHttpsToUpload));
         buf.append(" useHttpsToUpload=").append(useHttpsToUpload);
 

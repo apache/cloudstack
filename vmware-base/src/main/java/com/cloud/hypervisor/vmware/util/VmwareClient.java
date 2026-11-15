@@ -128,9 +128,9 @@ public class VmwareClient {
         javax.net.ssl.TrustManager tm = new TrustAllTrustManager();
         trustAllCerts[0] = tm;
         javax.net.ssl.SSLContext sc = SSLUtils.getSSLContext();
+        sc.init(null, trustAllCerts, null);
         javax.net.ssl.SSLSessionContext sslsc = sc.getServerSessionContext();
         sslsc.setSessionTimeout(0);
-        sc.init(null, trustAllCerts, null);
         javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(new SecureSSLSocketFactory(sc));
     }
 

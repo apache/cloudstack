@@ -29,11 +29,11 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class InternalLoadBalancerElementResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the internal load balancer element")
+    @Param(description = "The ID of the internal Load balancer element")
     private String id;
 
     @SerializedName(ApiConstants.NSP_ID)
-    @Param(description = "the physical network service provider id of the element")
+    @Param(description = "The physical Network service provider ID of the element")
     private String nspId;
 
     @SerializedName(ApiConstants.ENABLED)

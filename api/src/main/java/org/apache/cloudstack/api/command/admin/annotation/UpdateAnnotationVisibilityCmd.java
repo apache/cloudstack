@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "updateAnnotationVisibility", description = "update an annotation visibility.",
+@APICommand(name = "updateAnnotationVisibility", description = "Update an annotation visibility.",
         responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.16", authorized = {RoleType.Admin})
@@ -38,11 +38,11 @@ public class UpdateAnnotationVisibilityCmd extends BaseCmd {
 
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true,
-            description = "the id of the annotation")
+            description = "The ID of the annotation")
     private String uuid;
 
     @Parameter(name = ApiConstants.ADMINS_ONLY, type = CommandType.BOOLEAN, required = true,
-            description = "the annotation is visible for admins only")
+            description = "The annotation is visible for admins only")
     private Boolean adminsOnly;
 
     public String getUuid() {

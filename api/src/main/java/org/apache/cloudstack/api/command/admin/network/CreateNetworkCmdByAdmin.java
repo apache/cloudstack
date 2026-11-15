@@ -31,24 +31,24 @@ import com.cloud.network.Network;
 
 import java.util.List;
 
-@APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
+@APICommand(name = "createNetwork", description = "Creates a Network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCmd {
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description = "The ID or VID of the network")
     private String vlan;
 
-    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during network creation for shared and L2 networks")
+    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description = "When true bypasses VLAN ID/range overlap check during Network creation for shared and L2 Networks")
     private Boolean bypassVlanOverlapCheck;
 
-    @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description="when true ip address usage for the network will not be exported by the listUsageRecords API")
+    @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description = "When true IP address usage for the Network will not be exported by the listUsageRecords API")
     private Boolean hideIpAddressUsage;
 
-    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to a router in a shared network", since = "4.16",
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPv4 address to be assigned to a router in a shared Network", since = "4.16",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String routerIp;
 
-    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to a router in a shared network", since = "4.16",
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPv6 address to be assigned to a router in a shared Network", since = "4.16",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String routerIpv6;
 
@@ -56,7 +56,7 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = BgpPeerResponse.class,
-            description = "Ids of the Bgp Peer for the network",
+            description = "IDs of the Bgp Peer for the Network",
             since = "4.20.0")
     private List<Long> bgpPeerIds;
 

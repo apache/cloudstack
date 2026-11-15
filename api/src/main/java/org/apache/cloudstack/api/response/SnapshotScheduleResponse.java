@@ -26,19 +26,19 @@ import com.cloud.serializer.Param;
 
 public class SnapshotScheduleResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the snapshot schedule")
+    @Param(description = "The ID of the Snapshot schedule")
     private String id;
 
     @SerializedName("volumeid")
-    @Param(description = "the volume ID the snapshot schedule applied for")
+    @Param(description = "The volume ID the Snapshot schedule applied for")
     private String volumeId;
 
     @SerializedName("snapshotpolicyid")
-    @Param(description = "the snapshot policy ID used by the snapshot schedule")
+    @Param(description = "The Snapshot policy ID used by the Snapshot schedule")
     private String snapshotPolicyId;
 
     @SerializedName("scheduled")
-    @Param(description = "time the snapshot is scheduled to be taken")
+    @Param(description = "Time the Snapshot is scheduled to be taken")
     private Date scheduled;
 
     public String getId() {

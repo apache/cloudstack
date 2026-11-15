@@ -107,7 +107,7 @@ public class ScaleVMCmdTest extends TestCase {
         try {
             scaleVMCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to scale vm", exception.getDescription());
+            Assert.assertEquals("Failed to scale Instance", exception.getDescription());
         }
 
     }

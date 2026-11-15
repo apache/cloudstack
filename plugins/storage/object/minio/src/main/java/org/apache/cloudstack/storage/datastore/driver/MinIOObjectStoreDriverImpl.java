@@ -24,6 +24,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -98,6 +100,51 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return String.format("%s-%s", ACS_PREFIX, account.getUuid());
     }
 
+    private void updateCannedPolicy(long storeId, Account account, String excludeBucket) {
+        List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, account.getId());
+
+        String resources = buckets.stream()
+                .map(BucketVO::getName)
+                .filter(name -> !Objects.equals(name, excludeBucket))
+                .map(name -> "\"arn:aws:s3:::" + name + "/*\"")
+                .collect(Collectors.joining(",\n"));
+        String policy;
+        if (resources.isEmpty()) {
+            // Resource cannot be empty in a canned Policy so deny access to all resources if the user has no buckets
+            policy = " {\n" +
+                    "     \"Statement\": [\n" +
+                    "         {\n" +
+                    "             \"Action\": \"s3:*\",\n" +
+                    "             \"Effect\": \"Deny\",\n" +
+                    "             \"Resource\": [\"arn:aws:s3:::*\", \"arn:aws:s3:::*/*\"]\n" +
+                    "         }\n" +
+                    "     ],\n" +
+                    "     \"Version\": \"2012-10-17\"\n" +
+                    " }";
+        } else {
+            policy = " {\n" +
+                    "     \"Statement\": [\n" +
+                    "         {\n" +
+                    "             \"Action\": \"s3:*\",\n" +
+                    "             \"Effect\": \"Allow\",\n" +
+                    "             \"Resource\": [" + resources + "]\n" +
+                    "         }\n" +
+                    "     ],\n" +
+                    "     \"Version\": \"2012-10-17\"\n" +
+                    " }";
+        }
+
+        MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
+        String policyName = getUserOrAccessKeyForAccount(account) + "-policy";
+        String userName = getUserOrAccessKeyForAccount(account);
+        try {
+            minioAdminClient.addCannedPolicy(policyName, policy);
+            minioAdminClient.setPolicy(userName, false, policyName);
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeyException e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
     @Override
     public Bucket createBucket(Bucket bucket, boolean objectLock) {
         //ToDo Client pool mgmt
@@ -125,33 +172,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
 
-        List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
-        StringBuilder resources_builder = new StringBuilder();
-        for(BucketVO exitingBucket : buckets) {
-            resources_builder.append("\"arn:aws:s3:::"+exitingBucket.getName()+"/*\",\n");
-        }
-        resources_builder.append("\"arn:aws:s3:::"+bucketName+"/*\"\n");
+        updateCannedPolicy(storeId, account,null);
 
-        String policy = " {\n" +
-                "     \"Statement\": [\n" +
-                "         {\n" +
-                "             \"Action\": \"s3:*\",\n" +
-                "             \"Effect\": \"Allow\",\n" +
-                "             \"Principal\": \"*\",\n" +
-                "             \"Resource\": ["+resources_builder+"]" +
-                "         }\n" +
-                "     ],\n" +
-                "     \"Version\": \"2012-10-17\"\n" +
-                " }";
-        MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
-        String policyName = getUserOrAccessKeyForAccount(account) + "-policy";
-        String userName = getUserOrAccessKeyForAccount(account);
-        try {
-            minioAdminClient.addCannedPolicy(policyName, policy);
-            minioAdminClient.setPolicy(userName, false, policyName);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
         String accessKey = _accountDetailsDao.findDetail(accountId, MINIO_ACCESS_KEY).getValue();
         String secretKey = _accountDetailsDao.findDetail(accountId, MINIO_SECRET_KEY).getValue();
         ObjectStoreVO store = _storeDao.findById(storeId);
@@ -183,6 +205,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
         String bucketName = bucket.getName();
+        long accountId = bucket.getAccountId();
+        Account account = _accountDao.findById(accountId);
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             if(!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
@@ -197,6 +221,9 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
+
+        updateCannedPolicy(storeId, account, bucketName);
+
         return true;
     }
 

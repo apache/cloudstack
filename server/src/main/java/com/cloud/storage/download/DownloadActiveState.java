@@ -96,6 +96,11 @@ public abstract class DownloadActiveState extends DownloadState {
     }
 
     @Override
+    public String handleLimitReached() {
+        return Status.LIMIT_REACHED.toString();
+    }
+
+    @Override
     public String handleDisconnect() {
 
         return Status.DOWNLOAD_ERROR.toString();

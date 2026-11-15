@@ -84,7 +84,7 @@ public class StartSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Starting Shared FileSystem " + id;
+        return "Starting Shared FileSystem with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class VmwareDatacenterResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID associated with this VMware Datacenter")
+    @Param(description = "The Zone ID associated with this VMware Datacenter")
     private Long zoneId;
 
     @SerializedName(ApiConstants.NAME)

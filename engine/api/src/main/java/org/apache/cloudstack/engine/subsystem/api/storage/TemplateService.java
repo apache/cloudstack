@@ -67,15 +67,25 @@ public interface TemplateService {
 
     void handleTemplateSync(DataStore store);
 
+    void enforceSecStorageCopyLimit(long templateId, long zoneId);
+
+    boolean canCopyTemplateToImageStore(long templateId, long zoneId);
+
+    void replicateTemplateUpToCap(long templateId, long zoneId);
+
     void downloadBootstrapSysTemplate(DataStore store);
 
     void addSystemVMTemplatesToSecondary(DataStore store);
 
     void associateTemplateToZone(long templateId, Long zoneId);
 
-    void associateCrosszoneTemplatesToZone(long dcId);
+    void associateCrossZoneTemplatesToZone(long dcId);
 
     AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, String diskId, long fileSize, boolean bootable);
 
     List<DatadiskTO> getTemplateDatadisksOnImageStore(TemplateInfo templateInfo, String configurationId);
-}
+
+    AsyncCallFuture<TemplateApiResult> copyTemplateToImageStore(DataObject source, DataStore destStore);
+
+    void handleTemplateCopyFromSecondaryStores(long templateId, DataStore destStore);
+ }

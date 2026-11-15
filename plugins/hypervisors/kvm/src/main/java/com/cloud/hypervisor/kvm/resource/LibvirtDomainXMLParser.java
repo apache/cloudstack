@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -90,6 +91,7 @@ public class LibvirtDomainXMLParser {
                 if (type.equalsIgnoreCase("network")) {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
+                    String diskErrorPolicy = getAttrValue("driver", "error_policy", disk);
                     String diskPath = getAttrValue("source", "name", disk);
                     String protocol = getAttrValue("source", "protocol", disk);
                     String authUserName = getAttrValue("auth", "username", disk);
@@ -111,10 +113,16 @@ public class LibvirtDomainXMLParser {
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
                         DiskDef.DiskBus.valueOf(bus.toUpperCase()),
                         DiskDef.DiskProtocol.valueOf(protocol.toUpperCase()), fmt);
-                    def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    if (StringUtils.isNotBlank(diskCacheMode)) {
+                        def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    }
+                    if (StringUtils.isNotBlank(diskErrorPolicy)) {
+                        def.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
+                    }
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
+                    String diskErrorPolicy = getAttrValue("driver", "error_policy", disk);
                     String diskFile = getAttrValue("source", "file", disk);
                     String diskDev = getAttrValue("source", "dev", disk);
 
@@ -129,6 +137,7 @@ public class LibvirtDomainXMLParser {
                                 fmt = DiskDef.DiskFmtType.valueOf(diskFmtType.toUpperCase());
                             }
                             def.defFileBasedDisk(diskFile, diskLabel, DiskDef.DiskBus.valueOf(bus.toUpperCase()), fmt);
+                            parseBackingFiles(disk, def);
                         } else if (device.equalsIgnoreCase("cdrom")) {
                             def.defISODisk(diskFile, i+1, diskLabel, DiskDef.DiskType.FILE);
                         }
@@ -137,6 +146,9 @@ public class LibvirtDomainXMLParser {
                     }
                     if (StringUtils.isNotBlank(diskCacheMode)) {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    }
+                    if (StringUtils.isNotBlank(diskErrorPolicy)) {
+                        def.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(diskErrorPolicy.toUpperCase()));
                     }
                 }
 
@@ -403,6 +415,21 @@ public class LibvirtDomainXMLParser {
         return false;
     }
 
+    private void parseBackingFiles(Element disk, DiskDef def) {
+        NodeList backingStoreNodeList = disk.getElementsByTagName("backingStore");
+        List<String> backingStoreList = new ArrayList<>();
+        while (backingStoreNodeList.getLength() > 0) {
+            Element backingStore = (Element)backingStoreNodeList.item(0);
+            String path = getAttrValue("source", "file", backingStore);
+            if (StringUtils.isEmpty(path)) {
+                break;
+            }
+            backingStoreList.add(path.substring(path.lastIndexOf(File.separator))+1);
+            backingStoreNodeList = backingStore.getElementsByTagName("backingStore");
+        }
+        def.setBackingStoreList(backingStoreList);
+    }
+
     /**
      * Parse the memballoon tag.
      * @param devices the devices tag.
@@ -540,7 +567,7 @@ public class LibvirtDomainXMLParser {
 
             final String quota = getTagValue("quota", cpuTuneDefElement);
             if (StringUtils.isNotBlank(quota)) {
-                cpuTuneDef.setQuota((Integer.parseInt(quota)));
+                cpuTuneDef.setQuota((Long.parseLong(quota)));
             }
 
             final String period = getTagValue("period", cpuTuneDefElement);

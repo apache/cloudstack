@@ -39,6 +39,7 @@ import ZRLEDecoder from "./decoders/zrle.js";
 import JPEGDecoder from "./decoders/jpeg.js";
 import H264Decoder from "./decoders/h264.js";
 import SCANCODES_JP from "../keymaps/keymap-ja-atset1.js"
+import SCANCODES_ES_LATAM from "../keymaps/keymap-es-latam-atset1.js"
 
 // How many seconds to wait for a disconnect to finish
 const DISCONNECT_TIMEOUT = 3;
@@ -127,6 +128,8 @@ export default class RFB extends EventTargetMixin {
         this._scancodes = {};
         if (this._language === "jp") {
             this._scancodes = SCANCODES_JP;
+        } else if (this._language === "es-latam") {
+            this._scancodes = SCANCODES_ES_LATAM;
         }
 
         // Internal state
@@ -197,6 +200,7 @@ export default class RFB extends EventTargetMixin {
         // Keys
         this._shiftPressed = false;
         this._shiftKey = KeyTable.XK_Shift_L;
+        this._altgrPressed = false;
 
         // Mouse state
         this._mousePos = {};
@@ -531,6 +535,10 @@ export default class RFB extends EventTargetMixin {
             this._shiftKey = down ? keysym : KeyTable.XK_Shift_L;
         }
 
+        if (keysym === KeyTable.XK_Alt_R) {
+            this._altgrPressed = down;
+        }
+
         if (this._qemuExtKeyEventSupported && scancode) {
             // 0 is NoSymbol
             keysym = keysym || 0;
@@ -538,36 +546,102 @@ export default class RFB extends EventTargetMixin {
             Log.Info("Sending key (" + (down ? "down" : "up") + "): keysym " + keysym + ", scancode " + scancode);
 
             RFB.messages.QEMUExtendedKeyEvent(this._sock, keysym, down, scancode);
-        } else if (Object.keys(this._scancodes).length > 0) {
-            let vscancode = this._scancodes[keysym]
-            if (vscancode) {
-                let shifted = vscancode.includes("shift");
-                let vscancode_int = parseInt(vscancode);
-                let isLetter = (keysym >= 65 && keysym <=90) || (keysym >=97 && keysym <=122);
-                if (shifted && ! this._shiftPressed && ! isLetter) {
-                    RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
-                }
-                if (! shifted && this._shiftPressed && ! isLetter) {
-                    RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
-                }
-                RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, down, vscancode_int);
-                if (shifted && ! this._shiftPressed && ! isLetter) {
-                    RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
-                }
-                if (! shifted && this._shiftPressed && ! isLetter) {
-                    RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
-                }
-            } else {
-                if (this._language === "jp" && keysym === 65328) {
-                    keysym = 65509; // Caps lock
-                }
-                RFB.messages.keyEvent(this._sock, keysym, down ? 1 : 0);
-            }
+        } else if (Object.keys(this._scancodes).length > 0 && this._language === "jp") {
+            this.sendKeyWithJapaneseKeyboard(keysym, down)
+        } else if (Object.keys(this._scancodes).length > 0 && this._language === "es-latam") {
+            this.sendKeyWithSpanishLatamKeyboard(keysym, down)
         } else {
             if (!keysym) {
                 return;
             }
             Log.Info("Sending keysym (" + (down ? "down" : "up") + "): " + keysym);
+            RFB.messages.keyEvent(this._sock, keysym, down ? 1 : 0);
+        }
+    }
+
+    sendKeyWithJapaneseKeyboard(keysym, down) {
+        let vscancode = this._scancodes[keysym]
+        if (vscancode) {
+            let shifted = vscancode.includes("shift");
+            let vscancode_int = parseInt(vscancode);
+            let isLetter = (keysym >= 65 && keysym <= 90) || (keysym >= 97 && keysym <= 122);
+            if (shifted && !this._shiftPressed && !isLetter) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+            }
+            if (!shifted && this._shiftPressed && !isLetter) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+            }
+            RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, down, vscancode_int);
+            if (shifted && !this._shiftPressed && !isLetter) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+            }
+            if (!shifted && this._shiftPressed && !isLetter) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+            }
+        } else {
+            if (keysym === 65328) {
+                keysym = 65509; // Caps lock
+            }
+            RFB.messages.keyEvent(this._sock, keysym, down ? 1 : 0);
+        }
+    }
+
+    sendKeyWithSpanishLatamKeyboard(keysym, down) {
+        const VSCODE_ACUTE_LATAM = 26;  // The ASCII code of acute is 180
+        let vscancode = this._scancodes[keysym]
+        if (vscancode) {
+            let shifted = vscancode.includes("shift");
+            let altgr = vscancode.includes("altgr");
+            let acute = vscancode.includes("acute");
+            let vscancode_int = parseInt(vscancode);
+            if (acute) {
+                let shifted_1 = vscancode.includes("shift1");   // Shift with Acute accent
+                let shifted_2 = vscancode.includes("shift2");   // Shift with a/e/i/o/u
+                if (down) {
+                    if (shifted_1 && ! this._shiftPressed) {
+                        RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+                    } else if (! shifted_1 && this._shiftPressed) {
+                        RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+                    }
+                    RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, 1, VSCODE_ACUTE_LATAM);
+                    RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, 0, VSCODE_ACUTE_LATAM);
+                    if (shifted_2) {
+                        RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+                    } else {
+                        RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+                    }
+                } else {
+                    RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, 0, VSCODE_ACUTE_LATAM);
+                    if (shifted_2 && ! this._shiftPressed) {
+                        RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+                    } else if (! shifted_2 && this._shiftPressed) {
+                        RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+                    }
+                }
+                RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, down, vscancode_int);
+                return;
+            }
+            let isLetter = (keysym >= 65 && keysym <= 90) || (keysym >= 97 && keysym <= 122);
+            if (shifted && !this._shiftPressed && !isLetter && down) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+            }
+            if (!shifted && this._shiftPressed && !isLetter && down) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+            }
+            if (altgr && !this._altgrPressed && down) {
+                RFB.messages.keyEvent(this._sock, KeyTable.XK_Alt_R, 1);
+            }
+            RFB.messages.VMwareExtendedKeyEvent(this._sock, keysym, down, vscancode_int);
+            if (altgr && !this._altgrPressed && !down) {
+                RFB.messages.keyEvent(this._sock, KeyTable.XK_Alt_R, 0);
+            }
+            if (shifted && !this._shiftPressed && !isLetter && !down) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 0);
+            }
+            if (!shifted && this._shiftPressed && !isLetter && !down) {
+                RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
+            }
+        } else {
             RFB.messages.keyEvent(this._sock, keysym, down ? 1 : 0);
         }
     }

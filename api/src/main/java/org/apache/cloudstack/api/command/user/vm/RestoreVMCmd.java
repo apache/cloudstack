@@ -44,7 +44,7 @@ import com.cloud.vm.VirtualMachine;
 
 import java.util.Map;
 
-@APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "restoreVirtualMachine", description = "Restore an Instance to original Template/ISO or new Template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
@@ -52,13 +52,13 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+            required=true, description = "Instance ID")
     private Long vmId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
                type = CommandType.UUID,
                entityType = TemplateResponse.class,
-               description = "an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
+               description = "An optional Template Id to restore Instance from the new Template. This can be an ISO id in case of restore Instance deployed using ISO")
     private Long templateId;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
@@ -90,21 +90,21 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restore a VM to original template or specific snapshot";
+        return "Restoring Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to original Template or specific Snapshot";
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
         UserVm result;
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
         result = _userVmService.restoreVM(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restore vm " + getVmId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restore Instance " + getVmId());
         }
     }
 

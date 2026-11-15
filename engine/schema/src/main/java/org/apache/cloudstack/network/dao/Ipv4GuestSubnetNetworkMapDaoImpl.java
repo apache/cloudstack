@@ -63,6 +63,7 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         ParentIdSearch.done();
         NoParentSearch = createSearchBuilder();
         NoParentSearch.and("parentId", NoParentSearch.entity().getParentId(), SearchCriteria.Op.NULL);
+        NoParentSearch.and("dataCenterId", NoParentSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         NoParentSearch.done();
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.and("networkId", NetworkIdSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -70,6 +71,7 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         NetworkIdSearch.done();
         SubnetSearch = createSearchBuilder();
         SubnetSearch.and("subnet", SubnetSearch.entity().getSubnet(), SearchCriteria.Op.EQ);
+        SubnetSearch.and("dataCenterId", SubnetSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         SubnetSearch.done();
         StatesSearch = createSearchBuilder();
         StatesSearch.and("state", StatesSearch.entity().getState(), SearchCriteria.Op.IN);
@@ -142,9 +144,10 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
     }
 
     @Override
-    public Ipv4GuestSubnetNetworkMapVO findBySubnet(String subnet) {
+    public Ipv4GuestSubnetNetworkMapVO findBySubnetAndDataCenterId(String subnet, Long dataCenterId) {
         SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = SubnetSearch.create();
         sc.setParameters("subnet", subnet);
+        sc.setParameters("dataCenterId", dataCenterId);
         return findOneBy(sc);
     }
 
@@ -163,8 +166,9 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
     }
 
     @Override
-    public List<Ipv4GuestSubnetNetworkMapVO> listAllNoParent() {
+    public List<Ipv4GuestSubnetNetworkMapVO> listAllNoParentByDataCenterId(Long dataCenterId) {
         SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = NoParentSearch.create();
+        sc.setParameters("dataCenterId", dataCenterId);
         return listBy(sc, null);
     }
 }
