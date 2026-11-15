@@ -1675,4 +1675,23 @@ public class SystemVmTemplateRegistrationTest {
             SystemVmTemplateRegistration.CS_TINY_VERSION = previousTiny;
         }
     }
+
+    @Test
+    public void createTemplateObjectInDB_KvmTemplateIsDynamicallyScalable() {
+        assertTrue(createTemplateObject(Hypervisor.HypervisorType.KVM).isDynamicallyScalable());
+    }
+
+    @Test
+    public void createTemplateObjectInDB_OtherHypervisorTemplateIsNotDynamicallyScalable() {
+        assertFalse(createTemplateObject(Hypervisor.HypervisorType.VMware).isDynamicallyScalable());
+    }
+
+    private VMTemplateVO createTemplateObject(Hypervisor.HypervisorType hypervisorType) {
+        SystemVmTemplateRegistration.SystemVMTemplateDetails details = new SystemVmTemplateRegistration.SystemVMTemplateDetails(
+                "uuid", "systemvm", new java.sql.Date(System.currentTimeMillis()), "http://localhost/systemvm.qcow2", "d41d8cd98f00b204e9800998ecf8427e",
+                Storage.ImageFormat.QCOW2, 1, hypervisorType, CPU.CPUArch.amd64, 1L);
+        when(vmTemplateDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
+        when(vmTemplateDao.persist(any(VMTemplateVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        return systemVmTemplateRegistration.createTemplateObjectInDB(details);
+    }
 }

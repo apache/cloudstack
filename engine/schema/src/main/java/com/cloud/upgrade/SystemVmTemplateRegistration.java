@@ -590,7 +590,7 @@ public class SystemVmTemplateRegistration {
         return systemVmTemplateVersion;
     }
 
-    private VMTemplateVO createTemplateObjectInDB(SystemVMTemplateDetails details) {
+    protected VMTemplateVO createTemplateObjectInDB(SystemVMTemplateDetails details) {
         Long templateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO template = new VMTemplateVO();
         template.setUuid(details.getUuid());
@@ -613,6 +613,8 @@ public class SystemVmTemplateRegistration {
         template.setArch(details.getArch());
         template.setState(VirtualMachineTemplate.State.Inactive);
         template.setDeployAsIs(false);
+        // KVM hot-plugs CPU and memory without guest tools; CKS nodes are created from this template.
+        template.setDynamicallyScalable(Hypervisor.HypervisorType.KVM.equals(details.getHypervisorType()));
         template = vmTemplateDao.persist(template);
         return template;
     }
