@@ -9655,7 +9655,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             } catch (Exception e) {
                 logger.debug("Unable to start VM " + vm.getUuid(), e);
-                CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified ID." + e.getMessage());
+                CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified ID. " + e.getMessage());
                 ex.addProxyObject(vm.getUuid(), "vmId");
                 throw ex;
             }
