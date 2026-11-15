@@ -297,6 +297,12 @@
           <a-input
             v-model:value="form.etcdnodes"
             :placeholder="apiParams.etcdnodes.description"/>
+          <a-alert
+            v-if="form.etcdnodes && form.etcdnodes > 0 && selectedKubernetesVersion && selectedKubernetesVersion.supportsetcd === false"
+            style="margin-top: 8px"
+            type="warning"
+            show-icon
+            :message="$t('message.kubernetes.version.etcd.not.included')" />
         </a-form-item>
         <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdofferingid" ref="etcdofferingid">
           <template #label>

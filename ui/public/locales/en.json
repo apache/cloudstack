@@ -3945,6 +3945,7 @@
 "message.ip.v6.prefix.delete": "IPv6 prefix deleted",
 "message.iso.arch": "Please select an ISO architecture",
 "message.iso.desc": "Disc image containing data or bootable media for OS.",
+"message.kubernetes.version.etcd.not.included": "The ISO of the selected Kubernetes version does not include etcd, so a Cluster with dedicated etcd nodes cannot be created with it. Select another version or leave the etcd nodes empty.",
 "message.kubernetes.cluster.add.nodes": "Please confirm that you want to add the following nodes to the cluster",
 "message.kubernetes.cluster.delete": "Please confirm that you want to destroy the Cluster.",
 "message.kubeconfig.cluster.not.available": "Kubernetes Cluster kubeconfig not available currently.",

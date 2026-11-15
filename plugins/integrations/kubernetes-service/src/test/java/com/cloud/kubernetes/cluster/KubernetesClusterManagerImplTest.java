@@ -30,6 +30,7 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
+import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRule;
@@ -117,6 +118,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private KubernetesVersionService kubernetesVersionService;
 
     @Spy
     @InjectMocks
@@ -912,6 +916,41 @@ public class KubernetesClusterManagerImplTest {
         kubernetesClusterManager.validateNodeAffinityGroups(Arrays.asList(newNodeId), cluster);
 
         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
+    }
+
+    @Test
+    public void testValidateEtcdNodesSupportedByKubernetesVersionNoEtcdNodes() {
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        kubernetesClusterManager.validateEtcdNodesSupportedByKubernetesVersion(0, version);
+        Mockito.verifyNoInteractions(kubernetesVersionService);
+    }
+
+    @Test
+    public void testValidateEtcdNodesSupportedByKubernetesVersionEtcdIncluded() {
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(kubernetesVersionService.isEtcdIncludedInIso(version)).thenReturn(true);
+        kubernetesClusterManager.validateEtcdNodesSupportedByKubernetesVersion(3, version);
+    }
+
+    @Test
+    public void testValidateEtcdNodesSupportedByKubernetesVersionNotKnown() {
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(kubernetesVersionService.isEtcdIncludedInIso(version)).thenReturn(null);
+        kubernetesClusterManager.validateEtcdNodesSupportedByKubernetesVersion(1, version);
+    }
+
+    @Test
+    public void testValidateEtcdNodesSupportedByKubernetesVersionEtcdNotIncluded() {
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(version.getName()).thenReturn("v1.28.4");
+        Mockito.when(kubernetesVersionService.isEtcdIncludedInIso(version)).thenReturn(false);
+        try {
+            kubernetesClusterManager.validateEtcdNodesSupportedByKubernetesVersion(1, version);
+            Assert.fail("A cluster with etcd nodes should be rejected when the ISO has no etcd");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("v1.28.4"));
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("does not include the etcd binaries"));
+        }
     }
 
 }

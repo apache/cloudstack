@@ -31,6 +31,18 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface KubernetesVersionService extends PluggableService {
     static final String MIN_KUBERNETES_VERSION = "1.11.0";
+    // Detail of a Kubernetes ISO which records whether the ISO has the etcd binaries needed for dedicated etcd nodes
+    static final String ETCD_INCLUDED_ISO_DETAIL = "cks.etcd.included";
+    static final String ETCD_ARCHIVE_PATH_IN_ISO = "etcd/etcd-linux-amd64.tar.gz";
+
+    /**
+     * Tells whether the ISO of a Kubernetes version has the etcd binaries needed for dedicated etcd nodes. The ISO
+     * is checked on the first call and the result is stored with the ISO.
+     *
+     * @return null if it is not known because the ISO could not be checked
+     */
+    Boolean isEtcdIncludedInIso(KubernetesSupportedVersion kubernetesSupportedVersion);
+
     ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(ListKubernetesSupportedVersionsCmd cmd);
     KubernetesSupportedVersionResponse addKubernetesSupportedVersion(AddKubernetesSupportedVersionCmd cmd) throws CloudRuntimeException;
     GetUploadParamsResponse registerKubernetesSupportedVersionForPostUpload(GetUploadParamsForKubernetesSupportedVersionCmd cmd);

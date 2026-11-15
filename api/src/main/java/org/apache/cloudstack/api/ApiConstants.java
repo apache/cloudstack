@@ -1324,6 +1324,7 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
     public static final String SUPPORTS_AUTOSCALING = "supportsautoscaling";
+    public static final String SUPPORTS_ETCD = "supportsetcd";
     public static final String AUTOSCALING_ENABLED = "autoscalingenabled";
     public static final String MIN_SIZE = "minsize";
     public static final String MAX_SIZE = "maxsize";

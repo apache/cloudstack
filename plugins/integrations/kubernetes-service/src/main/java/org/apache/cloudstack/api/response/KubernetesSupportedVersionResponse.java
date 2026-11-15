@@ -78,6 +78,10 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "Whether Kubernetes supported version supports Autoscaling")
     private Boolean supportsAutoscaling;
 
+    @SerializedName(ApiConstants.SUPPORTS_ETCD)
+    @Param(description = "Whether the ISO of the Kubernetes supported version has the etcd binaries needed for dedicated etcd nodes. Not returned if the ISO has not been checked yet", since = "24.0.0")
+    private Boolean supportsEtcd;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "The enabled or disabled state of the Kubernetes supported version")
     private String state;
@@ -216,6 +220,14 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setSupportsAutoscaling(Boolean supportsAutoscaling) {
         this.supportsAutoscaling = supportsAutoscaling;
+    }
+
+    public Boolean getSupportsEtcd() {
+        return supportsEtcd;
+    }
+
+    public void setSupportsEtcd(Boolean supportsEtcd) {
+        this.supportsEtcd = supportsEtcd;
     }
 
     public void setCreated(Date created) {

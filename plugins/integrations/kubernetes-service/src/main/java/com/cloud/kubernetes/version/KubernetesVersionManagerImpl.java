@@ -19,9 +19,17 @@ package com.cloud.kubernetes.version;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,11 +45,21 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.CheckFileInIsoAnswer;
+import org.apache.cloudstack.storage.command.CheckFileInIsoCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.cpu.CPU;
@@ -55,8 +73,11 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
@@ -65,7 +86,9 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -91,6 +114,21 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     private ImageStoreDao imageStoreDao;
     @Inject
     private TemplateApiService templateService;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
+    @Inject
+    private TemplateDataStoreDao templateDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
+    @Inject
+    private EndPointSelector endPointSelector;
+
+    protected static final int ETCD_IN_ISO_CHECK_INTERVAL_SECONDS = 300;
+    protected static final int MAX_FAILED_BACKGROUND_ETCD_IN_ISO_CHECKS = 3;
+
+    private ScheduledExecutorService etcdInIsoChecker;
+    // ISO ID -> number of background checks that could not be run for it
+    private final Map<Long, Integer> failedEtcdInIsoChecks = new ConcurrentHashMap<>();
 
     public static final String MINIMUN_AUTOSCALER_SUPPORTED_VERSION = "1.15.0";
 
@@ -131,6 +169,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setSupportsHA(compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
             KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
         response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
+        response.setSupportsEtcd(getStoredEtcdIncludedInIso(kubernetesSupportedVersion.getIsoId()));
         updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion, response, isRootAdmin);
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
@@ -537,6 +576,146 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             version = kubernetesSupportedVersionDao.findById(versionId);
         }
         return  createKubernetesSupportedVersionResponse(version, true);
+    }
+
+    /**
+     * @return what an earlier check found for the ISO, or null if the ISO has not been checked yet
+     */
+    protected Boolean getStoredEtcdIncludedInIso(long isoId) {
+        VMTemplateDetailVO detail = templateDetailsDao.findDetail(isoId, ETCD_INCLUDED_ISO_DETAIL);
+        if (detail == null || StringUtils.isBlank(detail.getValue())) {
+            return null;
+        }
+        return Boolean.parseBoolean(detail.getValue());
+    }
+
+    /**
+     * Asks the secondary storage VM whether the ISO has the etcd binaries and stores the answer as a detail of
+     * the ISO, so the ISO is read only once.
+     *
+     * @return null if the check could not be run, in which case nothing is stored
+     */
+    protected Boolean checkAndStoreEtcdIncludedInIso(long isoId) {
+        VMTemplateVO iso = templateDao.findById(isoId);
+        if (iso == null || iso.isDirectDownload()) {
+            // A direct download ISO is not kept on an image store, so there is nothing the secondary storage VM can read
+            return null;
+        }
+        TemplateDataStoreVO isoOnStore = templateDataStoreDao.findReadyByTemplate(isoId, DataStoreRole.Image);
+        if (isoOnStore == null || StringUtils.isBlank(isoOnStore.getInstallPath())) {
+            logger.debug("Kubernetes ISO {} is not ready on any image store, unable to check it for the etcd binaries", iso);
+            return null;
+        }
+        DataStore store = dataStoreManager.getDataStore(isoOnStore.getDataStoreId(), DataStoreRole.Image);
+        EndPoint endPoint = store == null ? null : endPointSelector.select(store);
+        if (endPoint == null) {
+            logger.debug("No secondary storage VM available to check Kubernetes ISO {} for the etcd binaries", iso);
+            return null;
+        }
+        CheckFileInIsoCommand cmd = new CheckFileInIsoCommand(store.getTO(), isoOnStore.getInstallPath(), ETCD_ARCHIVE_PATH_IN_ISO);
+        Answer answer = endPoint.sendMessage(cmd);
+        if (!(answer instanceof CheckFileInIsoAnswer) || !answer.getResult()) {
+            logger.warn("Unable to check Kubernetes ISO {} for the etcd binaries: {}", iso, answer == null ? "no answer" : answer.getDetails());
+            return null;
+        }
+        boolean etcdIncluded = ((CheckFileInIsoAnswer)answer).isFilePresent();
+        templateDetailsDao.addDetail(isoId, ETCD_INCLUDED_ISO_DETAIL, String.valueOf(etcdIncluded), true);
+        logger.info("Kubernetes ISO {} {} the etcd binaries needed for dedicated etcd nodes", iso, etcdIncluded ? "includes" : "does not include");
+        return etcdIncluded;
+    }
+
+    @Override
+    public Boolean isEtcdIncludedInIso(KubernetesSupportedVersion kubernetesSupportedVersion) {
+        long isoId = kubernetesSupportedVersion.getIsoId();
+        Boolean etcdIncluded = getStoredEtcdIncludedInIso(isoId);
+        if (etcdIncluded != null) {
+            return etcdIncluded;
+        }
+        try {
+            return checkAndStoreEtcdIncludedInIso(isoId);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Unable to check the ISO of Kubernetes version {} for the etcd binaries", kubernetesSupportedVersion, e);
+            return null;
+        }
+    }
+
+    /**
+     * Checks the Kubernetes ISOs that are ready but have not been checked for the etcd binaries yet. This covers
+     * both newly registered ISOs and the ones registered before this check existed.
+     */
+    protected void checkEtcdIncludedInKubernetesIsos() {
+        Set<Long> isoIds = new HashSet<>();
+        for (KubernetesSupportedVersionVO version : kubernetesSupportedVersionDao.listAll()) {
+            long isoId = version.getIsoId();
+            if (!isoIds.add(isoId)) {
+                continue;
+            }
+            if (getStoredEtcdIncludedInIso(isoId) != null) {
+                failedEtcdInIsoChecks.remove(isoId);
+                continue;
+            }
+            if (failedEtcdInIsoChecks.getOrDefault(isoId, 0) >= MAX_FAILED_BACKGROUND_ETCD_IN_ISO_CHECKS) {
+                // Stop trying in the background, the ISO is still checked when a cluster with etcd nodes is requested
+                continue;
+            }
+            VMTemplateVO iso = templateDao.findById(isoId);
+            if (iso == null || iso.isDirectDownload() || templateDataStoreDao.findReadyByTemplate(isoId, DataStoreRole.Image) == null) {
+                continue;
+            }
+            try {
+                if (checkAndStoreEtcdIncludedInIso(isoId) == null) {
+                    failedEtcdInIsoChecks.merge(isoId, 1, Integer::sum);
+                }
+            } catch (CloudRuntimeException e) {
+                logger.warn("Unable to check the ISO of Kubernetes version {} for the etcd binaries", version, e);
+                failedEtcdInIsoChecks.merge(isoId, 1, Integer::sum);
+            }
+        }
+        failedEtcdInIsoChecks.keySet().retainAll(isoIds);
+    }
+
+    public class EtcdInKubernetesIsoChecker extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            GlobalLock lock = GlobalLock.getInternLock("KubernetesVersion.EtcdInIsoCheck.Lock");
+            try {
+                if (lock.lock(3)) {
+                    try {
+                        checkEtcdIncludedInKubernetesIsos();
+                    } catch (Exception e) {
+                        logger.warn("Failed to check the Kubernetes ISOs for the etcd binaries", e);
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+            } finally {
+                lock.releaseRef();
+            }
+        }
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        etcdInIsoChecker = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-ISO-Etcd-Checker"));
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        if (KubernetesClusterService.KubernetesServiceEnabled.value()) {
+            etcdInIsoChecker.scheduleWithFixedDelay(new EtcdInKubernetesIsoChecker(), ETCD_IN_ISO_CHECK_INTERVAL_SECONDS,
+                    ETCD_IN_ISO_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (etcdInIsoChecker != null) {
+            etcdInIsoChecker.shutdownNow();
+        }
+        return true;
     }
 
     @Override
