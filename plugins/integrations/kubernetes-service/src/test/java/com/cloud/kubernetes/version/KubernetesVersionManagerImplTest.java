@@ -179,6 +179,7 @@ public class KubernetesVersionManagerImplTest {
     }
 
     private static final long ISO_ID = 200L;
+    private static final long ZONE_ID = 1L;
 
     private KubernetesSupportedVersionVO mockVersionWithIso() {
         KubernetesSupportedVersionVO version = Mockito.mock(KubernetesSupportedVersionVO.class);
@@ -193,13 +194,21 @@ public class KubernetesVersionManagerImplTest {
     }
 
     private EndPoint mockIsoReadyOnImageStore() {
+        return mockIsoReadyOnImageStore(true);
+    }
+
+    private EndPoint mockIsoReadyOnImageStore(boolean inZone) {
         VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
         Mockito.when(iso.isDirectDownload()).thenReturn(false);
         Mockito.when(templateDao.findById(ISO_ID)).thenReturn(iso);
         TemplateDataStoreVO isoOnStore = Mockito.mock(TemplateDataStoreVO.class);
         Mockito.when(isoOnStore.getInstallPath()).thenReturn("template/tmpl/1/200/200-1-uuid.iso");
         Mockito.when(isoOnStore.getDataStoreId()).thenReturn(5L);
-        Mockito.when(templateDataStoreDao.findReadyByTemplate(ISO_ID, DataStoreRole.Image)).thenReturn(isoOnStore);
+        if (inZone) {
+            Mockito.when(templateDataStoreDao.findByTemplateZoneReady(ISO_ID, ZONE_ID)).thenReturn(isoOnStore);
+        } else {
+            Mockito.when(templateDataStoreDao.findReadyByTemplate(ISO_ID, DataStoreRole.Image)).thenReturn(isoOnStore);
+        }
         DataStore store = Mockito.mock(DataStore.class);
         Mockito.when(dataStoreManager.getDataStore(5L, DataStoreRole.Image)).thenReturn(store);
         EndPoint endPoint = Mockito.mock(EndPoint.class);
@@ -215,9 +224,9 @@ public class KubernetesVersionManagerImplTest {
     public void testIsEtcdIncludedInIsoUsesStoredResult() {
         KubernetesSupportedVersionVO version = mockVersionWithIso();
         mockStoredEtcdDetail("true");
-        Assert.assertEquals(Boolean.TRUE, kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertEquals(Boolean.TRUE, kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
         mockStoredEtcdDetail("false");
-        Assert.assertEquals(Boolean.FALSE, kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertEquals(Boolean.FALSE, kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
         Mockito.verifyNoInteractions(endPointSelector);
         verifyNothingStored();
     }
@@ -233,7 +242,7 @@ public class KubernetesVersionManagerImplTest {
             return new CheckFileInIsoAnswer(cmd, true);
         });
 
-        Assert.assertEquals(Boolean.TRUE, kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertEquals(Boolean.TRUE, kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
 
         Mockito.verify(templateDetailsDao).addDetail(ISO_ID, KubernetesVersionService.ETCD_INCLUDED_ISO_DETAIL, "true", true);
     }
@@ -245,7 +254,7 @@ public class KubernetesVersionManagerImplTest {
         Mockito.when(endPoint.sendMessage(Mockito.any(CheckFileInIsoCommand.class)))
                 .thenAnswer(invocation -> new CheckFileInIsoAnswer(invocation.getArgument(0), false));
 
-        Assert.assertEquals(Boolean.FALSE, kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertEquals(Boolean.FALSE, kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
 
         Mockito.verify(templateDetailsDao).addDetail(ISO_ID, KubernetesVersionService.ETCD_INCLUDED_ISO_DETAIL, "false", true);
     }
@@ -257,7 +266,7 @@ public class KubernetesVersionManagerImplTest {
         Mockito.when(endPoint.sendMessage(Mockito.any(CheckFileInIsoCommand.class)))
                 .thenAnswer(invocation -> new CheckFileInIsoAnswer((CheckFileInIsoCommand)invocation.getArgument(0), "isoinfo: command not found"));
 
-        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
 
         verifyNothingStored();
     }
@@ -269,7 +278,7 @@ public class KubernetesVersionManagerImplTest {
         Mockito.when(endPoint.sendMessage(Mockito.any(CheckFileInIsoCommand.class)))
                 .thenAnswer(invocation -> Answer.createUnsupportedCommandAnswer(invocation.getArgument(0)));
 
-        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
 
         verifyNothingStored();
     }
@@ -280,7 +289,7 @@ public class KubernetesVersionManagerImplTest {
         mockIsoReadyOnImageStore();
         Mockito.when(endPointSelector.select(Mockito.any(DataStore.class))).thenReturn(null);
 
-        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
 
         verifyNothingStored();
     }
@@ -292,8 +301,23 @@ public class KubernetesVersionManagerImplTest {
         Mockito.when(iso.isDirectDownload()).thenReturn(true);
         Mockito.when(templateDao.findById(ISO_ID)).thenReturn(iso);
 
-        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version));
+        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
 
+        Mockito.verifyNoInteractions(endPointSelector);
+        verifyNothingStored();
+    }
+
+    @Test
+    public void testIsEtcdIncludedInIsoReadsOnlyTheCopyInTheZone() {
+        KubernetesSupportedVersionVO version = mockVersionWithIso();
+        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findById(ISO_ID)).thenReturn(iso);
+        Mockito.when(templateDataStoreDao.findByTemplateZoneReady(ISO_ID, ZONE_ID)).thenReturn(null);
+
+        Assert.assertNull(kubernetesVersionManager.isEtcdIncludedInIso(version, ZONE_ID));
+
+        // A copy of the ISO in another zone is not used
+        Mockito.verify(templateDataStoreDao, Mockito.never()).findReadyByTemplate(Mockito.anyLong(), Mockito.any());
         Mockito.verifyNoInteractions(endPointSelector);
         verifyNothingStored();
     }
@@ -315,7 +339,7 @@ public class KubernetesVersionManagerImplTest {
         KubernetesSupportedVersionVO version = mockVersionWithIso();
         // Two versions sharing one ISO are checked once
         Mockito.when(kubernetesSupportedVersionDao.listAll()).thenReturn(List.of(version, version));
-        EndPoint endPoint = mockIsoReadyOnImageStore();
+        EndPoint endPoint = mockIsoReadyOnImageStore(false);
         Mockito.when(endPoint.sendMessage(Mockito.any(CheckFileInIsoCommand.class)))
                 .thenAnswer(invocation -> new CheckFileInIsoAnswer(invocation.getArgument(0), true));
 
@@ -329,7 +353,7 @@ public class KubernetesVersionManagerImplTest {
     public void testBackgroundCheckGivesUpAfterRepeatedFailures() {
         KubernetesSupportedVersionVO version = mockVersionWithIso();
         Mockito.when(kubernetesSupportedVersionDao.listAll()).thenReturn(List.of(version));
-        EndPoint endPoint = mockIsoReadyOnImageStore();
+        EndPoint endPoint = mockIsoReadyOnImageStore(false);
         Mockito.when(endPoint.sendMessage(Mockito.any(CheckFileInIsoCommand.class)))
                 .thenAnswer(invocation -> new CheckFileInIsoAnswer((CheckFileInIsoCommand)invocation.getArgument(0), "isoinfo: command not found"));
 
@@ -356,7 +380,7 @@ public class KubernetesVersionManagerImplTest {
         }
         Mockito.verifyNoInteractions(endPointSelector);
 
-        EndPoint endPoint = mockIsoReadyOnImageStore();
+        EndPoint endPoint = mockIsoReadyOnImageStore(false);
         Mockito.when(endPoint.sendMessage(Mockito.any(CheckFileInIsoCommand.class)))
                 .thenAnswer(invocation -> new CheckFileInIsoAnswer(invocation.getArgument(0), true));
         kubernetesVersionManager.checkEtcdIncludedInKubernetesIsos();

@@ -593,17 +593,19 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
      * Asks the secondary storage VM whether the ISO has the etcd binaries and stores the answer as a detail of
      * the ISO, so the ISO is read only once.
      *
+     * @param zoneId the zone whose copy of the ISO is read, or null to read any copy that is ready
      * @return null if the check could not be run, in which case nothing is stored
      */
-    protected Boolean checkAndStoreEtcdIncludedInIso(long isoId) {
+    protected Boolean checkAndStoreEtcdIncludedInIso(long isoId, Long zoneId) {
         VMTemplateVO iso = templateDao.findById(isoId);
         if (iso == null || iso.isDirectDownload()) {
             // A direct download ISO is not kept on an image store, so there is nothing the secondary storage VM can read
             return null;
         }
-        TemplateDataStoreVO isoOnStore = templateDataStoreDao.findReadyByTemplate(isoId, DataStoreRole.Image);
+        TemplateDataStoreVO isoOnStore = zoneId == null ? templateDataStoreDao.findReadyByTemplate(isoId, DataStoreRole.Image) :
+                templateDataStoreDao.findByTemplateZoneReady(isoId, zoneId);
         if (isoOnStore == null || StringUtils.isBlank(isoOnStore.getInstallPath())) {
-            logger.debug("Kubernetes ISO {} is not ready on any image store, unable to check it for the etcd binaries", iso);
+            logger.debug("Kubernetes ISO {} is not ready on an image store, unable to check it for the etcd binaries", iso);
             return null;
         }
         DataStore store = dataStoreManager.getDataStore(isoOnStore.getDataStoreId(), DataStoreRole.Image);
@@ -625,14 +627,14 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public Boolean isEtcdIncludedInIso(KubernetesSupportedVersion kubernetesSupportedVersion) {
+    public Boolean isEtcdIncludedInIso(KubernetesSupportedVersion kubernetesSupportedVersion, long zoneId) {
         long isoId = kubernetesSupportedVersion.getIsoId();
         Boolean etcdIncluded = getStoredEtcdIncludedInIso(isoId);
         if (etcdIncluded != null) {
             return etcdIncluded;
         }
         try {
-            return checkAndStoreEtcdIncludedInIso(isoId);
+            return checkAndStoreEtcdIncludedInIso(isoId, zoneId);
         } catch (CloudRuntimeException e) {
             logger.warn("Unable to check the ISO of Kubernetes version {} for the etcd binaries", kubernetesSupportedVersion, e);
             return null;
@@ -663,7 +665,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                 continue;
             }
             try {
-                if (checkAndStoreEtcdIncludedInIso(isoId) == null) {
+                if (checkAndStoreEtcdIncludedInIso(isoId, null) == null) {
                     failedEtcdInIsoChecks.merge(isoId, 1, Integer::sum);
                 }
             } catch (CloudRuntimeException e) {

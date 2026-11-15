@@ -41,7 +41,7 @@ public interface KubernetesVersionService extends PluggableService {
      *
      * @return null if it is not known because the ISO could not be checked
      */
-    Boolean isEtcdIncludedInIso(KubernetesSupportedVersion kubernetesSupportedVersion);
+    Boolean isEtcdIncludedInIso(KubernetesSupportedVersion kubernetesSupportedVersion, long zoneId);
 
     ListResponse<KubernetesSupportedVersionResponse> listKubernetesSupportedVersions(ListKubernetesSupportedVersionsCmd cmd);
     KubernetesSupportedVersionResponse addKubernetesSupportedVersion(AddKubernetesSupportedVersionCmd cmd) throws CloudRuntimeException;

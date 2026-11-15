@@ -1102,11 +1102,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      * the ISO is known not to have it. When the ISO could not be checked the request is let through, and a failed
      * etcd setup is then caught while the cluster starts.
      */
-    protected void validateEtcdNodesSupportedByKubernetesVersion(final long etcdNodes, final KubernetesSupportedVersion kubernetesVersion) {
+    protected void validateEtcdNodesSupportedByKubernetesVersion(final long etcdNodes, final KubernetesSupportedVersion kubernetesVersion, final long zoneId) {
         if (etcdNodes <= 0) {
             return;
         }
-        Boolean etcdIncluded = kubernetesVersionService.isEtcdIncludedInIso(kubernetesVersion);
+        Boolean etcdIncluded = kubernetesVersionService.isEtcdIncludedInIso(kubernetesVersion, zoneId);
         if (etcdIncluded == null) {
             logger.warn("Unable to tell whether the ISO of Kubernetes version {} includes the etcd binaries, allowing the request for {} etcd node(s)",
                     kubernetesVersion, etcdNodes);
@@ -1194,7 +1194,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state for datacenter ID: %s",  clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
 
-        validateEtcdNodesSupportedByKubernetesVersion(cmd.getEtcdNodes(), clusterKubernetesVersion);
+        validateEtcdNodesSupportedByKubernetesVersion(cmd.getEtcdNodes(), clusterKubernetesVersion, zone.getId());
 
         validateServiceOfferingsForNodeTypes(serviceOfferingNodeTypeMap, defaultServiceOfferingId, cmd.getEtcdNodes(), clusterKubernetesVersion);
 
