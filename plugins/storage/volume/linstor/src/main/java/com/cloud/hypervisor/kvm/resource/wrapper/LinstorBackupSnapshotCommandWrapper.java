@@ -18,6 +18,10 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
@@ -31,9 +35,11 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,6 +89,7 @@ public final class LinstorBackupSnapshotCommandWrapper
         final String srcPath,
         final SnapshotObjectTO dst,
         final KVMStoragePool secondaryPool,
+        final byte[] passphrase,
         int waitMilliSeconds
         )
         throws LibvirtException, QemuImgException, IOException
@@ -94,10 +101,53 @@ public final class LinstorBackupSnapshotCommandWrapper
         final QemuImgFile srcFile = new QemuImgFile(srcPath, QemuImg.PhysicalDiskFormat.RAW);
         final QemuImgFile dstFile = new QemuImgFile(dstPath, QemuImg.PhysicalDiskFormat.QCOW2);
 
-        // NOTE: the qemu img will also contain the drbd metadata at the end
         final QemuImg qemu = new QemuImg(waitMilliSeconds);
-        qemu.convert(srcFile, dstFile);
+        if (passphrase != null && passphrase.length > 0) {
+            // Encrypted volumes are backed up from their decrypted DRBD device, so the snapshot
+            // data here is plaintext. Encrypt the destination qcow2 with the volume's passphrase
+            // (LUKS), so the snapshot is not stored in clear text on secondary storage.
+            try (KeyFile keyFile = new KeyFile(passphrase)) {
+                final Map<String, String> options = new HashMap<>();
+                final List<QemuObject> qemuObjects = new ArrayList<>();
+                qemuObjects.add(QemuObject.prepareSecretForQemuImg(QemuImg.PhysicalDiskFormat.QCOW2,
+                    QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", options));
+                qemu.convert(srcFile, dstFile, options, qemuObjects, null, true);
+            }
+        } else {
+            // NOTE: the qemu img will also contain the drbd metadata at the end
+            qemu.convert(srcFile, dstFile);
+        }
         LOGGER.info("Backup snapshot '{}' to '{}'", srcPath, dstPath);
+        return dstPath;
+    }
+
+    /**
+     * Writes an incremental backup: a qcow2 on secondary storage containing only the blocks of the
+     * snapshot device that differ from the parent snapshot qcow2, with the parent as backing file.
+     * The overlay starts out backed by the raw snapshot device itself; the safe-mode rebase onto the
+     * parent then copies every cluster in which the two backing files differ into the overlay. The
+     * explicit virtual size clips the DRBD metadata trailing the storage snapshot device.
+     */
+    private String createIncrementalQCow2(final String srcPath, final SnapshotObjectTO dst, final KVMStoragePool secondaryPool,
+        final File parentFile, final long netSize, int waitMilliSeconds) throws LibvirtException, QemuImgException, IOException {
+        final String dstDir = secondaryPool.getLocalPathFor(dst.getPath());
+        FileUtils.forceMkdir(new File(dstDir));
+        final String dstPath = dstDir + File.separator + dst.getName();
+
+        final QemuImg qemu = new QemuImg(waitMilliSeconds);
+        final QemuImgFile dstFile = new QemuImgFile(dstPath, netSize, QemuImg.PhysicalDiskFormat.QCOW2);
+        try {
+            qemu.create(dstFile, new QemuImgFile(srcPath, QemuImg.PhysicalDiskFormat.RAW));
+            qemu.rebase(dstFile, new QemuImgFile(parentFile.getAbsolutePath(), QemuImg.PhysicalDiskFormat.QCOW2),
+                QemuImg.PhysicalDiskFormat.QCOW2.toString(), true);
+            // metadata-only rewrite to a relative backing name, so the chain stays valid on any mount point
+            qemu.rebase(dstFile, new QemuImgFile(parentFile.getName(), QemuImg.PhysicalDiskFormat.QCOW2),
+                QemuImg.PhysicalDiskFormat.QCOW2.toString(), false);
+        } catch (final QemuImgException e) {
+            FileUtils.deleteQuietly(new File(dstPath));
+            throw e;
+        }
+        LOGGER.info("Incremental backup snapshot '{}' to '{}' (parent '{}')", srcPath, dstPath, parentFile.getName());
         return dstPath;
     }
 
@@ -153,16 +203,50 @@ public final class LinstorBackupSnapshotCommandWrapper
 
             secondaryPool = storagePoolMgr.getStoragePoolByURI(dstDataStore.getUrl());
 
-            String dstPath = convertImageToQCow2(srcPath, dst, secondaryPool, cmd.getWaitInMillSeconds());
+            final byte[] passphrase = src.getVolume() != null ? src.getVolume().getPassphrase() : null;
+            final boolean encrypted = passphrase != null && passphrase.length > 0;
 
-            // resize to real volume size, cutting of drbd metadata
-            String result = qemuShrink(dstPath, src.getVolume().getSize(), cmd.getWaitInMillSeconds());
-            if (result != null) {
-                return new CopyCmdAnswer("qemu-img shrink failed: " + result);
+            final Map<String, String> options = cmd.getOptions();
+            final String parentInstallPath = options != null ?
+                options.get(LinstorBackupSnapshotCommand.OPTION_PARENT_PATH) : null;
+
+            boolean incremental = false;
+            String dstPath = null;
+            if (!encrypted && parentInstallPath != null && src.getVolume() != null) {
+                final File parentFile = new File(secondaryPool.getLocalPathFor(parentInstallPath));
+                if (parentFile.isFile()) {
+                    dstPath = createIncrementalQCow2(
+                        srcPath, dst, secondaryPool, parentFile, src.getVolume().getSize(), cmd.getWaitInMillSeconds());
+                    incremental = true;
+                } else {
+                    LOGGER.warn("Parent snapshot file '{}' missing on secondary storage, taking a full backup instead",
+                        parentFile.getAbsolutePath());
+                }
             }
-            LOGGER.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
+
+            if (dstPath == null) {
+                dstPath = convertImageToQCow2(srcPath, dst, secondaryPool, passphrase, cmd.getWaitInMillSeconds());
+            }
+
+            if (!encrypted && !incremental) {
+                // resize to real volume size, cutting of drbd metadata
+                // For encrypted volumes the source is the decrypted DRBD device (already net-sized,
+                // no drbd metadata to cut); shrinking an encrypted qcow2 would also need the secret.
+                // Incremental backups are created with the net size already, nothing to cut there.
+                String result = qemuShrink(dstPath, src.getVolume().getSize(), cmd.getWaitInMillSeconds());
+                if (result != null) {
+                    return new CopyCmdAnswer("qemu-img shrink failed: " + result);
+                }
+                LOGGER.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
+            }
 
             SnapshotObjectTO snapshot = setCorrectSnapshotSize(dst, dstPath);
+            // tells the management server whether the file is a delta qcow2 backed by the parent
+            // snapshot or a standalone full copy, so it can fix up the chain bookkeeping:
+            // SnapshotObject.processEvent drops the store ref's parent link when
+            // parentSnapshotPath is null, and the driver clears it when the answer is not incremental
+            snapshot.setKvmIncrementalSnapshot(incremental);
+            snapshot.setParentSnapshotPath(incremental ? parentInstallPath : null);
             LOGGER.info("Actual file size for '{}' is {}", dstPath, snapshot.getPhysicalSize());
             return new CopyCmdAnswer(snapshot);
         } catch (final Exception e) {
@@ -171,6 +255,9 @@ public final class LinstorBackupSnapshotCommandWrapper
             LOGGER.error(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
+            if (src.getVolume() != null) {
+                src.getVolume().clearPassphrase();
+            }
             cleanupSecondaryPool(secondaryPool);
             if (zfsHidden) {
                 zfsSnapdev(true, src.getPath());

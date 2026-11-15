@@ -390,7 +390,7 @@ install -D usage/target/transformed/cloudstack-usage.logrotate ${RPM_BUILD_ROOT}
 
 # Marvin
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin
-cp tools/marvin/dist/Marvin-*.tar.gz ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin/
+cp tools/marvin/dist/[Mm]arvin-*.tar.gz ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin/
 
 # integration-tests
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-integration-tests
@@ -466,7 +466,7 @@ else
 fi
 
 /usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
-/usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now rng-tools > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
@@ -530,7 +530,7 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /usr/bin/systemctl restart libvirtd
 /usr/bin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 /usr/bin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
-/usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now rng-tools > /dev/null 2>&1 || true
 
 # if saved agent.properties from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
@@ -599,7 +599,7 @@ fi
 
 %post marvin
 pip3 install --upgrade https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
-pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade /usr/share/cloudstack-marvin/[Mm]arvin-*.tar.gz
 
 #No default permission as the permission setup is complex
 %files management
@@ -709,7 +709,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
 %files marvin
-%attr(0644,root,root) %{_datadir}/%{name}-marvin/Marvin*.tar.gz
+%attr(0644,root,root) %{_datadir}/%{name}-marvin/[Mm]arvin-*.tar.gz
 %{_defaultdocdir}/%{name}-marvin-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-marvin-%{version}/NOTICE
 

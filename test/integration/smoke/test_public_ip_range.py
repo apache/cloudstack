@@ -145,10 +145,10 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # 7. Delete the Public IP range
 
         services = {
-            "gateway":"192.168.99.1",
+            "gateway":"10.1.99.1",
             "netmask":"255.255.255.0",
-            "startip":"192.168.99.2",
-            "endip":"192.168.99.200",
+            "startip":"10.1.99.2",
+            "endip":"10.1.99.200",
             "forvirtualnetwork":self.services["forvirtualnetwork"],
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]
@@ -344,10 +344,10 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             self.skipTest("An existing IP range defined for system vms, aborting test")
 
         services = {
-            "gateway":"192.168.100.1",
+            "gateway":"10.1.100.1",
             "netmask":"255.255.255.0",
-            "startip":"192.168.100.2",
-            "endip":"192.168.100.200",
+            "startip":"10.1.100.2",
+            "endip":"10.1.100.200",
             "forvirtualnetwork":self.services["forvirtualnetwork"],
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]
@@ -372,10 +372,10 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             self.skipTest("An existing IP range defined for system vms, aborting test")
 
         services = {
-            "gateway":"192.168.200.1",
+            "gateway":"10.1.200.1",
             "netmask":"255.255.255.0",
-            "startip":"192.168.200.2",
-            "endip":"192.168.200.200",
+            "startip":"10.1.200.2",
+            "endip":"10.1.200.200",
             "forvirtualnetwork":self.services["forvirtualnetwork"],
             "zoneid":self.services["zoneid"],
             "vlan":self.services["vlan"]

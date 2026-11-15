@@ -22,19 +22,25 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
+import com.cloud.exception.OriginDeniedException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.user.UserPasswordResetManager;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +49,7 @@ import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.net.InetAddress;
@@ -80,6 +87,9 @@ public class ApiServerTest {
     @Mock
     HttpSession session;
 
+    private static final String DEFAULT_CIDR_CHECKS_ENABLED = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.defaultValue();
+    private static final String DEFAULT_ALLOWED_CIDRS = ApiServiceConfiguration.ApiAllowedSourceCidrList.defaultValue();
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", true);
@@ -88,6 +98,17 @@ public class ApiServerTest {
     @AfterClass
     public static void afterClass() throws Exception {
         overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", false);
+    }
+
+    @Before
+    public void setupCommandAvailableChecks() {
+        apiServer.setApiAccessCheckers(Collections.emptyList());
+    }
+
+    @After
+    public void resetCidrConfig() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", DEFAULT_CIDR_CHECKS_ENABLED);
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiAllowedSourceCidrList, "_defaultValue", DEFAULT_ALLOWED_CIDRS);
     }
 
     private static void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
@@ -275,5 +296,48 @@ public class ApiServerTest {
         Mockito.when(domainManager.findDomainByIdOrPath(anyLong(), anyString())).thenReturn(domain);
         Mockito.when(accountManager.authenticateUser(anyString(), anyString(), anyLong(), any(), any())).thenReturn(null);
         apiServer.loginUser(session, "user", "pass", 1L, "/", null, null);
+    }
+
+    @Test
+    public void testCheckCommandAvailableSkipsCidrLookupWhenDisabled() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "false");
+        User user = Mockito.mock(User.class);
+
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
+
+        Mockito.verify(accountManager, Mockito.never()).getAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCheckCommandAvailableAllowsMatchingCidr() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "true");
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiAllowedSourceCidrList, "_defaultValue", "127.0.0.1/32");
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
+
+        Mockito.verify(accountManager).getAccount(1L);
+    }
+
+    @Test(expected = OriginDeniedException.class)
+    public void testCheckCommandAvailableDeniesNonMatchingCidr() throws Exception {
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiSourceCidrChecksEnabled, "_defaultValue", "true");
+        overrideDefaultConfigValue(ApiServiceConfiguration.ApiAllowedSourceCidrList, "_defaultValue", "10.0.0.0/8");
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", user, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckCommandAvailableThrowsWhenUserNull() throws Exception {
+        ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", null, "listVirtualMachines", InetAddress.getByName("127.0.0.1"), null, new ApiKeyPairPermission[0]);
     }
 }

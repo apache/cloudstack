@@ -859,12 +859,19 @@ public class XenServerStorageProcessor implements StorageProcessor {
         final DataTO srcData = cmd.getSrcTO();
         final DataTO destData = cmd.getDestTO();
         final VolumeObjectTO volume = (VolumeObjectTO) destData;
+        final DataStoreTO destStore = volume.getDataStore();
+        final boolean fullClone = destStore instanceof PrimaryDataStoreTO
+                && Boolean.TRUE.equals(((PrimaryDataStoreTO) destStore).isFullCloneFlag());
         VDI vdi = null;
         try {
             VDI tmpltvdi = null;
 
             tmpltvdi = getVDIbyUuid(conn, srcData.getPath());
-            vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
+            if (fullClone) {
+                vdi = tmpltvdi.copy(conn, tmpltvdi.getSR(conn));
+            } else {
+                vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
+            }
             Long virtualSize  = vdi.getVirtualSize(conn);
             if (volume.getSize() > virtualSize) {
                 logger.debug("Overriding provided Template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());

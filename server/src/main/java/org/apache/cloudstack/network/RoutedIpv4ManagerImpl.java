@@ -109,7 +109,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements RoutedIpv4Manager {
@@ -390,7 +389,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: %s", id));
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
@@ -430,7 +429,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final Long id = cmd.getId();
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: %s", id));
         }
 
         // update domain_id and account_id to null via dataCenterIpv4GuestSubnetDao, to release the dedication
@@ -519,12 +518,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
         if (zoneId != null) {
-            List<DataCenterIpv4GuestSubnetVO> subnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId);
-            if (CollectionUtils.isEmpty(subnets)) {
-                return new ArrayList<>();
-            }
-            List<Long> parentIds = subnets.stream().map(DataCenterIpv4GuestSubnetVO::getId).collect(Collectors.toList());
-            sc.addAnd("parentId", SearchCriteria.Op.IN, parentIds.toArray());
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
         if (parentId != null) {
             sc.addAnd("parentId", SearchCriteria.Op.EQ, parentId);
@@ -554,7 +548,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         response.setState(subnet.getState().name());
         response.setId(subnet.getUuid());
         response.setAllocatedTime(subnet.getAllocated());
-        Long zoneId = null;
+        Long zoneId = subnet.getDataCenterId();
         if (subnet.getNetworkId() != null) {
             Network network = ApiDBUtils.findNetworkById(subnet.getNetworkId());
             response.setNetworkId(network.getUuid());
@@ -650,7 +644,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     protected void getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(String networkCidr, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
-        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(networkCidr);
+        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(networkCidr, zoneId);
         if (subnetMap != null) {
             // check if the subnet is in use
             if (subnetMap.getNetworkId() != null || subnetMap.getVpcId() != null) {
@@ -672,7 +666,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         // Create new record without networkId
         final Long parentId = parent != null ? parent.getId() : null;
-        subnetMap = new Ipv4GuestSubnetNetworkMapVO(parentId, NetUtils.transformCidr(networkCidr), null, State.Free);
+        subnetMap = new Ipv4GuestSubnetNetworkMapVO(parentId, zoneId, NetUtils.transformCidr(networkCidr), null, State.Free);
         ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
@@ -698,7 +692,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
         // check conflicts
-        List<Ipv4GuestSubnetNetworkMapVO> subnetsForNetworkNoParents = ipv4GuestSubnetNetworkMapDao.listAllNoParent();
+        List<Ipv4GuestSubnetNetworkMapVO> subnetsForNetworkNoParents = ipv4GuestSubnetNetworkMapDao.listAllNoParentByDataCenterId(zoneId);
         checkConflicts(subnetsForNetworkNoParents, networkCidr);
         return null;
     }
@@ -730,7 +724,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     protected Ipv4GuestSubnetNetworkMap createIpv4SubnetFromParentSubnet(DataCenterIpv4GuestSubnet parent, Integer networkCidrSize) {
         String networkCidr = createIpv4SubnetStringFromParentSubnet(parent, networkCidrSize);
         // create DB record
-        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), NetUtils.transformCidr(networkCidr), null, State.Free);
+        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), parent.getDataCenterId(), NetUtils.transformCidr(networkCidr), null, State.Free);
         return ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
@@ -767,19 +761,19 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
 
         // Allocate a subnet automatically
-        String networkCidr = getFreeNetworkCidr(subnetsInFreeIpRanges, networkCidrSize);
+        String networkCidr = getFreeNetworkCidr(subnetsInFreeIpRanges, networkCidrSize, parent.getDataCenterId());
         if (networkCidr == null) {
             throw new InvalidParameterValueException("Failed to automatically allocate a subnet with specified cidrsize");
         }
         return networkCidr;
     }
 
-    private String getFreeNetworkCidr(List<Pair<Long, Integer>> subnetsInFreeIpRanges, int networkCidrSize) {
+    private String getFreeNetworkCidr(List<Pair<Long, Integer>> subnetsInFreeIpRanges, int networkCidrSize, Long dataCenterId) {
         for (int cidrSize = networkCidrSize; cidrSize >= 1; cidrSize--) {
             for (Pair<Long, Integer> freeSubnet : subnetsInFreeIpRanges) {
                 if (freeSubnet.second().equals(cidrSize)) {
                     String networkCidr = String.format("%s/%s", NetUtils.long2Ip(freeSubnet.first()), networkCidrSize);
-                    if (ipv4GuestSubnetNetworkMapDao.findBySubnet(networkCidr) == null) {
+                    if (ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(networkCidr, dataCenterId) == null) {
                         return networkCidr;
                     }
                 }
@@ -798,7 +792,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         checkConflicts(existingSubnets, networkCidr);
 
         // create DB record
-        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), NetUtils.transformCidr(networkCidr), null, State.Free);
+        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), parent.getDataCenterId(), NetUtils.transformCidr(networkCidr), null, State.Free);
         return ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
@@ -807,7 +801,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (network == null || network.getCidr() == null) {
             return;
         }
-        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(network.getCidr());
+        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(network.getCidr(), network.getDataCenterId());
         if (subnetMap != null) {
             if (network.getId() > 0L) {
                 subnetMap.setNetworkId(network.getId());
@@ -823,7 +817,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (vpc == null || vpc.getCidr() == null) {
             return;
         }
-        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(vpc.getCidr());
+        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnetAndDataCenterId(vpc.getCidr(), vpc.getZoneId());
         if (subnetMap != null) {
             if (vpc != null && vpc.getId() > 0L) {
                 subnetMap.setVpcId(vpc.getId());
@@ -989,15 +983,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public boolean isVirtualRouterGateway(Network network) {
         return isRoutedNetwork(network)
-                && (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter))
-                || networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VPCVirtualRouter);
+                && (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter)
+                || networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VPCVirtualRouter));
     }
 
     @Override
     public boolean isVirtualRouterGateway(NetworkOffering networkOffering) {
         return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
-                && networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
-                || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter);
+                && (networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
+                || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter));
     }
 
     @Override
@@ -1279,7 +1273,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
         if (bgpPeerVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: %s", id));
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
@@ -1327,7 +1321,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final Long id = releaseDedicatedBgpPeerCmd.getId();
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
         if (bgpPeerVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: %s", id));
         }
 
         // update domain_id and account_id to null via bgpPeerDao, to release the dedication

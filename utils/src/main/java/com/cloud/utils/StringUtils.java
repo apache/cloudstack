@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 public class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    private static final Pattern PASSWORD_FIELD_PATTERN = Pattern.compile("\\\"password\\\":\\\"([^\\\"]*)\\\"+");
 
     private static final Charset preferredACSCharset;
     private static final String UTF8 = "UTF-8";
@@ -146,7 +147,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     // removes a password/accesskey/ property from a response json object
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(([pP])assword|privatekey|accesskey|secretkey)\":\\s?\".*?\",?");
 
-    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)(([pP])assword|accesskey|secretkey)(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)(([pP])assword|accesskey|secretkey)(?=(%26|[&'\"]|$))");
 
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
 
@@ -437,5 +438,27 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         }
 
         return null;
+    }
+
+    public static String obfuscatePasswordInJsonLikeString(String result) {
+        if (isEmpty(result)) {
+            return result;
+        }
+        Matcher matcher = PASSWORD_FIELD_PATTERN.matcher(result);
+        StringBuilder obfuscatedResult = new StringBuilder();
+        while (matcher.find()) {
+            String password = matcher.group(1);
+            String replacement = "\"password\":\"" + obfuscatePasswordValue(password) + "\"";
+            matcher.appendReplacement(obfuscatedResult, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(obfuscatedResult);
+        return obfuscatedResult.toString();
+    }
+
+    private static String obfuscatePasswordValue(String password) {
+        if (isEmpty(password)) {
+            return password;
+        }
+        return password.charAt(0) + "*****";
     }
 }

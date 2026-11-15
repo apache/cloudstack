@@ -23,6 +23,7 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.CreateMultiSnapshotRequest;
 import com.linbit.linstor.api.model.Snapshot;
+import com.linbit.linstor.api.model.SnapshotRollback;
 
 import javax.inject.Inject;
 
@@ -49,6 +50,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
@@ -137,7 +139,10 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         try {
             final List<VolumeObjectTO> volumeTOs = _vmSnapshotHelper.getVolumeTOList(userVm.getId());
             final StoragePoolVO storagePool = _storagePoolDao.findById(volumeTOs.get(0).getPoolId());
-            final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+            final DevelopersApi api = LinstorUtil.getLinstorAPI(
+                    storagePool.getHostAddress(),
+                    LinstorConfigurationManager.ApiToken.valueIn(storagePool.getId()),
+                    Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePool.getId())));
 
             long prev_chain_size = 0;
             long virtual_size = 0;
@@ -235,7 +240,10 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
         List<VolumeObjectTO> volumeTOs = _vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
         final StoragePoolVO storagePool = _storagePoolDao.findById(volumeTOs.get(0).getPoolId());
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(
+                storagePool.getHostAddress(),
+                LinstorConfigurationManager.ApiToken.valueIn(storagePool.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePool.getId())));
 
         final String snapshotName = vmSnapshotVO.getName();
         final List<String> failedToDelete = new ArrayList<>();
@@ -272,7 +280,7 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     private String linstorRevertSnapshot(final DevelopersApi api, final String rscName, final String snapshotName) {
         String resultMsg = null;
         try {
-            ApiCallRcList answers = api.resourceSnapshotRollback(rscName, snapshotName);
+            ApiCallRcList answers = api.resourceSnapshotRollback(rscName, snapshotName, new SnapshotRollback());
             if (answers.hasError()) {
                 resultMsg = LinstorUtil.getBestErrorMessage(answers);
             }
@@ -289,7 +297,10 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         List<VolumeObjectTO> volumeTOs = _vmSnapshotHelper.getVolumeTOList(userVmId);
 
         final StoragePoolVO storagePool = _storagePoolDao.findById(volumeTOs.get(0).getPoolId());
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(
+                storagePool.getHostAddress(),
+                LinstorConfigurationManager.ApiToken.valueIn(storagePool.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePool.getId())));
         final String snapshotName = vmSnapshotVO.getName();
 
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {

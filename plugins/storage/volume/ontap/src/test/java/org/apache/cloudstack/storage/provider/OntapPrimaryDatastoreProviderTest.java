@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.provider;
 
 import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
@@ -26,7 +27,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.storage.driver.OntapPrimaryDatastoreDriver;
 import org.apache.cloudstack.storage.lifecycle.OntapPrimaryDatastoreLifecycle;
 import org.apache.cloudstack.storage.listener.OntapHostListener;
-import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,7 +60,7 @@ public class OntapPrimaryDatastoreProviderTest {
     @Test
     public void testGetName() {
         String name = provider.getName();
-        assertEquals(OntapStorageConstants.ONTAP_PLUGIN_NAME, name);
+        assertEquals(DataStoreProvider.ONTAP_PLUGIN_NAME, name);
     }
 
     @Test

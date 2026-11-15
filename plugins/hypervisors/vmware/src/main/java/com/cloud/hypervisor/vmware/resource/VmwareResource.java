@@ -5807,7 +5807,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected Answer execute(CheckOnHostCommand cmd) {
-        return new CheckOnHostAnswer(cmd, null, "Not Implmeneted");
+        return new CheckOnHostAnswer(cmd, null, "Not Implemented");
     }
 
     protected Answer execute(ModifySshKeysCommand cmd) {

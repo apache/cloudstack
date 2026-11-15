@@ -21,8 +21,13 @@ import java.util.List;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.Vpc;
 
 public interface NetworkRuleApplier {
-    public boolean applyRules(Network network, FirewallRule.Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+    default boolean applyRules(Network network, FirewallRule.Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        return applyRules(network, null, purpose, rules);
+    }
+
+    boolean applyRules(Network network, Vpc vpc, FirewallRule.Purpose purpose, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
 
 }

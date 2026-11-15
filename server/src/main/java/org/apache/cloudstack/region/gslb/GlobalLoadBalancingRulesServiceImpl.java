@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -668,12 +669,20 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         // loop through all the zones, participating in GSLB, and send GSLB config command
         // to the corresponding GSLB service provider in that zone
         for (Pair<Long, Long> zoneId : gslbSiteIds) {
+            if (zoneId.first() == null) {
+                logger.warn("Skipping GSLB configuration for zone with null ID");
+                continue;
+            }
 
             List<SiteLoadBalancerConfig> slbs = new ArrayList<SiteLoadBalancerConfig>();
             // set site as 'local' for the site in that zone
             for (Pair<Long, Long> innerLoopZoneId : gslbSiteIds) {
+                if (innerLoopZoneId.first() == null) {
+                    logger.warn("Skipping GSLB configuration for zone with null ID");
+                    continue;
+                }
                 SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(innerLoopZoneId.first());
-                siteLb.setLocal(zoneId.first() == innerLoopZoneId.first());
+                siteLb.setLocal(Objects.equals(zoneId.first(), innerLoopZoneId.first()));
                 slbs.add(siteLb);
             }
 

@@ -19,9 +19,11 @@
 
 package org.apache.cloudstack.storage.feign.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +51,9 @@ public class Volume {
 
     @JsonProperty("space")
     private VolumeSpace space;
+
+    @JsonProperty("guarantee")
+    private Guarantee guarantee;
 
     @JsonProperty("anti_ransomware")
     private AntiRansomware antiRansomware;
@@ -112,6 +117,14 @@ public class Volume {
         this.space = space;
     }
 
+    public Guarantee getGuarantee() {
+        return guarantee;
+    }
+
+    public void setGuarantee(Guarantee guarantee) {
+        this.guarantee = guarantee;
+    }
+
     public AntiRansomware getAntiRansomware() {
         return antiRansomware;
     }
@@ -139,4 +152,66 @@ public class Volume {
     public int hashCode() {
         return Objects.hashCode(uuid);
     }
+
+    public static class Guarantee {
+
+        /**
+         * ONTAP FlexVolume space guarantee (provisioning) type.
+         * <ul>
+         *   <li>{@link #NONE}   - thin provisioning (space is not reserved up front)</li>
+         *   <li>{@link #VOLUME} - thick provisioning (full volume size is reserved on the aggregate)</li>
+         * </ul>
+         */
+        public enum TypeEnum {
+            NONE("none"),
+
+            VOLUME("volume");
+
+            private String value;
+
+            TypeEnum(String value) {
+                this.value = value;
+            }
+
+            @JsonValue
+            public String getValue() {
+                return value;
+            }
+
+            @Override
+            public String toString() {
+                return String.valueOf(value);
+            }
+
+            @JsonCreator
+            public static TypeEnum fromValue(String text) {
+                if (text == null) return null;
+                for (TypeEnum b : TypeEnum.values()) {
+                    if (text.equalsIgnoreCase(b.value)) {
+                        return b;
+                    }
+                }
+                return null;
+            }
+        }
+
+        @JsonProperty("type")
+        private TypeEnum type;
+
+        public Guarantee() {
+        }
+
+        public Guarantee(TypeEnum type) {
+            this.type = type;
+        }
+
+        public TypeEnum getType() {
+            return type;
+        }
+
+        public void setType(TypeEnum type) {
+            this.type = type;
+        }
+    }
+
 }

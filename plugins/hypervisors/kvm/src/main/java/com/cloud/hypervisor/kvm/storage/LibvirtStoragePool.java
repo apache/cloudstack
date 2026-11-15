@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -173,9 +174,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
         logger.debug("find volume bypass libvirt volumeUid " + volumeUid);
         //For network file system or file system, try to use java file to find the volume, instead of through libvirt. BUG:CLOUDSTACK-4459
         String localPoolPath = this.getLocalPath();
-        File f = new File(localPoolPath + File.separator + volumeUuid);
+        File f = resolvePhysicalDiskFile(localPoolPath, volumeUid, volumeUuid);
         if (!f.exists()) {
-            logger.debug("volume: " + volumeUuid + " not exist on storage pool");
+            logger.debug("volume: " + volumeUid + " not exist on storage pool");
             throw new CloudRuntimeException("Can't find volume:" + volumeUuid);
         }
         disk = new KVMPhysicalDisk(f.getPath(), volumeUuid, this);
@@ -184,6 +185,32 @@ public class LibvirtStoragePool implements KVMStoragePool {
         disk.setVirtualSize(f.length());
         logger.debug("find volume bypass libvirt disk " + disk.toString());
         return disk;
+    }
+
+    File resolvePhysicalDiskFile(String localPoolPath, String volumeUid, String volumeUuid) {
+        File poolPath = new File(localPoolPath);
+        if (volumeUid.contains("/") && !new File(volumeUid).isAbsolute()) {
+            File nestedVolume = new File(poolPath, volumeUid);
+            if (isFileInStoragePool(poolPath, nestedVolume)) {
+                return nestedVolume;
+            }
+            logger.warn(String.format("Relative volume path [%s] resolves outside storage pool [%s]. Falling back to volume name lookup.",
+                    volumeUid, localPoolPath));
+        }
+        return new File(poolPath, volumeUuid);
+    }
+
+    private boolean isFileInStoragePool(File poolPath, File volumePath) {
+        try {
+            String canonicalPoolPath = poolPath.getCanonicalPath();
+            String canonicalVolumePath = volumePath.getCanonicalPath();
+            return canonicalVolumePath.equals(canonicalPoolPath) ||
+                    canonicalVolumePath.startsWith(canonicalPoolPath + File.separator);
+        } catch (IOException e) {
+            logger.warn(String.format("Unable to resolve storage pool path [%s] or volume path [%s].",
+                    poolPath, volumePath), e);
+            return false;
+        }
     }
 
     @Override
@@ -213,7 +240,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isExternalSnapshot() {
-        if (this.type == StoragePoolType.CLVM || type == StoragePoolType.RBD) {
+        if (this.type == StoragePoolType.CLVM || this.type == StoragePoolType.CLVM_NG || type == StoragePoolType.RBD) {
             return true;
         }
         return false;
@@ -276,6 +303,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public StoragePoolType getType() {
         return this.type;
+    }
+
+    public void setType(StoragePoolType type) {
+        this.type = type;
     }
 
     public StoragePool getPool() {
@@ -419,9 +450,5 @@ public class LibvirtStoragePool implements KVMStoragePool {
             logger.debug("Checking VM activity for host IP {} with KVMHAVMActivityChecker command [{}] succeeded.", hostIp, cmd.toString());
             return true;
         }
-    }
-
-    public void setType(StoragePoolType type) {
-        this.type = type;
     }
 }

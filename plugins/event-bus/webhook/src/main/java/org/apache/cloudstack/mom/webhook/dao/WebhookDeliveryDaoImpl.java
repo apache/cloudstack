@@ -30,11 +30,14 @@ import com.cloud.utils.db.SearchCriteria;
 
 public class WebhookDeliveryDaoImpl extends GenericDaoBase<WebhookDeliveryVO, Long> implements WebhookDeliveryDao {
     @Override
-    public int deleteByDeleteApiParams(Long id, Long webhookId, Long managementServerId, Date startDate,
-           Date endDate) {
+    public int deleteByDeleteApiParams(Long id, List<Long> webhookIds, Long managementServerId, Date startDate,
+           Date endDate, boolean isRootAdmin) {
+        if (!isRootAdmin && id == null && CollectionUtils.isEmpty(webhookIds)) {
+            return 0;
+        }
         SearchBuilder<WebhookDeliveryVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.EQ);
+        sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.IN);
         sb.and("managementServerId", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         sb.and("startDate", sb.entity().getStartTime(), SearchCriteria.Op.GTEQ);
         sb.and("endDate", sb.entity().getEndTime(), SearchCriteria.Op.LTEQ);
@@ -42,8 +45,8 @@ public class WebhookDeliveryDaoImpl extends GenericDaoBase<WebhookDeliveryVO, Lo
         if (id != null) {
             sc.setParameters("id", id);
         }
-        if (webhookId != null) {
-            sc.setParameters("webhookId", webhookId);
+        if (CollectionUtils.isNotEmpty(webhookIds)) {
+            sc.setParameters("webhookId", webhookIds.toArray());
         }
         if (managementServerId != null) {
             sc.setParameters("managementServerId", managementServerId);

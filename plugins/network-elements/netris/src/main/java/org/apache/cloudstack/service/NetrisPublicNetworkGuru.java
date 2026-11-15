@@ -27,7 +27,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.netris.NetrisService;
-import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
@@ -36,6 +35,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.inject.Inject;
@@ -110,7 +110,8 @@ public class NetrisPublicNetworkGuru extends PublicNetworkGuru {
                 Network.Service[] services = { Network.Service.SourceNat };
                 long networkOfferingId = vpc.getVpcOfferingId();
                 VpcOfferingVO vpcVO = vpcOfferingDao.findById(networkOfferingId);
-                boolean sourceNatEnabled = !NetworkOffering.NetworkMode.ROUTED.equals(vpcVO.getNetworkMode()) &&
+                NetworkOffering.NetworkMode vpcNetworkMode = NetrisResourceObjectUtils.getNetworkMode(vpcVO.getNetworkMode());
+                boolean sourceNatEnabled = !NetworkOffering.NetworkMode.ROUTED.equals(vpcNetworkMode) &&
                         vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
                 logger.info(String.format("Creating Netris VPC %s", vpc.getName()));
@@ -121,9 +122,7 @@ public class NetrisPublicNetworkGuru extends PublicNetworkGuru {
                     throw new CloudRuntimeException(msg);
                 }
 
-                boolean hasNatSupport = false;
-                VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
-                hasNatSupport = NetworkOffering.NetworkMode.NATTED.equals(vpcOffering.getNetworkMode());
+                boolean hasNatSupport = NetworkOffering.NetworkMode.NATTED.equals(NetrisResourceObjectUtils.getNetworkMode(vpcVO.getNetworkMode()));
 
                 if (!hasNatSupport) {
                     return nic;

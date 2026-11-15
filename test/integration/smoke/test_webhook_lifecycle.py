@@ -22,7 +22,8 @@ from marvin.cloudstackAPI import (listEvents)
 from marvin.lib.base import (Account,
                              Domain,
                              Webhook,
-                             SSHKeyPair)
+                             SSHKeyPair,
+                             Configurations)
 from marvin.lib.common import (get_domain,
                                get_zone)
 from marvin.lib.utils import (random_gen)
@@ -40,6 +41,8 @@ HTTPS_PAYLOAD_URL = "https://smee.io/C9LPa7Ei3iB6Qj2"
 
 class TestWebhooks(cloudstackTestCase):
 
+    original_config_values = {}
+
     @classmethod
     def setUpClass(cls):
         testClient = super(TestWebhooks, cls).getClsTestClient()
@@ -53,10 +56,72 @@ class TestWebhooks(cloudstackTestCase):
         cls._cleanup = []
         cls.logger = logging.getLogger('TestWebhooks')
         cls.logger.setLevel(logging.DEBUG)
+        cls.manage_webhook_test_configurations()
+        time.sleep(30)
 
     @classmethod
     def tearDownClass(cls):
+        cls.manage_webhook_test_configurations(restore=True)
         super(TestWebhooks, cls).tearDownClass()
+
+    @classmethod
+    def manage_webhook_test_configurations(cls, restore=False):
+        """
+        Manage configuration values required for the webhook integration tests.
+
+        During class setup, stores original values and applies test-specific overrides.
+        During class teardown, restores the original values.
+
+        More configurations can be easily added here later by extending the
+        configuration_updates dictionary.
+        """
+        configuration_updates = {
+            "webhook.delivery.allow.http": "true"
+        }
+
+        if restore:
+            for config_name, original_value in cls.original_config_values.items():
+                if original_value is None:
+                    continue
+                try:
+                    Configurations.update(
+                        cls.apiclient,
+                        name=config_name,
+                        value=original_value
+                    )
+                    cls.logger.debug("Restored configuration %s to original value: %s" % (config_name, original_value))
+                except Exception as e:
+                    cls.logger.warning("Error restoring configuration %s: %s" % (config_name, str(e)))
+            cls.original_config_values.clear()
+            return
+
+        cls.original_config_values.clear()
+        for config_name, config_value in configuration_updates.items():
+            try:
+                configs = Configurations.list(
+                    cls.apiclient,
+                    name=config_name
+                )
+                if configs:
+                    original_value = configs[0].value
+                    cls.original_config_values[config_name] = original_value
+                    cls.logger.debug("Stored original value for %s: %s" % (config_name, original_value))
+                else:
+                    cls.logger.debug("Configuration %s not found" % config_name)
+                    cls.original_config_values[config_name] = None
+            except Exception as e:
+                cls.logger.debug("Error retrieving configuration %s: %s" % (config_name, str(e)))
+                cls.original_config_values[config_name] = None
+
+            try:
+                Configurations.update(
+                    cls.apiclient,
+                    name=config_name,
+                    value=config_value
+                )
+                cls.logger.debug("Updated configuration %s to %s" % (config_name, config_value))
+            except Exception as e:
+                cls.logger.warning("Error updating configuration %s: %s" % (config_name, str(e)))
 
     def setUp(self):
         self.cleanup = []
@@ -326,12 +391,16 @@ class TestWebhooks(cloudstackTestCase):
             for event in events:
                 if event.type == "REGISTER.SSH.KEYPAIR":
                     register_sshkeypair_event_count = register_sshkeypair_event_count + 1
-        time.sleep(5)
-        list_deliveries = self.webhook.list_deliveries(
-            self.userapiclient,
-            page=1,
-            pagesize=20
-        )
+        list_deliveries = None
+        for _ in range(3):
+            list_deliveries = self.webhook.list_deliveries(
+                self.userapiclient,
+                page=1,
+                pagesize=20
+            )
+            if list_deliveries is not None and len(list_deliveries) > 0:
+                break
+            time.sleep(10)
         self.assertNotEqual(
             list_deliveries,
             None,

@@ -51,6 +51,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -165,6 +166,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -598,7 +600,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         SnapshotInfo snapshotObject = snapshotFactory.getSnapshot(snapshotId, chosenStore);
 
-        if (snapshotDataStoreReference.getKvmCheckpointPath() != null) {
+        if (isIncrementalChainRef(snapshotDataStoreReference, snapshot.getHypervisorType())) {
             snapshotSrv.convertSnapshot(snapshotObject);
         }
 
@@ -780,10 +782,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     /**
      * Will mark this snapshot as the end of the chain if it has reached the value of snapshot.delta.max.
      * */
-    private void endCurrentChainIfNeeded(Long snapshotId, Long zoneId) {
+    protected void endCurrentChainIfNeeded(Long snapshotId, Long zoneId) {
         SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId, zoneId);
         int chainSize = 1;
-        while (snapshotDataStoreVo.getParentSnapshotId() > 0) {
+        while (snapshotDataStoreVo != null && snapshotDataStoreVo.getParentSnapshotId() > 0) {
             snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotDataStoreVo.getParentSnapshotId(), zoneId);
             chainSize++;
         }
@@ -815,7 +817,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotDataStoreVO snapshotDataStoreVO;
         for (int i = 1; i < volumeSnapshots.size(); i++) {
             snapshotDataStoreVO = volumeSnapshots.get(i);
-            if (snapshotDataStoreVO.getKvmCheckpointPath() != null) {
+            if (isIncrementalChainRef(snapshotDataStoreVO, HypervisorType.KVM)) {
                 if (!snapshotDataStoreVO.isEndOfChain()) {
                     logger.debug("Found snapshot reference [{}] that used to belong to a now dead snapshot chain. Will mark it as end of chain.", snapshotDataStoreVO);
                     snapshotDataStoreVO.setEndOfChain(true);
@@ -824,6 +826,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 return;
             }
         }
+    }
+
+    /**
+     * Whether this snapshot store reference is part of a KVM incremental snapshot chain on secondary
+     * storage. File-based storage chains carry a qemu checkpoint path; Linstor chains only link deltas
+     * through the parent snapshot id (content-diff qcow2 chain). Members of either chain kind must be
+     * flattened (converted) before being used standalone.
+     */
+    protected boolean isIncrementalChainRef(SnapshotDataStoreVO ref, HypervisorType hypervisorType) {
+        return HypervisorType.KVM.equals(hypervisorType) && (ref.getKvmCheckpointPath() != null || ref.getParentSnapshotId() > 0);
     }
 
     private void postCreateRecurringSnapshotForPolicy(long userId, long volumeId, long snapshotId, long policyId) {
@@ -1527,13 +1539,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return null;
     }
 
-    private boolean hostSupportsSnapsthotForVolume(HostVO host, VolumeInfo volume, boolean isFromVmSnapshot) {
+    private boolean hostSupportsSnapshotForVolume(HostVO host, VolumeInfo volume, boolean isFromVmSnapshot) {
         if (host.getHypervisorType() != HypervisorType.KVM) {
             return true;
         }
 
-        //Turn off snapshot by default for KVM if the volume attached to vm that is not in the Stopped/Destroyed state,
-        //unless it is set in the global flag
+        // For KVM, snapshots of a volume attached to a vm that is not in the Stopped/Destroyed state are allowed
+        // unless the global flag kvm.snapshot.enabled is turned off (it is enabled by default since 4.22.0.0)
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
             VMInstanceVO vm = _vmDao.findById(vmId);
@@ -1584,9 +1596,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             if (hosts != null && !hosts.isEmpty()) {
                 HostVO host = hosts.get(0);
-                if (!hostSupportsSnapsthotForVolume(host, volume, isFromVmSnapshot)) {
+                if (!hostSupportsSnapshotForVolume(host, volume, isFromVmSnapshot)) {
                     throw new CloudRuntimeException(
-                            "KVM Snapshot is not supported for Running VMs. It is disabled by default due to a possible volume corruption in certain cases. To enable it set global settings kvm.snapshot.enabled to True. See the documentation for more details.");
+                            "KVM Snapshot is not supported for Running VMs because the global setting " +
+                                    "kvm.snapshot.enabled is set to false for this deployment. It can be disabled to " +
+                                    "avoid a possible volume corruption in certain cases. To allow snapshots of running " +
+                                    "VMs, set kvm.snapshot.enabled to true. See the documentation for more details.");
                 }
             }
         }
@@ -1633,7 +1648,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean isKvmAndFileBasedStorage = isHypervisorKvmAndFileBasedStorage(volume, storagePool);
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
-        if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
+        StoragePoolType poolType = volume.getStoragePoolType();
+
+        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, poolType, clusterId);
+
+        // NetApp ONTAP managed PRIMARY snapshots remain on primary/array storage (FlexVol).
+        // They must not use secondary archive bookkeeping (postSnapshotDirectlyToSecondary) or a physical
+        // secondary copy — delete is handled via StorageSystemSnapshotStrategy → driver deleteAsync.
+        boolean archiveSnapshotToSecondary = backupSnapToSecondary
+                && !isOntapManagedPrimaryLocationSnapshot(storagePool, payload);
+
+        if (isKvmAndFileBasedStorage && archiveSnapshotToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
             if (imageStore == null) {
                 throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
@@ -1641,7 +1666,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             snapshot.setImageStore(imageStore);
         }
 
-        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, clusterId);
 
         snapshot.addPayload(payload);
         try {
@@ -1656,14 +1680,25 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
 
-            if (backupSnapToSecondary) {
+            if (archiveSnapshotToSecondary) {
                 if (!isKvmAndFileBasedStorage) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
+                    if (!payload.getAsyncBackup() && ClvmPoolManager.isClvmPoolType(storagePool.getPoolType())) {
+                        _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
+                    }
                 } else {
                     postSnapshotDirectlyToSecondary(snapshot, snapshotOnPrimary, snapshotId);
                 }
             } else {
-                logger.debug("Skipping backup of snapshot [{}] to secondary due to configuration [{}].", snapshotOnPrimary.getUuid(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+                if (backupSnapToSecondary && isOntapManagedPrimaryLocationSnapshot(storagePool, payload)) {
+                    logger.info("takeSnapshot: snapshot [{}] on NetApp ONTAP managed primary pool [{}] with locationType=PRIMARY — "
+                            + "keeping snapshot on primary/array storage only; not archiving to secondary "
+                            + "(backup.snapshot.after.take is ignored for this snapshot class)",
+                            snapshotId, storagePool.getId());
+                } else {
+                    logger.debug("Skipping backup of snapshot [{}] to secondary due to configuration [{}].",
+                            snapshotOnPrimary.getUuid(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+                }
 
                 if (CollectionUtils.isNotEmpty(payload.getStoragePoolIds()) && payload.getAsyncBackup()) {
                     snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.COPY);
@@ -1678,7 +1713,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId(), clusterId);
                 snapshotZoneDao.addSnapshotToZone(snapshotId, snapshot.getDataCenterId());
 
-                DataStoreRole dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
+                DataStoreRole dataStoreRole;
+                if (payload.getAsyncBackup() && archiveSnapshotToSecondary && !isKvmAndFileBasedStorage) {
+                    dataStoreRole = DataStoreRole.Primary;
+                } else {
+                    dataStoreRole = archiveSnapshotToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
+                }
 
                 List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, dataStoreRole);
                 if (CollectionUtils.isEmpty(snapshotStoreRefs)) {
@@ -1693,7 +1733,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), storeResourceType, volume.getSize() - snapshotStoreRef.getPhysicalSize());
 
                 if (!payload.getAsyncBackup()) {
-                    if (backupSnapToSecondary) {
+                    if (archiveSnapshotToSecondary) {
                         copyNewSnapshotToZones(snapshotId, snapshot.getDataCenterId(), payload.getZoneIds());
                     }
                     if (CollectionUtils.isNotEmpty(payload.getStoragePoolIds())) {
@@ -1723,6 +1763,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return snapshot;
     }
 
+    /**
+     * KVM file-based fast-path: records snapshot on image store without copying bytes, then drops the
+     * primary {@code snapshot_data_store} row. Used only for non-managed primary storage when
+     * {@code backup.snapshot.after.take} is enabled. NetApp ONTAP managed PRIMARY snapshots never
+     * call this method — see {@link #isManagedPrimaryLocationSnapshot}.
+     */
     private void postSnapshotDirectlyToSecondary(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimary, Long snapshotId) {
         logger.debug("{} was directly copied to secondary storage because the hypervisor is KVM, the primary storage is file-based and the [{}] configuration" +
                 " is set to true.", snapshot.getSnapshotVO().toString(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot);
@@ -1737,6 +1783,23 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         snapshotOnPrimary.markBackedUp();
         _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
         snapshotDetailsDao.removeDetail(snapshotOnPrimary.getId(), AsyncJob.Constants.MS_ID);
+    }
+
+    /**
+     * Returns true when a volume snapshot on NetApp ONTAP is explicitly kept on managed primary/array storage.
+     *
+     * <p>For ONTAP managed pools, {@link #updateSnapshotPayload} defaults {@code locationType} to
+     * {@link Snapshot.LocationType#PRIMARY}. ONTAP volume snapshots therefore stay on the FlexVol
+     * on primary — they are not moved or mirrored to secondary storage. The primary
+     * {@code snapshot_data_store} row must remain so volume-snapshot DELETE uses
+     * {@code StorageSystemSnapshotStrategy} and the primary datastore driver.</p>
+     *
+     * <p>Other managed storage providers are not affected by this check.</p>
+     */
+    private boolean isOntapManagedPrimaryLocationSnapshot(StoragePool storagePool, CreateSnapshotPayload payload) {
+        return storagePool != null && storagePool.isManaged()
+                && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(storagePool.getStorageProviderName())
+                && Snapshot.LocationType.PRIMARY.equals(payload.getLocationType());
     }
 
     @Override
@@ -1816,6 +1879,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
                     if (backupedSnapshot != null) {
                         snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                        removeClvmPrimarySnapshotStoreRefIfNeeded(snapshotOnPrimary);
                         copyNewSnapshotToZones(snapshotOnPrimary.getId(), snapshotOnPrimary.getDataCenterId(), zoneIds);
                     }
                 }
@@ -1841,7 +1905,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, Long clusterId) {
+    void removeClvmPrimarySnapshotStoreRefIfNeeded(SnapshotInfo snapshotOnPrimary) {
+        DataStore dataStore = snapshotOnPrimary.getDataStore();
+        StoragePoolVO pool = _storagePoolDao.findById(dataStore.getId());
+        if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            _snapshotStoreDao.removeBySnapshotStore(snapshotOnPrimary.getId(), dataStore.getId(), dataStore.getRole());
+        }
+    }
+
+    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, StoragePoolType poolType, Long clusterId) {
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
         if (storagePoolVO.isManaged()) {
@@ -2019,8 +2091,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (vmInstance != null) {
             vmDisplayName = vmInstance.getHostName();
         }
+        boolean nameProvided = snapshotName != null;
         if (snapshotName == null)
             snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
+
+        if (nameProvided && _snapshotDao.findByVolumeIdAndNameNotInStatus(volumeId, snapshotName, Snapshot.State.Destroyed, Snapshot.State.Error) != null) {
+            throw new InvalidParameterValueException(String.format("A snapshot with name [%s] already exists for volume %s.", snapshotName, volume));
+        }
 
         HypervisorType hypervisorType = HypervisorType.None;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
@@ -2183,7 +2260,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<SnapshotDataStoreVO> snapshotChain = new ArrayList<>();
         long size = 0L;
         DataStore dstSecStore = null;
-        boolean kvmIncrementalSnapshot = currentSnap.getKvmCheckpointPath() != null;
+        boolean kvmIncrementalSnapshot = isIncrementalChainRef(currentSnap, snapshotVO.getHypervisorType());
         do {
             dstSecStore = getSnapshotZoneImageStore(currentSnap.getSnapshotId(), destZone.getId());
             if (dstSecStore != null) {

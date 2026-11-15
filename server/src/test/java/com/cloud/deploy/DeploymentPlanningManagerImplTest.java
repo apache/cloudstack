@@ -40,6 +40,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -79,6 +80,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -129,6 +135,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -198,6 +205,9 @@ public class DeploymentPlanningManagerImplTest {
     HostDao hostDao;
 
     @Inject
+    HostDetailsDao hostDetailsDao;
+
+    @Inject
     CapacityManager capacityMgr;
 
     @Inject
@@ -223,6 +233,12 @@ public class DeploymentPlanningManagerImplTest {
 
     @Mock
     DataStoreManager _dataStoreManager;
+
+    @Mock
+    NicDao nicDao;
+
+    @Mock
+    NetworkDao networkDao;
 
     @Inject
     HostPodDao _podDao;
@@ -263,6 +279,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(vmDetailsDao.listDetailsKeyPairs(ArgumentMatchers.anyLong())).thenReturn(null);
 
         Mockito.when(volDao.findByInstance(ArgumentMatchers.anyLong())).thenReturn(new ArrayList<>());
+        Mockito.when(nicDao.listByVmId(ArgumentMatchers.anyLong())).thenReturn(new ArrayList<>());
 
         Mockito.when(_dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(dataCenterId);
@@ -473,6 +490,101 @@ public class DeploymentPlanningManagerImplTest {
     }
 
     @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsNoTrunkNic() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(dataCenterId);
+        ExcludeList avoids = new ExcludeList();
+
+        NicVO ordinaryNic = Mockito.mock(NicVO.class);
+        Mockito.when(ordinaryNic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(ordinaryNic));
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        assertAvoidIsEmpty(avoids, true, true, true, true);
+        Mockito.verify(hostDao, Mockito.never()).listEnabledIdsByDataCenterId(Mockito.anyLong());
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsExcludesNotReadyHosts() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(dataCenterId);
+        ExcludeList avoids = new ExcludeList();
+
+        NicVO trunkNic = Mockito.mock(NicVO.class);
+        Mockito.when(trunkNic.getMultiNetwork()).thenReturn(true);
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(trunkNic));
+
+        long readyHostId = 10L;
+        long notReadyHostId = 11L;
+        long noDetailHostId = 12L;
+        Mockito.when(hostDao.listEnabledIdsByDataCenterId(dataCenterId))
+                .thenReturn(Arrays.asList(readyHostId, notReadyHostId, noDetailHostId));
+
+        Mockito.when(hostDetailsDao.findHostIdsWithVlanFilteringEnabled())
+                .thenReturn(Collections.singleton(readyHostId));
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        Assert.assertEquals(2, avoids.getHostsToAvoid().size());
+        Assert.assertTrue(avoids.getHostsToAvoid().contains(notReadyHostId));
+        Assert.assertTrue(avoids.getHostsToAvoid().contains(noDetailHostId));
+        Assert.assertFalse(avoids.getHostsToAvoid().contains(readyHostId));
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsExcludesFilteringHostsForGuestVlanOneNic() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(dataCenterId);
+        ExcludeList avoids = new ExcludeList();
+
+        NicVO vlanOneNic = Mockito.mock(NicVO.class);
+        Mockito.when(vlanOneNic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(vlanOneNic.getNetworkId()).thenReturn(5L);
+        Mockito.when(vlanOneNic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(1));
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(vlanOneNic));
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(networkDao.findById(5L)).thenReturn(network);
+
+        long filteringHostId = 10L;
+        long legacyHostId = 11L;
+        Mockito.when(hostDao.listEnabledIdsByDataCenterId(dataCenterId)).thenReturn(Arrays.asList(filteringHostId, legacyHostId));
+        Mockito.when(hostDetailsDao.findHostIdsWithVlanFilteringEnabled()).thenReturn(Collections.singleton(filteringHostId));
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        Assert.assertEquals(1, avoids.getHostsToAvoid().size());
+        Assert.assertTrue(avoids.getHostsToAvoid().contains(filteringHostId));
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsDoesNoLookupsForNicsOnOtherVlans() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        ExcludeList avoids = new ExcludeList();
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(nic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(100));
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(nic));
+        Mockito.clearInvocations(hostDao, hostDetailsDao);
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        assertAvoidIsEmpty(avoids, true, true, true, true);
+        Mockito.verify(networkDao, Mockito.never()).findById(Mockito.anyLong());
+        Mockito.verify(hostDetailsDao, Mockito.never()).findHostIdsWithVlanFilteringEnabled();
+        Mockito.verify(hostDao, Mockito.never()).listEnabledIdsByDataCenterId(Mockito.anyLong());
+    }
+
+    @Test
     public void avoidDisabledPodsTestNoDisabledPod() {
         DataCenter dc = Mockito.mock(DataCenter.class);
         List<Long> podIds = new ArrayList<>();
@@ -548,15 +660,77 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertFalse("Volumes do not require encryption, but reporting they do", _dpm.anyVolumeRequiresEncryption(volumes));
     }
 
+    private void stubHostEncryptionDetails(long hostId, boolean qemuNative, boolean rbd) {
+        Mockito.when(hostDetailsDao.findDetail(hostId, Host.HOST_VOLUME_ENCRYPTION))
+                .thenReturn(new DetailVO(hostId, Host.HOST_VOLUME_ENCRYPTION, String.valueOf(qemuNative)));
+        Mockito.when(hostDetailsDao.findDetail(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION))
+                .thenReturn(new DetailVO(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(rbd)));
+    }
+
+    private VolumeVO encryptedVolumeOnPool(Long poolId, Storage.StoragePoolType poolType) {
+        VolumeVO volume = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
+        volume.setPassphraseId(1L);
+        if (poolId != null) {
+            volume.setPoolId(poolId);
+            StoragePoolVO pool = new StoragePoolVO();
+            pool.setPoolType(poolType);
+            Mockito.when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        }
+        return volume;
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsRbdPoolNeedsRbdSupportTest() {
+        VolumeVO volume = encryptedVolumeOnPool(77L, Storage.StoragePoolType.RBD);
+        stubHostEncryptionDetails(5L, true, false);   // qemu-native only
+        stubHostEncryptionDetails(6L, false, true);   // librbd only
+        Assert.assertFalse("qemu-native-only host must not pass for an encrypted volume on an RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), null));
+        Assert.assertTrue("librbd-capable host must pass for an encrypted volume on an RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(6L, List.of(volume), null));
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsNonRbdPoolNeedsQemuSupportTest() {
+        VolumeVO volume = encryptedVolumeOnPool(78L, Storage.StoragePoolType.NetworkFilesystem);
+        stubHostEncryptionDetails(5L, true, false);   // qemu-native only
+        stubHostEncryptionDetails(6L, false, true);   // librbd only
+        Assert.assertTrue("qemu-native host must pass for an encrypted volume on a non-RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), null));
+        Assert.assertFalse("librbd-only host must not pass for an encrypted volume on a non-RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(6L, List.of(volume), null));
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsNoPoolAcceptsEitherMechanismTest() {
+        VolumeVO volume = encryptedVolumeOnPool(null, null);
+        stubHostEncryptionDetails(5L, false, true);   // librbd only
+        stubHostEncryptionDetails(6L, false, false);  // no encryption at all
+        Assert.assertTrue("a volume with no pool yet accepts any encryption mechanism",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), null));
+        Assert.assertFalse("a host with no encryption support must not pass for an encrypted volume",
+                _dpm.hostMeetsVolumeEncryptionRequirements(6L, List.of(volume), null));
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsUsesProposedPoolTest() {
+        VolumeVO volume = encryptedVolumeOnPool(null, null);
+        StoragePoolVO proposedRbdPool = new StoragePoolVO();
+        proposedRbdPool.setPoolType(Storage.StoragePoolType.RBD);
+        Map<Volume, StoragePool> proposedPools = Map.of(volume, proposedRbdPool);
+        stubHostEncryptionDetails(5L, true, false);   // qemu-native only
+        Assert.assertFalse("the proposed pool's type must drive the required encryption mechanism",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), proposedPools));
+    }
+
     /**
      * Root requires encryption, chosen host supports it
      */
     @Test
     public void passEncRootProvidedHostSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -579,9 +753,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void failEncRootProvidedHostNotSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -604,9 +777,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passNoEncRootProvidedHostNotSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -628,9 +800,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passNoEncRootProvidedHostSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -652,9 +823,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passEncRootLastHostSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -682,9 +852,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void failEncRootLastHostNotSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -708,9 +877,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passEncRootPlannerHostSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -733,9 +901,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void failEncRootPlannerHostSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -759,11 +926,8 @@ public class DeploymentPlanningManagerImplTest {
     public void findSuitablePoolsForVolumesTest() throws Exception {
         Long diskOfferingId = 1L;
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {
-            {
-                put(Host.HOST_VOLUME_ENCRYPTION, "true");
-            }
-        };
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -852,9 +1016,8 @@ public class DeploymentPlanningManagerImplTest {
 
         StoragePool pool = new StoragePoolVO();
 
-        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<>() {{
-            put(vol1, List.of(pool));
-        }};
+        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<>();
+        suitableVolumeStoragePools.put(vol1, List.of(pool));
 
         Pair<Map<Volume, List<StoragePool>>, List<Volume>> suitable = new Pair<>(suitableVolumeStoragePools, volumes);
 
@@ -863,6 +1026,12 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(vmProfile.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
         Mockito.doNothing().when(hostDao).loadDetails(host);
+        // encryption capability checks read host_details through the dao; answer them from the test host's detail map
+        Mockito.when(hostDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenAnswer(invocation -> {
+            String detailName = invocation.getArgument(1);
+            String detailValue = host.getDetails() != null ? host.getDetails().get(detailName) : null;
+            return detailValue != null ? new DetailVO(host.getId(), detailName, detailValue) : null;
+        });
         Mockito.doReturn(volumeVOs).when(volDao).findByInstance(ArgumentMatchers.anyLong());
         Mockito.doReturn(suitable).when(_dpm).findSuitablePoolsForVolumes(
                 ArgumentMatchers.any(VirtualMachineProfile.class),
@@ -882,9 +1051,8 @@ public class DeploymentPlanningManagerImplTest {
                 ArgumentMatchers.anyInt()
         );
 
-        Map<Volume, StoragePool> suitableVolumeStoragePoolMap = new HashMap<>() {{
-            put(vol1, pool);
-        }};
+        Map<Volume, StoragePool> suitableVolumeStoragePoolMap = new HashMap<>();
+        suitableVolumeStoragePoolMap.put(vol1, pool);
         Mockito.doReturn(true).when(_dpm).hostCanAccessSPool(ArgumentMatchers.any(Host.class), ArgumentMatchers.any(StoragePool.class));
 
         Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
@@ -976,6 +1144,16 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public HostDetailsDao hostDetailsDao() {
             return Mockito.mock(HostDetailsDao.class);
+        }
+
+        @Bean
+        public NicDao nicDao() {
+            return Mockito.mock(NicDao.class);
+        }
+
+        @Bean
+        public NetworkDao networkDao() {
+            return Mockito.mock(NetworkDao.class);
         }
 
 

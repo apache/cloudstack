@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.backup.repository;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -57,7 +58,8 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "backup repository provider")
     private String provider;
 
-    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
+    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options",
+            validations = {ApiArgValidator.SafeCommandOptions})
     private String mountOptions;
 
     @Parameter(name = ApiConstants.ZONE_ID,

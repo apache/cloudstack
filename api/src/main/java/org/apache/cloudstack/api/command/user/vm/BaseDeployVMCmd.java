@@ -19,7 +19,10 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,12 +43,14 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -56,15 +61,18 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.NetworkService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmDiskInfo;
-import com.cloud.utils.net.Dhcp;
 
 public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
 
@@ -75,13 +83,13 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "availability zone for the virtual machine")
-    private Long zoneId;
+    protected Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine", validations = {ApiArgValidator.RFCComplianceDomainName})
-    private String name;
+    protected String name;
 
     @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "an optional user generated name for the virtual machine")
-    private String displayName;
+    protected String displayName;
 
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The password of the virtual machine. If null, a random password will be generated for the VM.",
             since="4.19.0.0")
@@ -89,21 +97,21 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
-    private String accountName;
+    protected String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used. If account is NOT provided then virtual machine will be assigned to the caller account and domain.")
-    private Long domainId;
+    protected Long domainId;
 
     //Network information
     //@ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
-    private List<Long> networkIds;
+    protected List<Long> networkIds;
 
     @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
-    private String bootType;
+    protected String bootType;
 
     @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
-    private String bootMode;
+    protected String bootMode;
 
     @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
     private Boolean bootIntoSetup;
@@ -126,11 +134,19 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             since = "4.4")
     private Long rootdisksize;
 
+    @ACL
+    @Parameter(name = ApiConstants.ROOT_DISK_KMS_KEY_ID,
+            type = CommandType.UUID,
+            entityType = KMSKeyResponse.class,
+            description = "ID of the KMS Key to use for root disk encryption",
+            since = "4.23.0")
+    private Long rootDiskKmsKeyId;
+
     @Parameter(name = ApiConstants.DATADISKS_DETAILS,
             type = CommandType.MAP,
             since = "4.21.0",
             description = "Disk offering details for creating multiple data volumes. Mutually exclusive with diskOfferingId." +
-                    " Example: datadisksdetails[0].diskofferingid=a2a73a84-19db-4852-8930-dfddef053341&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200")
+                    " Example: datadisksdetails[0].diskofferingid=a2a73a84-19db-4852-8930-dfddef053341&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200&datadisksdetails[0].kmskeyid=<uuid>")
     private Map dataDisksDetails;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
@@ -138,7 +154,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which to deploy the virtual machine. "
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
-    private String hypervisor;
+    protected String hypervisor;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
@@ -147,10 +163,11 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                     "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                     "You also need to change vm.userdata.max.length value",
             length = 1048576)
-    private String userData;
+    protected String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18")
-    private Long userdataId;
+    protected Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
     private Map userdataDetails;
@@ -160,7 +177,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private String sshKeyPairName;
 
     @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "names of the ssh key pairs used to login to the virtual machine")
-    private List<String> sshKeyPairNames;
+    protected List<String> sshKeyPairNames;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
@@ -168,7 +185,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     @ACL
     @Parameter(name = ApiConstants.SECURITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "comma separated list of security groups id that going to be applied to the virtual machine. "
             + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
-    private List<Long> securityGroupIdList;
+    protected List<Long> securityGroupIdList;
 
     @ACL
     @Parameter(name = ApiConstants.SECURITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = SecurityGroupResponse.class, description = "comma separated list of security groups names that going to be applied to the virtual machine."
@@ -178,6 +195,15 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter."
             + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid&iptonetworklist[0].mac=aa:bb:cc:dd:ee::ff - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
+
+    @Parameter(name = ApiConstants.NIC_NETWORKS_LIST, type = CommandType.MAP, since = "24.0.0",
+            authorized = {RoleType.Admin},
+            description = "one entry per nic, each naming the set of networks that nic is associated with as a multi-VLAN trunk. The first network id in each entry is the nic's primary network."
+                    + " Can't be specified with networkIds or ipToNetworkList parameters."
+                    + " Optional ip4addresses/ip6addresses request specific IPs for the entry's associated (non-primary) networks - comma-separated,"
+                    + " positionally aligned to networkids after its first (primary) entry; a blank token auto-allocates that network's IP, same as omitting it."
+                    + " Example: nicnetworkslist[0].networkids=uuid1,uuid2,uuid3&nicnetworkslist[0].ip4address=10.10.10.11&nicnetworkslist[0].ip4addresses=10.10.20.5,10.10.30.5")
+    private Map nicNetworksList;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the ip address for default vm's network")
     private String ipAddress;
@@ -189,10 +215,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private String macAddress;
 
     @Parameter(name = ApiConstants.KEYBOARD, type = CommandType.STRING, description = "an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,es-latam,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
-    private String keyboard;
+    protected String keyboard;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy vm for the project")
-    private Long projectId;
+    protected Long projectId;
 
     @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "true if start vm after creating; defaulted to true if not specified")
     private Boolean startVm;
@@ -200,7 +226,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     @ACL
     @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine."
             + " Mutually exclusive with affinitygroupnames parameter")
-    private List<Long> affinityGroupIdList;
+    protected List<Long> affinityGroupIdList;
 
     @ACL
     @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
@@ -208,10 +234,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private List<String> affinityGroupNameList;
 
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
-    private Boolean displayVm;
+    protected Boolean displayVm;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details")
-    private Map details;
+    protected Map details;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
@@ -225,7 +251,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private Map dataDiskTemplateToDiskOfferingList;
 
     @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
-    private String extraConfig;
+    protected String extraConfig;
 
     @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "if true the image tags (if any) will be copied to the VM, default value is false")
     private Boolean copyImageTags;
@@ -298,6 +324,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    public Long getRootDiskKmsKeyId() {
+        return rootDiskKmsKeyId;
     }
 
     public String getDeploymentPlanner() {
@@ -495,6 +525,19 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     public List<Long> getNetworkIds() {
+        rejectNicNetworksListForNonRootAdmin(nicNetworksList, getFullUrlParams());
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null
+                    || MapUtils.isNotEmpty(ipToNetworkList) || MapUtils.isNotEmpty(vAppNetworks)) {
+                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s, %s",
+                        ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST, ApiConstants.NIC_NETWORK_LIST));
+            }
+            List<Long> networks = new ArrayList<>();
+            for (NicNetworkGrouping grouping : getNicNetworksList()) {
+                networks.add(grouping.getPrimaryNetworkId());
+            }
+            return networks;
+        }
         if (MapUtils.isNotEmpty(vAppNetworks)) {
             if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null || MapUtils.isNotEmpty(ipToNetworkList)) {
                 throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s", ApiConstants.NIC_NETWORK_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST));
@@ -512,6 +555,23 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
            }
        }
         return networkIds;
+    }
+
+    // nicnetworkslist is authorized={RoleType.Admin}; the framework drops it silently for other callers instead of rejecting it.
+    // Shared with AssignVMCmd, which carries the same parameter.
+    public static void rejectNicNetworksListForNonRootAdmin(Map parsedNicNetworksList, Map<String, String> rawParams) {
+        if (MapUtils.isNotEmpty(parsedNicNetworksList)) {
+            return;
+        }
+        boolean nicNetworksListWasSupplied = rawParams != null && rawParams.keySet().stream()
+                .anyMatch(key -> key.startsWith(ApiConstants.NIC_NETWORKS_LIST));
+        if (!nicNetworksListWasSupplied) {
+            return;
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        if (!Account.Type.ADMIN.equals(caller.getType())) {
+            throw new PermissionDeniedException(String.format("Only a root admin can use %s.", ApiConstants.NIC_NETWORKS_LIST));
+        }
     }
 
     public String getName() {
@@ -581,7 +641,19 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 minIops = Long.parseLong(dataDisk.get(ApiConstants.MIN_IOPS));
                 maxIops = Long.parseLong(dataDisk.get(ApiConstants.MAX_IOPS));
             }
-            VmDiskInfo vmDiskInfo = new VmDiskInfo(diskOffering, size, minIops, maxIops, deviceId);
+
+            // Extract KMS key ID if provided
+            Long kmsKeyId = null;
+            String kmsKeyUuid = dataDisk.get(ApiConstants.KMS_KEY_ID);
+            if (kmsKeyUuid != null) {
+                KMSKey kmsKey = _entityMgr.findByUuid(org.apache.cloudstack.kms.KMSKey.class, kmsKeyUuid);
+                if (kmsKey == null) {
+                    throw new InvalidParameterValueException("Unable to find KMS key " + kmsKeyUuid);
+                }
+                kmsKeyId = kmsKey.getId();
+            }
+
+            VmDiskInfo vmDiskInfo = new VmDiskInfo(diskOffering, size, minIops, maxIops, deviceId, kmsKeyId);
             vmDiskInfoList.add(vmDiskInfo);
         }
         this.dataDiskInfoList = vmDiskInfoList;
@@ -597,6 +669,20 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     public Map<Long, IpAddresses> getIpToNetworkMap() {
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            LinkedHashMap<Long, IpAddresses> ipToNetworkMap = new LinkedHashMap<>();
+            for (NicNetworkGrouping grouping : getNicNetworksList()) {
+                if (grouping.getIp4Address() == null && grouping.getIp6Address() == null && grouping.getMacAddress() == null) {
+                    continue;
+                }
+                HashMap<String, String> ips = new HashMap<>();
+                ips.put("ip", grouping.getIp4Address());
+                ips.put("ipv6", grouping.getIp6Address());
+                ips.put("mac", grouping.getMacAddress());
+                ipToNetworkMap.put(grouping.getPrimaryNetworkId(), getIpAddressesFromIpMap(ips));
+            }
+            return ipToNetworkMap.isEmpty() ? null : ipToNetworkMap;
+        }
         if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
             throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
@@ -614,6 +700,145 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
 
         return ipToNetworkMap;
+    }
+
+    /**
+     * Parses nicnetworkslist into one grouping per requested nic, each naming the full ordered set of networks
+     * (primary first) that nic is associated with. Legacy networkIds/ipToNetworkList/vAppNetworks are untouched
+     * when nicnetworkslist is absent - this only returns a non-empty list when it was actually supplied.
+     * <p>
+     * Entries are read in ascending order of their nicnetworkslist[N] index, not map iteration order - the index
+     * is what both the deploy-time nic creation order (device id) and VNF's per-device-id validation rely on, and
+     * the underlying request map is not guaranteed to preserve insertion order.
+     */
+    public List<NicNetworkGrouping> getNicNetworksList() {
+        return parseNicNetworksList(nicNetworksList, _networkService);
+    }
+
+    /**
+     * Shared with {@link org.apache.cloudstack.api.command.admin.vm.AssignVMCmd}, which reuses this exact
+     * nicnetworkslist parameter shape so a trunk nic's associations can be carried across an account
+     * reassignment instead of being silently rebuilt as separate nics.
+     */
+    public static List<NicNetworkGrouping> parseNicNetworksList(Map rawNicNetworksList, NetworkService networkService) {
+        List<NicNetworkGrouping> groupings = new ArrayList<>();
+        if (MapUtils.isEmpty(rawNicNetworksList)) {
+            return groupings;
+        }
+        // the request-binding framework hands back these keys as Integer, not String - sort on the parsed value
+        // directly rather than assuming a type, so this works regardless of which one it actually is
+        List<Object> indices = new ArrayList<>(rawNicNetworksList.keySet());
+        try {
+            indices.sort(Comparator.comparingInt(index -> Integer.parseInt(index.toString())));
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException(String.format("%s indices must be integers", ApiConstants.NIC_NETWORKS_LIST));
+        }
+        for (Object index : indices) {
+            HashMap<String, String> entry = (HashMap<String, String>) rawNicNetworksList.get(index);
+            String networkIdsCsv = entry.get("networkids");
+            if (StringUtils.isBlank(networkIdsCsv)) {
+                throw new InvalidParameterValueException(String.format("%s entries must specify networkids", ApiConstants.NIC_NETWORKS_LIST));
+            }
+            List<Long> resolvedNetworkIds = new ArrayList<>();
+            for (String token : networkIdsCsv.split(",")) {
+                resolvedNetworkIds.add(resolveNetworkId(token.trim(), networkService));
+            }
+            if (resolvedNetworkIds.size() != new HashSet<>(resolvedNetworkIds).size()) {
+                throw new InvalidParameterValueException(String.format("%s entry lists the same network more than once: %s", ApiConstants.NIC_NETWORKS_LIST, networkIdsCsv));
+            }
+            Map<Long, IpAddresses> associatedNetworkIps = parseAssociatedNetworkIps(resolvedNetworkIds, entry.get("ip4addresses"), entry.get("ip6addresses"));
+            groupings.add(new NicNetworkGrouping(resolvedNetworkIds, entry.get("ip4address"), entry.get("ip6address"), entry.get("macaddress"), associatedNetworkIps));
+        }
+        return groupings;
+    }
+
+    @Nonnull
+    private static Long resolveNetworkId(String networkIdOrUuid, NetworkService networkService) {
+        Network network = networkService.getNetwork(networkIdOrUuid);
+        if (network != null) {
+            return network.getId();
+        }
+        try {
+            return Long.parseLong(networkIdOrUuid);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkIdOrUuid);
+        }
+    }
+
+    /**
+     * Parses a nicnetworkslist[N] entry's optional ip4addresses/ip6addresses - comma-separated, positionally
+     * aligned to that entry's networkids starting from its 2nd id (the associated networks; the primary's own
+     * ip4address/ip6address is handled separately). A blank token, or a shorter list than the associated-network
+     * count, leaves that network to auto-allocate - same as not requesting an IP for it at all.
+     */
+    private static Map<Long, IpAddresses> parseAssociatedNetworkIps(List<Long> networkIds, String ip4AddressesCsv, String ip6AddressesCsv) {
+        if (StringUtils.isBlank(ip4AddressesCsv) && StringUtils.isBlank(ip6AddressesCsv)) {
+            return Collections.emptyMap();
+        }
+        List<Long> associatedNetworkIds = networkIds.subList(1, networkIds.size());
+        String[] ip4Tokens = ip4AddressesCsv != null ? ip4AddressesCsv.split(",", -1) : new String[0];
+        String[] ip6Tokens = ip6AddressesCsv != null ? ip6AddressesCsv.split(",", -1) : new String[0];
+        if (ip4Tokens.length > associatedNetworkIds.size() || ip6Tokens.length > associatedNetworkIds.size()) {
+            throw new InvalidParameterValueException(String.format(
+                    "%s entry's ip4addresses/ip6addresses can't list more entries than its associated networks (%d)",
+                    ApiConstants.NIC_NETWORKS_LIST, associatedNetworkIds.size()));
+        }
+        Map<Long, IpAddresses> associatedNetworkIps = new HashMap<>();
+        for (int i = 0; i < associatedNetworkIds.size(); i++) {
+            String ip4 = i < ip4Tokens.length ? StringUtils.trimToNull(ip4Tokens[i]) : null;
+            String ip6 = i < ip6Tokens.length ? StringUtils.trimToNull(ip6Tokens[i]) : null;
+            if (ip4 != null || ip6 != null) {
+                associatedNetworkIps.put(associatedNetworkIds.get(i), new IpAddresses(ip4, ip6));
+            }
+        }
+        return associatedNetworkIps;
+    }
+
+    /**
+     * One requested nic's full network association set, primary network first, from a nicnetworkslist entry.
+     */
+    public static class NicNetworkGrouping {
+        private final List<Long> networkIds;
+        private final String ip4Address;
+        private final String ip6Address;
+        private final String macAddress;
+        private final Map<Long, IpAddresses> associatedNetworkIps;
+
+        public NicNetworkGrouping(List<Long> networkIds, String ip4Address, String ip6Address, String macAddress, Map<Long, IpAddresses> associatedNetworkIps) {
+            this.networkIds = networkIds;
+            this.ip4Address = ip4Address;
+            this.ip6Address = ip6Address;
+            this.macAddress = macAddress;
+            this.associatedNetworkIps = associatedNetworkIps;
+        }
+
+        public Long getPrimaryNetworkId() {
+            return networkIds.get(0);
+        }
+
+        public List<Long> getAssociatedNetworkIds() {
+            return networkIds.subList(1, networkIds.size());
+        }
+
+        public String getIp4Address() {
+            return ip4Address;
+        }
+
+        public String getIp6Address() {
+            return ip6Address;
+        }
+
+        public String getMacAddress() {
+            return macAddress;
+        }
+
+        /**
+         * Requested ip4/ip6 addresses for this entry's associated (non-primary) networks, keyed by network id.
+         * A network with no entry here auto-allocates, same as today.
+         */
+        public Map<Long, IpAddresses> getAssociatedNetworkIps() {
+            return associatedNetworkIps;
+        }
     }
 
     @Nonnull
@@ -798,6 +1023,11 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
         return null;
     }
+
+    public String getInstanceType() {
+        return null;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

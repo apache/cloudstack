@@ -341,15 +341,19 @@
                               @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                             ></disk-offering-selection>
                             <disk-size-selection
-                              v-if="overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops)"
+                              v-if="(overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops || overrideDiskOffering.encrypt)) || (serviceOffering && serviceOffering.encryptroot)"
                               input-decorator="rootdisksize"
                               :preFillContent="dataPreFill"
                               :minDiskSize="dataPreFill.minrootdisksize"
                               :rootDiskSelected="overrideDiskOffering"
-                              :isCustomized="overrideDiskOffering.iscustomized"
+                              :isCustomized="overrideDiskOffering && overrideDiskOffering.iscustomized"
+                              :kmsKeys="options.kmsKeys"
+                              :loadingKmsKeys="loading.kmsKeys"
+                              :computeOfferingEncryptRoot="serviceOffering && serviceOffering.encryptroot"
                               @handler-error="handlerError"
                               @update-disk-size="updateFieldValue"
-                              @update-root-disk-iops-value="updateIOPSValue"/>
+                              @update-root-disk-iops-value="updateIOPSValue"
+                              @update-root-kms-key="updateRootKmsKey"/>
                             <a-form-item class="form-item-hidden">
                               <a-input v-model:value="form.rootdisksize"/>
                             </a-form-item>
@@ -394,14 +398,17 @@
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
                     <disk-size-selection
-                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops || diskOffering.encrypt)"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
                       :diskSelected="diskSelected"
                       :isCustomized="diskOffering.iscustomized"
+                      :kmsKeys="options.kmsKeys"
+                      :loadingKmsKeys="loading.kmsKeys"
                       @handler-error="handlerError"
                       @update-disk-size="updateFieldValue"
-                      @update-iops-value="updateIOPSValue"/>
+                      @update-iops-value="updateIOPSValue"
+                      @update-data-kms-key="updateDataKmsKey"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
@@ -441,9 +448,12 @@
                         v-if="networks.length > 0"
                         :items="networks"
                         :preFillContent="dataPreFill"
+                        :canTrunkNics="canTrunkNics"
+                        :zoneId="zoneId"
                         @update-network-config="($event) => updateNetworkConfig($event)"
                         @handler-error="($event) => hasError = $event"
                         @select-default-network-item="($event) => updateDefaultNetworks($event)"
+                        @update-trunk-groups="($event) => updateTrunkGroups($event)"
                       ></network-configuration>
                     </div>
                   </div>
@@ -1053,7 +1063,8 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: []
+        ioPolicyTypes: [],
+        kmsKeys: []
       },
       rowCount: {},
       loading: {
@@ -1074,7 +1085,8 @@ export default {
         pods: false,
         clusters: false,
         hosts: false,
-        groups: false
+        groups: false,
+        kmsKeys: false
       },
       owner: {
         projectid: store.getters.project?.id,
@@ -1096,6 +1108,8 @@ export default {
       diskOffering: {},
       affinityGroups: [],
       networks: [],
+      // networks seen across all pages, keyed by id - options.networks only holds the current page
+      networksCache: {},
       networksAdd: [],
       zone: {},
       sshKeyPairs: [],
@@ -1150,6 +1164,7 @@ export default {
       selectedZone: '',
       formModel: {},
       nicToNetworkSelection: [],
+      trunkGroups: {},
       selectedArchitecture: null,
       isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
       showLeaseOptions: false,
@@ -1175,6 +1190,9 @@ export default {
   computed: {
     rootDiskSize () {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
+    },
+    canTrunkNics () {
+      return this.hypervisor === 'KVM' && ('associateNetworkToNic' in this.$store.getters.apis)
     },
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
@@ -1617,7 +1635,7 @@ export default {
 
         this.zone = _.find(this.options.zones, (option) => option.id === this.instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(Object.values(this.networksCache), (option) => _.includes(instanceConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
@@ -1732,6 +1750,22 @@ export default {
   serviceOffering (oldValue, newValue) {
     if (oldValue && newValue && oldValue.id !== newValue.id) {
       this.dynamicscalingenabled = this.isDynamicallyScalable()
+      // Fetch KMS keys if encryption is enabled
+      if (newValue && newValue.encryptroot && this.zoneId) {
+        this.fetchKmsKeys()
+      }
+    }
+  },
+  diskOffering (newValue) {
+    // Fetch KMS keys if encryption is enabled
+    if (newValue && newValue.encrypt && this.zoneId) {
+      this.fetchKmsKeys()
+    }
+  },
+  overrideDiskOffering (newValue) {
+    // Fetch KMS keys if encryption is enabled
+    if (newValue && newValue.encrypt && this.zoneId) {
+      this.fetchKmsKeys()
     }
   },
   template (oldValue, newValue) {
@@ -1999,6 +2033,31 @@ export default {
       const param = this.params.networks
       this.fetchOptions(param, 'networks')
     },
+    fetchKmsKeys () {
+      if (!this.zoneId) {
+        return
+      }
+      this.loading.kmsKeys = true
+      this.options.kmsKeys = []
+      getAPI('listKMSKeys', {
+        zoneid: this.zoneId,
+        account: this.owner.account,
+        domainid: this.owner.domainid,
+        projectid: this.owner.projectid,
+        purpose: 'volume'
+      }).then(response => {
+        const kmskeyMap = response.listkmskeysresponse.kmskey || []
+        if (kmskeyMap.length > 0) {
+          this.options.kmsKeys = kmskeyMap
+        } else {
+          this.options.kmsKeys = null
+        }
+      }).catch(() => {
+        this.options.kmsKeys = null
+      }).finally(() => {
+        this.loading.kmsKeys = false
+      })
+    },
     resetData () {
       this.vm = {
         name: null,
@@ -2022,6 +2081,24 @@ export default {
       this.zoneSelected = false
       this.formRef.value.resetFields()
       this.fetchData()
+    },
+    updateRootKmsKey (value) {
+      this.form.rootkmskeyid = value
+    },
+    updateDataKmsKey (value) {
+      this.form.datakmskeyid = value
+    },
+    updateSelectedTemplateHypervisor () {
+      if (!this.form.templateid) {
+        return
+      }
+      for (const entry of Object.values(this.options.templates)) {
+        const template = entry?.template.find(option => option.id === this.form.templateid)
+        if (template?.hypervisor) {
+          this.form.hypervisor = template.hypervisor
+          return
+        }
+      }
     },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
@@ -2055,6 +2132,9 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          if (template.hypervisor) {
+            this.form.hypervisor = template.hypervisor
+          }
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
@@ -2168,6 +2248,9 @@ export default {
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
+    },
+    updateTrunkGroups (trunkGroups) {
+      this.trunkGroups = trunkGroups
     },
     updateSshKeyPairs (names) {
       this.form.keypairs = names
@@ -2386,6 +2469,10 @@ export default {
             deployVmData['details[0].memory'] = values.memory
           }
         }
+        // Add root disk KMS key if selected (optional - falls back to legacy passphrase if not provided)
+        if (values.rootkmskeyid) {
+          deployVmData.rootdiskkmskeyid = values.rootkmskeyid
+        }
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
@@ -2412,12 +2499,29 @@ export default {
             })
           }
         } else {
-          deployVmData.diskofferingid = values.diskofferingid
-          if (values.size) {
-            deployVmData.size = values.size
+          // When a KMS key is selected for data disk, we must use datadisksdetails format
+          if (values.datakmskeyid) {
+            deployVmData['datadisksdetails[0].diskofferingid'] = values.diskofferingid
+            deployVmData['datadisksdetails[0].deviceid'] = 1 // Device ID 1 for first data disk (0=root, 3=CD-ROM reserved)
+            if (values.size) {
+              deployVmData['datadisksdetails[0].size'] = values.size
+            }
+            deployVmData['datadisksdetails[0].kmskeyid'] = values.datakmskeyid
+            // Add IOPS if customized
+            if (this.isCustomizedDiskIOPS) {
+              deployVmData['datadisksdetails[0].miniops'] = this.diskIOpsMin
+              deployVmData['datadisksdetails[0].maxiops'] = this.diskIOpsMax
+            }
+          } else {
+            // Legacy format when no KMS key
+            deployVmData.diskofferingid = values.diskofferingid
+            if (values.size) {
+              deployVmData.size = values.size
+            }
           }
         }
-        if (this.isCustomizedDiskIOPS) {
+        // IOPS for non-KMS data disks (KMS data disks IOPS handled above in datadisksdetails)
+        if (this.isCustomizedDiskIOPS && !values.datakmskeyid) {
           deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
           deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
@@ -2432,9 +2536,48 @@ export default {
               deployVmData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
-            const arrNetwork = []
             networkIds = values.networkids
-            if (networkIds.length > 0) {
+            if (!networkIds || networkIds.length === 0) {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.step.4.continue')
+              })
+              this.loading.deploy = false
+              return
+            }
+            const groupedAwayNetworkIds = Object.values(this.trunkGroups || {}).flat()
+            const hasTrunkGroups = groupedAwayNetworkIds.length > 0
+            if (hasTrunkGroups) {
+              // one or more nics group several networks onto a single nic (multi-VLAN trunk) - mutually
+              // exclusive with iptonetworklist at the API level, so every nic (grouped or not) goes
+              // through nicnetworkslist here instead.
+              const ownNicNetworkIds = networkIds.filter(id => !groupedAwayNetworkIds.includes(id))
+              const orderedNicNetworkIds = []
+              for (const id of ownNicNetworkIds) {
+                if (id === this.defaultnetworkid) {
+                  orderedNicNetworkIds.unshift(id)
+                } else {
+                  orderedNicNetworkIds.push(id)
+                }
+              }
+              for (let j = 0; j < orderedNicNetworkIds.length; j++) {
+                const primaryNetworkId = orderedNicNetworkIds[j]
+                const groupNetworkIds = [primaryNetworkId, ...(this.trunkGroups[primaryNetworkId] || [])]
+                deployVmData['nicnetworkslist[' + j + '].networkids'] = groupNetworkIds.join(',')
+                if (this.networkConfig.length > 0) {
+                  const networkConfig = this.networkConfig.filter((item) => item.key === primaryNetworkId)
+                  if (networkConfig && networkConfig.length > 0) {
+                    if (networkConfig[0].ipAddress) {
+                      deployVmData['nicnetworkslist[' + j + '].ip4address'] = networkConfig[0].ipAddress
+                    }
+                    if (networkConfig[0].macAddress) {
+                      deployVmData['nicnetworkslist[' + j + '].macaddress'] = networkConfig[0].macAddress
+                    }
+                  }
+                }
+              }
+            } else {
+              const arrNetwork = []
               for (let i = 0; i < networkIds.length; i++) {
                 if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
@@ -2448,21 +2591,14 @@ export default {
                   arrNetwork.push(ipToNetwork)
                 }
               }
-            } else {
-              this.$notification.error({
-                message: this.$t('message.request.failed'),
-                description: this.$t('message.step.4.continue')
-              })
-              this.loading.deploy = false
-              return
-            }
-            for (let j = 0; j < arrNetwork.length; j++) {
-              deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
-              if (this.networkConfig.length > 0) {
-                const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
-                if (networkConfig && networkConfig.length > 0) {
-                  deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
-                  deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+              for (let j = 0; j < arrNetwork.length; j++) {
+                deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
+                if (this.networkConfig.length > 0) {
+                  const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
+                  if (networkConfig && networkConfig.length > 0) {
+                    deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
+                    deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+                  }
                 }
               }
             }
@@ -2697,6 +2833,12 @@ export default {
                 param.opts = response
                 this.options[name] = response
 
+                if (name === 'networks') {
+                  for (const network of response) {
+                    this.networksCache[network.id] = network
+                  }
+                }
+
                 if (name === 'hypervisors') {
                   const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
                   this.dataPreFill.hypervisor = hypervisorFromResponse
@@ -2914,11 +3056,12 @@ export default {
         promises.push(this.fetchTemplates(filter, params))
       })
       this.options.templates = templates
-      Promise.all(promises).then((response) => {
+      return Promise.all(promises).then((response) => {
         response.forEach((resItem, idx) => {
           templates[templateFilters[idx]] = _.isEmpty(resItem.listtemplatesresponse) ? { count: 0, template: [] } : resItem.listtemplatesresponse
           this.options.templates = { ...templates }
         })
+        this.updateSelectedTemplateHypervisor()
       }).catch((reason) => {
         console.log(reason)
       }).finally(() => {
@@ -3093,6 +3236,7 @@ export default {
       this.selectedBackupOffering = null
       this.fetchZoneOptions()
       this.updateZoneAllowsBackupOperations()
+      this.fetchKmsKeys()
     },
     onSelectPodId (value) {
       this.podId = value

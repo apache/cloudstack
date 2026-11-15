@@ -90,9 +90,21 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
         return volumeIds;
     }
 
+    public boolean isForced() {
+        return false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    public DestroyVMCmd() {
+    }
+
+    public DestroyVMCmd(Long id, Boolean expunge) {
+        this.id = id;
+        this.expunge = expunge;
+    }
 
     @Override
     public String getCommandName() {
@@ -132,7 +144,7 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
         CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
-        UserVm result = _userVmService.destroyVm(this);
+        UserVm result = _userVmService.destroyVm(this, true);
 
         UserVmResponse response = new UserVmResponse();
         if (result != null) {

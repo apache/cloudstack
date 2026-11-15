@@ -117,6 +117,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Max IOPS of the disk volume")
     private Long maxIops;
 
+    @SerializedName("iscustomizediops")
+    @Param(description = "True if the volume's disk offering uses custom IOPS, false otherwise")
+    private Boolean customizedIops;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "The date the disk volume was created")
     private Date created;
@@ -309,6 +313,18 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the format of the disk encryption if applicable", since = "4.19.1")
     private String encryptionFormat;
 
+    @SerializedName(ApiConstants.KMS_KEY)
+    @Param(description = "KMS key name of the volume", since = "4.23.0")
+    private String kmsKey;
+
+    @SerializedName(ApiConstants.KMS_KEY_ID)
+    @Param(description = "KMS key id of the volume", since = "4.23.0")
+    private String kmsKeyId;
+
+    @SerializedName(ApiConstants.KMS_KEY_VERSION)
+    @Param(description = "Version number of the KMS key used for disk encryption if applicable", since = "4.23.0")
+    private Integer kmsKeyVersion;
+
     public String getPath() {
         return path;
     }
@@ -396,6 +412,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public void setMaxIops(Long maxIops) {
         this.maxIops = maxIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
     }
 
     public void setCreated(Date created) {
@@ -700,6 +720,14 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         return maxIops;
     }
 
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public Boolean getCustomizedIops() {
+        return customizedIops;
+    }
+
     public Date getCreated() {
         return created;
     }
@@ -868,7 +896,35 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.volumeRepairResult = volumeRepairResult;
     }
 
+    public String getEncryptionFormat() {
+        return encryptionFormat;
+    }
+
     public void setEncryptionFormat(String encryptionFormat) {
         this.encryptionFormat = encryptionFormat;
+    }
+
+    public String getKmsKey() {
+        return kmsKey;
+    }
+
+    public void setKmsKey(String kmsKey) {
+        this.kmsKey = kmsKey;
+    }
+
+    public String getKmsKeyId() {
+        return kmsKeyId;
+    }
+
+    public void setKmsKeyId(String kmsKeyId) {
+        this.kmsKeyId = kmsKeyId;
+    }
+
+    public Integer getKmsKeyVersion() {
+        return kmsKeyVersion;
+    }
+
+    public void setKmsKeyVersion(Integer kmsKeyVersion) {
+        this.kmsKeyVersion = kmsKeyVersion;
     }
 }

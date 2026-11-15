@@ -133,7 +133,10 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -685,6 +688,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.manager.Commands;
@@ -1507,6 +1511,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
      */
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
             final VirtualMachine vm,
+            final Host srcHost,
             final Long startIndex,
             final Long pageSize,
             final String keyword) {
@@ -1515,31 +1520,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             logger.info("Live Migration of GPU enabled VM : {} is not supported", vm);
             return new Ternary<>(new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>());
-        }
-
-        final long srcHostId = vm.getHostId();
-        final Host srcHost = _hostDao.findById(srcHostId);
-        if (srcHost == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Unable to find the host with ID: " + srcHostId + " of this Instance: " + vm);
-            }
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
-            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
-
-        String srcHostVersion = srcHost.getHypervisorVersion();
-        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
-            srcHostVersion = "";
-        }
-
-        // Check if the vm can be migrated with storage.
-        boolean canMigrateWithStorage = false;
-
-        List<HypervisorType> hypervisorTypes = Arrays.asList(new HypervisorType[]{HypervisorType.VMware, HypervisorType.KVM});
-        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
-            canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1555,12 +1535,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             }
         }
 
+        boolean canMigrateWithStorage = isStorageMigrationSupported(vm, srcHost);
         if (!canMigrateWithStorage && usesLocal) {
             throw new InvalidParameterValueException("Unsupported operation, instance uses Local storage, cannot migrate");
         }
 
         validateVgpuProfileForVmMigration(vmProfile);
 
+        final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair;
         List<HostVO> allHosts;
@@ -1636,6 +1618,23 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return new Ternary<>(allHostsPairResult, filteredHosts, requiresStorageMotion);
     }
 
+    protected boolean isStorageMigrationSupported(final VirtualMachine vm, final Host srcHost) {
+        final List<HypervisorType> hypervisorTypes = Arrays.asList(HypervisorType.VMware, HypervisorType.KVM);
+        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
+            final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
+            return _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
+        }
+        return false;
+    }
+
+    protected String getHypervisorVersionOfHost(final Host host) {
+        final String version = host.getHypervisorVersion();
+        if (version == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return "";
+        }
+        return version;
+    }
+
     /**
      * Apply affinity group constraints and other exclusion rules for VM migration.
      * This builds an ExcludeList based on affinity groups, DPDK requirements, and dedicated resources.
@@ -1656,6 +1655,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 excludeNonDPDKEnabledHosts((DataCenterDeployment) plan, excludes);
             }
         }
+
+        _dpMgr.avoidHostsNotReadyForMultiNetworkNics(vmProfile, _dcDao.findById(plan.getDataCenterId()), excludes);
 
         // call affinitygroup chain
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
@@ -1727,9 +1728,19 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         validateVmForHostMigration(vm);
 
+        final long srcHostId = vm.getHostId();
+        final Host srcHost = _hostDao.findById(srcHostId);
+        if (srcHost == null) {
+            logger.debug("Unable to find the host with ID: {} of this Instance: {}", srcHostId, vm);
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
+            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
+            throw ex;
+        }
+
         // Get technically compatible hosts (storage, hypervisor, UEFI)
         Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> compatibilityResult =
-            getTechnicallyCompatibleHosts(vm, startIndex, pageSize, keyword);
+            getTechnicallyCompatibleHosts(vm, srcHost, startIndex, pageSize, keyword);
 
         Pair<List<? extends Host>, Integer> allHostsPair = compatibilityResult.first();
         List<? extends Host> filteredHosts = compatibilityResult.second();
@@ -1742,9 +1753,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         }
 
         // Create deployment plan and VM profile
-        final Host srcHost = _hostDao.findById(vm.getHostId());
-        final DataCenterDeployment plan = new DataCenterDeployment(
-            srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+        final DataCenterDeployment plan = createDeploymentPlanForMigrationListing(vm, srcHost);
         final VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(
             vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
 
@@ -1758,6 +1767,28 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
+    @Override
+    public String getMultiNetworkNicUnsuitableReason(final VirtualMachine vm, final Host host) {
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), nicDao, networkDao, _detailsDao);
+    }
+
+    @Override
+    public String getGuestBridgeStpMigrationCaution(final Host host) {
+        // a legacy host's guest nics use per-VLAN dynamic bridges instead, so stp on the shared bridge is irrelevant there
+        final DetailVO vlanFilteringDetail = _detailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        final boolean vlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
+        if (!vlanFilteringEnabled) {
+            return null;
+        }
+        final DetailVO stpDetail = _detailsDao.findDetail(host.getId(), Host.HOST_GUEST_BRIDGE_STP_ENABLED);
+        final boolean stpEnabled = stpDetail != null && Boolean.parseBoolean(stpDetail.getValue());
+        if (!stpEnabled) {
+            return null;
+        }
+        return "This host's guest bridge has STP enabled; a new NIC here (from this migration, a nic plug, or a VM start) "
+                + "will be unreachable for about the bridge's forward delay x2 while STP's listening/learning states run";
+    }
+
     private void validateVgpuProfileForVmMigration(final VirtualMachineProfile vmProfile) {
         // Validate if the VM is using a vGPU profile that supports migration.
         ServiceOffering serviceOffering = vmProfile.getServiceOffering();
@@ -1767,6 +1798,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
             }
         }
+    }
+
+    protected DataCenterDeployment createDeploymentPlanForMigrationListing(final VirtualMachine vm, final Host srcHost) {
+        final boolean canMigrateWithStorage = isStorageMigrationSupported(vm, srcHost);
+        if (canMigrateWithStorage) {
+            return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), null, null, null, null);
+        }
+        return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
     }
 
     /**
@@ -2357,6 +2396,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         final String groupName = cmd.getGroupName();
@@ -2408,6 +2448,11 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (imageStoreId != null) {
             scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
+            paramCountCheck++;
+        }
+        if (managementServerId != null) {
+            scope = ConfigKey.Scope.ManagementServer;
+            id = managementServerId;
             paramCountCheck++;
         }
 
@@ -2481,7 +2526,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        Object value = key.valueInScope(scope, id);
+                        boolean useStrictLookup = key.isStrictScope()
+                                && scope == ConfigKey.Scope.Domain
+                                && id != null
+                                && id.longValue() != Domain.ROOT_DOMAIN;
+                        Object value = key.valueInScope(scope, id, useStrictLookup);
+                        if (value == null && useStrictLookup) {
+                            value = key.defaultValue();
+                        }
                         configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {
@@ -3077,10 +3129,11 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         if (osDisplayName != null) {
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
-            if (CollectionUtils.isNotEmpty(guestOSVOS)) {
-                List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
-                sc.addAnd(guestOsId, SearchCriteria.Op.IN, guestOSids.toArray());
+            if (CollectionUtils.isEmpty(guestOSVOS)) {
+                return new Pair<>(Collections.emptyList(), 0);
             }
+            List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+            sc.addAnd(guestOsId, SearchCriteria.Op.IN, guestOSids.toArray());
         }
 
         final Pair<List<GuestOSHypervisorVO>, Integer> result = _guestOSHypervisorDao.searchAndCount(sc, searchFilter);
@@ -4331,6 +4384,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListPublicIpAddressesCmdByAdmin.class);
         cmdList.add(CreateNetworkCmdByAdmin.class);
         cmdList.add(UpdateNetworkCmdByAdmin.class);
+        cmdList.add(AssociateNetworkToNicCmd.class);
+        cmdList.add(DisassociateNetworkFromNicCmd.class);
+        cmdList.add(ChangeNicPrimaryNetworkCmd.class);
         cmdList.add(ListNetworksCmdByAdmin.class);
         cmdList.add(CreateVPCCmdByAdmin.class);
         cmdList.add(ListVPCsCmdByAdmin.class);

@@ -22,22 +22,25 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceSchedule;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 
 import javax.inject.Inject;
 import java.util.Date;
 
+@Deprecated
 @APICommand(name = "updateVMSchedule", description = "Update Instance Schedule.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateVMScheduleCmd extends BaseCmd {
     @Inject
-    VMScheduleManager vmScheduleManager;
+    ResourceScheduleManager resourceScheduleManager;
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
@@ -68,14 +71,14 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             type = CommandType.DATE,
             required = false,
             description = "Start date from which the schedule becomes active"
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\")")
+                    + "(Format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
             type = CommandType.DATE,
             required = false,
             description = "End date after which the schedule becomes inactive"
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\")")
+                    + "(Format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
 
     @Parameter(name = ApiConstants.ENABLED,
@@ -84,9 +87,9 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             description = "Enable Instance schedule")
     private Boolean enabled;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -116,24 +119,29 @@ public class UpdateVMScheduleCmd extends BaseCmd {
         return enabled;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
 
     @Override
     public void execute() {
-        VMScheduleResponse response = vmScheduleManager.updateSchedule(this);
+        ResourceScheduleResponse scheduleResponse = resourceScheduleManager.updateSchedule(
+                getId(), getDescription(), getSchedule(), getTimeZone(), getStartDate(), getEndDate(), getEnabled(), null);
+        VMScheduleResponse response = new VMScheduleResponse(scheduleResponse);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 
     @Override
     public long getEntityOwnerId() {
-        VMSchedule vmSchedule = _entityMgr.findById(VMSchedule.class, getId());
-        if (vmSchedule == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find vmSchedule by id=%d", getId()));
+        ResourceSchedule schedule = _entityMgr.findById(ResourceSchedule.class, getId());
+        if (schedule == null || !ApiCommandResourceType.VirtualMachine.equals(schedule.getResourceType())) {
+            throw new InvalidParameterValueException(String.format("Unable to find VM schedule by id=%d", getId()));
         }
-        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, vmSchedule.getVmId());
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, schedule.getResourceId());
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find VM schedule by id=%d", getId()));
+        }
         return vm.getAccountId();
     }
 }

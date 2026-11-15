@@ -218,7 +218,7 @@ imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 if [ "$cloud" == "true" ]
 then
     create_from_file_user $tmpltfs $tmpltimg2 $tmpltname
-    tmpltfs=/tmp/cloud/templates/
+    tmpltfs=/var/tmp/cloud/templates/
 else
     create_from_file $tmpltfs $tmpltimg2 $tmpltname
 fi

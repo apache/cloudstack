@@ -18,9 +18,14 @@ package com.cloud.utils.db;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -330,5 +335,75 @@ public class GenericDaoBaseTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void gmtCalendarUsesGmtTimeZone() {
+        Calendar calendar = GenericDaoBase.gmtCalendar();
+
+        Assert.assertEquals(TimeZone.getTimeZone("GMT"), calendar.getTimeZone());
+    }
+
+    @Test
+    public void gmtCalendarReturnsFreshInstancePerCall() {
+        Assert.assertNotSame(GenericDaoBase.gmtCalendar(), GenericDaoBase.gmtCalendar());
+    }
+
+    @Test
+    public void temporalSqlTypeDate() {
+        Attribute attr = new Attribute("table", "column");
+        attr.flags = Attribute.Flag.Date.setTrue(attr.flags);
+
+        Assert.assertEquals(Types.DATE, GenericDaoBase.temporalSqlType(attr));
+    }
+
+    @Test
+    public void temporalSqlTypeTime() {
+        Attribute attr = new Attribute("table", "column");
+        attr.flags = Attribute.Flag.Time.setTrue(attr.flags);
+
+        Assert.assertEquals(Types.TIME, GenericDaoBase.temporalSqlType(attr));
+    }
+
+    @Test
+    public void temporalSqlTypeDefaultsToTimestamp() {
+        Attribute attr = new Attribute("table", "column");
+        attr.flags = Attribute.Flag.TimeStamp.setTrue(attr.flags);
+
+        Assert.assertEquals(Types.TIMESTAMP, GenericDaoBase.temporalSqlType(attr));
+    }
+
+    @Test
+    public void getObjectDateReadsViaGmtTimestamp() throws SQLException {
+        Timestamp ts = new Timestamp(1_700_000_000_000L);
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(2), Mockito.any(Calendar.class))).thenReturn(ts);
+
+        Date result = GenericDaoBase.getObject(Date.class, resultSet, 2);
+
+        Assert.assertEquals(ts.getTime(), result.getTime());
+    }
+
+    @Test
+    public void getObjectDateNullTimestampReturnsNull() throws SQLException {
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(3), Mockito.any(Calendar.class))).thenReturn(null);
+
+        Assert.assertNull(GenericDaoBase.getObject(Date.class, resultSet, 3));
+    }
+
+    @Test
+    public void getObjectCalendarReadsViaGmtTimestamp() throws SQLException {
+        Timestamp ts = new Timestamp(1_700_000_000_000L);
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(4), Mockito.any(Calendar.class))).thenReturn(ts);
+
+        Calendar result = GenericDaoBase.getObject(Calendar.class, resultSet, 4);
+
+        Assert.assertEquals(ts.getTime(), result.getTimeInMillis());
+    }
+
+    @Test
+    public void getObjectCalendarNullTimestampReturnsNull() throws SQLException {
+        Mockito.when(resultSet.getTimestamp(Mockito.eq(5), Mockito.any(Calendar.class))).thenReturn(null);
+
+        Assert.assertNull(GenericDaoBase.getObject(Calendar.class, resultSet, 5));
     }
 }

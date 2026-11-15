@@ -89,7 +89,7 @@ public class DomainCheckerTest {
         Account caller = Mockito.mock(Account.class);
         Mockito.when(caller.getId()).thenReturn(1L);
         ControlledEntity entity = getMockedEntity(2L);
-        Mockito.when(_accountDao.findById(entity.getAccountId())).thenReturn(null);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(null);
 
         domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ModifyProject);
     }
@@ -103,7 +103,22 @@ public class DomainCheckerTest {
         ControlledEntity entity = getMockedEntity(2L);
         AccountVO owner = Mockito.mock(AccountVO.class);
         Mockito.when(owner.getDomainId()).thenReturn(101L);
-        Mockito.when(_accountDao.findById(entity.getAccountId())).thenReturn(owner);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(owner);
+        Mockito.when(_domainDao.isChildDomain(100L, 101L)).thenReturn(true);
+
+        domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ModifyProject);
+    }
+
+    @Test
+    public void testDomainAdminHasAccessToRemovedOwner() {
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(1L);
+        Mockito.when(caller.getDomainId()).thenReturn(100L);
+        Mockito.when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        ControlledEntity entity = getMockedEntity(2L);
+        AccountVO removedOwner = Mockito.mock(AccountVO.class);
+        Mockito.when(removedOwner.getDomainId()).thenReturn(101L);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(removedOwner);
         Mockito.when(_domainDao.isChildDomain(100L, 101L)).thenReturn(true);
 
         domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ModifyProject);
@@ -126,7 +141,7 @@ public class DomainCheckerTest {
         Account caller = resources.first();
         ControlledEntity entity = resources.second();
         AccountVO projectAccount = resources.third();
-        Mockito.when(_accountDao.findById(entity.getAccountId())).thenReturn(projectAccount);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(projectAccount);
         Mockito.when(_projectMgr.canModifyProjectAccount(caller, projectAccount.getId())).thenReturn(true);
         Mockito.doReturn(true).when(domainChecker).checkOperationPermitted(caller, entity);
 
@@ -139,7 +154,7 @@ public class DomainCheckerTest {
         Account caller = resources.first();
         ControlledEntity entity = resources.second();
         AccountVO projectAccount = resources.third();
-        Mockito.when(_accountDao.findById(entity.getAccountId())).thenReturn(projectAccount);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(projectAccount);
         Mockito.when(_projectMgr.canModifyProjectAccount(caller, projectAccount.getId())).thenReturn(false);
 
         domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ModifyProject);
@@ -151,7 +166,7 @@ public class DomainCheckerTest {
         Account caller = resources.first();
         ControlledEntity entity = resources.second();
         AccountVO projectAccount = resources.third();
-        Mockito.when(_accountDao.findById(entity.getAccountId())).thenReturn(projectAccount);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(projectAccount);
         Mockito.when(_projectMgr.canAccessProjectAccount(caller, projectAccount.getId())).thenReturn(true);
         Mockito.doReturn(true).when(domainChecker).checkOperationPermitted(caller, entity);
 
@@ -164,7 +179,7 @@ public class DomainCheckerTest {
         Account caller = resources.first();
         ControlledEntity entity = resources.second();
         AccountVO projectAccount = resources.third();
-        Mockito.when(_accountDao.findById(entity.getAccountId())).thenReturn(projectAccount);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(projectAccount);
         Mockito.when(_projectMgr.canAccessProjectAccount(caller, projectAccount.getId())).thenReturn(false);
 
         domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ListEntry);

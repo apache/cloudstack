@@ -47,7 +47,7 @@ export default {
       const code = params.get('code')
       const provider = this.$localStorage.get(OAUTH_PROVIDER)
       this.state.loginBtn = true
-      getAPI('verifyOAuthCodeAndGetUser', { provider: provider, secretcode: code }).then(response => {
+      getAPI('verifyOAuthCodeAndGetUser', { provider: provider, secretcode: code, domain: this.$localStorage.get(OAUTH_DOMAIN) }).then(response => {
         const email = response.verifyoauthcodeandgetuserresponse.oauthemail.email
         const loginParams = {}
         loginParams.email = email

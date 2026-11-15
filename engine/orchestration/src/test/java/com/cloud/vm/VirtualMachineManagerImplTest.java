@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,9 +60,13 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -70,6 +75,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -123,9 +129,11 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkService;
@@ -249,6 +257,10 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private NetworkDao networkDao;
     @Mock
+    private VolumeOrchestrationService volumeOrchestrationServiceMock;
+    @Mock
+    private NetworkOrchestrationService networkOrchestrationServiceMock;
+    @Mock
     private AccountDao accountDao;
     @Mock
     private DomainDao domainDao;
@@ -280,6 +292,8 @@ public class VirtualMachineManagerImplTest {
     ExtensionDetailsDao extensionDetailsDao;
     @Mock
     NicDao _nicsDao;
+    @Mock
+    HostDetailsDao hostDetailsDao;
     @Mock
     NetworkService networkService;
     @Mock
@@ -334,6 +348,19 @@ public class VirtualMachineManagerImplTest {
         if (updatedConfigKeyDepot) {
             ReflectionTestUtils.setField(VirtualMachineManager.VmMetadataManufacturer, "s_depot", configDepotImpl);
         }
+    }
+
+    private ClvmPoolManager injectMockedClvmPoolManager() {
+        ClvmPoolManager clvmPoolManagerMock = mock(ClvmPoolManager.class);
+        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmPoolManager", clvmPoolManagerMock);
+        return clvmPoolManagerMock;
+    }
+
+    private Method getUpdateClvmLockHostForVmVolumesMethod() throws NoSuchMethodException {
+        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
+            "updateClvmLockHostForVmVolumes", long.class, long.class);
+        method.setAccessible(true);
+        return method;
     }
 
     @Test
@@ -394,9 +421,9 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        Assert.assertTrue(actual);
+        Assert.assertTrue(actual.first());
     }
 
     @Test
@@ -409,9 +436,10 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        assertFalse(actual);
+        assertFalse(actual.first());
+        Assert.assertEquals("fail", actual.second());
     }
 
     @Test
@@ -421,11 +449,13 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
+        when(vm.getInstanceName()).thenReturn("test-vm");
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(null);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        assertFalse(actual);
+        assertFalse(actual.first());
+        Assert.assertNotNull(actual.second());
     }
 
     @Test
@@ -1280,6 +1310,158 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void testOrchestrateStartExcludesHostWithoutVlanFilteringForMultiNetworkNic() throws Exception {
+        VMInstanceVO vmInstance = new VMInstanceVO();
+        ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
+        ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
+        ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
+        ReflectionTestUtils.setField(vmInstance, "hostId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "type", VirtualMachine.Type.User);
+        ReflectionTestUtils.setField(vmInstance, "dataCenterId", 1L);
+        ReflectionTestUtils.setField(vmInstance, "hypervisorType", HypervisorType.KVM);
+
+        VirtualMachineGuru vmGuru = mock(VirtualMachineGuru.class);
+        User user = mock(User.class);
+        Account account = mock(Account.class);
+        Account owner = mock(Account.class);
+        ReservationContext ctx = mock(ReservationContext.class);
+        ItWorkVO work = mock(ItWorkVO.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(template.isDeployAsIs()).thenReturn(false);
+
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        when(plan.getDataCenterId()).thenReturn(1L);
+        when(plan.getPodId()).thenReturn(1L);
+
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        DeploymentPlanner planner = mock(DeploymentPlanner.class);
+
+        when(vmInstanceDaoMock.findByUuid("vm-uuid")).thenReturn(vmInstance);
+        doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
+
+        Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
+
+        when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
+        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
+        when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
+
+        NicVO trunkNic = mock(NicVO.class);
+        when(trunkNic.getMultiNetwork()).thenReturn(true);
+        when(_nicsDao.listByVmId(vmInstance.getId())).thenReturn(java.util.Collections.singletonList(trunkNic));
+
+        Host notReadyHost = mock(Host.class);
+        when(notReadyHost.getId()).thenReturn(1L);
+        when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+
+        Host readyHost = mock(Host.class);
+        when(readyHost.getId()).thenReturn(2L);
+        DetailVO readyDetail = mock(DetailVO.class);
+        when(readyDetail.getValue()).thenReturn("true");
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
+
+        Pod destPod = mock(Pod.class);
+        when(destPod.getId()).thenReturn(2L);
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getId()).thenReturn(1L);
+
+        DeployDestination notReadyDest = mock(DeployDestination.class);
+        when(notReadyDest.getHost()).thenReturn(notReadyHost);
+
+        DeployDestination readyDest = mock(DeployDestination.class);
+        when(readyDest.getHost()).thenReturn(readyHost);
+        when(readyDest.getPod()).thenReturn(destPod);
+        when(readyDest.getCluster()).thenReturn(cluster);
+
+        when(_dpMgr.planDeployment(any(VirtualMachineProfileImpl.class), any(DataCenterDeployment.class), any(ExcludeList.class), any(DeploymentPlanner.class)))
+                .thenReturn(notReadyDest, readyDest);
+
+        doNothing().when(virtualMachineManagerImpl).checkIfTemplateNeededForCreatingVmVolumes(vmInstance);
+
+        when(_workDao.updateStep(any(), any())).thenReturn(true);
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 2L), vmInstanceDaoMock)).thenThrow(new CloudRuntimeException("Error while transitioning"));
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationFailed, new Pair(vmInstance.getHostId(), null), vmInstanceDaoMock)).thenReturn(true);
+
+        ClusterDetailsVO cluster_detail_cpu = mock(ClusterDetailsVO.class);
+        ClusterDetailsVO cluster_detail_ram = mock(ClusterDetailsVO.class);
+        when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
+        when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
+        when(vmInstanceDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(cluster_detail_cpu.getValue()).thenReturn("1.0");
+        when(cluster_detail_ram.getValue()).thenReturn("1.0");
+        doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
+
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(account);
+        when(callContext.getCallingUser()).thenReturn(user);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+
+            try {
+                virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
+            } catch (CloudRuntimeException e) {
+                assertEquals(e.getMessage(), "Error while transitioning");
+            }
+        }
+
+        // first attempt landed on the not-ready host and was excluded without ever touching state transition;
+        // second attempt landed on the ready host and proceeded (reaching the same known stopping point as the
+        // other orchestrateStart tests confirms execution got past the readiness check this time)
+        verify(_dpMgr, Mockito.times(2)).planDeployment(any(VirtualMachineProfileImpl.class), any(DataCenterDeployment.class), any(ExcludeList.class), any(DeploymentPlanner.class));
+        verify(_stateMachine, Mockito.never()).transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 1L), vmInstanceDaoMock);
+        verify(hostDetailsDao, Mockito.atLeastOnce()).findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED);
+        verify(_stateMachine, Mockito.atLeastOnce()).transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 2L), vmInstanceDaoMock);
+        assertEquals(vmInstance.getPodIdToDeployIn(), (Long) destPod.getId());
+    }
+
+    private VMInstanceVO mockVmWithId(long id) {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(id);
+        return vm;
+    }
+
+    private NicVO mockVlanNic(int vlan, boolean multiNetwork) {
+        NicVO nic = mock(NicVO.class);
+        when(nic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(vlan));
+        when(nic.getMultiNetwork()).thenReturn(multiNetwork);
+        return nic;
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipFalseWhenDestSupportsTrunkXml() {
+        DetailVO trunkXmlSupported = mock(DetailVO.class);
+        when(trunkXmlSupported.getValue()).thenReturn("true");
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(trunkXmlSupported);
+
+        Assert.assertFalse(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+        verify(_nicsDao, Mockito.never()).listByVmId(anyLong());
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipTrueForTrunkNicOnNonTrunkXmlDest() {
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+        NicVO trunkNic = mockVlanNic(100, true);
+        when(_nicsDao.listByVmId(1L)).thenReturn(java.util.Collections.singletonList(trunkNic));
+
+        Assert.assertTrue(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipFalseForOrdinaryNicWithoutVlanFilteringDest() {
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+        NicVO ordinaryNic = mockVlanNic(100, false);
+        when(_nicsDao.listByVmId(1L)).thenReturn(java.util.Collections.singletonList(ordinaryNic));
+
+        Assert.assertFalse(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+    }
+
+    @Test
     public void testIsDiskOfferingSuitableForVmSuccess() {
         Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
         List<StoragePool> poolListMock = new ArrayList<>();
@@ -1865,6 +2047,97 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.unmanage(vmMockUuid, null);
     }
 
+    /**
+     * A pending remove-nic job for a different nic on the same vm must not swallow the removal of
+     * this nic: the pending-job lookup has to be keyed on the nic uuid so that a new job is
+     * submitted for this nic instead of joining the other nic's job. Regression test for the
+     * concurrent-removeNic collapse.
+     */
+    @Test
+    public void removeNicFromVmThroughJobQueueDoesNotJoinAnotherNicsPendingJob() {
+        String commandName = VmWorkRemoveNicFromVm.class.getName();
+        String nicUuid = UUID.randomUUID().toString();
+
+        Nic nic = mock(Nic.class);
+        when(nic.getId()).thenReturn(42L);
+        when(nic.getUuid()).thenReturn(nicUuid);
+
+        // A pending remove-nic job exists for the vm (e.g. for another nic); the nic-agnostic
+        // lookup would return it, but the nic-keyed lookup finds nothing for this nic. This stub is
+        // lenient because the fixed code never consults the nic-agnostic 3-arg lookup - only the
+        // buggy code does, where this job is what it wrongly joins.
+        Mockito.lenient().when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName))
+                .thenReturn(Collections.singletonList(mock(VmWorkJobVO.class)));
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                .thenReturn(Collections.emptyList());
+
+        VmWorkJobVO newJob = mock(VmWorkJobVO.class);
+        when(newJob.getId()).thenReturn(100L);
+        doReturn(new Pair<VmWorkJobVO, VmWork>(newJob, mock(VmWork.class)))
+                .when(virtualMachineManagerImpl).createWorkJobAndWorkInfo(commandName, vmInstanceVoMockId);
+        doNothing().when(virtualMachineManagerImpl).setCmdInfoAndSubmitAsyncJob(any(), any(), anyLong());
+
+        AsyncJobExecutionContext execContext = mock(AsyncJobExecutionContext.class);
+        try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(execContext);
+
+            virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+
+            // A new job must be created for this nic, stamped with the nic uuid, submitted and joined.
+            verify(virtualMachineManagerImpl, times(1)).createWorkJobAndWorkInfo(commandName, vmInstanceVoMockId);
+            verify(newJob, times(1)).setSecondaryObjectIdentifier(nicUuid);
+            verify(virtualMachineManagerImpl, times(1)).setCmdInfoAndSubmitAsyncJob(eq(newJob), any(), eq(vmInstanceVoMockId));
+            verify(execContext, times(1)).joinJob(100L);
+        }
+    }
+
+    /**
+     * When a pending remove-nic job already exists for this same nic, the request must join it
+     * rather than submit a duplicate: per-nic deduplication still holds.
+     */
+    @Test
+    public void removeNicFromVmThroughJobQueueJoinsExistingJobForSameNic() {
+        String commandName = VmWorkRemoveNicFromVm.class.getName();
+        String nicUuid = UUID.randomUUID().toString();
+
+        Nic nic = mock(Nic.class);
+        when(nic.getUuid()).thenReturn(nicUuid);
+
+        VmWorkJobVO existingJob = mock(VmWorkJobVO.class);
+        when(existingJob.getId()).thenReturn(77L);
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                .thenReturn(Collections.singletonList(existingJob));
+
+        AsyncJobExecutionContext execContext = mock(AsyncJobExecutionContext.class);
+        try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(execContext);
+
+            virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+
+            verify(virtualMachineManagerImpl, never()).createWorkJobAndWorkInfo(anyString(), anyLong());
+            verify(virtualMachineManagerImpl, never()).setCmdInfoAndSubmitAsyncJob(any(), any(), anyLong());
+            verify(execContext, times(1)).joinJob(77L);
+        }
+    }
+
+    /**
+     * More than one pending remove-nic job for the same nic is an inconsistent state and must fail
+     * fast rather than pick one arbitrarily. Mirrors the guard in addVmToNetworkThroughJobQueue.
+     */
+    @Test(expected = CloudRuntimeException.class)
+    public void removeNicFromVmThroughJobQueueThrowsWhenMultiplePendingJobsForSameNic() {
+        String commandName = VmWorkRemoveNicFromVm.class.getName();
+        String nicUuid = UUID.randomUUID().toString();
+
+        Nic nic = mock(Nic.class);
+        when(nic.getUuid()).thenReturn(nicUuid);
+
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                .thenReturn(Arrays.asList(mock(VmWorkJobVO.class), mock(VmWorkJobVO.class)));
+
+        virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+    }
+
     @Test
     public void testUnmanageHostNotFoundAfterTransaction() {
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
@@ -1954,4 +2227,190 @@ public class VirtualMachineManagerImplTest {
         }
     }
 
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithClvmVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long poolId = 10L;
+
+        VolumeVO clvmVolume1 = mock(VolumeVO.class);
+        VolumeVO clvmVolume2 = mock(VolumeVO.class);
+
+        when(clvmVolume1.getId()).thenReturn(1L);
+        when(clvmVolume1.getPoolId()).thenReturn(poolId);
+        when(clvmVolume2.getId()).thenReturn(2L);
+        when(clvmVolume2.getPoolId()).thenReturn(poolId);
+
+        StoragePoolVO clvmPool = mock(StoragePoolVO.class);
+        when(clvmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(clvmVolume1, clvmVolume2));
+        when(storagePoolDaoMock.findById(poolId)).thenReturn(clvmPool);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNonClvmVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long poolId = 10L;
+
+        VolumeVO nfsVolume = mock(VolumeVO.class);
+        when(nfsVolume.getPoolId()).thenReturn(poolId);
+
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        when(nfsPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(nfsVolume));
+        when(storagePoolDaoMock.findById(poolId)).thenReturn(nfsPool);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithMixedVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long clvmPoolId = 10L;
+        long nfsPoolId = 20L;
+
+        VolumeVO clvmVolume = mock(VolumeVO.class);
+        VolumeVO nfsVolume = mock(VolumeVO.class);
+
+        when(clvmVolume.getId()).thenReturn(1L);
+        when(clvmVolume.getPoolId()).thenReturn(clvmPoolId);
+        when(nfsVolume.getPoolId()).thenReturn(nfsPoolId);
+
+        StoragePoolVO clvmPool = mock(StoragePoolVO.class);
+        when(clvmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        when(nfsPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(clvmVolume, nfsVolume));
+        when(storagePoolDaoMock.findById(clvmPoolId)).thenReturn(clvmPool);
+        when(storagePoolDaoMock.findById(nfsPoolId)).thenReturn(nfsPool);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(2L, destHostId);
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNoVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Collections.emptyList());
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNullPoolId() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+
+        VolumeVO volumeWithoutPool = mock(VolumeVO.class);
+        when(volumeWithoutPool.getPoolId()).thenReturn(null);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volumeWithoutPool));
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(storagePoolDaoMock, never()).findById(anyLong());
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNullPool() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long poolId = 10L;
+
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volume.getPoolId()).thenReturn(poolId);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volume));
+        when(storagePoolDaoMock.findById(poolId)).thenReturn(null);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_MultipleClvmPools() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long pool1Id = 10L;
+        long pool2Id = 20L;
+
+        VolumeVO volume1 = mock(VolumeVO.class);
+        VolumeVO volume2 = mock(VolumeVO.class);
+        VolumeVO volume3 = mock(VolumeVO.class);
+
+        when(volume1.getId()).thenReturn(1L);
+        when(volume1.getPoolId()).thenReturn(pool1Id);
+        when(volume2.getId()).thenReturn(2L);
+        when(volume2.getPoolId()).thenReturn(pool2Id);
+        when(volume3.getId()).thenReturn(3L);
+        when(volume3.getPoolId()).thenReturn(pool1Id);
+
+        StoragePoolVO clvmPool1 = mock(StoragePoolVO.class);
+        when(clvmPool1.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        StoragePoolVO clvmPool2 = mock(StoragePoolVO.class);
+        when(clvmPool2.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volume1, volume2, volume3));
+        when(storagePoolDaoMock.findById(pool1Id)).thenReturn(clvmPool1);
+        when(storagePoolDaoMock.findById(pool2Id)).thenReturn(clvmPool2);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+    }
+
+    @Test
+    public void cleanupAllocatedResourcesRemovesVolumesAndNics() {
+        when(vmInstanceMock.getId()).thenReturn(1L);
+
+        virtualMachineManagerImpl.cleanupAllocatedResources(vmInstanceMock);
+
+        verify(volumeOrchestrationServiceMock).cleanupVolumes(1L);
+        verify(networkOrchestrationServiceMock).cleanupNics(Mockito.argThat(profile -> profile.getVirtualMachine() == vmInstanceMock));
+    }
 }

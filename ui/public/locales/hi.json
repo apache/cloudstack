@@ -3,6 +3,8 @@
 "label.access": "एक्सेस",
 "label.accesskey": "एक्सेस की",
 "label.account": "खाता",
+"label.account.type.domain.admin": "डोमेन व्यवस्थापक",
+"label.account.type.normal": "सामान्य (उपयोगकर्ता)",
 "label.accounts": "लेखा",
 "label.accounttype": "खाता प्रकार",
 "label.aclid": "ACL",

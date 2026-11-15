@@ -20,6 +20,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
@@ -71,6 +73,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
@@ -110,6 +113,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -148,6 +152,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -185,6 +192,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     HostDetailsDao _hostDetailsDao;
     @Inject
     private VMTemplateDao templateDao;
+    @Inject
+    protected NicDao _nicDao;
+    @Inject
+    protected NetworkDao _networkDao;
 
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
@@ -333,6 +344,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         avoidDisabledResources(vmProfile, dc, avoids);
         avoidDifferentArchResources(vmProfile, dc, avoids);
+        avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         String uefiFlag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.UefiFlag);
@@ -427,7 +439,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         long hostId = dest.getHost().getId();
                         avoids.addHost(dest.getHost().getId());
 
-                        if (volumesRequireEncryption && !Boolean.parseBoolean(_hostDetailsDao.findDetail(hostId, Host.HOST_VOLUME_ENCRYPTION).getValue())) {
+                        if (volumesRequireEncryption && !hostMeetsVolumeEncryptionRequirements(hostId, _volsDao.findByInstance(vm.getId()), null)) {
                             logger.warn("VM's volumes require encryption support, and the planner-provided host {} can't handle it", dest.getHost());
                             continue;
                         } else {
@@ -467,6 +479,39 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
     }
 
+    /**
+     * A multi-VLAN trunk nic can only be plugged on a host with VLAN filtering enabled on its guest bridge - this is
+     * a hard capability requirement, not a preference. Excluding every not-ready host up front, in one pass, avoids
+     * burning retries in the caller's exclude-and-retry loop (VirtualMachineManagerImpl#orchestrateStart) on hosts
+     * that were never going to work - which matters once a zone has more not-ready hosts than the start.retry budget.
+     * No-op, and the candidate set is untouched, for a VM with no multi-VLAN trunk nic - the common case.
+     */
+    @Override
+    public void avoidHostsNotReadyForMultiNetworkNics(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+        List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
+        boolean needsFilteringHost = VlanTrunkMigrationHelper.hasTrunkNic(nics);
+        boolean needsLegacyHost = !needsFilteringHost && VlanTrunkMigrationHelper.hasNativeVlanGuestNic(nics, _networkDao);
+        if (!needsFilteringHost && !needsLegacyHost) {
+            return;
+        }
+        Set<Long> filteringHostIds = _hostDetailsDao.findHostIdsWithVlanFilteringEnabled();
+        // without VLAN-filtering hosts a VLAN 1 nic is placeable anywhere
+        if (needsLegacyHost && filteringHostIds.isEmpty()) {
+            return;
+        }
+        List<Long> candidateHostIds = _hostDao.listEnabledIdsByDataCenterId(dc.getId());
+        if (CollectionUtils.isEmpty(candidateHostIds)) {
+            return;
+        }
+        List<Long> unsuitableHostIds = candidateHostIds.stream()
+                .filter(hostId -> filteringHostIds.contains(hostId) ? needsLegacyHost : needsFilteringHost)
+                .collect(Collectors.toList());
+        if (!unsuitableHostIds.isEmpty()) {
+            logger.debug("Excluding {} host(s) unsuitable for the multi-VLAN trunk or VLAN 1 nics of VM [{}]", unsuitableHostIds.size(), vmProfile);
+            avoids.addHostList(unsuitableHostIds);
+        }
+    }
+
     private DeployDestination deployInVmLastHost(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids,
             DeploymentPlanner planner, VirtualMachine vm, DataCenter dc, ServiceOffering offering, int cpuRequested, long ramRequested,
             boolean volumesRequireEncryption) throws InsufficientServerCapacityException {
@@ -480,9 +525,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         logger.debug("This VM has last host_id: {}", vm.getLastHostId());
         HostVO lastHost = _hostDao.findById(vm.getLastHostId());
+        _hostDao.loadDetails(lastHost);
         if (canUseLastHost(lastHost, avoids, plan, vm, offering, volumesRequireEncryption)) {
             _hostDao.loadHostTags(lastHost);
-            _hostDao.loadDetails(lastHost);
             if (lastHost.getStatus() != Status.Up) {
                 logger.debug("Cannot deploy VM [{}] to the last host [{}] because this host is not in UP state or is not enabled. Host current status [{}] and resource status [{}].",
                         vm, lastHost, lastHost.getState().name(), lastHost.getResourceState());
@@ -598,8 +643,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
-            logger.warn("The last host of this VM {} does not support volume encryption, which is required by this VM.", host);
+        if (volumesRequireEncryption && !hostMeetsVolumeEncryptionRequirements(host.getId(), _volsDao.findByInstance(vm.getId()), null)) {
+            logger.warn("The last host of this VM {} does not support the volume encryption required by this VM.", host);
             return false;
         }
         return true;
@@ -681,11 +726,56 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected boolean anyVolumeRequiresEncryption(List<? extends Volume> volumes) {
         for (Volume volume : volumes) {
-            if (volume.getPassphraseId() != null) {
+            if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean hostHasEncryptionDetail(long hostId, String detailName) {
+        DetailVO detail = _hostDetailsDao.findDetail(hostId, detailName);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
+    }
+
+    /**
+     * Checks that the host advertises the encryption mechanism each encrypted volume needs:
+     * {@link Host#HOST_RBD_VOLUME_ENCRYPTION} (librbd) for volumes on RBD pools,
+     * {@link Host#HOST_VOLUME_ENCRYPTION} (qemu-native LUKS) for volumes on any other pool type.
+     * The pool of a volume is taken from {@code proposedPools} when present (pools being allocated
+     * along with the host), falling back to the volume's persisted pool. For an encrypted volume
+     * with no pool yet (initial deployment without a proposed pool), either mechanism is accepted;
+     * the storage pool allocator selects a pool the host can serve.
+     */
+    protected boolean hostMeetsVolumeEncryptionRequirements(long hostId, Collection<? extends Volume> volumes, Map<Volume, StoragePool> proposedPools) {
+        for (Volume volume : volumes) {
+            if (volume.getPassphraseId() == null && volume.getKmsKeyId() == null) {
+                continue;
+            }
+            Storage.StoragePoolType poolType = null;
+            StoragePool proposedPool = proposedPools != null ? proposedPools.get(volume) : null;
+            if (proposedPool != null) {
+                poolType = proposedPool.getPoolType();
+            } else if (volume.getPoolId() != null) {
+                StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+                poolType = pool != null ? pool.getPoolType() : null;
+            }
+            boolean hostMeets;
+            if (poolType == Storage.StoragePoolType.RBD) {
+                hostMeets = hostHasEncryptionDetail(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION);
+            } else if (poolType != null) {
+                hostMeets = hostHasEncryptionDetail(hostId, Host.HOST_VOLUME_ENCRYPTION);
+            } else {
+                hostMeets = hostHasEncryptionDetail(hostId, Host.HOST_VOLUME_ENCRYPTION)
+                        || hostHasEncryptionDetail(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION);
+            }
+            if (!hostMeets) {
+                logger.debug("Host [{}] does not support the encryption mechanism required by volume [{}] (pool type [{}])",
+                        hostId, volume, poolType);
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isDeployAsIs(VirtualMachine vm) {
@@ -805,18 +895,49 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 return false;
             }
         }
+
+        DetailVO guestOsRule = _hostDetailsDao.findDetail(host.getId(), HostVO.GUEST_OS_RULE);
+        if (guestOsRule != null) {
+            return isHostGuestOsCompatible(vmProfile, host, guestOsRule);
+        }
+
+        DetailVO guestOsCategoryId = _hostDetailsDao.findDetail(host.getId(), HostVO.GUEST_OS_CATEGORY_ID);
+        if (guestOsCategoryId != null) {
+            return isHostGuestOsCategoryCompatible(vmProfile, host, guestOsCategoryId);
+        }
+
+        return true;
+    }
+
+    private boolean isHostGuestOsCategoryCompatible(VirtualMachineProfile vmProfile, HostVO host, DetailVO guestOsCategoryId) {
         long guestOSId = vmProfile.getTemplate().getGuestOSId();
         GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        if (guestOS != null) {
-            long guestOSCategoryId = guestOS.getCategoryId();
-            DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), "guest.os.category.id");
-            if (hostDetail != null) {
-                String guestOSCategoryIdString = hostDetail.getValue();
-                if (String.valueOf(guestOSCategoryId) != guestOSCategoryIdString) {
-                    logger.debug("The last host has different guest.os.category.id than guest os category of VM, skipping");
-                    return false;
-                }
-            }
+
+        if (guestOS == null) {
+            return true;
+        }
+
+        long guestOSCategoryId = guestOS.getCategoryId();
+        String guestOSCategoryIdString = guestOsCategoryId.getValue();
+        if (!String.valueOf(guestOSCategoryId).equals(guestOSCategoryIdString)) {
+            logger.debug("The last host has different `{}` than guest os category of VM, skipping", Host.GUEST_OS_CATEGORY_ID);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isHostGuestOsCompatible(VirtualMachineProfile vmProfile, HostVO host, DetailVO guestOsRule) {
+        VMTemplateVO template = (VMTemplateVO) vmProfile.getTemplate();
+        String templateGuestOSName = ApiDBUtils.getTemplateGuestOSName(template);
+
+        List<HostVO> incompatibleHosts = _hostDao.findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(templateGuestOSName);
+
+        boolean isHostCompatible = incompatibleHosts.stream().noneMatch(incompatibleHost -> incompatibleHost.getId() == host.getId());
+
+        if (!isHostCompatible) {
+            logger.debug("The template [{}] is incompatible with the host [{}] due to the guest OS rule [{}].", template, host, guestOsRule);
+            return false;
         }
         return true;
     }
@@ -1616,11 +1737,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             }
 
-            HostVO potentialHostVO = _hostDao.findById(potentialHost.getId());
-            _hostDao.loadDetails(potentialHostVO);
-
-            boolean hostHasEncryption = Boolean.parseBoolean(potentialHostVO.getDetail(Host.HOST_VOLUME_ENCRYPTION));
-            boolean hostMeetsEncryptionRequirements = !anyVolumeRequiresEncryption(new ArrayList<>(volumesOrderBySizeDesc)) || hostHasEncryption;
+            boolean hostMeetsEncryptionRequirements = hostMeetsVolumeEncryptionRequirements(potentialHost.getId(), volumesOrderBySizeDesc, storage);
             boolean hostFitsPlannerUsage = checkIfHostFitsPlannerUsage(potentialHost, resourceUsageRequired);
 
             if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && hostMeetsEncryptionRequirements && hostFitsPlannerUsage) {

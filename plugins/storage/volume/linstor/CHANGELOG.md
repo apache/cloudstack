@@ -24,6 +24,37 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026-10-07]
+
+### Fixed
+
+- Live migration with storage into Linstor failed with "cannot precreate storage for disk type 'block'"
+  if the auto-placement didn't put a copy of the new resource on the target host; the resource is
+  now made available on the target host before the migration starts.
+- Live migration with storage into Linstor failed on cgroup v2 hosts with
+  "shares '<n>' must be in range [1, 10000]" for VMs with more than 10000 cpus * MHz, and smaller
+  VMs ended up with an unscaled CPU weight; the CPU shares calculated by the target host are now used.
+
+## [2026-07-30]
+
+### Added
+
+- Support for incremental snapshot backups on secondary storage
+
+## [2026-06-24]
+
+### Fixed
+
+- Restore of encrypted volume snapshots: snapshots of encrypted volumes are now
+  stored as LUKS-encrypted qcow2 files and decrypted on revert (previously the
+  restored data was corrupted and the root device unbootable).
+
+## [2026-06-03]
+
+### Added
+
+- Support Linstor bearer token authentication (Linstor 1.34.0) and HTTPS controller connections
+
 ## [2026-01-17]
 
 ### Added

@@ -88,9 +88,15 @@ public interface AccountService {
 
     Account getActiveAccountById(long accountId);
 
+    Account getActiveAccountByUuid(String accountUuid);
+
     Account getAccount(long accountId);
 
+    Account getAccountByUuid(String accountUuid);
+
     User getActiveUser(long userId);
+
+    User getOneActiveUserForAccount(Account account);
 
     User getUserIncludingRemoved(long userId);
 
@@ -179,4 +185,6 @@ public interface AccountService {
     String getAccessingApiKey(BaseCmd cmd);
 
     List<RolePermissionEntity> getAllKeypairPermissions(String apiKey);
+
+    List<? extends ApiKeyPairPermission> getAllExplicitKeyPairPermissions(Long keyPairId);
 }

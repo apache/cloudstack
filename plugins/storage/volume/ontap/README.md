@@ -36,15 +36,15 @@ The NetApp ONTAP Storage Plugin provides integration between Apache CloudStack a
 
 ### Component Structure
 
-| Package | Description                                           |
-|---------|-------------------------------------------------------|
-| `driver` | Primary datastore driver implementation               |
+| Package | Description |
+| --- | --- |
+| `driver` | Primary datastore driver implementation |
 | `feign` | REST API clients and data models for ONTAP operations |
-| `lifecycle` | Storage pool lifecycle management                     |
-| `listener` | Host connection event handlers                        |
-| `provider` | Main provider and strategy factory                    |
-| `service` | ONTAP Storage strategy implementations (NAS/SAN)      |
-| `utils` | Constants and helper utilities                        |
+| `lifecycle` | Storage pool lifecycle management |
+| `listener` | Host connection event handlers |
+| `provider` | Main provider and strategy factory |
+| `service` | ONTAP Storage strategy implementations (NAS/SAN) |
+| `utils` | Constants and helper utilities |
 
 ## Requirements
 
@@ -65,7 +65,7 @@ The NetApp ONTAP Storage Plugin provides integration between Apache CloudStack a
 
 ### Minimum Volume Size
 
-ONTAP requires a minimum volume size of **1.56 GB** (1,677,721,600 bytes). The plugin will automatically adjust requested sizes below this threshold.
+ONTAP requires a minimum volume size of **20 MB** (20,971,520 bytes). Requests below this threshold are rejected.
 
 ## Configuration
 
@@ -74,7 +74,7 @@ ONTAP requires a minimum volume size of **1.56 GB** (1,677,721,600 bytes). The p
 When creating an ONTAP primary storage pool, provide the following details in the URL field (semicolon-separated key=value pairs):
 
 | Parameter | Required | Description |
-|-----------|----------|-------------|
+| --- | --- | --- |
 | `username` | Yes | ONTAP cluster admin username |
 | `password` | Yes | ONTAP cluster admin password |
 | `svmName` | Yes | Storage Virtual Machine name |
@@ -90,7 +90,7 @@ username=admin;password=secretpass;svmName=svm1;protocol=ISCSI;managementLIF=192
 ## Port Configuration
 
 | Protocol | Default Port |
-|----------|--------------|
+| --- | --- |
 | NFS | 2049 |
 | iSCSI | 3260 |
 | ONTAP Management API | 443 (HTTPS) |
@@ -116,7 +116,7 @@ username=admin;password=secretpass;svmName=svm1;protocol=ISCSI;managementLIF=192
 
 3. **Capacity Errors**
     - Check aggregate space availability
-    - Ensure requested volume size meets minimum requirements (1.56 GB)
+    - Ensure requested volume size meets minimum requirements (20 MB)
 
 4. **Host Connection Issues**
     - For iSCSI: Verify host IQN is properly configured in host's storage URL

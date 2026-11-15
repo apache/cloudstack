@@ -33,6 +33,11 @@ import com.cloud.utils.fsm.StateMachine;
  * Nic represents one nic on the VM.
  */
 public interface Nic extends Identity, InternalIdentity {
+
+    interface Topics {
+        String NIC_LIFECYCLE = "nic.lifecycle";
+    }
+
     enum Event {
         ReservationRequested, ReleaseRequested, CancelRequested, OperationCompleted, OperationFailed,
     }
@@ -140,6 +145,8 @@ public interface Nic extends Identity, InternalIdentity {
     AddressFormat getAddressFormat();
 
     boolean getSecondaryIp();
+
+    boolean getMultiNetwork();
 
     //
     // IPv4

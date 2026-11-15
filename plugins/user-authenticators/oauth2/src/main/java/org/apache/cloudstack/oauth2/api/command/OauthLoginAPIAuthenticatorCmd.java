@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import java.util.Objects;
+
 import com.cloud.api.ApiServlet;
 import com.cloud.domain.Domain;
 import com.cloud.user.User;
@@ -48,7 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.net.InetAddress;
 
-import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
+import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 
 @APICommand(name = "oauthlogin", description = "Logs a user into the CloudStack after successful verification of OAuth secret code from the particular provider." +
         "A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.",
@@ -120,9 +122,6 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
-        if (!OAuth2IsPluginEnabled.value()) {
-            throw new CloudAuthenticationException("OAuth is not enabled in CloudStack, users cannot login using OAuth");
-        }
         final String[] provider = (String[])params.get(ApiConstants.PROVIDER);
         final String[] emailArray = (String[])params.get(ApiConstants.EMAIL);
         final String[] secretCodeArray = (String[])params.get(ApiConstants.SECRET_CODE);
@@ -130,15 +129,41 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         String oauthProvider = ((provider == null) ? null : provider[0]);
         String email = ((emailArray == null) ? null : emailArray[0]);
         String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
-        if (StringUtils.isAnyEmpty(oauthProvider, email, secretCode)) {
-            throw new CloudAuthenticationException("OAuth provider, email, secretCode any of these cannot be null");
+
+        try {
+            if (StringUtils.isAnyEmpty(oauthProvider, email, secretCode)) {
+                throw new CloudAuthenticationException("OAuth provider, email, secretCode any of these cannot be null");
+            }
+
+            Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
+            final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
+            String domain = getDomainName(auditTrailSb, domainName);
+
+            final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
+            if (Objects.nonNull(userDomain)) {
+                domainId = userDomain.getId();
+            }
+
+            boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(domainId);
+            if (!oauthEnabled) {
+                logger.debug(String.format("OAuth is not enabled %s, users cannot login using OAuth", domainId == null ? "globally" : "in domain " + domainId));
+                throw new CloudAuthenticationException(String.format(
+                        "OAuth login is not enabled %s. Please contact your administrator.",
+                        domainId == null ? "globally" : "for this domain"));
+            }
+
+            return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
+        } catch (final CloudAuthenticationException ex) {
+            throw toServerApiException(session, params, responseType, auditTrailSb, ex);
         }
+    }
 
-        Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
-        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
-        String domain = getDomainName(auditTrailSb, domainName);
-
-        return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
+    private ServerApiException toServerApiException(HttpSession session, Map<String, Object[]> params, String responseType, StringBuilder auditTrailSb, CloudAuthenticationException ex) {
+        ApiServlet.invalidateHttpSession(session, "fall through to API key,");
+        String msg = ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user via OAuth";
+        auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + msg);
+        String serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), msg, params, responseType);
+        return new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
     }
 
     private String doOauthAuthentication(HttpSession session, Long domainId, String domain, String email, Map<String, Object[]> params, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb) {

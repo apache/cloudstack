@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.balancedweighted;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.firstfitleastconsumed;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.random;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispersing;
@@ -95,6 +96,8 @@ public class FirstFitAllocator extends BaseAllocator {
     CapacityDao _capacityDao;
     @Inject
     VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Inject
+    WeightedHostScorer weightedHostScorer;
 
     boolean _checkHvm = true;
 
@@ -123,7 +126,7 @@ public class FirstFitAllocator extends BaseAllocator {
         String hostTagOnTemplate = template.getTemplateTag();
         String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
 
-        List<HostVO> suitableHosts = retrieveHosts(vmProfile, type, (List<HostVO>) hosts, clusterId, podId, dcId, hostTagOnOffering, hostTagOnTemplate);
+        List<HostVO> suitableHosts = retrieveHosts(vmProfile, type, (List<HostVO>) hosts, template, clusterId, podId, dcId, hostTagOnOffering, hostTagOnTemplate);
 
         if (suitableHosts.isEmpty()) {
             logger.info("No suitable host found for VM [{}] in {}.", vmProfile, paramAsStringToLog);
@@ -137,8 +140,8 @@ public class FirstFitAllocator extends BaseAllocator {
         return allocateTo(vmProfile, plan, offering, template, avoid, suitableHosts, returnUpTo, considerReservedCapacity, account);
     }
 
-    protected List<HostVO> retrieveHosts(VirtualMachineProfile vmProfile, Type type, List<HostVO> hostsToFilter, Long clusterId, Long podId, long dcId, String hostTagOnOffering,
-                                         String hostTagOnTemplate) {
+    protected List<HostVO> retrieveHosts(VirtualMachineProfile vmProfile, Type type, List<HostVO> hostsToFilter, VMTemplateVO template,
+                                         Long clusterId, Long podId, long dcId, String hostTagOnOffering, String hostTagOnTemplate) {
         String haVmTag = (String) vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         List<HostVO> clusterHosts;
 
@@ -159,6 +162,7 @@ public class FirstFitAllocator extends BaseAllocator {
         filterHostsWithUefiEnabled(type, vmProfile, clusterId, podId, dcId, clusterHosts);
 
         addHostsBasedOnTagRules(hostTagOnOffering, clusterHosts);
+        filterHostsBasedOnGuestOsRules(template, clusterHosts);
 
         return clusterHosts;
 
@@ -208,6 +212,8 @@ public class FirstFitAllocator extends BaseAllocator {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
         } else if (firstfitleastconsumed.toString().equals(vmAllocationAlgorithm)) {
             hosts = reorderHostsByCapacity(plan, hosts);
+        } else if (balancedweighted.toString().equals(vmAllocationAlgorithm)) {
+            hosts = weightedHostScorer.rank(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), hosts);
         }
 
         logger.debug("FirstFitAllocator has {} hosts to check for allocation {}.", hosts.size(), hosts);

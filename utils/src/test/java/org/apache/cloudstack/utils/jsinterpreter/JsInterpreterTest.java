@@ -161,7 +161,7 @@ public class JsInterpreterTest {
 
     @Test
     public void executeScriptTestValidScriptShouldPassWithMixedVariables() {
-        try (JsInterpreter jsInterpreter = new JsInterpreter(1000)) {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(1000, "timeout.configuration")) {
             jsInterpreter.injectVariable("x", 10);
             jsInterpreter.injectVariable("y", "hello");
             jsInterpreter.injectVariable("z", true);
@@ -174,7 +174,7 @@ public class JsInterpreterTest {
     }
 
     private void runMaliciousScriptFileTest(String script, String filename) {
-        try (JsInterpreter jsInterpreter = new JsInterpreter(1000)) {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(1000, "timeout.configuration")) {
             jsInterpreter.executeScript(script);
         } catch (CloudRuntimeException ex) {
             Assert.assertTrue(ex.getMessage().contains("Unable to execute script"));

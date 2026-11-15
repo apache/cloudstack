@@ -74,6 +74,7 @@ public interface NetworkModel {
     String CLOUD_DOMAIN_FILE = "cloud-domain";
     String CLOUD_DOMAIN_ID_FILE = "cloud-domain-id";
     String CLOUD_NAME_FILE = "cloud-name";
+    String NIC_VLAN_MAPPING_FILE = "nic-vlan-mapping";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
@@ -137,6 +138,13 @@ public interface NetworkModel {
 
     Nic getNicInNetwork(long vmId, long networkId);
 
+    /**
+     * Resolves the nic and guest ip(s) a VM answers on for a given network - the nic's own primary network match
+     * when one exists, or a trunk nic's association (from nic_network_map) otherwise. Returns null if the VM has
+     * neither a primary nor an associated nic in that network.
+     */
+    Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId);
+
     List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type);
 
     Network getDefaultNetworkForVm(long vmId);
@@ -187,6 +195,8 @@ public interface NetworkModel {
 
     boolean canElementEnableIndividualServices(Provider provider);
 
+    boolean canElementEnableIndividualServicesByName(String providerName);
+
     boolean areServicesSupportedInNetwork(long networkId, Service... services);
 
     boolean isNetworkSystem(Network network);
@@ -236,6 +246,18 @@ public interface NetworkModel {
     String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware);
 
     String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware);
+
+    /**
+     * Resolves a provider name to a {@link Provider} instance.
+     * For known static providers, delegates to {@link Provider#getProvider(String)}.
+     * For dynamically-registered NetworkOrchestrator extension providers whose names
+     * are not in the static registry, returns a transient {@link Provider} with the
+     * given name so callers can still dispatch correctly.
+     *
+     * @param providerName the provider name from {@code ntwk_service_map} or similar
+     * @return a {@link Provider} instance, or {@code null} if not resolvable
+     */
+    Provider resolveProvider(String providerName);
 
     /**
      * @param providerName

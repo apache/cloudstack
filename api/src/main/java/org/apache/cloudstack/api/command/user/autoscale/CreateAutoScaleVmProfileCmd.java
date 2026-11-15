@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -106,6 +107,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             since = "4.18.0")
     private String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18.1")
     private Long userDataId;
 

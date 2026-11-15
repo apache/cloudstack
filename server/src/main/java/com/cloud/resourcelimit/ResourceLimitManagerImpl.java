@@ -20,6 +20,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -604,10 +605,160 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected List<ResourceCountVO> lockAccountAndOwnerDomainRows(long accountId, final ResourceType type, String tag) {
-        Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        Set<Long> rowIdsToLock = listRowsToLockForLimitCheck(accountId, type, tag);
+        if (rowIdsToLock.isEmpty()) {
+            return Collections.emptyList();
+        }
         SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
         sc.setParameters("id", rowIdsToLock.toArray());
         return _resourceCountDao.lockRows(sc, null, true);
+    }
+
+    /**
+     * Returns the {@code resource_count} row IDs that need {@code FOR UPDATE}
+     * locks for a limit check: always the account row, plus ancestor-domain
+     * rows ONLY when their effective limit for ({@code type}, {@code tag})
+     * is finite. Ancestors with an UNLIMITED (or absent) effective limit are
+     * excluded — locking them would only create cross-tenant InnoDB row-lock
+     * contention with no effect on the check outcome (see
+     * {@link #checkDomainResourceLimit} which short-circuits when the
+     * domain's limit is {@link Resource#RESOURCE_UNLIMITED} and skips the
+     * ROOT domain entirely).
+     *
+     * <p>The account row is always included so two concurrent reservations
+     * against the same account still serialize at the InnoDB level.
+     *
+     * <p>"Effective limit" is resolved exactly like
+     * {@link #findCorrectResourceLimitForDomain}: a bulk query fetches every
+     * explicit tag-specific {@code resource_limit} row owned by any domain
+     * in the chain (a second bulk query for untagged rows only runs if some
+     * domain in the chain turns out to have no tag-specific row of its own
+     * or an ancestor's), then the chain is walked in memory from the
+     * account's domain up to (but excluding) ROOT, taking the nearest
+     * tag-specific row and falling back to the nearest untagged row only
+     * when no tag-specific row exists anywhere in the domain's own upward
+     * path. This correctly locks domains that inherit a finite limit from
+     * an ancestor's row (not just domains that own one), and domains that
+     * fall back to a finite untagged limit because no tag-specific limit is
+     * configured.
+     *
+     * <p>The final domain-row lookup is a single bulk
+     * {@link ResourceCountDao#findByOwnersAndTypeAndTag} call over exactly
+     * the domains found to have a finite effective limit — no more, no
+     * fewer, and no per-domain round trips.
+     *
+     * <p>If the global default for this type is itself finite (only possible
+     * for {@code primary_storage}/{@code secondary_storage} via
+     * {@code domainResourceLimitMap}), every ancestor inherits that finite
+     * default and we fall back to {@link ResourceCountDao#listAllRowsToUpdate}
+     * to lock the full chain. Same fallback applies when a tagged account
+     * row does not yet exist, so the create-on-miss materialization in
+     * {@code listAllRowsToUpdate} still fires.
+     *
+     * <p>This is a READ-PATH helper. The write path
+     * ({@link #updateResourceCountForAccount}) keeps using
+     * {@code listAllRowsToUpdate} directly so counts at unconstrained
+     * ancestors stay accurate for audit/aggregation.
+     */
+    protected Set<Long> listRowsToLockForLimitCheck(long accountId, ResourceType type, String tag) {
+        if (findDefaultResourceLimitForDomain(type) != Resource.RESOURCE_UNLIMITED) {
+            return _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        }
+
+        Set<Long> rowIds = new HashSet<>();
+
+        ResourceCountVO accountRow = _resourceCountDao.findByOwnerAndTypeAndTag(accountId, ResourceOwnerType.Account, type, tag);
+        if (accountRow != null) {
+            rowIds.add(accountRow.getId());
+        } else if (StringUtils.isNotEmpty(tag)) {
+            // Preserve the tagged-row create-on-miss side effect from
+            // ResourceCountDaoImpl.listAllRowsToUpdate.
+            return _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        }
+
+        AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
+        if (account == null) {
+            return rowIds;
+        }
+
+        List<Long> ancestorChain = getOrderedAncestorDomainIds(account.getDomainId());
+        Set<Long> finiteLimitDomainIds = findAncestorDomainsWithFiniteLimit(ancestorChain, type, tag);
+        if (!finiteLimitDomainIds.isEmpty()) {
+            List<ResourceCountVO> domainRows = _resourceCountDao.findByOwnersAndTypeAndTag(
+                    new ArrayList<>(finiteLimitDomainIds), ResourceOwnerType.Domain, type, tag);
+            for (ResourceCountVO row : domainRows) {
+                rowIds.add(row.getId());
+            }
+        }
+
+        return rowIds;
+    }
+
+    /**
+     * Returns the account's domain plus every ancestor up to (but excluding)
+     * ROOT, ordered from the account's own domain outward — the same order
+     * {@link #findCorrectResourceLimitForDomain} and
+     * {@link #checkDomainResourceLimit} walk.
+     */
+    private List<Long> getOrderedAncestorDomainIds(long domainId) {
+        List<Long> chain = new ArrayList<>();
+        Long currentId = domainId;
+        while (currentId != null && currentId != Domain.ROOT_DOMAIN) {
+            chain.add(currentId);
+            DomainVO domain = _domainDao.findById(currentId);
+            currentId = (domain != null) ? domain.getParent() : null;
+        }
+        return chain;
+    }
+
+    /**
+     * Returns the subset of {@code ancestorChain} whose effective limit for
+     * ({@code type}, {@code tag}) is finite, per
+     * {@link #findCorrectResourceLimitForDomain}'s nearest-row-with-fallback
+     * semantics. The untagged fallback query only runs if at least one
+     * domain in the chain actually lacks a tag-specific row.
+     */
+    private Set<Long> findAncestorDomainsWithFiniteLimit(List<Long> ancestorChain, ResourceType type, String tag) {
+        if (ancestorChain.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<Long> chainSet = new HashSet<>(ancestorChain);
+        Map<Long, ResourceLimitVO> tagRowsByDomain = indexByDomainId(_resourceLimitDao.listByDomainIdsAndTypeAndTag(chainSet, type, tag));
+        Map<Long, ResourceLimitVO> untaggedRowsByDomain = null;
+
+        Set<Long> finiteLimitDomainIds = new HashSet<>();
+        for (int i = 0; i < ancestorChain.size(); i++) {
+            ResourceLimitVO nearestRow = findNearestRowFrom(ancestorChain, i, tagRowsByDomain);
+            if (nearestRow == null && StringUtils.isNotEmpty(tag)) {
+                if (untaggedRowsByDomain == null) {
+                    untaggedRowsByDomain = indexByDomainId(_resourceLimitDao.listByDomainIdsAndTypeAndTag(chainSet, type, null));
+                }
+                nearestRow = findNearestRowFrom(ancestorChain, i, untaggedRowsByDomain);
+            }
+            if (nearestRow != null && nearestRow.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
+                finiteLimitDomainIds.add(ancestorChain.get(i));
+            }
+        }
+        return finiteLimitDomainIds;
+    }
+
+    private static ResourceLimitVO findNearestRowFrom(List<Long> chain, int startIndex, Map<Long, ResourceLimitVO> rowsByDomain) {
+        for (int i = startIndex; i < chain.size(); i++) {
+            ResourceLimitVO row = rowsByDomain.get(chain.get(i));
+            if (row != null) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    private static Map<Long, ResourceLimitVO> indexByDomainId(List<ResourceLimitVO> rows) {
+        Map<Long, ResourceLimitVO> map = new HashMap<>();
+        for (ResourceLimitVO row : rows) {
+            map.put(row.getDomainId(), row);
+        }
+        return map;
     }
 
     @Override
@@ -1152,7 +1303,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         _accountMgr.checkAccess(callerAccount, domain);
         if (accountId != null) {
-            Account account = _entityMgr.findById(Account.class, accountId);
+            Account account = _entityMgr.findByIdIncludingRemoved(Account.class, accountId);
             if (account == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountId);
             }
@@ -1742,8 +1893,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
-        if (Boolean.FALSE.equals(display)) {
+    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering, Boolean enforceResourceLimitOnDisplayFalse) {
+        if (Boolean.FALSE.equals(display) && Boolean.FALSE.equals(enforceResourceLimitOnDisplayFalse)) {
             return new ArrayList<>();
         }
         List<String> tags = getResourceLimitStorageTags(diskOffering);
@@ -1757,7 +1908,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -1773,7 +1924,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -1790,8 +1941,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        List<String> currentTags = getResourceLimitStorageTagsForResourceCountOperation(true, currentOffering);
-        List<String> tagsAfterUpdate = getResourceLimitStorageTagsForResourceCountOperation(true, newOffering);
+        List<String> currentTags = getResourceLimitStorageTagsForResourceCountOperation(true, currentOffering, null);
+        List<String> tagsAfterUpdate = getResourceLimitStorageTagsForResourceCountOperation(true, newOffering, null);
         if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
             return;
         }
@@ -1811,7 +1962,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+                List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering, null);
                 if (CollectionUtils.isEmpty(tags)) {
                     return;
                 }
@@ -1827,11 +1978,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @DB
     @Override
-    public void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering) {
+    public void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering, Boolean enforceResourceLimitOnDisplayFalse) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+                List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering, enforceResourceLimitOnDisplayFalse);
                 if (CollectionUtils.isEmpty(tags)) {
                     return;
                 }
@@ -1865,11 +2016,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             Boolean display, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate, null));
         if (currentOffering.getId() == newOffering.getId() && currentTemplate.getId() == newTemplate.getId()) {
             return new Ternary<>(currentOfferingTags, new HashSet<>(), new HashSet<>());
         }
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate, null));
 
         if (currentOfferingTags.isEmpty() && newOfferingTags.isEmpty()) {
             return null;
@@ -1941,11 +2092,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private Ternary<Set<String>, Set<String>, Set<String>> getResourceLimitStorageTagsForDiskOfferingChange(
             Boolean display, DiskOffering currentOffering, DiskOffering newOffering
     ) {
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering, null));
         if (newOffering == null || currentOffering.getId() == newOffering.getId()) {
             return new Ternary<>(currentOfferingTags, new HashSet<>(), new HashSet<>());
         }
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering, null));
         if (currentOfferingTags.isEmpty() && newOfferingTags.isEmpty()) {
             return null;
         }
@@ -1992,7 +2143,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (size == null) {
             return;
         }
-        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2006,7 +2157,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (size == null) {
             return;
         }
-        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2015,8 +2166,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
-    protected List<String> getResourceLimitHostTagsForResourceCountOperation(Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) {
-        if (Boolean.FALSE.equals(display)) {
+    protected List<String> getResourceLimitHostTagsForResourceCountOperation(Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template,
+            Boolean enforceResourceLimitOnDisplayFalse) {
+        if (Boolean.FALSE.equals(display) && Boolean.FALSE.equals(enforceResourceLimitOnDisplayFalse)) {
             return new ArrayList<>();
         }
         List<String> tags = getResourceLimitHostTags(serviceOffering, template);
@@ -2030,7 +2182,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2053,11 +2205,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) {
+    public void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template,
+            Boolean countDisplayFalseInResourceLimit) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+                List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, countDisplayFalseInResourceLimit);
                 if (CollectionUtils.isEmpty(tags)) {
                     return;
                 }
@@ -2076,11 +2229,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering,
-            VirtualMachineTemplate template) {
+            VirtualMachineTemplate template, Boolean enforceResourceLimitOnDisplayFalse) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+                List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, enforceResourceLimitOnDisplayFalse);
                 if (CollectionUtils.isEmpty(tags)) {
                     return;
                 }
@@ -2117,8 +2270,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations
     ) throws ResourceAllocationException {
-        List<String> currentTags = getResourceLimitHostTagsForResourceCountOperation(true, currentOffering, currentTemplate);
-        List<String> tagsAfterUpdate = getResourceLimitHostTagsForResourceCountOperation(true, newOffering, newTemplate);
+        List<String> currentTags = getResourceLimitHostTagsForResourceCountOperation(true, currentOffering, currentTemplate, null);
+        List<String> tagsAfterUpdate = getResourceLimitHostTagsForResourceCountOperation(true, newOffering, newTemplate, null);
         if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
             return;
         }
@@ -2157,7 +2310,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void incrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2171,7 +2324,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void decrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2185,7 +2338,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void incrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2199,7 +2352,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void decrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2213,7 +2366,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void incrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
@@ -2227,7 +2380,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void decrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template, null);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }

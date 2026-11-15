@@ -63,6 +63,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "The OS category name of the host")
     private String osCategoryName;
 
+    @SerializedName(ApiConstants.GUEST_OS_RULE)
+    @Param(description = "the guest OS rule")
+    private String guestOsRule;
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "The IP address of the host")
     private String ipAddress;
@@ -197,6 +201,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the virtual machine id for host type ConsoleProxy and SecondaryStorageVM", since = "4.21.0")
     private String virtualMachineId;
 
+    @SerializedName("msid")
+    @Param(description = "(only for details=core) the msid of the host's management server")
+    private Long msId;
+
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "The management server ID of the host")
     private String managementServerId;
@@ -306,6 +314,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.INSTANCE_CONVERSION_SUPPORTED)
     @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
     private Boolean instanceConversionSupported;
+
+    @SerializedName(ApiConstants.VLAN_FILTERING_ENABLED)
+    @Param(description = "true if vlan_filtering is enabled on this host's guest bridge, so it can accept multi-VLAN trunk nics", since = "24.0.0")
+    private Boolean vlanFilteringEnabled;
+
+    @SerializedName(ApiConstants.VLAN_TRUNK_XML_SUPPORTED)
+    @Param(description = "true if this host's libvirt version supports trunk vlan tap membership natively", since = "24.0.0")
+    private Boolean vlanTrunkXmlSupported;
 
     @SerializedName(ApiConstants.ARCH)
     @Param(description = "CPU Arch of the host", since = "4.20")
@@ -486,6 +502,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setVirtualMachineId(String virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
+    }
+
+    public Long getMsId() {
+        return msId;
+    }
+
+    public void setMsId(Long msId) {
+        this.msId = msId;
     }
 
     public void setManagementServerId(String managementServerId) {
@@ -888,6 +912,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.instanceConversionSupported = instanceConversionSupported;
     }
 
+    public void setVlanFilteringEnabled(Boolean vlanFilteringEnabled) {
+        this.vlanFilteringEnabled = vlanFilteringEnabled;
+    }
+
+    public void setVlanTrunkXmlSupported(Boolean vlanTrunkXmlSupported) {
+        this.vlanTrunkXmlSupported = vlanTrunkXmlSupported;
+    }
+
     public Boolean getIsTagARule() {
         return isTagARule;
     }
@@ -984,6 +1016,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return instanceConversionSupported;
     }
 
+    public Boolean getVlanFilteringEnabled() {
+        return vlanFilteringEnabled;
+    }
+
+    public Boolean getVlanTrunkXmlSupported() {
+        return vlanTrunkXmlSupported;
+    }
+
     public void setExtensionId(String extensionId) {
         this.extensionId = extensionId;
     }
@@ -998,5 +1038,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public String getExtensionName() {
         return extensionName;
+    }
+
+    public String getGuestOsRule() {
+        return guestOsRule;
+    }
+
+    public void setGuestOsRule(String guestOsRule) {
+        this.guestOsRule = guestOsRule;
     }
 }

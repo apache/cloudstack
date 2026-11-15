@@ -62,7 +62,7 @@ public class JsInterpreter implements Closeable {
     protected Logger logger = LogManager.getLogger(JsInterpreter.class);
 
     protected static final List<String> RESTRICTED_TOKENS = Arrays.asList( "engine", "context", "factory",
-            "Java", "java", "Packages"," javax", "load", "loadWithNewGlobal", "print", "factory", "getClass",
+            "Java", "java", "Packages", "javax", "load", "loadWithNewGlobal", "print", "factory", "getClass",
             "runCommand", "Runtime", "exec", "ProcessBuilder", "Thread", "thread", "Threads", "Class", "class");
 
     protected ScriptEngine interpreter;
@@ -86,10 +86,10 @@ public class JsInterpreter implements Closeable {
      */
     protected JsInterpreter() { }
 
-    public JsInterpreter(long timeout) {
+    public JsInterpreter(long timeout, String configName) {
         this.timeout = timeout;
-        this.timeoutDefaultMessage = String.format(
-                "Timeout (in milliseconds) defined in the global setting [quota.activationrule.timeout]: [%s].", this.timeout);
+        this.timeoutDefaultMessage = String.format("Timeout (in milliseconds) defined in the global setting [%s]: [%s].",
+                configName, this.timeout);
 
         if (System.getProperty("nashorn.args") == null) {
             System.setProperty("nashorn.args", "--no-java --no-syntax-extensions");

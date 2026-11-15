@@ -19,22 +19,28 @@
 
 package org.apache.cloudstack.storage.service.model;
 
-import com.cloud.host.HostVO;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import java.util.List;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 
-import java.util.List;
+import com.cloud.host.HostVO;
 
 public class AccessGroup {
+
+    public enum HostRuleAction {
+        ADD,
+        REMOVE
+    }
 
     private Igroup igroup;
     private ExportPolicy exportPolicy;
 
     private List<HostVO> hostsToConnect;
-    private PrimaryDataStoreInfo primaryDataStoreInfo;
+    private Long storagePoolId;
     private Scope scope;
+    private HostRuleAction hostRuleAction = HostRuleAction.ADD;
 
 
     public Igroup getIgroup() {
@@ -55,19 +61,32 @@ public class AccessGroup {
     public List<HostVO> getHostsToConnect() {
         return hostsToConnect;
     }
+
     public void setHostsToConnect(List<HostVO> hostsToConnect) {
         this.hostsToConnect = hostsToConnect;
     }
-    public PrimaryDataStoreInfo getPrimaryDataStoreInfo() {
-        return primaryDataStoreInfo;
+
+    public Long getStoragePoolId() {
+        return storagePoolId;
     }
-    public void setPrimaryDataStoreInfo(PrimaryDataStoreInfo primaryDataStoreInfo) {
-        this.primaryDataStoreInfo = primaryDataStoreInfo;
+
+    public void setStoragePoolId(Long storagePoolId) {
+        this.storagePoolId = storagePoolId;
     }
+
     public Scope getScope() {
         return scope;
     }
+
     public void setScope(Scope scope) {
         this.scope = scope;
+    }
+
+    public HostRuleAction getHostRuleAction() {
+        return hostRuleAction;
+    }
+
+    public void setHostRuleAction(HostRuleAction hostRuleAction) {
+        this.hostRuleAction = hostRuleAction;
     }
 }

@@ -166,6 +166,18 @@ export default {
           responseKey1: 'listnetworksresponse',
           responseKey2: 'network',
           field: 'name'
+        },
+        hsmprofileid: {
+          apiName: 'listHSMProfiles',
+          responseKey1: 'listhsmprofilesresponse',
+          responseKey2: 'hsmprofile',
+          field: 'name'
+        },
+        kmskeyid: {
+          apiName: 'listKMSKeys',
+          responseKey1: 'listkmskeysresponse',
+          responseKey2: 'kmskey',
+          field: 'name'
         }
       }
     }
@@ -216,6 +228,12 @@ export default {
     retrieveFieldLabel (fieldName) {
       if (fieldName === 'groupid') {
         fieldName = 'group'
+      }
+      if (fieldName === 'hsmprofileid') {
+        fieldName = 'hsm.profile'
+      }
+      if (fieldName === 'kmskeyid') {
+        fieldName = 'kms.key'
       }
       if (fieldName === 'keyword') {
         if ('listAnnotations' in this.$store.getters.apis) {

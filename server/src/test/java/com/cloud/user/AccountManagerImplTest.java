@@ -26,11 +26,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.APIAclChecker;
+import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -73,6 +75,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.acl.DomainChecker;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -245,6 +248,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(userDataDao.removeByAccountId(Mockito.anyLong())).thenReturn(222);
         Mockito.when(sslCertDao.removeByAccountId(Mockito.anyLong())).thenReturn(333);
+        Mockito.when(kmsManager.deleteKMSKeysByAccountId(Mockito.anyLong())).thenReturn(true);
         Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
@@ -446,6 +450,80 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
                 Mockito.nullable(ControlledEntity.class), Mockito.nullable(AccessType.class), Mockito.anyString())).thenReturn(true);
         accountManagerImpl.preventRootDomainAdminAccessToRootAdminKeys(user, entity);
+    }
+
+    @Test
+    public void checkAccessResolvesDomainIdFromAccountWhenEntityDomainIdMissing() {
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(999L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(Mockito.anyLong());
+
+        ControlledEntity entity = Mockito.mock(ControlledEntity.class);
+        Mockito.when(entity.getDomainId()).thenReturn(-1L);
+        Mockito.when(entity.getAccountId()).thenReturn(10L);
+
+        Account resolvedAccount = Mockito.mock(Account.class);
+        Mockito.when(resolvedAccount.getDomainId()).thenReturn(7L);
+
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.when(_domainMgr.getDomain(7L)).thenReturn(domain);
+
+        Mockito.when(securityChecker.checkAccess(caller, entity, AccessType.ListEntry, "someApi")).thenReturn(true);
+        Mockito.when(securityChecker.checkAccess(caller, domain)).thenReturn(true);
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class)) {
+            apiDBUtilsMocked.when(() -> ApiDBUtils.findAccountById(10L)).thenReturn(resolvedAccount);
+
+            accountManagerImpl.checkAccess(caller, AccessType.ListEntry, false, "someApi", entity);
+        }
+
+        // domainId for the entity had to be resolved via its account (entity.getDomainId() == -1),
+        // so the domain-level check must have run against the account's domain, not against -1.
+        Mockito.verify(_domainMgr).getDomain(7L);
+        Mockito.verify(_domainMgr, Mockito.never()).getDomain(-1L);
+    }
+
+    @Test
+    public void checkAccessKeepsAllEntitiesGroupedUnderResolvedDomainId() {
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(999L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(Mockito.anyLong());
+
+        // Both entities are missing their own domainId and resolve, via different accounts, to the same domain.
+        ControlledEntity entity1 = Mockito.mock(ControlledEntity.class);
+        Mockito.when(entity1.getDomainId()).thenReturn(-1L);
+        Mockito.when(entity1.getAccountId()).thenReturn(10L);
+
+        ControlledEntity entity2 = Mockito.mock(ControlledEntity.class);
+        Mockito.when(entity2.getDomainId()).thenReturn(-1L);
+        Mockito.when(entity2.getAccountId()).thenReturn(20L);
+
+        Account resolvedAccount1 = Mockito.mock(Account.class);
+        Mockito.when(resolvedAccount1.getDomainId()).thenReturn(7L);
+        Account resolvedAccount2 = Mockito.mock(Account.class);
+        Mockito.when(resolvedAccount2.getDomainId()).thenReturn(7L);
+
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.when(_domainMgr.getDomain(7L)).thenReturn(domain);
+
+        Mockito.when(securityChecker.checkAccess(caller, entity1, AccessType.ListEntry, "someApi")).thenReturn(true);
+        Mockito.when(securityChecker.checkAccess(caller, entity2, AccessType.ListEntry, "someApi")).thenReturn(true);
+        Mockito.when(securityChecker.checkAccess(caller, domain))
+                .thenThrow(new PermissionDeniedException("denied", caller, Collections.emptyList()));
+
+        PermissionDeniedException thrown;
+        try (MockedStatic<ApiDBUtils> apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class)) {
+            apiDBUtilsMocked.when(() -> ApiDBUtils.findAccountById(10L)).thenReturn(resolvedAccount1);
+            apiDBUtilsMocked.when(() -> ApiDBUtils.findAccountById(20L)).thenReturn(resolvedAccount2);
+
+            thrown = Assert.assertThrows(PermissionDeniedException.class,
+                    () -> accountManagerImpl.checkAccess(caller, AccessType.ListEntry, false, "someApi", entity1, entity2));
+        }
+
+        // Both entities resolve to the same domain, so they must both be grouped under that single domain
+        // key and both show up as violations, instead of the second entity silently displacing the first.
+        Assert.assertEquals(2, thrown.getEntitiesInViolation().size());
+        Assert.assertTrue(thrown.getEntitiesInViolation().containsAll(Arrays.asList(entity1, entity2)));
     }
 
     @Test
@@ -1206,18 +1284,25 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
     }
 
     @Test
-    public void testDisableUserTwoFactorAuthentication() {
+    public void testDisableUserTwoFactorAuthenticationByAdmin() {
         Long userId = 1L;
-        Long accountId = 2L;
+        long accountId = 2L;
+        Long callerId = 100L;
 
         UserVO userVO = Mockito.mock(UserVO.class);
         Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getType()).thenReturn(Account.Type.ADMIN);
+        Mockito.when(caller.getId()).thenReturn(callerId);
         Account owner = Mockito.mock(Account.class);
+        Mockito.when(owner.getType()).thenReturn(Account.Type.NORMAL);
+        Mockito.doReturn(caller).when(accountManagerImpl).getCurrentCallingAccount();
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(callerId);
 
         Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(Account.class), Mockito.isNull(), nullable(Boolean.class), nullable(Account.class));
 
         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
         Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+        Mockito.doReturn(owner).when(accountManagerImpl).getAccount(accountId);
         Mockito.when(_accountService.getActiveAccountById(accountId)).thenReturn(owner);
 
         userVoMock.setKeyFor2fa("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
@@ -1232,6 +1317,27 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Assert.assertNull(response.getSecretCode());
         Assert.assertNull(userVoMock.getKeyFor2fa());
         Assert.assertNull(userVoMock.getUser2faProvider());
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testDisableUserTwoFactorAuthenticationForAdminByDomainAdmin() {
+        Long userId = 1L;
+        long accountId = 2L;
+        Long callerId = 100L;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        Mockito.when(caller.getId()).thenReturn(callerId);
+        Account owner = Mockito.mock(Account.class);
+        Mockito.when(owner.getType()).thenReturn(Account.Type.ADMIN);
+        Mockito.doReturn(caller).when(accountManagerImpl).getCurrentCallingAccount();
+
+        Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+        Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+        Mockito.doReturn(owner).when(accountManagerImpl).getAccount(accountId);
+
+        accountManagerImpl.disableTwoFactorAuthentication(userId, caller, owner);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1282,6 +1388,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
     @Test
     public void testEnable2FAcode() {
         SetupUserTwoFactorAuthenticationCmd cmd = Mockito.mock(SetupUserTwoFactorAuthenticationCmd.class);
+        Mockito.when(cmd.getUserId()).thenReturn(null);
         Mockito.when(cmd.getProvider()).thenReturn("staticpin");
 
         AccountVO accountMock = Mockito.mock(AccountVO.class);
@@ -2129,5 +2236,132 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
                 User.Source.NATIVE, true
         );
         Assert.assertNotNull(userResultVO);
+    }
+
+    @Test
+    public void deleteAndCleanupUserTestUserCleanup() {
+        long userId = userVoMock.getId();
+        Mockito.doNothing().when(accountManagerImpl).removeUserApiKeys(userId);
+        Mockito.doReturn(true).when(_projectMgr).cleanupProjectsForUser(null, userVoMock);
+
+        accountManagerImpl.deleteAndCleanupUser(userVoMock);
+
+        Mockito.verify(accountManagerImpl).removeUserApiKeys(userId);
+        Mockito.verify(_projectMgr).cleanupProjectsForUser(null, userVoMock);
+    }
+
+    // --- Tests for checkRoleEscalation ---
+
+    private void setPrivateField(Object target, String fieldName, Object value) throws Exception {
+        Class<?> clazz = target.getClass();
+        while (clazz != null) {
+            try {
+                java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(target, value);
+                return;
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    @Test
+    public void testCheckRoleEscalationSamePermissionsShouldPass() throws Exception {
+        APIChecker checker = Mockito.mock(APIChecker.class);
+        List<String> apis = Arrays.asList("api1", "api2", "api3");
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Account requested = Mockito.mock(Account.class);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(apis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testCheckRoleEscalationCallerHasMorePermissionsShouldPass() throws Exception {
+        List<String> allApis = Arrays.asList("api1", "api2", "api3");
+        List<String> requestedApis = Arrays.asList("api1", "api2");
+
+        APIAclChecker checker = Mockito.mock(APIAclChecker.class);
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Account requested = Mockito.mock(Account.class);
+
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(allApis);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckRoleEscalationRequestedHasMorePermissionsShouldThrow() throws Exception {
+        List<String> allApis = Arrays.asList("api1", "api2", "api3");
+        List<String> requestedApis = Arrays.asList("api1", "api2", "api3");
+        List<String> callerApis = Arrays.asList("api1");
+
+        APIAclChecker checker = Mockito.mock(APIAclChecker.class);
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Account requested = Mockito.mock(Account.class);
+
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(callerApis);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testCheckRoleEscalationEmptyApiListShouldPass() throws Exception {
+        APIAclChecker checker = Mockito.mock(APIAclChecker.class);
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.any(Account.class), Mockito.anyList())).thenReturn(Collections.emptyList());
+
+        Account caller = Mockito.mock(Account.class);
+        Account requested = Mockito.mock(Account.class);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>());
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testCheckRoleEscalationMultipleCheckersAppliedSequentially() throws Exception {
+        List<String> allApis = Arrays.asList("api1", "api2", "api3");
+        List<String> afterChecker1 = Arrays.asList("api1", "api2");
+        List<String> afterChecker2 = Arrays.asList("api1");
+
+        APIAclChecker checker1 = Mockito.mock(APIAclChecker.class);
+        Mockito.when(checker1.isEnabled()).thenReturn(true);
+        APIAclChecker checker2 = Mockito.mock(APIAclChecker.class);
+        Mockito.when(checker2.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Account requested = Mockito.mock(Account.class);
+
+        // requested: checker1 filters to [api1, api2], checker2 further filters to [api1]
+        Mockito.when(checker1.getApisAllowedToAccount(Mockito.eq(requested), Mockito.eq(allApis))).thenReturn(afterChecker1);
+        Mockito.when(checker2.getApisAllowedToAccount(Mockito.eq(requested), Mockito.eq(afterChecker1))).thenReturn(afterChecker2);
+        // caller: same filtering, so no escalation
+        Mockito.when(checker1.getApisAllowedToAccount(Mockito.eq(caller), Mockito.eq(afterChecker2))).thenReturn(afterChecker2);
+        Mockito.when(checker2.getApisAllowedToAccount(Mockito.eq(caller), Mockito.eq(afterChecker2))).thenReturn(afterChecker2);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker1, checker2));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
     }
 }

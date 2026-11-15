@@ -57,6 +57,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -113,6 +114,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -166,6 +169,7 @@ import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
@@ -201,6 +205,11 @@ import com.sun.management.OperatingSystemMXBean;
  */
 @Component
 public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable, DbStatsCollection {
+
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite"), INFLUXDB("influxdb");
@@ -267,9 +276,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
             "Minimal interval (in seconds) to report vm disk statistics. If vm.disk.stats.interval is smaller than this, use this to report vm disk statistics.", false);
     private static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.network.stats.interval", "0",
-            "Interval (in seconds) to report vm network statistics (for Shared networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
+            "Interval (in seconds) to report vm network statistics (for Shared and Routed networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
-            "Minimal Interval (in seconds) to report vm network statistics (for Shared networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.",
+            "Minimal Interval (in seconds) to report vm network statistics (for Shared and Routed networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.",
             false);
     private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<>("Advanced", Integer.class, "stats.timeout", "60000",
             "The timeout for stats call in milli seconds.", true,
@@ -387,7 +396,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
-    final static MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+
+    public static void registerMetric(String name, Metric metric) {
+        METRIC_REGISTRY.register(name, metric);
+    }
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -410,6 +423,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         registerAll("memory", new MemoryUsageGaugeSet(), METRIC_REGISTRY);
         registerAll("threads", new ThreadStatesGaugeSet(), METRIC_REGISTRY);
         registerAll("jvm", new JvmAttributeGaugeSet(), METRIC_REGISTRY);
+        try {
+            JmxReporter.forRegistry(METRIC_REGISTRY).inDomain("vm-extra").build().start();
+        } catch (Exception e) {
+            logger.warn("Failed to start JMX reporter for METRIC_REGISTRY, metrics will not be visible via JMX", e);
+        }
         return true;
     }
     @Override
@@ -1288,14 +1306,24 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * can be enabled/disabled independently.</p>
      */
     class VmStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
-            cleanUpVirtualMachineStats();
+            try {
+                cleanUpVirtualMachineStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up VM stats", e);
+            }
         }
     }
 
     class VolumeStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
-            cleanUpVolumeStats();
+            try {
+                cleanUpVolumeStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up Volume stats", e);
+            }
         }
     }
 
@@ -1581,9 +1609,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
                                     sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStatEntry.getMacAddress());
                                     NicVO nic = _nicDao.search(sc_nic, null).get(0);
-                                    List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
-                                    if (vlan == null || vlan.size() == 0 || vlan.get(0).getVlanType() != VlanType.DirectAttached)
-                                        continue; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
+                                    if (!isNetworkEligibleForNetworkStats(nic.getNetworkId())) {
+                                        continue; // only get network statistics for Shared or Routed network
+                                    }
                                     UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(),
                                             nic.getIPv4Address(), vmId, "UserVm");
                                     if (previousvmNetworkStats == null) {
@@ -2137,6 +2165,27 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return bytesReadDifferentFromPrevious || bytesWriteDifferentFromPrevious || ioReadDifferentFromPrevious || ioWriteDifferentFromPrevious;
         }
         return true;
+    }
+
+    /**
+     * Returns {@code true} if the given network is eligible for VM network statistics collection.
+     * Only Shared (DirectAttached) networks and Routed networks qualify.
+     *
+     * @param networkId the network id to evaluate
+     * @return {@code true} when the network is routed or direct-attached, {@code false} otherwise
+     */
+    protected boolean isNetworkEligibleForNetworkStats(Long networkId) {
+        if (networkId == null) {
+            return false;
+        }
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        boolean isDirectAttachedNetwork = CollectionUtils.isNotEmpty(vlans)
+                && vlans.get(0).getVlanType() == VlanType.DirectAttached;
+        if (isDirectAttachedNetwork) {
+            return true;
+        }
+        NetworkVO networkVO = networkDao.findById(networkId);
+        return networkVO != null && routedIpv4Manager.isRoutedNetwork(networkVO);
     }
 
     /**

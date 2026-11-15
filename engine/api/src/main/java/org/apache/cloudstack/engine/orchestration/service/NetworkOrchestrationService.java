@@ -91,8 +91,15 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<>("Network", Integer.class, NetworkThrottlingRateCK, "200",
             "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> DhcpLeaseTimeout = new ConfigKey<>("Network", Integer.class, "dhcp.lease.timeout", "0",
+            "DHCP lease time in seconds for VMs. Use 0 for infinite lease time (default). A non-zero value sets the lease duration in seconds.",
+            true, ConfigKey.Scope.Zone);
+
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
             "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+
+    ConfigKey<Boolean> MultiNetworkNicEnabled = new ConfigKey<>("Advanced", Boolean.class, "multi.network.nic.enabled", "false",
+            "Allow a NIC to be associated with more than one network (multi-VLAN trunk NICs)", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> MacAddressChanges = new ConfigKey<>("Advanced", Boolean.class, "network.mac.address.changes", "true",
             "Whether to allow or deny mac address changes on NICs for applicable network elements such as for vswitch/dvswitch porgroups.", true);
@@ -131,12 +138,17 @@ public interface NetworkOrchestrationService {
                     true,
                     Scope.Global);
 
+    ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
+            "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText,
         boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
         throws ConcurrentOperationException;
+
+    boolean isIsolationMethodNetworkExtension(Long networkOfferingId);
 
     void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
         ConcurrentOperationException;
@@ -173,6 +185,10 @@ public interface NetworkOrchestrationService {
 
     Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    // forces a network's state to Implemented; call only once implementNetwork() has reported success for it,
+    // to re-assert against a background cleanup task that can otherwise race it back to an earlier state
+    void markNetworkImplemented(long networkId);
 
     /**
      * Returns all extra dhcp options which are set on the provided nic
@@ -295,6 +311,10 @@ public interface NetworkOrchestrationService {
     boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network);
 
     void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering findById)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    // Deploys a lazily-implemented network's router on demand, for a trunk association that would otherwise never get one.
+    void ensureRouterForLazilyImplementedAssociation(Network network, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);

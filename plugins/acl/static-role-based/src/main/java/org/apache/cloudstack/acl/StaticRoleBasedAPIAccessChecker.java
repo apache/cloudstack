@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.UnavailableCommandException;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 
 import org.apache.cloudstack.api.APICommand;
@@ -92,7 +94,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(User user, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String commandName, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
@@ -102,11 +104,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
             throw new PermissionDeniedException(String.format("The account with id [%s] for user with uuid [%s] is null.", user.getAccountId(), user.getUuid()));
         }
 
-        return checkAccess(account, commandName);
+        return checkAccess(account, commandName, keyPair);
     }
 
     @Override
-    public boolean checkAccess(Account account, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) {
+    public boolean checkAccess(Account account, String commandName, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) {
         if (!isEnabled()) {
             return true;
         }
@@ -121,6 +123,21 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         } else {
             throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for this account.", commandName));
         }
+    }
+
+    @Override
+    public List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+        RoleType roleType = accountService.getRoleType(account);
+        List<String> allowedApis = new ArrayList<>();
+        for (String apiName : apiNames) {
+            if (isApiAllowed(apiName, roleType)) {
+                allowedApis.add(apiName);
+            }
+        }
+        return allowedApis;
     }
 
     /**

@@ -183,6 +183,12 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getNicsForTraffic(long, com.cloud.network.Networks.TrafficType)
      */
@@ -398,6 +404,16 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     public boolean canElementEnableIndividualServices(Provider provider) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public boolean canElementEnableIndividualServicesByName(String providerName) {
+        return false;
+    }
+
+    @Override
+    public Provider resolveProvider(String providerName) {
+        return Provider.getProvider(providerName);
     }
 
     /* (non-Javadoc)

@@ -229,8 +229,13 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public long getNetworkId() {
-        return -1;
+    public Long getNetworkId() {
+        return -1L;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return null;
     }
 
     @Override

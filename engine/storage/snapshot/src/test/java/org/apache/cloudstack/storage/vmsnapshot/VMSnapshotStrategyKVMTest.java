@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.test.utils.SpringUtils;
@@ -441,6 +442,11 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         @Bean
         public BackupManager backupManager() {
             return Mockito.mock(BackupManager.class);
+        }
+
+        @Bean
+        public SnapshotDataStoreDao snapshotDataStoreDao() {
+            return Mockito.mock(SnapshotDataStoreDao.class);
         }
     }
 }

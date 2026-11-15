@@ -45,10 +45,19 @@
           </a-tooltip>
         </template>
         <template v-if="column.key === 'suitability'">
-          <check-circle-two-tone
-            class="host-item__suitability-icon"
-            twoToneColor="#52c41a"
-            v-if="record.suitableformigration" />
+          <template v-if="record.suitableformigration">
+            <check-circle-two-tone
+              class="host-item__suitability-icon"
+              twoToneColor="#52c41a" />
+            <a-tooltip v-if="record.migrationcaution" :title="record.migrationcaution" placement="top">
+              <warning-outlined class="host-item__suitability-icon" style="color: #faad14;" />
+            </a-tooltip>
+          </template>
+          <a-tooltip v-else-if="record.unsuitablereason" :title="record.unsuitablereason" placement="top">
+            <close-circle-two-tone
+              class="host-item__suitability-icon"
+              twoToneColor="#f5222d" />
+          </a-tooltip>
           <close-circle-two-tone
             class="host-item__suitability-icon"
             twoToneColor="#f5222d"
@@ -97,7 +106,7 @@
     </a-pagination>
 
     <a-form-item
-      v-if="isUserVm && hasVolumes"
+      v-if="hasVolumes"
       class="top-spaced">
       <template #label>
         <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
@@ -124,6 +133,7 @@
         ref="storagePoolSelection"
         :autoAssignAllowed="false"
         :resource="resource"
+        :hostId="selectedHost.id && selectedHost.id !== -1 ? selectedHost.id : null"
         @select="handleStoragePoolChange" />
     </div>
     <instance-volumes-storage-pool-select-list-view
@@ -132,6 +142,7 @@
       class="top-spaced"
       :resource="resource"
       :clusterId="selectedHost.id ? selectedHost.clusterid : null"
+      :hostId="selectedHost.id && selectedHost.id !== -1 ? selectedHost.id : null"
       @select="handleVolumeToPoolChange" />
 
     <a-divider />
@@ -284,7 +295,7 @@ export default {
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
       this.volumeToPoolSelection = []
-      if (this.migrateWithStorage) {
+      if (this.migrateWithStorage && this.migrateMode !== 1) {
         this.$refs.volumeToPoolSelect.resetSelection()
       }
     },
@@ -307,7 +318,8 @@ export default {
       this.volumes = []
       getAPI('listVolumes', {
         listAll: true,
-        virtualmachineid: this.resource.id
+        virtualmachineid: this.resource.id,
+        listsystemvms: !this.isUserVm
       }).then(response => {
         this.volumes = response?.listvolumesresponse?.volume || []
       }).finally(() => {
@@ -338,11 +350,11 @@ export default {
     submitForm () {
       if (this.loading) return
       this.loading = true
-      const migrateApi = this.isUserVm
-        ? this.requiresStorageMigration()
-          ? 'migrateVirtualMachineWithVolume'
-          : 'migrateVirtualMachine'
-        : 'migrateSystemVm'
+      const migrateApi = !this.requiresStorageMigration()
+        ? this.isUserVm
+          ? 'migrateVirtualMachine'
+          : 'migrateSystemVm'
+        : 'migrateVirtualMachineWithVolume'
       var params = this.selectedHost.id === -1
         ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }

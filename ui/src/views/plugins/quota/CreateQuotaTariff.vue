@@ -62,7 +62,6 @@
           <tooltip-label :title="$t('label.quota.tariff.value')" :tooltip="apiParams.value.description"/>
         </template>
         <a-input-number
-          class="full-width-input"
           v-model:value="form.value"
           :placeholder="$t('placeholder.quota.tariff.value')" />
       </a-form-item>
@@ -85,7 +84,6 @@
           <tooltip-label :title="$t('label.quota.tariff.position')" :tooltip="apiParams.position.description" />
         </template>
         <a-input-number
-          class="full-width-input"
           v-model:value="form.position"
           :placeholder="$t('placeholder.quota.tariff.position')" />
       </a-form-item>
@@ -94,7 +92,6 @@
           <tooltip-label :title="$t('label.start.date')" :tooltip="apiParams.startdate.description"/>
         </template>
         <a-date-picker
-          class="full-width-input"
           v-model:value="form.startDate"
           :disabled-date="disabledStartDate"
           :placeholder="$t('placeholder.quota.tariff.startdate')"

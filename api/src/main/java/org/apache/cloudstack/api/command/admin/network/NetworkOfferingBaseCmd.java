@@ -52,6 +52,7 @@ import static com.cloud.network.Network.Service.SourceNat;
 import static com.cloud.network.Network.Service.StaticNat;
 import static com.cloud.network.Network.Service.UserData;
 
+import static com.cloud.network.Network.Service.Vpn;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
@@ -216,6 +217,8 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
             description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
     private String routingMode;
 
+    private Map<String, String> sourceDetailsMap;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -287,6 +290,10 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
                 services.add(NetworkACL.getName());
             } else {
                 services.add(Firewall.getName());
+            }
+
+            if (isNetrisNatted(getProvider(), getNetworkMode())) {
+                services.add(Vpn.getName());
             }
             return services;
         }
@@ -393,6 +400,9 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
                 serviceProviderMap.remove(Lb.getName());
             }
         }
+        if (isNetrisNatted(getProvider(), getNetworkMode())) {
+            serviceProviderMap.put(Vpn.getName(), List.of(routerProvider));
+        }
     }
 
     public Map<Network.Capability, String> getServiceCapabilities(Network.Service service) {
@@ -430,9 +440,8 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {
-            return null;
+            return sourceDetailsMap;
         }
-
         Collection paramsCollection = details.values();
         Object objlist[] = paramsCollection.toArray();
         Map<String, String> params = (Map<String, String>) (objlist[0]);

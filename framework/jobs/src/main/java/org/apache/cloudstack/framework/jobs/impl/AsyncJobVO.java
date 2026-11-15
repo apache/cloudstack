@@ -36,11 +36,12 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobDataHelper;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "async_job")
@@ -141,7 +142,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
         this.userId = userId;
         this.accountId = accountId;
         this.cmd = cmd;
-        this.cmdInfo = cmdInfo;
+        this.cmdInfo = AsyncJobDataHelper.encryptInfoIfNeeded(cmd, cmdInfo);
         uuid = ( injectedUuid == null ? UUID.randomUUID().toString() : injectedUuid );
         this.related = related;
         this.instanceId = instanceId;
@@ -237,7 +238,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     @Override
     public String getCmdInfo() {
-        return cmdInfo;
+        return AsyncJobDataHelper.decryptIfNeeded(cmd, cmdInfo);
     }
 
     public void setCmdInfo(String cmdInfo) {
@@ -273,7 +274,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     @Override
     public String getResult() {
-        return result;
+        return AsyncJobDataHelper.decryptResultIfNeeded(cmd, result);
     }
 
     public void setResult(String result) {
@@ -390,5 +391,18 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
                         "userId", "accountId", "instanceType", "instanceId", "cmd", "cmdInfo",
                         "cmdVersion", "status", "processStatus", "resultCode", "result", "initMsid",
                         "completeMsid", "lastUpdated", "lastPolled", "created", "removed"));
+    }
+
+    /*
+     Workaround to set encrypted values, else UpdateBuilder will always have unencrypted value
+     due to its invoke behaviour.
+     */
+
+    public void updateCmdInfoWithEncryptionIfNeeded(String cmdInfo) {
+        this.setCmdInfo(AsyncJobDataHelper.encryptInfoIfNeeded(cmd, cmdInfo));
+    }
+
+    public void updateResultWithEncryptionIfNeeded(final String result) {
+        this.setResult(AsyncJobDataHelper.encryptResultIfNeeded(cmd, result));
     }
 }

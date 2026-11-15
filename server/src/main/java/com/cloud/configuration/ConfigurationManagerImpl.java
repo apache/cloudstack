@@ -107,11 +107,13 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ValidatedConfigKey;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
@@ -143,7 +145,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.userdata.UserDataManager;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
@@ -160,6 +162,9 @@ import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostDetailsDao;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterDetailsDao;
@@ -465,9 +470,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     StorageManager _storageManager;
     @Inject
+    TemplateService _templateService;
+    @Inject
     ImageStoreDao _imageStoreDao;
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
+    @Inject
+    ManagementServerHostDetailsDao managementServerHostDetailsDao;
     @Inject
     MessageBus messageBus;
     @Inject
@@ -885,6 +896,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 break;
 
+                case ManagementServer:
+                    final ManagementServerHostVO managementServer = managementServerHostDao.findById(resourceId);
+                    Preconditions.checkState(managementServer != null);
+                    resourceType = ApiCommandResourceType.ManagementServer;
+                    managementServerHostDetailsDao.addDetail(resourceId, name, value, true);
+                    break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -1032,8 +1050,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String value = cmd.getValue();
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
-        final Long storagepoolId = cmd.getStoragepoolId();
+        final Long storagepoolId = cmd.getStoragePoolId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         // check if config value exists
@@ -1113,6 +1132,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             id = imageStoreId;
             paramCountCheck++;
         }
+        if (managementServerId != null) {
+            scope = ConfigKey.Scope.ManagementServer;
+            id = managementServerId;
+            paramCountCheck++;
+        }
 
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
@@ -1168,6 +1192,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long accountId = cmd.getAccountId();
         final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         ConfigKey<?> configKey = null;
         Optional optionalValue;
         String defaultValue;
@@ -1201,6 +1226,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         scopeMap.put(ConfigKey.Scope.Account.toString(), accountId);
         scopeMap.put(ConfigKey.Scope.StoragePool.toString(), storagepoolId);
         scopeMap.put(ConfigKey.Scope.ImageStore.toString(), imageStoreId);
+        scopeMap.put(ConfigKey.Scope.ManagementServer.toString(), managementServerId);
 
         ParamCountPair paramCountPair = getParamCount(scopeMap);
         id = paramCountPair.getId();
@@ -1293,6 +1319,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (imageStoreDetailVO != null) {
                     _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
                 }
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case ManagementServer:
+                final ManagementServerHostVO managementServer = managementServerHostDao.findById(id);
+                if (managementServer == null) {
+                    throw new InvalidParameterValueException("unable to find management server by id " + id);
+                }
+                managementServerHostDetailsDao.removeDetail(id, name);
                 optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
@@ -1483,6 +1519,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (type.equals(Integer.class)) {
             int val = Integer.parseInt(value);
+            if (KMSManager.KMSDekSizeBits.key().equalsIgnoreCase(name)) {
+                if (val != 128 && val != 192 && val != 256) {
+                    return String.format("Please enter a valid value for configuration parameter [%s]. Supported values are 128, 192, or 256.", name);
+                }
+            }
             if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
                 // The value needs to be between 0 to 255 because the MAC generation needs a value of 8 bits
                 // 0 is considered as disabled.
@@ -3179,6 +3220,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // Create default system networks
                 createDefaultSystemNetworks(zone.getId());
 
+                // Associate cross zone templates with the Edge Zones here because they don't have SSVMs
+                // For Core zones, this happens when the SSVM starts up.
+                if (isEdge) {
+                    _templateService.associateCrossZoneTemplatesToZone(zone.getId());
+                }
+
                 return zone;
             }
         });
@@ -3403,6 +3450,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // check if cache_mode parameter is valid
         validateCacheMode(cmd.getCacheMode());
 
+        // check if error_policy parameter is valid
+        validateErrorPolicy(cmd.getErrorPolicy());
+
         final Boolean offerHA = cmd.isOfferHa();
 
         boolean localStorageRequired = false;
@@ -3505,7 +3555,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), cmd.getErrorPolicy(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
                 cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), vgpuProfileId, gpuCount, cmd.getGpuDisplay(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
     }
 
@@ -3534,7 +3584,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                       Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, String errorPolicy, final Long storagePolicyID,
                                                       final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
                                                       final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
@@ -3631,7 +3681,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                     iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength,
                     iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                    hypervisorSnapshotReserve, cacheMode, storagePolicyID, encryptRoot);
+                    hypervisorSnapshotReserve, cacheMode, errorPolicy, storagePolicyID, encryptRoot);
         } else {
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
             String diskStoragePolicyId = diskOfferingDetailsDao.getDetail(diskOfferingId, ApiConstants.STORAGE_POLICY);
@@ -3714,7 +3764,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                       Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, boolean encrypt) {
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, String errorPolicy, final Long storagePolicyID, boolean encrypt) {
 
         DiskOfferingVO diskOffering = new DiskOfferingVO(name, displayText, typedProvisioningType, false, tags, false, localStorageRequired, false);
 
@@ -3761,6 +3811,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if(cacheMode != null) {
             diskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
+
+        if (errorPolicy != null) {
+            diskOffering.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(errorPolicy.toUpperCase()));
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -3909,6 +3963,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (cmd.getCacheMode() != null) {
             validateCacheMode(cmd.getCacheMode());
         }
+        if (cmd.getErrorPolicy() != null) {
+            validateErrorPolicy(cmd.getErrorPolicy());
+        }
         final Integer finalGpuCount = validateVgpuProfileAndGetGpuCount(vgpuProfileId, gpuCount);
 
         final Map<String, String> mergedDetails = mergeOfferingDetails(cmd, sourceOffering, customParams);
@@ -3929,7 +3986,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 diskParams.bytesWriteRate, diskParams.bytesWriteRateMax, diskParams.bytesWriteRateMaxLength,
                 diskParams.iopsReadRate, diskParams.iopsReadRateMax, diskParams.iopsReadRateMaxLength,
                 diskParams.iopsWriteRate, diskParams.iopsWriteRateMax, diskParams.iopsWriteRateMaxLength,
-                diskParams.hypervisorSnapshotReserve, diskParams.cacheMode, customParams.storagePolicy, dynamicScalingEnabled,
+                diskParams.hypervisorSnapshotReserve, diskParams.cacheMode, diskParams.errorPolicy, customParams.storagePolicy, dynamicScalingEnabled,
                 diskOfferingId, diskOfferingStrictness, isCustomized, encryptRoot,
                 vgpuProfileId, finalGpuCount, gpuDisplay, purgeResources, leaseParams.leaseDuration, leaseParams.leaseExpiryAction);
     }
@@ -4017,6 +4074,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             params.cacheMode = cmd.getCacheMode();
         } else if (sourceDiskOffering != null && sourceDiskOffering.getCacheMode() != null) {
             params.cacheMode = sourceDiskOffering.getCacheMode().toString();
+        }
+
+        if (cmd.getErrorPolicy() != null) {
+            params.errorPolicy = cmd.getErrorPolicy();
+        } else if (sourceDiskOffering != null && sourceDiskOffering.getErrorPolicy() != null) {
+            params.errorPolicy = sourceDiskOffering.getErrorPolicy().toString();
         }
 
         return params;
@@ -4131,6 +4194,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long maxIops;
         Integer hypervisorSnapshotReserve;
         String cacheMode;
+        String errorPolicy;
     }
 
     private static class CustomOfferingParams {
@@ -4176,12 +4240,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final Integer hypervisorSnapshotReserve = getOrDefault(cmd.getHypervisorSnapshotReserve(), sourceOffering.getHypervisorSnapshotReserve());
         final String cacheMode = resolveCacheMode(cmd, sourceOffering);
+        final String errorPolicy = resolveErrorPolicy(cmd, sourceOffering);
         final Long storagePolicy = resolveStoragePolicyForDiskOffering(cmd, sourceOffering);
 
         final Map<String, String> mergedDetails = mergeDiskOfferingDetails(cmd, sourceOffering);
 
         if (cmd.getCacheMode() != null) {
             validateCacheMode(cmd.getCacheMode());
+        }
+        if (cmd.getErrorPolicy() != null) {
+            validateErrorPolicy(cmd.getErrorPolicy());
         }
 
         validateMaxRateEqualsOrGreater(iopsParams.iopsReadRate, iopsParams.iopsReadRateMax, IOPS_READ_RATE);
@@ -4197,7 +4265,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 rateParams.bytesWriteRate, rateParams.bytesWriteRateMax, rateParams.bytesWriteRateMaxLength,
                 iopsParams.iopsReadRate, iopsParams.iopsReadRateMax, iopsParams.iopsReadRateMaxLength,
                 iopsParams.iopsWriteRate, iopsParams.iopsWriteRateMax, iopsParams.iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode, mergedDetails, storagePolicy, diskSizeStrictness, encrypt);
+                hypervisorSnapshotReserve, cacheMode, errorPolicy, mergedDetails, storagePolicy, diskSizeStrictness, encrypt);
     }
 
     private DiskOfferingVO getAndValidateSourceDiskOffering(Long sourceOfferingId) {
@@ -4237,6 +4305,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (sourceOffering.getCacheMode() != null) {
             return sourceOffering.getCacheMode().toString();
+        }
+        return null;
+    }
+
+    private String resolveErrorPolicy(CloneDiskOfferingCmd cmd, DiskOfferingVO sourceOffering) {
+        if (cmd.getErrorPolicy() != null) {
+            return cmd.getErrorPolicy();
+        }
+        if (sourceOffering.getErrorPolicy() != null) {
+            return sourceOffering.getErrorPolicy().toString();
         }
         return null;
     }
@@ -4549,7 +4627,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID,
+                                                final Integer hypervisorSnapshotReserve, String cacheMode, String errorPolicy, final Map<String, String> details, final Long storagePolicyID,
                                                 final boolean diskSizeStrictness, final boolean encrypt) {
         long diskSize = 0;// special case for custom disk offerings
         long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
@@ -4626,6 +4704,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (cacheMode != null) {
             newDiskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
+
+        if (errorPolicy != null) {
+            newDiskOffering.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(errorPolicy.toUpperCase()));
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -4712,6 +4794,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // check if cache_mode parameter is valid
         validateCacheMode(cmd.getCacheMode());
 
+        // check if error_policy parameter is valid
+        validateErrorPolicy(cmd.getErrorPolicy());
+
         boolean localStorageRequired = false;
         final String storageType = cmd.getStorageType();
         if (storageType != null) {
@@ -4745,6 +4830,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
         final String cacheMode = cmd.getCacheMode();
+        final String errorPolicy = cmd.getErrorPolicy();
         final boolean encrypt = cmd.getEncrypt();
 
         validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
@@ -4759,7 +4845,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId, diskSizeStrictness, encrypt);
+                hypervisorSnapshotReserve, cacheMode, errorPolicy, details, storagePolicyId, diskSizeStrictness, encrypt);
     }
 
     /**
@@ -4838,6 +4924,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
         Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         String cacheMode = cmd.getCacheMode();
+        String errorPolicy = cmd.getErrorPolicy();
         DiskOffering.State state = cmd.getState();
 
         // Check if diskOffering exists
@@ -4892,7 +4979,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle, user));
         }
 
-        boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags, cacheMode, state) ||
+        boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags, cacheMode, errorPolicy, state) ||
                 shouldUpdateIopsRateParameters(iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength) ||
                 shouldUpdateBytesRateParameters(bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
 
@@ -4918,6 +5005,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (cacheMode != null) {
             validateCacheMode(cacheMode);
             diskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
+
+        if (errorPolicy != null) {
+            validateErrorPolicy(errorPolicy);
+            diskOffering.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(errorPolicy.toUpperCase()));
         }
 
         if (state != null) {
@@ -5083,7 +5175,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfTags)) ||
                         (tagsOnPool.size() == 1 && tagsOnPool.get(0).isTagARule() &&
-                        TagAsRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value()))) {
+                        GenericRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value(),
+                                VolumeApiServiceImpl.storageTagRuleExecutionTimeout.key()))) {
                         continue;
                     }
 
@@ -5126,7 +5219,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfHostTags)) ||
                         (tagsOnHost.size() == 1 && tagsOnHost.get(0).getIsTagARule() &&
-                        TagAsRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value()))) {
+                        GenericRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                                HostTagsDao.hostTagRuleExecutionTimeout.key()))) {
                         continue;
                     }
 
@@ -5144,8 +5238,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Check if it needs to update any parameter when updateDiskoffering is called
      * Verify if name or displayText are not blank, tags is not null, sortkey and displayDiskOffering is not null
      */
-    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode, DiskOffering.State state) {
-        return !StringUtils.isAllBlank(name, displayText, cacheMode) || tags != null || sortKey != null || displayDiskOffering != null || state != null;
+    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode, String errorPolicy, DiskOffering.State state) {
+        return !StringUtils.isAllBlank(name, displayText, cacheMode, errorPolicy) || tags != null || sortKey != null || displayDiskOffering != null || state != null;
     }
 
     protected boolean shouldUpdateBytesRateParameters(Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
@@ -6135,7 +6229,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long domainId = domainMap != null ? domainMap.getDomainId() : null;
 
         final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
-        if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+        if (forSystemVms != null && !isRangeForSystemVM.equals(forSystemVms)) {
             if (VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
                 throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
             }
@@ -7223,7 +7317,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (forVpc == null) {
-                if (service == Service.SecurityGroup || service == Service.Firewall) {
+                if (service == Service.SecurityGroup) {
                     forVpc = false;
                 } else if (service == Service.NetworkACL) {
                     forVpc = true;
@@ -7268,7 +7362,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     for (final String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
-                        final Network.Provider provider = Network.Provider.getProvider(prvNameStr);
+                        final Network.Provider provider = _networkModel.resolveProvider(prvNameStr);
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
@@ -7954,7 +8048,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // 1) Vaidate the detail values - have to match the lb provider
                 // name
                 final String providerStr = details.get(detail);
-                if (Network.Provider.getProvider(providerStr) == null) {
+                if (_networkModel.resolveProvider(providerStr) == null) {
                     throw new InvalidParameterValueException("Invalid value " + providerStr + " for the detail " + detail);
                 }
                 if (serviceProviderMap.get(Service.Lb) != null) {
@@ -8446,8 +8540,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Map<String, String> getSourceOfferingDetails(Long sourceOfferingId) {
         List<NetworkOfferingDetailsVO> sourceDetailsVOs = networkOfferingDetailsDao.listDetails(sourceOfferingId);
         Map<String, String> sourceDetailsMap = new HashMap<>();
+        Set<String> ignoredSourceDetails = new HashSet<>(Arrays.asList(Detail.internetProtocol.name(), Detail.domainid.name(), Detail.zoneid.name()));
         for (NetworkOfferingDetailsVO detailVO : sourceDetailsVOs) {
-            sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
+            if (!ignoredSourceDetails.contains(detailVO.getName())) {
+                sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
+            }
         }
         return sourceDetailsMap;
     }
@@ -8595,7 +8692,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             if (cmd.getDetails() == null || cmd.getDetails().isEmpty()) {
                 if (!sourceDetailsMap.isEmpty()) {
-                    setField(cmd, "details", sourceDetailsMap);
+                    setField(cmd, "sourceDetailsMap", sourceDetailsMap);
                 }
             }
 
@@ -9165,7 +9262,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (offering.getVmType() != null && offering.getVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
                 networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(dataCenterId);
             } else {
-                networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
+                networkRate = NetworkOrchestrationService.VmNetworkThrottlingRate.valueIn(dataCenterId);
             }
         }
 
@@ -9366,6 +9463,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         cacheMode.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
                     "valid cache mode parameters: none, writeback, writethrough or hypervisor_default.", cacheMode));
+        }
+    }
+
+    protected void validateErrorPolicy(String errorPolicy){
+        if (errorPolicy != null &&
+                !Enums.getIfPresent(DiskOffering.DiskErrorPolicy.class,
+                        errorPolicy.toUpperCase()).isPresent()) {
+            throw new InvalidParameterValueException(String.format("Invalid error policy (%s). Please specify one of the following " +
+                    "valid error policy parameters: report, stop, ignore or enospace.", errorPolicy));
         }
     }
 

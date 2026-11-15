@@ -119,6 +119,7 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
@@ -862,7 +863,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 success = false;
             }
         } else {
-            _lb2stickinesspoliciesDao.expunge(stickinessPolicyId);
+            _lb2stickinesspoliciesDao.remove(stickinessPolicyId);
         }
         return success;
     }
@@ -976,8 +977,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                                     List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(ulb.getId());
                                     for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                                         UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-                                        Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(ulb.getNetworkId(), vm.getId());
-                                        String dstIp = lbVmMap.getInstanceIp() == null ? nic.getIPv4Address(): lbVmMap.getInstanceIp();
+                                        String dstIp = lbVmMap.getInstanceIp() == null ? getLbDestinationIp(vm.getId(), ulb.getNetworkId()) : lbVmMap.getInstanceIp();
 
                                         for (int i = 0; i < lbto.getDestinations().length; i++) {
                                             LoadBalancerTO.DestinationTO des = lbto.getDestinations()[i];
@@ -1096,9 +1096,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             Network loadBalancerNetwork = _networkDao.findById(loadBalancer.getNetworkId());
             _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, loadBalancerNetwork);
 
-            Nic vmNicInLb = getVmNicInLoadBalancer(vm, loadBalancer, loadBalancerNetwork, vmIdNetworkMap, vmOwner);
+            Pair<Nic, Network.IpAddresses> vmNicAndIpInLb = getVmNicInLoadBalancer(vm, loadBalancer, loadBalancerNetwork, vmIdNetworkMap, vmOwner);
+            Nic vmNicInLb = vmNicAndIpInLb.first();
 
-            String priIp = vmNicInLb.getIPv4Address();
+            String priIp = vmNicAndIpInLb.second().getIp4Address();
 
             if (existingVmIdIps.containsKey(instanceId)) {
                 // now check for ip address
@@ -1122,13 +1123,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             if (vmIpsList != null) {
 
-                //check if the ips belongs to nic secondary ip
+                //check if the ips belongs to nic secondary ip - scoped by network, since the same nic can carry
+                //secondary ips across more than one of its associated networks
                 for (String ip: vmIpsList) {
                     // skip the primary ip from vm secondary ip comparisions
                     if (ip.equals(priIp)) {
                         continue;
                     }
-                    if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,vmNicInLb.getId()) == null) {
+                    if(_nicSecondaryIpDao.findByIp4AddressAndNetworkIdAndInstanceId(loadBalancer.getNetworkId(), instanceId, ip) == null) {
                         throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
                                 "NIC in Network " + vmNicInLb.getNetworkId());
                     }
@@ -1220,11 +1222,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return success;
     }
 
-    protected Nic getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
+    protected Pair<Nic, Network.IpAddresses> getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
         boolean isVpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(loadBalancerNetwork);
 
         boolean isNetworkPassedVpcConserveMode = isVpcConserveModeEnabled && MapUtils.isNotEmpty(vmIdNetworkMap) && vmIdNetworkMap.containsKey(vm.getId());
-        Nic vmNicInLb = isNetworkPassedVpcConserveMode ?
+        Pair<Nic, Network.IpAddresses> vmNicInLb = isNetworkPassedVpcConserveMode ?
                 getNicForVmInVpcConserveModeTierNetwork(vm, vmIdNetworkMap, vmOwner, loadBalancerNetwork) :
                 getNicForVmLbNetwork(vm, loadBalancer);
 
@@ -1240,29 +1242,40 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     /**
-     * For Isolated Networks or Network tiers of VPCs not using Conserve mode, use the same network as the load balancer
-     * @return the nic of the VM in the load balancer network
+     * For Isolated Networks or Network tiers of VPCs not using Conserve mode, use the same network as the load balancer -
+     * either as the vm's primary nic, or (for a trunk nic) one of its associated networks.
+     * @return the nic and guest ip of the VM in the load balancer network
      */
-    protected Nic getNicForVmLbNetwork(UserVm vm, LoadBalancerVO loadBalancer) {
-        List<? extends Nic> nics = _networkModel.getNics(vm.getId());
-        for (Nic nic : nics) {
-            if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
-                return nic;
-            }
-        }
-        return null;
+    protected Pair<Nic, Network.IpAddresses> getNicForVmLbNetwork(UserVm vm, LoadBalancerVO loadBalancer) {
+        return _networkModel.getNicAndIpInNetwork(vm.getId(), loadBalancer.getNetworkId());
     }
 
     /**
      * On VPC Conserve Mode, VMs from multiple VPC networks tiers can be assigned to the same load balancer.
-     * @return the nic of the VM in the specified tier network in `vmIdNetworkMap`
+     * @return the nic and guest ip of the VM in the specified tier network in `vmIdNetworkMap`
      */
-    protected Nic getNicForVmInVpcConserveModeTierNetwork(UserVm vm, Map<Long, Long> vmIdNetworkMap, Account vmOwner, Network loadBalancerNetwork) {
+    protected Pair<Nic, Network.IpAddresses> getNicForVmInVpcConserveModeTierNetwork(UserVm vm, Map<Long, Long> vmIdNetworkMap, Account vmOwner, Network loadBalancerNetwork) {
         Long vmNetworkId = vmIdNetworkMap.get(vm.getId());
         Network vmNetwork = _networkDao.findById(vmNetworkId);
         _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, vmNetwork);
         checkNetworkBelongsToLoadBalancerVpc(vmNetwork, loadBalancerNetwork);
-        return _networkModel.getNicInNetwork(vm.getId(), vmNetworkId);
+        return _networkModel.getNicAndIpInNetwork(vm.getId(), vmNetworkId);
+    }
+
+    /**
+     * Resolves the guest ip a VM answers on for a LB rule's network - the nic's own primary network match when one
+     * exists, or a trunk nic's association (from nic_network_map) otherwise. Falls back further to a since-removed
+     * nic's last-known address (matching this method's replaced call sites' original use of
+     * NicDao.findByInstanceIdAndNetworkIdIncludingRemoved) so a VM whose nic was unplugged after being added to
+     * this LB rule still resolves to its last-known ip, same as before. Returns null only if none of these match.
+     */
+    private String getLbDestinationIp(long vmId, long networkId) {
+        Pair<Nic, Network.IpAddresses> nicAndIp = _networkModel.getNicAndIpInNetwork(vmId, networkId);
+        if (nicAndIp != null) {
+            return nicAndIp.second().getIp4Address();
+        }
+        Nic removedNic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
+        return removedNic != null ? removedNic.getIPv4Address() : null;
     }
 
     protected void checkNetworkBelongsToLoadBalancerVpc(Network vmNetwork, Network loadBalancerNetwork) {
@@ -1664,6 +1677,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lb2healthcheckDao.persist(lbHealthCheck);
                 }
 
+                List<LBStickinessPolicyVO> stickinessPolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(loadBalancerId);
+                for (LBStickinessPolicyVO stickinessPolicy : stickinessPolicies) {
+                    stickinessPolicy.setRevoke(true);
+                    _lb2stickinesspoliciesDao.persist(stickinessPolicy);
+                }
+
                 if (generateUsageEvent) {
                     // Generate usage event right after all rules were marked for revoke
                     Network network = _networkModel.getNetwork(lb.getNetworkId());
@@ -1760,7 +1779,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress systemIp = null;
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        if (srcPortStart == DNS_PORT && ipVO.isSourceNat()) {
+        if (srcPortStart == DNS_PORT && ipVO != null && ipVO.isSourceNat()) {
             List<NetworkOfferingServiceMapVO> offeringServices = _networkOfferingServiceDao.listByNetworkOfferingId(network.getNetworkOfferingId());
             for (NetworkOfferingServiceMapVO serviceMapVo: offeringServices) {
                 if (serviceMapVo.getService().equals(Service.Dns.getName())) {
@@ -2049,6 +2068,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (handled)
                 break;
         }
+        if (!handled) {
+            // Get provider name and get the element by provider name (it could be an external provider)
+            String lbProviderName = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+            if (lbProviderName != null) {
+                NetworkElement element = _networkModel.getElementImplementingProvider(lbProviderName);
+                if (element instanceof LoadBalancingServiceProvider) {
+                    handled = ((LoadBalancingServiceProvider) element).applyLBRules(network, rules);
+                }
+            }
+        }
         return handled;
     }
 
@@ -2260,8 +2289,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String dstIp = null;
         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
             UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-            Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-            dstIp = lbVmMap.getInstanceIp() == null ? nic.getIPv4Address(): lbVmMap.getInstanceIp();
+            dstIp = lbVmMap.getInstanceIp() == null ? getLbDestinationIp(vm.getId(), lb.getNetworkId()) : lbVmMap.getInstanceIp();
             LbDestination lbDst = new LbDestination(lb.getDefaultPortStart(), lb.getDefaultPortEnd(), dstIp, lbVmMap.isRevoke());
             dstList.add(lbDst);
         }
@@ -2678,7 +2706,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     public void removeLBRule(LoadBalancer rule) {
-        // remove the rule
+        FirewallRule relatedFirewallRule = _firewallDao.findByRelatedId(rule.getId());
+        if (relatedFirewallRule != null) {
+            logger.debug("Load balancer [{}] has a related firewall rule [{}]. Removing it.", rule.getUuid(), relatedFirewallRule.getUuid());
+            _firewallDao.remove(relatedFirewallRule.getId());
+        }
+
         _lbDao.remove(rule.getId());
     }
 
@@ -2732,9 +2765,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
             UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-            Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-            Ip ip = new Ip(nic.getIPv4Address());
-            dstList.put(ip, vm);
+            String ip4Address = getLbDestinationIp(vm.getId(), lb.getNetworkId());
+            if (ip4Address != null) {
+                dstList.put(new Ip(ip4Address), vm);
+            }
         }
         return dstList;
     }

@@ -52,6 +52,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcNetworkHelperImpl;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -146,6 +147,49 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         return true;
+    }
+
+    @Override
+    protected boolean canHandle(final Vpc vpc, final Service service) {
+        if (vpc == null) {
+            return false;
+        }
+
+        if (!_networkMdl.isProviderEnabledInZone(vpc.getZoneId(), Network.Provider.VPCVirtualRouter.getName())) {
+            return false;
+        }
+
+        if (service != null && !_vpcMgr.isProviderSupportServiceInVpc(vpc.getId(), service, getProvider())) {
+            logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the vpc " + vpc);
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean applyFWRulesInVPC(final Vpc vpc, final List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        boolean result = true;
+        if (canHandle(vpc, Service.Firewall)) {
+            final List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+            if (CollectionUtils.isEmpty(routers)) {
+                logger.debug("Virtual router element doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the vpc");
+                return true;
+            }
+
+            Network network = null;
+            if (CollectionUtils.isNotEmpty(rules) && rules.get(0).getNetworkId() != null) {
+                network = _networkModel.getNetwork(rules.get(0).getNetworkId());
+            }
+
+            final DataCenterVO dcVO = _dcDao.findById(vpc.getZoneId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = result && networkTopology.applyFirewallRulesInVPC(vpc, rules, domainRouterVO);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -412,10 +456,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         vpnCapabilities.putAll(capabilities.get(Service.Vpn));
         vpnCapabilities.put(Capability.VpnTypes, "s2svpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
-
-        // remove firewall capability
-        capabilities.remove(Service.Firewall);
-
         // add network ACL capability
         final Map<Capability, String> networkACLCapabilities = new HashMap<Capability, String>();
         networkACLCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
@@ -499,7 +539,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     public boolean applyIps(final Network network, final List<? extends PublicIpAddress> ipAddress, final Set<Service> services) throws ResourceUnavailableException {
         boolean canHandle = true;
         for (final Service service : services) {
-            if (!canHandle(network, service)) {
+            if (!canHandleIpService(network, service)) {
+                logger.debug("{} element can't handle service {} in the network {}; skipping IP association", getName(), service.getName(), network);
                 canHandle = false;
                 break;
             }
@@ -521,6 +562,22 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             }
         }
         return result;
+    }
+
+    /**
+     * The Firewall service for public IPs is a VPC service: the VPC offering provides it, while the
+     * tier's network offering does not list it. Once a public IP of the tier has a firewall rule,
+     * Firewall is part of the services passed to {@link #applyIps}, so it is checked on the VPC
+     * here. Otherwise no public IP of that tier could be associated with the VPC virtual router.
+     */
+    protected boolean canHandleIpService(final Network network, final Service service) {
+        if (canHandle(network, service)) {
+            return true;
+        }
+        if (Service.Firewall.equals(service) && network.getVpcId() != null) {
+            return canHandle(_vpcDao.findById(network.getVpcId()), service);
+        }
+        return false;
     }
 
     @Override
