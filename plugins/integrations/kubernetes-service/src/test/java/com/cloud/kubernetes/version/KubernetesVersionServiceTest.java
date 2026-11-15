@@ -67,8 +67,10 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
@@ -103,6 +105,8 @@ public class KubernetesVersionServiceTest {
     private ImageStoreDao imageStoreDao;
     @Mock
     private TemplateApiService templateService;
+    @Mock
+    private VMTemplateDetailsDao templateDetailsDao;
     @Mock
     private Account accountMock;
 
@@ -174,6 +178,49 @@ public class KubernetesVersionServiceTest {
             Assert.assertTrue(CollectionUtils.isNotEmpty(versionsResponse.getResponses()));
             Assert.assertEquals(versionVOs.size(), versionsResponse.getResponses().size());
         }
+    }
+
+    private Boolean listSupportsEtcd(String storedDetailValue) {
+        final long isoId = 200L;
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+            KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+            when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
+            when(versionVO.getIsoId()).thenReturn(isoId);
+            List<KubernetesSupportedVersionVO> versionVOs = List.of(versionVO);
+            when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+            when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class)))
+                    .thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+            VMTemplateDetailVO detail = null;
+            if (storedDetailValue != null) {
+                detail = Mockito.mock(VMTemplateDetailVO.class);
+                when(detail.getValue()).thenReturn(storedDetailValue);
+            }
+            when(templateDetailsDao.findDetail(isoId, KubernetesVersionService.ETCD_INCLUDED_ISO_DETAIL)).thenReturn(detail);
+
+            ListResponse<KubernetesSupportedVersionResponse> response = kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+
+            Mockito.verify(templateDetailsDao).findDetail(isoId, KubernetesVersionService.ETCD_INCLUDED_ISO_DETAIL);
+            return response.getResponses().get(0).getSupportsEtcd();
+        }
+    }
+
+    @Test
+    public void listKubernetesSupportedVersionsSupportsEtcdNotCheckedYet() {
+        Assert.assertNull(listSupportsEtcd(null));
+    }
+
+    @Test
+    public void listKubernetesSupportedVersionsSupportsEtcdTrue() {
+        Assert.assertEquals(Boolean.TRUE, listSupportsEtcd("true"));
+    }
+
+    @Test
+    public void listKubernetesSupportedVersionsSupportsEtcdFalse() {
+        Assert.assertEquals(Boolean.FALSE, listSupportsEtcd("false"));
     }
 
     @Test
