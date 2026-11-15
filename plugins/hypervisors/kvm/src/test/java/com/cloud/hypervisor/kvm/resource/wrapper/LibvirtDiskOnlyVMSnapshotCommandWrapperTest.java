@@ -59,6 +59,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 
 public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
 
@@ -68,21 +69,17 @@ public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
         KVMStoragePool storagePool = mock(KVMStoragePool.class);
-        CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
         VMSnapshotTO vmSnapshotTO = mock(VMSnapshotTO.class);
         PrimaryDataStoreTO dataStoreTO = mock(PrimaryDataStoreTO.class);
         VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
+        CreateDiskOnlyVmSnapshotCommand command = new CreateDiskOnlyVmSnapshotCommand("vm-name", "vm-uuid", vmSnapshotTO,
+                List.of(new Pair<>(rootVolume, "snapshot-volume-path")), null, VirtualMachine.State.Running, true);
 
         Path activeNvram = Files.createTempFile("active-", ".fd");
         Files.writeString(activeNvram, "snapshot-nvram");
         Path poolDirectory = Files.createTempDirectory("pool-");
 
-        when(command.isUefiEnabled()).thenReturn(true);
-        when(command.getVmUuid()).thenReturn("vm-uuid");
-        when(command.getVmName()).thenReturn("vm-name");
-        when(command.getTarget()).thenReturn(vmSnapshotTO);
         when(vmSnapshotTO.getId()).thenReturn(42L);
-        when(command.getVolumeTOs()).thenReturn(List.of(rootVolume));
         when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
         when(rootVolume.getDataStore()).thenReturn(dataStoreTO);
         when(dataStoreTO.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);

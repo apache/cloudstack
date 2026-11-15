@@ -52,6 +52,7 @@ import static com.cloud.network.Network.Service.SourceNat;
 import static com.cloud.network.Network.Service.StaticNat;
 import static com.cloud.network.Network.Service.UserData;
 
+import static com.cloud.network.Network.Service.Vpn;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
@@ -290,6 +291,10 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
             } else {
                 services.add(Firewall.getName());
             }
+
+            if (isNetrisNatted(getProvider(), getNetworkMode())) {
+                services.add(Vpn.getName());
+            }
             return services;
         }
     }
@@ -394,6 +399,9 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
             if (isNsxWithoutLb(getProvider(), getNsxSupportsLbService()) || isNetrisRouted(getProvider(), getNetworkMode())) {
                 serviceProviderMap.remove(Lb.getName());
             }
+        }
+        if (isNetrisNatted(getProvider(), getNetworkMode())) {
+            serviceProviderMap.put(Vpn.getName(), List.of(routerProvider));
         }
     }
 

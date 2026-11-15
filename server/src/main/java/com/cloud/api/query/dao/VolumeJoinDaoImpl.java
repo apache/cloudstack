@@ -91,6 +91,13 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         _count = "select count(distinct id) from volume_view WHERE ";
     }
 
+    protected void setThrottleRates(VolumeResponse volResponse, VolumeJoinVO volume) {
+        volResponse.setBytesReadRate(volume.getBytesReadRate());
+        volResponse.setBytesWriteRate(volume.getBytesWriteRate());
+        volResponse.setIopsReadRate(volume.getIopsReadRate());
+        volResponse.setIopsWriteRate(volume.getIopsWriteRate());
+    }
+
     @Override
     public VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO volume) {
         VolumeResponse volResponse = new VolumeResponse();
@@ -220,14 +227,17 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                 volResponse.setDiskOfferingName(volume.getDiskOfferingName());
                 volResponse.setDiskOfferingDisplayText(volume.getDiskOfferingDisplayText());
             }
+            DiskOffering diskOffering = computeOnlyDiskOffering != null
+                    ? computeOnlyDiskOffering
+                    : ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+            if (diskOffering != null) {
+                volResponse.setCustomizedIops(diskOffering.isCustomizedIops());
+            }
 
             if (view == ResponseView.Full) {
                 volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
             }
-            volResponse.setBytesReadRate(volume.getBytesReadRate());
-            volResponse.setBytesWriteRate(volume.getBytesReadRate());
-            volResponse.setIopsReadRate(volume.getIopsWriteRate());
-            volResponse.setIopsWriteRate(volume.getIopsWriteRate());
+            setThrottleRates(volResponse, volume);
 
         }
 

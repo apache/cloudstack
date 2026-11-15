@@ -27,6 +27,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.offering.DiskOffering.DiskErrorPolicy;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
@@ -68,6 +69,7 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Seri
     private Long iopsWriteRateMax;
     private Long iopsWriteRateMaxLength;
     private DiskCacheMode cacheMode;
+    private DiskErrorPolicy errorPolicy;
     private Hypervisor.HypervisorType hypervisorType;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
@@ -119,6 +121,7 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Seri
         iopsWriteRateMaxLength = volume.getIopsWriteRateMaxLength();
         hypervisorType = volume.getHypervisorType();
         setCacheMode(volume.getCacheMode());
+        setErrorPolicy(volume.getErrorPolicy());
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
@@ -353,6 +356,14 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Seri
 
     public DiskCacheMode getCacheMode() {
         return cacheMode;
+    }
+
+    public void setErrorPolicy(DiskErrorPolicy errorPolicy) {
+        this.errorPolicy = errorPolicy;
+    }
+
+    public DiskErrorPolicy getErrorPolicy() {
+        return errorPolicy;
     }
 
     public MigrationOptions getMigrationOptions() {

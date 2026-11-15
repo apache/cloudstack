@@ -65,6 +65,7 @@ class TestKMSLifecycle(cloudstackTestCase):
         cls.apiclient = cls.test_client.getApiClient()
         cls.zone = get_zone(cls.apiclient, cls.test_client.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
+        cls.hypervisor = cls.test_client.getHypervisorInfo()
 
         cls._cleanup = []
 
@@ -424,6 +425,10 @@ class TestKMSLifecycle(cloudstackTestCase):
         Test: deploy a VM with its root disk encrypted using a KMS key.
         Verify that the VM starts and the root volume has the KMS key ID.
         """
+
+        if self.hypervisor.lower() != 'kvm':
+            raise self.skipTest("Skipping test case for non-kvm hypervisor")
+
         # 1. Create a KMS key for the user
         key = self._create_kms_key(name=_random_name("vm-root-key"), profile_id=self.default_profile.id, apiclient=self.user_apiclient)
 
