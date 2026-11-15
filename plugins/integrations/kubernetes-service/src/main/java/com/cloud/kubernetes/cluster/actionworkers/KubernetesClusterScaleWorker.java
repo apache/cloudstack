@@ -619,6 +619,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             if (isWorkerNode && autoscalingChanged) {
                 boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
                 if (autoScaled && isNodeOfferingScalingNeeded) {
+                    // autoscaleCluster saved the new autoscaling settings; reload them so the
+                    // offering update below does not write the old values back
+                    KubernetesClusterVO updatedCluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+                    if (updatedCluster != null) {
+                        kubernetesCluster = updatedCluster;
+                    }
                     scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                 }
                 stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);

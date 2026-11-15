@@ -20,6 +20,7 @@ import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.network.Network;
@@ -191,6 +192,69 @@ public class KubernetesClusterScaleWorkerTest {
 
         Mockito.verify(scaleWorker).autoscaleCluster(requestedEnabled, 2L, 5L);
         Mockito.verifyNoInteractions(userVmManager);
+    }
+
+    @Test
+    public void testAutoscalingEnableWithWorkerOfferingChangeKeepsAutoscalingSettings() throws Exception {
+        Mockito.when(kubernetesCluster.getId()).thenReturn(7L);
+        Mockito.when(kubernetesCluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(false);
+        // Same sizes as the reloaded cluster, so only the autoscaling settings differ
+        Mockito.when(kubernetesCluster.getNodeCount()).thenReturn(2L);
+        Mockito.lenient().when(kubernetesCluster.getTotalNodeCount()).thenReturn(3L);
+        Mockito.lenient().when(kubernetesCluster.getCores()).thenReturn(6L);
+        Mockito.lenient().when(kubernetesCluster.getMemory()).thenReturn(6144L);
+        ServiceOfferingVO existingOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(existingOffering.getCpu()).thenReturn(2);
+        Mockito.when(existingOffering.getRamSize()).thenReturn(2048);
+        Mockito.when(serviceOfferingDao.findById(12L)).thenReturn(existingOffering);
+        ServiceOfferingVO newOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(newOffering.getId()).thenReturn(13L);
+        Mockito.when(newOffering.getCpu()).thenReturn(4);
+        Mockito.when(newOffering.getRamSize()).thenReturn(4096);
+
+        // The cluster as saved by autoscaleCluster
+        KubernetesClusterVO clusterAfterAutoscale = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(clusterAfterAutoscale.getId()).thenReturn(7L);
+        Mockito.when(clusterAfterAutoscale.getState()).thenReturn(KubernetesCluster.State.Scaling);
+        Mockito.when(clusterAfterAutoscale.getAutoscalingEnabled()).thenReturn(true);
+        Mockito.when(clusterAfterAutoscale.getMinSize()).thenReturn(2L);
+        Mockito.when(clusterAfterAutoscale.getMaxSize()).thenReturn(5L);
+        Mockito.when(clusterAfterAutoscale.getNodeCount()).thenReturn(2L);
+        Mockito.when(clusterAfterAutoscale.getTotalNodeCount()).thenReturn(3L);
+        Mockito.when(clusterAfterAutoscale.getCores()).thenReturn(6L);
+        Mockito.when(clusterAfterAutoscale.getMemory()).thenReturn(6144L);
+        KubernetesClusterDao kubernetesClusterDao = Mockito.mock(KubernetesClusterDao.class);
+        Mockito.when(kubernetesClusterDao.findById(7L)).thenReturn(clusterAfterAutoscale);
+
+        KubernetesClusterVmMapVO control = Mockito.mock(KubernetesClusterVmMapVO.class);
+        KubernetesClusterVmMapVO firstWorker = Mockito.mock(KubernetesClusterVmMapVO.class);
+        KubernetesClusterVmMapVO secondWorker = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(7L)).thenReturn(Arrays.asList(control, firstWorker, secondWorker));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmType(7L, WORKER)).thenReturn(Arrays.asList(firstWorker, secondWorker));
+        UserVmVO workerVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVmDao.findById(Mockito.anyLong())).thenReturn(workerVm);
+        Mockito.when(userVmManager.upgradeVirtualMachine(Mockito.anyLong(), Mockito.eq(13L), Mockito.anyMap())).thenReturn(true);
+
+        KubernetesClusterScaleWorker scaleWorker = Mockito.spy(new KubernetesClusterScaleWorker(kubernetesCluster,
+                Collections.singletonMap(WORKER.name(), newOffering), null, null, true, 2L, 5L, clusterManager));
+        scaleWorker.serviceOfferingDao = serviceOfferingDao;
+        scaleWorker.kubernetesClusterVmMapDao = kubernetesClusterVmMapDao;
+        scaleWorker.kubernetesClusterDao = kubernetesClusterDao;
+        scaleWorker.userVmDao = userVmDao;
+        scaleWorker.userVmManager = userVmManager;
+        Mockito.doNothing().when(scaleWorker).init();
+        Mockito.doReturn(12L).when(scaleWorker).getExistingOfferingIdForNodeType(Mockito.eq(WORKER), Mockito.any());
+        Mockito.doReturn(true).when(scaleWorker).autoscaleCluster(true, 2L, 5L);
+        Mockito.doReturn(true).when(scaleWorker).stateTransitTo(Mockito.anyLong(), Mockito.any());
+        KubernetesClusterVO updatedCluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.doReturn(updatedCluster).when(scaleWorker).updateKubernetesClusterEntry(Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+
+        Assert.assertTrue(scaleWorker.scaleCluster());
+
+        Mockito.verify(userVmManager, Mockito.times(2)).upgradeVirtualMachine(Mockito.anyLong(), Mockito.eq(13L), Mockito.anyMap());
+        Mockito.verify(scaleWorker).updateKubernetesClusterEntry(10L, 10240L, null, 13L, true, 2L, 5L, WORKER, true, false);
     }
 
     @Test
