@@ -1694,4 +1694,37 @@ public class SystemVmTemplateRegistrationTest {
         when(vmTemplateDao.persist(any(VMTemplateVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         return systemVmTemplateRegistration.createTemplateObjectInDB(details);
     }
+
+    @Test
+    public void updateRegisteredTemplateDetails_PreRegisteredKvmTemplateBecomesDynamicallyScalable() {
+        VMTemplateVO template = updateRegisteredTemplate(Storage.TemplateType.USER, Hypervisor.HypervisorType.KVM);
+        assertEquals(Storage.TemplateType.SYSTEM, template.getTemplateType());
+        assertTrue(template.isDynamicallyScalable());
+    }
+
+    @Test
+    public void updateRegisteredTemplateDetails_KvmSystemTemplateKeepsItsFlag() {
+        assertFalse(updateRegisteredTemplate(Storage.TemplateType.SYSTEM, Hypervisor.HypervisorType.KVM).isDynamicallyScalable());
+    }
+
+    @Test
+    public void updateRegisteredTemplateDetails_PreRegisteredOtherHypervisorTemplateIsNotDynamicallyScalable() {
+        assertFalse(updateRegisteredTemplate(Storage.TemplateType.USER, Hypervisor.HypervisorType.VMware).isDynamicallyScalable());
+    }
+
+    private VMTemplateVO updateRegisteredTemplate(Storage.TemplateType currentType, Hypervisor.HypervisorType hypervisorType) {
+        long templateId = 1L;
+        VMTemplateVO template = new VMTemplateVO();
+        template.setTemplateType(currentType);
+        template.setDynamicallyScalable(false);
+        SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails =
+                Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        when(templateDetails.getHypervisorType()).thenReturn(hypervisorType);
+        when(vmTemplateDao.findById(templateId)).thenReturn(template);
+        when(vmTemplateDao.update(template.getId(), template)).thenReturn(true);
+        doNothing().when(systemVmTemplateRegistration).updateSystemVMEntries(templateId, hypervisorType);
+        doNothing().when(systemVmTemplateRegistration).updateConfigurationParams(any(), any(), any());
+        systemVmTemplateRegistration.updateRegisteredTemplateDetails(templateId, templateDetails, null);
+        return template;
+    }
 }

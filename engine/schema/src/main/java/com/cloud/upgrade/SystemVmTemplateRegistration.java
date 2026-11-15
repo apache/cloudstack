@@ -1058,6 +1058,13 @@ public class SystemVmTemplateRegistration {
     protected void updateRegisteredTemplateDetails(Long templateId, MetadataTemplateDetails templateDetails,
                Long zoneId) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
+        // A KVM template registered by hand before the upgrade becomes a SystemVM template only here, after the
+        // upgrade SQL has marked the existing KVM SystemVM templates as dynamically scalable. Templates that are
+        // already SystemVM templates keep their flag, so an operator who turned it off keeps it off.
+        if (!Storage.TemplateType.SYSTEM.equals(templateVO.getTemplateType())
+                && Hypervisor.HypervisorType.KVM.equals(templateDetails.getHypervisorType())) {
+            templateVO.setDynamicallyScalable(true);
+        }
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
         GuestOSVO guestOS = guestOSDao.findOneByDisplayName(templateDetails.getGuestOs());
         if (guestOS != null) {
