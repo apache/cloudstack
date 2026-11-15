@@ -443,4 +443,8 @@ public interface StorageManager extends StorageService {
     String[] getStorageAccessGroups(Long zoneId, Long podId, Long clusterId, Long hostId);
 
     CapacityVO getObjectStorageUsedStats(Long zoneId);
+
+    static ConfigKey<Boolean> getMountDisabledStoragePool() {
+        return MountDisabledStoragePool;
+    }
 }

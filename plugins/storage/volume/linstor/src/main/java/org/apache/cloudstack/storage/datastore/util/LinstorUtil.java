@@ -41,9 +41,11 @@ import com.linbit.linstor.api.model.VolumeDefinitionModify;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -148,8 +150,26 @@ public class LinstorUtil {
         return nodes.stream().map(Node::getName).collect(Collectors.toList());
     }
 
+    /**
+     * How suitable a diskful resource is for reading its data (snapshots, volume copies):
+     * the node it is in use on is best, then nodes with an active resource, then inactive ones.
+     * Thick LVM snapshots on shared storage pools (dm-snapshot) are not cluster aware, so they
+     * must be read on the node the origin volume is active on - callers must honor this order.
+     */
+    private static int diskfulPreference(ResourceWithVolumes rwv) {
+        if (rwv.getState() != null && Boolean.TRUE.equals(rwv.getState().isInUse())) {
+            return 2;
+        }
+        return rwv.getFlags() == null || !rwv.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE) ? 1 : 0;
+    }
+
+    /**
+     * All storage pools holding a diskful copy of the resource, best suited first
+     * (see {@link #diskfulPreference}). Callers that need a single pool should take the first
+     * one, callers picking a host should walk the list in order and use the first usable one.
+     */
     public static List<com.linbit.linstor.api.model.StoragePool>
-    getDiskfulStoragePools(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    getDiskfulStoragePoolsByPreference(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
         List<ResourceWithVolumes> resources = api.viewResources(
                 Collections.emptyList(),
@@ -159,43 +179,50 @@ public class LinstorUtil {
                 null,
                 null);
 
-        String nodeName = null;
-        String storagePoolName = null;
-        for (ResourceWithVolumes rwv : resources) {
-            if (rwv.getVolumes().isEmpty()) {
-                continue;
-            }
-            Volume vol = rwv.getVolumes().get(0);
-            if (vol.getProviderKind() != ProviderKind.DISKLESS) {
-                nodeName = rwv.getNodeName();
-                storagePoolName = vol.getStoragePoolName();
-                break;
-            }
-        }
+        // node name -> storage pool name, ordered by how suited the copy is
+        List<Pair<String, String>> candidates = resources.stream()
+                .filter(rwv -> !rwv.getVolumes().isEmpty()
+                        && rwv.getVolumes().get(0).getProviderKind() != ProviderKind.DISKLESS)
+                .sorted(Comparator.comparingInt(LinstorUtil::diskfulPreference).reversed())
+                .map(rwv -> new Pair<>(rwv.getNodeName(), rwv.getVolumes().get(0).getStoragePoolName()))
+                .collect(Collectors.toList());
 
-        if (nodeName == null) {
-            return null;
+        if (candidates.isEmpty()) {
+            return Collections.emptyList();
         }
 
         List<com.linbit.linstor.api.model.StoragePool> sps = api.viewStoragePools(
-                Collections.singletonList(nodeName),
-                Collections.singletonList(storagePoolName),
+                candidates.stream().map(Pair::first).distinct().collect(Collectors.toList()),
+                candidates.stream().map(Pair::second).distinct().collect(Collectors.toList()),
                 Collections.emptyList(),
                 null,
                 null,
                 true
         );
-        return sps != null ? sps : Collections.emptyList();
+        if (sps == null) {
+            return Collections.emptyList();
+        }
+
+        // viewStoragePools does not keep our ordering, so re-apply it
+        List<com.linbit.linstor.api.model.StoragePool> ordered = new ArrayList<>();
+        for (Pair<String, String> candidate : candidates) {
+            sps.stream()
+                    .filter(sp -> candidate.first().equals(sp.getNodeName())
+                            && candidate.second().equals(sp.getStoragePoolName()))
+                    .findFirst()
+                    .ifPresent(ordered::add);
+        }
+        return ordered;
     }
 
+    /**
+     * The storage pool of the best suited diskful copy, null if the resource has none.
+     */
     public static com.linbit.linstor.api.model.StoragePool
     getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
-        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePools(api, rscName);
-        if (sps != null) {
-            return !sps.isEmpty() ? sps.get(0) : null;
-        }
-        return null;
+        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePoolsByPreference(api, rscName);
+        return !sps.isEmpty() ? sps.get(0) : null;
     }
 
     public static String getSnapshotPath(com.linbit.linstor.api.model.StoragePool sp, String rscName, String snapshotName) {
@@ -204,8 +231,10 @@ public class LinstorUtil {
         final String path;
         switch (sp.getProviderKind()) {
             case LVM_THIN:
+                // device-mapper doubles every dash in the VG and LV name, so the VG part needs escaping too
+                final String vgName = backingPool.split("/")[0];
                 path = String.format("/dev/mapper/%s-%s_%s_%s",
-                    backingPool.split("/")[0], rscName.replace("-", "--"), suffix, snapshotName.replace("-", "--"));
+                    vgName.replace("-", "--"), rscName.replace("-", "--"), suffix, snapshotName.replace("-", "--"));
                 break;
             case ZFS:
             case ZFS_THIN:
@@ -300,6 +329,40 @@ public class LinstorUtil {
         }
         LOGGER.error("isResourceInUse: null returned from resourceList");
         return null;
+    }
+
+    /**
+     * Cluster-wide in-use check by pool (builds the API from the pool, mirroring
+     * {@link #resourceSupportZeroBlocks}). Unlike a host-local qemu-img file lock, this
+     * reflects the DRBD InUse state across every node, so a volume attached to a running
+     * VM on another host is detected.
+     *
+     * Fails closed: if the controller cannot be reached, or returns nothing, the state is
+     * unknown rather than "free", and {@link KVMStoragePool#IN_USE_NODE_UNKNOWN} is returned.
+     *
+     * @return the node the resource is in use on, {@code null} if it is provably not in use,
+     *         or {@link KVMStoragePool#IN_USE_NODE_UNKNOWN} if that could not be determined.
+     */
+    public static String isResourceInUse(KVMStoragePool pool, String resName) {
+        final boolean insecureSsl = pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl();
+        final DevelopersApi api = getLinstorAPI(pool.getSourceHost(), null, insecureSsl);
+        try {
+            List<Resource> rscs = api.resourceList(resName, null, null);
+            if (rscs == null) {
+                LOGGER.error("isResourceInUse: null returned from resourceList for {}; treating in-use state as unknown",
+                        resName);
+                return KVMStoragePool.IN_USE_NODE_UNKNOWN;
+            }
+            return rscs.stream()
+                    .filter(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()))
+                    .map(Resource::getNodeName)
+                    .findFirst()
+                    .orElse(null);
+        } catch (ApiException apiExc) {
+            LOGGER.error("isResourceInUse: {}; treating in-use state of {} as unknown",
+                    apiExc.getBestMessage(), resName);
+            return KVMStoragePool.IN_USE_NODE_UNKNOWN;
+        }
     }
 
     /**
@@ -588,10 +651,17 @@ public class LinstorUtil {
     }
 
     /**
-     * Checks if all diskful resource are on a zeroed block device.
+     * Checks if all diskful resources are on a zeroed block device.
+     *
+     * Fails closed: this result enables skipping zero writes (nbdcopy --destination-is-zero /
+     * qemu-img --target-is-zero), so anything we cannot positively prove must return false.
+     * An unknown, empty or malformed answer is not proof, and a purely diskless view says
+     * nothing about the backing storage of its diskful peers.
+     *
      * @param pool Linstor pool to use
      * @param resName Linstor resource name
-     * @return true if all resources are on a provider with zeroed blocks.
+     * @return true only if at least one diskful volume was seen and every diskful volume is on a
+     *         provider that hands out zeroed blocks.
      */
     public static boolean resourceSupportZeroBlocks(KVMStoragePool pool, String resName) {
         final boolean insecureSsl = pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl();
@@ -605,16 +675,38 @@ public class LinstorUtil {
                     null,
                     null);
 
-            if (resWithVols != null) {
-                return resWithVols.stream()
-                        .allMatch(res -> {
-                            Volume vol0 = res.getVolumes().get(0);
-                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
-                        } );
+            if (resWithVols == null || resWithVols.isEmpty()) {
+                LOGGER.warn("resourceSupportZeroBlocks: no resource view returned for {}; assuming blocks are not zeroed",
+                        resName);
+                return false;
             }
+
+            boolean sawDiskful = false;
+            for (ResourceWithVolumes res : resWithVols) {
+                List<Volume> volumes = res.getVolumes();
+                if (volumes == null || volumes.isEmpty()) {
+                    LOGGER.warn("resourceSupportZeroBlocks: resource {} reported no volumes; assuming blocks are not zeroed",
+                            resName);
+                    return false;
+                }
+                Volume vol0 = volumes.get(0);
+                ProviderKind kind = vol0 == null ? null : vol0.getProviderKind();
+                if (kind == null) {
+                    LOGGER.warn("resourceSupportZeroBlocks: resource {} reported no provider kind; assuming blocks are not zeroed",
+                            resName);
+                    return false;
+                }
+                if (kind == ProviderKind.DISKLESS) {
+                    // A diskless replica stores nothing locally, so it neither proves nor
+                    // disproves anything about the data; the diskful peers decide.
+                    continue;
+                }
+                if (kind != ProviderKind.LVM_THIN && kind != ProviderKind.ZFS && kind != ProviderKind.ZFS_THIN) {
+                    return false;
+                }
+                sawDiskful = true;
+            }
+            return sawDiskful;
         } catch (ApiException apiExc) {
             LOGGER.error(apiExc.getMessage());
         }

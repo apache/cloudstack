@@ -25,6 +25,13 @@
         :loading="loading"
         layout="vertical"
         @finish="handleSubmit">
+        <div style="margin-bottom: 10px">
+          <a-alert type="warning">
+            <template #message>
+              <div v-html="$t('message.add.account.warning')"></div>
+            </template>
+          </a-alert>
+        </div>
         <a-form-item ref="roleid" name="roleid">
           <template #label>
             <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>

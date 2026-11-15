@@ -178,6 +178,12 @@
                 <warning-outlined :style="{ color: $config.theme['@warning-color'] }" />
               </a-tooltip>
             </span>
+            <span v-else-if="$route.path.startsWith('/host') && record.vlanfilteringenabled && multiNetworkNicEnabledZones[record.zoneid]">
+              &nbsp;
+              <a-tooltip :title="$t('message.host.vlanfilteringenabled.tooltip')">
+                <a-tag color="blue">{{ $t('label.host.vlanfilteringenabled') }}</a-tag>
+              </a-tooltip>
+            </span>
           </span>
           <span
             v-if="record.leaseduration !== undefined"
@@ -428,7 +434,8 @@
         <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'serviceofferingname'">
-        <router-link :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
+        <router-link v-if="$route.path === '/networkoffering'" :to="{ path: '/systemoffering/' + record.serviceofferingid, query:{issystem:'true'} }">{{ text }}</router-link>
+        <router-link v-else :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
@@ -814,9 +821,10 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template
-        v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)"
-      >
+      <template v-if="column.key === 'egressdefaultpolicy'">
+        <span> {{ record.egressdefaultpolicy ? 'Allow' : 'Deny' }} </span>
+      </template>
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
         {{ text && $toLocaleDate(text) }}
       </template>
       <template
@@ -1080,6 +1088,7 @@ import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
 import { timeZoneName } from '@/utils/timezone'
 import { FileTextOutlined } from '@ant-design/icons-vue'
+import { multiNetworkNicEnabledZones, fetchMultiNetworkNicEnabledForZone } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'ListView',
@@ -1180,7 +1189,8 @@ export default {
       },
       usageTypeMap: {},
       resourceIdToValidLinksMap: {},
-      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      multiNetworkNicEnabledZones: multiNetworkNicEnabledZones
     }
   },
   watch: {
@@ -1190,6 +1200,9 @@ export default {
         if (newData === oldData) return
         this.items.forEach(record => {
           this.resourceIdToValidLinksMap[record.id] = validateLinks(this.$router, false, record)
+          if (this.$route.path.startsWith('/host') && record.vlanfilteringenabled && record.zoneid) {
+            fetchMultiNetworkNicEnabledForZone(record.zoneid)
+          }
         })
       }
     }
@@ -1211,7 +1224,7 @@ export default {
     quickViewEnabled (actions, columns, key) {
       return actions.length > 0 &&
         (columns && key === columns[0].dataIndex) &&
-        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
+        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/instancebootgroup', '/affinitygroup', '/autoscalevmgroup',
           '/volume', '/snapshot', '/vmsnapshot', '/backup',
           '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
           '/template', '/iso',

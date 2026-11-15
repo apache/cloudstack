@@ -84,6 +84,9 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Boolean> ConsoleProxyDisableRpFilter = new ConfigKey<>(Boolean.class, "consoleproxy.disable.rpfilter", "Console Proxy", "true",
             "disable rp_filter on console proxy VM public interface", true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Long> ConsoleProxySessionReconnectionWindow = new ConfigKey<>(Long.class, "consoleproxy.session.reconnection.window", "Console Proxy", "0",
+            "Reconnection window (in milliseconds) for client IPs to the same session on console proxy VM", true, ConfigKey.Scope.Zone, null);
+
     ConfigKey<Integer> ConsoleProxyLaunchMax = new ConfigKey<>(Integer.class, "consoleproxy.launch.max", "Console Proxy", "10",
             "maximum number of console proxy instances per zone can be launched", false, ConfigKey.Scope.Zone, null);
 

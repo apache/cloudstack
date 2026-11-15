@@ -19,6 +19,8 @@ package org.apache.cloudstack.storage.volume;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.command.admin.volume.ListVolumesForImportCmd;
 import org.apache.cloudstack.api.command.admin.volume.ImportVolumeCmd;
@@ -37,7 +39,9 @@ public interface VolumeImportUnmanageService extends PluggableService, Configura
             Arrays.asList(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.VMware);
 
     List<Storage.StoragePoolType> SUPPORTED_STORAGE_POOL_TYPES_FOR_KVM = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem,
-            Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.RBD, Storage.StoragePoolType.SharedMountPoint);
+            Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.RBD, Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.Linstor,
+            Storage.StoragePoolType.StorPool);
 
     ConfigKey<Boolean> AllowImportVolumeWithBackingFile = new ConfigKey<>(Boolean.class,
             "allow.import.volume.with.backing.file",
@@ -53,5 +57,11 @@ public interface VolumeImportUnmanageService extends PluggableService, Configura
     VolumeResponse importVolume(ImportVolumeCmd cmd);
 
     boolean unmanageVolume(long volumeId);
+
+    /**
+     * Lets a storage driver (e.g. StorPool) react to a volume becoming managed/unmanaged, from
+     * this service or from another import path (e.g. VM import). No-op if unsupported.
+     */
+    void notifyStorageDriverOfVolumeManagementChange(StoragePool pool, Volume volume, boolean imported);
 
 }

@@ -63,6 +63,40 @@ public class VersionTest {
     }
 
     @Test
+    public void fromPackageAndCSVersion_NewVersioningZeroSecurity_MapsSecurityToBuildAndOmitsRevision() {
+        CloudStackVersion csVersion = CloudStackVersion.parse("24.0.0");
+        try (MockedStatic<VeeamControlService> mocked = Mockito.mockStatic(VeeamControlService.class)) {
+            mocked.when(VeeamControlService::getPackageVersion).thenReturn("24.0.0");
+            mocked.when(VeeamControlService::getCSVersion).thenReturn(csVersion);
+
+            Version version = Version.fromPackageAndCSVersion(true);
+
+            assertEquals("24.0.0", version.getFullVersion());
+            assertEquals("24", version.getMajor());
+            assertEquals("0", version.getMinor());
+            assertEquals("0", version.getBuild());
+            assertNull(version.getRevision());
+        }
+    }
+
+    @Test
+    public void fromPackageAndCSVersion_NewVersioningNonZeroSecurity_MapsSecurityToBuildAndOmitsRevision() {
+        CloudStackVersion csVersion = CloudStackVersion.parse("24.1.3");
+        try (MockedStatic<VeeamControlService> mocked = Mockito.mockStatic(VeeamControlService.class)) {
+            mocked.when(VeeamControlService::getPackageVersion).thenReturn("24.1.3");
+            mocked.when(VeeamControlService::getCSVersion).thenReturn(csVersion);
+
+            Version version = Version.fromPackageAndCSVersion(true);
+
+            assertEquals("24.1.3", version.getFullVersion());
+            assertEquals("24", version.getMajor());
+            assertEquals("1", version.getMinor());
+            assertEquals("3", version.getBuild());
+            assertNull(version.getRevision());
+        }
+    }
+
+    @Test
     public void fromPackageAndCSVersion_NullCloudStackVersion_ReturnsWithoutNumericParts() {
         try (MockedStatic<VeeamControlService> mocked = Mockito.mockStatic(VeeamControlService.class)) {
             mocked.when(VeeamControlService::getPackageVersion).thenReturn("4.23.1.2");

@@ -222,6 +222,7 @@ import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.api.query.dao.TemplateListFilter;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
@@ -340,6 +341,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -376,6 +378,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -591,6 +594,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     NicDao nicDao;
+
+    @Inject
+    NicNetworkMapDao nicNetworkMapDao;
 
     @Inject
     HostDao hostDao;
@@ -1302,6 +1308,25 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return result;
     }
 
+    SearchBuilder<NicVO> createNicSearchBuilder(Long vpcId, boolean hasAssociatedNics) {
+        SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
+        if (hasAssociatedNics) {
+            // trunk nics list networkId as an association, not as their primary network
+            nicSearch.and().op("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+            nicSearch.or("associatedNicIdIN", nicSearch.entity().getId(), Op.IN);
+            nicSearch.cp();
+        } else {
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+        }
+        nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
+        if (vpcId != null) {
+            SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
+            networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
+            nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        }
+        return nicSearch;
+    }
+
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Pair<List<Long>, Integer> vmIdPage = searchForUserVMIdsAndCount(cmd);
 
@@ -1465,15 +1490,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.and("podId", userVmSearchBuilder.entity().getPodIdToDeployIn(), Op.EQ);
         }
 
+        List<Long> associatedNicIds = networkId != null ? nicNetworkMapDao.listNicIdsByNetworkId(networkId) : new ArrayList<>();
         if (networkId != null || vpcId != null) {
-            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
-            nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
-            if (vpcId != null) {
-                SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
-                networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
-                nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
-            }
+            SearchBuilder<NicVO> nicSearch = createNicSearchBuilder(vpcId, !associatedNicIds.isEmpty());
             userVmSearchBuilder.join("nic", nicSearch, nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
@@ -1705,6 +1724,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkId != null) {
             userVmSearchCriteria.setJoinParameters("nic", "networkId", networkId);
+            if (!associatedNicIds.isEmpty()) {
+                userVmSearchCriteria.setJoinParameters("nic", "associatedNicIdIN", associatedNicIds.toArray());
+            }
         }
 
         if (vpcId != null) {
@@ -1776,6 +1798,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = uniqueVmPair.second();
 
         List<Long> vmIds = uniqueVmPair.first().stream().map(VMInstanceVO::getId).collect(Collectors.toList());
+
         return new Pair<>(vmIds, count);
     }
 
@@ -5078,8 +5101,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
         }
 
+        List<Long> guestOsIds = null;
         if (osCategoryId != null) {
-            List<Long> guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
+            guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
             if (CollectionUtils.isNotEmpty(guestOsIds)) {
                 sc.setParameters("guestOsIdIN", guestOsIds.toArray());
             } else {
@@ -5232,7 +5256,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         applyPublicTemplateSharingRestrictions(sc, caller);
 
         return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, caller,
-                showRemovedTmpl, parentTemplateId, showUnique, templateType, isVnf, forCks, searchFilter, sc);
+                showRemovedTmpl, parentTemplateId, showUnique, templateType, isVnf, forCks, searchFilter, sc,
+                buildTemplateListFilter(templateId, ids, name, keyword, templateFilter, isIso, bootable,
+                        pageSize, startIndex, zoneId, hyperType, hypers, showDomr, onlyReady,
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
+                        parentTemplateId, showUnique, templateType, isVnf, forCks, arch, guestOsIds, extensionId,
+                        imageStoreId, storagePoolId, domainId, isRecursive));
     }
 
     /**
@@ -5287,7 +5316,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
                                                                HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr, Account caller,
                                                                boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique, String templateType, Boolean isVnf, Boolean forCks,
-                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
+                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc,
+                                                               TemplateListFilter listFilter) {
         if (!isIso) {
             // add hypervisor criteria for template case
             if (hypers != null && !hypers.isEmpty()) {
@@ -5394,6 +5424,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // search unique templates and find details by Ids
         Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair;
+
+        // Only attempted when the bypass DAO supports the filter set; falls
+        // back to the SearchBuilder/template_view path below otherwise.
+        if (!showRemovedTmpl && BypassTemplateView.value() && listFilter != null && listFilter.canBypass()) {
+            uniqueTmplPair = _templateJoinDao.findDistinctTempZonePairs(listFilter);
+            return findTemplatesByIdOrTempZonePair(uniqueTmplPair, showRemovedTmpl, showUnique != null && showUnique, caller);
+        }
+
         if (showRemovedTmpl) {
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
@@ -5413,6 +5451,140 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
         // specially handle ISO. The original logic is very twisted and no idea
         // about what the code was doing.
+    }
+
+    /**
+     * Build the immutable filter the bypass-the-view DAO consumes. Mirrors the
+     * SearchCriteria construction in {@link #searchForTemplatesInternal}; the
+     * SearchBuilder path is unchanged. The "hard" markers (sharedAccountIds,
+     * domainIdsForFeaturedCommunity, tags, requiresViewFallback) drive
+     * {@link TemplateListFilter#canBypass()} — when any are populated,
+     * {@code templateChecks} routes to the legacy view-based path instead.
+     */
+    private TemplateListFilter buildTemplateListFilter(Long templateId, List<Long> ids, String name, String keyword,
+                                                       TemplateFilter templateFilter, boolean isIso, Boolean bootable,
+                                                       Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType,
+                                                       List<HypervisorType> hypers, boolean showDomr, boolean onlyReady,
+                                                       List<Account> permittedAccounts, Account caller,
+                                                       ListProjectResourcesCriteria listProjectResourcesCriteria,
+                                                       Map<String, String> tags, boolean showRemovedTmpl, Long parentTemplateId,
+                                                       Boolean showUnique, String templateType, Boolean isVnf, Boolean forCks,
+                                                       CPU.CPUArch arch, List<Long> guestOsIds, Long extensionId, Long imageStoreId,
+                                                       Long storagePoolId, Long domainId, boolean isRecursive) {
+        TemplateListFilter.Builder b = TemplateListFilter.builder()
+                .templateId(templateId)
+                .ids(ids == null ? null : new ArrayList<>(ids))
+                .name(name)
+                .keyword(keyword)
+                .hypervisorType(hyperType != null && !HypervisorType.None.equals(hyperType) ? hyperType : null)
+                .availableHypervisors(hypers)
+                .format(ImageFormat.ISO)  // bypass DAO uses isIso flag to flip between EQ and NEQ
+                .isIso(isIso)
+                .bootable(bootable)
+                .parentTemplateId(parentTemplateId)
+                .zoneId(zoneId)
+                .onlyReady(onlyReady)
+                .excludeSystemTemplates(!showDomr)
+                .templateType(templateType)
+                .isVnf(isVnf)
+                .forCks(forCks)
+                .arch(arch)
+                .guestOsIds(guestOsIds)
+                .extensionId(extensionId)
+                .imageStoreId(imageStoreId)
+                .showUnique(showUnique != null && showUnique)
+                .startIndex(startIndex)
+                .pageSize(pageSize)
+                .sortAscending(SortKeyAscending.value())
+                .showRemoved(showRemovedTmpl)
+                .tags(tags);
+
+        if (!showRemovedTmpl) {
+            b.templateStates(Arrays.asList(VirtualMachineTemplate.State.Active,
+                    VirtualMachineTemplate.State.UploadAbandoned,
+                    VirtualMachineTemplate.State.UploadError,
+                    VirtualMachineTemplate.State.NotUploaded,
+                    VirtualMachineTemplate.State.UploadInProgress));
+        }
+
+        // accountType filter (Project vs non-Project), applied only when no specific templateId.
+        if (templateId == null && listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+            b.accountTypeNeq(Account.Type.PROJECT);
+        } else if (templateId == null && listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+            b.accountTypeEq(Account.Type.PROJECT);
+        }
+
+        // ACL handling — mirrors the templateFilter switch in searchForTemplatesInternal.
+        // For "hard" templateFilter values, set requiresViewFallback so canBypass() returns
+        // false and the dispatcher falls back to the legacy view-based path.
+        if (templateId != null) {
+            return b.build();
+        }
+
+        // template_spool_ref join is not modeled in bypass SQL.
+        if (storagePoolId != null) {
+            b.requiresViewFallback(true);
+        }
+
+        List<Long> permittedAccountIds = new ArrayList<>();
+        for (Account account : permittedAccounts) {
+            permittedAccountIds.add(account.getId());
+        }
+
+        if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
+            // Walks the domain hierarchy and ORs domainId IS NULL — not yet modeled in bypass SQL.
+            b.publicTemplate(Boolean.TRUE);
+            b.featured(templateFilter == TemplateFilter.featured ? Boolean.TRUE : Boolean.FALSE);
+            b.requiresViewFallback(true);
+        } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
+            if (accountMgr.isAdmin(caller.getAccountId())) {
+                applySelfDomainScope(b, permittedAccounts, caller, domainId, isRecursive);
+            }
+            if (!permittedAccountIds.isEmpty()) {
+                b.accountIds(permittedAccountIds);
+                b.accountIdRequiredForFilter(true);
+            }
+        } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared) {
+            // launch_permission join — not modeled in bypass SQL.
+            b.requiresViewFallback(true);
+        } else if (templateFilter == TemplateFilter.executable) {
+            b.publicOrAccountIdComposite(true);
+            if (!permittedAccountIds.isEmpty()) {
+                b.accountIds(permittedAccountIds);
+            }
+        } else if (templateFilter == TemplateFilter.all && caller.getType() != Account.Type.ADMIN) {
+            // Non-admin "all" composite splits on listProjectResourcesCriteria:
+            //   SkipProjectResources → (public OR domainPath LIKE)         — bypass-eligible
+            //   else                 → (public OR account_id IN OR sharedAccountId IN) — needs launch_permission, falls back
+            if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+                DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+                if (callerDomain != null) {
+                    b.publicOrDomainPathComposite(true);
+                    b.domainPathLike(callerDomain.getPath() + "%");
+                } else {
+                    b.requiresViewFallback(true);
+                }
+            } else {
+                b.requiresViewFallback(true);
+            }
+        }
+
+        return b.build();
+    }
+
+    // Mirrors the admin domain-path scoping of the view path for self/selfexecutable.
+    private void applySelfDomainScope(TemplateListFilter.Builder b, List<Account> permittedAccounts, Account caller,
+                                      Long domainId, boolean isRecursive) {
+        Long domainIdForScope = !permittedAccounts.isEmpty()
+                ? permittedAccounts.get(0).getDomainId()
+                : Objects.requireNonNullElse(domainId, caller.getDomainId());
+        DomainVO scopeDomain = _domainDao.findById(domainIdForScope);
+        // A recursive scope from the root domain matches every row, so skip the domain join.
+        if (scopeDomain == null || (isRecursive && scopeDomain.getId() == Domain.ROOT_DOMAIN)) {
+            return;
+        }
+        b.domainPathLike(isRecursive ? scopeDomain.getPath() + "%" : scopeDomain.getPath());
+        b.domainPathExact(!isRecursive);
     }
 
     // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
@@ -5577,6 +5749,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
             options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
 
+            options.put(VmDetailConstants.KVM_HINT_DEDICATED, Arrays.asList("true", "false"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -6467,7 +6640,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
-                AllowUserViewAllDomainAccounts, AllowUserViewAllDataCenters, SharePublicTemplatesWithOtherDomains, ReturnVmStatsOnVmList};
+                AllowUserViewAllDomainAccounts, AllowUserViewAllDataCenters, SharePublicTemplatesWithOtherDomains,
+                ReturnVmStatsOnVmList, BypassTemplateView };
     }
 
     @Override

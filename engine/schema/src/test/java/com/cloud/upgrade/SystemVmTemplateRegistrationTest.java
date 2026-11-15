@@ -1638,4 +1638,41 @@ public class SystemVmTemplateRegistrationTest {
         assertTrue(exception.getMessage().contains("Exception while updating 'url' and 'checksum' for hypervisor type"));
         verify(vmTemplateDao).update(templateVO.getId(), templateVO);
     }
+
+    @Test
+    public void getSystemVmTemplateVersion_UsesExplicitVersionWhenSet() {
+        SystemVmTemplateRegistration registration = new SystemVmTemplateRegistration("4.22.0.0");
+
+        assertEquals("4.22.0.0", registration.getSystemVmTemplateVersion());
+    }
+
+    @Test
+    public void getSystemVmTemplateVersion_BuildsFromMajorAndTinyVersionBelowCutover() {
+        String previousMajor = SystemVmTemplateRegistration.CS_MAJOR_VERSION;
+        String previousTiny = SystemVmTemplateRegistration.CS_TINY_VERSION;
+        try {
+            SystemVmTemplateRegistration.CS_MAJOR_VERSION = "4.22";
+            SystemVmTemplateRegistration.CS_TINY_VERSION = "1";
+
+            assertEquals("4.22.1", systemVmTemplateRegistration.getSystemVmTemplateVersion());
+        } finally {
+            SystemVmTemplateRegistration.CS_MAJOR_VERSION = previousMajor;
+            SystemVmTemplateRegistration.CS_TINY_VERSION = previousTiny;
+        }
+    }
+
+    @Test
+    public void getSystemVmTemplateVersion_BuildsFromMajorAndTinyVersionAfterCutover() {
+        String previousMajor = SystemVmTemplateRegistration.CS_MAJOR_VERSION;
+        String previousTiny = SystemVmTemplateRegistration.CS_TINY_VERSION;
+        try {
+            SystemVmTemplateRegistration.CS_MAJOR_VERSION = "24.0";
+            SystemVmTemplateRegistration.CS_TINY_VERSION = "1";
+
+            assertEquals("24.0.1", systemVmTemplateRegistration.getSystemVmTemplateVersion());
+        } finally {
+            SystemVmTemplateRegistration.CS_MAJOR_VERSION = previousMajor;
+            SystemVmTemplateRegistration.CS_TINY_VERSION = previousTiny;
+        }
+    }
 }

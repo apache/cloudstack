@@ -21,6 +21,7 @@
       ref="selectionView"
       :resource="resource"
       :clusterId="clusterId"
+      :hostId="hostId"
       :suitabilityEnabled="suitabilityEnabled"
       :autoAssignAllowed="autoAssignAllowed"
       @select="handleSelect" />
@@ -60,6 +61,11 @@ export default {
       required: true
     },
     clusterId: {
+      type: String,
+      required: false,
+      default: null
+    },
+    hostId: {
       type: String,
       required: false,
       default: null

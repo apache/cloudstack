@@ -18,30 +18,36 @@
 //
 package com.cloud.utils;
 
+import com.cloud.utils.DateUtil.IntervalType;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.junit.Test;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-
-import java.time.format.DateTimeFormatter;
-import java.time.OffsetDateTime;
-
-import com.cloud.utils.DateUtil.IntervalType;
-
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DateUtilTest {
+    private static final String TEST_DATE_GMT = "2023-06-15 10:30:00";
+    private static final String TEST_DATE_EST = "2023-06-15 05:30:00";
+    private static final String TEST_DATE_ISO = "2023-06-15T10:30:00Z";
+    private static final String TEST_DATE_YYMMDD = "20230615103000";
+    private static final TimeZone GMT = DateUtil.GMT_TIMEZONE;
+    private static final TimeZone EST = TimeZone.getTimeZone("EST");
+
     // command line test tool
     public static void main(String[] args) {
         TimeZone localTimezone = Calendar.getInstance().getTimeZone();
-        TimeZone gmtTimezone = TimeZone.getTimeZone("GMT");
-        TimeZone estTimezone = TimeZone.getTimeZone("EST");
+        TimeZone gmtTimezone = GMT;
+        TimeZone estTimezone = EST;
 
         Date time = new Date();
         System.out.println("local time :" + DateUtil.getDateDisplayString(localTimezone, time));
@@ -49,7 +55,9 @@ public class DateUtilTest {
         System.out.println("EST time   :" + DateUtil.getDateDisplayString(estTimezone, time));
         //Test next run time. Expects interval and schedule as arguments
         if (args.length == 2) {
-            System.out.println("Next run time: " + DateUtil.getNextRunTime(IntervalType.getIntervalType(args[0]), args[1], "GMT", time).toString());
+            System.out.println("Next run time: " + DateUtil.getNextRunTime(IntervalType.getIntervalType(args[0]),
+                            args[1], "GMT", time)
+                    .toString());
         }
     }
 
@@ -129,5 +137,88 @@ public class DateUtilTest {
         Date dtParsed = DateUtil.parseTZDateString(str);
 
         assertEquals(str, time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void parseDateStringDefaultFormat() {
+        TimeZone gmt = GMT;
+        Date date = DateUtil.parseDateString(gmt, TEST_DATE_GMT);
+        assertEquals(TEST_DATE_GMT, DateUtil.getDateDisplayString(gmt, date));
+    }
+
+    @Test
+    public void parseDateStringInterpretedInRequestedTimezone() {
+        TimeZone est = EST;
+        Date date = DateUtil.parseDateString(est, TEST_DATE_EST);
+        assertEquals(TEST_DATE_GMT, DateUtil.getDateDisplayString(GMT, date));
+    }
+
+    @Test
+    public void parseDateStringCustomFormat() {
+        TimeZone gmt = GMT;
+        Date date = DateUtil.parseDateString(gmt, TEST_DATE_YYMMDD, DateUtil.YYYYMMDD_FORMAT);
+        assertEquals(TEST_DATE_GMT, DateUtil.getDateDisplayString(gmt, date));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void parseDateStringInvalidInputThrows() {
+        DateUtil.parseDateString(GMT, "not-a-date");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void parseDateStringFormatMismatchThrows() {
+        DateUtil.parseDateString(GMT, TEST_DATE_GMT, DateUtil.YYYYMMDD_FORMAT);
+    }
+
+    @Test
+    public void displayDateInTimezoneGmt() {
+        Date date = Date.from(Instant.parse(TEST_DATE_ISO));
+        assertEquals("2023-06-15T10:30:00+0000", DateUtil.displayDateInTimezone(GMT, date));
+    }
+
+    @Test
+    public void displayDateInTimezoneEst() {
+        Date date = Date.from(Instant.parse(TEST_DATE_ISO));
+        assertEquals("2023-06-15T05:30:00-0500", DateUtil.displayDateInTimezone(EST, date));
+    }
+
+    @Test
+    public void getDateDisplayStringGmt() {
+        Date date = Date.from(Instant.parse(TEST_DATE_ISO));
+        assertEquals(TEST_DATE_GMT, DateUtil.getDateDisplayString(GMT, date));
+    }
+
+    @Test
+    public void getDateDisplayStringTimezoneShift() {
+        Date date = Date.from(Instant.parse(TEST_DATE_ISO));
+        assertEquals(TEST_DATE_EST, DateUtil.getDateDisplayString(EST, date));
+    }
+
+    @Test
+    public void getDateDisplayStringCustomFormat() {
+        Date date = Date.from(Instant.parse(TEST_DATE_ISO));
+        assertEquals(TEST_DATE_YYMMDD, DateUtil.getDateDisplayString(GMT, date, DateUtil.YYYYMMDD_FORMAT));
+    }
+
+    @Test
+    public void getDateDisplayStringNullDate() {
+        assertEquals(null, DateUtil.getDateDisplayString(GMT, null));
+    }
+
+    @Test
+    public void displayDateInTimezoneNullDate() {
+        assertEquals(null, DateUtil.displayDateInTimezone(GMT, null));
+    }
+
+    @Test
+    public void getOutputStringNull() {
+        assertEquals("", DateUtil.getOutputString(null));
+    }
+
+    @Test
+    public void getOutputStringNonNull() {
+        Date date = Date.from(Instant.parse(TEST_DATE_ISO));
+        String result = DateUtil.getOutputString(date);
+        assertTrue(result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{4}"));
     }
 }

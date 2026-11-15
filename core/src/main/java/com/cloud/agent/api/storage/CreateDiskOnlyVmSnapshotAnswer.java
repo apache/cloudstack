@@ -26,13 +26,24 @@ import java.util.Map;
 public class CreateDiskOnlyVmSnapshotAnswer extends Answer {
 
     protected Map<String, Long> mapVolumeToSnapshotSize;
+    private String nvramSnapshotPath;
 
     public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Long> mapVolumeToSnapshotSize) {
+        this(command, success, details, mapVolumeToSnapshotSize, null);
+    }
+
+    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Long> mapVolumeToSnapshotSize,
+            String nvramSnapshotPath) {
         super(command, success, details);
         this.mapVolumeToSnapshotSize = mapVolumeToSnapshotSize;
+        this.nvramSnapshotPath = nvramSnapshotPath;
     }
 
     public Map<String, Long> getMapVolumeToSnapshotSize() {
         return mapVolumeToSnapshotSize;
+    }
+
+    public String getNvramSnapshotPath() {
+        return nvramSnapshotPath;
     }
 }

@@ -104,6 +104,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -132,6 +134,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     private NicDao _nicDao = null;
     @Inject
     private NicSecondaryIpDao _nicSecondaryIpDao = null;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao = null;
     @Inject
     private NicIpAliasDao _nicIpAliasDao = null;
     @Inject
@@ -552,6 +556,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         copyNicDetails(originalNic.getId(), newNic.getId());
         //Update nic uuid here
         moveServices(originalNic, newNic);
+        moveTrunkAssociations(originalNic, newNic);
 
         if (originalNic.getState() == Nic.State.Reserved) {
             final VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -593,6 +598,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
                                             (status) -> migrateNicsInDB(originalNic, networkInNewPhysicalNet, dc, context));
         }
 
+        _networkService.refreshTrunkNicsAssociatedToNetwork(networkInNewPhysicalNet);
+
         //Now that nics are migrated we can migrate the static nats on those nics
         reapplyPublicIps(srcNetwork, networkInNewPhysicalNet);
     }
@@ -632,6 +639,21 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         _nicIpAliasDao.moveIpAliases(originalNic.getId(), newNic.getId());
         _nicSecondaryIpDao.moveSecondaryIps(originalNic.getId(), newNic.getId());
         swapUuids(originalNic, newNic);
+    }
+
+    // Without this, removeNic() on the old nic would delete the associations along with their IPs and DHCP entries.
+    private void moveTrunkAssociations(NicVO originalNic, NicVO newNic) {
+        if (!originalNic.getMultiNetwork()) {
+            return;
+        }
+        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(originalNic.getId())) {
+            association.setNicId(newNic.getId());
+            _nicNetworkMapDao.update(association.getId(), association);
+        }
+        newNic.setMultiNetwork(true);
+        _nicDao.persist(newNic);
+        originalNic.setMultiNetwork(false);
+        _nicDao.persist(originalNic);
     }
 
     private void markAsNonDefault(NicVO nic) {
