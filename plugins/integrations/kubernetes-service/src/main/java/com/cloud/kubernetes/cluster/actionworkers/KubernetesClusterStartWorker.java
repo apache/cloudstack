@@ -694,6 +694,39 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
     }
 
+    /**
+     * The control nodes cannot bring up the API server without etcd, so a cluster whose etcd nodes failed to set up
+     * would only fail when the cluster start timeout is over. Check the etcd nodes first and fail with the reason.
+     */
+    protected void verifyEtcdRunningOnEtcdNodes(final List<UserVm> etcdVms, final List<UserVm> clusterVMs, final Network network, final long startTimeoutTime) {
+        if (CollectionUtils.isEmpty(etcdVms)) {
+            return;
+        }
+        final long timeoutTime = Math.min(startTimeoutTime,
+                System.currentTimeMillis() + KubernetesClusterService.KubernetesEtcdNodeSetupTimeout.value() * 1000);
+        final boolean directAccess = manager.isDirectAccess(network);
+        final int etcdNodeStartPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
+        for (int i = 0; i < etcdVms.size(); i++) {
+            final UserVm etcdVm = etcdVms.get(i);
+            // Same route as the port forwarding rules of setupKubernetesEtcdNetworkRules
+            final String ipAddress = directAccess ? etcdVm.getPrivateIpAddress() : publicIpAddress;
+            final int port = directAccess ? DEFAULT_SSH_PORT : etcdNodeStartPort + i;
+            final String failure = waitForEtcdOnEtcdNode(etcdVm, ipAddress, port, timeoutTime);
+            if (failure != null) {
+                List<UserVm> vmsWithIso = new ArrayList<>(etcdVms);
+                vmsWithIso.addAll(clusterVMs);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s as etcd is not running on etcd node %s: %s",
+                        kubernetesCluster.getName(), etcdVm.getDisplayName(), failure), kubernetesCluster, vmsWithIso, KubernetesCluster.Event.CreateFailed, null);
+            }
+        }
+        logger.info("etcd is running on all {} etcd node(s) of Kubernetes cluster: {}", etcdVms.size(), kubernetesCluster);
+    }
+
+    protected String waitForEtcdOnEtcdNode(final UserVm etcdVm, final String ipAddress, final int port, final long timeoutTime) {
+        return KubernetesClusterUtil.waitForEtcdOnEtcdNode(kubernetesCluster, etcdVm.getDisplayName(), ipAddress, port,
+                CLUSTER_NODE_VM_USER, sshKeyFile, timeoutTime, 10000);
+    }
+
     private void startKubernetesClusterVMs(Long domainId, Long accountId) {
         List <UserVm> clusterVms = getKubernetesClusterVMs();
         for (final UserVm vm : clusterVms) {
@@ -860,6 +893,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         attachIsoKubernetesVMs(etcdVms);
         attachIsoKubernetesVMs(clusterVMs);
+        verifyEtcdRunningOnEtcdNodes(etcdVms, clusterVMs, network, startTimeoutTime);
         if (!KubernetesClusterUtil.isKubernetesClusterControlVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
             String msg = String.format("Failed to setup Kubernetes cluster : %s is not in usable state as the system is unable to access control node VMs of the cluster", kubernetesCluster.getName());
             if (kubernetesCluster.getControlNodeCount() > 1 && manager.isDirectAccess(network)) {
