@@ -195,7 +195,6 @@ repos:
       - id: python-use-type-annotations
         name: run check for type annotations not comments
         description: Enforce that python3.6+ type annotations are used instead of type comments
-        exclude: ^scripts/vm/hypervisor/xenserver/xenserver56/InterfaceReconfigure\.py$
       - id: text-unicode-replacement-char
         name: run check for no unicode replacement char
         description: Forbid files which have a UTF-8 Unicode replacement character

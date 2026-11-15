@@ -625,7 +625,7 @@ def ethtool_settings(oc):
 # PIF and Bridge. However it is possible to override this by using
 # {VIF,PIF,Network}.other-config:mtu.
 #
-# type parameter is a string describing the object that the oc parameter
+# The type parameter is a string describing the object that the oc parameter
 # is from. e.g. "PIF", "Network"
 def mtu_setting(nw, type, oc):
     mtu = None
