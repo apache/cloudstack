@@ -283,6 +283,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     } else {
                         hostResponse.setUefiCapability(new Boolean(false));
                     }
+                    hostResponse.setVlanFilteringEnabled(Boolean.parseBoolean((String) hostDetails.get(Host.HOST_VLAN_FILTERING_ENABLED)));
+                    hostResponse.setVlanTrunkXmlSupported(Boolean.parseBoolean((String) hostDetails.get(Host.HOST_VLAN_TRUNK_XML_SUPPORTED)));
                 }
                 if (details.contains(HostDetails.all) &&
                         Arrays.asList(Hypervisor.HypervisorType.KVM,

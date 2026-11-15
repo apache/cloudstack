@@ -41,6 +41,13 @@ public interface ConsoleAccessManager extends Manager, Configurable {
             false,
             ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> KvmMultipleConsoleViewersEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "consoleproxy.kvm.multiple.viewers.enabled",
+            "false",
+            "Determines whether multiple simultaneous console viewers are allowed for the same KVM user VM",
+            true,
+            ConfigKey.Scope.Global);
+
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 
     boolean isSessionAllowed(String sessionUuid);

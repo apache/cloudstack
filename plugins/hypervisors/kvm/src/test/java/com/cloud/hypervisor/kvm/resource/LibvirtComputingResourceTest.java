@@ -1749,10 +1749,12 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
         final boolean executeInSequence = false;
         DiskTO[] diskTOS = new DiskTO[]{};
+        final NicTO[] nicTOs = new NicTO[]{};
         final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
 
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(vmTO.getDisks()).thenReturn(diskTOS);
+        when(vmTO.getNics()).thenReturn(nicTOs);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
             when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
@@ -7738,5 +7740,37 @@ public class LibvirtComputingResourceTest {
         Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    // getEffectiveGuestBridgeName() must mirror BridgeVifDriver#plugTrunkVlanNic's resolution
+
+    @Test
+    public void getEffectiveGuestBridgeNameFallsBackToGuestNetworkDeviceWhenNoLabelReported() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNamePrefersGuestTrafficLabelOverGuestNetworkDeviceWhenTheyDiffer() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameRevertsToGuestNetworkDeviceOnceLabelIsCleared() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+
+        libvirtComputingResourceSpy.setGuestTrafficLabel(null);
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameTreatsBlankLabelAsNoLabel() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("   ");
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
     }
 }
