@@ -44,23 +44,23 @@ public class DedicateGuestVlanRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VLAN_RANGE, type = CommandType.STRING, required = true, description = "guest vlan range to be dedicated")
+    @Parameter(name = ApiConstants.VLAN_RANGE, type = CommandType.STRING, required = true, description = "Guest VLAN range to be dedicated")
     private String vlan;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will own the VLAN")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account who will own the VLAN")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the VLAN")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project who will own the VLAN")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a VLAN")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the Account owning a VLAN")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "physical network ID of the vlan")
+               description = "Physical Network ID of the VLAN")
     private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////

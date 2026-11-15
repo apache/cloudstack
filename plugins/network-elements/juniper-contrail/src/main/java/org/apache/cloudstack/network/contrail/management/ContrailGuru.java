@@ -175,7 +175,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
                     _ipAddressDao.update(ip.getId(), ip);
                     _ipAddressDao.releaseFromLockTable(ip.getId());
                 } catch (Exception e) {
-                    logger.error("Unable to allocate source nat ip: " + e);
+                    logger.error("Unable to allocate source NAT IP: " + e);
                 }
             }
         }

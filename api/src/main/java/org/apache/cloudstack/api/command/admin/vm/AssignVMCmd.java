@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -27,11 +30,15 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd.NicNetworkGrouping;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -39,7 +46,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "assignVirtualMachine",
-            description = "Change ownership of a VM from one account to another. This API is available for Basic zones with security groups and Advanced zones with guest networks. A root administrator can reassign a VM from any account to any other account in any domain. A domain administrator can reassign a VM to any account in the same domain.",
+            description = "Change ownership of an Instance from one account to another. This API is available for Basic zones with security groups and Advanced zones with guest networks. A root administrator can reassign an Instance from any account to any other account in any domain. A domain administrator can reassign an Instance to any account in the same domain.",
             responseObject = UserVmResponse.class,
         since = "3.0.0", entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
@@ -55,16 +62,16 @@ public class AssignVMCmd extends BaseCmd  {
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
                required = true,
-               description = "id of the VM to be moved")
+               description = "ID of the Instance to be moved")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account name of the new VM owner.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account name of the new Instance owner.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain id of the new VM owner.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain id of the new Instance owner.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the new VM owner.")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the new Instance owner.")
     private Long projectId;
 
     //Network information
@@ -72,18 +79,29 @@ public class AssignVMCmd extends BaseCmd  {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list of new network ids in which the moved VM will participate. In case no network ids are provided the VM will be part of the default network for that zone. "
+               description = "List of new network IDs in which the moved Instance will participate. In case no network ids are provided the Instance will be part of the default network for that zone. "
                    +
                    "In case there is no network yet created for the new account the default network will be created.")
     private List<Long> networkIds;
+
+    @Parameter(name = ApiConstants.NIC_NETWORKS_LIST, type = CommandType.MAP, since = "24.0.0",
+            description = "one entry per nic, each naming the set of networks that nic is associated with as a multi-VLAN trunk."
+                    + " The first network id in each entry is the nic's primary network. Carries a trunk nic's associations across"
+                    + " this move instead of rebuilding them as separate nics. Can't be specified with networkIds."
+                    + " Example: nicnetworkslist[0].networkids=uuid1,uuid2,uuid3",
+            authorized = {RoleType.Admin})
+    private Map nicNetworksList;
 
     @Parameter(name = ApiConstants.SECURITY_GROUP_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = SecurityGroupResponse.class,
-               description = "list of security group ids to be applied on the virtual machine. " +
-                   "In case no security groups are provided the VM is part of the default security group.")
+               description = "List of security group ids to be applied on the Instance. " +
+                   "In case no security groups are provided the Instance is part of the default security group.")
     private List<Long> securityGroupIdList;
+
+    // Internal flag to allow assignment without adding a network
+    private boolean  skipNetwork = false;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,11 +124,60 @@ public class AssignVMCmd extends BaseCmd  {
     }
 
     public List<Long> getNetworkIds() {
+        BaseDeployVMCmd.rejectNicNetworksListForNonRootAdmin(nicNetworksList, getFullUrlParams());
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            if (CollectionUtils.isNotEmpty(networkIds)) {
+                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s",
+                        ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS));
+            }
+            List<Long> primaryNetworkIds = new ArrayList<>();
+            for (NicNetworkGrouping grouping : getNicNetworksList()) {
+                primaryNetworkIds.add(grouping.getPrimaryNetworkId());
+            }
+            return primaryNetworkIds;
+        }
         return networkIds;
+    }
+
+    /**
+     * One entry per requested nic, each naming its full network association set (primary first). Empty when
+     * nicnetworkslist wasn't supplied, in which case the plain networkIds param keeps its exact present meaning.
+     */
+    public List<NicNetworkGrouping> getNicNetworksList() {
+        BaseDeployVMCmd.rejectNicNetworksListForNonRootAdmin(nicNetworksList, getFullUrlParams());
+        return BaseDeployVMCmd.parseNicNetworksList(nicNetworksList, _networkService);
     }
 
     public List<Long> getSecurityGroupIdList() {
         return securityGroupIdList;
+    }
+
+    public boolean isSkipNetwork() {
+        return skipNetwork;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////////// Setters /////////////////////////
+    /////////////////////////////////////////////////////
+
+    public void setVirtualMachineId(Long virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setSkipNetwork(boolean skipNetwork) {
+        this.skipNetwork = skipNetwork;
     }
 
     /////////////////////////////////////////////////////
@@ -126,7 +193,7 @@ public class AssignVMCmd extends BaseCmd  {
             setResponseObject(response);
         } catch (Exception e) {
             ApiErrorCode errorCode = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
-            String msg = String.format("Failed to move VM [%s].", getVmId());
+            String msg = String.format("Failed to move Instance due to [%s].", getVmId());
             logger.error(msg, e);
             throw new ServerApiException(errorCode, msg);
         }

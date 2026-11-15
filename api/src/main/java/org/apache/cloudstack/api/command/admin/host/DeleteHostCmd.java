@@ -37,17 +37,17 @@ public class DeleteHostCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED,
                type = CommandType.BOOLEAN,
-               description = "Force delete the host. All HA enabled vms running on the host will be put to HA; HA disabled ones will be stopped")
+               description = "Force delete the host. All HA enabled Instances running on the host will be put to HA; HA disabled ones will be stopped")
     private Boolean forced;
 
     @Parameter(name = ApiConstants.FORCED_DESTROY_LOCAL_STORAGE,
                type = CommandType.BOOLEAN,
-               description = "Force destroy local storage on this host. All VMs created on this local storage will be destroyed")
+               description = "Force destroy local storage on this host. All Instances created on this local storage will be destroyed")
     private Boolean forceDestroyLocalStorage;
 
     // ///////////////////////////////////////////////////

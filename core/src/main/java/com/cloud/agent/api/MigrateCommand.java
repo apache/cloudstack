@@ -26,6 +26,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.storage.Storage;
 
 public class MigrateCommand extends Command {
     private String vmName;
@@ -42,8 +43,14 @@ public class MigrateCommand extends Command {
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
 
     private int newVmCpuShares;
+    private boolean clvmCrossPoolMigration;
 
     Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
+
+    // null means unknown capability, not false
+    private Boolean destVlanFilteringEnabled;
+    private Boolean destVlanTrunkXmlSupported;
+    private Map<String, String> nicBridgeMapping = new HashMap<>();
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
         return dpdkInterfaceMapping;
@@ -149,6 +156,38 @@ public class MigrateCommand extends Command {
         this.newVmCpuShares = newVmCpuShares;
     }
 
+    public boolean isClvmCrossPoolMigration() {
+        return clvmCrossPoolMigration;
+    }
+
+    public void setClvmCrossPoolMigration(boolean clvmCrossPoolMigration) {
+        this.clvmCrossPoolMigration = clvmCrossPoolMigration;
+    }
+
+    public Boolean getDestVlanFilteringEnabled() {
+        return destVlanFilteringEnabled;
+    }
+
+    public void setDestVlanFilteringEnabled(Boolean destVlanFilteringEnabled) {
+        this.destVlanFilteringEnabled = destVlanFilteringEnabled;
+    }
+
+    public Boolean getDestVlanTrunkXmlSupported() {
+        return destVlanTrunkXmlSupported;
+    }
+
+    public void setDestVlanTrunkXmlSupported(Boolean destVlanTrunkXmlSupported) {
+        this.destVlanTrunkXmlSupported = destVlanTrunkXmlSupported;
+    }
+
+    public Map<String, String> getNicBridgeMapping() {
+        return nicBridgeMapping;
+    }
+
+    public void setNicBridgeMapping(Map<String, String> nicBridgeMapping) {
+        this.nicBridgeMapping = nicBridgeMapping;
+    }
+
     public static class MigrateDiskInfo {
         public enum DiskType {
             FILE, BLOCK;
@@ -184,6 +223,8 @@ public class MigrateCommand extends Command {
         private final String sourceText;
         private final String backingStoreText;
         private boolean isSourceDiskOnStorageFileSystem;
+        private Storage.StoragePoolType sourcePoolType;
+        private Storage.StoragePoolType destPoolType;
 
         public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText) {
             this.serialNumber = serialNumber;
@@ -231,6 +272,22 @@ public class MigrateCommand extends Command {
 
         public void setSourceDiskOnStorageFileSystem(boolean isDiskOnFileSystemStorage) {
             this.isSourceDiskOnStorageFileSystem = isDiskOnFileSystemStorage;
+        }
+
+        public Storage.StoragePoolType getSourcePoolType() {
+            return sourcePoolType;
+        }
+
+        public void setSourcePoolType(Storage.StoragePoolType sourcePoolType) {
+            this.sourcePoolType = sourcePoolType;
+        }
+
+        public Storage.StoragePoolType getDestPoolType() {
+            return destPoolType;
+        }
+
+        public void setDestPoolType(Storage.StoragePoolType destPoolType) {
+            this.destPoolType = destPoolType;
         }
     }
 

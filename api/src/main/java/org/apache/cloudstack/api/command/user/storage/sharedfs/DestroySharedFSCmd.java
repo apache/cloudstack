@@ -95,7 +95,7 @@ public class DestroySharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Destroying Shared FileSystem " + id;
+        return "Destroying Shared FileSystem with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

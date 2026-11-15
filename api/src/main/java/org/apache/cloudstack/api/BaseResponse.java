@@ -25,11 +25,11 @@ public abstract class BaseResponse implements ResponseObject {
     private transient String objectName;
 
     @SerializedName(ApiConstants.JOB_ID)
-    @Param(description = "the UUID of the latest async job acting on this object")
+    @Param(description = "The UUID of the latest async job acting on this object")
     protected String jobId;
 
     @SerializedName(ApiConstants.JOB_STATUS)
-    @Param(description = "the current status of the latest async job acting on this object")
+    @Param(description = "The current status of the latest async job acting on this object")
     private Integer jobStatus;
 
     public BaseResponse() {

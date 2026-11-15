@@ -18,6 +18,7 @@
 //
 package org.apache.cloudstack.oauth2;
 
+import com.cloud.domain.Domain;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
@@ -27,10 +28,15 @@ import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableService {
+    String GLOBAL_DOMAIN_FILTER = "-1";
+    Long GLOBAL_DOMAIN_ID = -1L;
+
     public static ConfigKey<Boolean> OAuth2IsPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.enabled", "false",
-            "Indicates whether OAuth plugin is enabled or not", false);
+            "Indicates whether OAuth plugin is enabled or not. This can be configured at domain level.", true, ConfigKey.Scope.Domain)
+            .withStrictScope();
     public static final ConfigKey<String> OAuth2Plugins = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins", "google,github",
             "List of OAuth plugins", true);
     public static final ConfigKey<String> OAuth2PluginsExclude = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins.exclude", "",
@@ -49,13 +55,30 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
      */
     UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName);
 
-    String verifyCodeAndFetchEmail(String code, String provider);
+    String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId);
 
     OauthProviderVO registerOauthProvider(RegisterOAuthProviderCmd cmd);
 
-    List<OauthProviderVO> listOauthProviders(String provider, String uuid);
+    List<OauthProviderVO> listOauthProviders(String provider, String uuid, Long domainId);
 
     boolean deleteOauthProvider(Long id);
 
     OauthProviderVO updateOauthProvider(UpdateOAuthProviderCmd cmd);
+
+    Long resolveDomainId(Map<String, Object[]> params);
+
+    /**
+     * Resolves whether the OAuth plugin is enabled for the given domain scope.
+     * A null domain or the ROOT domain is treated as the global scope, since the
+     * ROOT domain has no domain-level override and inherits the global value;
+     * any other domain is checked strictly at its own domain scope (no inheritance).
+     * @param domainId domain id, or null for global
+     * @return true if OAuth is enabled for that scope
+     */
+    static boolean isPluginEnabledForDomain(Long domainId) {
+        if (domainId == null || domainId == Domain.ROOT_DOMAIN) {
+            return Boolean.TRUE.equals(OAuth2IsPluginEnabled.value());
+        }
+        return Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
+    }
 }

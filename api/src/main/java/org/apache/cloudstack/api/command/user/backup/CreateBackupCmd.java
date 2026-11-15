@@ -41,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createBackup",
-        description = "Create VM backup",
+        description = "Create Instance backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateBackupCmd extends BaseAsyncCreateCmd {
@@ -57,7 +57,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM")
+            description = "ID of the Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.NAME,
@@ -75,11 +75,17 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.QUIESCE_VM,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS and KBOSS backup providers. " +
                     "The filesystem is frozen before the backup starts and thawed immediately after. " +
                     "Requires the instance to have the QEMU Guest Agent installed and running.",
             since = "4.21.0")
     private Boolean quiesceVM;
+
+    @Parameter(name = ApiConstants.ISOLATED,
+            type = CommandType.BOOLEAN,
+            description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS,
+            since = "4.23.0")
+    private boolean isolated;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,6 +107,10 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
         return quiesceVM;
     }
 
+    public boolean isIsolated() {
+        return isolated;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -114,7 +124,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while creating backup of VM");
+                throw new CloudRuntimeException("Error while creating backup of Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -123,7 +133,12 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Backup;
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return vmId;
     }
 
     @Override
@@ -138,7 +153,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating backup for VM " + vmId;
+        return "Creating backup for Instance " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override

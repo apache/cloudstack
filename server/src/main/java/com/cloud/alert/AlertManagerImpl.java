@@ -19,7 +19,6 @@ package com.cloud.alert;
 import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,15 +36,12 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.org.Cluster;
-
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -54,6 +50,7 @@ import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,9 +67,11 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -86,10 +85,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
@@ -99,20 +100,6 @@ import com.cloud.utils.db.TransactionStatus;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     protected Logger logger = LogManager.getLogger(AlertManagerImpl.class.getName());
-
-    public static final List<AlertType> ALERTS = Arrays.asList(AlertType.ALERT_TYPE_HOST
-            , AlertType.ALERT_TYPE_USERVM
-            , AlertType.ALERT_TYPE_DOMAIN_ROUTER
-            , AlertType.ALERT_TYPE_CONSOLE_PROXY
-            , AlertType.ALERT_TYPE_SSVM
-            , AlertType.ALERT_TYPE_STORAGE_MISC
-            , AlertType.ALERT_TYPE_MANAGEMENT_NODE
-            , AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED
-            , AlertType.ALERT_TYPE_UPLOAD_FAILED
-            , AlertType.ALERT_TYPE_OOBM_AUTH_ERROR
-            , AlertType.ALERT_TYPE_HA_ACTION
-            , AlertType.ALERT_TYPE_CA_CERT
-            , AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY);
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
@@ -155,6 +142,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     Ipv6Service ipv6Service;
     @Inject
     HostDao hostDao;
+    @Inject
+    MessageBus messageBus;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -173,6 +162,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
     protected String senderAddress = null;
+
+    private final List<String> allowedRepetitiveAlertTypeNames = new ArrayList<>();
 
     public AlertManagerImpl() {
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
@@ -253,10 +244,30 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
             }
         }
+        initMessageBusListener();
+        setupRepetitiveAlertTypes();
 
         _timer = new Timer("CapacityChecker");
 
         return true;
+    }
+
+    protected void setupRepetitiveAlertTypes() {
+        allowedRepetitiveAlertTypeNames.clear();
+        String allowedRepetitiveAlertsStr = AllowedRepetitiveAlertTypes.value();
+        logger.trace("Allowed repetitive alert types specified by {}: {} ", AllowedRepetitiveAlertTypes.key(),
+                allowedRepetitiveAlertsStr);
+        if (StringUtils.isBlank(allowedRepetitiveAlertsStr)) {
+            return;
+        }
+        String[] allowedRepetitiveAlertTypesArray = allowedRepetitiveAlertsStr.split(",");
+        for (String allowedTypeName : allowedRepetitiveAlertTypesArray) {
+            if (StringUtils.isBlank(allowedTypeName)) {
+                continue;
+            }
+            allowedRepetitiveAlertTypeNames.add(allowedTypeName.toLowerCase());
+        }
+        logger.trace("{} alert types specified for repetitive alerts", allowedRepetitiveAlertTypeNames.size());
     }
 
     @Override
@@ -313,13 +324,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
             futures.put(hostId, executorService.submit(() -> {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        final HostVO host = hostDao.findById(hostId);
-                        _capacityMgr.updateCapacityForHost(host);
-                    }
-                });
+                final HostVO host = hostDao.findById(hostId);
+                _capacityMgr.updateCapacityForHost(host);
                 return null;
             }));
         }
@@ -854,11 +860,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     @Nullable
     private AlertVO getAlertForTrivialAlertType(AlertType alertType, long dataCenterId, Long podId, Long clusterId) {
-        AlertVO alert = null;
-        if (!ALERTS.contains(alertType)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+        if (alertType.isRepetitionAllowed() || (StringUtils.isNotBlank(alertType.getName()) &&
+                allowedRepetitiveAlertTypeNames.contains(alertType.getName().toLowerCase()))) {
+            return null;
         }
-        return alert;
+        return _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
     }
 
     protected void sendMessage(SMTPMailProperties mailProps) {
@@ -887,7 +893,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
-            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth};
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth, AllowedRepetitiveAlertTypes};
     }
 
     @Override
@@ -900,5 +906,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void initMessageBusListener() {
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (senderAddress, subject, args) -> {
+            Ternary<String, ConfigKey.Scope, Long> updatedSetting = (Ternary<String, ConfigKey.Scope, Long>) args;
+            String updatedSettingName = updatedSetting.first();
+            if (!AllowedRepetitiveAlertTypes.key().equals(updatedSettingName)) {
+                return;
+            }
+            setupRepetitiveAlertTypes();
+        });
     }
 }

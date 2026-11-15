@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -134,6 +135,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
+    @Inject
+    private AgentManager agentMgr;
+
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
         try {
@@ -251,8 +255,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";
         Pattern saveTimePattern = Pattern.compile(nstRegex);
 
+        if (host == null) {
+            LOG.warn("Unable to take backup, host is null");
+            return null;
+        }
+
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), agentMgr.getHostSshPort(host),
                     username, null, password, command, 120000, 120000, 3600000);
             if (!response.first()) {
                 LOG.error("Backup Script failed on HYPERVISOR {} due to: {}", host, response.second());
@@ -271,9 +280,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return null;
     }
     private boolean executeRestoreCommand(HostVO host, String username, String password, String command) {
+        if (host == null) {
+            LOG.warn("Unable to restore backup, host is null");
+            return false;
+        }
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), agentMgr.getHostSshPort(host),
                 username, null, password, command, 120000, 120000, 3600000);
 
             if (!response.first()) {
@@ -344,7 +357,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
+    public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup, boolean quickRestore, Long hostId) {
         String networkerServer;
         HostVO hostVO;
 
@@ -394,7 +407,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid,
+            Pair<String, VirtualMachine.State> vmNameAndState, VirtualMachine vm, boolean quickRestore) {
         String networkerServer;
         VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
         final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
@@ -478,7 +492,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM, boolean isolated) {
         String networkerServer;
         String clusterName;
 
@@ -635,7 +649,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
 
     @Override
-    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid, boolean quickrestore) {
         return new Pair<>(true, null);
     }
 }

@@ -57,17 +57,28 @@ public class LibvirtPrepareForMigrationCommandWrapperTest {
         Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
         dpdkInterfaceMapping.put("Interface", new DpdkTO());
 
-        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock, dpdkInterfaceMapping, libvirtComputingResourceMock,
-                virtualMachineTOMock);
+        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock, dpdkInterfaceMapping, null,
+                libvirtComputingResourceMock, virtualMachineTOMock);
 
         Assert.assertEquals(prepareForMigrationAnswer.getDpdkInterfaceMapping(), dpdkInterfaceMapping);
+    }
+
+    @Test
+    public void createPrepareForMigrationAnswerTestNicBridgeMappingNotEmptyShouldSetParamOnAnswer() {
+        Map<String, String> nicBridgeMapping = new HashMap<>();
+        nicBridgeMapping.put("02:00:00:00:00:01", "cloudbr0");
+
+        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock, null, nicBridgeMapping,
+                libvirtComputingResourceMock, virtualMachineTOMock);
+
+        Assert.assertEquals(nicBridgeMapping, prepareForMigrationAnswer.getNicBridgeMapping());
     }
 
     @Test
     public void createPrepareForMigrationAnswerTestVerifyThatCpuSharesIsSet() {
         int cpuShares = 1000;
         Mockito.doReturn(cpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
-        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock,null,
+        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock, null, null,
                 libvirtComputingResourceMock, virtualMachineTOMock);
 
         Assert.assertEquals(cpuShares, prepareForMigrationAnswer.getNewVmCpuShares().intValue());

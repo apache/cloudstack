@@ -91,7 +91,7 @@ public interface ResourceService {
 
     DataCenter getZone(Long zoneId);
 
-    List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
+    List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forSystemVm, Long podId);
 
     boolean releaseHostReservation(Long hostId);
 

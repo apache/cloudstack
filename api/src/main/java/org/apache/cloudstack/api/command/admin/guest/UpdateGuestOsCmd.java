@@ -123,7 +123,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating guest OS: " + getId();
+        return "Updating guest OS with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

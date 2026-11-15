@@ -20,11 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -169,7 +167,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
     }
 
-    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Set<Long> zoneSet, boolean isTemplatePrivate) {
+    protected int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        return templateMgr.getSecStorageCopyLimit(template, zoneId);
+    }
+
+    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Map<Long, Integer> zoneCopyCount, int copyLimit) {
         if (zoneId == null) {
             logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
             return false;
@@ -191,33 +193,30 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             return false;
         }
 
-        if (zoneSet == null) {
-            logger.info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage of zone [%s].", zone));
-            return true;
-        }
-
-        if (isTemplatePrivate && zoneSet.contains(zoneId)) {
-            logger.info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; therefore, image store [%s] will be skipped.",
-                    zone, imageStore));
+        int currentCount = zoneCopyCount.getOrDefault(zoneId, 0);
+        if (copyLimit > 0 && currentCount >= copyLimit) {
+            logger.info("Copy limit of {} reached for zone [{}]; skipping image store [{}].", copyLimit, zone, imageStore);
             return false;
         }
 
-        logger.info(String.format("Private template will be allocated in image store [%s] in zone [%s].", imageStore, zone));
-        zoneSet.add(zoneId);
+        zoneCopyCount.put(zoneId, currentCount + 1);
         return true;
     }
 
     /**
-     * If the template/ISO is marked as private, then it is allocated to a random secondary storage; otherwise, allocates to every storage pool in every zone given by the
-     * {@link TemplateProfile#getZoneIdList()}.
+     * Allocates the template/ISO to a single image store - the one the file will be uploaded to. The upload can only
+     * target one secondary store, so additional copies (up to the configured secstorage.public/private.template.copy.max)
+     * are propagated later by template sync instead of being pre-allocated here as empty placeholder entries that never
+     * receive the data.
      */
     protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
-        Set<Long> zoneSet = new HashSet<>();
+        Map<Long, Integer> zoneCopyCount = new HashMap<>();
         Collections.shuffle(imageStores);
         for (DataStore imageStore : imageStores) {
             Long zoneId_is = imageStore.getScope().getScopeId();
+            int copyLimit = zoneId_is == null ? 0 : getSecStorageCopyLimit(template, zoneId_is);
 
-            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneSet, isPrivateTemplate(template))) {
+            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneCopyCount, copyLimit)) {
                 continue;
             }
 
@@ -234,9 +233,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 throw new CloudRuntimeException(errMsg);
             }
 
-            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl
-                    .getChecksum(), tmpl.getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
-                    templateOnStore.getDataStore().getRole().toString());
+            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(),
+                    template.getUuid(), tmpl.getInstallPath(), tmpl.getChecksum(), tmpl.getType().toString(),
+                    template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
+                    templateOnStore.getDataStore().getRole().toString(), zoneId_is);
             //using the existing max template size configuration
             payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
 
@@ -244,21 +244,17 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             Account account = _accountDao.findById(accountId);
             Domain domain = _domainDao.findById(account.getDomainId());
 
-            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
+            payload.setDefaultMaxSecondaryStorageInBytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
             payload.setAccountId(accountId);
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());
             payload.setDescription(template.getDisplayText());
             payloads.add(payload);
-        }
-    }
 
-    protected boolean isPrivateTemplate(VMTemplateVO template){
-        // if public OR featured OR system template
-        if (template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM) {
-            return false;
-        } else {
-            return true;
+            // The file can only be uploaded to a single secondary store. Allocate just this one; additional copies
+            // up to the configured secondary storage copy limit are propagated afterwards by template sync, so we do
+            // not create empty placeholder template_store_ref rows on the other stores.
+            break;
         }
     }
 
@@ -293,7 +289,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
             GuestOS noneGuestOs = ApiDBUtils.findGuestOSByDisplayName(ApiConstants.ISO_GUEST_OS_NONE);
             if ((guestOSId == null || guestOSId == noneGuestOs.getId()) && bootable == true) {
-                throw new InvalidParameterValueException("Please pass a valid GuestOS Id");
+                throw new InvalidParameterValueException("Please pass a valid GuestOS ID");
             }
             if (bootable == false) {
                 guestOSId = noneGuestOs.getId(); //Guest os id of None.
@@ -309,7 +305,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 requiresHVM = true;
             }
             if (deployAsIs) {
-                logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
+                logger.info("Setting default guest OS for deploy-as-is Template while the Template registration is not completed");
                 guestOSId = getDefaultDeployAsIsGuestOsId();
             }
         }
@@ -342,7 +338,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         // check whether owner can create public templates
         boolean allowPublicUserTemplates = TemplateManager.AllowPublicUserTemplates.valueIn(templateOwner.getId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-            throw new InvalidParameterValueException("Only private templates/ISO can be created.");
+            throw new InvalidParameterValueException("Only private Templates/ISO can be created.");
         }
 
         if (!isAdmin || featured == null) {
@@ -362,8 +358,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (user == null) {
             throw new IllegalArgumentException("Unable to find user with id " + userId);
         }
-
-        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
 
         // If a zoneId is specified, make sure it is valid
         if (zoneIdList != null) {
@@ -386,7 +380,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     Objects.equals(template.getArch(), arch)) {
                 logger.error("{} for same arch {} is having same name or description", template,
                         template.getArch());
-                throw new IllegalArgumentException("Cannot use reserved names for templates");
+                throw new IllegalArgumentException("Cannot use reserved names for Templates");
             }
         }
 
@@ -404,7 +398,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-        CallContext.current().setEventDetails("Id: " + id + " name: " + name);
+        CallContext.current().setEventDetails("ID: " + id + " name: " + name);
         TemplateProfile profile = new TemplateProfile(id, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
             sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs, extensionId);
@@ -442,11 +436,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (cmd.isDeployAsIs()) {
             if (MapUtils.isNotEmpty(details)) {
                 if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                    logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
+                    logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the Template");
                     details.remove(VmDetailConstants.ROOT_DISK_CONTROLLER);
                 }
                 if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                    logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
+                    logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the Template");
                     details.remove(VmDetailConstants.NIC_ADAPTER);
                 }
             }
@@ -512,7 +506,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         Long osTypeId = cmd.getOsTypeId();
         if (osTypeId == null) {
-            logger.info("Setting the default guest OS for deploy-as-is templates while the template upload is not completed");
+            logger.info("Setting the default guest OS for deploy-as-is Templates while the Template upload is not completed");
             osTypeId = getDefaultDeployAsIsGuestOsId();
         }
         UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
@@ -574,7 +568,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             List<DataCenterVO> dcs = _dcDao.listAll();
 
             if (dcs.isEmpty()) {
-                throw new CloudRuntimeException("No zones are present in the system, can't add template");
+                throw new CloudRuntimeException("No zones are present in the system, can't add Template");
             }
 
             template.setCrossZones(true);
@@ -604,7 +598,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     Account owner = _accountMgr.getAccount(template.getAccountId());
                     if (owner.getType() == Account.Type.PROJECT) {
                         if (!_projectMgr.canAccessProjectAccount(account, owner.getId())) {
-                            throw new PermissionDeniedException(msg + ". Permission denied. The caller can't access project's template");
+                            throw new PermissionDeniedException(msg + ". Permission denied. The caller can't access project's Template");
                         }
                     } else {
                         throw new PermissionDeniedException(msg + ". Permission denied.");
@@ -638,10 +632,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("unable to find template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find Template with ID " + templateId);
         }
 
-        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete template ");
+        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete Template ");
 
         UserVO user = _userDao.findById(userId);
         if (user == null) {
@@ -649,11 +643,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         if (template.getFormat() == ImageFormat.ISO) {
-            throw new InvalidParameterValueException("Please specify a valid template.");
+            throw new InvalidParameterValueException("Please specify a valid Template.");
         }
 
         if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
-            throw new InvalidParameterValueException("The template is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
+            throw new InvalidParameterValueException("The Template is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         return new TemplateProfile(userId, template, zoneId);
@@ -667,7 +661,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("unable to find template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find Template with ID " + templateId);
         }
         return new TemplateProfile(userId, template, zoneId);
     }
@@ -681,10 +675,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("unable to find iso with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find ISO with ID " + templateId);
         }
 
-        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete iso ");
+        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete ISO ");
 
         UserVO user = _userDao.findById(userId);
         if (user == null) {
@@ -692,11 +686,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         if (template.getFormat() != ImageFormat.ISO) {
-            throw new InvalidParameterValueException("Please specify a valid iso.");
+            throw new InvalidParameterValueException("Please specify a valid ISO.");
         }
 
         if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
-            throw new InvalidParameterValueException("The iso is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
+            throw new InvalidParameterValueException("The ISO is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         return new TemplateProfile(userId, template, zoneId);

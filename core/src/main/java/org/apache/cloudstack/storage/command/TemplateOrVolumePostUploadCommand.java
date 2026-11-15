@@ -19,6 +19,9 @@
 
 package org.apache.cloudstack.storage.command;
 
+import com.cloud.configuration.Resource;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+
 public class TemplateOrVolumePostUploadCommand {
 
     long entityId;
@@ -57,8 +60,10 @@ public class TemplateOrVolumePostUploadCommand {
 
     private String nfsVersion;
 
-    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
-            String dataToRole) {
+    private long zoneId;
+
+    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum,
+             String type, String name, String imageFormat, String dataTo, String dataToRole, long zoneId) {
         this.entityId = entityId;
         this.entityUUID = entityUUID;
         this.absolutePath = absolutePath;
@@ -68,9 +73,7 @@ public class TemplateOrVolumePostUploadCommand {
         this.imageFormat = imageFormat;
         this.dataTo = dataTo;
         this.dataToRole = dataToRole;
-    }
-
-    public TemplateOrVolumePostUploadCommand() {
+        this.zoneId = zoneId;
     }
 
     public String getRemoteEndPoint() {
@@ -185,6 +188,11 @@ public class TemplateOrVolumePostUploadCommand {
         this.description = description;
     }
 
+    public void setDefaultMaxSecondaryStorageInBytes(long defaultMaxSecondaryStorageInBytes) {
+        this.defaultMaxSecondaryStorageInGB = defaultMaxSecondaryStorageInBytes != Resource.RESOURCE_UNLIMITED ?
+                ByteScaleUtils.bytesToGibibytes(defaultMaxSecondaryStorageInBytes) : Resource.RESOURCE_UNLIMITED;
+    }
+
     public void setDefaultMaxSecondaryStorageInGB(long defaultMaxSecondaryStorageInGB) {
         this.defaultMaxSecondaryStorageInGB = defaultMaxSecondaryStorageInGB;
     }
@@ -215,5 +223,9 @@ public class TemplateOrVolumePostUploadCommand {
 
     public long getProcessTimeout() {
         return processTimeout;
+    }
+
+    public long getZoneId() {
+        return zoneId;
     }
 }

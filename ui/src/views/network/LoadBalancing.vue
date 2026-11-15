@@ -204,6 +204,11 @@
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
               </div>
+              <div v-if="this.vpcConserveMode">
+                <router-link :to="{ path: '/guestnetwork/' + instance.loadbalancerruleinstance.nic[0].networkid }">
+                  {{ instance.loadbalancerruleinstance.nic[0].networkname }}
+                </router-link>
+              </div>
               <div>{{ ip }}</div>
               <tooltip-button
                 :disabled='record.autoscalevmgroup'
@@ -487,10 +492,10 @@
     >
       <div @keyup.ctrl.enter="handleAddNewRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -540,13 +545,15 @@
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option
-                  v-for="(nic, nicIndex) in nics[index]"
-                  :key="nic"
-                  :value="nic"
-                  :label="nic + nicIndex === 0 ? ` (${$t('label.primary')})` : null">
-                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-                </a-select-option>
+                <a-select-opt-group v-for="group in groupedNicIpOptionsFor(index)" :key="group.kind" :label="group.label">
+                  <a-select-option
+                    v-for="item in group.items"
+                    :key="item.ip"
+                    :value="item.ip"
+                    :label="item.ip + ' ' + item.networkname">
+                    {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+                  </a-select-option>
+                </a-select-opt-group>
               </a-select>
             </template>
 
@@ -807,6 +814,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { buildNicIpOptions, groupNicIpOptionsByKind, resolveNetworkIdForIp } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'LoadBalancing',
@@ -1022,7 +1030,8 @@ export default {
         urlpath: '/'
       },
       healthMonitorLoading: false,
-      isNetrisZone: false
+      isNetrisZone: false,
+      vpcConserveMode: false
     }
   },
   computed: {
@@ -1054,6 +1063,9 @@ export default {
     }
   },
   methods: {
+    groupedNicIpOptionsFor (index) {
+      return groupNicIpOptionsByKind(this.nics[index] || [], this.$t)
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -1079,9 +1091,23 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchLBRules()
       this.fetchZone()
+    },
+    fetchVpc () {
+      if (!this.resource.vpcid) {
+        return
+      }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchListTiers () {
       this.tiers.loading = true
@@ -1828,18 +1854,15 @@ export default {
       this.newRule.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
 
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: networkId
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
-        const newItem = []
-        newItem.push(response.listnicsresponse.nic[0].ipaddress)
-        if (response.listnicsresponse.nic[0].secondaryip) {
-          newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
-        }
-        this.nics[index] = newItem
-        this.newRule.vmguestip[index] = [this.nics[index][0]]
+        const nicsReturned = response.listnicsresponse.nic || []
+        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic, networkId))
+        this.newRule.vmguestip[index] = [this.nics[index][0]?.ip]
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -1850,7 +1873,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return
@@ -1935,11 +1958,17 @@ export default {
           ip.forEach(i => {
             vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
             vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = i
+            if (this.vpcConserveMode) {
+              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = resolveNetworkIdForIp(this.nics[count], i, this.selectedTier)
+            }
             innerCount++
           })
         } else {
           vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
+          if (this.vpcConserveMode && ip != null) {
+            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = resolveNetworkIdForIp(this.nics[count], ip, this.selectedTier)
+          }
           innerCount++
         }
         if (this.newRule.virtualmachineid[count]) {
@@ -2536,5 +2565,9 @@ export default {
     margin-bottom: 10px;
     width: 50%;
     float: right;
+  }
+
+  .nic-select__network {
+    color: rgba(0, 0, 0, 0.45);
   }
 </style>

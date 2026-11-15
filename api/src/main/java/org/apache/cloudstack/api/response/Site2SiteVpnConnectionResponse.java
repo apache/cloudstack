@@ -31,29 +31,29 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class Site2SiteVpnConnectionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the connection ID")
+    @Param(description = "The connection ID")
     private String id;
 
     @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID)
-    @Param(description = "the vpn gateway ID")
+    @Param(description = "The VPN gateway ID")
     private String vpnGatewayId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "the public IP address")
+    @Param(description = "The public IP address")
     //from VpnGateway
     private String ip;
 
     @SerializedName(ApiConstants.S2S_CUSTOMER_GATEWAY_ID)
-    @Param(description = "the customer gateway ID")
+    @Param(description = "The customer gateway ID")
     private String customerGatewayId;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "public ip address id of the customer gateway")
+    @Param(description = "Public IP address id of the customer gateway")
     //from CustomerGateway
     private String gatewayIp;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "guest cidr list of the customer gateway. Multiple entries are separated by a single comma character (,).")
+    @Param(description = "Guest CIDR list of the customer gateway. Multiple entries are separated by a single comma character (,).")
     //from CustomerGateway
     private String guestCidrList;
 
@@ -83,41 +83,41 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     private Long espLifetime;
 
     @SerializedName(ApiConstants.DPD)
-    @Param(description = "if DPD is enabled for customer gateway")
+    @Param(description = "If DPD is enabled for customer gateway")
     //from CustomerGateway
     private Boolean dpd;
 
     @SerializedName(ApiConstants.FORCE_ENCAP)
-    @Param(description = "if Force NAT Encapsulation is enabled for customer gateway")
+    @Param(description = "If Force NAT Encapsulation is enabled for customer gateway")
     //from CustomerGateway
     private Boolean encap;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "State of vpn connection")
+    @Param(description = "State of VPN connection")
     private String state;
 
     @SerializedName(ApiConstants.PASSIVE)
-    @Param(description = "State of vpn connection")
+    @Param(description = "State of VPN connection")
     private boolean passive;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the owner")
+    @Param(description = "The owner")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id")
+    @Param(description = "The project id")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name")
+    @Param(description = "The project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the owner")
+    @Param(description = "The domain id of the owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the owner")
+    @Param(description = "The domain name of the owner")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -125,23 +125,23 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date and time the host was created")
+    @Param(description = "The date and time the host was created")
     private Date created;
 
     @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "the date and time the host was removed")
+    @Param(description = "The date and time the host was removed")
     private Date removed;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is connection for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is connection for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     @SerializedName(ApiConstants.SPLIT_CONNECTIONS)
-    @Param(description = "Split multiple remote networks into multiple phase 2 SAs. Often used with Cisco some products.")
+    @Param(description = "Split multiple remote Networks into multiple phase 2 SAs. Often used with Cisco some products.")
     private Boolean splitConnections;
 
     @SerializedName(ApiConstants.IKE_VERSION)
-    @Param(description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
+    @Param(description = "Which IKE Version to use, one of ike (autoselect), IKEv1, or IKEv2. Defaults to ike")
     private String ikeVersion;
 
     public void setId(String id) {

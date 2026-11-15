@@ -120,4 +120,28 @@ public class NioSocket {
             return 0;
         }
     }
+
+    public void close() {
+        try {
+            if (socketChannel != null) {
+                socketChannel.close();
+            }
+        } catch (IOException e) {
+            logger.debug("Error closing socket channel: " + e.getMessage(), e);
+        }
+        try {
+            if (readSelector != null) {
+                readSelector.close();
+            }
+        } catch (IOException e) {
+            logger.debug("Error closing read selector: " + e.getMessage(), e);
+        }
+        try {
+            if (writeSelector != null) {
+                writeSelector.close();
+            }
+        } catch (IOException e) {
+            logger.debug("Error closing write selector: " + e.getMessage(), e);
+        }
+    }
 }

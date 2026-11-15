@@ -40,7 +40,7 @@ public class SynchronizeTungstenFabricDataCmd extends BaseCmd {
     public static final String APINAME = "synchronizeTungstenFabricData";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TungstenFabricProviderResponse.class,
-        required = true, description = "provider id")
+        required = true, description = "Provider ID")
     private Long tungstenProviderId;
 
     @Inject

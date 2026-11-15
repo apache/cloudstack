@@ -96,12 +96,12 @@ public class ExtractSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Snapshot extraction job";
+        return "Starting Snapshot extraction for Snapshot with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Snapshot ID: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
+        CallContext.current().setEventDetails("Snapshot ID: " + getResourceUuid(ApiConstants.ID));
         String uploadUrl = _snapshotService.extractSnapshot(this);
         logger.info("Extract URL [{}] of snapshot [{}].", uploadUrl, id);
         if (uploadUrl != null) {

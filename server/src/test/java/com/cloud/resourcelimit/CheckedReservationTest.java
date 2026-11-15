@@ -149,23 +149,10 @@ public class CheckedReservationTest {
     @Test
     public void testMultipleReservationsWithOneFailing() {
         List<String> tags = List.of("abc", "xyz");
-        when(account.getAccountId()).thenReturn(1L);
-        when(account.getDomainId()).thenReturn(4L);
         Map<Long, ReservationVO> persistedReservations = new HashMap<>();
-        Mockito.when(reservationDao.persist(Mockito.any(ReservationVO.class))).thenAnswer((Answer<ReservationVO>) invocation -> {
-            ReservationVO reservationVO = (ReservationVO) invocation.getArguments()[0];
-            Long id = (long) (persistedReservations.size() + 1);
-            ReflectionTestUtils.setField(reservationVO, "id", id);
-            persistedReservations.put(id, reservationVO);
-            return reservationVO;
-        });
-        Mockito.when(reservationDao.remove(Mockito.anyLong())).thenAnswer((Answer<Boolean>) invocation -> {
-            Long id = (Long) invocation.getArguments()[0];
-            persistedReservations.remove(id);
-            return true;
-        });
+
         try {
-            Mockito.doThrow(ResourceAllocationException.class).when(resourceLimitService).checkResourceLimitWithTag(account, Resource.ResourceType.cpu, "xyz", 1L);
+            Mockito.doThrow(ResourceAllocationException.class).when(resourceLimitService).checkResourceLimitWithTag(account, account.getDomainId(), true, Resource.ResourceType.cpu, "xyz", 1L);
             try (CheckedReservation vmReservation = new CheckedReservation(account, Resource.ResourceType.user_vm, tags, 1L, reservationDao, resourceLimitService);
                  CheckedReservation cpuReservation = new CheckedReservation(account, Resource.ResourceType.cpu, tags, 1L, reservationDao, resourceLimitService);
                  CheckedReservation memReservation = new CheckedReservation(account, Resource.ResourceType.memory, tags, 256L, reservationDao, resourceLimitService);

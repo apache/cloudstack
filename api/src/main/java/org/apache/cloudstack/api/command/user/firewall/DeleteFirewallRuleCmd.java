@@ -44,7 +44,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the firewall rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of the firewall rule")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -69,7 +69,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting firewall rule ID=" + id);
+        return ("Deleting firewall rule with ID:" + getResourceUuid(ApiConstants.ID));
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _firewallService.revokeIngressFwRule(id, true);
 
         if (result) {

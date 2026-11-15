@@ -40,7 +40,7 @@ public class GetUploadParamsForVolumeCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, description = "Image store uuid")
     private String imageStoreUuid;
 
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk "
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "The ID of the disk "
             + "offering. This must be a custom sized offering since during upload of volume/template size is unknown.")
     private Long diskOfferingId;
 
@@ -72,7 +72,7 @@ public class GetUploadParamsForVolumeCmd extends AbstractGetUploadParamsCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
+        Long accountId = _accountService.finalizeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

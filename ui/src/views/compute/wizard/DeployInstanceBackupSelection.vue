@@ -55,6 +55,7 @@
       @cancel="closeModals">
       <form-schedule
         :resource="addFormResource"
+        :dataSource="dataSource"
         :submitFn="handleAddBackupSchedule" />
     </a-modal>
   </div>
@@ -90,7 +91,8 @@ export default {
     return {
       backupOffering: null,
       showAddBackupSchedule: false,
-      localBackupOfferingId: this.backupOfferingId
+      localBackupOfferingId: this.backupOfferingId,
+      dataSource: []
     }
   },
   provide () {

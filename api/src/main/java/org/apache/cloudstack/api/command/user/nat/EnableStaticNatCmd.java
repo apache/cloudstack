@@ -45,19 +45,19 @@ public class EnableStaticNatCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the public IP "
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "The public IP "
         + "address ID for which static NAT feature is being enabled")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of "
-        + "the virtual machine for enabling static NAT feature")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of "
+        + "the Instance for enabling static NAT feature")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "The network of the VM the static NAT will be enabled for."
-                   + " Required when public IP address is not associated with any guest network yet (VPC case)")
+               description = "The Network of the Instance the static NAT will be enabled for."
+                   + " Required when public IP address is not associated with any guest Network yet (VPC case)")
     private Long networkId;
     @Parameter(name = ApiConstants.VM_GUEST_IP,
                type = CommandType.STRING,
@@ -101,7 +101,7 @@ public class EnableStaticNatCmd extends BaseCmd {
 
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to enable static NAT for the ipAddress id=" + ipAddressId +
-                " as IP is not associated with any network and no networkId is passed in");
+                " as IP is not associated with any Network and no networkId is passed in");
         }
         return ntwkId;
     }

@@ -54,6 +54,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -66,6 +67,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -96,6 +98,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -125,6 +129,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    private NicNetworkMapDao nicNetworkMapDao;
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
@@ -205,6 +211,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setIp6Dns1(profile.getIPv6Dns1());
         to.setIp6Dns2(profile.getIPv6Dns2());
         to.setNetworkId(profile.getNetworkId());
+        to.setEnabled(profile.isEnabled());
 
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
@@ -239,6 +246,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
             }
             to.setNicSecIps(secIps);
+            setTrunkAssociationsOnNicTO(to, nicVO);
         } else {
             logger.warn("Unable to load NicVO for NicProfile {}", profile);
             //Workaround for dynamically created nics
@@ -251,6 +259,33 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         //set nic secondary ip address in NicTO which are used for security group
         // configuration. Use full when vm stop/start
         return to;
+    }
+
+    private void setTrunkAssociationsOnNicTO(final NicTO to, final NicVO nic) {
+        if (!nic.getMultiNetwork()) {
+            return;
+        }
+        final List<NicNetworkMapVO> associations = nicNetworkMapDao.listByNicId(nic.getId());
+        if (associations.isEmpty()) {
+            return;
+        }
+        final List<NetworkTO> associatedNetworks = new ArrayList<>();
+        for (final NicNetworkMapVO association : associations) {
+            final NetworkVO associatedNetwork = networkDao.findById(association.getNetworkId());
+            if (associatedNetwork == null) {
+                continue;
+            }
+            final NetworkTO associatedTo = new NetworkTO();
+            associatedTo.setUuid(associatedNetwork.getUuid());
+            associatedTo.setBroadcastType(associatedNetwork.getBroadcastDomainType());
+            associatedTo.setBroadcastUri(associatedNetwork.getBroadcastUri());
+            associatedTo.setType(associatedNetwork.getTrafficType());
+            associatedNetworks.add(associatedTo);
+        }
+        if (!associatedNetworks.isEmpty()) {
+            to.setTrunkVlan(true);
+            to.setAssociatedNetworks(associatedNetworks);
+        }
     }
 
     private String getNetworkName(long zoneId, long domainId, long accountId, VpcVO vpc, long networkId) {
@@ -448,13 +483,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
-                                                         String vmInternalName, Backup backup) throws Exception {
+                                                         String vmInternalName, Backup backup, BackupProvider backupProvider) throws Exception {
         return null;
     }
 
     @Override
     public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
-                                                        VirtualMachine vm, long poolId, Backup backup) throws Exception {
+                                                        VirtualMachine vm, long poolId, Backup backup, BackupProvider backupProvider) throws Exception {
         return false;
     }
 

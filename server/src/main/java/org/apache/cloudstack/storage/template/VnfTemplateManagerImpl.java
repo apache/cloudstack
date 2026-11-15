@@ -76,6 +76,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListVnfTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVnfAppliancesCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -201,13 +202,58 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
     }
 
     @Override
-    public void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds) {
+    public void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds, Map<Integer, Long> vmNetworkMap) {
+        if (template.isDeployAsIs()) {
+            if (CollectionUtils.isNotEmpty(networkIds)) {
+                throw new InvalidParameterValueException("VNF nics mappings should be empty for deploy-as-is templates");
+            }
+            validateVnfApplianceNetworksMap(template, vmNetworkMap);
+            return;
+        }
         if (CollectionUtils.isEmpty(networkIds)) {
             throw new InvalidParameterValueException("VNF nics list is empty");
         }
         List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
         for (VnfTemplateNicVO vnfNic : vnfNics) {
             if (vnfNic.isRequired() && networkIds.size() <= vnfNic.getDeviceId()) {
+                throw new InvalidParameterValueException("VNF nic is required but not found: " + vnfNic);
+            }
+        }
+    }
+
+    @Override
+    public void validateVnfApplianceTrunkNics(VirtualMachineTemplate template, List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList) {
+        if (CollectionUtils.isEmpty(nicNetworksList)) {
+            return;
+        }
+        List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
+        for (VnfTemplateNicVO vnfNic : vnfNics) {
+            if (!vnfNic.isManagement() || vnfNic.getDeviceId() >= nicNetworksList.size()) {
+                continue;
+            }
+            if (!nicNetworksList.get((int) vnfNic.getDeviceId()).getAssociatedNetworkIds().isEmpty()) {
+                throw new InvalidParameterValueException("VNF nic is the management interface and cannot be a multi-VLAN trunk nic: " + vnfNic);
+            }
+        }
+    }
+
+    @Override
+    public void validateVnfApplianceTrunkNic(VirtualMachineTemplate template, long deviceId) {
+        List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
+        for (VnfTemplateNicVO vnfNic : vnfNics) {
+            if (vnfNic.isManagement() && vnfNic.getDeviceId() == deviceId) {
+                throw new InvalidParameterValueException("VNF nic is the management interface and cannot be a multi-VLAN trunk nic: " + vnfNic);
+            }
+        }
+    }
+
+    private void validateVnfApplianceNetworksMap(VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMap) {
+        if (MapUtils.isEmpty(vmNetworkMap)) {
+            throw new InvalidParameterValueException("VNF networks map is empty");
+        }
+        List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
+        for (VnfTemplateNicVO vnfNic : vnfNics) {
+            if (vnfNic.isRequired() && vmNetworkMap.size() <= vnfNic.getDeviceId()) {
                 throw new InvalidParameterValueException("VNF nic is required but not found: " + vnfNic);
             }
         }

@@ -21,6 +21,13 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 
 public class LinstorBackupSnapshotCommand extends CopyCommand
 {
+    /**
+     * Option holding the secondary storage install path of the parent snapshot qcow2. When set (and
+     * fullSnapshot=false), the agent writes an incremental backup: a qcow2 containing only the blocks
+     * that differ from the parent, with the parent as its backing file.
+     */
+    public static final String OPTION_PARENT_PATH = "parentPath";
+
     public LinstorBackupSnapshotCommand(DataTO srcData, DataTO destData, int timeout, boolean executeInSequence)
     {
         super(srcData, destData, timeout, executeInSequence);

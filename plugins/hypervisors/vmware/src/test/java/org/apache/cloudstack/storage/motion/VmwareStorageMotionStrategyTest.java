@@ -112,7 +112,7 @@ public class VmwareStorageMotionStrategyTest {
         when(destHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
         StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
-        assertTrue("The strategy is only supposed to handle vmware hosts", canHandle == StrategyPriority.HYPERVISOR);
+        assertTrue("The strategy is only supposed to handle VMWare hosts", canHandle == StrategyPriority.HYPERVISOR);
     }
 
     @Test
@@ -123,7 +123,7 @@ public class VmwareStorageMotionStrategyTest {
         when(destHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
         StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
-        assertFalse("The strategy is only supposed to handle vmware hosts", canHandle == StrategyPriority.HYPERVISOR);
+        assertFalse("The strategy is only supposed to handle VMWare hosts", canHandle == StrategyPriority.HYPERVISOR);
     }
 
     @Test

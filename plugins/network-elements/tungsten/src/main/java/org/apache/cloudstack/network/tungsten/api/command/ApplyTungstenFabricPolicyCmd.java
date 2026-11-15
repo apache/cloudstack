@@ -36,7 +36,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 
 import javax.inject.Inject;
 
-@APICommand(name = ApplyTungstenFabricPolicyCmd.APINAME, description = "apply Tungsten-Fabric policy",
+@APICommand(name = ApplyTungstenFabricPolicyCmd.APINAME, description = "Apply Tungsten-Fabric policy",
     responseObject = TungstenFabricPolicyResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
     false)
 public class ApplyTungstenFabricPolicyCmd extends BaseAsyncCmd {
@@ -45,19 +45,19 @@ public class ApplyTungstenFabricPolicyCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, required = true, description = "the uuid of network")
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, required = true, description = "The UUID of network")
     private String networkUuid;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric policy")
     private String policyUuid;
 
-    @Parameter(name = ApiConstants.MAJOR_SEQUENCE, type = CommandType.INTEGER, required = true, description = "the major sequence of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.MAJOR_SEQUENCE, type = CommandType.INTEGER, required = true, description = "The major sequence of Tungsten-Fabric policy")
     private int majorSequence;
 
-    @Parameter(name = ApiConstants.MINOR_SEQUENCE, type = CommandType.INTEGER, required = true, description = "the minor sequence of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.MINOR_SEQUENCE, type = CommandType.INTEGER, required = true, description = "The minor sequence of Tungsten-Fabric policy")
     private int minorSequence;
 
     @Override

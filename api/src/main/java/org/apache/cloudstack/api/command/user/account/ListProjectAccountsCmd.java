@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listProjectAccounts", description = "Lists project's accounts", responseObject = ProjectResponse.class, since = "3.0.0",
+@APICommand(name = "listProjectAccounts", description = "Lists project's Accounts", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListProjectAccountsCmd extends BaseListCmd {
 
@@ -41,16 +41,16 @@ public class ListProjectAccountsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "ID of the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list accounts of the project by account name")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "List Accounts of the project by Account name")
     private String accountName;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "list invitation by user ID")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "List invitation by User ID")
     private Long userId;
 
-    @Parameter(name = ApiConstants.ROLE, type = CommandType.STRING, description = "list accounts of the project by role")
+    @Parameter(name = ApiConstants.ROLE, type = CommandType.STRING, description = "List Accounts of the project by role")
     private String role;
 
-    @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = CommandType.UUID, entityType = ProjectRoleResponse.class, description = "list accounts of the project by project role id")
+    @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = CommandType.UUID, entityType = ProjectRoleResponse.class, description = "List Accounts of the project by project role id")
     private Long projectRoleId;
 
     /////////////////////////////////////////////////////

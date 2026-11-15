@@ -162,6 +162,7 @@ export default {
       },
       groupAction: true,
       popup: true,
+      requireNameConfirmation: true,
       groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup || null } }) },
       args: (record, store) => {
         const fields = []

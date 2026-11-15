@@ -31,23 +31,23 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the vpn gateway ID")
+    @Param(description = "The VPN gateway ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the customer gateway")
+    @Param(description = "Name of the customer gateway")
     private String name;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "public ip address id of the customer gateway")
+    @Param(description = "Public IP address ID of the customer gateway")
     private String gatewayIp;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "guest ip of the customer gateway")
+    @Param(description = "Guest IP of the customer gateway")
     private String guestIp;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "guest cidr list of the customer gateway. Multiple entries are separated by a single comma character (,).")
+    @Param(description = "Guest CIDR list of the customer gateway. Multiple entries are separated by a single comma character (,).")
     private String guestCidrList;
 
     @SerializedName(ApiConstants.IPSEC_PSK)
@@ -71,48 +71,56 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     private Long espLifetime;
 
     @SerializedName(ApiConstants.DPD)
-    @Param(description = "if DPD is enabled for customer gateway")
+    @Param(description = "If DPD is enabled for customer gateway")
     private Boolean dpd;
 
     @SerializedName(ApiConstants.FORCE_ENCAP)
-    @Param(description = "if Force NAT Encapsulation is enabled for customer gateway")
+    @Param(description = "If Force NAT Encapsulation is enabled for customer gateway")
     private Boolean encap;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the owner")
+    @Param(description = "The owner")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id")
+    @Param(description = "The project ID")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name")
+    @Param(description = "The project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the owner")
+    @Param(description = "The domain ID of the owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the owner")
+    @Param(description = "The domain name of the owner")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    @Param(description = "The domain path of the owner", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "the date and time the host was removed")
+    @Param(description = "The date and time the host was removed")
     private Date removed;
 
     @SerializedName(ApiConstants.SPLIT_CONNECTIONS)
-    @Param(description = "For IKEv2, whether to split multiple right subnet cidrs into multiple connection statements.")
+    @Param(description = "For IKEv2, whether to split multiple right subnet CIDRs into multiple connection statements.")
     private Boolean splitConnections;
 
     @SerializedName(ApiConstants.IKE_VERSION)
-    @Param(description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
+    @Param(description = "Which IKE Version to use, one of ike (autoselect), IKEv1, or IKEv2. Defaults to ike")
     private String ikeVersion;
+
+    @SerializedName(ApiConstants.OBSOLETE_PARAMETERS)
+    @Param(description = "Contains the list of obsolete/insecure cryptographic parameters that the vpn customer gateway is using.", since = "4.23.0")
+    private String obsoleteParameters;
+
+    @SerializedName(ApiConstants.EXCLUDED_PARAMETERS)
+    @Param(description = "Contains the list of excluded/not allowed cryptographic parameters that the vpn customer gateway is using.", since = "4.23.0")
+    private String excludedParameters;
 
     public void setId(String id) {
         this.id = id;
@@ -200,6 +208,14 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     @Override
     public void setDomainPath(String domainPath) {
         this.domainPath = domainPath;
+    }
+
+    public void setContainsObsoleteParameters(String obsoleteParameters) {
+        this.obsoleteParameters = obsoleteParameters;
+    }
+
+    public void setContainsExcludedParameters(String excludedParameters) {
+        this.excludedParameters = excludedParameters;
     }
 
 }

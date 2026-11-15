@@ -49,10 +49,11 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             Domain dm = conn.domainLookupByName(vmName);
 
-            logger.debug(String.format("Scaling %s.", scalingDetails));
+            logger.debug("Scaling {}.", scalingDetails);
             scaleMemory(dm, newMemory, vmDefinition);
             scaleVcpus(dm, newVcpus, vmDefinition);
             updateCpuShares(dm, newCpuShares);
+            libvirtComputingResource.updateCpuQuotaAndPeriod(dm, vmSpec, command.getLimitCpuUseChange());
 
             return new ScaleVmAnswer(command, true, String.format("Successfully scaled %s.", scalingDetails));
         } catch (LibvirtException | CloudRuntimeException e) {
@@ -74,7 +75,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
 
         if (oldCpuShares < newCpuShares) {
             LibvirtComputingResource.setCpuShares(dm, newCpuShares);
-            logger.info(String.format("Successfully increased cpu_shares of VM [%s] from [%s] to [%s].", dm.getName(), oldCpuShares, newCpuShares));
+            logger.info("Successfully increased cpu_shares of VM [{}] from [{}] to [{}].", dm.getName(), oldCpuShares, newCpuShares);
         }
     }
 

@@ -103,6 +103,9 @@ perl -pi -e "s/-SNAPSHOT//" tools/marvin/marvin/deployAndRun.py
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.marvin
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.centos6
+perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.s390x
+perl -pi -e "s/-SNAPSHOT//" plugins/hypervisors/ovm/pom.xml
+perl -pi -e "s/-SNAPSHOT//" plugins/hypervisors/ovm3/pom.xml
 
 case "$currentversion" in
   *-SNAPSHOT*)

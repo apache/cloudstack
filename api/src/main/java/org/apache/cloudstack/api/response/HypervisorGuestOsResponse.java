@@ -26,11 +26,11 @@ import com.cloud.serializer.Param;
 
 public class HypervisorGuestOsResponse extends BaseResponse {
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
-    @Param(description = "standard display name for the Guest OS")
+    @Param(description = "Standard display name for the Guest OS")
     private String osStdName;
 
     @SerializedName(ApiConstants.OS_NAME_FOR_HYPERVISOR)
-    @Param(description = "hypervisor specific name for the Guest OS")
+    @Param(description = "Hypervisor specific name for the Guest OS")
     private String osNameForHypervisor;
 
     public String getOsStdName() {

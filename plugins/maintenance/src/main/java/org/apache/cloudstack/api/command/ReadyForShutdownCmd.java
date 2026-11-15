@@ -26,7 +26,8 @@ import com.cloud.user.Account;
             description = "Returns the status of CloudStack, whether a shutdown has been triggered and if ready to shutdown",
             since = "4.19.0",
             responseObject = ManagementServerMaintenanceResponse.class,
-            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            httpMethod = "GET")
 public class ReadyForShutdownCmd extends BaseMSMaintenanceActionCmd {
     public static final String APINAME = "readyForShutdown";
 

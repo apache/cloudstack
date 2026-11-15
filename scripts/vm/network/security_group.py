@@ -586,7 +586,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         ip6s = []
 
     if secIpSet == "1":
-        logging.debug("Adding ipset for secondary ipv4 addresses")
+        logging.debug("Adding IPset for secondary IPv4 addresses")
         ip4s, ip6s = split_ips_by_family(ips)
 
         add_to_ipset(vmipsetName, ip4s, action)
@@ -635,7 +635,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     add_to_ipset(vmipsetName6, vm_ip6_addr, action)
     if secIpSet == "1":
-        logging.debug("Adding ipset for secondary ipv6 addresses")
+        logging.debug("Adding IPset for secondary IPv6 addresses")
         add_to_ipset(vmipsetName6, ip6s, action)
 
     try:

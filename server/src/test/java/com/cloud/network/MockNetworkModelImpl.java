@@ -130,6 +130,24 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getUniqueMacAddress(long, long, long)
+     */
+    @Override
+    public String getUniqueMacAddress(long macAddress, long networkId, long datacenterId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#isMACUnique(String, long)
+     */
+    @Override
+    public boolean isMACUnique(String mac, long networkId) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getPublicIpAddress(long)
      */
     @Override
@@ -161,6 +179,12 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      */
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -380,6 +404,16 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     public boolean canElementEnableIndividualServices(Provider provider) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public boolean canElementEnableIndividualServicesByName(String providerName) {
+        return false;
+    }
+
+    @Override
+    public Provider resolveProvider(String providerName) {
+        return Provider.getProvider(providerName);
     }
 
     /* (non-Javadoc)

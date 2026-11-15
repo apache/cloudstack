@@ -32,7 +32,6 @@ public class Host extends GenericPresetVariable {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
-        fieldNamesToIncludeInToString.add("tags");
     }
 
     public Boolean getIsTagARule() {
@@ -41,6 +40,5 @@ public class Host extends GenericPresetVariable {
 
     public void setIsTagARule(Boolean isTagARule) {
         this.isTagARule = isTagARule;
-        fieldNamesToIncludeInToString.add("isTagARule");
     }
 }

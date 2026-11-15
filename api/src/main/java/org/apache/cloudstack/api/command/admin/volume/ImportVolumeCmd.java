@@ -63,7 +63,7 @@ public class ImportVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PATH,
             type = BaseCmd.CommandType.STRING,
             required = true,
-            description = "the path of the volume")
+            description = "the path of the volume. It is the file name on file based storage pools (NFS, Local, SharedMountPoint), and the image name on RBD storage pools")
     private String path;
 
     @Parameter(name = ApiConstants.NAME,
@@ -156,7 +156,7 @@ public class ImportVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

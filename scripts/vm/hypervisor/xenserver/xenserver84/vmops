@@ -1587,6 +1587,43 @@ def network_rules(session, args):
     except:
         logging.exception("Failed to network rule!")
 
+@echo
+def create_vtpm(session, args):
+    util.SMlog("create_vtpm called with args: %s" % str(args))
+
+    try:
+        vm_uuid = args.get('vm_uuid')
+        if not vm_uuid:
+            return "ERROR: vm_uuid parameter is required"
+
+        # Check if vTPM already exists for this VM
+        cmd = ['xe', 'vtpm-list', 'vm-uuid=' + vm_uuid, '--minimal']
+        result = util.pread2(cmd)
+        existing_vtpms = result.strip()
+
+        if existing_vtpms:
+            util.SMlog("vTPM already exists for VM %s: %s" % (vm_uuid, existing_vtpms))
+            return existing_vtpms.split(',')[0]
+
+        cmd = ['xe', 'vtpm-create', 'vm-uuid=' + vm_uuid]
+        result = util.pread2(cmd)
+        vtpm_uuid = result.strip()
+
+        if vtpm_uuid:
+            util.SMlog("Successfully created vTPM %s for VM %s" % (vtpm_uuid, vm_uuid))
+            return vtpm_uuid
+        else:
+            return "ERROR: Failed to create vTPM, empty result"
+
+    except CommandException as e:
+        error_msg = "xe command failed: %s" % str(e)
+        util.SMlog("ERROR: %s" % error_msg)
+        return "ERROR: " + error_msg
+    except Exception as e:
+        error_msg = str(e)
+        util.SMlog("ERROR: %s" % error_msg)
+        return "ERROR: " + error_msg
+
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
                            "preparemigration": preparemigration,
@@ -1604,4 +1641,5 @@ if __name__ == "__main__":
                            "createFileInDomr":createFileInDomr,
                            "kill_copy_process":kill_copy_process,
                            "secureCopyToHost":secureCopyToHost,
-                           "runPatchScriptInDomr": runPatchScriptInDomr})
+                           "runPatchScriptInDomr": runPatchScriptInDomr,
+                           "create_vtpm": create_vtpm})

@@ -296,6 +296,9 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     @Override
     public boolean isTemplateMarkedForDirectDownload(long templateId) {
         VMTemplateVO templateVO = imageDataDao.findById(templateId);
+        if (templateVO == null) {
+            throw new CloudRuntimeException(String.format("Template not found with ID: %s", templateId));
+        }
         return templateVO.isDirectDownload();
     }
 }

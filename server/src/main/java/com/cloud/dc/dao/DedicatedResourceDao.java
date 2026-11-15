@@ -46,6 +46,12 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
 
     List<DedicatedResourceVO> listByDomainId(Long domainId);
 
+    /**
+     * Unlike {@link #listByDomainId(Long)}, this also includes resources dedicated to a specific
+     * account within the domain, not just domain-wide dedications.
+     */
+    List<DedicatedResourceVO> listAllByDomainId(Long domainId);
+
     List<DedicatedResourceVO> listZonesNotInDomainIds(List<Long> domainIds);
 
     List<Long> listAllPods();

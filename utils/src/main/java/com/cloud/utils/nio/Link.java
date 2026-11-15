@@ -380,7 +380,7 @@ public class Link {
         if (caService != null) {
             return caService.createSSLEngine(sslContext, clientAddress);
         }
-        LOGGER.error("CA service is not configured, by-passing CA manager to create SSL engine");
+        LOGGER.error("CA service is not configured, bypassing CA manager to create SSL engine");
         char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         final KeyStore ks = loadKeyStore(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -552,7 +552,7 @@ public class Link {
             LOGGER.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return new HandshakeHolder(myAppData, myNetData, true);
+            return new HandshakeHolder(myAppData, myNetData, false);
         }
         if (result == null) {
             return new HandshakeHolder(myAppData, myNetData, false);

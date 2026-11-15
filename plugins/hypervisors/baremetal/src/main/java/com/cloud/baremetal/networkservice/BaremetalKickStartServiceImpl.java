@@ -108,12 +108,12 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         }
 
         if (routers.size() > 1) {
-            throw new CloudRuntimeException(String.format("baremetal hasn't supported redundant router yet"));
+            throw new CloudRuntimeException(String.format("Baremetal hasn't supported redundant router yet"));
         }
 
         DomainRouterVO vr = routers.get(0);
         if (!Hypervisor.HypervisorType.VMware.equals(vr.getHypervisorType())) {
-            throw new CloudRuntimeException(String.format("baremetal only support vmware virtual router, but get %s", vr.getHypervisorType()));
+            throw new CloudRuntimeException(String.format("Baremetal only support VMWare virtual router, but get %s", vr.getHypervisorType()));
         }
 
         return vr;
@@ -180,7 +180,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, nwVO.getPhysicalNetworkId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
-            throw new CloudRuntimeException("No kickstart PXE server found in pod: " + dest.getPod().getId() + ", you need to add it before starting VM");
+            throw new CloudRuntimeException("No kickstart PXE server found in Pod: " + dest.getPod().getId() + ", you need to add it before starting Instance");
         }
         VMTemplateVO template = _tmpDao.findById(profile.getTemplateId());
         List<String> tuple =  parseKickstartUrl(profile);
@@ -216,7 +216,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         }
 
         if (mgmtNic == null) {
-            throw new CloudRuntimeException(String.format("cannot find management nic on virtual router[id:%s]", vr.getId()));
+            throw new CloudRuntimeException(String.format("Cannot find Management NIC on virtual router[id:%s]", vr.getId()));
         }
 
         String internalServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());

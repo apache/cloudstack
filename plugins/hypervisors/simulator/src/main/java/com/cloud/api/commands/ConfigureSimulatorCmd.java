@@ -38,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.user.Account;
 
-@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = MockResponse.class,
+@APICommand(name = "configureSimulator", description = "Configure simulator", responseObject = MockResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureSimulatorCmd extends BaseCmd {
     private static final String s_name = "configuresimulatorresponse";
@@ -46,28 +46,28 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     @Inject
     SimulatorManager _simMgr;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="configure range: in a zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description = "Configure range: in a zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class, description="configure range: in a pod")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class, description = "Configure range: in a pod")
     private Long podId;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description="configure range: in a cluster")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description = "Configure range: in a cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class, description="configure range: in a host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class, description = "Configure range: in a host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "which command needs to be configured")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Which command needs to be configured")
     private String command;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "configuration options for this command, which is separated by ;")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "Configuration options for this command, which is separated by ;")
     private String values;
 
-    @Parameter(name=ApiConstants.COUNT, type=CommandType.INTEGER, description="number of times the mock is active")
+    @Parameter(name=ApiConstants.COUNT, type=CommandType.INTEGER, description = "Number of times the mock is active")
     private Integer count;
 
-    @Parameter(name="jsonresponse", type=CommandType.STRING, description="agent command response to be returned", length=4096)
+    @Parameter(name="jsonresponse", type=CommandType.STRING, description = "Agent command response to be returned", length=4096)
     private String jsonResponse;
 
     @Override

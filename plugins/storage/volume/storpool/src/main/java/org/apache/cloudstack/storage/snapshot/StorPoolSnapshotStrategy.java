@@ -181,7 +181,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
         }
         if (res) {
-            processResult(snapshotInfos, Event.OperationSuccessed);
+            processResult(snapshotInfos, Event.OperationSucceeded);
             cleanUpDestroyedRecords(snapshotId);
         } else {
             processResult(snapshotInfos, Event.OperationFailed);
@@ -261,7 +261,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
                         logger.debug("for empty delta snapshot, only mark it as destroyed in db");
                         snapshot.processEvent(Event.DestroyRequested);
-                        snapshot.processEvent(Event.OperationSuccessed);
+                        snapshot.processEvent(Event.OperationSucceeded);
                         deleted = true;
                         if (!resultIsSet) {
                             result = true;
@@ -300,7 +300,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     }
 
     protected boolean areLastSnapshotRef(long snapshotId) {
-        List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
         if (CollectionUtils.isEmpty(snapshotStoreRefs) || snapshotStoreRefs.size() == 1) {
             return true;
         }
@@ -343,7 +343,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             List<Long> deletedRefs = new ArrayList<>();
             for (SnapshotDataStoreVO ref : storeRefs) {
                 boolean refZoneIdMatch = false;

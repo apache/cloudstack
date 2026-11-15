@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.Network;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.api.APICommand;
@@ -45,7 +47,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "assignToLoadBalancerRule",
-            description = "Assigns virtual machine or a list of virtual machines to a load balancer rule.",
+            description = "Assigns an Instance or a list of Instances to a load balancer rule.",
             responseObject = SuccessResponse.class,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -60,19 +62,19 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the list of IDs of the virtual machine that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
+               description = "The list of IDs of the Instance that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP,
             type = CommandType.MAP,
-            description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].vmip=10.1.1.75",
+            description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].vmip=10.1.1.75. (Optional, for VPC Conserve Mode) Pass vmnetworkid. Example: vmidipmap[0].vmnetworkid=NETWORK_TIER_UUID",
             since = "4.4")
     private Map vmIdIpMap;
 
@@ -112,12 +114,13 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "applying instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
+        return "Applying Instances for load balancer with ID: " + getResourceUuid(ApiConstants.ID) + " (Instances IDs: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
 
-    public Map<Long, List<String>> getVmIdIpListMap() {
-        Map<Long, List<String>> vmIdIpsMap = new HashMap<Long, List<String>>();
+    public Pair<Map<Long, List<String>>, Map<Long, Long>> getVmIdIpListMapAndVmIdNetworkMap() {
+        Map<Long, List<String>> vmIdIpsMap = new HashMap<>();
+        Map<Long, Long> vmIdNetworkMap = new HashMap<>();
         if (vmIdIpMap != null && !vmIdIpMap.isEmpty()) {
             Collection idIpsCollection = vmIdIpMap.values();
             Iterator iter = idIpsCollection.iterator();
@@ -125,10 +128,11 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                 HashMap<String, String> idIpsMap = (HashMap<String, String>)iter.next();
                 String vmId = idIpsMap.get("vmid");
                 String vmIp = idIpsMap.get("vmip");
+                String vmNetworkUuid = idIpsMap.get("vmnetworkid");
 
                 VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmId);
                 if (lbvm == null) {
-                    throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
+                    throw new InvalidParameterValueException("Unable to find Instance ID: " + vmId);
                 }
 
                 //check whether the given ip is valid ip or not
@@ -145,25 +149,35 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                     ipsList = new ArrayList<String>();
                 }
                 ipsList.add(vmIp);
+
+                if (vmNetworkUuid != null) {
+                    Network vmNetwork = _entityMgr.findByUuid(Network.class, vmNetworkUuid);
+                    if (vmNetwork == null) {
+                        throw new InvalidParameterValueException("Unable to find Network ID: " + vmNetworkUuid);
+                    }
+                    vmIdNetworkMap.put(longVmId, vmNetwork.getId());
+                }
                 vmIdIpsMap.put(longVmId, ipsList);
 
             }
         }
 
-        return vmIdIpsMap;
+        return new Pair<>(vmIdIpsMap, vmIdNetworkMap);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer Id: " + getLoadBalancerId() + " VmIds: " + StringUtils.join(getVirtualMachineIds(), ","));
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID) + " Instances IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
 
-        Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
+        Pair<Map<Long, List<String>>, Map<Long, Long>> mapsPair = getVmIdIpListMapAndVmIdNetworkMap();
+        Map<Long, List<String>> vmIdIpsMap = mapsPair.first();
+        Map<Long, Long> vmIdNetworkMap = mapsPair.second();
         boolean result = false;
 
         try {
-            result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap, false);
+            result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap, vmIdNetworkMap, false);
         }catch (CloudRuntimeException ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign load balancer rule");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign load balancer rule due to: " + ex.getMessage());
         }
 
         if (result) {

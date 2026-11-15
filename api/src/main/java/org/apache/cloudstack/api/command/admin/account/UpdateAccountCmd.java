@@ -41,7 +41,7 @@ import org.apache.cloudstack.region.RegionService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAccount", description = "Updates account information for the authenticated user", responseObject = AccountResponse.class, entityType = {Account.class},
+@APICommand(name = "updateAccount", description = "Updates Account information for the authenticated user", responseObject = AccountResponse.class, entityType = {Account.class},
         responseView = ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateAccountCmd extends BaseCmd implements UserCmd {
 
@@ -52,24 +52,24 @@ public class UpdateAccountCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Current account name")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Current Account name")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The UUID of the domain where the account exists")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The UUID of the domain where the Account exists")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "The UUID of the dynamic role to set for the account")
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "The UUID of the dynamic role to set for the Account")
     private Long roleId;
 
-    @Parameter(name = ApiConstants.NEW_NAME, type = CommandType.STRING, description = "New name for the account")
+    @Parameter(name = ApiConstants.NEW_NAME, type = CommandType.STRING, description = "New name for the Account")
     private String newName;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN,
                type = CommandType.STRING,
-               description = "Network domain for the account's networks; empty string will update domainName with NULL value")
+               description = "Network domain for the Account's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for the account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for the Account used to store specific parameters")
     private Map details;
 
     @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "Determines if Api key access for this user is enabled, disabled or inherits the value from its parent, the domain level setting api.key.access", since = "4.20.1.0", authorized = {RoleType.Admin})
@@ -144,7 +144,7 @@ public class UpdateAccountCmd extends BaseCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update account");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Account");
         }
     }
 

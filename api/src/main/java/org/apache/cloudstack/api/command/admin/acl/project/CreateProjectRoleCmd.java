@@ -41,7 +41,7 @@ public class CreateProjectRoleCmd extends ProjectRoleCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true,
-            description = "creates a project role with this unique name")
+            description = "Creates a project role with this unique name")
     private String projectRoleName;
 
     /////////////////////////////////////////////////////

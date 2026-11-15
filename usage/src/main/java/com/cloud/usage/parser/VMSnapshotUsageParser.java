@@ -56,7 +56,7 @@ public class VMSnapshotUsageParser extends UsageParser {
         List<UsageVMSnapshotVO> usageUsageVMSnapshots = usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageUsageVMSnapshots.isEmpty()) {
-            logger.debug("No VM snapshot usage events for this period");
+            logger.debug("No Instance Snapshot usage events for this period");
             return true;
         }
 

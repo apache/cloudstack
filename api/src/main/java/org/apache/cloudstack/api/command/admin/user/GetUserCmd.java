@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.UserResponse;
-
+import org.apache.cloudstack.api.ApiArgValidator;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserAccount;
 
@@ -35,7 +35,7 @@ public class GetUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, required = true, description = "API key of the user")
+    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, required = true, description = "API key of the user", validations = {ApiArgValidator.NotNullOrEmpty})
     private String apiKey;
 
     /////////////////////////////////////////////////////

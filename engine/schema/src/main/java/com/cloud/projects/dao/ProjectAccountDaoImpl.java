@@ -18,6 +18,7 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
+import com.cloud.user.User;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectAccount;
@@ -193,17 +194,6 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
 
     @Override
-    public void removeUserFromProjects(long userId) {
-        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
-        sc.setParameters("userId", userId);
-
-        int removedCount = remove(sc);
-        if (removedCount > 0) {
-            logger.debug(String.format("Removed user [%s] from %s project(s).", userId, removedCount));
-        }
-    }
-
-    @Override
     public boolean canUserModifyProject(long projectId, long accountId, long userId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("role",  ProjectAccount.Role.Admin);
@@ -221,5 +211,24 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("projectRoleId", id);
         return listBy(sc);
+    }
+
+    @Override
+    public List<ProjectAccountVO> listBy(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParametersIfNotNull("projectId", projectId);
+        sc.setParametersIfNotNull("userId", userId);
+        sc.setParametersIfNotNull("accountId", accountId);
+        return listBy(sc);
+    }
+
+    @Override
+    public void move(User oldUser, User newUser) {
+        List<ProjectAccountVO> projectAccounts = listBy(null, oldUser.getAccountId(), oldUser.getId());
+        for (ProjectAccountVO projectAccount : projectAccounts) {
+            projectAccount.setAccountId(newUser.getAccountId());
+            projectAccount.setUserId(newUser.getId());
+            update(projectAccount.getId(), projectAccount);
+        }
     }
 }

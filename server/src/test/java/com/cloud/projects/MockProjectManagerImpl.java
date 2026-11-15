@@ -21,6 +21,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.component.ManagerBase;
 
 import javax.naming.ConfigurationException;
@@ -212,6 +213,17 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     public long getInvitationTimeout() {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public boolean cleanupProjectsForUser(Project project, User user) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void moveProjectAssociationsToUser(User oldUser, User newUser) throws ResourceAllocationException {
+        // TODO Auto-generated method stub
     }
 
     @Override

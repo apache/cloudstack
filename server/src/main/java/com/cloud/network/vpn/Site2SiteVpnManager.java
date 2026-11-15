@@ -17,11 +17,17 @@
 package com.cloud.network.vpn;
 
 import java.util.List;
+import java.util.Set;
 
+import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.vm.DomainRouterVO;
 
 public interface Site2SiteVpnManager extends Site2SiteVpnService {
+    Set<String> getExcludedVpnGatewayParameters(Site2SiteCustomerGateway customerGw);
+
+    Set<String> getObsoleteVpnGatewayParameters(Site2SiteCustomerGateway customerGw);
+
     boolean cleanupVpnConnectionByVpc(long vpcId);
 
     boolean cleanupVpnGatewayByVpc(long vpcId);
