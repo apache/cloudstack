@@ -28,7 +28,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.BeanNameAware;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -38,7 +39,7 @@ import com.cloud.utils.component.Registry;
 
 public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNameAware {
 
-    private static final Logger log = Logger.getLogger(ExtensionRegistry.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     String name;
     String beanName;
@@ -111,7 +112,7 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
             registered.add(item);
         }
 
-        log.debug("Registering extension [" + name + "] in [" + this.name + "]");
+        logger.debug("Registering extension [" + name + "] in [" + this.name + "]");
 
         return true;
     }

@@ -21,6 +21,7 @@ import org.apache.cloudstack.acl.ProjectRolePermission;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -69,7 +70,7 @@ public class DeleteProjectRolePermissionCmd extends BaseCmd {
         if (rolePermission == null || rolePermission.getProjectId() != getProjectId()) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role permission id provided for the project");
         }
-        CallContext.current().setEventDetails("Deleting Project Role permission with id: " + rolePermission.getId());
+        CallContext.current().setEventDetails("Deleting Project Role permission with ID: " + rolePermission.getUuid());
         boolean result = projRoleService.deleteProjectRolePermission(rolePermission);
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(result);
@@ -79,5 +80,15 @@ public class DeleteProjectRolePermissionCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccountId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getProjectId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 }

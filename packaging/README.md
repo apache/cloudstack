@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # CloudStack RPM and DEB packaging
 This directory contains all the required scripts and tools needed to build RPM and DEB packages for Apache CloudStack.
 
@@ -6,9 +25,9 @@ These scripts are also used by the CloudStack team to build packages for the off
 # Requirements
 The RPM and DEB packages have dependencies on versions of specific libraries. Due to these dependencies the following distributions and their versions are supported by the packages.
 
-* CentOS / RHEL: 7 and 8
-* Debian 7 (Wheezy) and 8 (Jessy) (untested!)
-* Ubuntu: 16.04 (Xenial), 18.04 (Bionic) and 20.04 (Focal)
+* CentOS / RHEL: 8 and 9
+* Ubuntu: 20.04, 22.04, 24.04
+* Debian 12 (Bookworm, untested!)
 
 # Building
 Using the scripts in the *packaging* directory the RPM and DEB packages can be build.
@@ -38,4 +57,4 @@ The commands above will generate Ubuntu 14.04, 16.04, and 22.04 packages which y
 ## RPM
 The *package.sh* script can be used to build RPM packages for CloudStack. In the *packaging* script you can run the following command:
 
-``./package.sh --pack oss --distribution centos7``
+``./package.sh --pack oss --distribution el8``

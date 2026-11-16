@@ -31,52 +31,54 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Cluster.class)
 public class ClusterResponse extends BaseResponseWithAnnotations {
+    private transient long internalId;
+
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the cluster ID")
+    @Param(description = "The cluster ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the cluster name")
+    @Param(description = "The cluster name")
     private String name;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID of the cluster")
+    @Param(description = "The Pod ID of the cluster")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name of the cluster")
+    @Param(description = "The Pod name of the cluster")
     private String podName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the cluster")
+    @Param(description = "The Zone ID of the cluster")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the cluster")
+    @Param(description = "The Zone name of the cluster")
     private String zoneName;
 
     @SerializedName("hypervisortype")
-    @Param(description = "the hypervisor type of the cluster")
+    @Param(description = "The hypervisor type of the cluster")
     private String hypervisorType;
 
     @SerializedName("clustertype")
-    @Param(description = "the type of the cluster")
+    @Param(description = "The type of the cluster")
     private String clusterType;
 
     @SerializedName("allocationstate")
-    @Param(description = "the allocation state of the cluster")
+    @Param(description = "The allocation state of the cluster")
     private String allocationState;
 
     @SerializedName("managedstate")
-    @Param(description = "whether this cluster is managed by cloudstack")
+    @Param(description = "Whether this cluster is managed by Cloudstack")
     private String managedState;
 
     @SerializedName("capacity")
-    @Param(description = "the capacity of the Cluster", responseObject = CapacityResponse.class)
-    private List<CapacityResponse> capacitites;
+    @Param(description = "The capacity of the Cluster", responseObject = CapacityResponse.class)
+    private List<CapacityResponse> capacities;
 
     @SerializedName("cpuovercommitratio")
-    @Param(description = "The cpu overcommit ratio of the cluster")
+    @Param(description = "The CPU overcommit ratio of the cluster")
     private String cpuovercommitratio;
 
     @SerializedName("memoryovercommitratio")
@@ -90,6 +92,38 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.RESOURCE_DETAILS)
     @Param(description = "Meta data associated with the zone (key/value pairs)")
     private Map<String, String> resourceDetails;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the hosts in the cluster", since = "4.20")
+    private String arch;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the host", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.POD_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the pod", since = "4.21.0")
+    private String podStorageAccessGroups;
+
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
+    private String zoneStorageAccessGroups;
+
+    @SerializedName(ApiConstants.EXTENSION_ID)
+    @Param(description="The ID of extension for this cluster", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME)
+    @Param(description="The name of extension for this cluster", since = "4.21.0")
+    private String extensionName;
+
+    public void setInternalId(long internalId) {
+        this.internalId = internalId;
+    }
+
+    public long getInternalId() {
+        return internalId;
+    }
 
     public String getId() {
         return id;
@@ -171,12 +205,12 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
         this.managedState = managedState;
     }
 
-    public List<CapacityResponse> getCapacitites() {
-        return capacitites;
+    public List<CapacityResponse> getCapacities() {
+        return capacities;
     }
 
-    public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
-        this.capacitites = arrayList;
+    public void setCapacities(ArrayList<CapacityResponse> arrayList) {
+        this.capacities = arrayList;
     }
 
     public void setCpuOvercommitRatio(String cpuovercommitratio) {
@@ -218,5 +252,81 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public String getCpuovercommitratio() {
+        return cpuovercommitratio;
+    }
+
+    public void setCpuovercommitratio(String cpuovercommitratio) {
+        this.cpuovercommitratio = cpuovercommitratio;
+    }
+
+    public String getMemoryovercommitratio() {
+        return memoryovercommitratio;
+    }
+
+    public void setMemoryovercommitratio(String memoryovercommitratio) {
+        this.memoryovercommitratio = memoryovercommitratio;
+    }
+
+    public String getOvm3vip() {
+        return ovm3vip;
+    }
+
+    public void setOvm3vip(String ovm3vip) {
+        this.ovm3vip = ovm3vip;
+    }
+
+    public void setCapacities(List<CapacityResponse> capacities) {
+        this.capacities = capacities;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public String getPodStorageAccessGroups() {
+        return podStorageAccessGroups;
+    }
+
+    public void setPodStorageAccessGroups(String podStorageAccessGroups) {
+        this.podStorageAccessGroups = podStorageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
+    public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
+        this.zoneStorageAccessGroups = zoneStorageAccessGroups;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }

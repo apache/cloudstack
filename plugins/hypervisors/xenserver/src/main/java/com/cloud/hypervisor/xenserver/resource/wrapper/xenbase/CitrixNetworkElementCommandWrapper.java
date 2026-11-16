@@ -25,11 +25,9 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  NetworkElementCommand.class)
 public final class CitrixNetworkElementCommandWrapper extends CommandWrapper<NetworkElementCommand, Answer, CitrixResourceBase> {
-    private static final Logger s_logger = Logger.getLogger(CitrixNetworkElementCommandWrapper.class);
     @Override
     public Answer execute(final NetworkElementCommand command, final CitrixResourceBase citrixResourceBase) {
         final VirtualRoutingResource routingResource = citrixResourceBase.getVirtualRoutingResource();

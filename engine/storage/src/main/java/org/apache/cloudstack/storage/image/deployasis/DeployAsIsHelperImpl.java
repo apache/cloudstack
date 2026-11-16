@@ -56,7 +56,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -71,7 +72,7 @@ import static org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataSto
 @Component
 public class DeployAsIsHelperImpl implements DeployAsIsHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(DeployAsIsHelperImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static Gson gson;
 
     @Inject
@@ -128,7 +129,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         if (guestOsInfo != null) {
             String osType = guestOsInfo.first();
             String osDescription = guestOsInfo.second();
-            LOGGER.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
+            logger.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
             handleGuestOsFromOVFDescriptor(templateId, osType, osDescription, minimumHardwareVersion);
         }
     }
@@ -139,14 +140,14 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                 persistTemplateOVFInformation(templateId, ovfInformationTO);
             }
         } catch (Exception e) {
-            LOGGER.error("Error persisting deploy-as-is details for template " + templateId, e);
+            logger.error("Error persisting deploy-as-is details for template " + templateId, e);
             tmpltStoreVO.setErrorString(e.getMessage());
             tmpltStoreVO.setState(Failed);
             tmpltStoreVO.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
             templateDataStoreDao.update(tmpltStoreVO.getId(), tmpltStoreVO);
             return false;
         }
-        LOGGER.info("Successfully persisted deploy-as-is details for template " + templateId);
+        logger.info("Successfully persisted deploy-as-is details for template " + templateId);
         return true;
     }
 
@@ -162,16 +163,16 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         }
 
         String minimumHypervisorVersion = getMinimumSupportedHypervisorVersionForHardwareVersion(minimumHardwareVersion);
-        LOGGER.info("Minimum hardware version " + minimumHardwareVersion + " matched to hypervisor version " + minimumHypervisorVersion + ". " +
+        logger.info("Minimum hardware version " + minimumHardwareVersion + " matched to hypervisor version " + minimumHypervisorVersion + ". " +
                 "Checking guest OS supporting this version");
 
         List<GuestOSHypervisorVO> guestOsMappings = guestOSHypervisorDao.listByOsNameAndHypervisorMinimumVersion(guestOsType,
                 hypervisor.toString(), minimumHypervisorVersion);
 
         if (CollectionUtils.isNotEmpty(guestOsMappings)) {
-            if (LOGGER.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 String msg = String.format("number of hypervisor mappings for guest os \"%s\" is: %d", guestOsType, guestOsMappings.size());
-                LOGGER.debug(msg);
+                logger.debug(msg);
             }
             Long guestOsId = null;
             if (guestOsMappings.size() == 1) {
@@ -207,7 +208,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                                                 String minimumHardwareVersion) {
         Long guestOsId = retrieveTemplateGuestOsIdFromGuestOsInfo(templateId, guestOsType, guestOsDescription, minimumHardwareVersion);
         if (guestOsId != null) {
-            LOGGER.info("Updating deploy-as-is template guest OS to " + guestOsType);
+            logger.info("Updating deploy-as-is template guest OS to " + guestOsType);
             VMTemplateVO template = templateDao.findById(templateId);
             updateTemplateGuestOsId(template, guestOsId);
         }
@@ -223,7 +224,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                                                       Hypervisor.HypervisorType hypervisor, Collection<String> hypervisorVersions) {
         GuestOSVO newGuestOs = createGuestOsEntry(guestOsDescription);
         for (String hypervisorVersion : hypervisorVersions) {
-            LOGGER.info(String.format("Adding a new guest OS mapping for hypervisor: %s version: %s and " +
+            logger.info(String.format("Adding a new guest OS mapping for hypervisor: %s version: %s and " +
                     "guest OS: %s", hypervisor.toString(), hypervisorVersion, guestOsType));
             createGuestOsHypervisorMapping(newGuestOs.getId(), guestOsType, hypervisor.toString(), hypervisorVersion);
         }
@@ -278,7 +279,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                 hypervisorVersion = "6.7";
             }
         } catch (NumberFormatException e) {
-            LOGGER.error("Cannot parse hardware version " + hwVersion + " to integer. Using default hypervisor version", e);
+            logger.error("Cannot parse hardware version " + hwVersion + " to integer. Using default hypervisor version", e);
         }
         return hypervisorVersion;
     }
@@ -332,7 +333,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         if (ArrayUtils.isNotEmpty(nics)) {
             if (nics.length != networks.size()) {
                 String msg = "Different number of networks provided vs networks defined in deploy-as-is template";
-                LOGGER.error(msg);
+                logger.error(msg);
                 return map;
             }
             for (int i = 0; i < nics.length; i++) {
@@ -347,16 +348,16 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                                                             List<? extends TemplateDeployAsIsInformationTO> informationTOList) {
         for (TemplateDeployAsIsInformationTO informationTO : informationTOList) {
             String propKey = getKeyFromInformationTO(informationTO);
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Saving property %s for template %d as detail", propKey, templateId));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Saving property %s for template %d as detail", propKey, templateId));
             }
             String propValue = null;
             try {
                 propValue = getValueFromInformationTO(informationTO);
             } catch (RuntimeException re) {
-                LOGGER.error("gson marshalling of property object fails: " + propKey,re);
+                logger.error("gson marshalling of property object fails: " + propKey,re);
             } catch (IOException e) {
-                LOGGER.error("Could not decompress the license for template " + templateId, e);
+                logger.error("Could not decompress the license for template " + templateId, e);
             }
             saveTemplateDeployAsIsPropertyAttribute(templateId, propKey, propValue);
         }
@@ -391,18 +392,18 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
     }
 
     private void saveTemplateDeployAsIsPropertyAttribute(long templateId, String key, String value) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Saving property %s for template %d as detail", key, templateId));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Saving property %s for template %d as detail", key, templateId));
         }
         if (templateDeployAsIsDetailsDao.findDetail(templateId,key) != null) {
-            LOGGER.debug(String.format("Detail '%s' existed for template %d, deleting.", key, templateId));
+            logger.debug(String.format("Detail '%s' existed for template %d, deleting.", key, templateId));
             templateDeployAsIsDetailsDao.removeDetail(templateId,key);
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Template detail for template %d to save is '%s': '%s'", templateId, key, value));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Template detail for template %d to save is '%s': '%s'", templateId, key, value));
         }
         TemplateDeployAsIsDetailVO detailVO = new TemplateDeployAsIsDetailVO(templateId, key, value);
-        LOGGER.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
+        logger.debug("Persisting template details " + detailVO.getName() + " from OVF properties for template " + templateId);
         templateDeployAsIsDetailsDao.persist(detailVO);
     }
 

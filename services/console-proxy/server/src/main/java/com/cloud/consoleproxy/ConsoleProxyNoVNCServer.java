@@ -22,7 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -34,7 +35,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class ConsoleProxyNoVNCServer {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVNCServer.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxyNoVNCServer.class);
     public static final int WS_PORT = 8080;
     public static final int WSS_PORT = 8443;
     private static final String VNC_CONF_FILE_LOCATION = "/root/vncport";
@@ -46,16 +47,23 @@ public class ConsoleProxyNoVNCServer {
         try {
             portStr = Files.readString(Path.of(VNC_CONF_FILE_LOCATION)).trim();
         } catch (IOException e) {
-            s_logger.error("Cannot read the VNC port from the file " + VNC_CONF_FILE_LOCATION + " setting it to 8080", e);
+            LOGGER.error("Cannot read the VNC port from the file " + VNC_CONF_FILE_LOCATION + " setting it to 8080", e);
             return WS_PORT;
         }
         return Integer.parseInt(portStr);
     }
 
     public ConsoleProxyNoVNCServer() {
-        this.server = new Server(WS_PORT);
+        this.server = new Server();
         ConsoleProxyNoVNCHandler handler = new ConsoleProxyNoVNCHandler();
         this.server.setHandler(handler);
+
+        final HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setSendServerVersion(false);
+
+        final ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
+        connector.setPort(WS_PORT);
+        server.addConnector(connector);
     }
 
     public ConsoleProxyNoVNCServer(byte[] ksBits, String ksPassword) {
@@ -67,6 +75,7 @@ public class ConsoleProxyNoVNCServer {
             final HttpConfiguration httpConfig = new HttpConfiguration();
             httpConfig.setSecureScheme("https");
             httpConfig.setSecurePort(WSS_PORT);
+            httpConfig.setSendServerVersion(false);
 
             final HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
             httpsConfig.addCustomizer(new SecureRequestCustomizer());
@@ -85,7 +94,7 @@ public class ConsoleProxyNoVNCServer {
             sslConnector.setPort(WSS_PORT);
             server.addConnector(sslConnector);
         } catch (Exception e) {
-            s_logger.error("Unable to secure server due to exception ", e);
+            LOGGER.error("Unable to secure server due to exception ", e);
         }
     }
 

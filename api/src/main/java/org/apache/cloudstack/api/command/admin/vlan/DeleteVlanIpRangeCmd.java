@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,17 +28,16 @@ import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVlanIpRange", description = "Creates a VLAN IP range.", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteVlanIpRange", description = "Deletes a VLAN IP range.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "the id of the VLAN IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "The ID of the VLAN IP range")
     private Long id;
 
     /////////////////////////////////////////////////////

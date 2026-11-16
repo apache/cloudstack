@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.bucket;
 
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.user.Account;
@@ -30,13 +31,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "deleteBucket", description = "Deletes an empty Bucket.", responseObject = SuccessResponse.class, entityType = {Bucket.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteBucketCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteBucketCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -84,8 +83,8 @@ public class DeleteBucketCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Bucket Id: " + this._uuidMgr.getUuid(Bucket.class, getId()));
+    public void execute() throws ConcurrentOperationException, ResourceAllocationException {
+        CallContext.current().setEventDetails("Bucket ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _bucketService.deleteBucket(id, CallContext.current().getCallingAccount());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);

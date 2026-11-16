@@ -59,6 +59,12 @@ setup_k8s_node() {
 
     rm -f /etc/logrotate.d/cloud
 
+    # Enable cloud-init without any aid from ds-identify
+    echo "policy: enabled" >  /etc/cloud/ds-identify.cfg
+
+    # Add ConfigDrive to datasource_list
+    sed -i "s/datasource_list: .*/datasource_list: ['ConfigDrive', 'CloudStack']/g" /etc/cloud/cloud.cfg.d/cloudstack.cfg
+
     log_it "Starting cloud-init services"
     systemctl enable --now --no-block containerd
     if [ -f /home/cloud/success ]; then
@@ -72,3 +78,4 @@ setup_k8s_node() {
 }
 
 setup_k8s_node
+. /opt/cloud/bin/setup/patch.sh && patch_sshd_config

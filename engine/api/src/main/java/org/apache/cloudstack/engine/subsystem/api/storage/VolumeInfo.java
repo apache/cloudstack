@@ -21,12 +21,16 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.offering.DiskOffering.DiskErrorPolicy;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 
-public interface VolumeInfo extends DataObject, Volume {
+import java.util.List;
+import java.util.Set;
+
+public interface VolumeInfo extends DownloadableDataInfo, Volume {
 
     boolean isAttachedVM();
 
@@ -76,6 +80,8 @@ public interface VolumeInfo extends DataObject, Volume {
 
     DiskCacheMode getCacheMode();
 
+    DiskErrorPolicy getErrorPolicy();
+
     /**
      * Currently available for KVM volumes
      */
@@ -96,4 +102,25 @@ public interface VolumeInfo extends DataObject, Volume {
     public byte[] getPassphrase();
 
     Volume getVolume();
+
+    List<String> getCheckpointPaths();
+
+    Set<String> getCheckpointImageStoreUrls();
+
+    /**
+     * Gets the destination host ID hint for CLVM volume creation.
+     * This is used to route volume creation commands to the specific host where the VM will be deployed.
+     * Only applicable for CLVM storage pools to avoid shared mode activation.
+     *
+     * @return The host ID where the volume should be created, or null if not set
+     */
+    Long getDestinationHostId();
+
+    /**
+     * Sets the destination host ID hint for CLVM volume creation.
+     * This should be set before volume creation when the destination host is known.
+     *
+     * @param hostId The host ID where the volume should be created
+     */
+    void setDestinationHostId(Long hostId);
 }

@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.dedicated.DedicatedResourceResponse;
 
 import com.cloud.serializer.Param;
 
@@ -33,44 +34,52 @@ import com.cloud.serializer.Param;
 public class AffinityGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the affinity group")
+    @Param(description = "The ID of the affinity group")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the affinity group")
+    @Param(description = "The name of the affinity group")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the affinity group")
+    @Param(description = "The description of the affinity group")
     private String description;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the affinity group")
+    @Param(description = "The account owning the affinity group")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the affinity group")
+    @Param(description = "The domain ID of the affinity group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the affinity group")
+    @Param(description = "The domain name of the affinity group")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the affinity group belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project ID of the affinity group")
+    @Param(description = "The project ID of the affinity group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the affinity group")
+    @Param(description = "The project name of the affinity group")
     private String projectName;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the affinity group")
+    @Param(description = "The type of the affinity group")
     private String type;
 
     @SerializedName("virtualmachineIds")
-    @Param(description = "virtual machine IDs associated with this affinity group")
+    @Param(description = "Instance IDs associated with this affinity group")
     private List<String> vmIdList;
+
+    @SerializedName("dedicatedresources")
+    @Param(description = "dedicated resources associated with this affinity group")
+    private List<DedicatedResourceResponse> dedicatedResources;
 
     public AffinityGroupResponse() {
     }
@@ -113,6 +122,11 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override
@@ -160,6 +174,14 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         }
 
         this.vmIdList.add(vmId);
+    }
+
+    public void addDedicatedResource(DedicatedResourceResponse dedicatedResourceResponse) {
+        if (this.dedicatedResources == null) {
+            this.dedicatedResources = new ArrayList<>();
+        }
+
+        this.dedicatedResources.add(dedicatedResourceResponse);
     }
 
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,5 +48,32 @@ public class ConfigKeyTest {
     public void testIsSameKeyAsThrowingCloudRuntimeException() {
         ConfigKey key = new ConfigKey("hond", Boolean.class, "naam", "truus", "thrown name", false);
         Assert.assertFalse("zero and 0L should be considered the same address", key.isSameKeyAs(0L));
+    }
+
+    @Test
+    public void testDecode() {
+        ConfigKey key = new ConfigKey("testcategoey", Boolean.class, "test", "true", "test descriptuin", false, List.of(Scope.Zone, Scope.StoragePool));
+        int bitmask = key.getScopeBitmask();
+        List<Scope> scopes = ConfigKey.Scope.decode(bitmask);
+        Assert.assertEquals(bitmask, ConfigKey.Scope.getBitmask(scopes.toArray(new Scope[0])));
+        for (Scope scope : scopes) {
+            Assert.assertTrue(scope == Scope.Zone || scope == Scope.StoragePool);
+        }
+    }
+
+    @Test
+    public void testDecodeAsCsv() {
+        ConfigKey key = new ConfigKey("testcategoey", Boolean.class, "test", "true", "test descriptuin", false, List.of(Scope.Zone, Scope.StoragePool));
+        int bitmask = key.getScopeBitmask();
+        String scopes = ConfigKey.Scope.decodeAsCsv(bitmask);
+        Assert.assertTrue("Zone, StoragePool".equals(scopes));
+    }
+
+    @Test
+    public void testGetDescendants() {
+        List<Scope> descendants = ConfigKey.Scope.getAllDescendants(Scope.Zone.name());
+        for (Scope descendant : descendants) {
+            Assert.assertTrue(descendant == Scope.Cluster || descendant == Scope.StoragePool || descendant == Scope.ImageStore);
+        }
     }
 }

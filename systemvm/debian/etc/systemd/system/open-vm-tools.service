@@ -1,4 +1,4 @@
-﻿[Unit]
+[Unit]
 Description=Service for virtual machines hosted on VMware
 Documentation=http://open-vm-tools.sourceforge.net/about.php
 DefaultDependencies=no

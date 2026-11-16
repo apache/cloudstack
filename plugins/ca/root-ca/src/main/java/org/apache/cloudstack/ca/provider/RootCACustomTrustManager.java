@@ -27,29 +27,30 @@ import java.util.Map;
 
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.certificate.dao.CrlDao;
 import org.apache.commons.lang3.StringUtils;
 
 public final class RootCACustomTrustManager implements X509TrustManager {
-    private static final Logger LOG = Logger.getLogger(RootCACustomTrustManager.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String clientAddress = "Unknown";
     private boolean authStrictness = true;
     private boolean allowExpiredCertificate = true;
     private CrlDao crlDao;
-    private X509Certificate caCertificate;
+    private List<X509Certificate> caCertificates;
     private Map<String, X509Certificate> activeCertMap;
 
-    public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final X509Certificate caCertificate, final CrlDao crlDao) {
+    public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final List<X509Certificate> caCertificates, final CrlDao crlDao) {
         if (StringUtils.isNotEmpty(clientAddress)) {
             this.clientAddress = clientAddress.replace("/", "").split(":")[0];
         }
         this.authStrictness = authStrictness;
         this.allowExpiredCertificate = allowExpiredCertificate;
         this.activeCertMap = activeCertMap;
-        this.caCertificate = caCertificate;
+        this.caCertificates = caCertificates;
         this.crlDao = crlDao;
     }
 
@@ -71,12 +72,12 @@ public final class RootCACustomTrustManager implements X509TrustManager {
             builder.append("\n  Issuer DN:" + certificate.getIssuerDN());
             builder.append("\n  Alternative Names:" + certificate.getSubjectAlternativeNames());
         }
-        LOG.debug(builder.toString());
+        logger.debug(builder.toString());
     }
 
     @Override
     public void checkClientTrusted(final X509Certificate[] certificates, final String s) throws CertificateException {
-        if (LOG.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             printCertificateChain(certificates, s);
         }
 
@@ -86,7 +87,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         if (authStrictness && primaryClientCertificate == null) {
             throw new CertificateException("In strict auth mode, certificate(s) are expected from client:" + clientAddress);
         } else if (primaryClientCertificate == null) {
-            LOG.info("No certificate was received from client, but continuing since strict auth mode is disabled");
+            logger.info("No certificate was received from client, but continuing since strict auth mode is disabled");
             return;
         }
 
@@ -95,7 +96,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         if (serialNumber == null || crlDao.findBySerial(serialNumber) != null) {
             final String errorMsg = String.format("Client is using revoked certificate of serial=%x, subject=%s from address=%s",
                     primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
-            LOG.error(errorMsg);
+            logger.error(errorMsg);
             exceptionMsg = (StringUtils.isEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
         }
 
@@ -105,7 +106,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
             final String errorMsg = String.format("Client certificate has expired with serial=%x, subject=%s from address=%s",
                     primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
-            LOG.error(errorMsg);
+            logger.error(errorMsg);
             if (!allowExpiredCertificate) {
                 throw new CertificateException(errorMsg);
             }
@@ -125,17 +126,17 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         }
         if (!certMatchesOwnership) {
             final String errorMsg = "Certificate ownership verification failed for client: " + clientAddress;
-            LOG.error(errorMsg);
+            logger.error(errorMsg);
             exceptionMsg = (StringUtils.isEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
         }
         if (authStrictness && StringUtils.isNotEmpty(exceptionMsg)) {
             throw new CertificateException(exceptionMsg);
         }
-        if (LOG.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             if (authStrictness) {
-                LOG.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
+                logger.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
             } else {
-                LOG.debug("Client/agent connection from ip=" + clientAddress + " accepted without certificate validation.");
+                logger.debug("Client/agent connection from ip=" + clientAddress + " accepted without certificate validation.");
             }
         }
 
@@ -150,6 +151,6 @@ public final class RootCACustomTrustManager implements X509TrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[]{caCertificate};
+        return caCertificates.toArray(new X509Certificate[0]);
     }
 }

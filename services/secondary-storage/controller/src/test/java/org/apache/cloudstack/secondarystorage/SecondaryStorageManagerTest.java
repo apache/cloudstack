@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.cloud.network.NetworkModel;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,12 +57,22 @@ public class SecondaryStorageManagerTest {
     @Mock
     NetworkDao _networkDao;
 
+    @Mock
+    NetworkModel _networkModel;
+
     @InjectMocks
     SecondaryStorageManagerImpl _ssMgr = new SecondaryStorageManagerImpl();
 
+    private AutoCloseable closeable;
+
     @Before
     public void initMocks() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -68,6 +80,7 @@ public class SecondaryStorageManagerTest {
         DataCenterVO dc = mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         when(dc.isSecurityGroupEnabled()).thenReturn(false);
+        when(_networkModel.isSecurityGroupSupportedForZone(anyLong())).thenReturn(false);
 
         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
 
@@ -94,6 +107,7 @@ public class SecondaryStorageManagerTest {
         DataCenterVO dc = Mockito.mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         when(dc.isSecurityGroupEnabled()).thenReturn(true);
+        when(_networkModel.isSecurityGroupSupportedForZone(anyLong())).thenReturn(true);
 
         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
 

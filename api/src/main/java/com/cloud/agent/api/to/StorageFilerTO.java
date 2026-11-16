@@ -19,6 +19,7 @@ package com.cloud.agent.api.to;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class StorageFilerTO {
     long id;
@@ -73,6 +74,6 @@ public class StorageFilerTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("Pool[").append(id).append("|").append(host).append(":").append(port).append("|").append(path).append("]").toString();
+        return String.format("Pool %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "host", "port", "path"));
     }
 }

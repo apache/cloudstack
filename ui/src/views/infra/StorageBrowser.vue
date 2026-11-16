@@ -127,20 +127,20 @@
           <template v-if="column.key == 'associatedResource'">
             <template v-if="record.snapshotid">
               <router-link :to="{ path: '/snapshot/' + record.snapshotid }" target='_blank' >
-                {{ $t('label.snapshot') }}
+                {{ record.snapshotname }}
               </router-link>
             </template>
             <template v-else-if="record.volumeid">
               <router-link :to="{ path: '/volume/' + record.volumeid }" target='_blank' >
-                {{ $t('label.volume') }}
+                {{ record.volumename }}
               </router-link>
             </template>
             <template v-else-if="record.templateid">
               <router-link v-if="record.format === 'ISO'" :to="{ path: '/iso/' + record.templateid }" target='_blank' >
-                {{ $t('label.iso') }}
+                {{ record.templatename }}
               </router-link>
               <router-link v-else :to="{ path: '/template/' + record.templateid }" target='_blank'>
-                {{ $t('label.templatename') }}
+                {{ record.templatename }}
               </router-link>
             </template>
             <template v-else>
@@ -163,7 +163,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import MigrateImageStoreResource from '@/views/storage/MigrateImageStoreResource'
@@ -243,7 +243,7 @@ export default {
     },
     fetchImageStoreObjects () {
       this.loading = true
-      api('listImageStoreObjects', {
+      getAPI('listImageStoreObjects', {
         path: this.browserPath,
         id: this.resource.id,
         page: this.page,
@@ -257,7 +257,7 @@ export default {
     },
     fetchPrimaryStoreObjects () {
       this.loading = true
-      api('listStoragePoolObjects', {
+      getAPI('listStoragePoolObjects', {
         path: this.browserPath,
         id: this.resource.id,
         page: this.page,
@@ -324,7 +324,7 @@ export default {
         id: this.resource.id,
         path: `${this.browserPath}${record.name}`
       }
-      api('downloadImageStoreObject', params).then(response => {
+      postAPI('downloadImageStoreObject', params).then(response => {
         const jobId = response.downloadimagestoreobjectresponse.jobid
         this.$pollJob({
           jobId: jobId,

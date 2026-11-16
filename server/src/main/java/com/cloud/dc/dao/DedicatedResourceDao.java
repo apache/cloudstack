@@ -17,6 +17,7 @@
 package com.cloud.dc.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.utils.Pair;
@@ -45,6 +46,12 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
 
     List<DedicatedResourceVO> listByDomainId(Long domainId);
 
+    /**
+     * Unlike {@link #listByDomainId(Long)}, this also includes resources dedicated to a specific
+     * account within the domain, not just domain-wide dedications.
+     */
+    List<DedicatedResourceVO> listAllByDomainId(Long domainId);
+
     List<DedicatedResourceVO> listZonesNotInDomainIds(List<Long> domainIds);
 
     List<Long> listAllPods();
@@ -58,4 +65,6 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
     List<Long> findHostsByCluster(Long clusterId);
 
     List<Long> findHostsByZone(Long zoneId);
+
+    Map<Long, List<String>> listDomainsOfDedicatedResourcesUsedByDomainPath(String domainPath);
 }

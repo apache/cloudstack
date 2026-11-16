@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.hypervisor.Hypervisor;
+
 import java.util.List;
 
 public interface EndPointSelector {
@@ -39,6 +41,8 @@ public interface EndPointSelector {
 
     EndPoint select(DataObject object, StorageAction action, boolean encryptionSupportRequired);
 
+    EndPoint selectRandom(long zoneId, Hypervisor.HypervisorType hypervisorType);
+
     List<EndPoint> selectAll(DataStore store);
 
     List<EndPoint> findAllEndpointsForScope(DataStore store);
@@ -47,5 +51,5 @@ public interface EndPointSelector {
 
     EndPoint select(DataStore store, String downloadUrl);
 
-    EndPoint findSsvm(long dcId);
+    EndPoint findSsvm(Long dcId);
 }

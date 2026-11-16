@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, Long> implements SnapshotScheduleDao {
     protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
     protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;
-    private final SearchBuilder<SnapshotScheduleVO> VolumeIdSearch;
+    protected final SearchBuilder<SnapshotScheduleVO> schedulesAssignedWithAsyncJob;
     private final SearchBuilder<SnapshotScheduleVO> VolumeIdPolicyIdSearch;
 
     protected SnapshotScheduleDaoImpl() {
@@ -48,36 +48,14 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         coincidingSchedulesSearch.and("asyncJobId", coincidingSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
         coincidingSchedulesSearch.done();
 
-        VolumeIdSearch = createSearchBuilder();
-        VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        VolumeIdSearch.done();
-
         VolumeIdPolicyIdSearch = createSearchBuilder();
         VolumeIdPolicyIdSearch.and("volumeId", VolumeIdPolicyIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdPolicyIdSearch.and("policyId", VolumeIdPolicyIdSearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
         VolumeIdPolicyIdSearch.done();
 
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date) {
-        SearchCriteria<SnapshotScheduleVO> sc = coincidingSchedulesSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("scheduledTimestamp", date);
-        // Don't return manual snapshots. They will be executed through another
-        // code path.
-        sc.addAnd("policyId", SearchCriteria.Op.NEQ, 1L);
-        return listBy(sc);
-    }
-
-    @Override
-    public SnapshotScheduleVO findOneByVolume(long volumeId) {
-        SearchCriteria<SnapshotScheduleVO> sc = VolumeIdSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        return findOneBy(sc);
+        schedulesAssignedWithAsyncJob = createSearchBuilder();
+        schedulesAssignedWithAsyncJob.and("asyncJobId", schedulesAssignedWithAsyncJob.entity().getAsyncJobId(), SearchCriteria.Op.NNULL);
+        schedulesAssignedWithAsyncJob.done();
     }
 
     @Override
@@ -96,6 +74,11 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         SearchCriteria<SnapshotScheduleVO> sc = executableSchedulesSearch.create();
         sc.setParameters("scheduledTimestamp", currentTimestamp);
         return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotScheduleVO> getSchedulesAssignedWithAsyncJob() {
+        return listBy(schedulesAssignedWithAsyncJob.create());
     }
 
     /**

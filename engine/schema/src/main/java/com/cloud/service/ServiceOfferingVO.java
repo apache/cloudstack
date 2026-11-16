@@ -124,6 +124,15 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "dynamic_scaling_enabled")
     private boolean dynamicScalingEnabled = true;
 
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
+
+    @Column(name = "gpu_count")
+    private Integer gpuCount;
+
+    @Column(name = "gpu_display")
+    private Boolean gpuDisplay;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call service offering dao to load it.
@@ -194,10 +203,12 @@ public class ServiceOfferingVO implements ServiceOffering {
         limitCpuUse = offering.getLimitCpuUse();
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
-        vmType = offering.getSystemVmType();
+        vmType = offering.getVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
         diskOfferingStrictness = offering.diskOfferingStrictness;
+        vgpuProfileId = offering.vgpuProfileId;
+        gpuCount = offering.gpuCount;
     }
 
     @Override
@@ -278,7 +289,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public String getSystemVmType() {
+    public String getVmType() {
         return vmType;
     }
 
@@ -444,5 +455,31 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public void setDiskOfferingStrictness(boolean diskOfferingStrictness) {
         this.diskOfferingStrictness = diskOfferingStrictness;
+    }
+
+    @Override
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public void setVgpuProfileId(Long vgpuProfileId) {
+        this.vgpuProfileId = vgpuProfileId;
+    }
+
+    @Override
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public void setGpuCount(Integer gpuCount) {
+        this.gpuCount = gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return gpuDisplay;
+    }
+
+    public void setGpuDisplay(Boolean gpuDisplay) {
+        this.gpuDisplay = gpuDisplay;
     }
 }

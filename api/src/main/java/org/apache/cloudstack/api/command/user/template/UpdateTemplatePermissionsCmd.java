@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
@@ -25,9 +24,9 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateTemplatePermissions", responseObject = SuccessResponse.class, description = "Updates a template visibility permissions. "
-    + "A public template is visible to all accounts within the same domain. " + "A private template is visible only to the owner of the template. "
-        + "A privileged template is a private template with account permissions added. " + "Only accounts specified under the template permissions are visible to them.", entityType = {VirtualMachineTemplate.class},
+@APICommand(name = "updateTemplatePermissions", responseObject = SuccessResponse.class, description = "Updates a Template visibility permissions. "
+    + "A public Template is visible to all accounts within the same domain. " + "A private Template is visible only to the owner of the Template. "
+        + "A privileged Template is a private Template with account permissions added. " + "Only accounts specified under the Template permissions are visible to them.", entityType = {VirtualMachineTemplate.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTemplatePermissionsCmd extends BaseUpdateTemplateOrIsoPermissionsCmd {
     @Override
@@ -35,10 +34,6 @@ public class UpdateTemplatePermissionsCmd extends BaseUpdateTemplateOrIsoPermiss
         return "updatetemplatepermissionsresponse";
     }
 
-    @Override
-    protected Logger getLogger() {
-        return Logger.getLogger(UpdateTemplatePermissionsCmd.class.getName());
-    }
 
     @Override
     public long getEntityOwnerId() {

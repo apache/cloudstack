@@ -28,47 +28,47 @@ import org.apache.commons.lang3.StringUtils;
 @EntityReference(value = Host.class)
 public class OutOfBandManagementResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the host")
+    @Param(description = "The ID of the host")
     private String id;
 
     @SerializedName(ApiConstants.POWER_STATE)
-    @Param(description = "the out-of-band management interface powerState of the host")
+    @Param(description = "The out-of-band management interface powerState of the host")
     private OutOfBandManagement.PowerState powerState;
 
     @SerializedName(ApiConstants.ENABLED)
-    @Param(description = "true if out-of-band management is enabled for the host")
+    @Param(description = "True if out-of-band management is enabled for the host")
     private Boolean enabled;
 
     @SerializedName(ApiConstants.DRIVER)
-    @Param(description = "the out-of-band management driver for the host")
+    @Param(description = "The out-of-band management driver for the host")
     private String driver;
 
     @SerializedName(ApiConstants.ADDRESS)
-    @Param(description = "the out-of-band management interface address")
+    @Param(description = "The out-of-band management interface address")
     private String ipAddress;
 
     @SerializedName(ApiConstants.PORT)
-    @Param(description = "the out-of-band management interface port")
+    @Param(description = "The out-of-band management interface port")
     private String port;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the out-of-band management interface username")
+    @Param(description = "The out-of-band management interface username")
     private String username;
 
     @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "the out-of-band management interface password")
+    @Param(description = "The out-of-band management interface password")
     private String password;
 
     @SerializedName(ApiConstants.ACTION)
-    @Param(description = "the out-of-band management action (if issued)")
+    @Param(description = "The out-of-band management action (if issued)")
     private String outOfBandManagementAction;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the operation result description")
+    @Param(description = "The operation result description")
     private String resultDescription;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "the operation result")
+    @Param(description = "The operation result")
     private Boolean success;
 
     public OutOfBandManagementResponse() {

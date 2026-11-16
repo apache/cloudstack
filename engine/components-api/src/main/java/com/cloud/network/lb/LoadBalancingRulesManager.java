@@ -39,7 +39,7 @@ import com.cloud.user.Account;
 public interface LoadBalancingRulesManager {
 
     LoadBalancer createPublicLoadBalancer(String xId, String name, String description, int srcPort, int destPort, long sourceIpId, String protocol, String algorithm,
-        boolean openFirewall, CallContext caller, String lbProtocol, Boolean forDisplay, String cidrList) throws NetworkRuleConflictException;
+        boolean openFirewall, CallContext caller, String lbProtocol, Boolean forDisplay, String cidrList, Long networkId) throws NetworkRuleConflictException;
 
     boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
 
@@ -62,7 +62,7 @@ public interface LoadBalancingRulesManager {
      */
     boolean removeVmFromLoadBalancers(long vmId);
 
-    boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
+    boolean applyLoadBalancersForNetwork(Network network, Scheme scheme) throws ResourceUnavailableException;
 
     String getLBCapability(long networkid, String capabilityName);
 
@@ -74,7 +74,7 @@ public interface LoadBalancingRulesManager {
 
     boolean configureLbAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException;
 
-    boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
+    boolean revokeLoadBalancersForNetwork(Network network, Scheme scheme) throws ResourceUnavailableException;
 
     boolean validateLbRule(LoadBalancingRule lbRule);
 

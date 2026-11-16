@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -30,13 +29,13 @@ public class Site2SiteVpnGatewayDaoImpl extends GenericDaoBase<Site2SiteVpnGatew
     @Inject
     protected IPAddressDao _addrDao;
 
-    private static final Logger s_logger = Logger.getLogger(Site2SiteVpnGatewayDaoImpl.class);
 
     private final SearchBuilder<Site2SiteVpnGatewayVO> AllFieldsSearch;
 
     protected Site2SiteVpnGatewayDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ipAddressId", AllFieldsSearch.entity().getAddrId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -44,6 +43,13 @@ public class Site2SiteVpnGatewayDaoImpl extends GenericDaoBase<Site2SiteVpnGatew
     public Site2SiteVpnGatewayVO findByVpcId(long vpcId) {
         SearchCriteria<Site2SiteVpnGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcId", vpcId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public Site2SiteVpnGatewayVO findByPublicIpAddress(long ipAddressId) {
+        SearchCriteria<Site2SiteVpnGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipAddressId", ipAddressId);
         return findOneBy(sc);
     }
 }

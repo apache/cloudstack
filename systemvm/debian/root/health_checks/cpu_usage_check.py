@@ -28,8 +28,8 @@ def main():
         data = entries[0]
 
     if "maxCpuUsage" not in data:
-        print "Missing maxCpuUsage in health_checks_data systemThresholds, skipping"
-        exit(0)
+        print("Missing maxCpuUsage in health_checks_data systemThresholds, skipping")
+        exit(3)
 
     maxCpuUsage = float(data["maxCpuUsage"])
     cmd = "top -b -n2 -p 1 | fgrep \"Cpu(s)\" | tail -1 | " \
@@ -37,18 +37,19 @@ def main():
           "'{ split($1, vs, \",\");  idle=vs[length(vs)]; " \
           "sub(\"%\", \"\", idle); printf \"%.2f\", 100 - idle }'"
     pout = Popen(cmd, shell=True, stdout=PIPE)
-    if pout.wait() == 0:
-        currentUsage = float(pout.communicate()[0].strip())
+    stdout, _ = pout.communicate()
+    if pout.returncode == 0:
+        currentUsage = float(stdout.decode().strip())
         if currentUsage > maxCpuUsage:
-            print "CPU Usage " + str(currentUsage) + \
-                  "% has crossed threshold of " + str(maxCpuUsage) + "%"
+            print("CPU Usage " + str(currentUsage) +
+                  "% has crossed threshold of " + str(maxCpuUsage) + "%")
             exit(1)
-        print "CPU Usage within limits with current at " \
-              + str(currentUsage) + "%"
+        print("CPU Usage within limits with current at "
+              + str(currentUsage) + "%")
         exit(0)
     else:
-        print "Failed to retrieve cpu usage using " + cmd
-        exit(1)
+        print("Failed to retrieve cpu usage using " + cmd)
+        exit(3)
 
 
 if __name__ == "__main__":

@@ -18,13 +18,62 @@
 //
 package org.apache.cloudstack.framework.config.impl;
 
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.utils.Pair;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigDepotImplTest {
 
+    @Mock
+    ConfigurationDao _configDao;
+    @Mock
+    ConfigurationSubGroupDao configSubGroupDao;
+
+    @Mock
+    ConfigurationSubGroupDao _configSubGroupDao;
+
+    @InjectMocks
     private ConfigDepotImpl configDepotImpl = new ConfigDepotImpl();
+
+    @Test
+    public void createConfigObjectPersistsSubGroupWithNameAndGroupId() {
+        ConfigKey<?> key = Mockito.mock(ConfigKey.class);
+        Mockito.when(key.group()).thenReturn(null);
+        Mockito.when(key.subGroup()).thenReturn(new Pair<>("ConsoleProxy VM", 5L));
+        Mockito.when(key.key()).thenReturn("consoleproxy.capacity.standby");
+        Mockito.when(_configSubGroupDao.findByNameAndGroup("ConsoleProxy VM", 1L)).thenReturn(null);
+        Mockito.when(_configSubGroupDao.persist(Mockito.any(ConfigurationSubGroupVO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(_configDao.findById("consoleproxy.capacity.standby")).thenReturn(Mockito.mock(ConfigurationVO.class));
+
+        ArgumentCaptor<ConfigurationSubGroupVO> captor = ArgumentCaptor.forClass(ConfigurationSubGroupVO.class);
+        ReflectionTestUtils.invokeMethod(configDepotImpl, "createOrupdateConfigObject",
+                new Date(), "components", key, "someValue");
+
+        Mockito.verify(_configSubGroupDao).persist(captor.capture());
+        Assert.assertEquals("ConsoleProxy VM", captor.getValue().getName());
+        Assert.assertEquals(Long.valueOf(1L), captor.getValue().getGroupId());
+    }
 
     @Test
     public void createEmptyScopeLevelMappingsTest() {
@@ -40,4 +89,132 @@ public class ConfigDepotImplTest {
         }
     }
 
+    @Test
+    public void testIsNewConfig() {
+        String validNewConfigKey = "CONFIG";
+        ConfigKey<Boolean> validNewConfig = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "CONFIG", "true", "", true);
+        ConfigKey<Boolean> invalidNewConfig = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "CONFIG1", "true", "", true);
+        Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
+        newConfigs.add(validNewConfigKey);
+        ReflectionTestUtils.setField(configDepotImpl, "newConfigs", newConfigs);
+        Assert.assertTrue(configDepotImpl.isNewConfig(validNewConfig));
+        Assert.assertFalse(configDepotImpl.isNewConfig(invalidNewConfig));
+    }
+
+    private void runTestGetConfigStringValue(String key, String value) {
+        ConfigurationVO configurationVO = Mockito.mock(ConfigurationVO.class);
+        Mockito.when(configurationVO.getValue()).thenReturn(value);
+        Mockito.when(_configDao.findById(key)).thenReturn(configurationVO);
+        String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
+        Assert.assertEquals(value, result);
+    }
+
+    @Test
+    public void testGetConfigStringValue() {
+        runTestGetConfigStringValue("test", "value");
+    }
+
+    @Test
+    public void testGetConfigStringValue_nameWithCharacters() {
+        runTestGetConfigStringValue("test.1-1", "value");
+        runTestGetConfigStringValue("test_1#2", "value");
+    }
+
+    private void runTestGetConfigStringValueExpiry(long wait, int configDBRetrieval) {
+        String key = "test1";
+        String value = "expiry";
+        runTestGetConfigStringValue(key, value);
+        try {
+            Thread.sleep(wait);
+        } catch (InterruptedException ie) {
+            Assert.fail(ie.getMessage());
+        }
+        String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
+        Assert.assertEquals(value, result);
+        Mockito.verify(_configDao, Mockito.times(configDBRetrieval)).findById(key);
+    }
+
+    @Test
+    public void testGetConfigStringValueWithinExpiry() {
+        runTestGetConfigStringValueExpiry((ConfigDepotImpl.CONFIG_CACHE_EXPIRE_SECONDS * 1000 ) / 4,
+                1);
+    }
+
+    @Test
+    public void testGetConfigStringValueAfterExpiry() {
+        runTestGetConfigStringValueExpiry(((ConfigDepotImpl.CONFIG_CACHE_EXPIRE_SECONDS) + 5) * 1000,
+                2);
+    }
+
+    @Test
+    public void testPopulateConfigurationNewVO() {
+        ConfigKey StorageDisableThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class, "pool.storage.capacity.disablethreshold", "0.85",
+                "Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.",
+                true, List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
+        Configurable configurable = new Configurable() {
+            @Override
+            public String getConfigComponentName() {
+                return "test";
+            }
+
+            @Override
+            public ConfigKey<?>[] getConfigKeys() {
+                return new ConfigKey<?>[] { StorageDisableThreshold };
+            }
+        };
+        configDepotImpl.setConfigurables(List.of(configurable));
+        configDepotImpl.populateConfigurations();
+
+        Assert.assertEquals("pool.storage.capacity.disablethreshold",
+                configDepotImpl._scopeLevelConfigsMap.get(ConfigKey.Scope.Zone).iterator().next().key());
+        Assert.assertEquals("pool.storage.capacity.disablethreshold",
+                configDepotImpl._scopeLevelConfigsMap.get(ConfigKey.Scope.StoragePool).iterator().next().key());
+        Assert.assertEquals(0, configDepotImpl._scopeLevelConfigsMap.get(ConfigKey.Scope.Cluster).size());
+    }
+
+    @Test
+    public void testPopulateConfiguration() {
+        ConfigKey StorageDisableThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class, "pool.storage.capacity.disablethreshold", "0.85",
+                "Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.",
+                true, List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
+        Configurable configurable = new Configurable() {
+            @Override
+            public String getConfigComponentName() {
+                return "test";
+            }
+
+            @Override
+            public ConfigKey<?>[] getConfigKeys() {
+                return new ConfigKey<?>[]{StorageDisableThreshold};
+            }
+        };
+        configDepotImpl.setConfigurables(List.of(configurable));
+
+        ConfigurationVO configurationVO = new ConfigurationVO(StorageDisableThreshold.category(), "DEFAULT", "component",
+                StorageDisableThreshold.key(), StorageDisableThreshold.defaultValue(), StorageDisableThreshold.description(),
+                StorageDisableThreshold.displayText(), StorageDisableThreshold.parent(), 1L, 10L);
+        Mockito.when(_configDao.findById("pool.storage.capacity.disablethreshold")).thenReturn(configurationVO);
+        configDepotImpl.populateConfigurations();
+
+        Mockito.verify(_configDao, Mockito.times(1)).persist(configurationVO);
+    }
+
+    @Test
+    public void getParentScopeWithValidScope() {
+        ConfigKey.Scope scope = ConfigKey.Scope.Cluster;
+        ScopedConfigStorage scopedConfigStorage = Mockito.mock(ScopedConfigStorage.class);
+        Long id = 1L;
+        ConfigKey.Scope parentScope = ConfigKey.Scope.Zone;
+        Long parentId = 2L;
+
+        Mockito.when(scopedConfigStorage.getScope()).thenReturn(scope);
+        Mockito.when(scopedConfigStorage.getParentScope(id)).thenReturn(new Pair<>(parentScope, parentId));
+
+        configDepotImpl.setScopedStorages(Collections.singletonList(scopedConfigStorage));
+        Pair<ConfigKey.Scope, Long> result = configDepotImpl.getParentScope(scope, id);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(parentScope, result.first());
+        Assert.assertEquals(parentId, result.second());
+    }
 }

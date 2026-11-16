@@ -27,14 +27,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade302to40 extends Upgrade30xBase {
-    final static Logger s_logger = Logger.getLogger(Upgrade302to40.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -64,7 +62,6 @@ public class Upgrade302to40 extends Upgrade30xBase {
 
     @Override
     public void performDataMigration(Connection conn) {
-        //updateVmWareSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         correctVRProviders(conn);
         correctMultiplePhysicaNetworkSetups(conn);
         addHostDetailsUniqueKey(conn);
@@ -211,9 +208,9 @@ public class Upgrade302to40 extends Upgrade30xBase {
                             if (rsSameLabel.next()) {
                                 Long sameLabelcount = rsSameLabel.getLong(1);
                                 if (sameLabelcount > 0) {
-                                    s_logger.error("There are untagged networks for which we need to add a physical network with Xen traffic label = 'xen.guest.network.device' config value, which is: " +
+                                    logger.error("There are untagged networks for which we need to add a physical network with Xen traffic label = 'xen.guest.network.device' config value, which is: " +
                                         xenGuestLabel);
-                                    s_logger.error("However already there are " + sameLabelcount + " physical networks setup with same traffic label, cannot upgrade");
+                                    logger.error("However already there are " + sameLabelcount + " physical networks setup with same traffic label, cannot upgrade");
                                     throw new CloudRuntimeException("Cannot upgrade this setup since a physical network with same traffic label: " + xenGuestLabel +
                                         " already exists, Please check logs and contact Support.");
                                 }
@@ -230,9 +227,9 @@ public class Upgrade302to40 extends Upgrade30xBase {
                             conn.prepareStatement("SELECT n.id FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
                         pstmt3.setLong(1, zoneId);
                         ResultSet rsNet = pstmt3.executeQuery();
-                        s_logger.debug("Adding PhysicalNetwork to VLAN");
-                        s_logger.debug("Adding PhysicalNetwork to user_ip_address");
-                        s_logger.debug("Adding PhysicalNetwork to networks");
+                        logger.debug("Adding PhysicalNetwork to VLAN");
+                        logger.debug("Adding PhysicalNetwork to user_ip_address");
+                        logger.debug("Adding PhysicalNetwork to networks");
                         while (rsNet.next()) {
                             Long networkId = rsNet.getLong(1);
                             addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId, networkId);
@@ -253,7 +250,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
                 if (rs.next()) {
                     Long count = rs.getLong(1);
                     if (count > 1) {
-                        s_logger.debug("There are " + count + " physical networks setup");
+                        logger.debug("There are " + count + " physical networks setup");
                         multiplePhysicalNetworks = true;
                     }
                 }
@@ -272,7 +269,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
                         String networkId = rsVNet.getString(5);
                         String vpid = rsVNet.getString(4);
                         String npid = rsVNet.getString(6);
-                        s_logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: " + vnet +
+                        logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: " + vnet +
                             " has physical network id: " + vpid + " ,but the guest network: " + networkId + " that uses it has physical network id: " + npid);
 
                         String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. "
@@ -291,7 +288,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
                             + "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n"
                             + "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" + "7. Start all your VMs";
 
-                        s_logger.error(message);
+                        logger.error(message);
                         throw new CloudRuntimeException("Cannot upgrade this setup since Guest Vnet assignment to the multiple physical " +
                             "networks is incorrect. Please check the logs for details on how to proceed");
 
@@ -470,26 +467,26 @@ public class Upgrade302to40 extends Upgrade30xBase {
                 pstmt = conn.prepareStatement("DROP TEMPORARY TABLE `cloud`.`network_offerings2`");
                 pstmt.executeUpdate();
             } catch (SQLException e) {
-                s_logger.info("[ignored] ",e);
+                logger.info("[ignored] ",e);
             }
             closeAutoCloseable(pstmt);
         }
     }
 
     private void addHostDetailsUniqueKey(Connection conn) {
-        s_logger.debug("Checking if host_details unique key exists, if not we will add it");
+        logger.debug("Checking if host_details unique key exists, if not we will add it");
         try (
                 PreparedStatement pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` WHERE KEY_NAME = 'uk_host_id_name'");
                 ResultSet rs = pstmt.executeQuery();
             ) {
             if (rs.next()) {
-                s_logger.debug("Unique key already exists on host_details - not adding new one");
+                logger.debug("Unique key already exists on host_details - not adding new one");
             } else {
                 //add the key
                 PreparedStatement pstmtUpdate =
                     conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)");
                 pstmtUpdate.executeUpdate();
-                s_logger.debug("Unique key did not exist on host_details -  added new one");
+                logger.debug("Unique key did not exist on host_details -  added new one");
                 pstmtUpdate.close();
             }
         } catch (SQLException e) {
@@ -499,7 +496,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
 
     private void addVpcProvider(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Adding vpc provider to all physical networks in the system");
+        logger.debug("Adding vpc provider to all physical networks in the system");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
@@ -534,7 +531,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
                 pstmt.setLong(1, providerId);
                 pstmt.executeUpdate();
 
-                s_logger.debug("Added VPC Virtual router provider for physical network id=" + pNtwkId);
+                logger.debug("Added VPC Virtual router provider for physical network id=" + pNtwkId);
 
             }
         } catch (SQLException e) {
@@ -543,12 +540,12 @@ public class Upgrade302to40 extends Upgrade30xBase {
             closeAutoCloseable(rs);
             closeAutoCloseable(pstmt);
         }
-        s_logger.debug("Done adding VPC physical network service providers to all physical networks");
+        logger.debug("Done adding VPC physical network service providers to all physical networks");
     }
 
     private void updateRouterNetworkRef(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Updating router network ref");
+        logger.debug("Updating router network ref");
         try (
                 PreparedStatement pstmt = conn.prepareStatement("SELECT d.id, d.network_id FROM `cloud`.`domain_router` d, `cloud`.`vm_instance` v " + "WHERE d.id=v.id AND v.removed is NULL");
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT guest_type from `cloud`.`networks` where id=?");
@@ -571,13 +568,13 @@ public class Upgrade302to40 extends Upgrade30xBase {
                     pstmt2.setString(3, networkType);
                     pstmt2.executeUpdate();
                 }
-                s_logger.debug("Added reference for router id=" + routerId + " and network id=" + networkId);
+                logger.debug("Added reference for router id=" + routerId + " and network id=" + networkId);
 
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update the router/network reference ", e);
         }
-        s_logger.debug("Done updating router/network references");
+        logger.debug("Done updating router/network references");
     }
 
     private void fixForeignKeys(Connection conn) {
@@ -693,7 +690,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
     }
 
     private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId) {
-        s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
+        logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
         String insertF5 =
             "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
                 + "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -716,7 +713,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
     }
 
     private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId) {
-        s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
+        logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
         String insertSrx =
             "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
                 + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -738,7 +735,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
 
     private void addF5ServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
         // add physical network service provider - F5BigIp
-        s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
+        logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
         String insertPNSP =
             "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
                 + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
@@ -757,7 +754,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
 
     private void addSrxServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
         // add physical network service provider - JuniperSRX
-        s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
+        logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
         String insertPNSP =
             "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
                 + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
@@ -875,7 +872,7 @@ public class Upgrade302to40 extends Upgrade30xBase {
                     pstmtUpdate.setLong(2, networkId);
                     pstmtUpdate.setLong(3, f5DeviceId);
                     pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
+                    logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
 
                     // add mapping for the network in network_external_firewall_device_map
                     String insertFwMapping =
@@ -885,11 +882,11 @@ public class Upgrade302to40 extends Upgrade30xBase {
                     pstmtUpdate.setLong(2, networkId);
                     pstmtUpdate.setLong(3, srxDevivceId);
                     pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
+                    logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
                 }
 
                 // update host details for F5 and SRX devices
-                s_logger.debug("Updating the host details for F5 and SRX devices");
+                logger.debug("Updating the host details for F5 and SRX devices");
                 pstmt = conn.prepareStatement("SELECT host_id, name FROM `cloud`.`host_details` WHERE  host_id=? OR host_id=?");
                 pstmt.setLong(1, f5HostId);
                 pstmt.setLong(2, srxHostId);
@@ -908,20 +905,20 @@ public class Upgrade302to40 extends Upgrade30xBase {
                     pstmt.setString(3, camlCaseName);
                     pstmt.executeUpdate();
                 }
-                s_logger.debug("Successfully updated host details for F5 and SRX devices");
+                logger.debug("Successfully updated host details for F5 and SRX devices");
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
             } finally {
                 closeAutoCloseable(rs);
                 closeAutoCloseable(pstmt);
             }
-            s_logger.info("Successfully upgraded networks using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
+            logger.info("Successfully upgraded networks using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
     }
 
     private void encryptConfig(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Encrypting Config values");
+        logger.debug("Encrypting Config values");
         try (
                 PreparedStatement pstmt = conn.prepareStatement("select name, value from `cloud`.`configuration` where name in ('router.ram.size', 'secondary.storage.vm', 'security.hash.key') and category <> 'Hidden'");
                 PreparedStatement pstmt1 = conn.prepareStatement("update `cloud`.`configuration` set value=?, category = 'Hidden' where name=?");
@@ -943,11 +940,11 @@ public class Upgrade302to40 extends Upgrade30xBase {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt configuration values ", e);
         }
-        s_logger.debug("Done encrypting Config values");
+        logger.debug("Done encrypting Config values");
     }
 
     private void encryptClusterDetails(Connection conn) {
-        s_logger.debug("Encrypting cluster details");
+        logger.debug("Encrypting cluster details");
         try (
                 PreparedStatement pstmt = conn.prepareStatement("select id, value from `cloud`.`cluster_details` where name = 'password'");
                 PreparedStatement pstmt1 = conn.prepareStatement("update `cloud`.`cluster_details` set value=? where id=?");
@@ -969,6 +966,6 @@ public class Upgrade302to40 extends Upgrade30xBase {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
         }
-        s_logger.debug("Done encrypting cluster_details");
+        logger.debug("Done encrypting cluster_details");
     }
 }

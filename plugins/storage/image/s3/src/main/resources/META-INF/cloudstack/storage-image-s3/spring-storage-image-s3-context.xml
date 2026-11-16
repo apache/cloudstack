@@ -30,5 +30,5 @@
     <bean id="s3ImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl" />
 
-    
+
 </beans>

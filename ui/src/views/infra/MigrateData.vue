@@ -89,7 +89,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'MigrateData',
@@ -121,7 +121,7 @@ export default {
     fetchImageStores () {
       return new Promise((resolve, reject) => {
         this.loading = true
-        api('listImageStores').then(json => {
+        getAPI('listImageStores').then(json => {
           this.imageStores = json.listimagestoresresponse.imagestore || []
           this.form.srcpool = this.imageStores[0].id || ''
           resolve(this.imageStores)
@@ -189,7 +189,7 @@ export default {
     },
     migrateData (args, title) {
       return new Promise((resolve, reject) => {
-        api('migrateSecondaryStorageData', args).then(async json => {
+        postAPI('migrateSecondaryStorageData', args).then(async json => {
           const jobId = json.migratesecondarystoragedataresponse.jobid
           if (jobId) {
             this.$pollJob({

@@ -18,16 +18,28 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 
 import com.cloud.host.Host;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Pair;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
+    /** Validate backend ownership before adopting an existing volume, without modifying it. */
+    default void validateVolumeForImport(StoragePool pool, String path) {
+        if (pool.getPoolType() == StoragePoolType.Linstor) {
+            throw new UnsupportedOperationException("The storage driver cannot validate LINSTOR volume imports");
+        }
+    }
+
     enum QualityOfServiceState { MIGRATION, NO_MIGRATION }
 
     String BASIC_CREATE = "basicCreate";
@@ -43,6 +55,10 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
+
+    default boolean requiresAccessForMigration(DataObject dataObject) {
+        return false;
+    }
 
     /**
      * intended for managed storage (cloud.storage_pool.managed = true)
@@ -84,9 +100,33 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
 
     /**
      * intended for managed storage
+     * returns true if the storage can provide its custom stats
+     */
+    default boolean poolProvidesCustomStorageStats() {
+        return false;
+    }
+
+    /**
+     * intended for managed storage
+     * returns the custom stats if the storage can provide them
+     */
+    default Map<String, String> getCustomStorageStats(StoragePool pool) {
+        return null;
+    }
+
+    /**
+     * intended for managed storage
      * returns the total capacity and used size in bytes
      */
     Pair<Long, Long> getStorageStats(StoragePool storagePool);
+
+    /**
+     * Intended for managed storage
+     * returns the capacity and used IOPS or null if not supported
+     */
+    default Pair<Long, Long> getStorageIopsStats(StoragePool storagePool) {
+        return null;
+    }
 
     /**
      * intended for managed storage
@@ -105,6 +145,22 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      * returns true if the host can access the storage pool
      */
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    /**
+     * intended for managed storage
+     * returns true if the host can prepare storage client to provide access the storage pool
+     */
+    default boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
+        return false;
+    }
+
+    /**
+     * intended for managed storage
+     * returns true if the host can be disconnected from storage pool
+     */
+    default boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        return true;
+    }
 
     /**
      * Used by storage pools which want to keep VMs' information
@@ -138,4 +194,59 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     boolean isStorageSupportHA(StoragePoolType type);
 
     void detachVolumeFromAllStorageNodes(Volume volume);
+    /**
+     * Data store driver needs its grantAccess() method called for volumes in order for them to be used with a host.
+     * @return true if we should call grantAccess() to use a volume
+     */
+    default boolean volumesRequireGrantAccessWhenUsed() {
+        return false;
+    }
+
+    /**
+     * Zone-wide data store supports using a volume across clusters without the need for data motion
+     * @return true if we don't need to data motion volumes across clusters for zone-wide use
+     */
+    default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
+        return false;
+    }
+
+    /**
+     * This method returns the actual size required on the pool for a volume.
+     *
+     * @param volumeSize
+     *         Size of volume to be created on the store
+     * @param templateSize
+     *         Size of template, if any, which will be used to create the volume
+     * @param isEncryptionRequired
+     *         true if volume is encrypted
+     *
+     * @return the size required on the pool for the volume
+     */
+    default long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
+        return volumeSize;
+    }
+    default boolean informStorageForDiskOfferingChange() {
+        return false;
+    }
+
+    default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
+
+    /**
+     * intended for storage that can enumerate its own volumes available for import without hypervisor involvement
+     * @param volumePath when not blank, restricts the result to the volume with this path, if found
+     * @param keyword when not blank, restricts the result to volumes whose name contains this keyword
+     * @param forUnmanage when volume will be unmanaged from CloudStack
+     * @return null if the storage driver does not support listing volumes for import on its own,
+     * in which case the caller falls back to querying a host via GetVolumesOnStorageCommand
+    */
+    default List<VolumeOnStorageTO> listVolumesForImport(StoragePool pool, String volumePath, String keyword, boolean forUnmanage) {
+        return null;
+    }
+
+    /**
+     * Called after a volume is imported into or unmanaged from CloudStack, so the driver can
+     * mark/unmark it accordingly (e.g. tag it) for future {@link #listVolumesForImport} calls.
+     */
+    default void volumeManagementChanged(StoragePool pool, Volume volume, boolean imported) {
+    }
 }

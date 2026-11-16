@@ -21,12 +21,12 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -42,33 +42,35 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
+import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.network.Networks;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtPrepareForMigrationCommandWrapper.class);
 
     @Override
     public Answer execute(final PrepareForMigrationCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final VirtualMachineTO vm = command.getVirtualMachine();
 
         if (command.isRollback()) {
+            logger.info("Handling rollback for PrepareForMigration of VM {}", vm.getName());
             return handleRollback(command, libvirtComputingResource);
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Preparing host for migrating " + vm);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preparing host for migrating " + vm);
         }
 
         final NicTO[] nics = vm.getNics();
 
         Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+        Map<String, String> nicBridgeMapping = new HashMap<>();
 
         boolean skipDisconnect = false;
 
@@ -79,13 +81,18 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
 
             for (final NicTO nic : nics) {
-                LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
+                VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
+                LibvirtVMDef.InterfaceDef interfaceDef = vifDriver.plug(nic, null, "", vm.getExtraConfig());
                 if (vm.getDetails() != null) {
                     libvirtComputingResource.setInterfaceDefQueueSettings(vm.getDetails(), vm.getCpus(), interfaceDef);
                 }
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
                     DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);
+                    logger.debug("Configured DPDK interface for VM {}", vm.getName());
+                }
+                if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && interfaceDef != null) {
+                    nicBridgeMapping.put(nic.getMac(), interfaceDef.getBrName());
                 }
             }
 
@@ -111,31 +118,39 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                             secretConsumer = volume.getDetails().get(DiskTO.SECRET_CONSUMER_DETAIL);
                         }
                         String secretUuid = libvirtComputingResource.createLibvirtVolumeSecret(conn, secretConsumer, volumeObjectTO.getPassphrase());
-                        s_logger.debug(String.format("Created libvirt secret %s for disk %s", secretUuid, volumeObjectTO.getPath()));
+                        logger.debug(String.format("Created libvirt secret %s for disk %s", secretUuid, volumeObjectTO.getPath()));
                         volumeObjectTO.clearPassphrase();
                     } else {
-                        s_logger.debug(String.format("disk %s has no passphrase or encryption", volumeObjectTO));
+                        logger.debug(String.format("disk %s has no passphrase or encryption", volumeObjectTO));
                     }
                 }
             }
 
             skipDisconnect = true;
 
-            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
+            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm, true)) {
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
-            PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
-            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+            // Activate CLVM volumes in shared mode on destination host for live migration
+            try {
+                List<LibvirtVMDef.DiskDef> disks = libvirtComputingResource.getDisks(conn, vm.getName());
+                LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+                    disks,
+                    vm,
+                    LibvirtComputingResource.ClvmVolumeState.SHARED
+                );
+            } catch (Exception e) {
+                logger.warn("Failed to activate CLVM volumes in shared mode on destination for VM {}: {}",
+                    vm.getName(), e.getMessage(), e);
             }
-            return answer;
+
+            logger.info("Successfully prepared destination host for migration of VM {}", vm.getName());
+            return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, nicBridgeMapping, libvirtComputingResource, vm);
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
                 for (DpdkTO to : dpdkInterfaceMapping.values()) {
-                    String cmd = String.format("ovs-vsctl del-port %s", to.getPort());
-                    s_logger.debug("Removing DPDK port: " + to.getPort());
-                    Script.runSimpleBashScript(cmd);
+                    removeDpdkPort(to.getPort());
                 }
             }
             return new PrepareForMigrationAnswer(command, e.toString());
@@ -146,10 +161,32 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         }
     }
 
+    protected PrepareForMigrationAnswer createPrepareForMigrationAnswer(PrepareForMigrationCommand command, Map<String, DpdkTO> dpdkInterfaceMapping,
+                                                                        Map<String, String> nicBridgeMapping,
+                                                                        LibvirtComputingResource libvirtComputingResource, VirtualMachineTO vm) {
+        PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
+
+        if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+            logger.debug(String.format("Setting DPDK interface for the migration of VM [%s].", vm));
+            answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
+
+        if (MapUtils.isNotEmpty(nicBridgeMapping)) {
+            answer.setNicBridgeMapping(nicBridgeMapping);
+        }
+
+        int newCpuShares = libvirtComputingResource.calculateCpuShares(vm);
+        logger.debug(String.format("Setting CPU shares to [%s] for the migration of VM [%s].", newCpuShares, vm));
+        answer.setNewVmCpuShares(newCpuShares);
+
+        return answer;
+    }
+
     private Answer handleRollback(PrepareForMigrationCommand command, LibvirtComputingResource libvirtComputingResource) {
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         VirtualMachineTO vmTO = command.getVirtualMachine();
 
+        logger.info("Rolling back PrepareForMigration for VM {}: disconnecting physical disks", vmTO.getName());
         if (!storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmTO)) {
             return new PrepareForMigrationAnswer(command, "failed to disconnect physical disks from host");
         }

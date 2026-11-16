@@ -30,6 +30,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -127,8 +128,14 @@ public class NicVO implements Nic {
     @Column(name = "secondary_ip")
     boolean secondaryIp;
 
+    @Column(name = "multi_network")
+    boolean multiNetwork;
+
     @Column(name = "mtu")
     Integer mtu;
+
+    @Column(name = "enabled")
+    boolean enabled;
 
     @Transient
     transient String nsxLogicalSwitchUuid;
@@ -142,6 +149,7 @@ public class NicVO implements Nic {
         this.networkId = configurationId;
         this.state = State.Allocated;
         this.vmType = vmType;
+        this.enabled = true;
     }
 
     @Override
@@ -329,17 +337,10 @@ public class NicVO implements Nic {
 
     @Override
     public String toString() {
-        return new StringBuilder("Nic[").append(id)
-            .append("-")
-            .append(instanceId)
-            .append("-")
-            .append(deviceId)
-            .append("-")
-            .append(reservationId)
-            .append("-")
-            .append(iPv4Address)
-            .append("]")
-            .toString();
+        return String.format("Nic %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "instanceId",
+                        "deviceId", "broadcastUri", "reservationId", "iPv4Address", "multiNetwork"));
     }
 
     @Override
@@ -383,6 +384,15 @@ public class NicVO implements Nic {
         this.secondaryIp = secondaryIp;
     }
 
+    @Override
+    public boolean getMultiNetwork() {
+        return multiNetwork;
+    }
+
+    public void setMultiNetwork(boolean multiNetwork) {
+        this.multiNetwork = multiNetwork;
+    }
+
     public void setVmType(VirtualMachine.Type vmType) {
         this.vmType = vmType;
     }
@@ -401,6 +411,14 @@ public class NicVO implements Nic {
 
     public void setNsxLogicalSwitchPortUuid(String nsxLogicalSwitchPortUuid) {
         this.nsxLogicalSwitchPortUuid = nsxLogicalSwitchPortUuid;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override

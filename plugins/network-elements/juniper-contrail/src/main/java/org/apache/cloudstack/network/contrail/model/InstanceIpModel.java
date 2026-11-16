@@ -25,12 +25,10 @@ import net.juniper.contrail.api.types.InstanceIp;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 
 public class InstanceIpModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(InstanceIpModel.class);
 
     private String _name;
     private String _uuid;
@@ -47,7 +45,7 @@ public class InstanceIpModel extends ModelObjectBase {
         _vmiModel = vmiModel;
         if (vmiModel != null) {
             vmiModel.addSuccessor(this);
-            s_logger.debug("vmiModel has " + vmiModel.successors().size() + " IP addresses");
+            logger.debug("vmiModel has " + vmiModel.successors().size() + " IP addresses");
         }
     }
 

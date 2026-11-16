@@ -18,18 +18,18 @@ under the License.
 -->
 <templatedwnldstress>
 
-	<!-- 
+	<!--
 		STEPS/TEST CASES COVERED:
 		1. Create an Account and a User
 		2. Create a Network for that Account
 		3. Deploy a VM in the account
 			a. List the Root Volume
 		4. Stop the VM
-		5. Start the VM 
+		5. Start the VM
 		6. Reboot the VM
 		7. Destroy VM
 		8. Verify that vm is destroyed
-		9. Delete Account		
+		9. Delete Account
 	 -->
 
 	<command>
@@ -76,7 +76,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Create default network-->
 	<command>
 		<name>createNetwork</name>
@@ -114,7 +114,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>	[Deploy a Virtual Machine under the Account]</testcase>
@@ -159,7 +159,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-		
+
 	<command>
 		<name>listVolumes</name>
 		<testcase>	[List the ROOT Volume of the VM]</testcase>
@@ -180,7 +180,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>	[Stop virtual machine]</testcase>
@@ -191,7 +191,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<testcase>	[Create template from root volume]</testcase>
@@ -219,7 +219,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-		
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>	[Deploying virtual machine from the Private Template]</testcase>
@@ -235,7 +235,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privatetemplateid</param>
@@ -272,7 +272,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host where vm is running</testcase>
@@ -289,7 +289,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select install_path from template_spool_ref</name>
 		<mysql>true</mysql>
@@ -307,7 +307,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<script>true</script>
@@ -323,7 +323,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy virtual machine created from the private template</testcase>
@@ -333,9 +333,9 @@ under the License.
 				<param>vmid1</param>
 			</item>
 		</parameters>
-	</command>	
-		
-	<!-- SLEEP TIME BEGINS-->	
+	</command>
+
+	<!-- SLEEP TIME BEGINS-->
 	<command>
 		<name>listConfigurations</name>
 		<testcase>Getting expunge interval value</testcase>
@@ -352,7 +352,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>updateConfiguration</name>
 		<testcase>Updating storage.cleanup.interval</testcase>
@@ -367,7 +367,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listConfigurations</name>
 		<testcase>Getting expunge interval value</testcase>
@@ -384,7 +384,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -411,9 +411,9 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -424,8 +424,8 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -436,8 +436,8 @@ under the License.
 				<param>storage.cleanup.interval</param>
 			</item>
 		</parameters>
-	</command>	
-		
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -448,10 +448,10 @@ under the License.
 				<param>storage.cleanup.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- SLEEP TIME ENDS-->
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -470,7 +470,7 @@ under the License.
 	</command>
 
 	<!-- Second VM -->
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying virtual machine from the private template</testcase>
@@ -486,7 +486,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privatetemplateid</param>
@@ -523,7 +523,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host where vm is running</testcase>
@@ -540,7 +540,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select install_path from template_spool_ref</name>
 		<mysql>true</mysql>
@@ -558,7 +558,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<script>true</script>
@@ -574,7 +574,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy virtual machine created from the private template</testcase>
@@ -584,9 +584,9 @@ under the License.
 				<param>vmid1</param>
 			</item>
 		</parameters>
-	</command>	
-		
-	<!-- SLEEP TIME BEGINS-->	
+	</command>
+
+	<!-- SLEEP TIME BEGINS-->
 	<command>
 		<name>listConfigurations</name>
 		<testcase>Getting expunge interval value</testcase>
@@ -603,7 +603,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -614,9 +614,9 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -627,8 +627,8 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -639,8 +639,8 @@ under the License.
 				<param>storage.cleanup.interval</param>
 			</item>
 		</parameters>
-	</command>	
-		
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -651,10 +651,10 @@ under the License.
 				<param>storage.cleanup.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- SLEEP TIME ENDS-->
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -673,8 +673,8 @@ under the License.
 	</command>
 
 	<!-- Clean Up Section -->
-		
-	
+
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>	[Start virtual machine]</testcase>
@@ -691,7 +691,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<testcase>	[Reboot Virtual Machine]</testcase>
@@ -702,7 +702,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>	[Destroy virtual machine]</testcase>
@@ -713,7 +713,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>	[Verify that vm was destroyed]</testcase>
@@ -730,7 +730,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deleteTemplate</name>
 		<testcase>Delete private template</testcase>
@@ -741,7 +741,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteAccount</name>
 		<testcase>	[Delete account]</testcase>
@@ -751,7 +751,7 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 </templatedwnldstress>

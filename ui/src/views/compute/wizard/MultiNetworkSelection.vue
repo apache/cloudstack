@@ -47,7 +47,7 @@
           <a-select
             style="width: 100%"
             v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
-            :defaultValue="validNetworks[record.id][0].id"
+            :defaultValue="getDefaultNetwork(record)"
             @change="val => handleNetworkChange(record, val)"
             showSearch
             optionFilterProp="label"
@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import _ from 'lodash'
 import CheckBoxInputPair from '@/components/CheckBoxInputPair'
 
@@ -98,6 +98,14 @@ export default {
     zoneId: {
       type: String,
       default: () => ''
+    },
+    domainid: {
+      type: String,
+      default: ''
+    },
+    account: {
+      type: String,
+      default: ''
     },
     selectionEnabled: {
       type: Boolean,
@@ -144,7 +152,8 @@ export default {
       ipAddressesEnabled: {},
       ipAddresses: {},
       indexNum: 1,
-      sendValuesTimer: null
+      sendValuesTimer: null,
+      accountNetworkUpdateTimer: null
     }
   },
   computed: {
@@ -184,6 +193,14 @@ export default {
     },
     zoneId () {
       this.fetchNetworks()
+    },
+    account () {
+      clearTimeout(this.accountNetworkUpdateTimer)
+      this.accountNetworkUpdateTimer = setTimeout(() => {
+        if (this.account) {
+          this.fetchNetworks()
+        }
+      }, 750)
     }
   },
   created () {
@@ -196,13 +213,20 @@ export default {
         return
       }
       this.loading = true
-      api('listNetworks', {
+      var params = {
         zoneid: this.zoneId,
         listall: true
-      }).then(response => {
+      }
+      if (this.domainid && this.account) {
+        params.domainid = this.domainid
+        params.account = this.account
+      }
+      getAPI('listNetworks', params).then(response => {
         this.networks = response.listnetworksresponse.network || []
-        this.orderNetworks()
+      }).catch(() => {
+        this.networks = []
       }).finally(() => {
+        this.orderNetworks()
         this.loading = false
       })
     },
@@ -241,7 +265,16 @@ export default {
       this.values = {}
       this.ipAddresses = {}
       for (const item of this.items) {
-        var network = this.validNetworks[item.id]?.[0] || null
+        let network = null
+        if (item.vlanid && item.vlanid !== -1) {
+          const matched = this.validNetworks[item.id].filter(x => Number(x.vlan) === item.vlanid)
+          if (matched.length > 0) {
+            network = matched[0]
+          }
+        }
+        if (!network) {
+          network = this.validNetworks[item.id]?.[0] || null
+        }
         this.values[item.id] = network ? network.id : ''
         this.ipAddresses[item.id] = (!network || network.type === 'L2') ? null : 'auto'
         this.setIpAddressEnabled(item, network)
@@ -255,6 +288,9 @@ export default {
         this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
       }
       this.sendValuesTimed()
+    },
+    getDefaultNetwork (record) {
+      return this.values[record.id] || this.validNetworks[record.id]?.[0]?.id
     },
     sendValuesTimed () {
       clearTimeout(this.sendValuesTimer)

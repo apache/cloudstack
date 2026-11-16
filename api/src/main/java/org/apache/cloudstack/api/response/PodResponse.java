@@ -30,60 +30,68 @@ import com.cloud.serializer.Param;
 @EntityReference(value = Pod.class)
 public class PodResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the Pod")
+    @Param(description = "The ID of the Pod")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the Pod")
+    @Param(description = "The name of the Pod")
     private String name;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the Pod")
+    @Param(description = "The Zone ID of the Pod")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the Pod")
+    @Param(description = "The Zone name of the Pod")
     private String zoneName;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway of the Pod")
+    @Param(description = "The gateway of the Pod")
     private String gateway;
 
     @SerializedName(ApiConstants.NETMASK)
-    @Param(description = "the netmask of the Pod")
+    @Param(description = "The netmask of the Pod")
     private String netmask;
 
     @SerializedName(ApiConstants.IP_RANGES)
-    @Param(description = "the IP ranges for the Pod", responseObject = IpRangeResponse.class, since = "4.16.0")
+    @Param(description = "The IP ranges for the Pod", responseObject = IpRangeResponse.class, since = "4.16.0")
     private List<IpRangeResponse> ipRanges;
 
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.START_IP)
-    @Param(description = "the starting IP for the Pod. This parameter is deprecated, please use 'startip' from ipranges parameter.")
+    @Param(description = "The starting IP for the Pod. This parameter is deprecated, please use 'startip' from ipranges parameter.")
     private List<String> startIp;
 
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.END_IP)
-    @Param(description = "the ending IP for the Pod. This parameter is deprecated, please use 'endip' from ipranges parameter.")
+    @Param(description = "The ending IP for the Pod. This parameter is deprecated, please use 'endip' from ipranges parameter.")
     private List<String> endIp;
 
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
-    @Param(description = "indicates if range is dedicated for CPVM and SSVM. This parameter is deprecated, please use 'forsystemvms' from ipranges parameter.")
+    @Param(description = "Indicates if range is dedicated for CPVM and SSVM. This parameter is deprecated, please use 'forsystemvms' from ipranges parameter.")
     private List<String> forSystemVms;
 
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.VLAN_ID)
-    @Param(description = "indicates Vlan ID for the range. This parameter is deprecated, please use 'vlanid' from ipranges parameter.")
+    @Param(description = "Indicates VLAN ID for the range. This parameter is deprecated, please use 'vlanid' from ipranges parameter.")
     private List<String> vlanId;
 
     @SerializedName(ApiConstants.ALLOCATION_STATE)
-    @Param(description = "the allocation state of the Pod")
+    @Param(description = "The allocation state of the Pod")
     private String allocationState;
 
     @SerializedName(ApiConstants.CAPACITY)
-    @Param(description = "the capacity of the Pod", responseObject = CapacityResponse.class)
+    @Param(description = "The capacity of the Pod", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacities;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the pod", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
+    private String zoneStorageAccessGroups;
 
     public String getId() {
         return id;
@@ -183,5 +191,21 @@ public class PodResponse extends BaseResponseWithAnnotations {
 
     public void setCapacities(List<CapacityResponse> capacities) {
         this.capacities = capacities;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
+    public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
+        this.zoneStorageAccessGroups = zoneStorageAccessGroups;
     }
 }

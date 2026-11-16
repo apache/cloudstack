@@ -17,24 +17,28 @@
 
 package org.apache.cloudstack.storage.datastore.client;
 
-import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.cloud.storage.StoragePool;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.common.base.Preconditions;
 
 public class ScaleIOGatewayClientConnectionPool {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOGatewayClientConnectionPool.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
-    private ConcurrentHashMap<Long, ScaleIOGatewayClient> gatewayClients;
-
+    private Map<Long, ScaleIOGatewayClient> gatewayClients;
     private static final ScaleIOGatewayClientConnectionPool instance;
+    private final Object lock = new Object();
 
     static {
         instance = new ScaleIOGatewayClientConnectionPool();
@@ -45,44 +49,81 @@ public class ScaleIOGatewayClientConnectionPool {
     }
 
     private ScaleIOGatewayClientConnectionPool() {
-        gatewayClients = new ConcurrentHashMap<Long, ScaleIOGatewayClient>();
+        gatewayClients = new ConcurrentHashMap<>();
     }
 
-    public ScaleIOGatewayClient getClient(Long storagePoolId, StoragePoolDetailsDao storagePoolDetailsDao)
-            throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
-        Preconditions.checkArgument(storagePoolId != null && storagePoolId > 0, "Invalid storage pool id");
+    public ScaleIOGatewayClient getClient(StoragePool storagePool,
+                                          StoragePoolDetailsDao storagePoolDetailsDao) {
+        return getClient(storagePool.getId(), storagePool.getUuid(), storagePoolDetailsDao);
+    }
 
-        ScaleIOGatewayClient client = null;
-        synchronized (gatewayClients) {
-            client = gatewayClients.get(storagePoolId);
-            if (client == null) {
-                final String url = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_ENDPOINT).getValue();
-                final String encryptedUsername = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_USERNAME).getValue();
-                final String username = DBEncryptionUtil.decrypt(encryptedUsername);
-                final String encryptedPassword = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD).getValue();
-                final String password = DBEncryptionUtil.decrypt(encryptedPassword);
-                final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(storagePoolId);
-                final int clientMaxConnections = StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.valueIn(storagePoolId);
 
-                client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout, clientMaxConnections);
-                gatewayClients.put(storagePoolId, client);
-                LOGGER.debug("Added gateway client for the storage pool: " + storagePoolId);
+    public ScaleIOGatewayClient getClient(DataStore dataStore,
+                                          StoragePoolDetailsDao storagePoolDetailsDao) {
+        return getClient(dataStore.getId(), dataStore.getUuid(), storagePoolDetailsDao);
+    }
+
+    private ScaleIOGatewayClient getClient(Long storagePoolId, String storagePoolUuid,
+                                           StoragePoolDetailsDao storagePoolDetailsDao) {
+
+        Preconditions.checkArgument(storagePoolId != null && storagePoolId > 0,
+                "Invalid storage pool id");
+
+        logger.debug("Getting ScaleIO client for {} ({})", storagePoolId, storagePoolUuid);
+
+        ScaleIOGatewayClient client = gatewayClients.get(storagePoolId);
+        if (client == null) {
+            logger.debug("Before acquiring lock to create ScaleIO client for {} ({})", storagePoolId, storagePoolUuid);
+            synchronized (lock) {
+                logger.debug("Acquired lock to create ScaleIO client for {} ({})", storagePoolId, storagePoolUuid);
+                client = gatewayClients.get(storagePoolId);
+                if (client == null) {
+                    logger.debug("Initializing ScaleIO client for {} ({})", storagePoolId, storagePoolUuid);
+
+                    String url = Optional.ofNullable(storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_ENDPOINT))
+                            .map(StoragePoolDetailVO::getValue)
+                            .orElse(null);
+
+                    String username = Optional.ofNullable(storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_USERNAME))
+                            .map(StoragePoolDetailVO::getValue)
+                            .map(DBEncryptionUtil::decrypt)
+                            .orElse(null);
+
+                    String password = Optional.ofNullable(storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD))
+                            .map(StoragePoolDetailVO::getValue)
+                            .map(DBEncryptionUtil::decrypt)
+                            .orElse(null);
+
+                    int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(storagePoolId);
+                    int clientMaxConnections = StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.valueIn(storagePoolId);
+
+                    try {
+                        client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout, clientMaxConnections);
+                        logger.debug("Created ScaleIO client for the storage pool [id: {}, uuid: {}]", storagePoolId, storagePoolUuid);
+                        gatewayClients.put(storagePoolId, client);
+                    } catch (Exception e) {
+                        String msg = String.format("Failed to create ScaleIO client for the storage pool [id: %d, uuid: %s]", storagePoolId, storagePoolUuid);
+                        throw new CloudRuntimeException(msg, e);
+                    }
+                }
             }
         }
 
+        logger.debug("Returning ScaleIO client for {} ({})", storagePoolId, storagePoolUuid);
         return client;
     }
 
-    public boolean removeClient(Long storagePoolId) {
-        Preconditions.checkArgument(storagePoolId != null && storagePoolId > 0, "Invalid storage pool id");
+    public boolean removeClient(DataStore dataStore) {
+        Preconditions.checkArgument(dataStore != null && dataStore.getId() > 0,
+                "Invalid storage pool id");
 
-        ScaleIOGatewayClient client = null;
-        synchronized (gatewayClients) {
-            client = gatewayClients.remove(storagePoolId);
+        ScaleIOGatewayClient client;
+        synchronized (lock) {
+            client = gatewayClients.remove(dataStore.getId());
         }
 
         if (client != null) {
-            LOGGER.debug("Removed gateway client for the storage pool: " + storagePoolId);
+            logger.debug("Removed gateway client for the storage pool: {}", dataStore);
             return true;
         }
 

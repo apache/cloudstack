@@ -23,7 +23,6 @@ import java.util.Random;
 import javax.inject.Inject;
 
 import com.cloud.network.NetworkModel;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
@@ -50,11 +49,12 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
     @Inject
     DataCenterDao _dcDao;
     @Inject
     StorageNetworkManager _sNwMgr;
+    @Inject
+    NetworkModel _networkModel;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -76,7 +76,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         TrafficType type = offering.getTrafficType();
 
         if (!isMyTrafficType(type)) {
@@ -87,6 +87,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
                     plan.getPhysicalNetworkId(), offering.isRedundantRouter());
         return config;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     protected PodBasedNetworkGuru() {
@@ -128,7 +133,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         Integer vlan = result.getVlan();
 
         nic.setIPv4Address(result.getIpAddress());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(result.getMacAddress(), NetworkModel.MACIdentifier.value())));
+        String macAddress = _networkModel.getUniqueMacAddress(result.getMacAddress(), config.getId(), dest.getDataCenter().getId());
+        nic.setMacAddress(macAddress);
         nic.setIPv4Gateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
@@ -141,7 +147,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.setIsolationUri(null);
 
-        s_logger.debug("Allocated a nic " + nic + " for " + vm);
+        logger.debug("Allocated a nic " + nic + " for " + vm);
     }
 
     @Override
@@ -158,8 +164,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
 
         nic.deallocate();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Released nic: " + nic);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
         }
 
         return true;

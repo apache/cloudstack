@@ -37,4 +37,6 @@ public interface ElasticLoadBalancerManager {
         NetworkRuleConflictException;
 
     public void handleDeleteLoadBalancerRule(LoadBalancer lb, long callerUserId, Account caller);
+
+    void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
 }

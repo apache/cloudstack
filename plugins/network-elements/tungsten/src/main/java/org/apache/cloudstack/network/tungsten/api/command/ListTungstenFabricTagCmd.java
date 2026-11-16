@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,31 +45,30 @@ import javax.inject.Inject;
 @APICommand(name = ListTungstenFabricTagCmd.APINAME, responseObject = TungstenFabricTagResponse.class,
     description = "Lists Tungsten-Fabric tags", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricTagCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricTagCmd.class.getName());
     public static final String APINAME = "listTungstenFabricTag";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric network")
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric Network")
     private String networkUuid;
 
-    @Parameter(name = ApiConstants.VM_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric vm")
+    @Parameter(name = ApiConstants.VM_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric Instance")
     private String vmUuid;
 
-    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric nic")
+    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric NIC")
     private String nicUuid;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric policy")
     private String policyUuid;
 
-    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric application policy set")
     private String applicationPolicySetUuid;
 
-    @Parameter(name = ApiConstants.TAG_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric tag")
+    @Parameter(name = ApiConstants.TAG_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric tag")
     private String tagUuid;
 
     @Override

@@ -799,7 +799,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Domain admin is allowed to deploy vm for users not in hos domain ")
         except Exception as e:
             self.debug("When Domain admin tries to deploy vm for users in their sub domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Domain admin tries to deploy vm for users not in hos domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -876,7 +876,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Regular user is allowed to deploy vm for other users in their domain ")
         except Exception as e:
             self.debug("When user tries to deploy vm for users in their domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user tries to deploy vm for other users in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -903,7 +903,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Regular user is allowed to deploy vm for users not in their domain ")
         except Exception as e:
             self.debug("When user tries to deploy vm for users n different domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user tries to deploy vm for users not in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -1030,7 +1030,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Domain admin is allowed to restart network for users not in their domain ")
         except Exception as e:
             self.debug("When Domain admin tries to restart network for users in their sub domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Domain admin tries to restart network for users not in their domain ")
 
     ## Test cases relating restart network as regular user
@@ -1061,7 +1061,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Regular user is allowed to restart network for users in their domain ")
         except Exception as e:
             self.debug("When user tries to restart network for users in their domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user tries to restart network for users in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -1077,7 +1077,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Regular user is allowed to restart network for users not in their domain ")
         except Exception as e:
             self.debug("When user tries to restart network for users in other domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
                 self.fail("Error message validation failed when Regular user is allowed to restart network for users not in their domain ")
 
     @staticmethod

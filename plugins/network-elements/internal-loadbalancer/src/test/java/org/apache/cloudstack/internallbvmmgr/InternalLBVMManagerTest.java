@@ -31,7 +31,7 @@ import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -164,15 +164,15 @@ public class InternalLBVMManagerTest extends TestCase {
         }
 
         createNetwork();
-        Mockito.when(_ntwkModel.getNetwork(Matchers.anyLong())).thenReturn(ntwk);
+        Mockito.when(_ntwkModel.getNetwork(ArgumentMatchers.anyLong())).thenReturn(ntwk);
 
-        Mockito.when(_itMgr.toNicTO(Matchers.any(NicProfile.class), Matchers.any(HypervisorType.class))).thenReturn(null);
-        Mockito.when(_domainRouterDao.findById(Matchers.anyLong())).thenReturn(vm);
+        Mockito.when(_itMgr.toNicTO(ArgumentMatchers.any(NicProfile.class), ArgumentMatchers.any(HypervisorType.class))).thenReturn(null);
+        Mockito.when(_domainRouterDao.findById(ArgumentMatchers.anyLong())).thenReturn(vm);
         final DataCenterVO dc = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, NetworkType.Advanced, null, null);
-        Mockito.when(_dcDao.findById(Matchers.anyLong())).thenReturn(dc);
+        Mockito.when(_dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
         final NetworkOfferingVO networkOfferingVO = new NetworkOfferingVO();
         networkOfferingVO.setConcurrentConnections(500);
-        Mockito.when(_offeringDao.findById(Matchers.anyLong())).thenReturn(networkOfferingVO);
+        Mockito.when(_offeringDao.findById(ArgumentMatchers.anyLong())).thenReturn(networkOfferingVO);
 
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(vm);
         Mockito.when(_domainRouterDao.findById(invalidVmId)).thenReturn(null);

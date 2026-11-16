@@ -35,16 +35,15 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageLayer;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -54,9 +53,6 @@ public class ScaleIOStoragePoolTest {
 
     StorageAdaptor adapter;
 
-    @Mock
-    StorageLayer storageLayer;
-
     @Before
     public void setUp() throws Exception {
         final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
@@ -65,7 +61,7 @@ public class ScaleIOStoragePoolTest {
         Map<String,String> details = new HashMap<String, String>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        adapter = spy(new ScaleIOStorageAdaptor(storageLayer));
+        adapter = spy(new ScaleIOStorageAdaptor());
         pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
     }
 
@@ -100,9 +96,8 @@ public class ScaleIOStoragePoolTest {
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            when(Script.runSimpleBashScript(
-                    "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
-                    sdcId);
+            when(Script.runSimpleBashScript(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms --file /etc/emc/scaleio/drv_cfg.txt|grep 218ce1797566a00f|awk '{print $5}'"), Mockito.eq(ScaleIOUtil.DEFAULT_TIMEOUT_MS)))
+                    .thenReturn(sdcId);
 
             ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type,
                     details, adapter);
@@ -121,10 +116,10 @@ public class ScaleIOStoragePoolTest {
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            when(Script.runSimpleBashScript(
-                    "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
-                    null);
-            when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_guid")).thenReturn(sdcGuid);
+            when(Script.runSimpleBashScript(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms --file /etc/emc/scaleio/drv_cfg.txt|grep 218ce1797566a00f|awk '{print $5}'"), Mockito.eq(ScaleIOUtil.DEFAULT_TIMEOUT_MS)))
+                    .thenReturn(null);
+            when(Script.runSimpleBashScript(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_guid --file /etc/emc/scaleio/drv_cfg.txt"), Mockito.eq(ScaleIOUtil.DEFAULT_TIMEOUT_MS)))
+                    .thenReturn(sdcGuid);
 
             ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type,
                     details, adapter);
@@ -145,6 +140,7 @@ public class ScaleIOStoragePoolTest {
         assertTrue(pool.isExternalSnapshot());
     }
 
+    @Ignore
     public void testGetPhysicalDiskWithWildcardFileFilter() throws Exception {
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String systemId = "218ce1797566a00f";
@@ -195,7 +191,7 @@ public class ScaleIOStoragePoolTest {
 
         when(adapter.getPhysicalDisk(volumeId, pool)).thenReturn(disk);
 
-        final boolean result = adapter.connectPhysicalDisk(volumePath, pool, null);
+        final boolean result = adapter.connectPhysicalDisk(volumePath, pool, null, false);
         assertTrue(result);
     }
 }

@@ -16,16 +16,23 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.user.User;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
+import org.apache.cloudstack.api.command.QuotaResourceStatementCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
-import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
+import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
 import java.util.Date;
 import java.util.List;
@@ -38,25 +45,17 @@ public interface QuotaResponseBuilder {
 
     Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(QuotaTariffListCmd cmd);
 
-    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration);
+    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO quotaTariff, boolean returnActivationRule);
 
-    QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
+    boolean isUserAllowedToSeeActivationRules(User user);
 
-    QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage, Date startDate, Date endDate);
+    QuotaStatementResponse createQuotaStatementResponse(QuotaStatementCmd cmd);
 
-    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll);
+    QuotaBalanceResponse createQuotaBalanceResponse(QuotaBalanceCmd cmd);
 
-    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll, String keyword, Long startIndex, Long pageSize);
+    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd);
 
-    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(String accountName, Long domainId);
-
-    QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
-
-    List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);
-
-    List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd);
-
-    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce);
+    QuotaCreditsResponse addQuotaCredits(QuotaCreditsCmd cmd);
 
     List<QuotaEmailTemplateResponse> listQuotaEmailTemplates(QuotaEmailTemplateListCmd cmd);
 
@@ -69,4 +68,23 @@ public interface QuotaResponseBuilder {
     QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd);
 
     boolean deleteQuotaTariff(String quotaTariffUuid);
+
+    /**
+     * Lists the preset variables for the usage type informed in the command.
+     * @param cmd used to retrieve the Quota usage type parameter.
+     * @return the response consisting of a {@link List} of the preset variables and their descriptions.
+     */
+    List<QuotaPresetVariablesItemResponse> listQuotaPresetVariables(QuotaPresetVariablesListCmd cmd);
+
+    Pair<QuotaEmailConfigurationVO, Double> configureQuotaEmail(QuotaConfigureEmailCmd cmd);
+
+    QuotaConfigureEmailResponse createQuotaConfigureEmailResponse(QuotaEmailConfigurationVO quotaEmailConfigurationVO, Double minBalance, long accountId);
+
+    List<QuotaConfigureEmailResponse> listEmailConfiguration(long accountId);
+
+    Pair<List<QuotaCreditsResponse>, Integer> createQuotaCreditsListResponse(QuotaCreditsListCmd cmd);
+
+    QuotaValidateActivationRuleResponse validateActivationRule(QuotaValidateActivationRuleCmd cmd);
+
+    QuotaResourceStatementResponse createQuotaResourceStatement(QuotaResourceStatementCmd cmd);
 }

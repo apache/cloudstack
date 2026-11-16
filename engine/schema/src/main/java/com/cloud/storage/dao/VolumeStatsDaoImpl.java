@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
@@ -32,6 +34,8 @@ import com.cloud.storage.VolumeStatsVO;
 
 @Component
 public class VolumeStatsDaoImpl extends GenericDaoBase<VolumeStatsVO, Long> implements VolumeStatsDao {
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected SearchBuilder<VolumeStatsVO> volumeIdSearch;
     protected SearchBuilder<VolumeStatsVO> volumeIdTimestampGreaterThanEqualSearch;
@@ -116,9 +120,14 @@ public class VolumeStatsDaoImpl extends GenericDaoBase<VolumeStatsVO, Long> impl
     }
 
     @Override
-    public void removeAllByTimestampLessThan(Date limit) {
+    public void removeAllByTimestampLessThan(Date limitDate, long limitPerQuery) {
         SearchCriteria<VolumeStatsVO> sc = timestampSearch.create();
-        sc.setParameters(TIMESTAMP, limit);
-        expunge(sc);
+        sc.setParameters(TIMESTAMP, limitDate);
+
+        logger.debug(String.format("Starting to remove all volume_stats rows older than [%s].", limitDate));
+
+        long totalRemoved = batchExpunge(sc, limitPerQuery);
+
+        logger.info(String.format("Removed a total of [%s] volume_stats rows older than [%s].", totalRemoved, limitDate));
     }
 }

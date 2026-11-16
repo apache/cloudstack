@@ -16,7 +16,7 @@
 // under the License.
 This project contains code for basic VNC, RDP, and HyperV (RDP) clients.
 
-Usage: 
+Usage:
   java common.Client vnc|rdp|hyperv OPTIONS
 
 Common options:

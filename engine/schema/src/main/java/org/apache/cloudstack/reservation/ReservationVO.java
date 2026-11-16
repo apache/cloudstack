@@ -18,16 +18,21 @@
 //
 package org.apache.cloudstack.reservation;
 
-import com.cloud.configuration.Resource;
-import org.apache.cloudstack.user.ResourceReservation;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.user.ResourceReservation;
+
+import com.cloud.configuration.Resource;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "resource_reservation")
@@ -47,20 +52,38 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "resource_type", nullable = false)
     Resource.ResourceType resourceType;
 
+    @Column(name = "tag")
+    String tag;
+
+    @Column(name = "resource_id")
+    Long resourceId;
+
     @Column(name = "amount")
     long amount;
 
-    protected ReservationVO()
-    {}
+    @Column(name = "mgmt_server_id")
+    Long managementServerId;
 
-    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, Long delta) {
-        if (delta == null || delta <= 0) {
-            throw new CloudRuntimeException("resource reservations can not be made for no resources");
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+    protected ReservationVO() {
+    }
+
+    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, String tag, Long delta) {
+        if (delta == null) {
+            throw new CloudRuntimeException("resource reservations can not be made for null resources");
         }
         this.accountId = accountId;
         this.domainId = domainId;
         this.resourceType = resourceType;
+        this.tag = tag;
         this.amount = delta;
+        this.managementServerId = ManagementServerNode.getManagementServerId();
+    }
+
+    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, Long delta) {
+        this(accountId, domainId, resourceType, null, delta);
     }
 
     @Override
@@ -84,7 +107,34 @@ public class ReservationVO implements ResourceReservation {
     }
 
     @Override
+    public String getTag() {
+        return tag;
+    }
+
+    @Override
     public Long getReservedAmount() {
         return amount;
+    }
+
+    @Override
+    public Long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 }

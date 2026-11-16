@@ -22,7 +22,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -31,9 +32,9 @@ import org.apache.log4j.Logger;
  * management software
  */
 public class ConsoleProxyGCThread extends Thread {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyGCThread.class);
+    protected Logger logger = LogManager.getLogger(ConsoleProxyGCThread.class);
 
-    private final static int MAX_SESSION_IDLE_SECONDS = 180;
+    private static final int DEFAULT_MAX_SESSION_IDLE_SECONDS = 180;
 
     private final Map<String, ConsoleProxyClient> connMap;
     private final Set<String> removedSessionsSet;
@@ -44,22 +45,30 @@ public class ConsoleProxyGCThread extends Thread {
         this.removedSessionsSet = removedSet;
     }
 
+    private int getMaxSessionIdleSeconds() {
+        if (ConsoleProxy.sessionTimeoutMillis <= 0) {
+            return DEFAULT_MAX_SESSION_IDLE_SECONDS;
+        }
+
+        return Math.max(1, ConsoleProxy.sessionTimeoutMillis / 1000);
+    }
+
     private void cleanupLogging() {
-        if (lastLogScan != 0 && System.currentTimeMillis() - lastLogScan < 3600000)
+        if (lastLogScan != 0 && System.currentTimeMillis() - lastLogScan < 3600000) {
             return;
+        }
 
         lastLogScan = System.currentTimeMillis();
 
         File logDir = new File("./logs");
-        File files[] = logDir.listFiles();
+        File[] files = logDir.listFiles();
         if (files != null) {
             for (File file : files) {
                 if (System.currentTimeMillis() - file.lastModified() >= 86400000L) {
                     try {
                         file.delete();
                     } catch (Throwable e) {
-                        s_logger.info("[ignored]"
-                                + "failed to delete file: " + e.getLocalizedMessage());
+                        logger.info("[ignored]failed to delete file: " + e.getLocalizedMessage());
                     }
                 }
             }
@@ -68,17 +77,18 @@ public class ConsoleProxyGCThread extends Thread {
 
     @Override
     public void run() {
-
         boolean bReportLoad = false;
         long lastReportTick = System.currentTimeMillis();
 
         while (true) {
             cleanupLogging();
+            ConsoleProxy.cleanupExpiredReconnectGrants();
             bReportLoad = false;
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
             }
+
             Set<String> e = connMap.keySet();
             Iterator<String> iterator = e.iterator();
             while (iterator.hasNext()) {
@@ -90,8 +100,8 @@ public class ConsoleProxyGCThread extends Thread {
                     client = connMap.get(key);
                 }
 
-                long seconds_unused = (System.currentTimeMillis() - client.getClientLastFrontEndActivityTime()) / 1000;
-                if (seconds_unused < MAX_SESSION_IDLE_SECONDS) {
+                long secondsUnused = (System.currentTimeMillis() - client.getClientLastFrontEndActivityTime()) / 1000;
+                if (secondsUnused < getMaxSessionIdleSeconds()) {
                     continue;
                 }
 
@@ -100,31 +110,30 @@ public class ConsoleProxyGCThread extends Thread {
                     bReportLoad = true;
                 }
 
-                // close the server connection
-                s_logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
+                logger.info("Dropping " + client + " which has not been used for " + secondsUnused + " seconds");
                 client.closeClient();
             }
 
             if (bReportLoad || System.currentTimeMillis() - lastReportTick > 5000) {
-                // report load changes
                 ConsoleProxyClientStatsCollector collector = new ConsoleProxyClientStatsCollector(connMap);
                 collector.setRemovedSessions(new ArrayList<>(removedSessionsSet));
                 String loadInfo = collector.getStatsReport();
                 ConsoleProxy.reportLoadInfo(loadInfo);
                 lastReportTick = System.currentTimeMillis();
+
                 synchronized (removedSessionsSet) {
                     removedSessionsSet.clear();
                 }
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Report load change : " + loadInfo);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Report load change : " + loadInfo);
                 }
             }
 
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ex) {
-                s_logger.debug("[ignored] Console proxy was interrupted during GC.");
+                logger.debug("[ignored] Console proxy was interrupted during GC.");
             }
         }
     }

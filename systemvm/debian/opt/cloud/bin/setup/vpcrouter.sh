@@ -82,7 +82,7 @@ setup_vpcrouter() {
   enable_vpc_rpsrfs 1
   disable_rpfilter
   enable_fwding 1
-  enable_passive_ftp 1
+  enable_passive_ftp
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
@@ -129,3 +129,4 @@ then
   exit 1
 fi
 setup_vpcrouter
+. /opt/cloud/bin/setup/patch.sh && patch_router

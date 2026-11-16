@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -42,7 +41,6 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin})
 public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(UpdatePodManagementNetworkIpRangeCmd.class);
 
 
     /////////////////////////////////////////////////////
@@ -115,7 +113,7 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId();
+        return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getResourceUuid(ApiConstants.POD_ID);
     }
 
     @Override
@@ -138,10 +136,10 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (Exception e) {
-            s_logger.warn("Failed to update pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId(), e);
+            logger.warn("Failed to update pod management IP range {}-{} of Pod: {}", getNewStartIP(), getNewEndIP(), getPodId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

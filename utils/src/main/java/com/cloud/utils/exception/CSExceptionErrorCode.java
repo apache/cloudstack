@@ -21,7 +21,8 @@ package com.cloud.utils.exception;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * CSExceptionErrorCode lists the CloudStack error codes that correspond
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
 
 public class CSExceptionErrorCode {
 
-    public static final Logger s_logger = Logger.getLogger(CSExceptionErrorCode.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(CSExceptionErrorCode.class);
 
     // Declare a hashmap of CloudStack Error Codes for Exceptions.
     protected static final HashMap<String, Integer> ExceptionErrorCodeMap;
@@ -73,6 +74,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.exception.StorageConflictException", 4550);
             ExceptionErrorCodeMap.put("com.cloud.exception.UnavailableCommandException", 4555);
             ExceptionErrorCodeMap.put("com.cloud.exception.OperationTimedoutException", 4560);
+            ExceptionErrorCodeMap.put("org.apache.cloudstack.framework.kms.KMSException", 4561);
 
             // Have a special error code for ServerApiException when it is
             // thrown in a standalone manner when failing to detect any of the above
@@ -92,7 +94,7 @@ public class CSExceptionErrorCode {
         if (ExceptionErrorCodeMap.containsKey(exceptionName)) {
             return ExceptionErrorCodeMap.get(exceptionName);
         } else {
-            s_logger.info("Could not find exception: " + exceptionName + " in error code list for exceptions");
+            LOGGER.info("Could not find exception: " + exceptionName + " in error code list for exceptions");
             return -1;
         }
     }

@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.utils.Pair;
@@ -35,43 +34,42 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listVPCOfferings", description = "Lists VPC offerings", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVPCOfferingsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVPCOfferingsCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, description = "list VPC offerings by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, description = "List VPC offerings by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list VPC offerings by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List VPC offerings by name")
     private String vpcOffName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "list VPC offerings by display text")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "List VPC offerings by display text")
     private String displayText;
 
-    @Parameter(name = ApiConstants.IS_DEFAULT, type = CommandType.BOOLEAN, description = "true if need to list only default " + "VPC offerings. Default value is false")
+    @Parameter(name = ApiConstants.IS_DEFAULT, type = CommandType.BOOLEAN, description = "True if need to list only default " + "VPC offerings. Default value is false")
     private Boolean isDefault;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "list VPC offerings supporting certain services")
+               description = "List VPC offerings supporting certain services")
     private List<String> supportedServices;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list VPC offerings by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List VPC offerings by state")
     private String state;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "list VPC offerings available for VPC creation in specific domain",
+            description = "List VPC offerings available for VPC creation in specific domain",
             since = "4.18")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "id of zone VPC offering is associated with",
+            description = "ID of zone VPC offering is associated with",
             since = "4.13")
     private Long zoneId;
 

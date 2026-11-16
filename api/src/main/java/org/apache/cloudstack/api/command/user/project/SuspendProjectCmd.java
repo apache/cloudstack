@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.project;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,14 +37,13 @@ import com.cloud.projects.Project;
 @APICommand(name = "suspendProject", description = "Suspends a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class SuspendProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(SuspendProjectCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be suspended")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "ID of the project to be suspended")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -62,7 +60,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Project Id: " + id);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.ID));
         Project project = _projectService.suspendProject(id);
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
@@ -80,7 +78,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Suspending project: " + id;
+        return "Suspending project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.test.TestAppender;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -28,8 +30,9 @@ import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -37,8 +40,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.regex.Pattern;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HeuristicRuleHelperTest {
@@ -59,14 +60,33 @@ public class HeuristicRuleHelperTest {
     VolumeVO volumeVOMock;
 
     @Mock
+    BackupVO backupVOMock;
+
+    @Mock
     DataStoreManager dataStoreManagerMock;
 
     @Mock
     DataStore dataStoreMock;
 
+    @Mock
+    Logger loggerMock;
+
     @Spy
     @InjectMocks
     HeuristicRuleHelper heuristicRuleHelperSpy = new HeuristicRuleHelper();
+
+    @Before
+    public void setUp() {
+        Mockito.doReturn("template-name").when(vmTemplateVOMock).getName();
+        Mockito.doReturn(Storage.ImageFormat.QCOW2).when(vmTemplateVOMock).getFormat();
+        Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(vmTemplateVOMock).getHypervisorType();
+        Mockito.doReturn("snapshot-name").when(snapshotInfoMock).getName();
+        Mockito.doReturn(1024L).when(snapshotInfoMock).getSize();
+        Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(snapshotInfoMock).getHypervisorType();
+        Mockito.doReturn("volume-name").when(volumeVOMock).getName();
+        Mockito.doReturn(Storage.ImageFormat.RAW).when(volumeVOMock).getFormat();
+        Mockito.doReturn(2048L).when(volumeVOMock).getSize();
+    }
 
     @Test
     public void getImageStoreIfThereIsHeuristicRuleTestZoneDoesNotHaveHeuristicRuleShouldReturnNull() {
@@ -74,15 +94,8 @@ public class HeuristicRuleHelperTest {
 
         Mockito.when(secondaryStorageHeuristicDaoMock.findByZoneIdAndType(Mockito.anyLong(), Mockito.any(HeuristicType.class))).thenReturn(null);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.DEBUG, Pattern.quote(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.",
-                zoneId, HeuristicType.TEMPLATE)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HeuristicRuleHelper.LOGGER, testLogAppender);
-
         DataStore result = heuristicRuleHelperSpy.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.TEMPLATE, null);
 
-        testLogAppender.assertMessagesLogged();
         Assert.assertNull(result);
     }
 
@@ -95,14 +108,8 @@ public class HeuristicRuleHelperTest {
         Mockito.doReturn(null).when(heuristicRuleHelperSpy).interpretHeuristicRule(Mockito.anyString(), Mockito.any(HeuristicType.class), Mockito.isNull(),
                 Mockito.anyLong());
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.DEBUG, Pattern.quote(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicVOMock, zoneId)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HeuristicRuleHelper.LOGGER, testLogAppender);
-
         DataStore result = heuristicRuleHelperSpy.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.TEMPLATE, null);
 
-        testLogAppender.assertMessagesLogged();
         Assert.assertNull(result);
     }
 
@@ -157,6 +164,21 @@ public class HeuristicRuleHelperTest {
         heuristicRuleHelperSpy.buildPresetVariables(null, HeuristicType.VOLUME, 1L, volumeVOMock);
 
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setVolumePresetVariable(Mockito.any(VolumeVO.class));
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setAccountPresetVariable(Mockito.anyLong());
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
+    }
+
+    @Test
+    public void buildPresetVariablesTestWithBackupHeuristicTypeShouldSetBackupAndSecondaryStorageAndAccountPresetVariables() {
+        Mockito.doNothing().when(heuristicRuleHelperSpy).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setBackupPresetVariable(Mockito.any(BackupVO.class));
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setAccountPresetVariable(Mockito.anyLong());
+
+        heuristicRuleHelperSpy.buildPresetVariables(null, HeuristicType.BACKUP, 1L, backupVOMock);
+
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setBackupPresetVariable(Mockito.any(BackupVO.class));
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSecondaryStoragesVariable(Mockito.anyLong());
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setAccountPresetVariable(Mockito.anyLong());
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));

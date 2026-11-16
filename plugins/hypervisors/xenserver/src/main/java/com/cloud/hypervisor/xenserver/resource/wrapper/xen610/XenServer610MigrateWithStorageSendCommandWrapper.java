@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageSendAnswer;
@@ -49,7 +48,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  MigrateWithStorageSendCommand.class)
 public final class XenServer610MigrateWithStorageSendCommandWrapper extends CommandWrapper<MigrateWithStorageSendCommand, Answer, XenServer610Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageSendCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateWithStorageSendCommand command, final XenServer610Resource xenServer610Resource) {
@@ -114,7 +112,7 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
                 xenServer610Resource.waitForTask(connection, task, 1000, timeout);
                 xenServer610Resource.checkForSuccess(connection, task);
             } catch (final Types.HandleInvalid e) {
-                s_logger.error("Error while checking if vm " + vmName + " can be migrated.", e);
+                logger.error("Error while checking if vm " + vmName + " can be migrated.", e);
                 throw new CloudRuntimeException("Error while checking if vm " + vmName + " can be migrated.", e);
             }
 
@@ -126,24 +124,24 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
                 xenServer610Resource.waitForTask(connection, task, 1000, timeout);
                 xenServer610Resource.checkForSuccess(connection, task);
             } catch (final Types.HandleInvalid e) {
-                s_logger.error("Error while migrating vm " + vmName, e);
+                logger.error("Error while migrating vm " + vmName, e);
                 throw new CloudRuntimeException("Error while migrating vm " + vmName, e);
             }
 
             final Set<VolumeTO> volumeToSet = null;
             return new MigrateWithStorageSendAnswer(command, volumeToSet);
         } catch (final CloudRuntimeException e) {
-            s_logger.error("Migration of vm " + vmName + " with storage failed due to " + e.toString(), e);
+            logger.error("Migration of vm " + vmName + " with storage failed due to " + e.toString(), e);
             return new MigrateWithStorageSendAnswer(command, e);
         } catch (final Exception e) {
-            s_logger.error("Migration of vm " + vmName + " with storage failed due to " + e.toString(), e);
+            logger.error("Migration of vm " + vmName + " with storage failed due to " + e.toString(), e);
             return new MigrateWithStorageSendAnswer(command, e);
         } finally {
             if (task != null) {
                 try {
                     task.destroy(connection);
                 } catch (final Exception e) {
-                    s_logger.debug("Unable to destroy task " + task.toString() + " on host " + xenServer610Resource.getHost().getUuid() + " due to " + e.toString());
+                    logger.debug("Unable to destroy task " + task.toString() + " on host " + xenServer610Resource.getHost().getUuid() + " due to " + e.toString());
                 }
             }
         }

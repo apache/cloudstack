@@ -20,7 +20,9 @@ Tests of Non-Strict (host anti-affinity and host affinity) affinity groups
 """
 
 import logging
+import time
 
+from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import startVirtualMachine, stopVirtualMachine, destroyVirtualMachine
@@ -37,7 +39,7 @@ from marvin.lib.base import (Account,
 
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_test_template)
 
 
 class TestNonStrictAffinityGroups(cloudstackTestCase):
@@ -54,7 +56,11 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template\
+                        with hypervisor %s" % cls.hypervisor
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestNonStrictAffinityGroups")
@@ -202,6 +208,9 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
         self.assertNotEqual(vm_1_host_id,
                             vm_2_host_id,
                             msg="Both VMs of affinity group %s are on the same host" % self.affinity_group.name)
+
+
+        time.sleep(10)
 
         # 4. Migrate vm-2 to same host as vm-1
         self.virtual_machine_2.migrate(
@@ -355,6 +364,8 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
         self.assertEqual(vm_11_host_id,
                          vm_12_host_id,
                          msg="Both VMs of affinity group %s are on the different host" % self.affinity_group.name)
+
+        time.sleep(10)
 
         # 4. Migrate vm-12 to different host as vm-11
         self.virtual_machine_12.migrate(

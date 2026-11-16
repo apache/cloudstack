@@ -141,6 +141,7 @@ class TestGlobalACLs(cloudstackTestCase):
 
         # Creating ACL list
         acl = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl")
+        self.cleanup.append(acl)
 
         # Creating tier on VPC with ACL list
         network = Network.create(

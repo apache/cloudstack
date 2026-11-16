@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -53,22 +54,22 @@ public class ConfigureOutOfBandManagementCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the host")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.DRIVER, type = CommandType.STRING, required = true, description = "the host management interface driver, for example: ipmitool")
+    @Parameter(name = ApiConstants.DRIVER, type = CommandType.STRING, required = true, description = "The host management interface driver, for example: ipmitool")
     private String driver;
 
-    @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, required = true, description = "the host management interface IP address")
+    @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, required = true, description = "The host management interface IP address")
     private String address;
 
-    @Parameter(name = ApiConstants.PORT, type = CommandType.STRING, required = true, description = "the host management interface port")
+    @Parameter(name = ApiConstants.PORT, type = CommandType.STRING, required = true, description = "The host management interface port")
     private String port;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the host management interface user")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "The host management interface user")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the host management interface password")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "The host management interface password")
     private String password;
 
     /////////////////////////////////////////////////////
@@ -111,5 +112,15 @@ public class ConfigureOutOfBandManagementCmd extends BaseCmd {
         if (StringUtils.isNotEmpty(value)) {
             builder.put(option, value);
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getHostId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Host;
     }
 }

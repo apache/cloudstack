@@ -36,7 +36,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -48,7 +49,7 @@ import com.cloud.storage.dao.VolumeDao;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
-    private static final Logger LOGGER = Logger.getLogger(DataMotionServiceImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     StorageStrategyFactory storageStrategyFactory;

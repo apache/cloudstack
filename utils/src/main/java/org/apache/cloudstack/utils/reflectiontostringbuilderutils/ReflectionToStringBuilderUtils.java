@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.reflections.ReflectionUtils;
 
 /**
@@ -37,7 +38,7 @@ import org.reflections.ReflectionUtils;
  * - Reflect only selected fields (ReflectionToStringBuilder just has methods to exclude fields).
  */
 public class ReflectionToStringBuilderUtils {
-    protected static final Logger LOGGER = Logger.getLogger(ReflectionToStringBuilderUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(ReflectionToStringBuilderUtils.class);
     private static final ToStringStyle DEFAULT_STYLE = ToStringStyle.JSON_STYLE;
 
     /**

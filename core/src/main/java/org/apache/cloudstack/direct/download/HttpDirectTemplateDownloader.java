@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.direct.download;
 
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.util.Map;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
@@ -39,24 +41,24 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 
 public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     protected HttpClient client;
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
-    public static final Logger s_logger = Logger.getLogger(HttpDirectTemplateDownloader.class.getName());
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
-    protected HttpDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, null);
+    protected HttpDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout, boolean followRedirects) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, null, followRedirects);
     }
 
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
-                                        Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath) {
-        super(url, destPoolPath, templateId, checksum, downloadPath);
+                Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath,
+                boolean followRedirects) {
+        super(url, destPoolPath, templateId, checksum, downloadPath, followRedirects);
         s_httpClientManager.getParams().setConnectionTimeout(connectTimeout == null ? 5000 : connectTimeout);
         s_httpClientManager.getParams().setSoTimeout(soTimeout == null ? 5000 : soTimeout);
         client = new HttpClient(s_httpClientManager);
@@ -68,7 +70,8 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     protected GetMethod createRequest(String downloadUrl, Map<String, String> headers) {
         GetMethod request = new GetMethod(downloadUrl);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(this.isFollowRedirects());
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         if (MapUtils.isNotEmpty(headers)) {
             for (String key : headers.keySet()) {
                 request.setRequestHeader(key, headers.get(key));
@@ -83,7 +86,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         try {
             int status = client.executeMethod(request);
             if (status != HttpStatus.SC_OK) {
-                s_logger.warn("Not able to download template, status code: " + status);
+                logger.warn("Not able to download Template, status code: " + status);
                 return new Pair<>(false, null);
             }
             return performDownload();
@@ -95,14 +98,14 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     }
 
     protected Pair<Boolean, String> performDownload() {
-        s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
+        logger.info("Downloading Template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         try (
                 InputStream in = request.getResponseBodyAsStream();
                 OutputStream out = new FileOutputStream(getDownloadedFilePath())
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
-            s_logger.error("Error downloading template " + getTemplateId() + " due to: " + e.getMessage());
+            logger.error("Error downloading Template " + getTemplateId() + " due to: " + e.getMessage());
             return new Pair<>(false, null);
         }
         return new Pair<>(true, getDownloadedFilePath());
@@ -111,14 +114,17 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     @Override
     public boolean checkUrl(String url) {
         HeadMethod httpHead = new HeadMethod(url);
+        httpHead.setFollowRedirects(this.isFollowRedirects());
+        httpHead.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         try {
-            if (client.executeMethod(httpHead) != HttpStatus.SC_OK) {
-                s_logger.error(String.format("Invalid URL: %s", url));
+            int responseCode = client.executeMethod(httpHead);
+            if (responseCode != HttpStatus.SC_OK) {
+                logger.error(String.format("HTTP HEAD request to URL: %s failed, response code: %d", url, responseCode));
                 return false;
             }
             return true;
         } catch (IOException e) {
-            s_logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
+            logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
             return false;
         } finally {
             httpHead.releaseConnection();
@@ -128,9 +134,9 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     @Override
     public Long getRemoteFileSize(String url, String format) {
         if ("qcow2".equalsIgnoreCase(format)) {
-            return QCOW2Utils.getVirtualSize(url);
+            return QCOW2Utils.getVirtualSizeFromUrl(url, this.isFollowRedirects());
         } else {
-            return UriUtils.getRemoteSize(url);
+            return UriUtils.getRemoteSize(url, this.isFollowRedirects());
         }
     }
 
@@ -142,7 +148,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         try {
             status = client.executeMethod(getMethod);
         } catch (IOException e) {
-            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            logger.error("Error retrieving urls form metalink: " + metalinkUrl);
             getMethod.releaseConnection();
             return null;
         }
@@ -152,7 +158,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
                 addMetalinkUrlsToListFromInputStream(is, urls);
             }
         } catch (IOException e) {
-            s_logger.warn(e.getMessage());
+            logger.warn(e.getMessage());
         } finally {
             getMethod.releaseConnection();
         }
@@ -168,7 +174,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
                 return generateChecksumListFromInputStream(is);
             }
         } catch (IOException e) {
-            s_logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
+            logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
         } finally {
             getMethod.releaseConnection();
         }

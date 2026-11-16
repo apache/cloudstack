@@ -35,7 +35,7 @@
     <bean id="VHDX" class="org.apache.cloudstack.storage.image.format.VHDX" />
     <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
     <bean id="BAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
-    
+
     <bean id="hypervisorHelperImpl" class="org.apache.cloudstack.storage.helper.HypervisorHelperImpl" />
 
     <bean id="VMSnapshotHelperImpl"
@@ -63,13 +63,13 @@
             <list />
         </property>
     </bean>
-    
+
     <bean id="storageStrategyFactoryImpl" class="org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl" >
         <property name="dataMotionStrategies" value="#{dataMotionStrategiesRegistry.registered}" />
         <property name="snapshotStrategies" value="#{snapshotStrategiesRegistry.registered}" />
         <property name="vmSnapshotStrategies" value="#{vmSnapshotStrategiesRegistry.registered}" />
     </bean>
-    
+
     <bean id="imageStoreDetailsUtil" class="com.cloud.storage.ImageStoreDetailsUtil" />
 
     <bean id="deployAsIsImageStoreHelper" class="org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelperImpl" />

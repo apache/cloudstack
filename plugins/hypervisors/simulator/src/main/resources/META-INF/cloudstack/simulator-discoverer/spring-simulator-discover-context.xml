@@ -32,5 +32,5 @@
     </bean>
     <bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
     </bean>
-    
+
 </beans>

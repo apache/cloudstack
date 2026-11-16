@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DataCenterDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
@@ -35,7 +37,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
@@ -69,7 +72,7 @@ import com.cloud.utils.net.NetUtils;
 
 public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingRulesService {
 
-    private static final Logger s_logger = Logger.getLogger(GlobalLoadBalancingRulesServiceImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     AccountManager _accountMgr;
@@ -77,6 +80,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     GlobalLoadBalancerRuleDao _gslbRuleDao;
     @Inject
     GlobalLoadBalancerLbRuleMapDao _gslbLbMapDao;
+    @Inject
+    DataCenterDao zoneDao;
     @Inject
     RegionDao _regionDao;
     @Inject
@@ -159,7 +164,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
         });
 
-        s_logger.debug("successfully created new global load balancer rule for the account " + gslbOwner.getId());
+        logger.debug("successfully created new global load balancer rule for the account {}", gslbOwner);
 
         return newGslbRule;
     }
@@ -279,11 +284,11 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
         boolean success = false;
         try {
-            s_logger.debug("Configuring gslb rule configuration on the gslb service providers in the participating zones");
+            logger.debug("Configuring gslb rule configuration on the gslb service providers in the participating zones");
 
             // apply the gslb rule on to the back end gslb service providers on zones participating in gslb
             if (!applyGlobalLoadBalancerRuleConfig(gslbRuleId, false)) {
-                s_logger.warn("Failed to add load balancer rules " + newLbRuleIds + " to global load balancer rule id " + gslbRuleId);
+                logger.warn("Failed to add load balancer rules {} to global load balancer rule {}", newLbRuleIds, gslbRule);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to add load balancer rules to GSLB rule ");
                 throw ex;
             }
@@ -382,11 +387,11 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
         boolean success = false;
         try {
-            s_logger.debug("Attempting to configure global load balancer rule configuration on the gslb service providers ");
+            logger.debug("Attempting to configure global load balancer rule configuration on the gslb service providers ");
 
             // apply the gslb rule on to the back end gslb service providers
             if (!applyGlobalLoadBalancerRuleConfig(gslbRuleId, false)) {
-                s_logger.warn("Failed to remove load balancer rules " + lbRuleIdsToremove + " from global load balancer rule id " + gslbRuleId);
+                logger.warn("Failed to remove load balancer rules {} from global load balancer rule {}", lbRuleIdsToremove, gslbRule);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove load balancer rule ids from GSLB rule ");
                 throw ex;
             }
@@ -426,7 +431,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         try {
             revokeGslbRule(gslbRuleId, caller);
         } catch (Exception e) {
-            s_logger.warn("Failed to delete GSLB rule due to" + e.getMessage());
+            logger.warn("Failed to delete GSLB rule due to" + e.getMessage());
             return false;
         }
 
@@ -445,8 +450,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, gslbRule);
 
         if (gslbRule.getState() == com.cloud.region.ha.GlobalLoadBalancerRule.State.Staged) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Rule Id: " + gslbRuleId + " is still in Staged state so just removing it.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Rule: {} is still in Staged state so just removing it.", gslbRule);
             }
             _gslbRuleDao.remove(gslbRuleId);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(), 0, gslbRule.getId(), gslbRule.getName(),
@@ -541,7 +546,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         _gslbRuleDao.update(gslbRule.getId(), gslbRule);
 
         try {
-            s_logger.debug("Updating global load balancer with id " + gslbRule.getUuid());
+            logger.debug("Updating global load balancer {}", gslbRule);
 
             // apply the gslb rule on to the back end gslb service providers on zones participating in gslb
             applyGlobalLoadBalancerRuleConfig(gslbRuleId, false);
@@ -664,12 +669,20 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         // loop through all the zones, participating in GSLB, and send GSLB config command
         // to the corresponding GSLB service provider in that zone
         for (Pair<Long, Long> zoneId : gslbSiteIds) {
+            if (zoneId.first() == null) {
+                logger.warn("Skipping GSLB configuration for zone with null ID");
+                continue;
+            }
 
             List<SiteLoadBalancerConfig> slbs = new ArrayList<SiteLoadBalancerConfig>();
             // set site as 'local' for the site in that zone
             for (Pair<Long, Long> innerLoopZoneId : gslbSiteIds) {
+                if (innerLoopZoneId.first() == null) {
+                    logger.warn("Skipping GSLB configuration for zone with null ID");
+                    continue;
+                }
                 SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(innerLoopZoneId.first());
-                siteLb.setLocal(zoneId.first() == innerLoopZoneId.first());
+                siteLb.setLocal(Objects.equals(zoneId.first(), innerLoopZoneId.first()));
                 slbs.add(siteLb);
             }
 
@@ -687,7 +700,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 lookupGslbServiceProvider().applyGlobalLoadBalancerRule(zoneId.first(), zoneId.second(), gslbConfigCmd);
             } catch (ResourceUnavailableException | NullPointerException e) {
                 String msg = "Failed to configure GSLB rule in the zone " + zoneId.first() + " due to " + e.getMessage();
-                s_logger.warn(msg);
+                logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -696,14 +709,14 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     }
 
     @Override
-    public boolean revokeAllGslbRulesForAccount(com.cloud.user.Account caller, long accountId) throws com.cloud.exception.ResourceUnavailableException {
-        List<GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
+    public boolean revokeAllGslbRulesForAccount(com.cloud.user.Account caller, Account account) throws com.cloud.exception.ResourceUnavailableException {
+        List<GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(account.getId());
         if (gslbRules != null && !gslbRules.isEmpty()) {
             for (GlobalLoadBalancerRule gslbRule : gslbRules) {
                 revokeGslbRule(gslbRule.getId(), caller);
             }
         }
-        s_logger.debug("Successfully cleaned up GSLB rules for account id=" + accountId);
+        logger.debug("Successfully cleaned up GSLB rules for account {}", account);
         return true;
     }
 

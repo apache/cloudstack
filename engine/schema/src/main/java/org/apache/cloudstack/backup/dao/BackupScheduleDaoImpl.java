@@ -17,27 +17,23 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.backup.BackupSchedule;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.backup.BackupScheduleVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long> implements BackupScheduleDao {
-
-    @Inject
-    VMInstanceDao vmInstanceDao;
-
     private SearchBuilder<BackupScheduleVO> backupScheduleSearch;
     private SearchBuilder<BackupScheduleVO> executableSchedulesSearch;
 
@@ -49,6 +45,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         backupScheduleSearch = createSearchBuilder();
         backupScheduleSearch.and("vm_id", backupScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         backupScheduleSearch.and("async_job_id", backupScheduleSearch.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
+        backupScheduleSearch.and("interval_type", backupScheduleSearch.entity().getScheduleType(), SearchCriteria.Op.EQ);
         backupScheduleSearch.done();
 
         executableSchedulesSearch = createSearchBuilder();
@@ -58,9 +55,17 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     }
 
     @Override
-    public BackupScheduleVO findByVM(Long vmId) {
+    public List<BackupScheduleVO> listByVM(Long vmId) {
         SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType) {
+        SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("interval_type", intervalType.ordinal());
         return findOneBy(sc);
     }
 
@@ -71,16 +76,19 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         return listBy(sc);
     }
 
+    @DB
     @Override
-    public BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(schedule.getVmId());
-        BackupScheduleResponse response = new BackupScheduleResponse();
-        response.setVmId(vm.getUuid());
-        response.setVmName(vm.getHostName());
-        response.setIntervalType(schedule.getScheduleType());
-        response.setSchedule(schedule.getSchedule());
-        response.setTimezone(schedule.getTimezone());
-        response.setObjectName("backupschedule");
-        return response;
+    public boolean remove(Long id) {
+        String sql = "UPDATE backups SET backup_schedule_id = NULL WHERE backup_schedule_id = ?";
+        TransactionLegacy transaction = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement preparedStatement = transaction.prepareAutoCloseStatement(sql);
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
+            return super.remove(id);
+        } catch (SQLException e) {
+            logger.warn("Unable to clean up backup schedules references from the backups table.", e);
+            return false;
+        }
     }
 }

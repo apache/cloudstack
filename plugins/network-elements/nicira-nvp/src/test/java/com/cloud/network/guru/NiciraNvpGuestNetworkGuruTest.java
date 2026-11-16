@@ -21,9 +21,9 @@ package com.cloud.network.guru;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -168,7 +168,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Lswitch);
     }
@@ -180,7 +180,6 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
-        mock(NiciraNvpDeviceVO.class);
         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -192,7 +191,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -203,7 +202,6 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
-        mock(NiciraNvpDeviceVO.class);
         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -215,7 +213,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -241,7 +239,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -263,7 +261,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -318,7 +315,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -377,7 +373,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -432,7 +427,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");

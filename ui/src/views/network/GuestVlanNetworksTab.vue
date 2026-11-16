@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -115,7 +115,7 @@ export default {
         id: this.resource.id
       }
       this.fetchLoading = true
-      api('listGuestVlans', params).then(json => {
+      getAPI('listGuestVlans', params).then(json => {
         this.networks = json.listguestvlansresponse.guestvlan[0].network || []
       }).catch(error => {
         this.$notifyError(error)

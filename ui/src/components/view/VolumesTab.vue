@@ -19,7 +19,7 @@
   <a-table
     class="table"
     size="small"
-    :columns="volumeColumns"
+    :columns="columns"
     :dataSource="volumes"
     :rowKey="item => item.id"
     :pagination="false"
@@ -38,14 +38,22 @@
         <status :text="text ? text : ''" />{{ text }}
       </template>
       <template v-if="column.key === 'size'">
-        {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+        {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+      </template>
+      <template v-if="column.key === 'storage'">
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'kmskey'">
+        <router-link v-if="record.kmskeyid" :to="{ path: '/kmskey/' + encodeURIComponent(record.kmskeyid) }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
       </template>
     </template>
   </a-table>
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -64,11 +72,20 @@ export default {
     }
   },
   inject: ['parentFetchData'],
+  computed: {
+    columns () {
+      if (this.volumes?.[0]) {
+        return this.allColumns.filter(col => col.dataIndex in this.volumes[0])
+      }
+      return this.allColumns.filter(col => this.defaultColumns.includes(col.dataIndex))
+    }
+  },
   data () {
     return {
       vm: {},
       volumes: [],
-      volumeColumns: [
+      defaultColumns: ['name', 'state', 'type', 'size', 'kmskey'],
+      allColumns: [
         {
           key: 'name',
           title: this.$t('label.name'),
@@ -87,6 +104,16 @@ export default {
           key: 'size',
           title: this.$t('label.size'),
           dataIndex: 'size'
+        },
+        {
+          key: 'kmskey',
+          title: this.$t('label.kms.key'),
+          dataIndex: 'kmskey'
+        },
+        {
+          key: 'storage',
+          title: this.$t('label.storage'),
+          dataIndex: 'storage'
         }
       ]
     }
@@ -114,7 +141,7 @@ export default {
       }
     },
     getVolumes () {
-      api('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id }).then(json => {
+      getAPI('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })

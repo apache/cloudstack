@@ -41,6 +41,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mockito;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.TransactionLegacy;
 
 @RunWith(Parameterized.class)
 public class UsageSanityCheckerIT{
@@ -70,8 +71,8 @@ public class UsageSanityCheckerIT{
             "Error: Found 2 duplicate allocated Vm entries in vm usage helper table\n" +
             "Error: Found 1 running Vm entries without corresponding allocated entries in vm usage helper table\n" +
             "Error: Found 1 volume usage records which are created after volume is removed\n" +
-            "Error: Found 1 template/ISO usage records which are created after it is removed\n" +
-            "Error: Found 1 snapshot usage records which are created after it is removed\n";
+            "Error: Found 1 Template/ISO usage records which are created after it is removed\n" +
+            "Error: Found 1 Snapshot usage records which are created after it is removed\n";
 
     protected static final String EXPECTED_ERRORS_2 = "Error: Found 3 usage records with raw_usage > 10\n" +
             "Error: Found 1 Vm usage records which are created after Vm is destroyed\n" +
@@ -80,8 +81,8 @@ public class UsageSanityCheckerIT{
             "Error: Found 4 running Vm entries without corresponding allocated entries in vm usage helper table\n" +
             "Error: Found 2 volume usage records which are created after volume is removed\n" +
             "Error: Found 6 duplicate records in volume usage helper table\n" +
-            "Error: Found 2 template/ISO usage records which are created after it is removed\n" +
-            "Error: Found 1 snapshot usage records which are created after it is removed\n";
+            "Error: Found 2 Template/ISO usage records which are created after it is removed\n" +
+            "Error: Found 1 Snapshot usage records which are created after it is removed\n";
 
     protected static final String EXPECTED_ERRORS_3 = "";
 
@@ -106,7 +107,7 @@ public class UsageSanityCheckerIT{
     protected Connection createConnection(String dbSchema) throws SQLException {
         String cloudDbUrl = "jdbc:mysql://"+properties.getProperty("db."+dbSchema+".host") +
                 ":" + properties.getProperty("db."+dbSchema+".port") + "/" +
-                properties.getProperty("db."+dbSchema+".name");
+                properties.getProperty("db."+dbSchema+".name") + "?" + TransactionLegacy.CONNECTION_PARAMS;
         return DriverManager.getConnection(cloudDbUrl, properties.getProperty("db."+dbSchema+".username"),
                 properties.getProperty("db."+dbSchema+".password"));
     }

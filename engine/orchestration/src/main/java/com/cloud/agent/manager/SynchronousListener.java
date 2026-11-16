@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -29,7 +30,7 @@ import com.cloud.host.Status;
 import com.cloud.utils.Profiler;
 
 public class SynchronousListener implements Listener {
-    private static final Logger s_logger = Logger.getLogger(SynchronousListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected Answer[] _answers;
     protected boolean _disconnected;
@@ -70,8 +71,7 @@ public class SynchronousListener implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
+        logger.trace("Agent disconnected, agent id: {}, state: {}. Will notify waiters", agentId, state);
 
         _disconnected = true;
         notifyAll();
@@ -127,10 +127,8 @@ public class SynchronousListener implements Listener {
         }
         profiler.stop();
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Synchronized command - sending completed, time: " + profiler.getDurationInMillis() + ", answer: " +
-                (_answers != null ? _answers[0].toString() : "null"));
-        }
+        logger.trace("Synchronized command - sending completed, time: {}, answer: {}", profiler.getDurationInMillis(),
+            (_answers != null ? _answers[0].toString() : "null"));
         return _answers;
     }
 

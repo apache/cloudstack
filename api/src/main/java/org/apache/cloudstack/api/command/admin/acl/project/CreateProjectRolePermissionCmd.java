@@ -22,6 +22,7 @@ import org.apache.cloudstack.acl.ProjectRolePermission;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
@@ -71,7 +72,7 @@ public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
         if (projectRole == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid project role ID provided");
         }
-        CallContext.current().setEventDetails("Project Role ID: " + projectRole.getId() + ", Rule:" + getRule() + ", Permission: " + getPermission() + ", Description: " + getDescription());
+        CallContext.current().setEventDetails("Project Role ID: " + projectRole.getUuid() + ", Rule:" + getRule() + ", Permission: " + getPermission() + ", Description: " + getDescription());
         final ProjectRolePermission projectRolePermission = projRoleService.createProjectRolePermission(this);
         if (projectRolePermission == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create project role permission");
@@ -95,5 +96,15 @@ public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
         response.setResponseName(getCommandName());
         response.setObjectName("projectrolepermission");
         setResponseObject(response);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getProjectId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 }

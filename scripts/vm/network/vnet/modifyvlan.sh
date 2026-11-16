@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,10 +36,10 @@ addVlan() {
 		ip link add link $pif name $vlanDev type vlan id $vlanId > /dev/null
 		echo 1 > /proc/sys/net/ipv6/conf/$vlanDev/disable_ipv6
 		ip link set $vlanDev up
-		
+
 		if [ $? -gt 0 ]
 		then
-            # race condition that someone already creates the vlan 
+            # race condition that someone already creates the vlan
 			if [ ! -d /sys/class/net/$vlanDev ]
             then
 			    printf "Failed to create vlan $vlanId on pif: $pif."
@@ -47,18 +47,18 @@ addVlan() {
             fi
 		fi
 	fi
-	
+
 	# disable IPv6
 	echo 1 > /proc/sys/net/ipv6/conf/$vlanDev/disable_ipv6
 	# is up?
 	ip link set $vlanDev up > /dev/null 2>/dev/null
-	
+
 	if [ ! -d /sys/class/net/$vlanBr ]
 	then
 		ip link add name $vlanBr type bridge
 		echo 1 > /proc/sys/net/ipv6/conf/$vlanBr/disable_ipv6
 		ip link set $vlanBr up
-	
+
 		if [ $? -gt 0 ]
 		then
 			if [ ! -d /sys/class/net/$vlanBr ]
@@ -68,15 +68,15 @@ addVlan() {
 			fi
 		fi
 	fi
-	
+
 	#pif is eslaved into vlanBr?
-	ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null 
+	ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null
 	if [ $? -gt 0 ]
 	then
 		ip link set $vlanDev master $vlanBr
 		if [ $? -gt 0 ]
 		then
-			ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null 
+			ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null
 			if [ $? -gt 0 ]
 			then
 				printf "Failed to add vlan: $vlanDev to $vlanBr"
@@ -102,7 +102,7 @@ deleteVlan() {
   if [ $deleteBr == "true" ]
   then
 	  ip link delete $vlanDev type vlan > /dev/null
-	
+
   	if [ $? -gt 0 ]
 	  then
 		  printf "Failed to del vlan: $vlanId"
@@ -124,7 +124,7 @@ deleteVlan() {
     fi
   fi
 	return 0
-	
+
 }
 
 op=
@@ -179,18 +179,18 @@ if [ "$op" == "add" ]
 then
 	# Add the vlan
 	addVlan $vlanId $pif $brName
-	
+
 	# If the add fails then return failure
 	if [ $? -gt 0 ]
 	then
 		exit 1
 	fi
-else 
+else
 	if [ "$op" == "delete" ]
 	then
 		# Delete the vlan
 		deleteVlan $vlanId $pif $brName $deleteBr
-	
+
 		# Always exit with success
 		exit 0
 	fi

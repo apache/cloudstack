@@ -111,7 +111,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -184,7 +184,7 @@ export default {
       this.fetchLoading = true
       this.dataSource = []
       this.totalCount = 0
-      api('listTungstenFabricTag', {
+      getAPI('listTungstenFabricTag', {
         zoneid: this.zoneId,
         applicationpolicysetuuid: this.resource.uuid,
         page: this.page,
@@ -201,7 +201,7 @@ export default {
     fetchTag () {
       this.tagSrc.loading = true
       this.tagSrc.opts = []
-      api('listTungstenFabricTag', { zoneid: this.zoneId }).then(json => {
+      getAPI('listTungstenFabricTag', { zoneid: this.zoneId }).then(json => {
         this.tagSrc.opts = json?.listtungstenfabrictagresponse?.tag || []
       }).finally(() => {
         this.tagSrc.loading = true
@@ -224,7 +224,7 @@ export default {
         const tag = this.tagSrc.opts.filter(tag => tag.uuid === params.taguuid)
         const description = tag[0]?.name || values.taguuid
 
-        api('applyTungstenFabricTag', params).then(json => {
+        postAPI('applyTungstenFabricTag', params).then(json => {
           this.$pollJob({
             jobId: json.applytungstenfabrictagresponse.jobid,
             title: this.$t('label.apply.tungsten.tag'),
@@ -267,7 +267,7 @@ export default {
       params.applicationpolicysetuuid = this.resource.uuid
       params.taguuid = uuid
 
-      api('removeTungstenFabricTag', params).then(json => {
+      postAPI('removeTungstenFabricTag', params).then(json => {
         this.$pollJob({
           jobId: json.removetungstenfabrictagresponse.jobid,
           title: this.$t('label.delete.tungsten.firewall.policy'),

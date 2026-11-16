@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -36,7 +35,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveGuestOsMappingCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(RemoveGuestOsMappingCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,7 +62,7 @@ public class RemoveGuestOsMappingCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Guest OS Mapping Id: " + id);
+        CallContext.current().setEventDetails("Guest OS Mapping ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _mgr.removeGuestOsMapping(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -76,7 +74,7 @@ public class RemoveGuestOsMappingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Guest OS Mapping: " + getId();
+        return "Removing Guest OS Mapping with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -22,7 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import com.cloud.exception.ResourceAllocationException;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
@@ -48,7 +48,6 @@ import com.cloud.utils.component.ManagerBase;
 
 @Component
 public class RegionServiceImpl extends ManagerBase implements RegionService, Manager {
-    public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
 
     @Inject
     private RegionManager _regionMgr;
@@ -156,7 +155,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      * {@inheritDoc}
      */
     @Override
-    public boolean moveUser(MoveUserCmd cmd) {
+    public boolean moveUser(MoveUserCmd cmd) throws ResourceAllocationException {
         return _regionMgr.moveUser(cmd);
     }
 

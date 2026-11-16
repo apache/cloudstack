@@ -33,15 +33,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricManagementNetworkCmd.APINAME, description = "create Tungsten-Fabric management network",
+@APICommand(name = CreateTungstenFabricManagementNetworkCmd.APINAME, description = "Create Tungsten-Fabric management network",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
     false)
 public class CreateTungstenFabricManagementNetworkCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTungstenFabricManagementNetworkCmd.class.getName());
     public static final String APINAME = "createTungstenFabricManagementNetwork";
 
     @Inject
@@ -51,7 +49,7 @@ public class CreateTungstenFabricManagementNetworkCmd extends BaseCmd {
     TungstenService tungstenService;
 
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true,
-        description = "the ID of pod")
+        description = "The ID of pod")
     private Long podId;
 
     public Long getPodId() {

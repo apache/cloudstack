@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -60,7 +60,7 @@ deploy_server() {
 if [ $? -gt 0 ]; then echo "failed to setup db.properties file on remote $1"; return 2; fi
 
 #ssh root@$1 "cd /root/cloudstack-oss && nohup ant run &"
-  #if [ $? -gt 0 ]; then echo "failed to start the softare on remote $1"; return 2; fi
+  #if [ $? -gt 0 ]; then echo "failed to start the software on remote $1"; return 2; fi
 
   echo "Remote management server is deployed as a part of cluster setup; you have to start it manually by logging in remotely"
 }

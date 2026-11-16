@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.StringUtils;
 
@@ -51,7 +52,7 @@ import com.cloud.utils.UriUtils;
 
 public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreLifeCycleImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
@@ -94,7 +95,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         } else {
             logString = StringUtils.cleanString(url);
         }
-        s_logger.info("Trying to add a new data store at " + logString + " to data center " + dcId);
+        logger.info("Trying to add a new data store at " + logString + " to data center " + dcId);
 
         URI uri = null;
         try {

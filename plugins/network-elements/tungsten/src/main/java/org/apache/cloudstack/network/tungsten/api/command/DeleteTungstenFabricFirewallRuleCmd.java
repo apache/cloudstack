@@ -33,23 +33,21 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = DeleteTungstenFabricFirewallRuleCmd.APINAME, description = "delete Tungsten-Fabric firewall rule",
+@APICommand(name = DeleteTungstenFabricFirewallRuleCmd.APINAME, description = "Delete Tungsten-Fabric firewall rule",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteTungstenFabricFirewallRuleCmd.class.getName());
     public static final String APINAME = "deleteTungstenFabricFirewallRule";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric firewall rule")
+    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric firewall rule")
     private String firewallRuleUuid;
 
     @Override

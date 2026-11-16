@@ -24,13 +24,17 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-service-console-proxy</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>24.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
         <dependency>
-            <groupId>ch.qos.reload4j</groupId>
-            <artifactId>reload4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -76,7 +80,7 @@
             <resource>
                 <directory>certs</directory>
                 <excludes>
-                    <exclude>realhostip.csr</exclude>
+                    <exclude>systemvm.csr</exclude>
                 </excludes>
             </resource>
         </resources>

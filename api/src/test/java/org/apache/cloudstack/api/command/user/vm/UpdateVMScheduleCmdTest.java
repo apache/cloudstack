@@ -21,9 +21,12 @@ package org.apache.cloudstack.api.command.user.vm;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceSchedule;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,19 +35,26 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.security.InvalidParameterException;
-
 public class UpdateVMScheduleCmdTest {
     @Mock
-    public VMScheduleManager vmScheduleManager;
+    public ResourceScheduleManager resourceScheduleManager;
+
     @Mock
     public EntityManager entityManager;
+
     @InjectMocks
     private UpdateVMScheduleCmd updateVMScheduleCmd = new UpdateVMScheduleCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -54,20 +64,31 @@ public class UpdateVMScheduleCmdTest {
      */
     @Test
     public void testSuccessfulExecution() {
-        VMScheduleResponse vmScheduleResponse = Mockito.mock(VMScheduleResponse.class);
-        Mockito.when(vmScheduleManager.updateSchedule(updateVMScheduleCmd)).thenReturn(vmScheduleResponse);
+        ResourceScheduleResponse scheduleResponse = new ResourceScheduleResponse();
+        scheduleResponse.setId("schedule-uuid");
+        scheduleResponse.setResourceId("vm-uuid");
+        Mockito.when(resourceScheduleManager.updateSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenReturn(scheduleResponse);
         updateVMScheduleCmd.execute();
-        Assert.assertEquals(vmScheduleResponse, updateVMScheduleCmd.getResponseObject());
+        VMScheduleResponse response = (VMScheduleResponse) updateVMScheduleCmd.getResponseObject();
+        Assert.assertNotNull(response);
+        Assert.assertEquals("schedule-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "id"));
+        Assert.assertEquals("vm-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "vmId"));
     }
 
     /**
      * given: "We have a VMScheduleManager and UpdateVMScheduleCmd"
      * when: "UpdateVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.updateSchedule(updateVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(resourceScheduleManager.updateSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenThrow(new InvalidParameterValueException("Invalid schedule"));
         updateVMScheduleCmd.execute();
     }
 
@@ -78,11 +99,12 @@ public class UpdateVMScheduleCmdTest {
      */
     @Test
     public void testSuccessfulGetEntityOwnerId() {
-        VMSchedule vmSchedule = Mockito.mock(VMSchedule.class);
+        ResourceSchedule schedule = Mockito.mock(ResourceSchedule.class);
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
 
-        Mockito.when(entityManager.findById(VMSchedule.class, updateVMScheduleCmd.getId())).thenReturn(vmSchedule);
-        Mockito.when(entityManager.findById(VirtualMachine.class, vmSchedule.getVmId())).thenReturn(vm);
+        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine);
+        Mockito.when(entityManager.findById(ResourceSchedule.class, updateVMScheduleCmd.getId())).thenReturn(schedule);
+        Mockito.when(entityManager.findById(VirtualMachine.class, schedule.getResourceId())).thenReturn(vm);
 
         long ownerId = updateVMScheduleCmd.getEntityOwnerId();
         Assert.assertEquals(vm.getAccountId(), ownerId);
@@ -91,12 +113,11 @@ public class UpdateVMScheduleCmdTest {
     /**
      * given: "We have an EntityManager and UpdateVMScheduleCmd"
      * when: "UpdateVMScheduleCmd.getEntityOwnerId is executed for a VM Schedule which doesn't exist"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testFailureGetEntityOwnerId() {
-        VMSchedule vmSchedule = Mockito.mock(VMSchedule.class);
-        Mockito.when(entityManager.findById(VMSchedule.class, updateVMScheduleCmd.getId())).thenReturn(null);
-        long ownerId = updateVMScheduleCmd.getEntityOwnerId();
+        Mockito.when(entityManager.findById(ResourceSchedule.class, updateVMScheduleCmd.getId())).thenReturn(null);
+        updateVMScheduleCmd.getEntityOwnerId();
     }
 }

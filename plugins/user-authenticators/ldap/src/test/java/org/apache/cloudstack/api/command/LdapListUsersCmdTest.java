@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -167,7 +167,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
-        boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
+        boolean result = ldapListUsersCmd.isACloudStackUser(ldapUser);
 
         assertTrue(result);
     }
@@ -183,7 +183,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
-        boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
+        boolean result = ldapListUsersCmd.isACloudStackUser(ldapUser);
 
         assertFalse(result);
     }

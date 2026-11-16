@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.ScopeType;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class ClusterScope extends AbstractScope {
     private ScopeType type = ScopeType.CLUSTER;
@@ -51,4 +52,9 @@ public class ClusterScope extends AbstractScope {
         return this.zoneId;
     }
 
+    @Override
+    public String toString() {
+        return String.format("ClusterScope %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "zoneId", "clusterId", "podId"));
+    }
 }

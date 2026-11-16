@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.user.tag;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +37,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 @APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0", entityType = {ResourceTag.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTagsCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -48,17 +46,17 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, required = true, description = "Map of tags (key/value pairs)")
     private Map tag;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_IDS,
                type = CommandType.LIST,
                required = true,
                collectionType = CommandType.STRING,
-               description = "list of resources to create the tags for")
+               description = "List of resources to create the tags for")
     private List<String> resourceIds;
 
-    @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "identifies client specific tag. "
+    @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "Identifies client specific tag. "
         + "When the value is not null, the tag can't be used by cloudStack code internally")
     private String customer;
 

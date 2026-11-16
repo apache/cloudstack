@@ -78,12 +78,12 @@ under the License.
 				<name>account</name>
 				<param>accountname</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -166,7 +166,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>	[Deploy Virtual Machine in the created Account]</testcase>
@@ -202,7 +202,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -237,7 +237,7 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>routerid</param>
@@ -247,8 +247,8 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>associateIpAddress</name>
 		<testcase>	[Acquire a new IP Address for the Account]</testcase>
@@ -266,14 +266,14 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  Test case 323 - create port forwarding rule for sourcenat ip address -->
 	<command>
 		<name>createPortForwardingRule</name>
@@ -313,7 +313,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<!--  Test case 324 - create port forwarding rule for non-sourcenate ip address -->
 	<command>
 		<name>createPortForwardingRule</name>
@@ -353,7 +353,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 325 - create port forwarding rule with protocol TCP -->
 	<command>
 		<name>createPortForwardingRule</name>
@@ -393,7 +393,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 326 - create port forwarding rule with protocol UDP -->
 	<command>
 		<name>createPortForwardingRule</name>
@@ -433,9 +433,9 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 327 - update existing port forwarding rule -->
-<!-- 
+<!--
 	<command>
 		<name>updatePortForwardingRule</name>
 		<testcase>327</testcase>
@@ -474,7 +474,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
--->	
+-->
 <!--  Test case 328 - bug 6159 - verify that you can create portForwarding rules with the same parameters for UDP/TCP -->
 	<command>
 		<name>createPortForwardingRule</name>
@@ -514,7 +514,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createPortForwardingRule</name>
 		<testcase>328 [Create Port Forwarding Rule with same parameters with UDP protocol]</testcase>
@@ -553,7 +553,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 329 - delete portForwarding rule -->
 	<command>
 		<name>associateIpAddress</name>
@@ -572,14 +572,14 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip1</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createPortForwardingRule</name>
 		<testcase>	[Create Port Forwarding Rule with the acquired IP Address] </testcase>
@@ -617,14 +617,14 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>portforwardingruleid1</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deletePortForwardingRule</name>
 		<testcase>329 [Delete Port Forwarding Rule]</testcase>
@@ -643,7 +643,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listPortForwardingRules</name>
 		<testcase>329 [Try to list the Deleted Port Forwarding Rules (del pf rule exercise end)]</testcase>
@@ -696,14 +696,14 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>portforwardingruleid1</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>disassociateIpAddress</name>
 		<testcase>	[Release the Non-Source NAT IP Address] </testcase>
@@ -722,7 +722,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listPortForwardingRules</name>
 		<testcase>331 [Try to List the Port Forwarding Rules created from Released IP Address(del ip exercise end)]</testcase>
@@ -736,13 +736,13 @@ under the License.
 		<returnvalue>
 		</returnvalue>
 	</command>
-	
+
 <!--  Test case 332 - try to create a port forwarding rule with the parameters that are already in use by existing load balancing rule - Negative case-->
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>	[Create Load Balancing Rule Inorder to test PF-LBrule collision (pf-lb collision exercise begin)] </testcase>
 		<parameters>
-		<item getparam="true"> 
+		<item getparam="true">
 			<name>privateip</name>
 			<param>vmipaddress</param>
 		</item>
@@ -781,13 +781,13 @@ under the License.
 		</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>assignToLoadBalancerRule</name>
 		<testcase>	[Assign the Created LB Rule to the VM created in the Test] </testcase>
 		<parameters>
-		<item getparam="true"> 
+		<item getparam="true">
 			<name>virtualmachineids</name>
 			<param>vmid</param>
 		</item>
@@ -797,14 +797,14 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createPortForwardingRule</name>
 		<testcase>	[Create Port Forwarding Rule to test PF-LBrule collision (pf-lb rule collison exercise end)] </testcase>
 		<testcase>332</testcase>
 		<error>true</error>
 		<parameters>
-		<item getparam="true"> 
+		<item getparam="true">
 			<name>privateip</name>
 			<param>vmipaddress</param>
 		</item>
@@ -838,7 +838,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 <!--  test case 336 - try to add a new port forwarding rule when domR is stopped -->
 	<command>
 		<name>stopRouter</name>
@@ -850,12 +850,12 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createPortForwardingRule</name>
 		<testcase>336 [Create Port Forwarding Rule with the Source NAT IP Address]</testcase>
 		<parameters>
-		<item getparam="true"> 
+		<item getparam="true">
 			<name>privateip</name>
 			<param>vmipaddress</param>
 		</item>
@@ -889,7 +889,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startRouter</name>
 		<testcase>	[Start the DomR (add new pfrule when domR is stopped exercise end)] </testcase>
@@ -900,14 +900,14 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  test case 337 - try to update an existing port forwarding rule when domR is stopped - negative case -->
 
 		<command>
 		<name>createPortForwardingRule</name>
 		<testcase>337 [Create Port Forwarding Rule with the Source NAT IP Address]</testcase>
 		<parameters>
-		<item getparam="true"> 
+		<item getparam="true">
 			<name>privateip</name>
 			<param>vmipaddress</param>
 		</item>
@@ -940,16 +940,16 @@ under the License.
 			<value>1</value>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>portforwardingruleid_forremove</param>
 			</item>
 		</returnvalue>
 	</command>
-<!-- 
+<!--
 		THIS CASE IS OBSOLETE AS WE NO LONGER ALLOW TO UPDATE A PF RULE
-			
+
 	<command>
 		<name>stopRouter</name>
 		<parameters>
@@ -959,13 +959,13 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createPortForwardingRule</name>
 		<testcase>337</testcase>
 		<error>true</error>
 		<parameters>
-		<item getparam="true"> 
+		<item getparam="true">
 			<name>privateip</name>
 			<param>vmipaddress</param>
 		</item>
@@ -999,7 +999,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startRouter</name>
 		<parameters>
@@ -1010,7 +1010,7 @@ under the License.
 		</parameters>
 	</command>
 -->
-	
+
 <!--  Test case 338 - delete existing port forwarding rule while domR is stopped -->
 	<command>
 		<name>stopRouter</name>
@@ -1041,7 +1041,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startRouter</name>
 		<testcase>	[Start the DomR (del pf rule exercise end)]</testcase>
@@ -1063,6 +1063,6 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 </portforwardtest>

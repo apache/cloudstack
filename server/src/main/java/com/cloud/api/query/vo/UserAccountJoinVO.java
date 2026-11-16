@@ -19,7 +19,6 @@ package com.cloud.api.query.vo;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -60,13 +59,6 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name = "state")
     private String state;
-
-    @Column(name = "api_key")
-    private String apiKey = null;
-
-    @Encrypt
-    @Column(name = "secret_key")
-    private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -132,6 +124,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name = "is_user_2fa_enabled")
     boolean user2faEnabled;
+
+    @Column(name = "api_key_access")
+    Boolean apiKeyAccess;
 
     public UserAccountJoinVO() {
     }
@@ -206,14 +201,6 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
         return state;
     }
 
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
     public Date getCreated() {
         return created;
     }
@@ -280,5 +267,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public boolean isUser2faEnabled() {
         return user2faEnabled;
+    }
+
+    public Boolean getApiKeyAccess() {
+        return apiKeyAccess;
     }
 }

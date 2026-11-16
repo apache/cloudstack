@@ -63,19 +63,19 @@ class configFileOps:
         newLines = []
         if os.path.exists(self.fileName) and os.path.isfile(self.fileName):
             fp = open(self.fileName, "r")
-            for line  in fp.readlines():
+            for line in fp.readlines():
                 matched = False
                 for entry in self.entries:
                     if entry.op == "add":
                         if entry.separator == "=":
-                            matchString = "^\ *" + entry.name + ".*"
+                            matchString = r"^\ *" + entry.name + ".*"
                         elif entry.separator == " ":
-                            matchString = "^\ *" + entry.name + "\ *" + entry.value
+                            matchString = r"^\ *" + entry.name + r"\ *" + entry.value
                     else:
                         if entry.separator == "=":
-                            matchString = "^\ *" + entry.name + "\ *=\ *" + entry.value
+                            matchString = r"^\ *" + entry.name + r"\ *=\ *" + entry.value
                         else:
-                            matchString = "^\ *" + entry.name + "\ *" + entry.value
+                            matchString = r"^\ *" + entry.name + r"\ *" + entry.value
 
                     match = re.match(matchString, line)
                     if match is not None:

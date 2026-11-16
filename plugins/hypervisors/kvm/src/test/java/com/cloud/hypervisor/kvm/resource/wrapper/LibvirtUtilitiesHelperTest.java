@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.utils.Pair;
 
 import junit.framework.TestCase;
@@ -74,5 +75,31 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
 
         Assert.assertEquals(String.valueOf(libvirtVersion), result.first());
         Assert.assertTrue(result.second());
+    }
+
+    @Test
+    public void generateVMSnapshotXMLEscapesSnapshotName() {
+        VMSnapshotTO snapshot = Mockito.mock(VMSnapshotTO.class);
+        Mockito.doReturn("i-2-3-VM_VS_</name><disks><disk name='vda'/></disks><name>x").when(snapshot).getSnapshotName();
+        Mockito.doReturn(1000L).when(snapshot).getCreateTime();
+
+        String xml = libvirtUtilitiesHelperSpy.generateVMSnapshotXML(snapshot, null, "<domain/>");
+
+        Assert.assertTrue(xml.contains("<name>i-2-3-VM_VS_&lt;/name&gt;&lt;disks&gt;&lt;disk name=&apos;vda&apos;/&gt;&lt;/disks&gt;&lt;name&gt;x</name>"));
+        Assert.assertFalse(xml.contains("<disks>"));
+    }
+
+    @Test
+    public void generateVMSnapshotXMLEscapesParentSnapshotName() {
+        VMSnapshotTO snapshot = Mockito.mock(VMSnapshotTO.class);
+        Mockito.doReturn("child").when(snapshot).getSnapshotName();
+        Mockito.doReturn(1000L).when(snapshot).getCreateTime();
+        VMSnapshotTO parent = Mockito.mock(VMSnapshotTO.class);
+        Mockito.doReturn("parent</name><disks/>").when(parent).getSnapshotName();
+
+        String xml = libvirtUtilitiesHelperSpy.generateVMSnapshotXML(snapshot, parent, "<domain/>");
+
+        Assert.assertTrue(xml.contains("<parent><name>parent&lt;/name&gt;&lt;disks/&gt;</name></parent>"));
+        Assert.assertFalse(xml.contains("<disks/>"));
     }
 }

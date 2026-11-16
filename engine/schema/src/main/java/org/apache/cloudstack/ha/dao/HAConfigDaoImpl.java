@@ -31,7 +31,6 @@ import com.cloud.utils.db.UpdateBuilder;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.ha.HAConfigVO;
 import org.apache.cloudstack.ha.HAResource;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -42,7 +41,6 @@ import java.util.List;
 @DB
 @Component
 public class HAConfigDaoImpl extends GenericDaoBase<HAConfigVO, Long> implements HAConfigDao {
-    private static final Logger LOG = Logger.getLogger(HAConfigDaoImpl.class);
 
     private static final String EXPIRE_OWNERSHIP = "UPDATE ha_config set mgmt_server_id=NULL where mgmt_server_id=?";
 
@@ -77,8 +75,8 @@ public class HAConfigDaoImpl extends GenericDaoBase<HAConfigVO, Long> implements
     public boolean updateState(HAConfig.HAState currentState, HAConfig.Event event, HAConfig.HAState nextState, HAConfig vo, Object data) {
         HAConfigVO haConfig = (HAConfigVO) vo;
         if (haConfig == null) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Invalid ha config view object provided");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Invalid ha config view object provided");
             }
             return false;
         }
@@ -104,8 +102,8 @@ public class HAConfigDaoImpl extends GenericDaoBase<HAConfigVO, Long> implements
         ub.set(haConfig, MsIdAttr, newManagementServerId);
 
         int result = update(ub, sc, null);
-        if (LOG.isTraceEnabled() && result <= 0) {
-            LOG.trace(String.format("Failed to update HA state from:%s to:%s due to event:%s for the ha_config id:%d", currentState, nextState, event, haConfig.getId()));
+        if (logger.isTraceEnabled() && result <= 0) {
+            logger.trace(String.format("Failed to update HA state from:%s to:%s due to event:%s for the ha_config id:%d", currentState, nextState, event, haConfig.getId()));
         }
         return result > 0;
     }
@@ -141,7 +139,7 @@ public class HAConfigDaoImpl extends GenericDaoBase<HAConfigVO, Long> implements
                     pstmt.executeUpdate();
                 } catch (SQLException e) {
                     txn.rollback();
-                    LOG.warn("Failed to expire HA ownership of management server id: " + serverId);
+                    logger.warn("Failed to expire HA ownership of management server id: " + serverId);
                 }
             }
         });

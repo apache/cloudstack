@@ -22,7 +22,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -62,6 +64,10 @@ public class RouterDeploymentDefinitionBuilder {
     protected NetworkDao networkDao;
     @Inject
     private DomainRouterDao routerDao;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
+    @Inject
+    private NetrisProviderDao netrisProviderDao;
     @Inject
     private PhysicalNetworkServiceProviderDao physicalProviderDao;
     @Inject
@@ -125,6 +131,8 @@ public class RouterDeploymentDefinitionBuilder {
 
         routerDeploymentDefinition.networkDao = networkDao;
         routerDeploymentDefinition.routerDao = routerDao;
+        routerDeploymentDefinition.nsxProviderDao = nsxProviderDao;
+        routerDeploymentDefinition.netrisProviderDao = netrisProviderDao;
         routerDeploymentDefinition.physicalProviderDao = physicalProviderDao;
         routerDeploymentDefinition.networkModel = networkModel;
         routerDeploymentDefinition.vrProviderDao = vrProviderDao;

@@ -22,6 +22,7 @@ package com.cloud.resource;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
@@ -49,6 +50,10 @@ public interface ServerResource extends Manager {
      * @return StartupCommand ready to be sent to the management server.
      */
     StartupCommand[] initialize();
+
+    default StartupCommand[] initialize(boolean isTransferredConnection) {
+        return initialize();
+    }
 
     /**
      * @param id id of the server to put in the PingCommand
@@ -78,4 +83,13 @@ public interface ServerResource extends Manager {
 
     void setAgentControl(IAgentControl agentControl);
 
+    default boolean isExitOnFailures() {
+        return true;
+    }
+
+    default boolean isAppendAgentNameToLogs() {
+        return false;
+    }
+
+    default void processPingAnswer(PingAnswer answer) {};
 }

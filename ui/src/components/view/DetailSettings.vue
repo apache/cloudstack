@@ -26,7 +26,7 @@
         <a-button
           type="dashed"
           style="width: 100%"
-          :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
+          :disabled="!(isAdminOrOwner() && hasSettingUpdatePermission())"
           @click="onShowAddDetail">
           <template #icon><plus-outlined /></template>
           {{ $t('label.add.setting') }}
@@ -39,7 +39,7 @@
           <a-auto-complete
             class="detail-input"
             ref="keyElm"
-            :filterOption="filterOption"
+            :filterOption="(input, option) => filterOption(input, option, 'key')"
             v-model:value="newKey"
             :options="detailKeys"
             :placeholder="$t('label.name')"
@@ -51,7 +51,7 @@
             disabled />
           <a-auto-complete
             class="detail-input"
-            :filterOption="filterOption"
+            :filterOption="(input, option) => filterOption(input, option, 'value')"
             v-model:value="newValue"
             :options="detailValues"
             :placeholder="$t('label.value')"
@@ -96,18 +96,16 @@
         </a-list-item-meta>
         <template #actions>
           <div
-            v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
-              'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasSettingUpdatePermission()">
             <tooltip-button
               :tooltip="$t('label.edit')"
               icon="edit-outlined"
-              :disabled="deployasistemplate === true"
+              :disabled="item.name.startsWith('extraconfig')"
               v-if="!item.edit"
               @onClick="showEditDetail(index)" />
           </div>
           <div
-            v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
-              'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasSettingUpdatePermission()">
             <a-popconfirm
               :title="`${$t('label.delete.setting')}?`"
               @confirm="deleteDetail(index)"
@@ -115,7 +113,12 @@
               :cancelText="$t('label.no')"
               placement="left"
             >
-              <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="primary" :danger="true" icon="delete-outlined" />
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                :disabled="item.name.startsWith('extraconfig')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
             </a-popconfirm>
           </div>
         </template>
@@ -125,7 +128,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -173,7 +176,7 @@ export default {
         if (this.detailOptions[this.newKey]) {
           return { value: this.detailOptions[this.newKey] }
         } else {
-          return ''
+          return []
         }
       }
       return this.detailOptions[this.newKey].map(value => {
@@ -185,7 +188,12 @@ export default {
     this.updateResource(this.resource)
   },
   methods: {
-    filterOption (input, option) {
+    filterOption (input, option, filterType) {
+      if ((filterType === 'key' && !this.newKey) ||
+        (filterType === 'value' && !this.newValue)) {
+        return true
+      }
+
       return (
         option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
@@ -201,15 +209,20 @@ export default {
           return { name: k, value: resource.details[k], edit: false }
         })
       }
-      api('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
+      getAPI('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && resource.state !== 'Stopped')
-      api('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
-        this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
-      })
+      if (this.$route.meta.name === 'vm') {
+        getAPI('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
+          this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
+        })
+      }
     },
     allowEditOfDetail (name) {
+      if (this.deployasistemplate) {
+        return this.resource.alloweddetails && this.resource.alloweddetails.split(',').map(item => item.trim()).includes(name)
+      }
       if (this.resource.readonlydetails) {
         if (this.resource.readonlydetails.split(',').map(item => item.trim()).includes(name)) {
           return false
@@ -283,7 +296,7 @@ export default {
       var params = { id: this.resource.id }
       params = Object.assign(params, this.getDetailsParam(this.details))
       this.loading = true
-      api(apiName, params).then(json => {
+      postAPI(apiName, params).then(json => {
         var details = {}
         if (this.resourceType === 'UserVm' && json.updatevirtualmachineresponse.virtualmachine.details) {
           details = json.updatevirtualmachineresponse.virtualmachine.details
@@ -307,8 +320,16 @@ export default {
         this.error = this.$t('message.error.provide.setting')
         return
       }
+      if (this.newKey.startsWith('extraconfig')) {
+        this.error = this.$t('error.unable.to.add.setting.extraconfig')
+        return
+      }
       if (!this.allowEditOfDetail(this.newKey)) {
-        this.error = this.$t('error.unable.to.proceed')
+        if (this.deployasistemplate) {
+          this.error = this.$t('error.unable.to.add.setting') + ' : ' + this.newKey + '. ' + this.$t('message.error.setting.deployasistemplate')
+        } else {
+          this.error = this.$t('error.unable.to.add.setting') + ' : ' + this.newKey
+        }
         return
       }
       this.error = false
@@ -333,6 +354,12 @@ export default {
       this.newValue = ''
       this.error = false
       this.showAddDetail = false
+    },
+    hasSettingUpdatePermission () {
+      return (
+        (this.resourceType === 'Template' && 'updateTemplate' in this.$store.getters.apis) ||
+        (this.resourceType === 'UserVm' && 'updateVirtualMachine' in this.$store.getters.apis)
+      )
     }
   }
 }

@@ -31,13 +31,11 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.saml.SAML2AuthManager;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 @APICommand(name = "authorizeSamlSso", description = "Allow or disallow a user to use SAML SSO", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AuthorizeSAMLSSOCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AuthorizeSAMLSSOCmd.class.getName());
 
 
     @Inject
@@ -85,7 +83,7 @@ public class AuthorizeSAMLSSOCmd extends BaseCmd {
         _accountService.checkAccess(CallContext.current().getCallingAccount(), domain);
         _accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, true, account);
 
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.USER_ID));
         SuccessResponse response = new SuccessResponse();
         Boolean status = false;
 

@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -35,7 +35,6 @@ import com.cloud.user.User;
 @APICommand(name = "createUser", description = "Creates a user for an account that already exists", responseObject = UserResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -54,13 +53,13 @@ public class CreateUserCmd extends BaseCmd {
                description = "Creates the user under the specified domain. Has to be accompanied with the account parameter")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "email")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "Email")
     private String email;
 
-    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "firstname")
+    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "Firstname")
     private String firstname;
 
-    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "lastname")
+    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "Lastname")
     private String lastname;
 
     @Parameter(name = ApiConstants.PASSWORD,
@@ -79,6 +78,12 @@ public class CreateUserCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, description = "User UUID, required for adding account from external provisioning system")
     private String userUUID;
+
+    @Parameter(name = ApiConstants.PASSWORD_CHANGE_REQUIRED,
+            type = CommandType.BOOLEAN,
+            description = "Provide true to mandate the User to reset password on next login.",
+            since = "4.23.0")
+    private Boolean passwordChangeRequired;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -120,6 +125,10 @@ public class CreateUserCmd extends BaseCmd {
         return userUUID;
     }
 
+    public Boolean isPasswordChangeRequired() {
+        return BooleanUtils.isTrue(passwordChangeRequired);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -149,7 +158,7 @@ public class CreateUserCmd extends BaseCmd {
         CallContext.current().setEventDetails("UserName: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
         User user =
             _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(),
-                getUserUUID());
+                getUserUUID(), isPasswordChangeRequired());
         if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -37,6 +38,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
@@ -45,9 +47,13 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
+import org.apache.cloudstack.util.CPUArchConverter;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "host")
@@ -116,8 +122,12 @@ public class EngineHostVO implements EngineHost, Identity {
     private String storageMacAddressDeux;
 
     @Column(name = "hypervisor_type", updatable = true, nullable = false)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "proxy_port")
     private Integer proxyPort;
@@ -126,6 +136,7 @@ public class EngineHostVO implements EngineHost, Identity {
     private String resource;
 
     @Column(name = "fs_type")
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType fsType;
 
     @Column(name = "available")
@@ -361,6 +372,9 @@ public class EngineHostVO implements EngineHost, Identity {
     @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
+    @Column(name = "last_mgmt_server_id")
+    private Long lastManagementServerId;
+
     @Column(name = "dom0_memory")
     private long dom0MinMemory;
 
@@ -390,6 +404,9 @@ public class EngineHostVO implements EngineHost, Identity {
     @StateMachine(state = State.class, event = Event.class)
     @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State orchestrationState = null;
+
+    @Column(name = "storage_access_groups")
+    private String storageAccessGroups = null;
 
     public EngineHostVO(String guid) {
         this.guid = guid;
@@ -545,6 +562,10 @@ public class EngineHostVO implements EngineHost, Identity {
         this.managementServerId = managementServerId;
     }
 
+    public void setLastManagementServerId(Long lastManagementServerId) {
+        this.lastManagementServerId = lastManagementServerId;
+    }
+
     @Override
     public long getLastPinged() {
         return lastPinged;
@@ -612,6 +633,11 @@ public class EngineHostVO implements EngineHost, Identity {
     @Override
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    @Override
+    public Long getLastManagementServerId() {
+        return lastManagementServerId;
     }
 
     @Override
@@ -687,7 +713,9 @@ public class EngineHostVO implements EngineHost, Identity {
 
     @Override
     public String toString() {
-        return new StringBuilder("Host[").append("-").append(id).append("-").append(type).append("]").toString();
+        return String.format("EngineHost %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "type"));
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {
@@ -719,6 +747,15 @@ public class EngineHostVO implements EngineHost, Identity {
     @Override
     public ResourceState getResourceState() {
         return resourceState;
+    }
+
+    @Override
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArch arch) {
+        this.arch = arch;
     }
 
     public void setResourceState(ResourceState state) {
@@ -772,5 +809,14 @@ public class EngineHostVO implements EngineHost, Identity {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Host;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 }

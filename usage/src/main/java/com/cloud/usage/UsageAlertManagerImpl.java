@@ -23,7 +23,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -39,7 +40,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 @Component
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
-    protected Logger logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
+    protected Logger logger = LogManager.getLogger(UsageAlertManagerImpl.class.getName());
 
     private String senderAddress;
     protected SMTPMailSender mailSender;

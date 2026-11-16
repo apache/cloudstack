@@ -111,7 +111,7 @@ namespace HypervResource
 
             return vm;
         }
-		
+
         /// <summary>
         /// Returns ComputerSystem lacking any NICs and VOLUMEs
         /// </summary>
@@ -164,7 +164,7 @@ namespace HypervResource
             // Obtain controller for Hyper-V networking subsystem
             var vmNetMgmtSvc = GetVirtualSwitchManagementService();
 
-            // Create NIC resource by cloning the default NIC 
+            // Create NIC resource by cloning the default NIC
             var synthNICsSettings = SyntheticEthernetPortSettingData.GetInstances(vmNetMgmtSvc.Scope, "InstanceID LIKE \"%Default\"");
 
             // Assert
@@ -217,7 +217,7 @@ namespace HypervResource
         public const string HARDDISK_DISK = "Microsoft:Hyper-V:Virtual Hard Disk"; // For IDE_HARDDISK_DRIVE
 
         /// <summary>
-        /// Create new VM.  By default we start it. 
+        /// Create new VM.  By default we start it.
         /// </summary>
         public ComputerSystem DeployVirtualMachine(dynamic jsonObj, string systemVmIso)
         {
@@ -351,9 +351,9 @@ namespace HypervResource
                         break;
                     case "DATADISK":
                         break;
-                    default: 
+                    default:
                         // TODO: double check exception type
-                        errMsg = string.Format("Unknown disk type {0} for disk {1}, vm named {2}", 
+                        errMsg = string.Format("Unknown disk type {0} for disk {1}, vm named {2}",
                                 string.IsNullOrEmpty(driveType) ? "NULL" : driveType,
                                 string.IsNullOrEmpty(diskName) ? "NULL" : diskName, vmName);
                         var ex = new WmiException(errMsg);
@@ -452,9 +452,9 @@ namespace HypervResource
                             SetBandWidthLimit((ulong)networkRateMbps, portSettings);
                         }
 
-                        logger.DebugFormat("Created adapter {0} on port {1}, {2}", 
+                        logger.DebugFormat("Created adapter {0} on port {1}, {2}",
                             newAdapter.Path, portSettings.Path, (vlan == null ? "No VLAN" : "VLAN " + vlan));
-                     //   logger.DebugFormat("Created adapter {0} on port {1}, {2}", 
+                     //   logger.DebugFormat("Created adapter {0} on port {1}, {2}",
                     //       newAdapter.Path, portSettings.Path, (vlan == null ? "No VLAN" : "VLAN " + vlan));
                     }
                 }
@@ -468,7 +468,7 @@ namespace HypervResource
             var vm = GetComputerSystem(vmName);
             if (bootArgs != null && !String.IsNullOrEmpty((string)bootArgs))
             {
-               
+
                 String bootargs = bootArgs;
                 AddUserData(vm, bootargs);
             }
@@ -576,7 +576,7 @@ namespace HypervResource
         }
 
         /// this method is to add a dvd drive and attach the systemvm iso.
-        /// 
+        ///
         public void patchSystemVmIso(String vmName, String systemVmIso)
         {
             ComputerSystem vmObject = GetComputerSystem(vmName);
@@ -611,7 +611,7 @@ namespace HypervResource
         /// <param name="driveResourceType">IDE_HARDDISK_DRIVE or IDE_ISO_DRIVE</param>
         public ManagementPath AddDiskDriveToIdeController(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
         {
-            logger.DebugFormat("Creating DISK for VM {0} (GUID {1}) by attaching {2}", 
+            logger.DebugFormat("Creating DISK for VM {0} (GUID {1}) by attaching {2}",
                         vm.ElementName,
                         vm.Name,
                         vhdfile);
@@ -622,13 +622,13 @@ namespace HypervResource
                 case HARDDISK_DRIVE:
                     diskResourceSubType = HARDDISK_DISK;
                     break;
-                case ISO_DRIVE: 
+                case ISO_DRIVE:
                     diskResourceSubType = ISO_DISK;
                     break;
                 default:
                     var errMsg = string.Format(
                         "Unrecognised disk drive type {0} for VM {1} (GUID {2})",
-                        string.IsNullOrEmpty(driveResourceType) ? "NULL": driveResourceType, 
+                        string.IsNullOrEmpty(driveResourceType) ? "NULL": driveResourceType,
                         vm.ElementName,
                         vm.Name);
                     var ex = new WmiException(errMsg);
@@ -886,7 +886,7 @@ namespace HypervResource
         }
 
         /// <summary>
-        /// Create Msvm_StorageAllocationSettingData corresponding to the ISO image, and 
+        /// Create Msvm_StorageAllocationSettingData corresponding to the ISO image, and
         /// associate this with the VM's DVD drive.
         /// </summary>
         private void AttachIso(ComputerSystem vm, string isoPath)
@@ -1191,7 +1191,7 @@ namespace HypervResource
             string vmToDestroy = jsonObj.vmName;
             DestroyVm(vmToDestroy);
         }
-        
+
         /// <summary>
         /// Remove all VMs and all SwitchPorts with the displayName.  VHD gets deleted elsewhere.
         /// </summary>
@@ -1461,7 +1461,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="storageSettings">Path that uniquely identifies the resource.</param>
         /// <param name="vm">VM to which the disk image will be attached.</param>
-        // Add new 
+        // Add new
         private void RemoveNetworkResource(ManagementPath resourcePath)
         {
             var virtSwitchMgmtSvc = GetVirtualSwitchManagementService();
@@ -1523,9 +1523,9 @@ namespace HypervResource
         public void SetState(ComputerSystem vm, ushort requiredState)
         {
             logger.InfoFormat(
-                "Changing state of {0} (GUID {1}) to {2}", 
-                vm.ElementName, 
-                vm.Name,  
+                "Changing state of {0} (GUID {1}) to {2}",
+                vm.ElementName,
+                vm.Name,
                 RequiredState.ToString(requiredState));
 
             ManagementPath jobPath;
@@ -1555,9 +1555,9 @@ namespace HypervResource
             }
 
             logger.InfoFormat(
-                "Successfully changed vm state of {0} (GUID {1} to requested state {2}", 
-                vm.ElementName, 
-                vm.Name,  
+                "Successfully changed vm state of {0} (GUID {1} to requested state {2}",
+                vm.ElementName,
+                vm.Name,
                 requiredState);
         }
 
@@ -1589,9 +1589,9 @@ namespace HypervResource
 
         public SyntheticEthernetPortSettingData GetSyntheticEthernetPortSettings(EthernetSwitchPort port)
         {
-            // An ASSOCIATOR object provides the cross reference from the EthernetSwitchPort and the 
+            // An ASSOCIATOR object provides the cross reference from the EthernetSwitchPort and the
             // SyntheticEthernetPortSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vm.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(port.Path.Path, SyntheticEthernetPortSettingData.CreatedClassName);
@@ -1620,7 +1620,7 @@ namespace HypervResource
         /// <param name="storageSettings">Msvm_StorageAllocationSettings with HostResource configured with image
         /// file and Parent set to a controller associated with the ComputerSystem</param>
         /// <param name="vm">VM to which the disk image will be attached.</param>
-        // Add new 
+        // Add new
         private ManagementPath[] AddStorageResource(string[] storageSettings, ComputerSystem vm)
         {
             return AddVirtualResource(storageSettings, vm);
@@ -1697,7 +1697,7 @@ namespace HypervResource
             var vmVirtMgmtSvc = GetVirtualisationSystemManagementService();
             EthernetSwitchPortVlanSettingData.GetInstances();
 
-            // Create NIC resource by cloning the default NIC 
+            // Create NIC resource by cloning the default NIC
             var vlanSettings = EthernetSwitchPortVlanSettingData.GetInstances(vmVirtMgmtSvc.Scope, "InstanceID LIKE \"%Default\"");
 
             // Assert
@@ -1783,7 +1783,7 @@ namespace HypervResource
         /// <remarks>
         /// With V1 API, external ethernet port was attached to the land endpoint, which was attached to the switch.
         /// e.g. Msvm_ExternalEthernetPort -> SwitchLANEndpoint -> SwitchPort -> VirtualSwitch
-        /// 
+        ///
         /// With V2 API, there are two kinds of lan endpoint:  one on the computer system and one on the switch
         /// e.g. Msvm_ExternalEthernetPort -> LANEndpoint -> LANEdnpoint -> EthernetSwitchPort -> VirtualEthernetSwitch
         /// </remarks>
@@ -1800,7 +1800,7 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-            foreach(ExternalEthernetPort externNIC in externNICs.OfType<ExternalEthernetPort>()) { 
+            foreach(ExternalEthernetPort externNIC in externNICs.OfType<ExternalEthernetPort>()) {
             // A sequence of ASSOCIATOR objects need to be traversed to get from external NIC the vswitch.
             // We use ManagementObjectSearcher objects to execute this sequence of questions
             // NB: default scope of ManagementObjectSearcher is '\\.\root\cimv2', which does not contain
@@ -1822,7 +1822,7 @@ namespace HypervResource
             var switchEndpointQuery = new RelatedObjectQuery(adapterEndPoint.Path.Path, LANEndpoint.CreatedClassName);
             var switchEndpointSearch = new ManagementObjectSearcher(externNIC.Scope, switchEndpointQuery);
             var switchEndpointCollection = new LANEndpoint.LANEndpointCollection(switchEndpointSearch.Get());
-        
+
             // assert
             if (endpointCollection.Count < 1)
             {
@@ -1831,12 +1831,12 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-        
+
             LANEndpoint switchEndPoint = switchEndpointCollection.OfType<LANEndpoint>().First();
             var switchPortQuery = new RelatedObjectQuery(switchEndPoint.Path.Path, EthernetSwitchPort.CreatedClassName);
             var switchPortSearch = new ManagementObjectSearcher(switchEndPoint.Scope, switchPortQuery);
             var switchPortCollection = new EthernetSwitchPort.EthernetSwitchPortCollection(switchPortSearch.Get());
-        
+
             // assert
             if (switchPortCollection.Count < 1 )
             {
@@ -1845,7 +1845,7 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-        
+
             EthernetSwitchPort switchPort = switchPortCollection.OfType<EthernetSwitchPort>().First();
             var vSwitchQuery = new RelatedObjectQuery(switchPort.Path.Path, VirtualEthernetSwitch.CreatedClassName);
             var vSwitchSearch = new ManagementObjectSearcher(externNIC.Scope, vSwitchQuery);
@@ -2001,7 +2001,7 @@ namespace HypervResource
 
         private static ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name)
         {
-            // Tweak default settings by basing new VM on default global setting object 
+            // Tweak default settings by basing new VM on default global setting object
             // with designed display name.
             UInt16 startupAction = 2; // Do nothing.
             UInt16 stopAction = 4; // Shutdown.
@@ -2142,7 +2142,7 @@ namespace HypervResource
         {
             // VirtualSystemManagementService is a singleton, most anonymous way of lookup is by asking for the set
             // of local instances, which should be size 1.
-           
+
             var virtSysMgmtSvcCollection = VirtualSystemManagementService.GetInstances();
             foreach (VirtualSystemManagementService item in virtSysMgmtSvcCollection)
             {
@@ -2192,8 +2192,8 @@ namespace HypervResource
             if (jobObj.JobState != JobState.Completed)
             {
                 var errMsg = string.Format(
-                    "Hyper-V Job failed, Error Code:{0}, Description: {1}", 
-                    jobObj.ErrorCode, 
+                    "Hyper-V Job failed, Error Code:{0}, Description: {1}",
+                    jobObj.ErrorCode,
                     jobObj.ErrorDescription);
                 var ex = new WmiException(errMsg);
                 logger.Error(errMsg, ex);
@@ -2269,18 +2269,18 @@ namespace HypervResource
                 sockets++;
            }
         }
-        
+
         public void GetProcessorUsageInfo(out double cpuUtilization)
         {
-            PerfFormattedData_Counters_ProcessorInformation.PerfFormattedData_Counters_ProcessorInformationCollection coll = 
+            PerfFormattedData_Counters_ProcessorInformation.PerfFormattedData_Counters_ProcessorInformationCollection coll =
                             PerfFormattedData_Counters_ProcessorInformation.GetInstances("Name=\"_Total\"");
             cpuUtilization = 100;
             // Use the first one
             foreach (PerfFormattedData_Counters_ProcessorInformation procInfo in coll)
             {
-                // Idle during a given internal 
+                // Idle during a given internal
                 // See http://library.wmifun.net/cimv2/win32_perfformatteddata_counters_processorinformation.html
-                cpuUtilization = 100.0 - (double)procInfo.PercentIdleTime;            
+                cpuUtilization = 100.0 - (double)procInfo.PercentIdleTime;
             }
         }
 
@@ -2308,7 +2308,7 @@ namespace HypervResource
                 logger.Error(errMsg);
                 return null;
             }
-            
+
             return defaultVirtualHardDiskPath;
         }
 
@@ -2376,9 +2376,9 @@ namespace HypervResource
 
         public ProcessorSettingData GetProcSettings(VirtualSystemSettingData vmSettings)
         {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
+            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the
             // ProcessorSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, ProcessorSettingData.CreatedClassName);
@@ -2401,9 +2401,9 @@ namespace HypervResource
 
         public MemorySettingData GetMemSettings(VirtualSystemSettingData vmSettings)
         {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
+            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the
             // MemorySettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, MemorySettingData.CreatedClassName);
@@ -2431,7 +2431,7 @@ namespace HypervResource
 
             foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
             {
-                // DVD drive is '16', see http://msdn.microsoft.com/en-us/library/hh850200(v=vs.85).aspx 
+                // DVD drive is '16', see http://msdn.microsoft.com/en-us/library/hh850200(v=vs.85).aspx
                 if (wmiObj.ResourceType == 16)
                 {
                     return wmiObj;
@@ -2459,8 +2459,8 @@ namespace HypervResource
             }
 
             var errMsg = string.Format(
-                                "Cannot find the Microsoft Emulated IDE Controlle at address {0} in VirtualSystemSettingData {1}", 
-                                cntrllerAddr, 
+                                "Cannot find the Microsoft Emulated IDE Controlle at address {0} in VirtualSystemSettingData {1}",
+                                cntrllerAddr,
                                 vmSettings.Path.Path);
             var ex = new WmiException(errMsg);
             logger.Error(errMsg, ex);
@@ -2488,8 +2488,8 @@ namespace HypervResource
         }
 
         /// <summary>
-        /// VM resources, typically hardware a described by a generic MSVM_ResourceAllocationSettingData object.  The hardware type being 
-        /// described is identified in two ways:  in general terms using an enum in the ResourceType field, and in terms of the implementation 
+        /// VM resources, typically hardware a described by a generic MSVM_ResourceAllocationSettingData object.  The hardware type being
+        /// described is identified in two ways:  in general terms using an enum in the ResourceType field, and in terms of the implementation
         /// using text in the ResourceSubType field.
         /// See http://msdn.microsoft.com/en-us/library/cc136877%28v=vs.85%29.aspx
         /// </summary>
@@ -2497,9 +2497,9 @@ namespace HypervResource
         /// <returns></returns>
         public ResourceAllocationSettingData.ResourceAllocationSettingDataCollection GetResourceAllocationSettings(VirtualSystemSettingData vmSettings)
         {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
+            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the
             // ResourceAllocationSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, ResourceAllocationSettingData.CreatedClassName);
@@ -2525,9 +2525,9 @@ namespace HypervResource
             // ComputerSystem -> VirtualSystemSettingData -> EthernetPortAllocationSettingData
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
 
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
+            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the
             // EthernetPortAllocationSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, EthernetPortAllocationSettingData.CreatedClassName);
@@ -2568,9 +2568,9 @@ namespace HypervResource
 
         public EthernetSwitchPortVlanSettingData GetVlanSettings(EthernetPortAllocationSettingData ethernetConnection)
         {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
+            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the
             // EthernetPortAllocationSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(ethernetConnection.Path.Path, EthernetSwitchPortVlanSettingData.CreatedClassName);
@@ -2596,14 +2596,14 @@ namespace HypervResource
 
             return wmiObjCollection.OfType<EthernetSwitchPortVlanSettingData>().First();
         }
-        
+
 
         public SyntheticEthernetPortSettingData[] GetEthernetPortSettings(ComputerSystem vm)
         {
-            // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the 
+            // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the
             // SyntheticEthernetPortSettingData, via the VirtualSystemSettingData.
             // However, generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //
             // string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vm.path, resultclassName);
             //
@@ -2640,9 +2640,9 @@ namespace HypervResource
 
         public VirtualSystemSettingData GetVmSettings(ComputerSystem vm)
         {
-            // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the 
+            // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the
             // VirtualSystemSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vm.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(vm.Path.Path, VirtualSystemSettingData.CreatedClassName);
@@ -2671,9 +2671,9 @@ namespace HypervResource
 
         public KvpExchangeComponentSettingData GetKvpSettings(VirtualSystemSettingData vmSettings)
         {
-            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
+            // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the
             // KvpExchangeComponentSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
-            // Instead, we use the System.Management to code the equivalant of 
+            // Instead, we use the System.Management to code the equivalant of
             //  string query = string.Format( "ASSOCIATORS OF {{{0}}} WHERE ResultClass = {1}", vmSettings.path, resultclassName);
             //
             var wmiObjQuery = new RelatedObjectQuery(vmSettings.Path.Path, KvpExchangeComponentSettingData.CreatedClassName);
@@ -2700,7 +2700,7 @@ namespace HypervResource
             {
                 return;
             }
-            // Process info available from WMI, 
+            // Process info available from WMI,
             // See http://msdn.microsoft.com/en-us/library/hh850062(v=vs.85).aspx
             uint[] requestedInfo = new uint[] {  // TODO: correct?
                     0, // Name
@@ -2887,7 +2887,7 @@ namespace HypervResource
     /// http://msdn.microsoft.com/en-us/library/hh850116(v=vs.85).aspx#methods
     /// However, the CIM standard has additional possibilities based on the description
     /// of EnabledState.
-    /// The previous V1 API is described by 
+    /// The previous V1 API is described by
     /// http://msdn.microsoft.com/en-us/library/cc136822%28v=vs.85%29.aspx
     /// </summary>
         public class EnabledState
@@ -2914,27 +2914,27 @@ namespace HypervResource
         public const UInt16 Suspended = 32769;
             /// <summary>
             /// The VM is starting. This is a transitional state between 3 (Disabled)
-            /// or 32769 (Suspended) and 2 (Enabled) initiated by a call to the 
+            /// or 32769 (Suspended) and 2 (Enabled) initiated by a call to the
             /// RequestStateChange method with a RequestedState parameter of 2 (Enabled).
             /// </summary>
         public const UInt16 Starting = 32770;
             /// <summary>
-            /// Starting with Windows Server 2008 R2 this value is not supported. 
-            /// If the VM is performing a snapshot operation, the element at index 1 
-            /// of the OperationalStatus property array will contain 32768 (Creating Snapshot), 
+            /// Starting with Windows Server 2008 R2 this value is not supported.
+            /// If the VM is performing a snapshot operation, the element at index 1
+            /// of the OperationalStatus property array will contain 32768 (Creating Snapshot),
             /// 32769 (Applying Snapshot), or 32770 (Deleting Snapshot).
             /// </summary>
         public const UInt16 Snapshotting = 32771;
             /// <summary>
             /// The VM is saving its state. This is a transitional state between 2 (Enabled)
-            /// and 32769 (Suspended) initiated by a call to the RequestStateChange method 
+            /// and 32769 (Suspended) initiated by a call to the RequestStateChange method
             /// with a RequestedState parameter of 32769 (Suspended).
             /// </summary>
         public const UInt16 Saving = 32773;
             /// <summary>
-            /// The VM is turning off. This is a transitional state between 2 (Enabled) 
-            /// and 3 (Disabled) initiated by a call to the RequestStateChange method 
-            /// with a RequestedState parameter of 3 (Disabled) or a guest operating system 
+            /// The VM is turning off. This is a transitional state between 2 (Enabled)
+            /// and 3 (Disabled) initiated by a call to the RequestStateChange method
+            /// with a RequestedState parameter of 3 (Disabled) or a guest operating system
             /// initiated power off.
             /// </summary>
         public const UInt16 Stopping = 32774;
@@ -2980,7 +2980,7 @@ namespace HypervResource
                 case Saving: result = "Saving"; break;
                 case Stopping: result = "Stopping"; break;
                 case Pausing: result = "Unknown"; break;
-                case Resuming: result = "Starting"; break; 
+                case Resuming: result = "Starting"; break;
             }
             return result;
         }

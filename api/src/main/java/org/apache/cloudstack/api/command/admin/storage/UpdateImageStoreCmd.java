@@ -25,14 +25,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.ImageStore;
 
 @APICommand(name = UpdateImageStoreCmd.APINAME, description = "Updates image store read-only status", responseObject = ImageStoreResponse.class, entityType = {ImageStore.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0")
 public class UpdateImageStoreCmd extends BaseCmd {
-    private static final Logger LOG = Logger.getLogger(UpdateImageStoreCmd.class.getName());
     public static final String APINAME = "updateImageStore";
 
     /////////////////////////////////////////////////////
@@ -41,9 +39,16 @@ public class UpdateImageStoreCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "Image Store UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = true, description = "If set to true, it designates the corresponding image store to read-only, " +
-            "hence not considering them during storage migration")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "The new name for the Image Store.")
+    private String name;
+
+    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = false,
+            description = "If set to true, it designates the corresponding image store to read-only, hence not considering them during storage migration")
     private Boolean readonly;
+
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false,
+            description = "The number of bytes CloudStack can use on this image storage.\n\tNOTE: this will be overwritten by the StatsCollector as soon as there is a SSVM to query the storage.")
+    private Long capacityBytes;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -53,8 +58,16 @@ public class UpdateImageStoreCmd extends BaseCmd {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public Boolean getReadonly() {
         return readonly;
+    }
+
+    public Long getCapacityBytes() {
+        return capacityBytes;
     }
 
     /////////////////////////////////////////////////////
@@ -63,7 +76,7 @@ public class UpdateImageStoreCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        ImageStore result = _storageService.updateImageStoreStatus(getId(), getReadonly());
+        ImageStore result = _storageService.updateImageStore(this);
         ImageStoreResponse storeResponse = null;
         if (result != null) {
             storeResponse = _responseGenerator.createImageStoreResponse(result);

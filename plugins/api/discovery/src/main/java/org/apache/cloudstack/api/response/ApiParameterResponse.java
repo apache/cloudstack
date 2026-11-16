@@ -16,41 +16,45 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ApiParameterResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the api parameter")
+    @Param(description = "The name of the API parameter")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description of the api parameter")
+    @Param(description = "Description of the API parameter")
     private String description;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "parameter type")
+    @Param(description = "Parameter type")
     private String type;
 
     @SerializedName(ApiConstants.LENGTH)
-    @Param(description = "length of the parameter")
+    @Param(description = "Length of the parameter")
     private int length;
 
     @SerializedName(ApiConstants.REQUIRED)
-    @Param(description = "true if this parameter is required for the api request")
+    @Param(description = "True if this parameter is required for the API request")
     private Boolean required;
 
     @SerializedName(ApiConstants.SINCE)
-    @Param(description = "version of CloudStack the api was introduced in")
+    @Param(description = "Version of CloudStack the API was introduced in")
     private String since;
 
     @SerializedName("related")
-    @Param(description = "comma separated related apis to get the parameter")
+    @Param(description = "Comma separated related APIs to get the parameter")
     private String related;
+
+    private transient List<RoleType> authorizedRoleTypes = null;
 
     public ApiParameterResponse() {
     }
@@ -87,4 +91,11 @@ public class ApiParameterResponse extends BaseResponse {
         this.related = related;
     }
 
+    public void setAuthorizedRoleTypes(List<RoleType> authorizedRoleTypes) {
+        this.authorizedRoleTypes = authorizedRoleTypes;
+    }
+
+    public List<RoleType> getAuthorizedRoleTypes() {
+        return authorizedRoleTypes;
+    }
 }

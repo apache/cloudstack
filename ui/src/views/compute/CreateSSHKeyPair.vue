@@ -27,11 +27,8 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="name" ref="name">
-          <template #label :title="apiParams.name.description">
-            {{ $t('label.name') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           </template>
           <a-input
             v-model:value="form.name"
@@ -39,22 +36,16 @@
             v-focus="true" />
         </a-form-item>
         <a-form-item name="publickey" ref="publickey">
-          <template #label :title="apiParams.publickey.description">
-            {{ $t('label.publickey') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.publickey')" :tooltip="apiParams.publickey.description"/>
           </template>
           <a-input
             v-model:value="form.publickey"
             :placeholder="apiParams.publickey.description"/>
         </a-form-item>
         <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin()">
-          <template #label :title="apiParams.domainid.description">
-            {{ $t('label.domainid') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
           <a-select
             id="domain-selection"
@@ -103,13 +94,17 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateSSHKeyPair',
   mixins: [mixinForm],
   props: {},
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       domains: [],
@@ -161,7 +156,7 @@ export default {
     fetchDomainData () {
       const params = {}
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listdomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listdomains)
       }).finally(() => {
@@ -195,7 +190,7 @@ export default {
         }
         if (this.isValidValueForKey(values, 'publickey') && values.publickey.length > 0) {
           params.publickey = values.publickey
-          api('registerSSHKeyPair', params).then(json => {
+          postAPI('registerSSHKeyPair', params).then(json => {
             this.$message.success(this.$t('message.success.register.keypair') + ' ' + values.name)
           }).catch(error => {
             this.$notifyError(error)
@@ -205,7 +200,7 @@ export default {
             this.closeAction()
           })
         } else {
-          api('createSSHKeyPair', params).then(json => {
+          postAPI('createSSHKeyPair', params).then(json => {
             this.$message.success(this.$t('message.success.create.keypair') + ' ' + values.name)
             if (json.createsshkeypairresponse?.keypair?.privatekey) {
               this.isSubmitted = true

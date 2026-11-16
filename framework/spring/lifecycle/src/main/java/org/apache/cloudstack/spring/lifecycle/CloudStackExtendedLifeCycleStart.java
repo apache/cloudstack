@@ -45,5 +45,4 @@ public class CloudStackExtendedLifeCycleStart extends AbstractSmartLifeCycle imp
     public void run() {
         lifeCycle.startBeans();
     }
-
 }

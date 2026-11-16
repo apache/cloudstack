@@ -1244,7 +1244,7 @@ class TestListInstances(cloudstackTestCase):
                 status[0],
                 "Listing VM's by name and zone failed"
             )
-            # Verifying Verifying that the size of the list is 1
+            # Verifying that the size of the list is 1
             self.assertEqual(
                 1,
                 len(list_vms),
@@ -1404,7 +1404,7 @@ class TestListInstances(cloudstackTestCase):
             status[0],
             "Listing VM's by name and zone failed"
         )
-        # Verifying Verifying that the size of the list is 1
+        # Verifying that the size of the list is 1
         self.assertEqual(
             1,
             len(list_vms),
@@ -1474,7 +1474,7 @@ class TestListInstances(cloudstackTestCase):
             status[0],
             "Listing VM's by name, account and zone failed"
         )
-        # Verifying Verifying that the size of the list is 1
+        # Verifying that the size of the list is 1
         self.assertEqual(
             1,
             len(list_vms),
@@ -3341,9 +3341,6 @@ class TestInstances(cloudstackTestCase):
                deployed in step1
         Step6: Verifying that VM's service offerings is changed
         """
-        if self.hypervisor.lower() == 'kvm':
-            self.skipTest(
-                "ScaleVM is not supported on KVM. Hence, skipping the test")
         # Checking if Dynamic scaling of VM is supported or not
         list_config = Configurations.list(
             self.apiClient,

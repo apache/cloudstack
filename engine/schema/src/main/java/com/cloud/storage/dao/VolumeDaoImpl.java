@@ -23,13 +23,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.reservation.ReservationVO;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.Resource;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -43,19 +47,22 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);
     protected final SearchBuilder<VolumeVO> DetachedAccountIdSearch;
     protected final SearchBuilder<VolumeVO> TemplateZoneSearch;
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
@@ -68,13 +75,21 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
+    protected final SearchBuilder<VolumeVO> ExternalUuidSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
-    @Inject
-    ResourceTagDao _tagsDao;
+    private final SearchBuilder<VolumeVO> poolAndPathSearch;
+    final GenericSearchBuilder<VolumeVO, Integer> CountByOfferingId;
+    private final SearchBuilder<VolumeVO> kmsMigrationSearch;
 
-    protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
+    @Inject
+    ReservationDao reservationDao;
+    @Inject
+    ResourceTagDao tagsDao;
+    @Inject
+    KMSWrappedKeyDao kmsWrappedKeyDao;
+
     // need to account for zone-wide primary storage where storage_pool has
     // null-value pod and cluster, where hypervisor information is stored in
     // storage_pool
@@ -82,8 +97,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected static final String SELECT_HYPERTYPE_FROM_ZONE_VOLUME = "SELECT s.hypervisor from volumes v, storage_pool s where v.pool_id = s.id and v.id = ?";
     protected static final String SELECT_POOLSCOPE = "SELECT s.scope from storage_pool s, volumes v where s.id = v.pool_id and v.id = ?";
 
-    private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
-            + " AND pool.pod_id = ? AND pool.cluster_id = ? " + " GROUP BY pool.id ORDER BY 2 ASC ";
+    private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART1 = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? ";
+    private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART2 = " GROUP BY pool.id ORDER BY 2 ASC ";
+
     private static final String ORDER_ZONE_WIDE_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
             + " AND pool.scope = 'ZONE' AND pool.status='Up' " + " GROUP BY pool.id ORDER BY 2 ASC ";
 
@@ -125,7 +141,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByPoolId(long poolId) {
+    public List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
@@ -134,7 +150,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId) {
+    public List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("poolId", poolId);
@@ -151,7 +167,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
+    public List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId, Volume.Type volumeType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
@@ -193,6 +209,17 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
         sc.setParameters("vType", vType.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> findByInstanceAndNotStates(long id, Volume.State...states) {
+        SearchBuilder<VolumeVO> sb = createSearchBuilder();
+        sb.and("instanceId", sb.entity().getInstanceId(), Op.EQ);
+        sb.and("state", sb.entity().getState(), Op.NIN);
+        SearchCriteria<VolumeVO> sc = sb.create();
+        sc.setParameters("instanceId", id);
+        sc.setParameters("state", (Object[]) states);
         return listBy(sc);
     }
 
@@ -335,7 +362,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
                 } else if (scope == ScopeType.ZONE) {
                     sql = SELECT_HYPERTYPE_FROM_ZONE_VOLUME;
                 } else {
-                    s_logger.error("Unhandled scope type '" + scope + "' when running getHypervisorType on volume id " + volumeId);
+                    logger.error("Unhandled scope type '" + scope + "' when running getHypervisorType on volume id " + volumeId);
                 }
 
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -365,14 +392,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         } else if (type.equals(HypervisorType.VMware)) {
             return ImageFormat.OVA;
         } else {
-            s_logger.warn("Do not support hypervisor " + type.toString());
+            logger.warn("Do not support hypervisor " + type.toString());
             return null;
         }
     }
 
     public VolumeDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.IN);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("dcId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
@@ -387,6 +414,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
+        AllFieldsSearch.and("iScsiName", AllFieldsSearch.entity().get_iScsiName(), Op.EQ);
+        AllFieldsSearch.and("path", AllFieldsSearch.entity().getPath(), Op.EQ);
+        AllFieldsSearch.and("kmsKeyId", AllFieldsSearch.entity().getKmsKeyId(), Op.EQ);
+        AllFieldsSearch.and("kmsWrappedKeyId", AllFieldsSearch.entity().getKmsWrappedKeyId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -443,7 +474,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
         CountByAccount.and("displayVolume", CountByAccount.entity().isDisplayVolume(), Op.EQ);
+        CountByAccount.and("idNIN", CountByAccount.entity().getId(), Op.NIN);
         CountByAccount.done();
+
+        ExternalUuidSearch = createSearchBuilder();
+        ExternalUuidSearch.and("externalUuid", ExternalUuidSearch.entity().getExternalUuid(), Op.EQ);
+        ExternalUuidSearch.done();
 
         primaryStorageSearch = createSearchBuilder(SumCount.class);
         primaryStorageSearch.select("sum", Func.SUM, primaryStorageSearch.entity().getSize());
@@ -454,6 +490,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         primaryStorageSearch.and("displayVolume", primaryStorageSearch.entity().isDisplayVolume(), Op.EQ);
         primaryStorageSearch.and("isRemoved", primaryStorageSearch.entity().getRemoved(), Op.NULL);
         primaryStorageSearch.and("NotCountStates", primaryStorageSearch.entity().getState(), Op.NIN);
+        primaryStorageSearch.and("idNIN", primaryStorageSearch.entity().getId(), Op.NIN);
         primaryStorageSearch.done();
 
         primaryStorageSearch2 = createSearchBuilder(SumCount.class);
@@ -468,6 +505,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         primaryStorageSearch2.and("displayVolume", primaryStorageSearch2.entity().isDisplayVolume(), Op.EQ);
         primaryStorageSearch2.and("isRemoved", primaryStorageSearch2.entity().getRemoved(), Op.NULL);
         primaryStorageSearch2.and("NotCountStates", primaryStorageSearch2.entity().getState(), Op.NIN);
+        primaryStorageSearch2.and("idNIN", primaryStorageSearch2.entity().getId(), Op.NIN);
         primaryStorageSearch2.done();
 
         secondaryStorageSearch = createSearchBuilder(SumCount.class);
@@ -487,6 +525,22 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volumeIdSearch.and("idIN", volumeIdSearch.entity().getId(), Op.IN);
         volumeIdSearch.done();
 
+        poolAndPathSearch = createSearchBuilder();
+        poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
+        poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
+        poolAndPathSearch.done();
+
+        CountByOfferingId = createSearchBuilder(Integer.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("diskOfferingId", CountByOfferingId.entity().getDiskOfferingId(), Op.EQ);
+        CountByOfferingId.done();
+
+        kmsMigrationSearch = createSearchBuilder();
+        kmsMigrationSearch.and("passphraseId", kmsMigrationSearch.entity().getPassphraseId(), Op.NNULL);
+        kmsMigrationSearch.and("zoneId", kmsMigrationSearch.entity().getDataCenterId(), Op.EQ);
+        kmsMigrationSearch.and("accountId", kmsMigrationSearch.entity().getAccountId(), Op.EQ);
+        kmsMigrationSearch.and("domainId", kmsMigrationSearch.entity().getDomainId(), Op.EQ);
+        kmsMigrationSearch.done();
     }
 
     @Override
@@ -501,15 +555,24 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     @Override
     public Long countAllocatedVolumesForAccount(long accountId) {
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, Resource.ResourceType.volume, null);
+        List<Long> reservedResourceIds = reservations.stream().filter(reservation -> reservation.getReservedAmount() > 0).map(ReservationVO::getResourceId).collect(Collectors.toList());
+
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunged);
+        sc.setParameters("state", State.Destroy, State.Expunged);
         sc.setParameters("displayVolume", 1);
+        if (CollectionUtils.isNotEmpty(reservedResourceIds)) {
+            sc.setParameters("idNIN", reservedResourceIds.toArray());
+        }
         return customSearch(sc, null).get(0);
     }
 
     @Override
     public long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters) {
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, Resource.ResourceType.volume, null);
+        List<Long> reservedResourceIds = reservations.stream().filter(reservation -> reservation.getReservedAmount() > 0).map(ReservationVO::getResourceId).collect(Collectors.toList());
+
         SearchCriteria<SumCount> sc;
         if (!virtualRouters.isEmpty()) {
             sc = primaryStorageSearch2.create();
@@ -521,6 +584,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("states", State.Allocated);
         sc.setParameters("NotCountStates", State.Destroy, State.Expunged);
         sc.setParameters("displayVolume", 1);
+        if (CollectionUtils.isNotEmpty(reservedResourceIds)) {
+            sc.setParameters("idNIN", reservedResourceIds.toArray());
+        }
         List<SumCount> storageSpace = customSearch(sc, null);
         if (storageSpace != null) {
             return storageSpace.get(0).sum;
@@ -542,27 +608,18 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
     }
 
-    public static class SumCount {
-        public long sum;
-        public long count;
-
-        public SumCount() {
-        }
-    }
-
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed() {
-        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", Volume.State.Destroy);
-
-        return listBy(sc);
+        return listVolumesToBeDestroyed(null);
     }
 
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed(Date date) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", Volume.State.Destroy);
-        sc.setParameters("updateTime", date);
+        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunging);
+        if (date != null) {
+            sc.setParameters("updateTime", date);
+        }
 
         return listBy(sc);
     }
@@ -585,7 +642,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         builder.set(vo, "updated", new Date());
 
         int rows = update((VolumeVO)vo, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             VolumeVO dbVol = findByIdIncludingRemoved(vo.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -596,7 +653,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
                 str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
                 .append("; updatedTime=").append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update volume: id=" + vo.getId() + ", as there is no such volume exists in the database anymore");
+                logger.debug("Unable to update volume: id=" + vo.getId() + ", as there is no such volume exists in the database anymore");
             }
         }
         return rows > 0;
@@ -606,14 +663,27 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
-        List<Long> result = new ArrayList<Long>();
+        List<Long> result = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART1);
         try {
-            String sql = ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, accountId);
-            pstmt.setLong(2, dcId);
-            pstmt.setLong(3, podId);
-            pstmt.setLong(4, clusterId);
+            List<Long> resourceIdList = new ArrayList<>();
+            resourceIdList.add(accountId);
+            resourceIdList.add(dcId);
+
+            if (podId != null) {
+                sql.append(" AND pool.pod_id = ?");
+                resourceIdList.add(podId);
+            }
+            if (clusterId != null) {
+                sql.append(" AND pool.cluster_id = ?");
+                resourceIdList.add(clusterId);
+            }
+            sql.append(ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART2);
+
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmt.setLong(i + 1, resourceIdList.get(i));
+            }
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -621,9 +691,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             }
             return result;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT, e);
+            logger.debug("DB Exception on: " + sql.toString(), e);
+            throw new CloudRuntimeException(e);
         } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT, e);
+            logger.debug("Caught: " + sql.toString(), e);
+            throw new CloudRuntimeException(e);
         }
     }
 
@@ -690,14 +762,40 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public Pair<List<VolumeVO>, Integer> listVolumesForKMSMigration(Long zoneId, Long accountId, Long domainId, Integer limit) {
+        SearchCriteria<VolumeVO> sc = kmsMigrationSearch.create();
+
+        Filter filter = new Filter(limit);
+        sc.setParameters("zoneId", zoneId);
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+        }
+        return searchAndCount(sc, filter);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
-        s_logger.debug(String.format("Removing volume %s from DB", id));
+        logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
+            // Clean up KMS wrapped key if volume was encrypted with KMS
+            if (entry.getKmsWrappedKeyId() != null) {
+                try {
+                    kmsWrappedKeyDao.remove(entry.getKmsWrappedKeyId());
+                    logger.debug("Removed KMS wrapped key [id={}] for volume [id={}, uuid={}]",
+                            entry.getKmsWrappedKeyId(), id, entry.getUuid());
+                } catch (Exception e) {
+                    logger.warn("Failed to remove KMS wrapped key [id={}] for volume [id={}, uuid={}]: {}",
+                            entry.getKmsWrappedKeyId(), id, entry.getUuid(), e.getMessage(), e);
+                }
+            }
+            tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
 
@@ -720,7 +818,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             destVol.setInstanceId(instanceId);
             update(srcVolId, srcVol);
             update(destVolId, destVol);
-            _tagsDao.updateResourceId(srcVolId, destVolId, ResourceObjectType.Volume);
+            tagsDao.updateResourceId(srcVolId, destVolId, ResourceObjectType.Volume);
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to persist the sequence number for this host");
         }
@@ -784,6 +882,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         if (volume.getState() != Volume.State.Destroy) {
             volume.setState(Volume.State.Destroy);
             volume.setPoolId(null);
+            volume.setPoolType(null);
             volume.setInstanceId(null);
             update(volume.getId(), volume);
             remove(volume.getId());
@@ -803,6 +902,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public VolumeVO findByPoolIdAndPath(long id, String path) {
+        SearchCriteria<VolumeVO> sc = poolAndPathSearch.create();
+        sc.setParameters("poolId", id);
+        sc.setParameters("path", path);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<VolumeVO> listByIds(List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
@@ -810,5 +917,98 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = volumeIdSearch.create();
         sc.setParameters("idIN", ids.toArray());
         return listBy(sc, null);
+    }
+
+    @Override
+    public List<VolumeVO> listAllocatedVolumesForAccountDiskOfferingIdsAndNotForVms(long accountId, List<Long> diskOfferingIds, List<Long> vmIds) {
+        SearchBuilder<VolumeVO> sb = createSearchBuilder();
+        sb.and("account", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NIN);
+        sb.and("diskOfferingIds", sb.entity().getDiskOfferingId(), SearchCriteria.Op.IN);
+        sb.and("displayVolume", sb.entity().isDisplayVolume(), Op.EQ);
+        if (CollectionUtils.isNotEmpty(vmIds)) {
+            sb.and().op("instanceId", sb.entity().getInstanceId(), Op.NULL);
+            sb.or("notVmIds", sb.entity().getInstanceId(), Op.NIN);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<VolumeVO> sc = sb.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunged);
+        sc.setParameters("diskOfferingIds", diskOfferingIds.toArray());
+        sc.setParameters("displayVolume", 1);
+        if (CollectionUtils.isNotEmpty(vmIds)) {
+            sc.setParameters("notVmIds", vmIds.toArray());
+        }
+        return listBy(sc);
+    }
+
+    @Override
+    public VolumeVO persist(VolumeVO entity) {
+        return Transaction.execute((TransactionCallback<VolumeVO>) status -> {
+            VolumeVO volume = super.persist(entity);
+            reservationDao.setResourceId(Resource.ResourceType.volume, volume.getId());
+            reservationDao.setResourceId(Resource.ResourceType.primary_storage, volume.getId());
+            return volume;
+        });
+    }
+
+    @Override
+    public List<VolumeVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VolumeVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        SearchCriteria<VolumeVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        Filter filter = new Filter(VolumeVO.class, "id", true, 0L, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
+    }
+
+    @Override
+    public VolumeVO findOneByIScsiName(String iScsiName) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("iScsiName", iScsiName);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public int getVolumeCountByOfferingId(long diskOfferingId) {
+        SearchCriteria<Integer> sc = CountByOfferingId.create();
+        sc.setParameters("diskOfferingId", diskOfferingId);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
+    @Override
+    public VolumeVO findByLastIdAndState(long lastVolumeId, State ...states) {
+        QueryBuilder<VolumeVO> sc = QueryBuilder.create(VolumeVO.class);
+        sc.and(sc.entity().getLastId(), SearchCriteria.Op.EQ,  lastVolumeId);
+        sc.and(sc.entity().getState(), SearchCriteria.Op.IN,  (Object[]) states);
+        return sc.find();
+    }
+
+    @Override
+    public boolean existsWithKmsKey(long kmsKeyId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("kmsKeyId", kmsKeyId);
+        sc.setParameters("notDestroyed", Volume.State.Expunged, Volume.State.Destroy);
+        return findOneBy(sc) != null;
+    }
+
+    public VolumeVO findByExternalUuid(String externalUuid) {
+        SearchCriteria<VolumeVO> sc = ExternalUuidSearch.create();
+        sc.setParameters("externalUuid", externalUuid);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> findByKmsWrappedKeyId(Long kmsWrappedKeyId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("kmsWrappedKeyId", kmsWrappedKeyId);
+        sc.setParameters("notDestroyed", Volume.State.Expunged);
+        return listBy(sc);
     }
 }

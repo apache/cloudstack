@@ -17,15 +17,15 @@
 
 package org.apache.cloudstack.quota.activationrule.presetvariables;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GenericPresetVariable {
+    @PresetVariableDefinition(description = "ID of the resource.")
     private String id;
+
+    @PresetVariableDefinition(description = "Name of the resource.")
     private String name;
-    protected transient Set<String> fieldNamesToIncludeInToString = new HashSet<>();
 
     public String getId() {
         return id;
@@ -33,7 +33,6 @@ public class GenericPresetVariable {
 
     public void setId(String id) {
         this.id = id;
-        fieldNamesToIncludeInToString.add("id");
     }
 
     public String getName() {
@@ -42,11 +41,10 @@ public class GenericPresetVariable {
 
     public void setName(String name) {
         this.name = name;
-        fieldNamesToIncludeInToString.add("name");
     }
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[0]));
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
     }
 }

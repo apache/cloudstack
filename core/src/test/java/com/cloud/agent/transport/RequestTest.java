@@ -19,13 +19,20 @@
 
 package com.cloud.agent.transport;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.mockito.Mockito;
+
+import com.google.gson.Gson;
 
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -35,13 +42,19 @@ import com.cloud.agent.api.BadCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVolumeStatsCommand;
+import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.exception.UnsupportedVersionException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.DataStoreRole;
@@ -49,6 +62,8 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.vm.VirtualMachine;
 
 /**
  *
@@ -58,26 +73,47 @@ import com.cloud.template.VirtualMachineTemplate;
  */
 
 public class RequestTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(RequestTest.class);
+    private static final Logger logger = LogManager.getLogger(RequestTest.class);
+
+    /**
+     * Changes GsonHelper's logging Gson level AND clears its cached TypeAdapters.
+     *
+     * Gson bakes each Command class's shouldSkipClass/shouldSkipField decision into a TypeAdapter
+     * the first time that class is serialized, then caches it (Gson#typeTokenCache) for the life
+     * of the Gson instance. Since GsonHelper.getGsonLogger() is a static singleton shared for the
+     * whole test JVM, just calling Configurator.setLevel() again has no effect on classes already
+     * cached - they'd keep reflecting whichever level was active the first time they were logged.
+     * Clearing the cache after every level change forces a fresh (correct) evaluation.
+     */
+    private static void setGsonLoggerLevel(String loggerName, Level level) {
+        Configurator.setLevel(loggerName, level);
+        try {
+            Field field = Gson.class.getDeclaredField("typeTokenCache");
+            field.setAccessible(true);
+            ((Map<?, ?>)field.get(GsonHelper.getGsonLogger())).clear();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void testSerDeser() {
-        s_logger.info("Testing serializing and deserializing works as expected");
+        logger.info("Testing serializing and deserializing works as expected");
 
-        s_logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
+        logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
         UpdateHostPasswordCommand cmd1 = new UpdateHostPasswordCommand("abc", "def");
-        s_logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
+        logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
         SecStorageFirewallCfgCommand cmd2 = new SecStorageFirewallCfgCommand();
-        s_logger.info("GetHostStatsCommand should not show up at all in debug level");
+        logger.info("GetHostStatsCommand should not show up at all in debug level");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         cmd2.addPortConfig("abc", "24", true, "eth0");
         cmd2.addPortConfig("127.0.0.1", "44", false, "eth1");
         Request sreq = new Request(2, 3, new Command[] {cmd1, cmd2, cmd3}, true, true);
         sreq.setSequence(892403717);
 
-        Logger logger = Logger.getLogger(GsonHelper.class);
-        Level level = logger.getLevel();
+        Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
+        Level level = gsonLogger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        setGsonLoggerLevel(gsonLogger.getName(), Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -85,19 +121,20 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.TRACE);
+        setGsonLoggerLevel(gsonLogger.getName(), Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
+        System.out.println(log);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.INFO);
+        setGsonLoggerLevel(gsonLogger.getName(), Level.INFO);
         log = sreq.log("Info", true, Level.INFO);
         assert (log == null);
 
-        logger.setLevel(level);
+        setGsonLoggerLevel(GsonHelper.class.getName(), level);
 
         byte[] bytes = sreq.getBytes();
 
@@ -109,9 +146,9 @@ public class RequestTest extends TestCase {
         try {
             creq = Request.parse(bytes);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         } catch (UnsupportedVersionException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         }
 
         assert creq != null : "Couldn't get the request back";
@@ -127,9 +164,9 @@ public class RequestTest extends TestCase {
         try {
             sresp = Response.parse(bytes);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         } catch (UnsupportedVersionException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         }
 
         assert sresp != null : "Couldn't get the response back";
@@ -138,7 +175,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testSerDeserTO() {
-        s_logger.info("Testing serializing and deserializing interface TO works as expected");
+        logger.info("Testing serializing and deserializing interface TO works as expected");
 
         NfsTO nfs = new NfsTO("nfs://192.168.56.10/opt/storage/secondary", DataStoreRole.Image);
         // SecStorageSetupCommand cmd = new SecStorageSetupCommand(nfs, "nfs://192.168.56.10/opt/storage/secondary", null);
@@ -156,9 +193,9 @@ public class RequestTest extends TestCase {
         try {
             creq = Request.parse(bytes);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         } catch (UnsupportedVersionException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         }
 
         assert creq != null : "Couldn't get the request back";
@@ -168,7 +205,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testDownload() {
-        s_logger.info("Testing Download answer");
+        logger.info("Testing Download answer");
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getId()).thenReturn(1L);
         Mockito.when(template.getFormat()).thenReturn(ImageFormat.QCOW2);
@@ -193,7 +230,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testCompress() {
-        s_logger.info("testCompress");
+        logger.info("testCompress");
         int len = 800000;
         ByteBuffer inputBuffer = ByteBuffer.allocate(len);
         for (int i = 0; i < len; i++) {
@@ -202,7 +239,7 @@ public class RequestTest extends TestCase {
         inputBuffer.limit(len);
         ByteBuffer compressedBuffer = ByteBuffer.allocate(len);
         compressedBuffer = Request.doCompress(inputBuffer, len);
-        s_logger.info("compressed length: " + compressedBuffer.limit());
+        logger.info("compressed length: " + compressedBuffer.limit());
         ByteBuffer decompressedBuffer = ByteBuffer.allocate(len);
         decompressedBuffer = Request.doDecompress(compressedBuffer, len);
         for (int i = 0; i < len; i++) {
@@ -213,26 +250,76 @@ public class RequestTest extends TestCase {
     }
 
     public void testLogging() {
-        s_logger.info("Testing Logging");
+        logger.info("Testing Logging");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         Request sreq = new Request(2, 3, new Command[] {cmd3}, true, true);
         sreq.setSequence(1);
-        Logger logger = Logger.getLogger(GsonHelper.class);
-        Level level = logger.getLevel();
+        Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
+        Level level = gsonLogger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        setGsonLoggerLevel(GsonHelper.class.getName(), Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log == null);
 
         log = sreq.log("Debug", false, Level.DEBUG);
         assert (log != null);
 
-        logger.setLevel(Level.TRACE);
+        setGsonLoggerLevel(GsonHelper.class.getName(), Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
-        assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
-        s_logger.debug(log);
+        assert (log != null);
 
-        logger.setLevel(level);
+        assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
+        logger.debug(log);
+
+        setGsonLoggerLevel(GsonHelper.class.getName(), level);
+    }
+
+    public void testCompatFieldRenamingNestedTOs() {
+        logger.info("Testing that renamed fields are restored on nested TOs too, for backward compatibility with older Agents");
+
+        DiskTO diskTO = new DiskTO();
+        diskTO.setDetails(new HashMap<String, String>());
+
+        NicTO nicTO = new NicTO();
+        nicTO.setSecurityGroupEnabled(true);
+
+        VirtualMachineTO vmTO = new VirtualMachineTO(1, "i-2-3-VM", VirtualMachine.Type.User, 1, 512, 512L * 1024 * 1024, 512L * 1024 * 1024,
+                BootloaderType.HVM, "Other PV (64-bit)", true, true, "vncpassword123");
+        vmTO.setDetails(new HashMap<String, String>());
+        vmTO.setDisks(new DiskTO[] {diskTO});
+        vmTO.setNics(new NicTO[] {nicTO});
+
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getPrivateIpAddress()).thenReturn("10.1.1.1");
+        StartCommand startCmd = new StartCommand(vmTO, host, false);
+
+        Request startReq = new Request(1, 1, startCmd, true);
+        String startWireJson = GsonHelper.getGson().toJson(new Command[] {startCmd});
+        assert startWireJson.contains("\"params\"") : "VirtualMachineTO.details should be serialized under its old name 'params'";
+        assert startWireJson.contains("\"_details\"") : "nested DiskTO.details should be serialized under its old name '_details'";
+        assert startWireJson.contains("\"isSecurityGroupEnabled\"") : "nested NicTO.securityGroupEnabled should be serialized under its old name 'isSecurityGroupEnabled'";
+        assert startWireJson.contains("vncpassword123") : "wire serialization should still contain the real vncPassword value";
+
+        Logger gsonLogger = LogManager.getLogger(GsonHelper.class);
+        Level gsonLoggerLevel = gsonLogger.getLevel();
+        setGsonLoggerLevel(GsonHelper.class.getName(), Level.TRACE);
+        String startLogJson;
+        try {
+            startLogJson = startReq.log("Trace", true, Level.TRACE);
+        } finally {
+            setGsonLoggerLevel(GsonHelper.class.getName(), gsonLoggerLevel);
+        }
+        assert startLogJson.contains("\"isSecurityGroupEnabled\"") : "renamed fields should still show up in the logging serialization";
+        assert !startLogJson.contains("vncpassword123") : "logging serialization should never contain the plaintext vncPassword value";
+
+        MigrateCommand migrateCmd = new MigrateCommand("i-2-3-VM", "10.1.1.2", true, vmTO, false);
+        String migrateWireJson = GsonHelper.getGson().toJson(new Command[] {migrateCmd});
+        assert migrateWireJson.contains("\"destIp\"") : "MigrateCommand.destinationIp should be serialized under its old name 'destIp'";
+        assert migrateWireJson.contains("\"isWindows\"") : "MigrateCommand.windows should be serialized under its old name 'isWindows'";
+        assert migrateWireJson.contains("\"vmTO\"") : "MigrateCommand.virtualMachine should be serialized under its old name 'vmTO'";
+        assert migrateWireJson.contains("\"params\"") : "VirtualMachineTO nested in MigrateCommand should still be renamed";
+        assert migrateWireJson.contains("\"_details\"") : "DiskTO nested inside the VirtualMachineTO nested in MigrateCommand should still be renamed";
+        assert migrateWireJson.contains("\"isSecurityGroupEnabled\"") : "NicTO nested inside the VirtualMachineTO nested in MigrateCommand should still be renamed";
     }
 
     protected void compareRequest(Request req1, Request req2) {
@@ -253,24 +340,24 @@ public class RequestTest extends TestCase {
     }
 
     public void testGoodCommand() {
-        s_logger.info("Testing good Command");
+        logger.info("Testing good Command");
         String content = "[{\"com.cloud.agent.api.GetVolumeStatsCommand\":{\"volumeUuids\":[\"dcc860ac-4a20-498f-9cb3-bab4d57aa676\"],"
-                + "\"poolType\":\"NetworkFilesystem\",\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
+                + "\"poolType\":{\"name\":\"NetworkFilesystem\"},\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
         Request sreq = new Request(Version.v2, 1L, 2L, 3L, 1L, (short)1, content);
         sreq.setSequence(1);
         Command cmds[] = sreq.getCommands();
-        s_logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
+        logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
         assert cmds[0].getClass().equals(GetVolumeStatsCommand.class);
     }
 
     public void testBadCommand() {
-        s_logger.info("Testing Bad Command");
+        logger.info("Testing Bad Command");
         String content = "[{\"com.cloud.agent.api.SomeJunkCommand\":{\"volumeUuids\":[\"dcc860ac-4a20-498f-9cb3-bab4d57aa676\"],"
-                + "\"poolType\":\"NetworkFilesystem\",\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
+                + "\"poolType\":{\"name\":\"NetworkFilesystem\"},\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
         Request sreq = new Request(Version.v2, 1L, 2L, 3L, 1L, (short)1, content);
         sreq.setSequence(1);
         Command cmds[] = sreq.getCommands();
-        s_logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
+        logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
         assert cmds[0].getClass().equals(BadCommand.class);
     }
 

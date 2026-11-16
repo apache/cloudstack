@@ -32,7 +32,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface InternalLoadBalancerVMManager {
     //RAM/CPU for the system offering used by Internal LB VMs
-    public static final int DEFAULT_INTERNALLB_VM_RAMSIZE = 256;            // 256 MB
+    public static final int DEFAULT_INTERNALLB_VM_RAMSIZE = 512;            // 512 MB
     public static final int DEFAULT_INTERNALLB_VM_CPU_MHZ = 256;            // 256 MHz
 
     /**

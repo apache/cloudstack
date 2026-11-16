@@ -47,6 +47,15 @@
           :checked="shrinkOk"
           @change="val => { shrinkOk = val }"/>
       </a-form-item>
+      <a-form-item name="autoMigrate" ref="autoMigrate" :label="$t('label.automigrate.volume')">
+        <template #label>
+          <tooltip-label :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+        </template>
+        <a-switch
+          v-model:checked="form.autoMigrate"
+          :checked="autoMigrate"
+          @change="val => { autoMigrate = val }"/>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -56,11 +65,15 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ResizeVolume',
+  components: {
+    TooltipLabel
+  },
   mixins: [mixinForm],
   props: {
     resource: {
@@ -70,10 +83,9 @@ export default {
   },
   data () {
     return {
-      offerings: [],
-      customDiskOffering: false,
       loading: false,
-      customDiskOfferingIops: false
+      customDiskOfferingIops: false,
+      initialSize: null
     }
   },
   created () {
@@ -91,27 +103,27 @@ export default {
       })
     },
     fetchData () {
-      this.loading = true
-      api('listDiskOfferings', {
-        zoneid: this.resource.zoneid,
-        listall: true
-      }).then(json => {
-        this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.form.diskofferingid = this.offerings[0].id || ''
-        this.customDiskOffering = this.offerings[0].iscustomized || false
-        this.customDiskOfferingIops = this.offerings[0].iscustomizediops || false
-      }).finally(() => {
-        this.loading = false
-      })
+      if (this.resource.size != null) {
+        this.form.size = this.resource.size / (1024 * 1024 * 1024)
+        this.initialSize = this.form.size
+      }
+      this.customDiskOfferingIops = this.resource.iscustomizediops
+      if (this.customDiskOfferingIops) {
+        this.form.miniops = this.resource.miniops
+        this.form.maxiops = this.resource.maxiops
+      }
     },
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        if (this.initialSize != null && values.size != null && Number(values.size) === Number(this.initialSize)) {
+          delete values.size
+        }
         this.loading = true
         values.id = this.resource.id
-        api('resizeVolume', values).then(response => {
+        postAPI('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
             title: this.$t('label.action.resize.volume'),
@@ -131,11 +143,7 @@ export default {
           })
           this.closeModal()
         }).catch(error => {
-          this.$notification.error({
-            message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.errorresponse.errortext,
-            duration: 0
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })

@@ -24,7 +24,7 @@
       layout="vertical"
       @finish="handleSubmit"
     >
-      <a-form-item name="quota" ref="quota" :label="$t('label.quotagb')">
+      <a-form-item name="quota" ref="quota" :label="$t('label.quotagib')">
         <a-input
           v-model:value="form.quota"
           :placeholder="$t('label.quota')"/>
@@ -66,7 +66,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 
 export default {
@@ -141,7 +141,7 @@ export default {
         }
 
         this.loading = true
-        api('updateBucket', data).then(response => {
+        postAPI('updateBucket', data).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.bucket.update'),

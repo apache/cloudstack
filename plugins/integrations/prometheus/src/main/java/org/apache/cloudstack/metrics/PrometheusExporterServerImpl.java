@@ -17,29 +17,37 @@
 package org.apache.cloudstack.metrics;
 
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.net.NetUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PrometheusExporterServerImpl extends ManagerBase implements PrometheusExporterServer, Configurable {
-    private static final Logger LOG = Logger.getLogger(PrometheusExporterServerImpl.class);
 
     private static HttpServer httpServer;
 
     @Inject
     private PrometheusExporter prometheusExporter;
 
-    private final static class ExporterHandler implements HttpHandler {
+    private String allowedAddressesConfig;
+    private Set<String> allowedAddresses = Collections.emptySet();
+
+    private final class ExporterHandler implements HttpHandler {
         private PrometheusExporter prometheusExporter;
 
         ExporterHandler(final PrometheusExporter prometheusExporter) {
@@ -49,11 +57,11 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
 
         @Override
         public void handle(final HttpExchange httpExchange) throws IOException {
-            final String remoteClientAddress = httpExchange.getRemoteAddress().getAddress().toString().replace("/", "");
-            LOG.debug("Prometheus exporter received client request from: " + remoteClientAddress);
+            final String remoteClientAddress = httpExchange.getRemoteAddress().getAddress().getHostAddress();
+            logger.debug("Prometheus exporter received client request from: " + remoteClientAddress);
             String response = "Forbidden";
             int responseCode = 403;
-            if (Arrays.asList(PrometheusExporterAllowedAddresses.value().split(",")).contains(remoteClientAddress)) {
+            if (getAllowedAddresses().contains(remoteClientAddress)) {
                 prometheusExporter.updateMetrics();
                 response = prometheusExporter.getMetrics();
                 responseCode = 200;
@@ -65,14 +73,50 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
             try {
                 os.write(bytesToOutput);
             } catch (IOException e) {
-                LOG.error(String.format("could not export Prometheus data due to %s", e.getLocalizedMessage()));
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Error during Prometheus export: ", e);
+                logger.error(String.format("could not export Prometheus data due to %s", e.getLocalizedMessage()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Error during Prometheus export: ", e);
                 }
                 os.write("The system could not export Prometheus due to an internal error. Contact your operator to learn about the reason.".getBytes());
             } finally {
                 os.close();
             }
+        }
+    }
+
+    private synchronized Set<String> getAllowedAddresses() {
+        final String config = PrometheusExporterAllowedAddresses.value();
+        if (!config.equals(allowedAddressesConfig)) {
+            allowedAddresses = normalizeAddresses(config);
+            allowedAddressesConfig = config;
+        }
+        return allowedAddresses;
+    }
+
+    /**
+     * Normalizes a comma separated list of IP addresses to their canonical text form, so that
+     * equivalent notations (e.g. ::1 and 0:0:0:0:0:0:0:1) match the remote client address.
+     * Blank entries and anything that is not an IP literal are ignored, so no DNS resolution takes place.
+     */
+    protected Set<String> normalizeAddresses(final String addresses) {
+        return Arrays.stream(addresses.split(","))
+                .map(String::trim)
+                .filter(addr -> !addr.isEmpty())
+                .map(this::normalizeAddress)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private String normalizeAddress(final String address) {
+        if (!NetUtils.isValidIp4(address) && !NetUtils.isValidIp6(address)) {
+            logger.warn("Ignoring invalid IP address [{}] in {}", address, PrometheusExporterAllowedAddresses.key());
+            return null;
+        }
+        try {
+            return InetAddress.getByName(address).getHostAddress();
+        } catch (UnknownHostException e) {
+            logger.warn("Ignoring IP address [{}] in {} that could not be parsed", address, PrometheusExporterAllowedAddresses.key(), e);
+            return null;
         }
     }
 
@@ -96,9 +140,9 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                     }
                 });
                 httpServer.start();
-                LOG.debug("Started prometheus exporter http server");
+                logger.debug("Started prometheus exporter http server");
             } catch (final IOException e) {
-                LOG.info("Failed to start prometheus exporter http server due to: ", e);
+                logger.info("Failed to start prometheus exporter http server due to: ", e);
             }
         }
         return true;
@@ -108,7 +152,7 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
     public boolean stop() {
         if (httpServer != null) {
             httpServer.stop(0);
-            LOG.debug("Stopped Prometheus exporter http server");
+            logger.debug("Stopped Prometheus exporter http server");
         }
         return true;
     }

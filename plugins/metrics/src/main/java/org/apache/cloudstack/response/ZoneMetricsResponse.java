@@ -23,75 +23,75 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 public class ZoneMetricsResponse extends ZoneResponse implements HostMetricsSummary {
     @SerializedName("state")
-    @Param(description = "state of the cluster")
+    @Param(description = "State of the cluster")
     private String state;
 
     @SerializedName("clusters")
-    @Param(description = "healthy / total clusters in the zone")
+    @Param(description = "Healthy / total clusters in the zone")
     private String resources;
 
     @SerializedName("cputotal")
-    @Param(description = "the total cpu capacity in Ghz")
+    @Param(description = "The total cpu capacity in Ghz")
     private String cpuTotal;
 
     @SerializedName("cpuused")
-    @Param(description = "the total cpu used in Ghz")
+    @Param(description = "The total cpu used in Ghz")
     private String cpuUsed;
 
     @SerializedName("cpuallocated")
-    @Param(description = "the total cpu allocated in Ghz")
+    @Param(description = "The total cpu allocated in Ghz")
     private String cpuAllocated;
 
     @SerializedName("cpumaxdeviation")
-    @Param(description = "the maximum cpu deviation")
+    @Param(description = "The maximum cpu deviation")
     private String cpuMaxDeviation;
 
     @SerializedName("memorytotal")
-    @Param(description = "the total cpu capacity in GiB")
+    @Param(description = "The total cpu capacity in GiB")
     private String memTotal;
 
     @SerializedName("memoryused")
-    @Param(description = "the total cpu used in GiB")
+    @Param(description = "The total cpu used in GiB")
     private String memUsed;
 
     @SerializedName("memoryallocated")
-    @Param(description = "the total cpu allocated in GiB")
+    @Param(description = "The total cpu allocated in GiB")
     private String memAllocated;
 
     @SerializedName("memorymaxdeviation")
-    @Param(description = "the maximum memory deviation")
+    @Param(description = "The maximum memory deviation")
     private String memMaxDeviation;
 
     @SerializedName("cputhreshold")
-    @Param(description = "cpu usage notification threshold exceeded")
+    @Param(description = "CPU usage notification threshold exceeded")
     private Boolean cpuThresholdExceeded;
 
     @SerializedName("cpudisablethreshold")
-    @Param(description = "cpu usage disable threshold exceeded")
+    @Param(description = "CPU usage disable threshold exceeded")
     private Boolean cpuDisableThresholdExceeded;
 
     @SerializedName("cpuallocatedthreshold")
-    @Param(description = "cpu allocated notification threshold exceeded")
+    @Param(description = "CPU allocated notification threshold exceeded")
     private Boolean cpuAllocatedThresholdExceeded;
 
     @SerializedName("cpuallocateddisablethreshold")
-    @Param(description = "cpu allocated disable threshold exceeded")
+    @Param(description = "CPU allocated disable threshold exceeded")
     private Boolean cpuAllocatedDisableThresholdExceeded;
 
     @SerializedName("memorythreshold")
-    @Param(description = "memory usage notification threshold exceeded")
+    @Param(description = "Memory usage notification threshold exceeded")
     private Boolean memoryThresholdExceeded;
 
     @SerializedName("memorydisablethreshold")
-    @Param(description = "memory usage disable threshold exceeded")
+    @Param(description = "Memory usage disable threshold exceeded")
     private Boolean memoryDisableThresholdExceeded;
 
     @SerializedName("memoryallocatedthreshold")
-    @Param(description = "memory allocated notification threshold exceeded")
+    @Param(description = "Memory allocated notification threshold exceeded")
     private Boolean memoryAllocatedThresholdExceeded;
 
     @SerializedName("memoryallocateddisablethreshold")
-    @Param(description = "memory allocated disable threshold exceeded")
+    @Param(description = "Memory allocated disable threshold exceeded")
     private Boolean memoryAllocatedDisableThresholdExceeded;
 
 

@@ -19,7 +19,8 @@ package com.cloud.hypervisor.vmware.resource;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.ClusterManager;
@@ -31,7 +32,7 @@ import com.cloud.utils.StringUtils;
 
 @Component
 public class VmwareContextFactory {
-    private static final Logger s_logger = Logger.getLogger(VmwareContextFactory.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareContextFactory.class);
 
     private static volatile int s_seq = 1;
     private static VmwareManager s_vmwareMgr;
@@ -61,8 +62,8 @@ public class VmwareContextFactory {
         assert (vCenterPassword != null);
 
         String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " +
+        if (LOGGER.isDebugEnabled())
+            LOGGER.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " +
                 StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
         VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
@@ -88,7 +89,7 @@ public class VmwareContextFactory {
         } else {
             // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
             if (!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vmwareMgr.getVcenterSessionTimeout())) {
-                s_logger.info("Validation of the context failed, dispose and create a new one");
+                LOGGER.info("Validation of the context failed, dispose and create a new one");
                 context.close();
                 context = create(vCenterAddress, vCenterUserName, vCenterPassword);
             }

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deletePhysicalNetwork", description = "Deletes a Physical Network.", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePhysicalNetworkCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -45,7 +43,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the ID of the Physical network")
+               description = "The ID of the Physical network")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -67,7 +65,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Physical Network Id: " + id);
+        CallContext.current().setEventDetails("Physical Network Id: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.deletePhysicalNetwork(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -79,7 +77,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Physical network: " + getId();
+        return "Deleting Physical network with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

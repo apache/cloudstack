@@ -52,13 +52,17 @@ public interface StoragePoolAllocator extends Adapter {
      *            avoid
      * @param int returnUpTo (use -1 to return all possible pools)
      * @param boolean bypassStorageTypeCheck allows bypassing useLocalStorage check for provided DiskProfile when true
+     * @param String keyword if passed, will only return storage pools that contain this keyword in the name
      * @return List<StoragePool> List of storage pools that are suitable for the
      *         VM
      **/
+    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword);
+
     List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck);
 
 
     static int RETURN_UPTO_ALL = -1;
 
     List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh);
+
 }

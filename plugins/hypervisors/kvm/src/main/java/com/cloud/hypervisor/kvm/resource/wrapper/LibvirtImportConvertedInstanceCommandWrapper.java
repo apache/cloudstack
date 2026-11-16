@@ -1,0 +1,113 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+package com.cloud.hypervisor.kvm.resource.wrapper;
+
+import java.util.List;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ImportConvertedInstanceAnswer;
+import com.cloud.agent.api.ImportConvertedInstanceCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
+
+@ResourceWrapper(handles =  ImportConvertedInstanceCommand.class)
+public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseConvertCommandWrapper<ImportConvertedInstanceCommand, Answer, LibvirtComputingResource> {
+
+    @Override
+    public Answer execute(ImportConvertedInstanceCommand cmd, LibvirtComputingResource serverResource) {
+        RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
+        Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
+        String sourceInstanceName = sourceInstance.getInstanceName();
+        List<String> destinationStoragePools = cmd.getDestinationStoragePools();
+        List<Storage.StoragePoolType> destinationStoragePoolTypes = cmd.getDestinationStoragePoolTypes();
+        DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
+        final String temporaryConvertUuid = cmd.getTemporaryConvertUuid();
+        final boolean forceConvertToPool = cmd.isForceConvertToPool();
+
+        final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
+        KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
+        final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
+
+        try {
+            if (isForcedBlockStorageConversion(conversionTemporaryLocation, forceConvertToPool)) {
+                List<KVMPhysicalDisk> disks = getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid);
+                UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid, disks, null);
+                return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
+            }
+
+            String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);
+            LibvirtDomainXMLParser xmlParser = parseMigratedVMXmlDomain(convertedBasePath);
+
+            List<KVMPhysicalDisk> temporaryDisks = xmlParser == null ?
+                    getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid) :
+                    getTemporaryDisksFromParsedXml(temporaryStoragePool, xmlParser, convertedBasePath, temporaryConvertPath, temporaryConvertUuid);
+
+            List<KVMPhysicalDisk> disks;
+            if (forceConvertToPool) {
+                // Force flag to use the conversion path, no need to move disks
+                disks = temporaryDisks;
+            } else {
+                disks = moveTemporaryDisksToDestination(temporaryDisks,
+                        destinationStoragePools, destinationStoragePoolTypes, storagePoolMgr);
+                cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid, true);
+            }
+
+            if (CollectionUtils.isEmpty(disks)) {
+                String msg = String.format("Unable to import the converted disks for VM %s from destination pools", sourceInstanceName);
+                logger.error(msg);
+                return new ImportConvertedInstanceAnswer(cmd, false, msg);
+            }
+
+            UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
+                    disks, xmlParser);
+            return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
+        } catch (Exception e) {
+            String error = String.format("Error converting instance %s from %s, due to: %s",
+                    sourceInstanceName, sourceHypervisorType, e.getMessage());
+            logger.error(error, e);
+            return new ImportConvertedInstanceAnswer(cmd, false, error);
+        } finally {
+            if (conversionTemporaryLocation instanceof NfsTO) {
+                logger.debug("Cleaning up secondary storage temporary location");
+                storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
+            }
+        }
+    }
+
+    private boolean isForcedBlockStorageConversion(DataStoreTO conversionTemporaryLocation, boolean forceConvertToPool) {
+        if (!forceConvertToPool || !(conversionTemporaryLocation instanceof PrimaryDataStoreTO)) {
+            return false;
+        }
+        Storage.StoragePoolType poolType = ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType();
+        return poolType == Storage.StoragePoolType.RBD || poolType == Storage.StoragePoolType.Linstor;
+    }
+}

@@ -33,6 +33,7 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "image_store")
@@ -214,5 +215,12 @@ public class ImageStoreVO implements ImageStore {
 
     public void setUsedBytes(Long usedBytes) {
         this.usedBytes = usedBytes;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ImageStore %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 }

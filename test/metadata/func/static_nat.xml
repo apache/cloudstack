@@ -18,9 +18,9 @@ under the License.
 -->
 <staticnat>
 
-<command> 
+<command>
 		<name>createUser</name>
-		<testcase>Create a regular user</testcase>	
+		<testcase>Create a regular user</testcase>
 		<parameters>
 			<item random="true">
 			    <name>username</name>
@@ -57,7 +57,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the user</testcase>
@@ -78,7 +78,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 		<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying virtual machine</testcase>
@@ -95,7 +95,7 @@ under the License.
 			<item>
 			    <name>diskofferingid</name>
 				<value>5</value>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -127,9 +127,9 @@ under the License.
 				<param>vmipaddress</param>
 			</item>
 		</returnvalue>
-	</command>		
-	
-	
+	</command>
+
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying virtual machine</testcase>
@@ -146,7 +146,7 @@ under the License.
 			<item>
 			    <name>diskofferingid</name>
 				<value>5</value>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -178,8 +178,8 @@ under the License.
 				<param>vmipaddress1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -190,8 +190,8 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 		<command>
 		<name>listRouters</name>
 		<testcase>35</testcase>
@@ -219,9 +219,9 @@ under the License.
 				<param>sourcenatpublicip</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>associateIpAddress</name>
 		<usercommand>true</usercommand>
@@ -231,15 +231,15 @@ under the License.
 			<param>globalzoneid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!-- TRY TO CREATE STATIC NAT RULE FOR SOURCE NAT IP ADDRESS - NEGATIVE CASE-->
 	<command>
 		<name>createIpForwardingRule</name>
@@ -257,8 +257,8 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!-- CREATE STATIC NAT RULE FOR SOURCE NAT IP ADDRESS -->
 	<command>
 		<name>createIpForwardingRule</name>
@@ -274,14 +274,14 @@ under the License.
 			<param>vmid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>ruleid</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -297,8 +297,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!-- CREATE STATIC NAT RULE FOR SOURCE NAT IP ADDRESS -->
 	<command>
 		<name>deleteIpForwardingRule</name>
@@ -311,7 +311,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listIpForwardingRules</name>
 		<usercommand>true</usercommand>
@@ -324,7 +324,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -341,8 +341,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!-- LIST STATIC NAT RULES -->
 	<command>
 		<name>createIpForwardingRule</name>
@@ -358,14 +358,14 @@ under the License.
 			<param>vmid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>ruleid</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listIpForwardingRules</name>
 		<usercommand>true</usercommand>
@@ -378,7 +378,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listIpForwardingRules</name>
 		<usercommand>true</usercommand>
@@ -391,8 +391,8 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>listIpForwardingRules</name>
 		<usercommand>true</usercommand>
@@ -405,7 +405,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<!-- RELEASE IP ADDRESS WHEN IT HAS STATIC NAT RULES ASSIGNED AND VERIFY THAT THE RULES ARE REMOVED -->
 	<command>
 		<name>disassociateIpAddress</name>
@@ -417,7 +417,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listIpForwardingRules</name>
 		<usercommand>true</usercommand>
@@ -425,7 +425,7 @@ under the License.
 		<empty>false</empty>
 	</command>
 
-	
+
 	<!-- TRY TO ENABLE STATIC NAT FOR THE SAME IP AND DIFFERENT VMS - SHOULD FAIL FOR THE SECOND ONE -->
 	<command>
 		<name>associateIpAddress</name>
@@ -436,15 +436,15 @@ under the License.
 			<param>globalzoneid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>createIpForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -459,14 +459,14 @@ under the License.
 			<param>vmid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>ruleid</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createIpForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -483,8 +483,8 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!-- Destroy vm and verify that all corresponding rules got removed -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -496,7 +496,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listConfigurations</name>
 		<testcase>Getting expunge interval value</testcase>
@@ -513,7 +513,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -524,15 +524,15 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listIpForwardingRules</name>
 		<usercommand>true</usercommand>
 		<empty>true</empty>
 		<testcase>Test case 1140: static nat rules should be removed once corresponding vm is expunged</testcase>
 	</command>
-	
+
 
 	<!-- ENABLE STATIC NAT FOR THE SAME VM AND 2 DIFFERENT IPS-->
 		<command>
@@ -544,14 +544,14 @@ under the License.
 			<param>globalzoneid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip1</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 		<command>
 		<name>associateIpAddress</name>
 		<usercommand>true</usercommand>
@@ -561,14 +561,14 @@ under the License.
 			<param>globalzoneid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip2</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createIpForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -584,7 +584,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createIpForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -600,8 +600,8 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -617,8 +617,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -634,8 +634,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!-- REBOOT DOMR AND VERIFY THAT STATIC NAT RULE STILL WORKS -->
 	<command>
 		<name>rebootRouter</name>
@@ -647,7 +647,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -675,8 +675,8 @@ under the License.
 				<param>routerid</param>
 			</item>
 		</parameters>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>startRouter</name>
 		<testcase>Starting router...</testcase>
@@ -686,8 +686,8 @@ under the License.
 				<param>routerid</param>
 			</item>
 		</parameters>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -703,7 +703,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 <!-- CREATE PORT FORWARDING RULE AND STATIC NAT RULE FOR THE SAME IP/VM; THEN DELETE STATIC NAT -->
 	<command>
@@ -722,7 +722,7 @@ under the License.
 			<item>
 			    <name>diskofferingid</name>
 				<value>5</value>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -754,8 +754,8 @@ under the License.
 				<param>vmipaddress1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -766,8 +766,8 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>associateIpAddress</name>
 		<usercommand>true</usercommand>
@@ -777,14 +777,14 @@ under the License.
 			<param>globalzoneid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createPortForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -815,8 +815,8 @@ under the License.
 			<param>vmid</param>
 		</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -832,7 +832,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createIpForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -847,14 +847,14 @@ under the License.
 			<param>vmid1</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>ruleid</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -870,7 +870,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteIpForwardingRule</name>
 		<usercommand>true</usercommand>
@@ -882,7 +882,7 @@ under the License.
 		</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -898,9 +898,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
-	<!--  Delete user as a part of cleanup -->	
+
+
+	<!--  Delete user as a part of cleanup -->
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting the user</testcase>
@@ -910,7 +910,7 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>		
+	</command>
 
 
 </staticnat>

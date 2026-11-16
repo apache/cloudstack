@@ -17,7 +17,7 @@
 # under the License.
 import os
 import re
-import CsHelper
+from . import CsHelper
 import logging
 
 

@@ -44,6 +44,10 @@ export default {
     styles: {
       type: Object,
       default: () => {}
+    },
+    vmState: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
@@ -84,8 +88,41 @@ export default {
           case 'ReadWrite':
             state = this.$t('state.readwrite')
             break
+          case 'partiallyallocated':
+            state = this.$t('state.partiallyallocated')
+            break
           case 'InProgress':
             state = this.$t('state.inprogress')
+            break
+          case 'Down':
+            state = this.$t('state.down')
+            break
+          case 'Up':
+            state = this.$t('state.up')
+            break
+          case 'Yes':
+            state = this.$t('label.yes')
+            break
+          case 'no':
+            state = this.$t('label.no')
+            break
+          case 'backedup':
+            state = this.$t('label.backedup')
+            break
+          case 'backingup':
+            state = this.$t('label.backingup')
+            break
+          case 'allocated':
+            state = this.$t('label.allocated')
+            break
+          case 'queued':
+            state = this.$t('label.queued')
+            break
+          case 'restoring':
+            state = this.$t('label.restoring')
+            break
+          case 'failed':
+            state = this.$t('label.failed')
             break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
@@ -113,6 +150,11 @@ export default {
         case 'up':
         case 'success':
         case 'poweron':
+        case 'primary':
+        case 'managed':
+        case 'yes':
+        case 'compressed':
+        case 'valid':
           status = 'success'
           break
         case 'alert':
@@ -127,6 +169,11 @@ export default {
         case 'poweroff':
         case 'stopped':
         case 'failed':
+        case 'unmanaged':
+        case 'no':
+        case 'notvalid':
+        case 'unabletovalidate':
+        case 'compressionerror':
           status = 'error'
           break
         case 'migrating':
@@ -135,6 +182,8 @@ export default {
         case 'stopping':
         case 'upgrading':
         case 'inprogress':
+        case 'validating':
+        case 'compressing':
           status = 'processing'
           break
         case 'allocated':
@@ -149,6 +198,9 @@ export default {
         case 'pending':
         case 'unsecure':
         case 'warning':
+        case 'backup':
+        case 'partiallyallocated':
+        case 'uncompressed':
           status = 'warning'
           break
       }
@@ -168,23 +220,28 @@ export default {
       if (!(state && this.displayText)) {
         return ''
       }
+      let result
       if (this.$route.path === '/vmsnapshot' || this.$route.path.includes('/vmsnapshot/')) {
-        return this.$t('message.vmsnapshot.state.' + state.toLowerCase())
+        result = this.$t('message.vmsnapshot.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        result = this.$t('message.vm.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
+        if (this.vmState) {
+          result = this.$t('message.vm.state.' + state.toLowerCase())
+        } else {
+          result = this.$t('message.volume.state.' + state.toLowerCase())
+        }
+      } else if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
+        result = this.$t('message.guestnetwork.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {
+        result = this.$t('message.publicip.state.' + state.toLowerCase())
       }
-      if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
-        return this.$t('message.vm.state.' + state.toLowerCase())
+
+      if (!result || (result.startsWith('message.') && result.endsWith('.state.' + state.toLowerCase()))) {
+        // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
+        result = this.$t(state)
       }
-      if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
-        return this.$t('message.volume.state.' + state.toLowerCase())
-      }
-      if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-        return this.$t('message.guestnetwork.state.' + state.toLowerCase())
-      }
-      if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {
-        return this.$t('message.publicip.state.' + state.toLowerCase())
-      }
-      // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
-      return this.$t(state)
+      return result
     },
     getStyle () {
       let styles = { display: 'inline-flex' }

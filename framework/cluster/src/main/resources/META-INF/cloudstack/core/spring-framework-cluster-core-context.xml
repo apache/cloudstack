@@ -28,9 +28,9 @@
                       >
 
     <bean id="clusterServiceServletAdapter" class="com.cloud.cluster.ClusterServiceServletAdapter" />
-    
+
     <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
-    
+
     <bean id="clusterFenceManagerImpl" class="com.cloud.cluster.ClusterFenceManagerImpl" />
-    
+
 </beans>

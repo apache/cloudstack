@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.kubernetes.cluster.dao;
 
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -23,9 +24,15 @@ import java.util.List;
 
 public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterVmMapVO, Long> {
     public List<KubernetesClusterVmMapVO> listByClusterId(long clusterId);
+
+    public KubernetesClusterVmMapVO getClusterMapFromVmId(long vmId);
     public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
 
     int removeByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
 
     public int removeByClusterId(long clusterId);
+
+    List<KubernetesClusterVmMapVO> listByClusterIdAndVmType(long clusterId, KubernetesClusterNodeType nodeType);
+
+    KubernetesClusterVmMapVO findByVmId(long vmId);
 }

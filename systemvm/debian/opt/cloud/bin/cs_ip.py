@@ -57,7 +57,7 @@ def merge(dbag, ip):
     ip['network'] = str(ipo.network) + '/' + str(ipo.prefixlen)
     if 'mtu' in ip:
         ip['mtu'] = str(ip['mtu'])
-    if 'nw_type' not in ip.keys():
+    if 'nw_type' not in list(ip.keys()):
         ip['nw_type'] = 'public'
     else:
         ip['nw_type'] = ip['nw_type'].lower()

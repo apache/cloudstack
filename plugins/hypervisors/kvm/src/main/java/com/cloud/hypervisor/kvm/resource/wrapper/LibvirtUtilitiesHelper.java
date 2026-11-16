@@ -22,7 +22,13 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -41,7 +47,7 @@ import com.cloud.utils.script.Script;
  * and the methods wrapped here.
  */
 public class LibvirtUtilitiesHelper {
-    private static final Logger s_logger = Logger.getLogger(LibvirtUtilitiesHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtUtilitiesHelper.class);
 
     public static final int TIMEOUT = 10000;
 
@@ -107,9 +113,9 @@ public class LibvirtUtilitiesHelper {
     }
 
     public String generateVMSnapshotXML(VMSnapshotTO snapshot, VMSnapshotTO parent, String domainXmlDesc) {
-        String parentName = (parent == null)? "": ("  <parent><name>" + parent.getSnapshotName() + "</name></parent>\n");
+        String parentName = (parent == null)? "": ("  <parent><name>" + StringEscapeUtils.escapeXml(parent.getSnapshotName()) + "</name></parent>\n");
         String vmSnapshotXML = "<domainsnapshot>\n"
-                + "  <name>" + snapshot.getSnapshotName() + "</name>\n"
+                + "  <name>" + StringEscapeUtils.escapeXml(snapshot.getSnapshotName()) + "</name>\n"
                 + "  <state>running</state>\n"
                 + parentName
                 + "  <creationTime>" + (int) Math.rint(snapshot.getCreateTime()/1000) + "</creationTime>\n"
@@ -129,7 +135,7 @@ public class LibvirtUtilitiesHelper {
             return new Pair<>(String.valueOf(currentLibvirtVersion), currentLibvirtVersion >= version);
         } catch (LibvirtException ex) {
             String exceptionMessage = ex.getMessage();
-            s_logger.error(String.format("Unable to validate if the Libvirt's version is equal or higher than [%s] due to [%s]. Returning 'false' as default'.", version,
+            LOGGER.error(String.format("Unable to validate if the Libvirt's version is equal or higher than [%s] due to [%s]. Returning 'false' as default'.", version,
                     exceptionMessage), ex);
             return new Pair<>(String.format("Unknown due to [%s]", exceptionMessage), false);
         }
@@ -140,8 +146,14 @@ public class LibvirtUtilitiesHelper {
      */
     public static boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Connect conn) {
         Pair<String, Boolean> result = isLibvirtVersionEqualOrHigherThanVersionInParameter(conn, LIBVIRT_VERSION_THAT_SUPPORTS_FLAG_DELETE_ON_COMMAND_VIRSH_BLOCKCOMMIT);
-        s_logger.debug(String.format("The current Libvirt's version [%s]%s supports the flag '--delete' on command 'virsh blockcommit'.", result.first(),
+        LOGGER.debug(String.format("The current Libvirt's version [%s]%s supports the flag '--delete' on command 'virsh blockcommit'.", result.first(),
                 result.second() ? "" : " does not"));
         return result.second();
     }
+
+    public KVMStoragePool getPrimaryPoolFromDataTo(DataTO dataTO, KVMStoragePoolManager storageManager) {
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataTO.getDataStore();
+        return storageManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+    }
+
 }

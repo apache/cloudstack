@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,12 +17,12 @@
 # under the License.
 
 help() {
-  printf "Usage: $0 
-                    -i nfs server ip 
+  printf "Usage: $0
+                    -i nfs server ip
                     -p nfs server path
-                    -m mount point 
-                    -h host  
-                    -r write/read hb log 
+                    -m mount point
+                    -h host
+                    -r write/read hb log
                     -c cleanup
                     -t interval between read hb log\n"
   exit 1
@@ -52,7 +52,7 @@ do
      HostIP="$OPTARG"
      ;;
   r)
-     rflag=1 
+     rflag=1
      ;;
   t)
      interval="$OPTARG"
@@ -75,7 +75,7 @@ fi
 #delete VMs on this mountpoint
 deleteVMs() {
   local mountPoint=$1
-  vmPids=$(ps aux| grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null) 
+  vmPids=$(ps aux | grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
   if [ $? -gt 0 ]
   then
      return
@@ -93,14 +93,14 @@ deleteVMs() {
 }
 
 #checking is there the same nfs server mounted under $MountPoint?
-mounts=$(cat /proc/mounts |grep nfs|grep $MountPoint)
+mounts=$(cat /proc/mounts | grep nfs | grep $MountPoint)
 if [ $? -gt 0 ]
 then
    # remount it
    mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac &> /dev/null
    if [ $? -gt 0 ]
    then
-      printf "Failed to remount $NfsSvrIP:$NfsSvrPath under $MountPoint" 
+      printf "Failed to remount $NfsSvrIP:$NfsSvrPath under $MountPoint"
       exit 1
    fi
    if [ "$rflag" == "0" ]
@@ -156,12 +156,19 @@ then
   exit 0
 elif [ "$cflag" == "1" ]
 then
-  /usr/bin/logger -t heartbeat "kvmheartbeat.sh will reboot system because it was unable to write the heartbeat to the storage."
-  sync &
-  sleep 5
-  echo b > /proc/sysrq-trigger
-  exit $?
+  # If the shared helper cannot be loaded (missing file, no permission, partial upgrade),
+  # fall back to the original hard-reboot so a failed heartbeat still fences the host.
+  # shellcheck disable=SC1091
+  if ! . "$(dirname "$0")/kvmha-fence.sh" || ! declare -F fence_action > /dev/null; then
+    "${FENCE_LOGGER:-/usr/bin/logger}" -t heartbeat "kvmheartbeat.sh: ERROR could not load kvmha-fence.sh; falling back to hard-reboot."
+    "${FENCE_LOGGER:-/usr/bin/logger}" -t heartbeat "kvmheartbeat.sh will reboot system because it was unable to write the heartbeat to the storage."
+    sync &
+    sleep 5
+    echo b > "${FENCE_SYSRQ_TRIGGER:-/proc/sysrq-trigger}"
+    exit $?
+  fi
+  fence_action "kvmheartbeat.sh"
 else
-  write_hbLog 
+  write_hbLog
   exit $?
 fi

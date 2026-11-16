@@ -30,13 +30,19 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.vm.VmImportService;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 @APICommand(name = "importVm",
         description = "Import virtual machine from a unmanaged host into CloudStack",
@@ -48,7 +54,53 @@ import org.apache.log4j.Logger;
         since = "4.19.0")
 public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
-    public static final Logger LOGGER = Logger.getLogger(ImportVmCmd.class);
+    @Inject
+    public VmImportService vmImportService;
+
+    public enum VmwareMigrationMode {
+        OVF,
+        VDDK,
+        CBT;
+
+        public static VmwareMigrationMode fromValue(String value, boolean useVddkFallback) {
+            if (StringUtils.isBlank(value)) {
+                return useVddkFallback ? VDDK : OVF;
+            }
+            for (VmwareMigrationMode mode : values()) {
+                if (mode.name().equalsIgnoreCase(value)) {
+                    return mode;
+                }
+            }
+            throw new IllegalArgumentException(String.format("Unsupported VMware migration mode: %s", value));
+        }
+    }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            required = true,
+            description = "the zone ID")
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.USERNAME,
+            type = CommandType.STRING,
+            description = "the username for the host")
+    private String username;
+
+    @Parameter(name = ApiConstants.PASSWORD,
+            type = CommandType.STRING,
+            description = "the password for the host")
+    private String password;
+
+    @Parameter(name = ApiConstants.HOST,
+            type = CommandType.STRING,
+            description = "the host name or IP address")
+    private String host;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
             type = CommandType.STRING,
@@ -56,78 +108,127 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "hypervisor type of the host")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.DISK_PATH,
+            type = CommandType.STRING,
+            description = "path of the disk image. It is the file name on file based storage pools (NFS, Local, SharedMountPoint), and the image name on RBD storage pools")
+    private String diskPath;
+
     @Parameter(name = ApiConstants.IMPORT_SOURCE,
             type = CommandType.STRING,
             required = true,
             description = "Source location for Import" )
     private String importSource;
 
-    // Import from Vmware to KVM migration parameters
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "the network ID")
+    private Long networkId;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "Host where local disk is located")
+    private Long hostId;
+
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "Shared storage pool where disk is located")
+    private Long storagePoolId;
+
+    @Parameter(name = ApiConstants.TEMP_PATH,
+            type = CommandType.STRING,
+            description = "Temp Path on external host for disk image copy" )
+    private String tmpPath;
+
+    // Import from VMware to KVM migration parameters
 
     @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
             type = CommandType.UUID,
             entityType = VmwareDatacenterResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) UUID of a linked existing vCenter")
+            description = "(only for importing VMs from VMware to KVM) UUID of a linked existing vCenter")
     private Long existingVcenterId;
 
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
-    private String host;
+            description = "(only for importing VMs from VMware to KVM) VMware ESXi host IP/Name.")
+    private String hostip;
 
     @Parameter(name = ApiConstants.VCENTER,
             type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+            description = "(only for importing VMs from VMware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
     @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware datacenter.")
+            description = "(only for importing VMs from VMware to KVM) Name of VMware datacenter.")
     private String datacenterName;
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
+            description = "(only for importing VMs from VMware to KVM) Name of VMware cluster.")
     private String clusterName;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The Username required to connect to resource.")
-    private String username;
-
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The password for the specified username.")
-    private String password;
-
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the host to perform the virt-v2v conversion from VMware to KVM.")
     private Long convertInstanceHostId;
 
+    @Parameter(name = ApiConstants.IMPORT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, since = "4.19.2",
+            description = "(only for importing VMs from VMware to KVM) optional - the host to import the converted instance from VMware to KVM.")
+    private Long importInstanceHostId;
+
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM. " +
+                    "When " + ApiConstants.USE_VDDK + " and " + ApiConstants.FORCE_CONVERT_TO_POOL + " are true, this can be an RBD primary storage pool for direct RBD import.")
     private Long convertStoragePoolId;
 
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_IMPORT;
-    }
+    @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
+    private Boolean forceMsToImportVmFiles;
 
-    @Override
-    public String getEventDescription() {
-        String vmName = getName();
-        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
-            String msg = StringUtils.isNotBlank(vcenter) ?
-                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
-                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
-            return String.format("Importing unmanaged VM: %s from %s - VM: %s", getDisplayName(), msg, vmName);
-        }
-        return String.format("Importing unmanaged VM: %s", vmName);
-    }
+    @Parameter(name = ApiConstants.EXTRA_PARAMS,
+            type = CommandType.STRING,
+            since = "4.22",
+            description = "(only for importing VMs from VMware to KVM) optional - extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
+    private String extraParams;
 
+    @Parameter(name = ApiConstants.FORCE_CONVERT_TO_POOL,
+            type = CommandType.BOOLEAN,
+            since = "4.22",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
+    private Boolean forceConvertToPool;
+
+    @Parameter(name = ApiConstants.OS_ID,
+            type = CommandType.UUID,
+            entityType = GuestOSResponse.class,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - the ID of the guest OS for the imported VM.")
+    private Long guestOsId;
+
+    @Parameter(name = ApiConstants.USE_VDDK,
+            type = CommandType.BOOLEAN,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, uses VDDK on the KVM conversion host for converting the VM. " +
+                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ". " +
+                    "With " + ApiConstants.FORCE_CONVERT_TO_POOL + "=true and an RBD conversion pool, the source VMware VM must be powered off and " +
+                    "the conversion host must support qemu RBD access and in-place virt-v2v finalization.")
+    private Boolean useVddk;
+
+    @Parameter(name = ApiConstants.VMWARE_MIGRATION_MODE,
+            type = CommandType.STRING,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - migration mode to use. Valid values are OVF, VDDK, and CBT. " +
+                    "When omitted, CloudStack preserves the existing usevddk behavior.")
+    private String vmwareMigrationMode;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getZoneId() {
+        return zoneId;
+    }
 
     public Long getExistingVcenterId() {
         return existingVcenterId;
     }
 
-    public String getHost() {
-        return host;
+    public String getHostIp() {
+        return hostip;
     }
 
     public String getVcenter() {
@@ -150,20 +251,89 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return password;
     }
 
+    public String getHost() {
+        return host;
+    }
+
     public Long getConvertInstanceHostId() {
         return convertInstanceHostId;
+    }
+
+    public Long getImportInstanceHostId() {
+        return importInstanceHostId;
     }
 
     public Long getConvertStoragePoolId() {
         return convertStoragePoolId;
     }
 
+    public Boolean getForceMsToImportVmFiles() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceMsToImportVmFiles, false);
+    }
+
     public String getHypervisor() {
         return hypervisor;
     }
 
+    public String getDiskPath() {
+        return diskPath;
+    }
+
     public String getImportSource() {
         return importSource;
+    }
+
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public Long getStoragePoolId() {
+        return storagePoolId;
+    }
+
+    public boolean getUseVddk() {
+        return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
+    }
+
+    public String getVmwareMigrationMode() {
+        return vmwareMigrationMode;
+    }
+
+    public String getTmpPath() {
+        return tmpPath;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_IMPORT;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public boolean getForceConvertToPool() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
+    }
+
+    public Long getGuestOsId() {
+        return guestOsId;
+    }
+
+    @Override
+    public String getEventDescription() {
+        String vmName = getName();
+        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
+            String msg = StringUtils.isNotBlank(vcenter) ?
+                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
+                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
+            return String.format("Importing unmanaged VM: %s from %s - VM: %s", getDisplayName(), msg, vmName);
+        }
+        return String.format("Importing unmanaged VM: %s", vmName);
     }
 
     /////////////////////////////////////////////////////
@@ -176,5 +346,4 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
 }

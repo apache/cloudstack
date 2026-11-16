@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -47,7 +46,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveFromGlobalLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "removefromloadbalancerruleresponse";
 
@@ -67,7 +65,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                collectionType = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the list load balancer rules that will be assigned to global load balancer rule")
+               description = "The list load balancer rules that will be assigned to global load balancer rule")
     private List<Long> loadBalancerRulesIds;
 
     /////////////////////////////////////////////////////
@@ -110,13 +108,13 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesIds(), ",") + " from global load balancer: " + getGlobalLoadBalancerRuleId();
+        return "Removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesIds(), ",") + " from global load balancer: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
         CallContext.current().setEventDetails(
-            "Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
+            "Global Load balancer rule Id: " + getResourceUuid(ApiConstants.ID) + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.removeFromGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

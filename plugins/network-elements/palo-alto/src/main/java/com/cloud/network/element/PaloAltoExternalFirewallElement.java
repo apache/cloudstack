@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -85,7 +84,6 @@ import com.cloud.vm.VirtualMachineProfile;
 public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
         PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, StaticNatServiceProvider {
 
-    private static final Logger s_logger = Logger.getLogger(PaloAltoExternalFirewallElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -121,18 +119,18 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
     private boolean canHandle(Network network, Service service) {
         DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         if (zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) {
-            s_logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
+            logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
             return false;
         }
 
         if (service == null) {
             if (!_networkManager.isProviderForNetwork(getProvider(), network.getId())) {
-                s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+                logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
                 return false;
             }
         } else {
             if (!_networkManager.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
+                logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
         }
@@ -147,7 +145,7 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
 
         // don't have to implement network is Basic zone
         if (zone.getNetworkType() == NetworkType.Basic) {
-            s_logger.debug("Not handling network implement in zone of type " + NetworkType.Basic);
+            logger.debug("Not handling network implement in zone of type " + NetworkType.Basic);
             return false;
         }
 
@@ -160,7 +158,7 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception in more gracefule manner when multiple providers are present for
             // the network
-            s_logger.error("Fail to implement the Palo Alto for network " + network, capacityException);
+            logger.error("Fail to implement the Palo Alto for network " + network, capacityException);
             return false;
         }
     }
@@ -182,7 +180,7 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
 
         // don't have to implement network is Basic zone
         if (zone.getNetworkType() == NetworkType.Basic) {
-            s_logger.debug("Not handling network shutdown in zone of type " + NetworkType.Basic);
+            logger.debug("Not handling network shutdown in zone of type " + NetworkType.Basic);
             return false;
         }
 
@@ -430,7 +428,7 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         if (!services.contains(Service.Firewall)) {
-            s_logger.warn("Palo Alto must be used as Firewall Service Provider in the network");
+            logger.warn("Palo Alto must be used as Firewall Service Provider in the network");
             return false;
         }
         return true;

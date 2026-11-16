@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
@@ -46,17 +45,19 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "addiptovmnicresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "the ID of the nic to which you want to assign private IP")
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "The ID of the NIC to which you want to assign private IP")
     private Long nicId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false, description = "Secondary IP Address")
     private String ipAddr;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description of the secondary IP address", length = 2048)
+    private String description;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,7 +70,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     private long getNetworkId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find network id for specified nic");
+            throw new InvalidParameterValueException("Can't find Network ID for specified NIC");
         }
         return nic.getNetworkId();
     }
@@ -81,7 +82,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     private boolean isZoneSGEnabled() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
-        return dc.isSecurityGroupEnabled();
+        return dc.isSecurityGroupEnabled() || _ntwkModel.isSecurityGroupSupportedForZone(dc.getId());
     }
 
     @Override
@@ -91,7 +92,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "associating ip to nic id=" + this._uuidMgr.getUuid(Nic.class, getNicId()) + " belonging to network id=" + this._uuidMgr.getUuid(Network.class, getNetworkId());
+        return "Associating secondary IP address to NIC with ID: " + getResourceUuid(ApiConstants.NIC_ID) + " belonging to Network with ID: " + this._uuidMgr.getUuid(Network.class, getNetworkId());
     }
 
     /////////////////////////////////////////////////////
@@ -110,23 +111,23 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
+        CallContext.current().setEventDetails("Nic ID: " + getResourceUuid(ApiConstants.NIC_ID));
         NicSecondaryIp result = _entityMgr.findById(NicSecondaryIp.class, getEntityId());
 
         if (result != null) {
-            CallContext.current().setEventDetails("secondary Ip Id: " + getEntityUuid());
+            CallContext.current().setEventDetails("Secondary IP address ID: " + getEntityUuid());
             boolean success = false;
             success = _networkService.configureNicSecondaryIp(result, isZoneSGEnabled());
 
             if (success == false) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary IP");
             }
 
             NicSecondaryIpResponse response = _responseGenerator.createSecondaryIPToNicResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to nic");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary IP to NIC");
         }
     }
 
@@ -144,7 +145,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find nic for id specified");
+            throw new InvalidParameterValueException("Can't find NIC for id specified");
         }
         long vmId = nic.getInstanceId();
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, vmId);
@@ -162,17 +163,17 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
         }
 
         try {
-            result = _networkService.allocateSecondaryGuestIP(getNicId(), requestedIpPair);
+            result = _networkService.allocateSecondaryGuestIP(getNicId(), requestedIpPair, description);
             if (result != null) {
                 setEntityId(result.getId());
                 setEntityUuid(result.getUuid());
             }
         } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for nic failed : " + e.getMessage());
+            throw new InvalidParameterValueException("Allocating guest IP for NIC failed : " + e.getMessage());
         }
 
         if (result == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to nic");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary IP to NIC");
         }
     }
 }

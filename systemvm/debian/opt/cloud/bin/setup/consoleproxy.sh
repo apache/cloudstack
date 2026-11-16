@@ -33,15 +33,21 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
 
   log_it "Applying iptables rule for VNC port ${VNCPORT}"
-  sed -i 's/8080/${VNCPORT}/' /etc/iptables/rules.v4
+  sed -i "s/8080/${VNCPORT}/" /etc/iptables/rules.v4
   echo "${VNCPORT}" > /root/vncport
   log_it "Creating VNC port ${VNCPORT} file for VNC server configuration"
 
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0
+  if [[ -n "$NTP_SERVER_LIST" ]]; then
+    setup_ntp
+    systemctl restart ntp
+  fi
   rm -f /etc/logrotate.d/cloud
 
 }
 
 setup_console_proxy
+# System VMs are patched during bootstrap
+. /opt/cloud/bin/setup/patch.sh && patch_system_vm

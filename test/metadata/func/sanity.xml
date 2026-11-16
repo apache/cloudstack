@@ -18,7 +18,7 @@ under the License.
 -->
 <sanity>
 
-	<!-- 
+	<!--
 		STEPS/TEST CASES COVERED:
 		1. Create an Account
 		2. Create a User in that Account
@@ -27,7 +27,7 @@ under the License.
 		5. Release the IP Address
 		6. Reboot the VM
 		7. Stop the VM
-		8. Start the VM 
+		8. Start the VM
 		9. List Routers
 		10. Stop Router
 		11.	List Router
@@ -37,7 +37,7 @@ under the License.
 		15.	Recover virtual machine
 		16. Verify that vm is destroyed
 		17. Delete Account
-		
+
 	 -->
 
 	<command>
@@ -84,7 +84,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<!-- Create default network-->
 	<command>
 		<name>createNetwork</name>
@@ -122,7 +122,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>	[Deploy a Virtual Machine under the Account]</testcase>
@@ -167,8 +167,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>associateIpAddress</name>
 		<testcase>	[Acquire an IP Address (Non-Source NAT*)]</testcase>
@@ -190,14 +190,14 @@ under the License.
 			<item setparam="true">
 				<name>id</name>
 				<param>nonsourcenatpublicipid</param>
-			</item>  
+			</item>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>nonsourcenatpublicip</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>disassociateIpAddress</name>
 		<testcase>	[Release the IP Address (Non-Source NAT*)]</testcase>
@@ -208,7 +208,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<testcase>	[Reboot Virtual Machine]</testcase>
@@ -219,7 +219,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>	[Stop virtual machine]</testcase>
@@ -230,7 +230,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>	[Start virtual machine]</testcase>
@@ -247,8 +247,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>listRouters</name>
 		<testcase>	[List Routers]</testcase>
@@ -272,9 +272,9 @@ under the License.
 				<param>routerid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>stopRouter</name>
 		<testcase>	[Stop router]</testcase>
@@ -313,7 +313,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>	[Verify that vm was destroyed]</testcase>
@@ -330,7 +330,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>recoverVirtualMachine</name>
 		<testcase>	[Recover virtual machine]</testcase>
@@ -341,7 +341,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>	[Verify that machine was recovered]</testcase>
@@ -362,7 +362,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deleteAccount</name>
 		<testcase>	[Delete account]</testcase>
@@ -372,7 +372,7 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 </sanity>

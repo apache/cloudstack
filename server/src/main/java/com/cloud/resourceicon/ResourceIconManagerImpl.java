@@ -16,8 +16,11 @@
 // under the License.
 package com.cloud.resourceicon;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -25,13 +28,11 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.metadata.ResourceMetaDataManagerImpl;
 import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -64,7 +65,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ResourceIconManagerImpl extends ManagerBase implements ResourceIconManager {
-    public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
 
     @Inject
     AccountService accountService;
@@ -184,7 +184,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();
-                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource [id: %s, uuid: %s] ", caller, id, resourceUuid));
 
                     if (existingResourceIcon == null) {
                         resourceIcon = new ResourceIconVO(id, resourceType, resourceUuid, base64Image);
@@ -211,7 +211,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
         Account caller = CallContext.current().getCallingAccount();
         List<? extends ResourceIcon> resourceIcons = searchResourceIcons(resourceIds, resourceType);
         if (resourceIcons.isEmpty()) {
-            s_logger.debug("No resource Icon(s) uploaded for the specified resources");
+            logger.debug("No resource Icon(s) uploaded for the specified resources");
             return false;
         }
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -224,9 +224,9 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();
-                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource [id: %s, uuid: %s]", caller, id, resourceId));
                     resourceIconDao.remove(resourceIcon.getId());
-                    s_logger.debug("Removed icon for resources (" +
+                    logger.debug("Removed icon for resources (" +
                             String.join(", ", resourceIds) + ")");
                 }
             }
@@ -249,5 +249,19 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
         sc.setParameters("resourceUuid", resourceUuids.toArray());
         sc.setParameters("resourceType", resourceType);
         return resourceIconDao.search(sc, null);
+    }
+
+
+    @Override
+    public Map<Long, ResourceIcon> getByResourceTypeAndIds(ResourceTag.ResourceObjectType resourceType, Collection<Long> resourceIds) {
+        List<ResourceIconVO> icons = resourceIconDao.listByResourceTypeAndIds(resourceType, resourceIds);
+        return icons.stream().collect(Collectors.toMap(ResourceIconVO::getResourceId, Function.identity()));
+    }
+
+
+    @Override
+    public Map<String, ResourceIcon> getByResourceTypeAndUuids(ResourceTag.ResourceObjectType resourceType, Collection<String> resourceUuids) {
+        List<ResourceIconVO> icons = resourceIconDao.listByResourceTypeAndUuids(resourceType, resourceUuids);
+        return icons.stream().collect(Collectors.toMap(ResourceIconVO::getResourceUuid, Function.identity()));
     }
 }

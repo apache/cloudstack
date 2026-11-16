@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import static org.apache.cloudstack.query.QueryService.SortKeyAscending;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,6 +28,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +49,8 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     protected DiskOfferingDetailsDao detailsDao;
 
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
+    protected final SearchBuilder<DiskOfferingVO> ActiveAndNonComputeSearch;
+
     private final String SizeDiskOfferingSearch = "SELECT * FROM disk_offering WHERE " +
             "disk_size = ? AND provisioning_type = ? AND removed IS NULL";
 
@@ -57,17 +62,12 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
+        ActiveAndNonComputeSearch = createSearchBuilder();
+        ActiveAndNonComputeSearch.and("state", ActiveAndNonComputeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ActiveAndNonComputeSearch.and("computeOnly", ActiveAndNonComputeSearch.entity().isComputeOnly(), SearchCriteria.Op.EQ);
+        ActiveAndNonComputeSearch.done();
+
         _computeOnlyAttr = _allAttributes.get("computeOnly");
-    }
-
-    @Override
-    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        return super.searchIncludingRemoved(sc, filter, lock, cache);
-    }
-
-    @Override
-    public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
-        return super.customSearchIncludingRemoved(sc, filter);
     }
 
     @Override
@@ -141,13 +141,14 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
-    public List<DiskOfferingVO> findCustomDiskOfferings() {
+    public List<DiskOfferingVO> listCustomDiskOfferings() {
         SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
         sb.and("customized", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<DiskOfferingVO> sc = sb.create();
         sc.setParameters("customized", true);
-        return listBy(sc);
+        Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value());
+        return listBy(sc, searchFilter);
     }
 
     @Override
@@ -156,5 +157,31 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         diskOffering.setRemoved(new Date());
 
         return update(id, diskOffering);
+    }
+
+    @Override
+    public List<DiskOfferingVO> listByStorageTag(String tag) {
+        SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
+        sb.and("tagNotNull", sb.entity().getTags(), SearchCriteria.Op.NNULL);
+        sb.and().op("tagEq", sb.entity().getTags(), SearchCriteria.Op.EQ);
+        sb.or("tagStartLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.or("tagMidLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.or("tagEndLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.cp();
+        sb.done();
+        SearchCriteria<DiskOfferingVO> sc = sb.create();
+        sc.setParameters("tagEq", tag);
+        sc.setParameters("tagStartLike", tag + ",%");
+        sc.setParameters("tagMidLike", "%," + tag + ",%");
+        sc.setParameters("tagEndLike",   "%," + tag);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DiskOfferingVO> listAllActiveAndNonComputeDiskOfferings() {
+        SearchCriteria<DiskOfferingVO> sc = ActiveAndNonComputeSearch.create();
+        sc.setParameters("state", DiskOffering.State.Active);
+        sc.setParameters("computeOnly", false);
+        return listBy(sc);
     }
 }

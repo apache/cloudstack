@@ -16,7 +16,7 @@
 # under the License.
 
 """ P1 tests for testing resize volume functionality with primary storage
-    imit constraints on account/domain
+    limit constraints on account/domain
 
     Test Plan: https://cwiki.apache.org/confluence/display/CLOUDSTACK/
     Limit+Resources+to+domain+or+accounts

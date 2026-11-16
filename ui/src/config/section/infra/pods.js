@@ -24,8 +24,9 @@ export default {
   icon: 'appstore-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-pods',
   permission: ['listPods'],
+  searchFilters: ['name', 'zoneid'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
-  details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
+  details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename', 'storageaccessgroups', 'zonestorageaccessgroups'],
   related: [{
     name: 'cluster',
     title: 'label.clusters',
@@ -70,7 +71,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'netmask', 'gateway']
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/PodUpdate.vue')))
     },
     {
       api: 'updatePod',

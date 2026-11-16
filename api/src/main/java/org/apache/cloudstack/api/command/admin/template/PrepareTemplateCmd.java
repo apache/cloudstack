@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.template;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -35,10 +34,9 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareTemplate", responseObject = TemplateResponse.class, description = "load template into primary storage", entityType = {VirtualMachineTemplate.class},
+@APICommand(name = "prepareTemplate", responseObject = TemplateResponse.class, description = "Load Template into primary storage", entityType = {VirtualMachineTemplate.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class PrepareTemplateCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(PrepareTemplateCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -49,7 +47,7 @@ public class PrepareTemplateCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "zone ID of the template to be prepared in primary storage(s).")
+               description = "Zone ID of the Template to be prepared in primary storage(s).")
     private Long zoneId;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -57,7 +55,7 @@ public class PrepareTemplateCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = TemplateResponse.class,
                required = true,
-               description = "template ID of the template to be prepared in primary storage(s).")
+               description = "Template ID of the Template to be prepared in primary storage(s).")
     private Long templateId;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -65,7 +63,7 @@ public class PrepareTemplateCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
             required = false,
-            description = "storage pool ID of the primary storage pool to which the template should be prepared. If it is not provided the template" +
+            description = "Storage pool ID of the primary storage pool to which the Template should be prepared. If it is not provided the Template" +
                     " is prepared on all the available primary storage pools.")
     private Long storageId;
 

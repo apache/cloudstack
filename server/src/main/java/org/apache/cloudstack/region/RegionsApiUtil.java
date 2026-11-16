@@ -36,7 +36,8 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -50,7 +51,7 @@ import com.cloud.user.UserAccountVO;
  *
  */
 public class RegionsApiUtil {
-    public static final Logger s_logger = Logger.getLogger(RegionsApiUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(RegionsApiUtil.class);
 
     /**
      * Makes an api call using region service end_point, api command and params
@@ -71,10 +72,10 @@ public class RegionsApiUtil {
                 return false;
             }
         } catch (HttpException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return false;
         } catch (IOException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return false;
         }
     }
@@ -108,20 +109,20 @@ public class RegionsApiUtil {
                 try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
                     return (RegionAccount) in.readObject();
                 }catch (IOException e) {
-                    s_logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                     return null;
                 }
             } else {
                 return null;
             }
         } catch (HttpException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } catch (IOException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } catch (ClassNotFoundException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         }
     }
@@ -150,20 +151,20 @@ public class RegionsApiUtil {
                 try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
                     return (RegionDomain) in.readObject();
                 }catch (IOException e) {
-                    s_logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                     return null;
                 }
             } else {
                 return null;
             }
         } catch (HttpException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } catch (IOException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } catch (ClassNotFoundException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         }
     }
@@ -189,20 +190,20 @@ public class RegionsApiUtil {
                 try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
                     return (UserAccountVO)in.readObject();
                 } catch (IOException e) {
-                    s_logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                     return null;
                 }
             } else {
                 return null;
             }
         } catch (HttpException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } catch (IOException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } catch (ClassNotFoundException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         }
     }
@@ -224,7 +225,7 @@ public class RegionsApiUtil {
                 }
             }
         } catch (UnsupportedEncodingException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         }
         return paramString.toString();
@@ -282,7 +283,7 @@ public class RegionsApiUtil {
             return finalUrl;
 
         } catch (UnsupportedEncodingException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         }
     }
@@ -303,7 +304,7 @@ public class RegionsApiUtil {
             byte[] encryptedBytes = mac.doFinal();
             return URLEncoder.encode(Base64.encodeBase64String(encryptedBytes), "UTF-8");
         } catch (Exception ex) {
-            s_logger.error(ex.getMessage());
+            LOGGER.error(ex.getMessage());
             return null;
         }
     }

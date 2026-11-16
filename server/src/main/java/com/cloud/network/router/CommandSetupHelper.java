@@ -23,17 +23,25 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.BgpPeerTO;
+import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.agent.api.HandleCksIsoCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
@@ -46,6 +54,7 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetBgpPeersCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
@@ -69,9 +78,11 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
@@ -112,6 +123,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -146,11 +158,14 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 public class CommandSetupHelper {
 
-    private static final Logger s_logger = Logger.getLogger(CommandSetupHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private EntityManager _entityMgr;
@@ -159,6 +174,8 @@ public class CommandSetupHelper {
     private DomainDao domainDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
@@ -207,6 +224,10 @@ public class CommandSetupHelper {
     Ipv6Service ipv6Service;
     @Inject
     VirtualRouterProviderDao vrProviderDao;
+    @Inject
+    ASNumberDao asNumberDao;
+    @Inject
+    BgpPeerDetailsDao bgpPeerDetailsDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -226,7 +247,7 @@ public class CommandSetupHelper {
 
             Domain domain = domainDao.findById(vm.getDomainId());
             if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
-                s_logger.debug("Adding domain info to cloud metadata");
+                logger.debug("Adding domain info to cloud metadata");
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_FILE, domain.getName());
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_ID_FILE, domain.getUuid());
             }
@@ -236,13 +257,15 @@ public class CommandSetupHelper {
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_NAME_FILE, customCloudName);
             }
 
+            addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
             cmds.addCommand("vmdata", vmDataCommand);
         }
     }
 
     public void createApplyVpnUsersCommand(final List<? extends VpnUser> users, final VirtualRouter router, final Commands cmds) {
-        final List<VpnUser> addUsers = new ArrayList<VpnUser>();
-        final List<VpnUser> removeUsers = new ArrayList<VpnUser>();
+        final List<VpnUser> addUsers = new ArrayList<>();
+        final List<VpnUser> removeUsers = new ArrayList<>();
         for (final VpnUser user : users) {
             if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
                 addUsers.add(user);
@@ -262,28 +285,47 @@ public class CommandSetupHelper {
     }
 
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, boolean remove, final Commands cmds) {
-        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIPv4Address(), vm.getHostName(), nic.getIPv6Address(),
-                _networkModel.getExecuteInSeqNtwkElmtCmd());
+        createDhcpEntryCommand(router, vm, nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getIPv4Gateway(), nic.getIPv6Gateway(),
+                nic.getNetworkId(), nic.isDefaultNic(), remove, false, cmds);
+    }
 
-        String gatewayIp = nic.getIPv4Gateway();
+    // Same as createDhcpEntryCommand(router, vm, NicVO, ...), but for a nic's association with a network other
+    // than its primary (multi-VLAN trunk nics) - takes the addressing explicitly, since a nic's own DB row only
+    // ever carries its primary network's IP/gateway. Always called with isAssociatedNetwork=true: this is the
+    // one overload every trunk-association DHCP push goes through, directly (never via the NicVO overload above).
+    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
+            final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final Commands cmds) {
+        createDhcpEntryCommand(router, vm, macAddress, ip4Address, ip6Address, ip4Gateway, ip6Gateway, networkId, isDefaultNic, remove, true, cmds);
+    }
+
+    private void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
+            final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final boolean isAssociatedNetwork,
+            final Commands cmds) {
+        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(macAddress, ip4Address, vm.getHostName(), ip6Address,
+                _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
-        dhcpCommand.setDefaultRouter(gatewayIp);
-        dhcpCommand.setIp6Gateway(nic.getIPv6Gateway());
+        dhcpCommand.setDefaultRouter(ip4Gateway);
+        dhcpCommand.setIp6Gateway(ip6Gateway);
         String ipaddress = null;
         final NicVO domrDefaultNic = findDefaultDnsIp(vm.getId());
         if (domrDefaultNic != null) {
             ipaddress = domrDefaultNic.getIPv4Address();
         }
         dhcpCommand.setDefaultDns(ipaddress);
-        dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
-        dhcpCommand.setDefault(nic.isDefaultNic());
+        dhcpCommand.setDuid(NetUtils.getDuidLL(macAddress));
+        dhcpCommand.setDefault(isDefaultNic);
+        dhcpCommand.setAssociatedNetwork(isAssociatedNetwork);
         dhcpCommand.setRemove(remove);
+
+        // Set DHCP lease timeout from zone-scoped config (0 = infinite)
+        Long leaseTime = (long) NetworkOrchestrationService.DhcpLeaseTimeout.valueIn(router.getDataCenterId());
+        dhcpCommand.setLeaseTime(leaseTime);
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
+        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmds.addCommand("dhcp", dhcpCommand);
@@ -305,7 +347,7 @@ public class CommandSetupHelper {
     public void configDnsMasq(final VirtualRouter router, final Network network, final Commands cmds) {
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.State.active);
-        final List<DhcpTO> ipList = new ArrayList<DhcpTO>();
+        final List<DhcpTO> ipList = new ArrayList<>();
 
         final NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
         final String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getIPv4Gateway(), router_guest_nic.getIPv4Netmask());
@@ -317,8 +359,8 @@ public class CommandSetupHelper {
         ipList.add(new DhcpTO(router_guest_nic.getIPv4Address(), router_guest_nic.getIPv4Gateway(), router_guest_nic.getIPv4Netmask(), startIpOfSubnet));
         for (final NicIpAliasVO ipAliasVO : ipAliasVOList) {
             final DhcpTO DhcpTO = new DhcpTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("configDnsMasq : adding ip {" + DhcpTO.getGateway() + ", " + DhcpTO.getNetmask() + ", " + DhcpTO.getRouterIp() + ", " + DhcpTO.getStartIpOfSubnet()
+            if (logger.isTraceEnabled()) {
+                logger.trace("configDnsMasq : adding ip {" + DhcpTO.getGateway() + ", " + DhcpTO.getNetmask() + ", " + DhcpTO.getRouterIp() + ", " + DhcpTO.getStartIpOfSubnet()
                         + "}");
             }
             ipList.add(DhcpTO);
@@ -350,8 +392,12 @@ public class CommandSetupHelper {
             final List<LbDestination> destinations = rule.getDestinations();
             final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
             final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
-            lb.setCidrList(rule.getCidrList());
+            String cidrList = rule.getCidrList();
+            if (cidrList != null && !cidrList.isEmpty()) {
+                lb.setCidrList(String.join(" ", cidrList.split(",")));
+            }
             lb.setLbProtocol(lb_protocol);
+            lb.setLbSslCert(rule.getLbSslCert());
             lbs[i++] = lb;
         }
         String routerPublicIp = null;
@@ -369,15 +415,16 @@ public class CommandSetupHelper {
         final NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(guestNetwork.getId(),
                 router.getId()), _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
-        String maxconn = null;
+        String maxconn;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
 
         final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()),
-                router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
+                router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
+                NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
@@ -393,16 +440,17 @@ public class CommandSetupHelper {
     }
 
     public void createApplyPortForwardingRulesCommands(final List<? extends PortForwardingRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<PortForwardingRuleTO> rulesTO = new ArrayList<PortForwardingRuleTO>();
+        final List<PortForwardingRuleTO> rulesTO = new ArrayList<>();
         if (rules != null) {
             for (final PortForwardingRule rule : rules) {
+                _rulesDao.loadSourceCidrs((PortForwardingRuleVO) rule);
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 final PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }
         }
 
-        SetPortForwardingRulesCommand cmd = null;
+        SetPortForwardingRulesCommand cmd;
 
         if (router.getVpcId() != null) {
             cmd = new SetPortForwardingRulesVpcCommand(rulesTO);
@@ -420,7 +468,7 @@ public class CommandSetupHelper {
     }
 
     public void createApplyStaticNatRulesCommands(final List<? extends StaticNatRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
+        final List<StaticNatRuleTO> rulesTO = new ArrayList<>();
         if (rules != null) {
             for (final StaticNatRule rule : rules) {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
@@ -438,12 +486,13 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
-    public void createApplyFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+    public void createApplyFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds,
+            final Long guestNetworkId, final Long vpcId) {
+        final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
-            if (rules.size() > 0) {
+            if (!rules.isEmpty()) {
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
                     systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
                 }
@@ -452,10 +501,18 @@ public class CommandSetupHelper {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
-                    final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(), Purpose.Firewall, traffictype);
+                    String srcIp = null;
+                    if (rule.getSourceIpAddressId() != null) {
+                        final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                        srcIp = sourceIp.getAddress().addr();
+                    }
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, srcIp, Purpose.Firewall, traffictype);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    if (guestNetworkId == null) {
+                        logger.warn("Skipping egress firewall rule {} as guestNetworkId is null", rule.getUuid());
+                        continue;
+                    }
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     defaultEgressPolicy = offering.isEgressDefaultPolicy();
@@ -466,9 +523,14 @@ public class CommandSetupHelper {
             }
         }
 
-        final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
+        final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO, vpcId);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        if (guestNetworkId != null) {
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        }
+        if (vpcId != null) {
+            cmd.setAccessDetail(NetworkElementCommand.VPC_ID, String.valueOf(vpcId));
+        }
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -481,14 +543,18 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
+    public void createApplyFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
+        createApplyFirewallRulesCommands(rules, router, cmds, guestNetworkId, null);
+    }
+
     public void createApplyIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
         final NetworkVO network = _networkDao.findById(guestNetworkId);
         final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();;
+        Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();
         if (rules != null) {
-            if (rules.size() > 0) {
+            if (!rules.isEmpty()) {
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
                     systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
                 }
@@ -522,25 +588,33 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
-    public void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+    public void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final Long guestNetworkId,
+            final Long vpcId) {
+        final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
-            if (rules.size() > 0) {
-                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
-                    systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
-                }
+            boolean isSystemFirewallEgressRule = !rules.isEmpty() && rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System;
+            if (isSystemFirewallEgressRule) {
+                systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
             }
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
                 _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
-                    final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(), Purpose.Firewall, traffictype);
+                    String srcIp = null;
+                    if (rule.getSourceIpAddressId() != null) {
+                        final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                        srcIp = sourceIp.getAddress().addr();
+                    }
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, srcIp, Purpose.Firewall, traffictype);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    if (guestNetworkId == null) {
+                        logger.warn("Skipping egress firewall rule {} as guestNetworkId is null", rule.getUuid());
+                        continue;
+                    }
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     defaultEgressPolicy = offering.isEgressDefaultPolicy();
@@ -551,9 +625,14 @@ public class CommandSetupHelper {
             }
         }
 
-        final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
+        final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO, vpcId);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        if (guestNetworkId != null) {
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        }
+        if (vpcId != null) {
+            cmd.setAccessDetail(NetworkElementCommand.VPC_ID, String.valueOf(vpcId));
+        }
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -566,6 +645,10 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
+    public void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final Long guestNetworkId) {
+        createFirewallRulesCommands(rules, router, cmds, guestNetworkId, router.getVpcId());
+    }
+
     public void createIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
@@ -573,7 +656,7 @@ public class CommandSetupHelper {
         final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();
         if (rules != null) {
-            if (rules.size() > 0) {
+            if (!rules.isEmpty()) {
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
                     systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
                 }
@@ -614,7 +697,7 @@ public class CommandSetupHelper {
 
     public void createNetworkACLsCommands(final List<? extends NetworkACLItem> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId,
             final boolean privateGateway) {
-        final List<NetworkACLTO> rulesTO = new ArrayList<NetworkACLTO>();
+        final List<NetworkACLTO> rulesTO = new ArrayList<>();
         String guestVlan = null;
         final Network guestNtwk = _networkDao.findById(guestNetworkId);
         final URI uri = guestNtwk.getBroadcastUri();
@@ -663,7 +746,7 @@ public class CommandSetupHelper {
     }
 
     public void createApplyStaticNatCommands(final List<? extends StaticNat> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
+        final List<StaticNatRuleTO> rulesTO = new ArrayList<>();
         if (rules != null) {
             for (final StaticNat rule : rules) {
                 final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
@@ -734,7 +817,7 @@ public class CommandSetupHelper {
             if (createVmData) {
                 final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
-                    s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
+                    logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
 
                     _userVmDao.loadDetails(vm);
                     createVmDataCommand(router, vm, nic, vm.getDetail("SSH.PublicKey"), cmds);
@@ -755,9 +838,39 @@ public class CommandSetupHelper {
 
             final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
             if (nic != null) {
-                s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+                logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
                 createDhcpEntryCommand(router, vm, nic, false, cmds);
             }
+        }
+        createDhcpEntryCommandsForAssociatedNics(router, cmds, guestNetworkId, dc, dnsBasicZoneUpdates);
+    }
+
+    // A nic whose primary network is something else but is also associated with guestNetworkId (multi-VLAN
+    // trunk nic) is invisible to the primary-only lookup above, so a full VR rebuild would otherwise drop its
+    // entry - it would keep its current lease but fail to renew once this VR is the only one it can ask.
+    private void createDhcpEntryCommandsForAssociatedNics(final DomainRouterVO router, final Commands cmds, final long guestNetworkId,
+            final DataCenterVO dc, final String dnsBasicZoneUpdates) {
+        final NetworkVO network = _networkDao.findById(guestNetworkId);
+        if (network == null) {
+            return;
+        }
+        for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNetworkId(guestNetworkId)) {
+            final NicVO nic = _nicDao.findById(association.getNicId());
+            if (nic == null) {
+                continue;
+            }
+            final UserVmVO vm = _userVmDao.findById(nic.getInstanceId());
+            if (vm == null || !(vm.getState() == VirtualMachine.State.Running || vm.getState() == VirtualMachine.State.Migrating
+                    || vm.getState() == VirtualMachine.State.Stopping)) {
+                continue;
+            }
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
+                    && dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
+                continue;
+            }
+            logger.debug("Creating dhcp entry for vm " + vm + "'s association with network " + guestNetworkId + " on domR " + router + ".");
+            createDhcpEntryCommand(router, vm, nic.getMacAddress(), association.getIp4Address(), association.getIp6Address(),
+                    network.getGateway(), network.getIp6Gateway(), guestNetworkId, false, false, cmds);
         }
     }
 
@@ -787,12 +900,15 @@ public class CommandSetupHelper {
         Boolean addSourceNat = null;
         // Ensure that in multiple vlans case we first send all ip addresses of
         // vlan1, then all ip addresses of vlan2, etc..
-        final Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PublicIpAddress>>();
+        final Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<>();
         for (final PublicIpAddress ipAddress : ips) {
-            final String vlanTag = ipAddress.getVlanTag();
+            String vlanTag = ipAddress.getVlanTag();
+            if (Objects.isNull(vlanTag)) {
+                vlanTag = "nsx-"+ipAddress.getAddress().addr();
+            }
             ArrayList<PublicIpAddress> ipList = vlanIpMap.get(vlanTag);
             if (ipList == null) {
-                ipList = new ArrayList<PublicIpAddress>();
+                ipList = new ArrayList<>();
             }
             // VR doesn't support release for sourceNat IP address; so reset the
             // state
@@ -820,7 +936,7 @@ public class CommandSetupHelper {
             final List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
 
             // Source nat ip address should always be sent first
-            Collections.sort(ipAddrList, new Comparator<PublicIpAddress>() {
+            Collections.sort(ipAddrList, new Comparator<>() {
                 @Override
                 public int compare(final PublicIpAddress o1, final PublicIpAddress o2) {
                     final boolean s1 = o1.isSourceNat();
@@ -840,10 +956,22 @@ public class CommandSetupHelper {
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
                 final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
+                String vlanTag = ipAddr.getVlanTag();
+                String key = null;
+                if (Objects.isNull(vlanTag)) {
+                    if (Hypervisor.HypervisorType.VMware == router.getHypervisorType()) {
+                        key = "nsx-" + ipAddr.getAddress().addr();
+                    } else if (Hypervisor.HypervisorType.KVM == router.getHypervisorType()) {
+                        key = "netris-" + ipAddr.getAddress().addr();
+                    }
+                } else {
+                    key = BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag()));
+                }
 
-                final String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
+                final String macAddress = vlanMacAddress.get(key);
 
-                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
+                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(),
+                        Objects.isNull(vlanTag) ? null : BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
                 setIpAddressNetworkParams(ip, network, router);
                 if (network.getPublicMtu() != null) {
@@ -857,7 +985,7 @@ public class CommandSetupHelper {
                 }
                 ipsToSend[i++] = ip;
                 if (ipAddr.isSourceNat()) {
-                    sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
+                    sourceNatIpAdd = new Pair<>(ip, ipAddr.getNetworkId());
                     addSourceNat = add;
                 }
 
@@ -895,12 +1023,12 @@ public class CommandSetupHelper {
 
         // Ensure that in multiple vlans case we first send all ip addresses of
         // vlan1, then all ip addresses of vlan2, etc..
-        final Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PublicIpAddress>>();
+        final Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<>();
         for (final PublicIpAddress ipAddress : ips) {
             final String vlanTag = ipAddress.getVlanTag();
             ArrayList<PublicIpAddress> ipList = vlanIpMap.get(vlanTag);
             if (ipList == null) {
-                ipList = new ArrayList<PublicIpAddress>();
+                ipList = new ArrayList<>();
             }
             // domR doesn't support release for sourceNat IP address; so reset
             // the state
@@ -913,7 +1041,7 @@ public class CommandSetupHelper {
 
         final List<NicVO> nics = _nicDao.listByVmId(router.getId());
         String baseMac = null;
-        Map<String, String> vlanMacAddress = new HashMap<String, String>();;
+        Map<String, String> vlanMacAddress = new HashMap<>();
         Long guestNetworkId = null;
         for (final NicVO nic : nics) {
             final NetworkVO nw = _networkDao.findById(nic.getNetworkId());
@@ -934,7 +1062,7 @@ public class CommandSetupHelper {
             final String vlanTagKey = vlanAndIp.getKey();
             final List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
             // Source nat ip address should always be sent first
-            Collections.sort(ipAddrList, new Comparator<PublicIpAddress>() {
+            Collections.sort(ipAddrList, new Comparator<>() {
                 @Override
                 public int compare(final PublicIpAddress o1, final PublicIpAddress o2) {
                     final boolean s1 = o1.isSourceNat();
@@ -962,7 +1090,7 @@ public class CommandSetupHelper {
                 final String vlanId = ipAddr.getVlanTag();
                 final String vlanGateway = ipAddr.getGateway();
                 final String vlanNetmask = ipAddr.getNetmask();
-                String vifMacAddress = null;
+                String vifMacAddress;
                 final String vlanTag = BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag()));
                 if (vlanMacAddress.containsKey(vlanTag)) {
                     vifMacAddress = vlanMacAddress.get(vlanTag);
@@ -1038,7 +1166,7 @@ public class CommandSetupHelper {
 
     private Map<String, Boolean> getVlanLastIpMap(Long vpcId, Long guestNetworkId) {
         // for network if the ips does not have any rules, then only last ip
-        final Map<String, Boolean> vlanLastIpMap = new HashMap<String, Boolean>();
+        final Map<String, Boolean> vlanLastIpMap = new HashMap<>();
         final List<IPAddressVO> userIps;
         if (vpcId != null) {
             userIps = _ipAddressDao.listByAssociatedVpc(vpcId, null);
@@ -1047,6 +1175,9 @@ public class CommandSetupHelper {
         }
         for (IPAddressVO ip : userIps) {
             String vlanTag = _vlanDao.findById(ip.getVlanId()).getVlanTag();
+            if (Objects.isNull(vlanTag)) {
+                vlanTag = "nsx-" + ip.getAddress().addr();
+            }
             Boolean lastIp = vlanLastIpMap.get(vlanTag);
             if (lastIp != null && !lastIp) {
                 continue;
@@ -1103,12 +1234,12 @@ public class CommandSetupHelper {
 
         // Ensure that in multiple vlans case we first send all ip addresses of
         // vlan1, then all ip addresses of vlan2, etc..
-        final Map<String, ArrayList<PrivateIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PrivateIpAddress>>();
+        final Map<String, ArrayList<PrivateIpAddress>> vlanIpMap = new HashMap<>();
         for (final PrivateIpAddress ipAddress : ips) {
             final String vlanTag = ipAddress.getBroadcastUri();
             ArrayList<PrivateIpAddress> ipList = vlanIpMap.get(vlanTag);
             if (ipList == null) {
-                ipList = new ArrayList<PrivateIpAddress>();
+                ipList = new ArrayList<>();
             }
 
             ipList.add(ipAddress);
@@ -1144,7 +1275,7 @@ public class CommandSetupHelper {
 
     public SetupGuestNetworkCommand createSetupGuestNetworkCommand(final DomainRouterVO router, final boolean add, final NicProfile guestNic) {
         final Network network = _networkModel.getNetwork(guestNic.getNetworkId());
-
+        final NetworkOfferingVO networkOfferingVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
         String defaultDns1 = null;
         String defaultDns2 = null;
         String defaultIp6Dns1 = null;
@@ -1180,6 +1311,10 @@ public class CommandSetupHelper {
         final NicProfile nicProfile = _networkModel.getNicProfile(router, nic.getNetworkId(), null);
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
+
+        boolean isVrGuestGateway = _networkModel.isAnyServiceSupportedInNetwork(network.getId(), Provider.VPCVirtualRouter, Service.SourceNat, Service.Gateway);
+        setupCmd.setVrGuestGateway(isVrGuestGateway);
+        setupCmd.setNetworkId(network.getId());
 
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
@@ -1280,6 +1415,45 @@ public class CommandSetupHelper {
         }
     }
 
+    protected void addNicVlanMappingToVmData(VmDataCommand cmd, UserVm vm, NicVO nic) {
+        boolean exposeMapping = nic.getMultiNetwork() && VirtualMachineManager.AllowExposeNicVlanMapping.valueIn(vm.getAccountId());
+        setOrClearVmData(cmd, NetworkModel.METATDATA_DIR, NetworkModel.NIC_VLAN_MAPPING_FILE, exposeMapping, () -> buildNicVlanMappingJson(nic));
+    }
+
+    private String buildNicVlanMappingJson(NicVO nic) {
+        List<NicNetworkMapVO> associations = _nicNetworkMapDao.listByNicId(nic.getId());
+        List<NicVlanMappingEntry> mappings = new ArrayList<>();
+        for (NicNetworkMapVO association : associations) {
+            NetworkVO associatedNetwork = _networkDao.findById(association.getNetworkId());
+            if (associatedNetwork == null || associatedNetwork.getBroadcastDomainType() != BroadcastDomainType.Vlan || associatedNetwork.getBroadcastUri() == null) {
+                continue;
+            }
+            String vlanTag = BroadcastDomainType.Vlan.getValueFrom(associatedNetwork.getBroadcastUri());
+            mappings.add(new NicVlanMappingEntry(associatedNetwork.getUuid(), associatedNetwork.getName(), vlanTag));
+        }
+        return mappings.isEmpty() ? "" : new Gson().toJson(mappings);
+    }
+
+    /**
+     * Sends the current value when {@code shouldExist}, otherwise sends "" - vmdata.py's signal to delete a
+     * previously-written file - so a guest never keeps seeing stale metadata once the condition no longer holds.
+     */
+    private void setOrClearVmData(VmDataCommand cmd, String folder, String file, boolean shouldExist, Supplier<String> valueSupplier) {
+        cmd.addVmData(folder, file, shouldExist ? valueSupplier.get() : "");
+    }
+
+    private static final class NicVlanMappingEntry {
+        private final String networkId;
+        private final String networkName;
+        private final String vlan;
+
+        private NicVlanMappingEntry(String networkId, String networkName, String vlan) {
+            this.networkId = networkId;
+            this.networkName = networkName;
+            this.vlan = vlan;
+        }
+    }
+
     private NicVO findGatewayIp(final long userVmId) {
         final NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
         return defaultNic;
@@ -1331,7 +1505,7 @@ public class CommandSetupHelper {
 
     private void setIpAddressNetworkParams(IpAddressTO ipAddress, final Network network, final VirtualRouter router) {
         if (_networkModel.isPrivateGateway(network.getId())) {
-            s_logger.debug("network " + network.getId() + " (name: " + network.getName() + " ) is a vpc private gateway, set traffic type to Public");
+            logger.debug("network (id: {}, uuid: {}, name: {}) is a vpc private gateway, set traffic type to Public", network.getId(), network.getUuid(), network.getName());
             ipAddress.setTrafficType(TrafficType.Public);
             ipAddress.setPrivateGateway(true);
         } else {
@@ -1344,7 +1518,8 @@ public class CommandSetupHelper {
         nicTO.setMac(ipAddress.getVifMacAddress());
         nicTO.setType(ipAddress.getTrafficType());
         nicTO.setGateway(ipAddress.getVlanGateway());
-        nicTO.setBroadcastUri(BroadcastDomainType.fromString(ipAddress.getBroadcastUri()));
+        URI broadcastUri = ipAddress.getBroadcastUri() != null ? BroadcastDomainType.fromString(ipAddress.getBroadcastUri()) : null;
+        nicTO.setBroadcastUri(broadcastUri);
         nicTO.setType(network.getTrafficType());
         nicTO.setName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
         nicTO.setBroadcastType(network.getBroadcastDomainType());
@@ -1358,7 +1533,7 @@ public class CommandSetupHelper {
 
     private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
         if (network == null) {
-            s_logger.debug("Unable to get NIC details as the network is null");
+            logger.debug("Unable to get NIC details as the network is null");
             return null;
         }
         Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
@@ -1385,5 +1560,51 @@ public class CommandSetupHelper {
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             cmds.addCommand("updateNetwork", cmd);
         }
+    }
+
+    public void createHandleCksIsoCommand(final VirtualRouter router, final boolean mount, Commands cmds) {
+        HandleCksIsoCommand command = new HandleCksIsoCommand(mount);
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand("handleCksIso", command);
+    }
+
+    public void createBgpPeersCommands(final List<? extends BgpPeer> bgpPeers, final VirtualRouter router, final Commands cmds, final Network network) {
+        List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
+
+        ASNumberVO asNumberVO = router.getVpcId() != null ?
+                asNumberDao.findByZoneAndVpcId(router.getDataCenterId(), router.getVpcId()) :
+                asNumberDao.findByZoneAndNetworkId(router.getDataCenterId(), network.getId());
+        if (asNumberVO == null) {
+            logger.debug("No AS number found for the guest network or VPC, skipping.");
+            return;
+        }
+
+        List<Network> guestNetworks = new ArrayList<>();
+        if (router.getVpcId() != null) {
+            List<NetworkVO> networks = _networkDao.listByVpc(router.getVpcId());
+            for (NetworkVO networkVO : networks) {
+                final NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(networkVO.getNetworkOfferingId());
+                if (NetworkOffering.RoutingMode.Dynamic.equals(offering.getRoutingMode())) {
+                    guestNetworks.add(networkVO);
+                }
+            }
+        } else {
+            guestNetworks.add(network);
+        }
+        for (BgpPeer bgpPeer: bgpPeers) {
+            Map<BgpPeer.Detail, String> bgpPeerDetails = bgpPeerDetailsDao.getBgpPeerDetails(bgpPeer.getId());
+            for (Network guestNetwork : guestNetworks) {
+                bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
+                        guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
+            }
+        }
+
+        final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand("bgpPeersCommand", cmd);
     }
 }

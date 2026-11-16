@@ -19,9 +19,9 @@
 
 package org.apache.cloudstack.cluster;
 
+import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -30,19 +30,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterDrsMetric;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterImbalance;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getMetricValue;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.junit.Assert.assertEquals;
@@ -62,18 +65,13 @@ public class BalancedTest {
 
     ServiceOfferingVO serviceOffering;
 
+    ClusterVO cluster;
+
     long clusterId = 1L;
 
     Map<Long, List<VirtualMachine>> hostVmMap;
 
-    List<Long> cpuList, memoryList;
-
-    Map<Long, Long> hostCpuUsedMap, hostMemoryUsedMap;
-
-
-    @Mock
-    private ServiceOfferingDao serviceOfferingDao;
-
+    Map<Long, Ternary<Long, Long, Long>> hostCpuFreeMap, hostMemoryFreeMap;
 
     private AutoCloseable closeable;
 
@@ -81,6 +79,7 @@ public class BalancedTest {
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         closeable = MockitoAnnotations.openMocks(this);
 
+        cluster = Mockito.mock(ClusterVO.class);
 
         vm1 = Mockito.mock(VirtualMachine.class);
         vm2 = Mockito.mock(VirtualMachine.class);
@@ -92,30 +91,27 @@ public class BalancedTest {
         hostVmMap.put(2L, Arrays.asList(vm2, vm3));
 
         serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+
+        Mockito.when(cluster.getId()).thenReturn(clusterId);
         Mockito.when(vm3.getHostId()).thenReturn(2L);
-
         Mockito.when(destHost.getId()).thenReturn(1L);
-
         Mockito.when(serviceOffering.getCpu()).thenReturn(1);
         Mockito.when(serviceOffering.getSpeed()).thenReturn(1000);
-        Mockito.when(serviceOffering.getRamSize()).thenReturn(512);
+        Mockito.when(serviceOffering.getRamSize()).thenReturn(1024);
 
         overrideDefaultConfigValue(ClusterDrsImbalanceThreshold, "_defaultValue", "0.5");
 
-        cpuList = Arrays.asList(1L, 2L);
-        memoryList = Arrays.asList(512L, 2048L);
+        hostCpuFreeMap = new HashMap<>();
+        hostCpuFreeMap.put(1L, new Ternary<>(1000L, 0L, 10000L));
+        hostCpuFreeMap.put(2L, new Ternary<>(2000L, 0L, 10000L));
 
-        hostCpuUsedMap = new HashMap<>();
-        hostCpuUsedMap.put(1L, 1000L);
-        hostCpuUsedMap.put(2L, 2000L);
-
-        hostMemoryUsedMap = new HashMap<>();
-        hostMemoryUsedMap.put(1L, 512L * 1024L * 1024L);
-        hostMemoryUsedMap.put(2L, 2048L * 1024L * 1024L);
+        hostMemoryFreeMap = new HashMap<>();
+        hostMemoryFreeMap.put(1L, new Ternary<>(512L * 1024L * 1024L, 0L, 8192L * 1024L * 1024L));
+        hostMemoryFreeMap.put(2L, new Ternary<>(2048L * 1024L * 1024L, 0L, 8192L * 1024L * 1024L));
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name,
-                                            final Object o) throws IllegalAccessException, NoSuchFieldException {
+            final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field f = ConfigKey.class.getDeclaredField(name);
         f.setAccessible(true);
         f.set(configKey, o);
@@ -124,6 +120,48 @@ public class BalancedTest {
     @After
     public void tearDown() throws Exception {
         closeable.close();
+    }
+
+    /**
+     * Helper method to prepare metrics data for getMetrics calls with optimized signature.
+     * Calculates pre-imbalance and builds baseMetricsArray and hostIdToIndexMap.
+     *
+     * @return a Ternary containing preImbalance, baseMetricsArray, and hostIdToIndexMap
+     */
+    private Ternary<Double, double[], Map<Long, Integer>> prepareMetricsData() throws ConfigurationException {
+        // Calculate pre-imbalance
+        Double preImbalance = getClusterImbalance(clusterId, new ArrayList<>(hostCpuFreeMap.values()),
+                new ArrayList<>(hostMemoryFreeMap.values()), null);
+
+        // Build baseMetricsArray and hostIdToIndexMap
+        String metricType = getClusterDrsMetric(clusterId);
+        Map<Long, Ternary<Long, Long, Long>> baseMetricsMap = "cpu".equals(metricType) ? hostCpuFreeMap : hostMemoryFreeMap;
+        double[] baseMetricsArray = new double[baseMetricsMap.size()];
+        Map<Long, Integer> hostIdToIndexMap = new HashMap<>();
+
+        int index = 0;
+        for (Map.Entry<Long, Ternary<Long, Long, Long>> entry : baseMetricsMap.entrySet()) {
+            Long hostId = entry.getKey();
+            Ternary<Long, Long, Long> metrics = entry.getValue();
+            long used = metrics.first();
+            long actualTotal = metrics.third() - metrics.second();
+            long free = actualTotal - metrics.first();
+            Double metricValue = getMetricValue(clusterId, used, free, actualTotal, null);
+            if (metricValue != null) {
+                baseMetricsArray[index] = metricValue;
+                hostIdToIndexMap.put(hostId, index);
+                index++;
+            }
+        }
+
+        // Trim array if some values were null
+        if (index < baseMetricsArray.length) {
+            double[] trimmed = new double[index];
+            System.arraycopy(baseMetricsArray, 0, trimmed, 0, index);
+            baseMetricsArray = trimmed;
+        }
+
+        return new Ternary<>(preImbalance, baseMetricsArray, hostIdToIndexMap);
     }
 
     /**
@@ -144,7 +182,7 @@ public class BalancedTest {
     @Test
     public void needsDrsWithCpu() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
-        assertFalse(balanced.needsDrs(clusterId, cpuList, memoryList));
+        assertFalse(balanced.needsDrs(cluster, new ArrayList<>(hostCpuFreeMap.values()), new ArrayList<>(hostMemoryFreeMap.values())));
     }
 
     /*
@@ -154,14 +192,14 @@ public class BalancedTest {
     @Test
     public void needsDrsWithMemory() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-        assertTrue(balanced.needsDrs(clusterId, cpuList, memoryList));
+        assertTrue(balanced.needsDrs(cluster, new ArrayList<>(hostCpuFreeMap.values()), new ArrayList<>(hostMemoryFreeMap.values())));
     }
 
     /* 3. cluster with "unknown" metric */
     @Test
-    public void needsDrsWithUnknown() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
+    public void needsDrsWithUnknown() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "unknown");
-        assertThrows(ConfigurationException.class, () -> balanced.needsDrs(clusterId, cpuList, memoryList));
+        assertThrows(ConfigurationException.class, () -> balanced.needsDrs(cluster, new ArrayList<>(hostCpuFreeMap.values()), new ArrayList<>(hostMemoryFreeMap.values())));
     }
 
     /**
@@ -188,10 +226,16 @@ public class BalancedTest {
      improvement = 0.3333 - 0.3333  = 0.0
     */
     @Test
-    public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException {
+    public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException, ConfigurationException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
-        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost,
-                hostCpuUsedMap, hostMemoryUsedMap, false);
+
+        Ternary<Double, double[], Map<Long, Integer>> metricsData = prepareMetricsData();
+        Double preImbalance = metricsData.first();
+        double[] baseMetricsArray = metricsData.second();
+        Map<Long, Integer> hostIdToIndexMap = metricsData.third();
+
+        Ternary<Double, Double, Double> result = balanced.getMetrics(cluster, vm3, serviceOffering, destHost,
+                hostCpuFreeMap, hostMemoryFreeMap, false, preImbalance, baseMetricsArray, hostIdToIndexMap);
         assertEquals(0.0, result.first(), 0.01);
         assertEquals(0.0, result.second(), 0.0);
         assertEquals(1.0, result.third(), 0.0);
@@ -202,24 +246,16 @@ public class BalancedTest {
      improvement = 0.6 - 0.2 = 0.4
     */
     @Test
-    public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException {
+    public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException, ConfigurationException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost,
-                hostCpuUsedMap, hostMemoryUsedMap, false);
-        assertEquals(0.4, result.first(), 0.01);
-        assertEquals(0, result.second(), 0.0);
-        assertEquals(1, result.third(), 0.0);
-    }
 
-    /*
-     3. cluster with default metric
-     improvement = 0.3333 + 0.6 - 0.3333 - 0.2 = 0.4
-    */
-    @Test
-    public void getMetricsWithDefault() throws NoSuchFieldException, IllegalAccessException {
-        overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
-        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost,
-                hostCpuUsedMap, hostMemoryUsedMap, false);
+        Ternary<Double, double[], Map<Long, Integer>> metricsData = prepareMetricsData();
+        Double preImbalance = metricsData.first();
+        double[] baseMetricsArray = metricsData.second();
+        Map<Long, Integer> hostIdToIndexMap = metricsData.third();
+
+        Ternary<Double, Double, Double> result = balanced.getMetrics(cluster, vm3, serviceOffering, destHost,
+                hostCpuFreeMap, hostMemoryFreeMap, false, preImbalance, baseMetricsArray, hostIdToIndexMap);
         assertEquals(0.4, result.first(), 0.01);
         assertEquals(0, result.second(), 0.0);
         assertEquals(1, result.third(), 0.0);

@@ -20,11 +20,11 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.StorageService;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.object.ObjectStore;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,11 +39,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AddObjectStoragePoolCmdTest {
-    public static final Logger s_logger = Logger.getLogger(AddObjectStoragePoolCmdTest.class.getName());
 
     @Mock
     StorageService storageService;
@@ -63,17 +64,22 @@ public class AddObjectStoragePoolCmdTest {
 
     String provider = "Simulator";
 
+    Long size = 10L;
+
     Map<String, String> details;
+
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         details = new HashMap<>();
         addObjectStoragePoolCmdSpy = Mockito.spy(new AddObjectStoragePoolCmd());
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "name", name);
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "url", url);
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "providerName", provider);
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "details", details);
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "size", size);
         addObjectStoragePoolCmdSpy._storageService = storageService;
         addObjectStoragePoolCmdSpy._responseGenerator = responseGenerator;
     }
@@ -81,17 +87,52 @@ public class AddObjectStoragePoolCmdTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testAddObjectStore() throws DiscoveryException {
         Mockito.doReturn(objectStore).when(storageService).discoverObjectStore(Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), anyObject());
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), any());
         ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
-        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(anyObject());
+        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(any());
         addObjectStoragePoolCmdSpy.execute();
 
         Mockito.verify(storageService, Mockito.times(1))
-                .discoverObjectStore(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+                .discoverObjectStore(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRequestIsMarkedAsContainingSensitiveInformation() {
+        APICommand apiCommand = AddObjectStoragePoolCmd.class.getAnnotation(APICommand.class);
+
+        assertNotNull(apiCommand);
+        assertTrue(apiCommand.requestHasSensitiveInfo());
+    }
+
+    @Test
+    public void testCredentialsAndProviderOptionsReachDiscoveryUnchanged() throws DiscoveryException {
+        Map<String, String> expected = new HashMap<>();
+        expected.put("accesskey", "ACCESS_SENTINEL");
+        expected.put("secretkey", "SECRET+key&with=symbols");
+        expected.put("validateSSL", "true");
+        expected.put("s3Url", "https://s3.example.test");
+        expected.put("iamUrl", "https://iam.example.test");
+        Map<Integer, Map<String, String>> indexedDetails = new HashMap<>();
+        int index = 0;
+        for (Map.Entry<String, String> entry : expected.entrySet()) {
+            Map<String, String> detail = new HashMap<>();
+            detail.put("key", entry.getKey());
+            detail.put("value", entry.getValue());
+            indexedDetails.put(index++, detail);
+        }
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "details", indexedDetails);
+        Mockito.doReturn(objectStore).when(storageService).discoverObjectStore(Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), any());
+        Mockito.doReturn(new ObjectStoreResponse()).when(responseGenerator).createObjectStoreResponse(any());
+
+        addObjectStoragePoolCmdSpy.execute();
+
+        Mockito.verify(storageService).discoverObjectStore(name, url, size, provider, expected);
     }
 }

@@ -1,0 +1,192 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+
+package com.cloud.hypervisor.kvm.resource.wrapper;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckVolumeAnswer;
+import com.cloud.agent.api.CheckVolumeCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.libvirt.LibvirtException;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@ResourceWrapper(handles = CheckVolumeCommand.class)
+public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
+
+    private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(
+            Storage.StoragePoolType.Filesystem,
+            Storage.StoragePoolType.NetworkFilesystem,
+            Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.RBD,
+            Storage.StoragePoolType.Linstor);
+
+    @Override
+    public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        String srcFile = command.getSrcFile();
+        StorageFilerTO storageFilerTO = command.getStorageFilerTO();
+        KVMStoragePoolManager poolMgr = libvirtComputingResource.getStoragePoolMgr();
+        KVMStoragePool pool = poolMgr.getStoragePool(storageFilerTO.getType(), storageFilerTO.getUuid());
+
+        try {
+            if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
+                if (Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
+                    List<VolumeOnStorageTO> volumes = pool.getVolumesForImport(srcFile);
+                    if (volumes == null || volumes.size() != 1 || !srcFile.equals(volumes.get(0).getPath())) {
+                        return new CheckVolumeAnswer(command, false, "LINSTOR volume not found", 0, null);
+                    }
+                    VolumeOnStorageTO volume = volumes.get(0);
+                    return new CheckVolumeAnswer(command, true, "", volume.getVirtualSize(), volume.getDetails());
+                }
+                final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
+                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())) {
+                    return checkRbdVolume(command, pool, vol);
+                }
+                final String path = vol.getPath();
+                final boolean isRbd = Storage.StoragePoolType.RBD.equals(storageFilerTO.getType());
+
+                Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, vol);
+                if (MapUtils.isEmpty(volumeDetails)) {
+                    return new Answer(command, false, "Unable to read the volume on the storage pool");
+                }
+
+                if (!isRbd) {
+                    try {
+                        KVMPhysicalDisk.checkQcow2File(path);
+                    } catch (final CloudRuntimeException e) {
+                        return new CheckVolumeAnswer(command, false, "", 0, volumeDetails);
+                    }
+                }
+
+                // Images on RBD are raw and the path is an image name that qemu-img cannot open
+                // without the rbd: URI, so take the size libvirt already reported for the volume.
+                long size = isRbd ? vol.getVirtualSize() : KVMPhysicalDisk.getVirtualSizeFromFile(path);
+                return new CheckVolumeAnswer(command, true, "", size, volumeDetails);
+            } else {
+                return new Answer(command, false, "Unsupported Storage Pool");
+            }
+        } catch (final Exception e) {
+            logger.error("Error while checking the disk: {}", e.getMessage());
+            return new Answer(command, false, e.getMessage());
+        }
+    }
+
+    /**
+     * RBD (Ceph) volumes are raw images that cannot be inspected through direct file reads
+     * (checkQcow2File / getVirtualSizeFromFile operate on a local path). Instead the volume is
+     * inspected through the RBD URI via qemu-img (see {@link #getDiskFileInfo}). The virtual size
+     * is taken from the disk reported by the storage pool, and the encrypted/backing-file/locked
+     * details are still collected so the management server can apply its import validations.
+     */
+    private Answer checkRbdVolume(final CheckVolumeCommand command, final KVMStoragePool pool, final KVMPhysicalDisk disk) {
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, disk);
+        if (volumeDetails == null) {
+            return new CheckVolumeAnswer(command, false, "", 0, null);
+        }
+        return new CheckVolumeAnswer(command, true, "", disk.getVirtualSize(), volumeDetails);
+    }
+
+    private Map<VolumeOnStorageTO.Detail, String> getVolumeDetails(KVMStoragePool pool, KVMPhysicalDisk disk) {
+        Map<String, String> info = getDiskFileInfo(pool, disk, true);
+        if (MapUtils.isEmpty(info)) {
+            return null;
+        }
+
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = new HashMap<>();
+
+        String backingFilePath = info.get(QemuImg.BACKING_FILE);
+        if (StringUtils.isNotBlank(backingFilePath)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.BACKING_FILE, backingFilePath);
+        }
+        String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
+        if (StringUtils.isNotBlank(backingFileFormat)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, backingFileFormat);
+        }
+        String clusterSize = info.get(QemuImg.CLUSTER_SIZE);
+        if (StringUtils.isNotBlank(clusterSize)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.CLUSTER_SIZE, clusterSize);
+        }
+        String fileFormat = info.get(QemuImg.FILE_FORMAT);
+        if (StringUtils.isNotBlank(fileFormat)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
+        }
+        String encrypted = info.get(QemuImg.ENCRYPTED);
+        if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
+        }
+        boolean isLocked = isDiskFileLocked(pool, disk);
+        if (!isLocked) {
+            // For clustered block storage (Linstor/DRBD) the host-local qemu-img lock is not
+            // authoritative: a volume can be attached to a running VM on another node. Consult
+            // the backend's cluster-wide in-use state so such a volume is not adopted.
+            String inUseNode = pool.getVolumeInUseNode(disk.getName());
+            if (KVMStoragePool.IN_USE_NODE_UNKNOWN.equals(inUseNode)) {
+                logger.warn("Could not determine cluster-wide in-use state of volume {}; marking as locked",
+                        disk.getName());
+                isLocked = true;
+            } else if (inUseNode != null) {
+                logger.info("Volume {} is in use on node {}; marking as locked", disk.getName(), inUseNode);
+                isLocked = true;
+            }
+        }
+        volumeDetails.put(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
+
+        return volumeDetails;
+    }
+
+    private Map<String, String> getDiskFileInfo(KVMStoragePool pool, KVMPhysicalDisk disk, boolean secure) {
+        if (!STORAGE_POOL_TYPES_SUPPORTED.contains(pool.getType())) {
+            return new HashMap<>(); // unknown
+        }
+        try {
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+            if (Storage.StoragePoolType.RBD.equals(pool.getType())) {
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool, disk.getPath());
+                qemuFile = new QemuImgFile(rbdDestFile, disk.getFormat());
+            }
+            return qemu.info(qemuFile, secure);
+        } catch (QemuImgException | LibvirtException ex) {
+            logger.error("Failed to get info of disk file: " + ex.getMessage());
+            return null;
+        }
+    }
+
+    private boolean isDiskFileLocked(KVMStoragePool pool, KVMPhysicalDisk disk) {
+        Map<String, String> info = getDiskFileInfo(pool, disk, false);
+        return info == null;
+    }
+}

@@ -18,6 +18,7 @@
 package com.cloud.event;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +26,21 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.vm.Nic;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -46,9 +54,12 @@ public class UsageEventUtils {
     private static UsageEventDao s_usageEventDao;
     private static AccountDao s_accountDao;
     private static DataCenterDao s_dcDao;
-    private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
+    private static NetworkDao s_networkDao;
+    private static NicNetworkMapDao s_nicNetworkMapDao;
+    protected static Logger LOGGER = LogManager.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
     protected static ConfigurationDao s_configDao;
+    private static EventDistributor eventDistributor;
 
     @Inject
     UsageEventDao usageEventDao;
@@ -58,6 +69,10 @@ public class UsageEventUtils {
     DataCenterDao dcDao;
     @Inject
     ConfigurationDao configDao;
+    @Inject
+    NetworkDao networkDao;
+    @Inject
+    NicNetworkMapDao nicNetworkMapDao;
 
     public UsageEventUtils() {
     }
@@ -68,6 +83,8 @@ public class UsageEventUtils {
         s_accountDao = accountDao;
         s_dcDao = dcDao;
         s_configDao = configDao;
+        s_networkDao = networkDao;
+        s_nicNetworkMapDao = nicNetworkMapDao;
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -89,6 +106,60 @@ public class UsageEventUtils {
         }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
 
+    }
+
+    // named distinctly, rather than as another publishUsageEvent(...) overload, because its parameter shape
+    // (Map<String, String>, boolean) is only distinguishable at compile time from the existing (Long, boolean)
+    // overload above when neither argument is a literal null - several existing call sites pass null literals
+    // here, which would make an overload ambiguous
+    public static void publishUsageEventWithDetails(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, Map<String, String> details, boolean displayResource) {
+        if (displayResource) {
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, details);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    /**
+     * Emits one {@code usageType} usage event per network a NIC is actually billed against - its primary
+     * network, plus any additional networks it is associated with as a multi-VLAN trunk nic. An ordinary,
+     * non-trunk nic has exactly one such network, so this is identical to today's single-event behaviour for
+     * every legacy nic. Each event carries the network id as a detail, so the usage-processing side can
+     * disambiguate rows when a trunk nic's networks share the same network offering.
+     */
+    public static void publishNicNetworkOfferingUsageEvents(String usageType, long accountId, long zoneId, long vmId, String entityType, String entityUUID,
+            Nic nic, long isDefault, boolean displayResource) {
+        NetworkVO primaryNetwork = s_networkDao.findById(nic.getNetworkId());
+        if (primaryNetwork != null) {
+            publishNicNetworkOfferingUsageEvent(usageType, accountId, zoneId, vmId, entityType, entityUUID, nic.getId(), primaryNetwork, isDefault, displayResource);
+        }
+        if (nic.getMultiNetwork()) {
+            for (NicNetworkMapVO association : s_nicNetworkMapDao.listByNicId(nic.getId())) {
+                NetworkVO associatedNetwork = s_networkDao.findById(association.getNetworkId());
+                if (associatedNetwork != null) {
+                    publishNicNetworkOfferingUsageEvent(usageType, accountId, zoneId, vmId, entityType, entityUUID, nic.getId(), associatedNetwork, isDefault,
+                            displayResource);
+                }
+            }
+        }
+    }
+
+    // Public so a single association can be billed immediately outside the nic-wide loop above - e.g. a live
+    // associateNetworkToNic/disassociateNetworkFromNic on a Running VM, where only the one network just
+    // (dis)associated should be billed, not every network the nic already has.
+    public static void publishNicNetworkOfferingUsageEvent(String usageType, long accountId, long zoneId, long vmId, String entityType, String entityUUID,
+            long nicId, NetworkVO network, long isDefault, boolean displayResource) {
+        Map<String, String> details = Collections.singletonMap(UsageEventVO.DynamicParameters.networkId.name(), String.valueOf(network.getId()));
+        publishUsageEventWithDetails(usageType, accountId, zoneId, vmId, Long.toString(nicId), network.getNetworkOfferingId(), null, isDefault, entityType, entityUUID,
+                details, displayResource);
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, Long vmId, boolean displayResource) {
+        if (displayResource) {
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, offeringId, templateId, size, vmId, resourceName);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -199,6 +270,10 @@ public class UsageEventUtils {
         s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, vmId, securityGroupId));
     }
 
+    public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, Long offeringId, Long templateId, Long size, Long vmId, String resourceName) {
+        s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, offeringId, templateId, size, vmId, resourceName));
+    }
+
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
         String configKey = "publish.usage.events";
         String value = s_configDao.getValue(configKey);
@@ -206,9 +281,9 @@ public class UsageEventUtils {
         if( !configValue)
             return;
         try {
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
         } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+            return; // no provider is configured to provide events distributor, so just return
         }
 
         Account account = s_accountDao.findById(accountId);
@@ -237,13 +312,27 @@ public class UsageEventUtils {
 
         event.setDescription(eventDescription);
 
-        try {
-            s_eventBus.publish(event);
-        } catch (EventBusException e) {
-            s_logger.warn("Failed to publish usage event on the event bus.");
-        }
+        eventDistributor.publish(event);
     }
 
     static final String Name = "management-server";
+
+    public static void publishNetworkCreation(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(),
+                network.getUuid());
+    }
+
+    public static void publishNetworkUpdate(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, network.getState().name(),
+                Network.class.getName(), network.getUuid(), true);
+    }
+
+    public static void publishNetworkDeletion(Network network) {
+        publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(),
+                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null,
+                Network.class.getName(), network.getUuid());
+    }
 
 }

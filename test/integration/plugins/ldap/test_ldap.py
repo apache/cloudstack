@@ -101,11 +101,13 @@ class TestLDAP(cloudstackTestCase):
     def tearDownClass(cls):
         cls.logger.info("Tearing Down Class")
         try:
-            cleanup_resources(cls.apiclient, reversed(cls._cleanup))
-            cls.remove_ldap_configuration_for_domains()
-            cls.logger.debug("done cleaning up resources in tearDownClass(cls) %s")
-        except Exception as e:
-            cls.logger.debug("Exception in tearDownClass(cls): %s" % e)
+            super(TestLDAP, cls).tearDownClass()
+        finally:
+            try:
+                cls.remove_ldap_configuration_for_domains()
+                cls.logger.debug("done cleaning up resources in tearDownClass(cls) %s")
+            except Exception as e:
+                cls.logger.debug("Exception in tearDownClass(cls): %s" % e)
 
     def setUp(self):
         self.cleanup = []
@@ -116,11 +118,7 @@ class TestLDAP(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestLDAP, self).tearDown()
 
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_01_manual(self):
@@ -349,8 +347,8 @@ class TestLDAP(cloudstackTestCase):
         if parent_domain:
             domain_to_create["parentdomainid"] = parent_domain
         tmpDomain = Domain.create(cls.apiclient, domain_to_create)
-        cls.logger.debug("Created domain %s with id %s " % (tmpDomain.name, tmpDomain.id))
         cls._cleanup.append(tmpDomain)
+        cls.logger.debug("Created domain %s with id %s " % (tmpDomain.name, tmpDomain.id))
         return tmpDomain
 
     @classmethod

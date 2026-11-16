@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteLBHealthCheckPolicy", description = "Deletes a load balancer health check policy.", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteLBHealthCheckPolicyCmd.class.getName());
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
@@ -46,7 +44,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = LBHealthCheckResponse.class,
                required = true,
-               description = "the ID of the load balancer health check policy")
+               description = "The ID of the load balancer health check policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -78,12 +76,12 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer health check policy: " + getId();
+        return "Deleting load balancer health check policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer health check policy Id: " + getId());
+        CallContext.current().setEventDetails("Load balancer health check policy ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _lbService.deleteLBHealthCheckPolicy(getId(), true);
 
         if (result) {

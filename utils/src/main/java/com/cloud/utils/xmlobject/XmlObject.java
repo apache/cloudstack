@@ -27,12 +27,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XmlObject {
-    private final Logger logger = Logger.getLogger(XmlObject.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
@@ -54,14 +55,11 @@ public class XmlObject {
         }
         Object old = elements.get(key);
         if (old == null) {
-            //System.out.println(String.format("no %s, add new", key));
             elements.put(key, e);
         } else {
             if (old instanceof List) {
-                //System.out.println(String.format("already list %s, add", key));
                 ((List)old).add(e);
             } else {
-                //System.out.println(String.format("not list list %s, add list", key));
                 List lst = new ArrayList();
                 lst.add(old);
                 lst.add(e);

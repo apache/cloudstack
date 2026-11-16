@@ -32,6 +32,13 @@ public class NicTO extends NetworkTO {
     Map<NetworkOffering.Detail, String> details;
     boolean dpdkEnabled;
     Integer mtu;
+    Long networkId;
+    boolean enabled;
+
+    String networkSegmentName;
+
+    boolean trunkVlan;
+    List<NetworkTO> associatedNetworks;
 
     public NicTO() {
         super();
@@ -83,6 +90,14 @@ public class NicTO extends NetworkTO {
         this.nicUuid = uuid;
     }
 
+    public String getNicUuid() {
+        return nicUuid;
+    }
+
+    public void setNicUuid(String nicUuid) {
+        this.nicUuid = nicUuid;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("]").toString();
@@ -126,5 +141,46 @@ public class NicTO extends NetworkTO {
 
     public void setMtu(Integer mtu) {
         this.mtu = mtu;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
+    }
+
+    public String getNetworkSegmentName() {
+        return networkSegmentName;
+    }
+
+    public void setNetworkSegmentName(String networkSegmentName) {
+        this.networkSegmentName = networkSegmentName;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    // trunkVlan/associatedNetworks carry the additional networks for a multi-VLAN trunk nic; unset for ordinary nics
+    public boolean isTrunkVlan() {
+        return trunkVlan;
+    }
+
+    public void setTrunkVlan(boolean trunkVlan) {
+        this.trunkVlan = trunkVlan;
+    }
+
+    public List<NetworkTO> getAssociatedNetworks() {
+        return associatedNetworks;
+    }
+
+    public void setAssociatedNetworks(List<NetworkTO> associatedNetworks) {
+        this.associatedNetworks = associatedNetworks;
     }
 }

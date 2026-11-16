@@ -25,25 +25,22 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Types.XenAPIException;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 @ResourceWrapper(handles = ListDataStoreObjectsCommand.class)
 public final class CitrixListDataStoreObjectsCommandWrapper extends CommandWrapper<ListDataStoreObjectsCommand, Answer, CitrixResourceBase> {
-
-    private static final Logger LOGGER = Logger.getLogger(CitrixListDataStoreObjectsCommandWrapper.class);
 
     @Override
     public Answer execute(final ListDataStoreObjectsCommand command, final CitrixResourceBase citrixResourceBase) {
         try {
             return citrixResourceBase.listFilesAtPath(command);
         } catch (XenAPIException e) {
-            LOGGER.warn("XenAPI exception", e);
+            logger.warn("XenAPI exception", e);
 
         } catch (XmlRpcException e) {
-            LOGGER.warn("Xml Rpc Exception", e);
+            logger.warn("Xml Rpc Exception", e);
         } catch (Exception e) {
-            LOGGER.warn("Caught exception", e);
+            logger.warn("Caught exception", e);
         }
         return null;
     }

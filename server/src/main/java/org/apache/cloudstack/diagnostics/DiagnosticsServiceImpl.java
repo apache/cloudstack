@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -70,6 +69,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -77,7 +77,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class DiagnosticsServiceImpl extends ManagerBase implements PluggableService, DiagnosticsService, Configurable {
-    private static final Logger LOGGER = Logger.getLogger(DiagnosticsServiceImpl.class);
 
     @Inject
     private AgentManager agentManager;
@@ -128,6 +127,12 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final String cmdType = cmd.getType().getValue();
         final String ipAddress = cmd.getAddress();
         final String optionalArguments = cmd.getOptionalArguments();
+
+        if (StringUtils.isBlank(ipAddress) || !isValidIpOrHostname(ipAddress)) {
+            throw new InvalidParameterValueException("Invalid ipaddress value: " + ipAddress +
+                    ". It must be a valid IPv4/IPv6 address or hostname.");
+        }
+
         final VMInstanceVO vmInstance = instanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.DomainRouter, VirtualMachine.Type.SecondaryStorageVm);
 
         if (vmInstance == null) {
@@ -142,7 +147,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final String shellCmd = prepareShellCmd(cmdType, ipAddress, optionalArguments);
 
         if (StringUtils.isEmpty(shellCmd)) {
-            throw new IllegalArgumentException("Optional parameters contain unwanted characters: " + optionalArguments);
+            throw new InvalidParameterValueException("Diagnostics command contains invalid characters in ipaddress or optional parameters");
         }
 
         final Hypervisor.HypervisorType hypervisorType = vmInstance.getHypervisorType();
@@ -151,7 +156,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final Map<String, String> accessDetails = networkManager.getSystemVMAccessDetails(vmInstance);
 
         if (StringUtils.isEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
-            throw new CloudRuntimeException("Unable to set system vm ControlIP for system vm with ID: " + vmId);
+            throw new CloudRuntimeException("Unable to set system vm ControlIP for system vm: " + vmInstance);
         }
 
         command.setAccessDetail(accessDetails);
@@ -178,7 +183,20 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         }
     }
 
+    protected boolean isValidIpOrHostname(String address) {
+        if (StringUtils.isBlank(address)) {
+            return false;
+        }
+        if (NetUtils.isValidIp4(address) || NetUtils.isValidIp6(address)) {
+            return true;
+        }
+        return NetUtils.verifyDomainName(address);
+    }
+
     protected String prepareShellCmd(String cmdType, String ipAddress, String optionalParams) {
+        if (!isValidIpOrHostname(ipAddress)) {
+            return null;
+        }
         final String CMD_TEMPLATE = String.format("%s %s", cmdType, ipAddress);
         if (StringUtils.isEmpty(optionalParams)) {
             return CMD_TEMPLATE;
@@ -211,11 +229,26 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         return zipFilesAnswer.getDetails().replace("\n", "");
     }
 
+    private static final Pattern VALID_DIAG_FILE_PATTERN = Pattern.compile("^[\\w\\-./]+$");
+
+    protected void validateDiagnosticsFilesList(List<String> filesList) {
+        if (CollectionUtils.isEmpty(filesList)) {
+            return;
+        }
+        for (String file : filesList) {
+            if (StringUtils.isBlank(file) || !VALID_DIAG_FILE_PATTERN.matcher(file).matches() || file.contains("..")) {
+                throw new InvalidParameterValueException("Invalid diagnostics file entry: " + file +
+                        ". File paths must contain only alphanumeric characters, hyphens, underscores, dots, and forward slashes.");
+            }
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "getting diagnostics files on system vm", async = true)
     public String getDiagnosticsDataCommand(GetDiagnosticsDataCmd cmd) {
         final Long vmId = cmd.getId();
         final List<String> optionalFilesList = cmd.getFilesList();
+        validateDiagnosticsFilesList(optionalFilesList);
         final VMInstanceVO vmInstance = getSystemVMInstance(vmId);
         final DataStore store = getImageStore(vmInstance.getDataCenterId());
 
@@ -229,7 +262,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final long zoneId = vmInstance.getDataCenterId();
         VMInstanceVO ssvm = getSecondaryStorageVmInZone(zoneId);
         if (ssvm == null) {
-            throw new CloudRuntimeException("No SSVM found in zone with ID: " + zoneId);
+            throw new CloudRuntimeException("No SSVM found in zone: " + dataCenterDao.findById(zoneId));
         }
 
         // Secondary Storage install path = "diagnostics_data/diagnostics_files_xxxx.tar
@@ -248,7 +281,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private Pair<Boolean, String> copyZipFileToSecondaryStorage(VMInstanceVO vmInstance, Long vmHostId, String fileToCopy, DataStore store) {
         String vmControlIp = getVMSshIp(vmInstance);
         if (StringUtils.isBlank(vmControlIp)) {
-            return new Pair<>(false, "Unable to find system vm ssh/control IP for  vm with ID: " + vmInstance.getId());
+            return new Pair<>(false, "Unable to find System VM SSH/Control IP for Instance with ID: " + vmInstance.getId());
         }
         Pair<Boolean, String> copyResult;
         if (vmInstance.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
@@ -267,7 +300,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private void configureNetworkElementCommand(NetworkElementCommand cmd, VMInstanceVO vmInstance) {
         Map<String, String> accessDetails = networkManager.getSystemVMAccessDetails(vmInstance);
         if (StringUtils.isBlank(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
-            throw new CloudRuntimeException("Unable to set system vm ControlIP for system vm with ID: " + vmInstance.getId());
+            throw new CloudRuntimeException(String.format("Unable to set system vm ControlIP for system vm: %s", vmInstance));
         }
         cmd.setAccessDetail(accessDetails);
     }
@@ -284,10 +317,10 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         configureNetworkElementCommand(cmd, vmInstance);
         final Answer fileCleanupAnswer = agentManager.easySend(vmInstance.getHostId(), cmd);
         if (fileCleanupAnswer == null) {
-            LOGGER.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
+            logger.error("Failed to cleanup diagnostics zip file on vm: {}", vmInstance);
         } else {
             if (!fileCleanupAnswer.getResult()) {
-                LOGGER.error(String.format("Zip file cleanup for vm %s has failed with: %s", vmInstance.getUuid(), fileCleanupAnswer.getDetails()));
+                logger.error("Zip file cleanup for vm {} has failed with: {}", vmInstance, fileCleanupAnswer.getDetails());
             }
         }
 
@@ -326,11 +359,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     }
 
     private Pair<Boolean, String> copyToSecondaryStorageVMware(final DataStore store, final String vmSshIp, String diagnosticsFile) {
-        LOGGER.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
+        logger.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
         boolean success = false;
         String mountPoint = mountManager.getMountPoint(store.getUri(), imageStoreDetailsUtil.getNfsVersion(store.getId()));
         if (StringUtils.isBlank(mountPoint)) {
-            LOGGER.error("Failed to generate mount point for copying to secondary storage for " + store.getName());
+            logger.error("Failed to generate mount point for copying to secondary storage for {}", store);
             return new Pair<>(false, "Failed to mount secondary storage:" + store.getName());
         }
 
@@ -351,7 +384,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             success = fileInSecondaryStore.exists();
         } catch (Exception e) {
             String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             return new Pair<>(false, msg);
         }
 
@@ -373,7 +406,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private DataStore getImageStore(Long zoneId) {
         List<DataStore> stores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (CollectionUtils.isEmpty(stores)) {
-            throw new CloudRuntimeException("No Secondary storage found in Zone with Id: " + zoneId);
+            throw new CloudRuntimeException(String.format("No Secondary storage found in Zone: %s", dataCenterDao.findById(zoneId)));
         }
         DataStore imageStore = null;
         for (DataStore store : stores) {
@@ -384,7 +417,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             }
         }
         if (imageStore == null) {
-            throw new CloudRuntimeException("No suitable secondary storage found to retrieve diagnostics in Zone: " + zoneId);
+            throw new CloudRuntimeException(String.format("No suitable secondary storage found to retrieve diagnostics in Zone: %s", dataCenterDao.findById(zoneId)));
         }
         return imageStore;
     }
@@ -405,7 +438,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
                 VirtualMachine.Type.DomainRouter, VirtualMachine.Type.SecondaryStorageVm);
         if (vmInstance == null) {
             String msg = String.format("Unable to find vm instance with id: %s", vmId);
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException("Diagnostics command execution failed, " + msg);
         }
 
@@ -420,7 +453,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         Map<String, String> accessDetails = networkManager.getSystemVMAccessDetails(vmInstance);
         String controlIP = accessDetails.get(NetworkElementCommand.ROUTER_IP);
         if (StringUtils.isBlank(controlIP)) {
-            throw new CloudRuntimeException("Unable to find system vm ssh/control IP for  vm with ID: " + vmInstance.getId());
+            throw new CloudRuntimeException(String.format("Unable to find System VM SSH/Control IP for Instance: %s", vmInstance));
         }
         return controlIP;
     }
@@ -446,15 +479,15 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             this.serviceImpl = serviceImpl;
         }
 
-        private static void deleteOldDiagnosticsFiles(File directory, String storeName) {
+        private void deleteOldDiagnosticsFiles(File directory, String storeName) {
             final File[] fileList = directory.listFiles();
             if (fileList != null) {
                 String msg = String.format("Found %s diagnostics files in store %s for garbage collection", fileList.length, storeName);
-                LOGGER.info(msg);
+                logger.info(msg);
                 for (File file : fileList) {
                     if (file.isFile() && MaximumFileAgeforGarbageCollection.value() <= getTimeDifference(file)) {
                         boolean success = file.delete();
-                        LOGGER.info(file.getName() + " delete status: " + success);
+                        logger.info(file.getName() + " delete status: " + success);
                     }
                 }
             }
@@ -480,7 +513,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         private void cleanupOldDiagnosticFiles(DataStore store) {
             String mountPoint = null;
-            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(),
+                    serviceImpl.imageStoreDetailsUtil.getNfsVersion(store.getId()));
             if (StringUtils.isNotBlank(mountPoint)) {
                 File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
                 if (directory.isDirectory()) {

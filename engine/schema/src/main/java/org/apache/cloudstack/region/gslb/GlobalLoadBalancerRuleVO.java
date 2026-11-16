@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.region.gslb;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -27,8 +28,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import com.cloud.region.ha.GlobalLoadBalancerRule;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "global_load_balancing_rules")
@@ -73,6 +78,10 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     @Column(name = "state")
     GlobalLoadBalancerRule.State state;
 
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
+
     public GlobalLoadBalancerRuleVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -91,6 +100,15 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
         uuid = UUID.randomUUID().toString();
         this.state = state;
     }
+
+
+    @Override
+    public String toString() {
+        return String.format("GlobalLoadBalancerRule %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
+    }
+
 
     @Override
     public String getName() {

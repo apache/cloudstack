@@ -46,9 +46,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);
 
+    List<VolumeVO> findByInstanceAndNotStates(long id, Volume.State...states);
+
     List<VolumeVO> findIncludingRemovedByInstanceAndType(long id, Volume.Type vType);
 
-    List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId);
+    List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId);
 
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
 
@@ -70,11 +72,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findCreatedByInstance(long id);
 
-    List<VolumeVO> findByPoolId(long poolId);
+    List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId);
 
     VolumeVO findByPoolIdName(long poolId, String name);
 
-    List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType);
+    List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId, Volume.Type volumeType);
 
     List<VolumeVO> findByPoolIdAndState(long poolid, Volume.State state);
 
@@ -110,9 +112,21 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> listVolumesByPassphraseId(long passphraseId);
 
     /**
+     * List volumes with passphrase_id for migration to KMS
+     *
+     * @param zoneId    Zone ID (required)
+     * @param accountId Account ID filter (optional, null for all accounts)
+     * @param domainId  Domain ID filter (optional, null for all domains)
+     * @param limit     Maximum number of volumes to return
+     * @return list of volumes that need migration
+     */
+    Pair<List<VolumeVO>, Integer> listVolumesForKMSMigration(Long zoneId, Long accountId, Long domainId, Integer limit);
+
+    /**
      * Gets the Total Primary Storage space allocated for an account
      *
-     * @param list of ids of virtual router VMs under this account
+     * @param accountId
+     * @param virtualRouters list of ids of virtual router VMs under this account
      * @return total Primary Storage space (in bytes) used
      */
     long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters);
@@ -152,5 +166,29 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> listByPoolIdAndPaths(long id, List<String> pathList);
 
+    VolumeVO findByPoolIdAndPath(long id, String path);
+
     List<VolumeVO> listByIds(List<Long> ids);
+
+    List<VolumeVO> listAllocatedVolumesForAccountDiskOfferingIdsAndNotForVms(long accountId, List<Long> diskOfferingIds, List<Long> vmIds);
+
+    List<VolumeVO> searchRemovedByVms(List<Long> vmIds, Long batchSize);
+
+    VolumeVO findOneByIScsiName(String iScsiName);
+
+    int getVolumeCountByOfferingId(long diskOfferingId);
+
+    VolumeVO findByLastIdAndState(long lastVolumeId, Volume.State...states);
+
+    boolean existsWithKmsKey(long kmsKeyId);
+
+    /**
+     *  Retrieves volume by its externalId
+     *
+     * @param externalUuid
+     * @return Volume Object of matching search criteria
+     */
+    VolumeVO findByExternalUuid(String externalUuid);
+
+    List<VolumeVO> findByKmsWrappedKeyId(Long kmsWrappedKeyId);
 }

@@ -29,8 +29,7 @@ public interface NioSocketHandler {
     void readBytes(ByteBuffer data, int length);
     String readString();
     byte[] readServerInit();
-    int readNextBytes();
-    void readNextByteArray(byte[] arr, int len);
+    int readAvailableDataIntoBuffer(ByteBuffer buffer, int maxSize);
 
     // Write operations
     void writeUnsignedInteger(int sizeInBits, int value);
@@ -42,4 +41,5 @@ public interface NioSocketHandler {
     void flushWriteBuffer();
     void startTLSConnection(NioSocketSSLEngineManager sslEngineManager);
     boolean isTLSConnection();
+    void close();
 }

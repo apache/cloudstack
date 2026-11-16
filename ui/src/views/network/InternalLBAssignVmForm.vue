@@ -47,13 +47,15 @@
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option
-                v-for="(nic, nicIndex) in nics[index]"
-                :key="nic"
-                :value="nic"
-                :label="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : '' }}
-              </a-select-option>
+              <a-select-opt-group v-for="group in groupedNicIpOptionsFor(index)" :key="group.kind" :label="group.label">
+                <a-select-option
+                  v-for="item in group.items"
+                  :key="item.ip"
+                  :value="item.ip"
+                  :label="item.ip + ' ' + item.networkname">
+                  {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+                </a-select-option>
+              </a-select-opt-group>
             </a-select>
           </span>
           <span><status :text="vm.state" displayText /></span>
@@ -97,8 +99,9 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
+import { buildNicIpOptions, groupNicIpOptionsByKind } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'InternalLBAssignVmForm',
@@ -132,13 +135,16 @@ export default {
     this.fetchData()
   },
   methods: {
+    groupedNicIpOptionsFor (index) {
+      return groupNicIpOptionsByKind(this.nics[index] || [], this.$t)
+    },
     fetchData () {
       this.fetchLoadBalancers()
       this.fetchVirtualMachines()
     },
     fetchLoadBalancers () {
       this.fetchLoading = true
-      api('listLoadBalancers', {
+      getAPI('listLoadBalancers', {
         id: this.resource.id
       }).then(response => {
         const lb = response.listloadbalancersresponse.loadbalancer
@@ -155,7 +161,7 @@ export default {
     },
     fetchVirtualMachines () {
       this.fetchLoading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         networkid: this.resource.networkid,
         page: this.page,
@@ -182,18 +188,15 @@ export default {
       }
       this.iLb.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
-      api('listNics', {
+      const networkId = this.resource.networkid
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: this.resource.networkid
+        networkid: networkId
       }).then(response => {
         if (!response.listnicsresponse.nic[0]) return
-        const newItem = []
-        newItem.push(response.listnicsresponse.nic[0].ipaddress)
-        if (response.listnicsresponse.nic[0].secondaryip) {
-          newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
-        }
-        this.nics[index] = newItem
-        this.iLb.vmguestip[index] = this.nics[index][0]
+        const nicsReturned = response.listnicsresponse.nic || []
+        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic, networkId))
+        this.iLb.vmguestip[index] = this.nics[index][0]?.ip
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -218,7 +221,7 @@ export default {
       }
       this.params.id = this.resource.id
       this.fetchLoading = true
-      api('assignToLoadBalancerRule', this.params).then(response => {
+      postAPI('assignToLoadBalancerRule', this.params).then(response => {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: `${this.$t('message.success.assigned.vms')} ${this.$t('label.to')} ${this.resource.name}`,
@@ -288,5 +291,9 @@ export default {
       margin-right: 10px;
     }
   }
+}
+
+.nic-select__network {
+  color: rgba(0, 0, 0, 0.45);
 }
 </style>

@@ -39,8 +39,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
 
         long newMemory = ByteScaleUtils.bytesToKibibytes(vmSpec.getMaxRam());
         int newVcpus = vmSpec.getCpus();
-        int newCpuSpeed = vmSpec.getMinSpeed() != null ? vmSpec.getMinSpeed() : vmSpec.getSpeed();
-        int newCpuShares = newVcpus * newCpuSpeed;
+        int newCpuShares = libvirtComputingResource.calculateCpuShares(vmSpec);
         String vmDefinition = vmSpec.toString();
         String scalingDetails = String.format("%s memory to [%s KiB], CPU cores to [%s] and cpu_shares to [%s]", vmDefinition, newMemory, newVcpus, newCpuShares);
 
@@ -50,24 +49,17 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             Domain dm = conn.domainLookupByName(vmName);
 
-            logger.debug(String.format("Scaling %s.", scalingDetails));
+            logger.debug("Scaling {}.", scalingDetails);
             scaleMemory(dm, newMemory, vmDefinition);
             scaleVcpus(dm, newVcpus, vmDefinition);
             updateCpuShares(dm, newCpuShares);
+            libvirtComputingResource.updateCpuQuotaAndPeriod(dm, vmSpec, command.getLimitCpuUseChange());
 
             return new ScaleVmAnswer(command, true, String.format("Successfully scaled %s.", scalingDetails));
         } catch (LibvirtException | CloudRuntimeException e) {
             String message = String.format("Unable to scale %s due to [%s].", scalingDetails, e.getMessage());
             logger.error(message, e);
             return new ScaleVmAnswer(command, false, message);
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (LibvirtException ex) {
-                    logger.warn(String.format("Error trying to close libvirt connection [%s]", ex.getMessage()), ex);
-                }
-            }
         }
     }
 
@@ -83,7 +75,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
 
         if (oldCpuShares < newCpuShares) {
             LibvirtComputingResource.setCpuShares(dm, newCpuShares);
-            logger.info(String.format("Successfully increased cpu_shares of VM [%s] from [%s] to [%s].", dm.getName(), oldCpuShares, newCpuShares));
+            logger.info("Successfully increased cpu_shares of VM [{}] from [{}] to [{}].", dm.getName(), oldCpuShares, newCpuShares);
         }
     }
 

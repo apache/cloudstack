@@ -18,25 +18,31 @@ package com.cloud.host.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VmDetailConstants;
 
 @Component
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
     protected final SearchBuilder<DetailVO> DetailNameSearch;
+    protected final SearchBuilder<DetailVO> ExternalDetailSearch;
 
     public HostDetailsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -51,6 +57,11 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         DetailNameSearch = createSearchBuilder();
         DetailNameSearch.and("name", DetailNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailNameSearch.done();
+
+        ExternalDetailSearch = createSearchBuilder();
+        ExternalDetailSearch.and("hostId", ExternalDetailSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        ExternalDetailSearch.and("name", ExternalDetailSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        ExternalDetailSearch.done();
     }
 
     @Override
@@ -129,5 +140,50 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         SearchCriteria<DetailVO> sc = DetailNameSearch.create();
         sc.setParameters("name", name);
         return listBy(sc);
+    }
+
+    @Override
+    public Set<Long> findHostIdsWithVlanFilteringEnabled() {
+        return findByName(Host.HOST_VLAN_FILTERING_ENABLED).stream()
+                .filter(detail -> Boolean.parseBoolean(detail.getValue()))
+                .map(DetailVO::getHostId)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public void removeExternalDetails(long hostId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SearchCriteria<DetailVO> sc = ExternalDetailSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("name", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
+        remove(sc);
+        txn.commit();
+    }
+
+    @Override
+    public void replaceExternalDetails(long hostId, Map<String, String> details) {
+        if (details.isEmpty()) {
+            return;
+        }
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        List<DetailVO> detailVOs = new ArrayList<>();
+        for (Map.Entry<String, String> entry : details.entrySet()) {
+            String name = entry.getKey();
+            String value = entry.getValue();
+            if ("password".equals(entry.getKey())) {
+                value = DBEncryptionUtil.encrypt(value);
+            }
+            detailVOs.add(new DetailVO(hostId, name, value));
+        }
+        SearchCriteria<DetailVO> sc = ExternalDetailSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("name", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
+        remove(sc);
+        for (DetailVO detail : detailVOs) {
+            persist(detail);
+        }
+        txn.commit();
     }
 }

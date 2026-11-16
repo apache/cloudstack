@@ -65,6 +65,10 @@ public class DiskOfferingDetailVO implements ResourceDetail {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public String getValue() {
         return value;

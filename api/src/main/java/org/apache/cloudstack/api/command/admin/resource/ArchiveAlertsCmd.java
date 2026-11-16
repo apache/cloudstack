@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.resource;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveAlertsCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ArchiveAlertsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -48,18 +46,18 @@ public class ArchiveAlertsCmd extends BaseCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = AlertResponse.class,
-               description = "the IDs of the alerts")
+               description = "The IDs of the alerts")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date range to archive alerts"
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date range to archive alerts"
         + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date range to archive alerts"
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date range to archive alerts"
         + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "archive by alert type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Archive by alert type")
     private String type;
 
     // ///////////////////////////////////////////////////

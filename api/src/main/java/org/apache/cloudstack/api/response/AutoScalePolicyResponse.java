@@ -31,48 +31,52 @@ import com.cloud.serializer.Param;
 public class AutoScalePolicyResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the autoscale policy ID")
+    @Param(description = "The autoscale policy ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the autoscale policy")
+    @Param(description = "Name of the autoscale policy")
     private String name;
 
     @SerializedName(ApiConstants.ACTION)
-    @Param(description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
+    @Param(description = "The action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
 
     @SerializedName(ApiConstants.DURATION)
-    @Param(description = "the duration for which the conditions have to be true before action is taken")
+    @Param(description = "The duration for which the conditions have to be true before action is taken")
     private Integer duration;
 
     @SerializedName(ApiConstants.QUIETTIME)
-    @Param(description = "the cool down period for which the policy should not be evaluated after the action has been taken")
+    @Param(description = "The cool down period for which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
 
     @SerializedName("conditions")
-    @Param(description = "the list of IDs of the conditions that are being evaluated on every interval")
+    @Param(description = "The list of IDs of the conditions that are being evaluated on every interval")
     private List<ConditionResponse> conditions;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the autoscale policy")
+    @Param(description = "The Account owning the autoscale policy")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id autoscale policy")
+    @Param(description = "The project id autoscale policy")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the autoscale policy")
+    @Param(description = "The project name of the autoscale policy")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the autoscale policy")
+    @Param(description = "The domain ID of the autoscale policy")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the autoscale policy")
+    @Param(description = "The domain name of the autoscale policy")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the autoscale policy belongs", since = "4.19.2.0")
+    private String domainPath;
 
     @Override
     public String getObjectId() {
@@ -116,6 +120,11 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

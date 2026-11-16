@@ -26,20 +26,18 @@ import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.Properties;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.server.ServerProperties;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.jmx.MBeanContainer;
-import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
@@ -50,10 +48,12 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.cloud.utils.server.ServerProperties;
 
 /***
  * The ServerDaemon class implements the embedded server, it can be started either
@@ -61,7 +61,7 @@ import org.apache.commons.lang3.StringUtils;
  * Configuration parameters are read from server.properties file available on the classpath.
  */
 public class ServerDaemon implements Daemon {
-    private static final Logger LOG = Logger.getLogger(ServerDaemon.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String WEB_XML = "META-INF/webapp/WEB-INF/web.xml";
 
     /////////////////////////////////////////////////////
@@ -71,14 +71,15 @@ public class ServerDaemon implements Daemon {
     private static final String BIND_INTERFACE = "bind.interface";
     private static final String CONTEXT_PATH = "context.path";
     private static final String SESSION_TIMEOUT = "session.timeout";
-    private static final String HTTP_ENABLE = "http.enable";
-    private static final String HTTP_PORT = "http.port";
-    private static final String HTTPS_ENABLE = "https.enable";
-    private static final String HTTPS_PORT = "https.port";
-    private static final String KEYSTORE_FILE = "https.keystore";
     private static final String KEYSTORE_PASSWORD = "https.keystore.password";
     private static final String WEBAPP_DIR = "webapp.dir";
     private static final String ACCESS_LOG = "access.log";
+    private static final String REQUEST_CONTENT_SIZE_KEY = "request.content.size";
+    private static final int DEFAULT_REQUEST_CONTENT_SIZE = 1048576;
+    private static final String REQUEST_MAX_FORM_KEYS_KEY = "request.max.form.keys";
+    private static final int DEFAULT_REQUEST_MAX_FORM_KEYS = 5000;
+    private static final String THREADS_MIN = "threads.min";
+    private static final String THREADS_MAX = "threads.max";
 
     ////////////////////////////////////////////////////////
     /////////////// Server Configuration ///////////////////
@@ -90,6 +91,8 @@ public class ServerDaemon implements Daemon {
     private int httpPort = 8080;
     private int httpsPort = 8443;
     private int sessionTimeout = 30;
+    private int maxFormContentSize = DEFAULT_REQUEST_CONTENT_SIZE;
+    private int maxFormKeys = DEFAULT_REQUEST_MAX_FORM_KEYS;
     private boolean httpsEnable = false;
     private String accessLogFile = "access.log";
     private String bindInterface = null;
@@ -97,6 +100,8 @@ public class ServerDaemon implements Daemon {
     private String keystoreFile;
     private String keystorePassword;
     private String webAppLocation;
+    private int minThreads;
+    private int maxThreads;
 
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
@@ -112,12 +117,12 @@ public class ServerDaemon implements Daemon {
     public void init(final DaemonContext context) {
         final File confFile = PropertiesUtil.findConfigFile("server.properties");
         if (confFile == null) {
-            LOG.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+            logger.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                     bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
             return;
         }
 
-        LOG.info("Server configuration file found: " + confFile.getAbsolutePath());
+        logger.info("Server configuration file found: " + confFile.getAbsolutePath());
 
         try {
             InputStream is = new FileInputStream(confFile);
@@ -127,25 +132,29 @@ public class ServerDaemon implements Daemon {
             }
             setBindInterface(properties.getProperty(BIND_INTERFACE, null));
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
-            setHttpEnable(Boolean.valueOf(properties.getProperty(HTTP_ENABLE, "true")));
-            setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
-            setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
-            setHttpsPort(Integer.valueOf(properties.getProperty(HTTPS_PORT, "8443")));
-            setKeystoreFile(properties.getProperty(KEYSTORE_FILE));
+            setHttpEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTP_ENABLE, "true")));
+            setHttpPort(Integer.valueOf(properties.getProperty(ServerProperties.HTTP_PORT, "8080")));
+            setHttpsEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTPS_ENABLE, "false")));
+            setHttpsPort(Integer.valueOf(properties.getProperty(ServerProperties.HTTPS_PORT, "8443")));
+            setKeystoreFile(properties.getProperty(ServerProperties.KEYSTORE_FILE));
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
+            setMaxFormContentSize(Integer.valueOf(properties.getProperty(REQUEST_CONTENT_SIZE_KEY, String.valueOf(DEFAULT_REQUEST_CONTENT_SIZE))));
+            setMaxFormKeys(Integer.valueOf(properties.getProperty(REQUEST_MAX_FORM_KEYS_KEY, String.valueOf(DEFAULT_REQUEST_MAX_FORM_KEYS))));
+            setMinThreads(Integer.valueOf(properties.getProperty(THREADS_MIN, "10")));
+            setMaxThreads(Integer.valueOf(properties.getProperty(THREADS_MAX, "500")));
         } catch (final IOException e) {
-            LOG.warn("Failed to read configuration from server.properties file", e);
+            logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
             // make sure that at least HTTP is enabled if both of them are set to false (misconfiguration)
             if (!httpEnable && !httpsEnable) {
                 setHttpEnable(true);
-                LOG.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
+                logger.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
             }
         }
-        LOG.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+        logger.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                 bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
     }
 
@@ -153,8 +162,8 @@ public class ServerDaemon implements Daemon {
     public void start() throws Exception {
         // Thread pool
         final QueuedThreadPool threadPool = new QueuedThreadPool();
-        threadPool.setMinThreads(10);
-        threadPool.setMaxThreads(500);
+        threadPool.setMinThreads(minThreads);
+        threadPool.setMaxThreads(maxThreads);
 
         // Jetty Server
         server = new Server(threadPool);
@@ -168,7 +177,7 @@ public class ServerDaemon implements Daemon {
 
         // HTTP config
         final HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
+// it would be nice to make this dynamic but we take care of this ourselves for now: httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
         httpConfig.setSecureScheme("https");
         httpConfig.setSecurePort(httpsPort);
         httpConfig.setOutputBufferSize(32768);
@@ -186,6 +195,8 @@ public class ServerDaemon implements Daemon {
 
         // Extra config options
         server.setStopAtShutdown(true);
+        server.setAttribute(ContextHandler.MAX_FORM_CONTENT_SIZE_KEY, maxFormContentSize);
+        server.setAttribute(ContextHandler.MAX_FORM_KEYS_KEY, maxFormKeys);
 
         // HTTPS Connector
         createHttpsConnector(httpConfig);
@@ -248,7 +259,7 @@ public class ServerDaemon implements Daemon {
                 KeyStoreScanner scanner = new KeyStoreScanner(sslContextFactory);
                 server.addBean(scanner);
             } catch (Exception ex) {
-                LOG.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
+                logger.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
             }
         }
     }
@@ -257,6 +268,8 @@ public class ServerDaemon implements Daemon {
         final WebAppContext webApp = new WebAppContext();
         webApp.setContextPath(contextPath);
         webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
+        webApp.setMaxFormContentSize(maxFormContentSize);
+        webApp.setMaxFormKeys(maxFormKeys);
 
         // GZIP handler
         final GzipHandler gzipHandler = new GzipHandler();
@@ -286,7 +299,7 @@ public class ServerDaemon implements Daemon {
     }
 
     private RequestLog createRequestLog() {
-        final NCSARequestLog log = new NCSARequestLog();
+        final ACSRequestLog log = new ACSRequestLog();
         final File logPath = new File(accessLogFile);
         final File parentFile = logPath.getParentFile();
         if (parentFile != null) {
@@ -354,5 +367,21 @@ public class ServerDaemon implements Daemon {
 
     public void setSessionTimeout(int sessionTimeout) {
         this.sessionTimeout = sessionTimeout;
+    }
+
+    public void setMaxFormContentSize(int maxFormContentSize) {
+        this.maxFormContentSize = maxFormContentSize;
+    }
+
+    public void setMaxFormKeys(int maxFormKeys) {
+        this.maxFormKeys = maxFormKeys;
+    }
+
+    public void setMinThreads(int minThreads) {
+        this.minThreads = minThreads;
+    }
+
+    public void setMaxThreads(int maxThreads) {
+        this.maxThreads = maxThreads;
     }
 }

@@ -17,16 +17,24 @@
 package com.cloud.storage.secondary;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface SecondaryStorageVmManager extends Manager {
 
@@ -35,6 +43,13 @@ public interface SecondaryStorageVmManager extends Manager {
             "30000",
             "The time interval(in millisecond) to scan whether or not system needs more SSVM to ensure minimal standby capacity",
             false);
+
+    ConfigKey<String> SecondaryStorageVmUserData = new ConfigKey<>(String.class, "secstorage.vm.userdata",
+            ConfigKey.CATEGORY_ADVANCED, "",
+            "UUID for user data for secondary storage VMs. This works only when systemvm.userdata.enabled is set to true",
+            true, ConfigKey.Scope.Zone, null, "User Data for SSVMs",
+            null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_SEC_STORAGE_VM);
+
 
     public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz
@@ -46,6 +61,10 @@ public interface SecondaryStorageVmManager extends Manager {
     public static final String ALERT_SUBJECT = "secondarystoragevm-alert";
 
     public SecondaryStorageVmVO startSecStorageVm(long ssVmVmId);
+
+    void startSecStorageVmForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException;
 
     public boolean stopSecStorageVm(long ssVmVmId);
 

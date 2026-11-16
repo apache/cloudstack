@@ -20,6 +20,8 @@ have limits and resource count **/
 
 package org.apache.cloudstack.api.response;
 
+import java.util.List;
+
 public interface ResourceLimitAndCountResponse {
 
     public void setNetworkLimit(String networkLimit);
@@ -45,6 +47,12 @@ public interface ResourceLimitAndCountResponse {
     public void setMemoryTotal(Long memoryTotal);
 
     public void setMemoryAvailable(String memoryAvailable);
+
+    public void setGpuLimit(String gpuLimit);
+
+    public void setGpuTotal(Long gpuTotal);
+
+    public void setGpuAvailable(String gpuAvailable);
 
     public void setPrimaryStorageLimit(String primaryStorageLimit);
 
@@ -82,6 +90,30 @@ public interface ResourceLimitAndCountResponse {
 
     public void setSnapshotAvailable(String snapshotAvailable);
 
+    public void setBackupLimit(String backupLimit);
+
+    public void setBackupTotal(Long backupTotal);
+
+    public void setBackupAvailable(String backupAvailable);
+
+    public void setBackupStorageLimit(String backupStorageLimit);
+
+    public void setBackupStorageTotal(Long backupStorageTotal);
+
+    public void setBackupStorageAvailable(String backupStorageAvailable);
+
+    void setBucketLimit(String bucketLimit);
+
+    void setBucketTotal(Long bucketTotal);
+
+    void setBucketAvailable(String bucketAvailable);
+
+    void setObjectStorageLimit(String objectStorageLimit);
+
+    void setObjectStorageTotal(Long objectStorageTotal);
+
+    void setObjectStorageAvailable(String objectStorageAvailable);
+
     public void setTemplateLimit(String templateLimit);
 
     public void setTemplateTotal(Long templateTotal);
@@ -91,5 +123,7 @@ public interface ResourceLimitAndCountResponse {
     public void setVmStopped(Integer vmStopped);
 
     public void setVmRunning(Integer vmRunning);
+
+    public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts);
 
 }

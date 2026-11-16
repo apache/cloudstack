@@ -1,0 +1,1357 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.storage.datastore.adapter.flasharray;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.http.Header;
+import org.apache.http.NameValuePair;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterContext;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterDataObject;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterDiskOffering;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderSnapshot;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderVolume;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderVolumeNamer;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderVolumeStats;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderVolumeStorageStats;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderVolume.AddressType;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.ssl.SSLContextBuilder;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/**
+ * Array API
+ */
+public class FlashArrayAdapter implements ProviderAdapter {
+    protected Logger logger = LogManager.getLogger(getClass());
+
+    public static final String HOSTGROUP = "hostgroup";
+    public static final String STORAGE_POD = "pod";
+    public static final String TRANSPORT = "transport";
+    public static final String TRANSPORT_FC = "fc";
+    public static final String TRANSPORT_NVME_TCP = "nvme-tcp";
+    public static final String KEY_TTL = "keyttl";
+    public static final String CONNECT_TIMEOUT_MS = "connectTimeoutMs";
+    public static final String POST_COPY_WAIT_MS = "postCopyWaitMs";
+    public static final String API_LOGIN_VERSION = "apiLoginVersion";
+    public static final String API_VERSION = "apiVersion";
+
+    private static final long KEY_TTL_DEFAULT = (1000 * 60 * 14);
+    private static final long CONNECT_TIMEOUT_MS_DEFAULT = 600000;
+    private static final long POST_COPY_WAIT_MS_DEFAULT = 5000;
+    private static final String API_LOGIN_VERSION_DEFAULT = "1.19";
+    private static final String API_VERSION_DEFAULT = "2.23";
+
+    /** A FlashArray NVMe namespace EUI-128 is exactly 32 hexadecimal characters. */
+    private static final Pattern EUI128_PATTERN = Pattern.compile("[0-9a-fA-F]{32}");
+
+    // URLs for which the legacy-auth deprecation WARN has already been emitted,
+    // so we don't spam the logs once per refresh per pool while it's still configured.
+    private static final Set<String> WARNED_LEGACY_URLS = ConcurrentHashMap.newKeySet();
+
+    static final ObjectMapper mapper = new ObjectMapper();
+    public String pod = null;
+    public String hostgroup = null;
+    private static final DateTimeFormatter DELETION_TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+    private AddressType volumeAddressType = AddressType.FIBERWWN;
+    private String username;
+    private String password;
+    private String accessToken;
+    private String url;
+    private long keyExpiration = -1;
+    private long keyTtl = KEY_TTL_DEFAULT;
+    private long connTimeout = CONNECT_TIMEOUT_MS_DEFAULT;
+    private long postCopyWait = POST_COPY_WAIT_MS_DEFAULT;
+    private CloseableHttpClient _client = null;
+    private boolean skipTlsValidation;
+    private String apiLoginVersion = API_LOGIN_VERSION_DEFAULT;
+    private String apiVersion = API_VERSION_DEFAULT;
+
+    private Map<String, String> connectionDetails = null;
+
+    protected FlashArrayAdapter(String url, Map<String, String> details) {
+        this.url = url;
+        this.connectionDetails = details;
+        login();
+    }
+
+    @Override
+    public ProviderVolume create(ProviderAdapterContext context, ProviderAdapterDataObject dataObject,
+            ProviderAdapterDiskOffering offering, long size) {
+        FlashArrayVolume request = new FlashArrayVolume();
+        request.setExternalName(
+                pod + "::" + ProviderVolumeNamer.generateObjectName(context, dataObject));
+        request.setPodName(pod);
+        request.setAllocatedSizeBytes(roundUp512Boundary(size));
+        FlashArrayList<FlashArrayVolume> list = POST("/volumes?names=" + request.getExternalName() + "&overwrite=false",
+                request, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+    }
+
+    /**
+     * Connect the volume to the host that was granted access. The storage framework
+     * grants and revokes access one host at a time, so each host is given its own
+     * connection: a host-group scoped connection is shared by every member host and
+     * therefore cannot express the removal of a single host's access.
+     */
+    @Override
+    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, String hostname) {
+
+        // should not happen but double check for sanity
+        if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            throw new RuntimeException("This storage provider does not support direct attachments of snapshots to hosts");
+        }
+
+        String volumeName = normalizeName(pod, dataObject.getExternalName());
+        try {
+            FlashArrayList<FlashArrayConnection> list = null;
+            FlashArrayHost host = getHost(hostname);
+            if (host != null) {
+                list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
+                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                });
+            }
+
+            if (list == null || list.getItems() == null || list.getItems().size() == 0) {
+                throw new RuntimeException("Volume attach did not return connection information "
+                        + "(expected lun for Fibre Channel or nsid for NVMe-TCP)");
+            }
+
+            FlashArrayConnection connection = (FlashArrayConnection) this.getFlashArrayItem(list);
+            if (AddressType.NVMETCP.equals(volumeAddressType)) {
+                // The FlashArray REST API does not return nsid in the connections
+                // payload for NVMe-TCP. The namespace is identified on the host by
+                // EUI-128 (see FlashArrayVolume.getAddress()); the value returned
+                // here is stored by the driver only for informational purposes.
+                return connection.getNsid() != null ? "" + connection.getNsid() : "1";
+            }
+            if (connection.getLun() == null) {
+                throw new RuntimeException("Volume attach missing lun field");
+            }
+            return "" + connection.getLun();
+
+        } catch (Throwable e) {
+            // the volume is already attached. happens in some scenarios where orchestration
+            // creates the volume before copying to it
+            if (e.toString().contains("Connection already exists")) {
+                FlashArrayList<FlashArrayConnection> list = GET("/connections?volume_names=" + volumeName,
+                        new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                        });
+                if (list != null && list.getItems() != null) {
+                    for (FlashArrayConnection conn : list.getItems()) {
+                        if (AddressType.NVMETCP.equals(volumeAddressType)) {
+                            // Match the host-scoped connection this adapter creates. A
+                            // host-group scoped match is kept only as a fallback, so that
+                            // volumes still carrying a group connection created by an
+                            // earlier release continue to resolve here.
+                            if (conn.getHost() != null && conn.getHost().getName() != null
+                                    && (conn.getHost().getName().equals(hostname)
+                                        || (hostname.indexOf('.') > 0
+                                            && conn.getHost().getName()
+                                                .equals(hostname.substring(0, hostname.indexOf('.')))))) {
+                                return conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            }
+                            if (hostgroup != null && conn.getHostGroup() != null
+                                    && conn.getHostGroup().getName() != null
+                                    && conn.getHostGroup().getName().equals(hostgroup)) {
+                                return conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            }
+                        } else if (conn.getHost() != null && conn.getHost().getName() != null
+                                && (conn.getHost().getName().equals(hostname)
+                                    || (hostname.indexOf('.') > 0
+                                        && conn.getHost().getName()
+                                            .equals(hostname.substring(0, hostname.indexOf('.')))))
+                                && conn.getLun() != null) {
+                            return "" + conn.getLun();
+                        }
+                    }
+                    throw new RuntimeException("Volume connection identifier (lun/nsid) not found in existing connection");
+                } else {
+                    throw new RuntimeException("Volume connection is not found in existing connection list");
+                }
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, String hostname) {
+        String volumeName = normalizeName(pod, dataObject.getExternalName());
+        // Only the connection for this host may be removed. A host-group scoped
+        // connection is shared by every member host, so deleting it here would revoke
+        // the volume from all of them -- including the host a live-migrating VM has
+        // just moved to, which pulls the namespace out from under the running guest.
+        FlashArrayHost host = getHost(hostname);
+        if (host != null) {
+            DELETE("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName);
+        }
+    }
+
+    @Override
+    public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+        String fullName = normalizeName(pod, dataObject.getExternalName());
+
+        // Snapshots live under /volume-snapshots and already use the array's
+        // reserved form <volume>.<suffix>, which legitimately contains ".".
+        // The stricter [A-Za-z0-9_-] naming rule applies to regular volume
+        // names and free-form rename targets, not to these reserved snapshot
+        // names. Since FlashArray snapshot names are system-defined rather
+        // than arbitrary rename targets, we skip the usual timestamped rename
+        // and only mark snapshots destroyed; the array's own ".N" suffix
+        // already disambiguates them in the recycle bin.
+        if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            try {
+                FlashArrayVolume destroy = new FlashArrayVolume();
+                destroy.setDestroyed(true);
+                PATCH("/volume-snapshots?names=" + fullName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+            } catch (CloudRuntimeException e) {
+                String msg = e.getMessage();
+                if (msg != null && (msg.contains("No such volume or snapshot")
+                        || msg.contains("Volume does not exist"))) {
+                    return;
+                }
+                throw e;
+            }
+            return;
+        }
+
+        // first make sure we are disconnected
+        removeVlunsAll(context, pod, dataObject.getExternalName());
+
+        // Rename then destroy: FlashArray keeps destroyed volumes in a recycle
+        // bin (default 24h) from which they can be recovered. Renaming with a
+        // deletion timestamp gives operators a forensic trail when browsing the
+        // array - they can see when each destroyed copy was deleted on the
+        // CloudStack side. FlashArray rejects a single PATCH that combines
+        // {name, destroyed}, so the rename and the destroy must be issued as
+        // two separate requests each carrying only its own field.
+        // Use UTC so the rename suffix is stable regardless of the management
+        // server's local timezone or DST changes - operators correlating the
+        // CloudStack delete event with the array's audit log get a consistent
+        // wall-clock value.
+        String timestamp = DELETION_TIMESTAMP_FORMAT.format(java.time.Instant.now());
+        String renamedName = fullName + "-" + timestamp;
+
+        try {
+            FlashArrayVolume rename = new FlashArrayVolume();
+            rename.setExternalName(renamedName);
+            PATCH("/volumes?names=" + fullName, rename, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            });
+
+            FlashArrayVolume destroy = new FlashArrayVolume();
+            destroy.setDestroyed(true);
+            PATCH("/volumes?names=" + renamedName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            });
+        } catch (CloudRuntimeException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("Volume does not exist")) {
+                return;
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public ProviderVolume getVolume(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+        String externalName = dataObject.getExternalName();
+        // if its not set, look for the generated name for some edge cases
+        if (externalName == null) {
+            externalName = pod + "::" + ProviderVolumeNamer.generateObjectName(context, dataObject);
+        }
+        FlashArrayVolume volume = null;
+        try {
+            volume = getVolume(externalName);
+            // if we didn't get an address back its likely an empty object
+            if (volume != null && volume.getAddress() == null) {
+                return null;
+            } else if (volume == null) {
+                return null;
+            }
+
+            return volume;
+        } catch (Exception e) {
+            // assume any exception is a not found. FlashArray returns 400's for most errors
+            return null;
+        }
+    }
+
+    @Override
+    public ProviderVolume getVolumeByAddress(ProviderAdapterContext context, AddressType addressType, String address) {
+        // public FlashArrayVolume getVolumeByWwn(String wwn) {
+        if (address == null || addressType == null) {
+            throw new RuntimeException("Invalid search criteria provided for getVolumeByAddress");
+        }
+
+        String serial;
+        if (ProviderVolume.AddressType.FIBERWWN.equals(addressType)) {
+            // Strip the NAA prefix (1 char) + Pure OUI to recover the volume serial.
+            serial = address.substring(FlashArrayVolume.PURE_OUI.length() + 1).toUpperCase();
+        } else if (ProviderVolume.AddressType.NVMETCP.equals(addressType)) {
+            // Reverse the EUI-128 layout: serial = eui[2:16] + eui[22:32], after
+            // stripping the optional "eui." prefix that appears in udev paths.
+            String eui = address.startsWith("eui.") ? address.substring(4) : address;
+            if (eui == null || !EUI128_PATTERN.matcher(eui).matches()) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address ["
+                        + address + "]: expected 32 hexadecimal characters, got "
+                        + (eui == null ? "null" : String.valueOf(eui.length())));
+            }
+            // Validate the FlashArray EUI-128 layout before deriving a serial from it, so a
+            // malformed or tampered address cannot be mapped onto an unintended volume:
+            //   00 + serial[0:14] + <Pure OUI> + serial[14:24]
+            if (!eui.startsWith("00")) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address [" + address
+                        + "]: expected a \"00\" prefix for a FlashArray namespace");
+            }
+            if (!eui.regionMatches(true, 16, FlashArrayVolume.PURE_OUI_EUI, 0,
+                    FlashArrayVolume.PURE_OUI_EUI.length())) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address [" + address
+                        + "]: expected the Pure Storage OUI [" + FlashArrayVolume.PURE_OUI_EUI
+                        + "] at offset 16");
+            }
+            serial = (eui.substring(2, 16) + eui.substring(22)).toUpperCase();
+        } else {
+            throw new RuntimeException(
+                    "Invalid volume address type [" + addressType + "] requested for volume search");
+        }
+        String query = "serial='" + serial + "'";
+
+        FlashArrayVolume volume = null;
+        try {
+            FlashArrayList<FlashArrayVolume> list = GET("/volumes?filter=" + query,
+                    new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                    });
+
+            // if we didn't get an address back its likely an empty object
+            if (list == null || list.getItems() == null || list.getItems().size() == 0) {
+                return null;
+            }
+
+            volume = withAddressType((FlashArrayVolume) this.getFlashArrayItem(list));
+            if (volume != null && volume.getAddress() == null) {
+                return null;
+            }
+
+            return volume;
+        } catch (Exception e) {
+            // assume any exception is a not found. FlashArray returns 400's for most errors
+            return null;
+        }
+    }
+
+    @Override
+    public void resize(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, long newSizeInBytes) {
+        // public void resizeVolume(String volumeNamespace, String volumeName, long
+        // newSizeInBytes) {
+        FlashArrayVolume volume = new FlashArrayVolume();
+        volume.setAllocatedSizeBytes(roundUp512Boundary(newSizeInBytes));
+        PATCH("/volumes?names=" + dataObject.getExternalName(), volume, null);
+    }
+
+    /**
+     * Take a snapshot and return a Volume representing that snapshot
+     *
+     * @param volumeName
+     * @param snapshotName
+     * @return
+     */
+    @Override
+    public ProviderSnapshot snapshot(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject,
+            ProviderAdapterDataObject targetDataObject) {
+        // public FlashArrayVolume snapshotVolume(String volumeNamespace, String
+        // volumeName, String snapshotName) {
+        FlashArrayList<FlashArrayVolume> list = POST(
+                "/volume-snapshots?source_names=" + sourceDataObject.getExternalName(), null,
+                new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+        // Stamp the pool's volume address type so ProviderSnapshot.getAddress()
+        // emits an NVMe EUI-128 on NVMe-TCP pools. Without this, the adaptive
+        // driver persists the snapshot with an FC-style WWN and subsequent
+        // revert/list operations cannot locate the namespace.
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+    }
+
+    /**
+     * Replaces the base volume with the given snapshot. Note this can only be done
+     * when the snapshot and volume
+     * are
+     *
+     * @param name
+     * @return
+     */
+    @Override
+    public ProviderVolume revert(ProviderAdapterContext context, ProviderAdapterDataObject snapshotDataObject) {
+        // public void promoteSnapshot(String namespace, String snapshotName) {
+        if (snapshotDataObject == null || snapshotDataObject.getExternalName() == null) {
+            throw new RuntimeException("Snapshot revert not possible as an external snapshot name was not provided");
+        }
+
+        FlashArrayVolume snapshot = this.getSnapshot(snapshotDataObject.getExternalName());
+        if (snapshot.getSource() == null) {
+            throw new CloudRuntimeException("Snapshot source was not available from the storage array");
+        }
+
+        String origVolumeName = snapshot.getSource().getName();
+
+        // now "create" a new volume with the snapshot volume as its source (basically a
+        // FlashArray copy)
+        // and overwrite to true (volume already exists, we are recreating it)
+        FlashArrayVolume input = new FlashArrayVolume();
+        input.setExternalName(origVolumeName);
+        input.setAllocatedSizeBytes(roundUp512Boundary(snapshot.getAllocatedSizeInBytes()));
+        input.setSource(new FlashArrayVolumeSource(snapshot.getExternalName()));
+        POST("/volumes?names=" + origVolumeName + "&overwrite=true", input, null);
+
+        return this.getVolume(origVolumeName);
+    }
+
+    @Override
+    public ProviderSnapshot getSnapshot(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+        FlashArrayList<FlashArrayVolume> list = GET(
+                "/volume-snapshots?names=" + dataObject.getExternalName(),
+                new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+        // Stamp the pool's volume address type so ProviderSnapshot.getAddress()
+        // emits an NVMe EUI-128 on NVMe-TCP pools instead of the FIBERWWN
+        // default. Without this, the adaptive driver persists the snapshot
+        // path with an FC-style WWN and revert/list fails to locate the
+        // namespace on the host.
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+    }
+
+    @Override
+    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject,
+            ProviderAdapterDataObject destDataObject, Long newSize) {
+        // Add new parameter as newSize to match method declaration but not used anywhere
+        // private ManagedVolume copy(ManagedVolume sourceVolume, String destNamespace,
+        // String destName) {
+        if (sourceDataObject == null || sourceDataObject.getExternalName() == null
+                || sourceDataObject.getType() == null) {
+            throw new RuntimeException("Provided volume has no external source information");
+        }
+
+        if (destDataObject == null) {
+            throw new RuntimeException("Provided volume target information was not provided");
+        }
+
+        if (destDataObject.getExternalName() == null) {
+            // this means its a new volume? so our external name will be the Cloudstack UUID
+            destDataObject
+                    .setExternalName(ProviderVolumeNamer.generateObjectName(context, destDataObject));
+        }
+
+        FlashArrayVolume currentVol;
+        if (sourceDataObject.getType().equals(ProviderAdapterDataObject.Type.SNAPSHOT)) {
+            currentVol = getSnapshot(sourceDataObject.getExternalName());
+        } else {
+            currentVol = getVolume(sourceDataObject.getExternalName());
+        }
+
+        if (currentVol == null) {
+            throw new RuntimeException("Unable to find current volume to copy from");
+        }
+
+        // now "create" a new volume with the snapshot volume as its source (basically a
+        // FlashArray copy)
+        // and overwrite to true (volume already exists, we are recreating it)
+        FlashArrayVolume payload = new FlashArrayVolume();
+        payload.setExternalName(normalizeName(pod, destDataObject.getExternalName()));
+        payload.setPodName(pod);
+        payload.setAllocatedSizeBytes(roundUp512Boundary(currentVol.getAllocatedSizeInBytes()));
+        payload.setSource(new FlashArrayVolumeSource(sourceDataObject.getExternalName()));
+        FlashArrayList<FlashArrayVolume> list = POST(
+                "/volumes?names=" + payload.getExternalName() + "&overwrite=true", payload,
+                new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+        FlashArrayVolume outVolume = withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+        pause(postCopyWait);
+        return outVolume;
+    }
+
+    private void pause(long period) {
+        try {
+            Thread.sleep(period);
+        } catch (InterruptedException e) {
+
+        }
+    }
+
+    public boolean supportsSnapshotConnection() {
+        return false;
+    }
+
+    @Override
+    public void refresh(Map<String, String> details) {
+        this.connectionDetails = details;
+        this.refreshSession(true);
+    }
+
+    @Override
+    public void validate() {
+        login();
+
+        if (this.getVolumeNamespace(pod) == null) {
+            throw new RuntimeException(
+                    "Pod [" + pod + "] not found in FlashArray at [" + url + "], please validate configuration");
+        }
+    }
+
+    @Override
+    public void disconnect() {
+        return;
+    }
+
+    @Override
+    public ProviderVolumeStorageStats getManagedStorageStats() {
+        FlashArrayPod pod = getVolumeNamespace(this.pod);
+        if (pod == null) {
+            return null;
+        }
+        Long capacityBytes = pod.getQuotaLimit();
+        if (capacityBytes == null || capacityBytes == 0) {
+            // Pod has no explicit quota set; report the array total physical
+            // capacity so the CloudStack allocator has a real ceiling to plan
+            // against rather than bailing out with a zero-capacity pool.
+            capacityBytes = getArrayTotalCapacity();
+        }
+        if (capacityBytes == null || capacityBytes == 0) {
+            return null;
+        }
+        Long usedBytes = pod.getFootprint();
+        if (usedBytes == null) {
+            usedBytes = 0L;
+        }
+        ProviderVolumeStorageStats stats = new ProviderVolumeStorageStats();
+        stats.setCapacityInBytes(capacityBytes);
+        stats.setActualUsedInBytes(usedBytes);
+        return stats;
+    }
+
+    private Long getArrayTotalCapacity() {
+        try {
+            FlashArrayList<Map<String, Object>> list = GET("/arrays?space=true",
+                    new TypeReference<FlashArrayList<Map<String, Object>>>() {
+                    });
+            if (list != null && CollectionUtils.isNotEmpty(list.getItems())) {
+                Object cap = list.getItems().get(0).get("capacity");
+                if (cap instanceof Number) {
+                    return ((Number) cap).longValue();
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not retrieve total capacity for FlashArray [{}] (pod [{}]): {}",
+                    this.url, this.pod, e.getMessage());
+            logger.debug("Stack trace for array total capacity lookup failure on FlashArray [{}] (pod [{}])",
+                    this.url, this.pod, e);
+        }
+        return null;
+    }
+
+    @Override
+    public ProviderVolumeStats getVolumeStats(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+        ProviderVolume vol = getVolume(dataObject.getExternalName());
+        Long usedBytes = vol.getUsedBytes();
+        Long allocatedSizeInBytes = vol.getAllocatedSizeInBytes();
+        if (usedBytes == null || allocatedSizeInBytes == null) {
+            return null;
+        }
+        ProviderVolumeStats stats = new ProviderVolumeStats();
+        stats.setAllocatedInBytes(allocatedSizeInBytes);
+        stats.setActualUsedInBytes(usedBytes);
+        return stats;
+    }
+
+    @Override
+    public boolean canAccessHost(ProviderAdapterContext context, String hostname) {
+        if (hostname == null) {
+            throw new RuntimeException("Unable to validate host access because a hostname was not provided");
+        }
+
+        FlashArrayHost host = getHost(hostname);
+        if (host != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private FlashArrayHost getHost(String hostname) {
+        FlashArrayList<FlashArrayHost> list = null;
+
+        try {
+            list = GET("/hosts?names=" + hostname,
+                new TypeReference<FlashArrayList<FlashArrayHost>>() {
+                });
+        } catch (Exception e) {
+
+        }
+
+        if (list == null) {
+            if (hostname.indexOf('.') > 0) {
+                list = GET("/hosts?names=" + hostname.substring(0, (hostname.indexOf('.'))),
+                    new TypeReference<FlashArrayList<FlashArrayHost>>() {
+                });
+            }
+        }
+        return (FlashArrayHost) getFlashArrayItem(list);
+    }
+
+    private String getAccessToken() {
+        return accessToken;
+    }
+
+    /**
+     * Discover the latest supported Purity REST API version by hitting the unauthenticated
+     * {@code /api/api_version} endpoint (returns {@code {"version":["1.0",...,"2.36"]}}).
+     * The discovered version is stored on {@link #apiVersion}; on failure the caller-configured
+     * default remains in place.
+     */
+    private void fetchApiVersionFromPurity(CloseableHttpClient client) {
+        HttpGet vReq = new HttpGet(url + "/api_version");
+        CloseableHttpResponse vResp = null;
+        try {
+            vResp = client.execute(vReq);
+            if (vResp.getStatusLine().getStatusCode() == 200) {
+                JsonNode root = mapper.readTree(vResp.getEntity().getContent());
+                JsonNode versions = root.get("version");
+                if (versions != null && versions.isArray() && versions.size() > 0) {
+                    apiVersion = versions.get(versions.size() - 1).asText();
+                }
+            } else {
+                logger.warn("Unexpected HTTP " + vResp.getStatusLine().getStatusCode()
+                        + " from FlashArray [" + url + "] /api_version, falling back to default "
+                        + API_VERSION_DEFAULT);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to discover Purity REST API version from " + url
+                    + "/api_version, falling back to default " + API_VERSION_DEFAULT, e);
+        } finally {
+            if (vResp != null) {
+                try {
+                    vResp.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing /api_version response from FlashArray [" + url + "]", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Exchange the operator-configured username/password for a long-lived Purity api-token
+     * via REST 1.x {@code /auth/apitoken}. Emits the once-per-URL deprecation WARN.
+     * @return the api-token to feed into the REST 2.x /login exchange.
+     */
+    private String getApiTokenUsingUserPass(CloseableHttpClient client) throws IOException {
+        if (WARNED_LEGACY_URLS.add(url)) {
+            logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
+                    + "login against Purity REST 1.x. Replace with a pre-minted "
+                    + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
+                    + "removed in a future release.");
+        }
+        HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
+        ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
+        postParms.add(new BasicNameValuePair("username", username));
+        postParms.add(new BasicNameValuePair("password", password));
+        request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
+        CloseableHttpResponse response = null;
+        try {
+            response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
+                FlashArrayApiToken legacyToken = mapper.readValue(response.getEntity().getContent(),
+                        FlashArrayApiToken.class);
+                if (legacyToken == null || legacyToken.getApiToken() == null) {
+                    throw new CloudRuntimeException(
+                            "Authentication responded successfully but no api token was returned");
+                }
+                return legacyToken.getApiToken();
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else {
+                throw new CloudRuntimeException(
+                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
+                                + "] - " + response.getStatusLine().getReasonPhrase());
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
+                }
+            }
+        }
+    }
+
+    private synchronized void refreshSession(boolean force) {
+        try {
+            if (force || keyExpiration < System.currentTimeMillis()) {
+                // close client to force connection reset on appliance -- not doing this can
+                // result in NotAuthorized error...guessing
+                _client.close();
+                ;
+                _client = null;
+                login();
+                keyExpiration = System.currentTimeMillis() + keyTtl;
+            }
+        } catch (Exception e) {
+            // retry frequently but not every request to avoid DDOS on storage API
+            logger.warn(
+                    "Failed to refresh FlashArray API key for " + username + "@" + url + ", will retry in 5 seconds",
+                    e);
+            keyExpiration = System.currentTimeMillis() + (5 * 1000);
+        }
+    }
+
+    /**
+     * Login to the array and get an access token
+     */
+    private void login() {
+        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
+        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
+
+        URL urlFull;
+        try {
+            urlFull = new URL(urlStr);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Invalid URL format: " + urlStr, e);
+        }
+        ;
+
+        int port = urlFull.getPort();
+        if (port <= 0) {
+            port = 443;
+        }
+        this.url = urlFull.getProtocol() + "://" + urlFull.getHost() + ":" + port + urlFull.getPath();
+
+        Map<String, String> queryParms = new HashMap<String, String>();
+        if (urlFull.getQuery() != null) {
+            String[] queryToks = urlFull.getQuery().split("&");
+            for (String tok : queryToks) {
+                if (tok.endsWith("=")) {
+                    continue;
+                }
+                int i = tok.indexOf("=");
+                if (i > 0) {
+                    queryParms.put(tok.substring(0, i), tok.substring(i + 1));
+                }
+            }
+        }
+
+        pod = connectionDetails.get(FlashArrayAdapter.STORAGE_POD);
+        if (pod == null) {
+            pod = queryParms.get(FlashArrayAdapter.STORAGE_POD);
+            if (pod == null) {
+                throw new RuntimeException(
+                        FlashArrayAdapter.STORAGE_POD + " paramater/option required to configure this storage pool");
+            }
+        }
+
+        apiLoginVersion = connectionDetails.get(FlashArrayAdapter.API_LOGIN_VERSION);
+        if (apiLoginVersion == null) {
+            apiLoginVersion = queryParms.get(FlashArrayAdapter.API_LOGIN_VERSION);
+            if (apiLoginVersion == null) {
+                apiLoginVersion = API_LOGIN_VERSION_DEFAULT;
+            }
+        }
+
+        apiVersion = connectionDetails.get(FlashArrayAdapter.API_VERSION);
+        boolean apiVersionExplicit = apiVersion != null;
+        if (!apiVersionExplicit) {
+            apiVersion = queryParms.get(FlashArrayAdapter.API_VERSION);
+            apiVersionExplicit = apiVersion != null;
+            if (!apiVersionExplicit) {
+                apiVersion = API_VERSION_DEFAULT;
+            }
+        }
+
+        String transport = connectionDetails.get(FlashArrayAdapter.TRANSPORT);
+        if (transport == null) {
+            transport = queryParms.get(FlashArrayAdapter.TRANSPORT);
+        }
+        volumeAddressType = TRANSPORT_NVME_TCP.equalsIgnoreCase(transport)
+                ? AddressType.NVMETCP : AddressType.FIBERWWN;
+
+        // retrieve for legacy purposes.  if set, we'll remove any connections to hostgroup we find and use the host
+        hostgroup = connectionDetails.get(FlashArrayAdapter.HOSTGROUP);
+        if (hostgroup == null) {
+            hostgroup = queryParms.get(FlashArrayAdapter.HOSTGROUP);
+        }
+
+        String connTimeoutStr = connectionDetails.get(FlashArrayAdapter.CONNECT_TIMEOUT_MS);
+        if (connTimeoutStr == null) {
+            connTimeoutStr = queryParms.get(FlashArrayAdapter.CONNECT_TIMEOUT_MS);
+        }
+        if (connTimeoutStr == null) {
+            connTimeout = CONNECT_TIMEOUT_MS_DEFAULT;
+        } else {
+            try {
+                connTimeout = Integer.parseInt(connTimeoutStr);
+            } catch (NumberFormatException e) {
+                logger.warn("Connection timeout not formatted correctly, using default", e);
+                connTimeout = CONNECT_TIMEOUT_MS_DEFAULT;
+            }
+        }
+
+        String keyTtlString = connectionDetails.get(FlashArrayAdapter.KEY_TTL);
+        if (keyTtlString == null) {
+            keyTtlString = queryParms.get(FlashArrayAdapter.KEY_TTL);
+        }
+        if (keyTtlString == null) {
+            keyTtl = KEY_TTL_DEFAULT;
+        } else {
+            try {
+                keyTtl = Integer.parseInt(keyTtlString);
+            } catch (NumberFormatException e) {
+                logger.warn("Key TTL not formatted correctly, using default", e);
+                keyTtl = KEY_TTL_DEFAULT;
+            }
+        }
+
+        String copyWaitStr = connectionDetails.get(FlashArrayAdapter.POST_COPY_WAIT_MS);
+        if (copyWaitStr == null) {
+            copyWaitStr = queryParms.get(FlashArrayAdapter.POST_COPY_WAIT_MS);
+        }
+        if (copyWaitStr == null) {
+            postCopyWait = POST_COPY_WAIT_MS_DEFAULT;
+        } else {
+            try {
+                postCopyWait = Integer.parseInt(copyWaitStr);
+            } catch (NumberFormatException e) {
+                logger.warn("Key TTL not formatted correctly, using default", e);
+                postCopyWait = KEY_TTL_DEFAULT;
+            }
+        }
+
+        String skipTlsValidationStr = connectionDetails.get(ProviderAdapter.API_SKIP_TLS_VALIDATION_KEY);
+        if (skipTlsValidationStr == null) {
+            skipTlsValidationStr = queryParms.get(ProviderAdapter.API_SKIP_TLS_VALIDATION_KEY);
+        }
+
+        if (skipTlsValidationStr != null) {
+            skipTlsValidation = Boolean.parseBoolean(skipTlsValidationStr);
+        } else {
+            skipTlsValidation = true;
+        }
+
+        // Resolve the long-lived API token. Prefer a pre-minted api_token (Purity REST 2.x flow);
+        // fall back to legacy username/password auth via Purity REST 1.x for backward compatibility.
+        String apiToken = connectionDetails.get(ProviderAdapter.API_TOKEN_KEY);
+        if (apiToken != null && apiToken.isEmpty()) {
+            apiToken = null;
+        }
+        boolean usingLegacyUserPass = apiToken == null;
+        if (usingLegacyUserPass && (username == null || password == null)) {
+            throw new CloudRuntimeException("FlashArray adapter requires either " + ProviderAdapter.API_TOKEN_KEY
+                    + " (preferred) or both " + ProviderAdapter.API_USERNAME_KEY + " and "
+                    + ProviderAdapter.API_PASSWORD_KEY + " in the connection details");
+        }
+
+        CloseableHttpClient client = getClient();
+        CloseableHttpResponse response = null;
+        try {
+            // Discover the latest supported API version from the array unless one was explicitly configured.
+            // GET /api/api_version is unauthenticated and returns {"version":["1.0",...,"2.36"]}.
+            if (!apiVersionExplicit) {
+                fetchApiVersionFromPurity(client);
+            }
+
+            if (usingLegacyUserPass) {
+                apiToken = getApiTokenUsingUserPass(client);
+            }
+
+            // Exchange the long-lived api-token for a short-lived x-auth-token (REST 2.x).
+            HttpPost request = new HttpPost(url + "/" + apiVersion + "/login");
+            request.addHeader("api-token", apiToken);
+            response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
+                Header[] headers = response.getHeaders("x-auth-token");
+                if (headers == null || headers.length == 0) {
+                    throw new CloudRuntimeException(
+                            "FlashArray /login responded successfully but no x-auth-token header was returned");
+                }
+                accessToken = headers[0].getValue();
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "FlashArray [" + url + "] rejected the api-token at /" + apiVersion + "/login");
+            } else {
+                throw new CloudRuntimeException(
+                        "Unexpected HTTP response code from FlashArray [" + url + "] /" + apiVersion
+                                + "/login - [" + statusCode + "] - "
+                                + response.getStatusLine().getReasonPhrase());
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Error encoding login form for FlashArray [" + url + "]", e);
+        } catch (UnsupportedOperationException e) {
+            throw new CloudRuntimeException("Error processing login response from FlashArray [" + url + "]", e);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Error sending login request to FlashArray [" + url + "]", e);
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing response from login attempt to FlashArray", e);
+                }
+            }
+        }
+    }
+
+    private void removeVlunsAll(ProviderAdapterContext context, String volumeNamespace, String volumeName) {
+        volumeName = normalizeName(volumeNamespace, volumeName);
+        FlashArrayList<FlashArrayConnection> list = null;
+
+        try {
+            list = GET("/connections?volume_names=" + volumeName,
+                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                    });
+        } catch (CloudRuntimeException e) {
+            // this means the volume being deleted no longer exists so no connections can be
+            // searched
+            if (e.toString().contains("Bad Request")) {
+                return;
+            }
+        }
+
+        if (list != null && list.getItems() != null) {
+            for (FlashArrayConnection conn : list.getItems()) {
+                if (hostgroup != null && conn.getHostGroup() != null && conn.getHostGroup().getName() != null) {
+                    DELETE("/connections?host_group_names=" + conn.getHostGroup().getName() + "&volume_names="
+                            + volumeName);
+                    break;
+                } else if (conn.getHost() != null && conn.getHost().getName() != null) {
+                    DELETE("/connections?host_names=" + conn.getHost().getName() + "&volume_names=" + volumeName);
+                }
+            }
+        }
+    }
+
+    /**
+     * Look up a volume by name. The pool's address type is always stamped onto the
+     * result, so no caller can emit an FC-style WWN for a volume that lives on an
+     * NVMe-TCP pool (see {@link FlashArrayVolume#getAddress()}). The snapshot
+     * accessor below holds the same invariant.
+     */
+    private FlashArrayVolume getVolume(String volumeName) {
+        FlashArrayList<FlashArrayVolume> list = GET("/volumes?names=" + volumeName,
+                new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+    }
+
+    private FlashArrayPod getVolumeNamespace(String name) {
+        FlashArrayList<FlashArrayPod> list = GET("/pods?names=" + name,
+                new TypeReference<FlashArrayList<FlashArrayPod>>() {
+                });
+        return (FlashArrayPod) getFlashArrayItem(list);
+    }
+
+    private FlashArrayVolume getSnapshot(String snapshotName) {
+        FlashArrayList<FlashArrayVolume> list = GET("/volume-snapshots?names=" + snapshotName,
+                new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+    }
+
+    private FlashArrayVolume withAddressType(FlashArrayVolume vol) {
+        if (vol != null) {
+            vol.setAddressType(volumeAddressType);
+        }
+        return vol;
+    }
+
+    private Object getFlashArrayItem(FlashArrayList<?> list) {
+        if (list.getItems() != null && list.getItems().size() > 0) {
+            return list.getItems().get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private String normalizeName(String volumeNamespace, String volumeName) {
+        if (!volumeName.contains("::")) {
+            if (volumeNamespace != null) {
+                volumeName = volumeNamespace + "::" + volumeName;
+            }
+        }
+        return volumeName;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T POST(String path, Object input, final TypeReference<T> type) {
+        CloseableHttpResponse response = null;
+        try {
+            this.refreshSession(false);
+            HttpPost request = new HttpPost(url + "/" + apiVersion + path);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+            request.addHeader("X-auth-token", getAccessToken());
+            if (input != null) {
+                try {
+                    String data = mapper.writeValueAsString(input);
+                    request.setEntity(new StringEntity(data));
+                } catch (UnsupportedEncodingException | JsonProcessingException e) {
+                    throw new CloudRuntimeException(
+                            "Error processing request payload to [" + url + "] for path [" + path + "]", e);
+                }
+            }
+
+            CloseableHttpClient client = getClient();
+            try {
+                response = (CloseableHttpResponse) client
+                        .execute(request);
+            } catch (IOException e) {
+                throw new CloudRuntimeException("Error sending request to FlashArray [" + url + path + "]", e);
+            }
+
+            final int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
+                try {
+                    if (type != null) {
+                        Header header = response.getFirstHeader("Location");
+                        if (type.getType().getTypeName().equals(String.class.getName())) {
+                            if (header != null) {
+                                return (T) header.getValue();
+                            } else {
+                                return null;
+                            }
+                        } else {
+                            return mapper.readValue(response.getEntity().getContent(), type);
+                        }
+                    }
+                    return null;
+                } catch (UnsupportedOperationException | IOException e) {
+                    throw new CloudRuntimeException("Error processing response from FlashArray [" + url + path + "]",
+                            e);
+                }
+            } else if (statusCode == 400) {
+                try {
+                    Map<String, Object> payload = mapper.readValue(response.getEntity().getContent(),
+                            new TypeReference<Map<String, Object>>() {
+                            });
+                    throw new CloudRuntimeException("Invalid request error 400: " + payload);
+                } catch (UnsupportedOperationException | IOException e) {
+                    throw new CloudRuntimeException(
+                            "Error processing bad request response from FlashArray [" + url + path + "]", e);
+                }
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else {
+                try {
+                    Map<String, Object> payload = mapper.readValue(response.getEntity().getContent(),
+                            new TypeReference<Map<String, Object>>() {
+                            });
+                    throw new CloudRuntimeException("Invalid request error " + statusCode + ": " + payload);
+                } catch (UnsupportedOperationException | IOException e) {
+                    throw new CloudRuntimeException(
+                            "Unexpected HTTP response code from FlashArray on POST [" + url + path + "] - ["
+                                    + statusCode + "] - " + response.getStatusLine().getReasonPhrase());
+                }
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Unexpected failure closing response to FlashArray API", e);
+                }
+            }
+        }
+    }
+
+    private <T> T PATCH(String path, Object input, final TypeReference<T> type) {
+        CloseableHttpResponse response = null;
+        try {
+            this.refreshSession(false);
+            HttpPatch request = new HttpPatch(url + "/" + apiVersion + path);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+            request.addHeader("X-auth-token", getAccessToken());
+            String data = mapper.writeValueAsString(input);
+            request.setEntity(new StringEntity(data));
+
+            CloseableHttpClient client = getClient();
+            response = client.execute(request);
+
+            final int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
+                if (type != null)
+                    return mapper.readValue(response.getEntity().getContent(), type);
+                return null;
+            } else if (statusCode == 400) {
+                Map<String, Object> payload = mapper.readValue(response.getEntity().getContent(),
+                        new TypeReference<Map<String, Object>>() {
+                        });
+                throw new CloudRuntimeException("Invalid request error 400: " + payload);
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else {
+                Map<String, Object> payload = mapper.readValue(response.getEntity().getContent(),
+                        new TypeReference<Map<String, Object>>() {
+                        });
+                throw new CloudRuntimeException(
+                        "Invalid request error from FlashArray on PUT [" + url + path + "]" + statusCode + ": "
+                                + response.getStatusLine().getReasonPhrase() + " - " + payload);
+            }
+        } catch (UnsupportedEncodingException | JsonProcessingException e) {
+            throw new CloudRuntimeException(
+                    "Error processing request payload to [" + url + "] for path [" + path + "]", e);
+        } catch (UnsupportedOperationException e) {
+            throw new CloudRuntimeException("Error processing bad request response from FlashArray [" + url + "]",
+                    e);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Error sending request to FlashArray [" + url + "]", e);
+
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Unexpected failure closing response to FlashArray API", e);
+                }
+            }
+        }
+
+    }
+
+    private <T> T GET(String path, final TypeReference<T> type) {
+        CloseableHttpResponse response = null;
+        try {
+            this.refreshSession(false);
+            HttpGet request = new HttpGet(url + "/" + apiVersion + path);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+            request.addHeader("X-auth-token", getAccessToken());
+
+            CloseableHttpClient client = getClient();
+            response = client.execute(request);
+            final int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200) {
+                try {
+                    return mapper.readValue(response.getEntity().getContent(), type);
+                } catch (UnsupportedOperationException | IOException e) {
+                    throw new CloudRuntimeException("Error processing response from FlashArray [" + url + "]", e);
+                }
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else {
+                throw new CloudRuntimeException(
+                        "Unexpected HTTP response code from FlashArray on GET [" + request.getURI() + "] - ["
+                                + statusCode + "] - " + response.getStatusLine().getReasonPhrase());
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Error sending request to FlashArray [" + url + "]", e);
+        } catch (UnsupportedOperationException e) {
+            throw new CloudRuntimeException("Error processing response from FlashArray [" + url + "]", e);
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Unexpected failure closing response to FlashArray API", e);
+                }
+            }
+        }
+    }
+
+    private void DELETE(String path) {
+        CloseableHttpResponse response = null;
+        try {
+            this.refreshSession(false);
+            HttpDelete request = new HttpDelete(url + "/" + apiVersion + path);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+            request.addHeader("X-auth-token", getAccessToken());
+
+            CloseableHttpClient client = getClient();
+            response = client.execute(request);
+            final int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 404 || statusCode == 400) {
+                // this means the volume was deleted successfully, or doesn't exist (effective
+                // delete), or
+                // the volume name is malformed or too long - meaning it never got created to
+                // begin with (effective delete)
+                return;
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else if (statusCode == 409) {
+                throw new CloudRuntimeException(
+                        "The volume cannot be deleted at this time due to existing dependencies.  Validate that all snapshots associated with this volume have been deleted and try again.");
+            } else {
+                throw new CloudRuntimeException(
+                        "Unexpected HTTP response code from FlashArray on DELETE [" + url + path + "] - ["
+                                + statusCode + "] - " + response.getStatusLine().getReasonPhrase());
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Error sending request to FlashArray [" + url + "]", e);
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Unexpected failure closing response to FlashArray API", e);
+                }
+            }
+        }
+    }
+
+    private CloseableHttpClient getClient() {
+        if (_client == null) {
+            RequestConfig config = RequestConfig.custom()
+                    .setConnectTimeout((int) connTimeout)
+                    .setConnectionRequestTimeout((int) connTimeout)
+                    .setSocketTimeout((int) connTimeout).build();
+
+            HostnameVerifier verifier = null;
+            SSLContext sslContext = null;
+
+            if (this.skipTlsValidation) {
+                try {
+                    verifier = NoopHostnameVerifier.INSTANCE;
+                    sslContext = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE).build();
+                } catch (KeyManagementException e) {
+                    throw new CloudRuntimeException(e);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new CloudRuntimeException(e);
+                } catch (KeyStoreException e) {
+                    throw new CloudRuntimeException(e);
+                }
+            }
+
+            _client = HttpClients.custom()
+                    .setDefaultRequestConfig(config)
+                    .setSSLHostnameVerifier(verifier)
+                    .setSSLContext(sslContext)
+                    .build();
+        }
+        return _client;
+    }
+
+    /**
+     * pure array requires volume sizes in multiples of 512...we'll just round up to
+     * next 512 boundary
+     *
+     * @param sizeInBytes
+     * @return
+     */
+    private Long roundUp512Boundary(Long sizeInBytes) {
+        Long remainder = sizeInBytes % 512;
+        if (remainder > 0) {
+            sizeInBytes = sizeInBytes + (512 - remainder);
+        }
+        return sizeInBytes;
+    }
+
+    @Override
+    public Map<String, String> getConnectionIdMap(ProviderAdapterDataObject dataIn) {
+        Map<String, String> map = new HashMap<String, String>();
+
+        // flasharray doesn't let you directly map a snapshot to a host, so we'll just return an empty map
+        if (dataIn.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            return map;
+        }
+
+        try {
+            FlashArrayList<FlashArrayConnection> list = GET("/connections?volume_names=" + dataIn.getExternalName(),
+                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                    });
+
+            if (list != null && list.getItems() != null) {
+                for (FlashArrayConnection conn : list.getItems()) {
+                    if (AddressType.NVMETCP.equals(volumeAddressType)) {
+                        // Key on the host name so connid.<hostname> is matched by
+                        // parseAndValidatePath. NVMe-TCP reports an nsid where Fibre
+                        // Channel reports a lun; the connection itself is host-scoped
+                        // on both transports.
+                        if (conn.getHost() != null && conn.getHost().getName() != null) {
+                            String id = conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            map.put(conn.getHost().getName(), id);
+                        }
+                    } else if (conn.getHost() != null) {
+                        map.put(conn.getHost().getName(), "" + conn.getLun());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // flasharray returns a 400 if the volume doesn't exist, so we'll just return an empty object.
+            if (logger.isTraceEnabled()) {
+                logger.trace("Error getting connection map for volume [" + dataIn.getExternalName() + "]: " + e.toString(), e);
+            }
+        }
+        return map;
+    }
+
+    @Override
+    public boolean canDirectAttachSnapshot() {
+        return false;
+    }
+}

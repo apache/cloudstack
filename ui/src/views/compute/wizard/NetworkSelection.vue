@@ -101,7 +101,7 @@
 
 <script>
 import _ from 'lodash'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { isAdmin } from '@/role'
 import store from '@/store'
 import CreateNetwork from '@/views/network/CreateNetwork'
@@ -219,13 +219,17 @@ export default {
         return {
           type: 'radio',
           selectedRowKeys: this.selectedRowKeys,
+          // without this, antd drops any selected key not in the current page's dataSource on every change
+          preserveSelectedRowKeys: true,
           onChange: this.onSelectRow
         }
       } else {
         return {
           type: 'checkbox',
           selectedRowKeys: this.selectedRowKeys,
+          preserveSelectedRowKeys: true,
           onChange: (rows) => {
+            this.selectedRowKeys = rows
             this.$emit('select-network-item', rows)
           }
         }
@@ -251,17 +255,20 @@ export default {
       }
     },
     loading () {
-      api('listZones', { id: this.zoneId }).then(json => {
+      getAPI('listZones', { id: this.zoneId }).then(json => {
         const zoneResponse = json.listzonesresponse.zone || []
         this.showCreateButton = false
-        if (zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
+        if ('createNetwork' in store.getters.apis && zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
           this.showCreateButton = true
         }
       })
       if (!this.loading) {
         if (this.preFillContent.networkids) {
-          this.selectedRowKeys = this.preFillContent.networkids
-          this.$emit('select-network-item', this.preFillContent.networkids)
+          const validNetworkIds = this.preFillContent.networkids.filter(networkId =>
+            this.items.some(item => item.id === networkId)
+          )
+          this.selectedRowKeys = validNetworkIds
+          this.$emit('select-network-item', validNetworkIds)
         } else {
           if (this.items && this.items.length > 0) {
             if (this.oldZoneId === this.zoneId) {
@@ -314,7 +321,7 @@ export default {
     if (projectId) {
       params.projectid = projectId
     }
-    api('listVPCs', {
+    getAPI('listVPCs', {
       params
     }).then((response) => {
       this.vpcs = _.get(response, 'listvpcsresponse.vpc')
@@ -327,7 +334,7 @@ export default {
       if (!projectId) {
         return false
       }
-      api('listVPCs', {
+      getAPI('listVPCs', {
         projectid: store.getters.project.id
       }).then((response) => {
         this.vpcs = _.get(response, 'listvpcsresponse.vpc')
@@ -383,7 +390,7 @@ export default {
         args.specifyvlan = false
         args.state = 'Enabled'
 
-        api('listNetworkOfferings', args).then(json => {
+        getAPI('listNetworkOfferings', args).then(json => {
           const listNetworkOfferings = json.listnetworkofferingsresponse.networkoffering || []
           resolve(listNetworkOfferings)
         }).catch(error => {

@@ -20,17 +20,17 @@ package org.apache.cloudstack.api;
 
 import com.cloud.baremetal.networkservice.BaremetalPxePingResponse;
 
-@APICommand(name = "addBaremetalPxePingServer", description = "add a baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class,
+@APICommand(name = "addBaremetalPxePingServer", description = "Add a baremetal ping PXE server", responseObject = BaremetalPxePingResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddBaremetalPxePingServerCmd extends AddBaremetalPxeCmd {
 
-    @Parameter(name = ApiConstants.PING_STORAGE_SERVER_IP, type = CommandType.STRING, required = true, description = "PING storage server ip")
+    @Parameter(name = ApiConstants.PING_STORAGE_SERVER_IP, type = CommandType.STRING, required = true, description = "PING storage server IP")
     private String pingStorageServerIp;
 
     @Parameter(name = ApiConstants.PING_DIR, type = CommandType.STRING, required = true, description = "Root directory on PING storage server")
     private String pingDir;
 
-    @Parameter(name = ApiConstants.TFTP_DIR, type = CommandType.STRING, required = true, description = "Tftp root directory of PXE server")
+    @Parameter(name = ApiConstants.TFTP_DIR, type = CommandType.STRING, required = true, description = "TFTP root directory of PXE server")
     private String tftpDir;
 
     @Parameter(name = ApiConstants.PING_CIFS_USERNAME, type = CommandType.STRING, description = "Username of PING storage server")

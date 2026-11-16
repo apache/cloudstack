@@ -31,14 +31,15 @@ import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class EncryptionSecretKeyChecker {
 
-    private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // Two possible locations with the new packaging naming
     private static final String s_altKeyFile = "key";
@@ -57,14 +58,14 @@ public class EncryptionSecretKeyChecker {
     public void check(Properties properties, String property) throws IOException {
         String encryptionType = properties.getProperty(property);
 
-        s_logger.debug("Encryption Type: " + encryptionType);
+        logger.debug("Encryption Type: " + encryptionType);
 
         if (encryptionType == null || encryptionType.equals("none")) {
             return;
         }
 
         if (s_useEncryption) {
-            s_logger.warn("Encryption already enabled, is check() called twice?");
+            logger.warn("Encryption already enabled, is check() called twice?");
             return;
         }
 
@@ -98,7 +99,7 @@ public class EncryptionSecretKeyChecker {
         } else if (encryptionType.equals("web")) {
             int port = 8097;
             try (ServerSocket serverSocket = new ServerSocket(port);) {
-                s_logger.info("Waiting for admin to send secret key on port " + port);
+                logger.info("Waiting for admin to send secret key on port " + port);
                 try (
                         Socket clientSocket = serverSocket.accept();
                         PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);

@@ -18,7 +18,7 @@
 <template>
   <span @click="$message.success($t('label.copied.clipboard') + ': ' + label)">
     <a-tooltip :title="tooltip ? tooltip : $t('label.copy')" :placement="tooltipPlacement">
-      <a href="javascript:;" v-clipboard:copy="label">{{ label }}</a>
+      <a href="javascript:;" v-clipboard:copy="copyValue === '' ? label : copyValue">{{ label }}&nbsp;<copy-outlined v-if="showIcon"/></a>
     </a-tooltip>
   </span>
 </template>
@@ -32,6 +32,10 @@ export default {
       type: String,
       default: ''
     },
+    copyValue: {
+      type: String,
+      default: ''
+    },
     tooltip: {
       type: String,
       default: ''
@@ -39,6 +43,10 @@ export default {
     tooltipPlacement: {
       type: String,
       default: 'top'
+    },
+    showIcon: {
+      type: Boolean,
+      default: false
     }
   }
 }

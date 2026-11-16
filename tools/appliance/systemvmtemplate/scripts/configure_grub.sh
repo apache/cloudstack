@@ -34,7 +34,7 @@ function configure_grub() {
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=0
 GRUB_DISTRIBUTOR=Debian
-GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet fsck.mode=force fsck.repair=yes"
 GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200n8 console=hvc0 earlyprintk=xen net.ifnames=0 biosdevname=0 debian-installer=en_US nomodeset"
 GRUB_CMDLINE_XEN="com1=115200 console=com1"
 GRUB_TERMINAL="console serial"

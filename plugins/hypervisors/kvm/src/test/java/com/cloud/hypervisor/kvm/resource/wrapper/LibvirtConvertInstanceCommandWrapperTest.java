@@ -18,22 +18,12 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ConvertInstanceCommand;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.RemoteInstanceTO;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
-import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
-import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
-import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.storage.Storage;
-import com.cloud.utils.Pair;
-import com.cloud.utils.script.Script;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,9 +35,18 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ConvertInstanceCommand;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.storage.Storage;
+import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtConvertInstanceCommandWrapperTest {
@@ -71,12 +70,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
     private static final String secondaryPoolUrl = "nfs://192.168.1.1/secondary";
     private static final String vmName = "VmToImport";
-    private static final String hostName = "VmwareHost1";
-    private static final String vmwareVcenter = "192.168.1.2";
-    private static final String vmwareDatacenter = "Datacenter";
-    private static final String vmwareCluster = "Cluster";
-    private static final String vmwareUsername = "administrator@vsphere.local";
-    private static final String vmwarePassword = "password";
 
     @Before
     public void setUp() {
@@ -85,16 +78,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         Mockito.when(storagePoolManager.getStoragePoolByURI(secondaryPoolUrl)).thenReturn(temporaryPool);
         KVMPhysicalDisk physicalDisk1 = Mockito.mock(KVMPhysicalDisk.class);
         KVMPhysicalDisk physicalDisk2 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2));
-    }
-
-    @Test
-    public void testIsInstanceConversionSupportedOnHost() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            boolean supported = convertInstanceCommandWrapper.isInstanceConversionSupportedOnHost();
-            Assert.assertTrue(supported);
-        }
     }
 
     @Test
@@ -122,51 +105,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     }
 
     @Test
-    public void testGetTemporaryDisksWithPrefixFromTemporaryPool() {
-        String convertPath = "/xyz";
-        String convertPrefix = UUID.randomUUID().toString();
-        KVMPhysicalDisk physicalDisk1 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(physicalDisk1.getName()).thenReturn("disk1");
-        KVMPhysicalDisk physicalDisk2 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(physicalDisk2.getName()).thenReturn("disk2");
-
-        KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedDisk1.getName()).thenReturn(String.format("%s-sda", convertPrefix));
-        KVMPhysicalDisk convertedDisk2 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedDisk2.getName()).thenReturn(String.format("%s-sdb", convertPrefix));
-        KVMPhysicalDisk convertedXml = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedXml.getName()).thenReturn(String.format("%s.xml", convertPrefix));
-        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2,
-                convertedDisk1, convertedDisk2, convertedXml));
-
-        List<KVMPhysicalDisk> convertedDisks = convertInstanceCommandWrapper.getTemporaryDisksWithPrefixFromTemporaryPool(temporaryPool, convertPath, convertPrefix);
-        Assert.assertEquals(2, convertedDisks.size());
-    }
-
-    @Test
-    public void testGetTemporaryDisksFromParsedXml() {
-        String relativePath = UUID.randomUUID().toString();
-        String fullPath = String.format("/mnt/xyz/%s", relativePath);
-
-        LibvirtVMDef.DiskDef diskDef = new LibvirtVMDef.DiskDef();
-        LibvirtVMDef.DiskDef.DiskBus bus = LibvirtVMDef.DiskDef.DiskBus.VIRTIO;
-        LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
-        diskDef.defFileBasedDisk(fullPath, "test", bus, type);
-
-        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
-        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
-
-        KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
-        Mockito.when(temporaryPool.getPhysicalDisk(relativePath)).thenReturn(convertedDisk1);
-
-        List<KVMPhysicalDisk> disks = convertInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "");
-        Mockito.verify(convertInstanceCommandWrapper).sanitizeDisksPath(List.of(diskDef));
-        Assert.assertEquals(1, disks.size());
-        Assert.assertEquals("disk1", disks.get(0).getName());
-    }
-
-    @Test
     public void testSanitizeDisksPath() {
         String relativePath = UUID.randomUUID().toString();
         String fullPath = String.format("/mnt/xyz/%s", relativePath);
@@ -179,114 +117,66 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         Assert.assertEquals(relativePath, diskDef.getDiskPath());
     }
 
-    @Test
-    public void testMoveTemporaryDisksToDestination() {
-        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(sourceDisk.getPool()).thenReturn(temporaryPool);
-        List<KVMPhysicalDisk> disks = List.of(sourceDisk);
-        String destinationPoolUuid = UUID.randomUUID().toString();
-        List<String> destinationPools = List.of(destinationPoolUuid);
-
-        KVMPhysicalDisk destDisk = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(destDisk.getPath()).thenReturn("xyz");
-        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, destinationPoolUuid))
-                .thenReturn(destinationPool);
-        Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
-                .thenReturn(destDisk);
-
-        List<KVMPhysicalDisk> movedDisks = convertInstanceCommandWrapper.moveTemporaryDisksToDestination(disks, destinationPools, storagePoolManager);
-        Assert.assertEquals(1, movedDisks.size());
-        Assert.assertEquals("xyz", movedDisks.get(0).getPath());
-    }
-
-    @Test
-    public void testGetUnmanagedInstanceDisks() {
-        String relativePath = UUID.randomUUID().toString();
-        LibvirtVMDef.DiskDef diskDef = new LibvirtVMDef.DiskDef();
-        LibvirtVMDef.DiskDef.DiskBus bus = LibvirtVMDef.DiskDef.DiskBus.IDE;
-        LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
-        diskDef.defFileBasedDisk(relativePath, relativePath, bus, type);
-
-        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(sourceDisk.getName()).thenReturn(UUID.randomUUID().toString());
-        Mockito.when(sourceDisk.getPool()).thenReturn(destinationPool);
-        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
-        List<KVMPhysicalDisk> disks = List.of(sourceDisk);
-
-        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
-        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
-
-        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = convertInstanceCommandWrapper.getUnmanagedInstanceDisks(disks, parser);
-        Assert.assertEquals(1, unmanagedInstanceDisks.size());
-        UnmanagedInstanceTO.Disk disk = unmanagedInstanceDisks.get(0);
-        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.IDE.toString(), disk.getController());
-    }
-
-    @Test
-    public void testGetNfsStoragePoolHostAndPath() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            String localMountPoint = "/mnt/xyz";
-            String host = "192.168.1.2";
-            String path = "/secondary";
-            String mountOutput = String.format("%s:%s on %s type nfs (...)", host, path, localMountPoint);
-            Mockito.when(temporaryPool.getLocalPath()).thenReturn(localMountPoint);
-            Mockito.when(Script.runSimpleBashScript(Mockito.anyString()))
-                    .thenReturn(mountOutput);
-
-            Pair<String, String> pair = convertInstanceCommandWrapper.getNfsStoragePoolHostAndPath(temporaryPool);
-            Assert.assertEquals(host, pair.first());
-            Assert.assertEquals(path, pair.second());
-        }
-    }
-
     private RemoteInstanceTO getRemoteInstanceTO(Hypervisor.HypervisorType hypervisorType) {
         RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
         Mockito.when(remoteInstanceTO.getHypervisorType()).thenReturn(hypervisorType);
         Mockito.when(remoteInstanceTO.getInstanceName()).thenReturn(vmName);
-        Mockito.when(remoteInstanceTO.getHostName()).thenReturn(hostName);
-        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn(vmwareVcenter);
-        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn(vmwareDatacenter);
-        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn(vmwareCluster);
-        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn(vmwareUsername);
-        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn(vmwarePassword);
         return remoteInstanceTO;
     }
 
-    private ConvertInstanceCommand getConvertInstanceCommand(RemoteInstanceTO remoteInstanceTO, Hypervisor.HypervisorType hypervisorType) {
+    private ConvertInstanceCommand getConvertInstanceCommand(RemoteInstanceTO remoteInstanceTO, Hypervisor.HypervisorType hypervisorType, boolean checkConversionSupport) {
         ConvertInstanceCommand cmd = Mockito.mock(ConvertInstanceCommand.class);
         Mockito.when(cmd.getSourceInstance()).thenReturn(remoteInstanceTO);
         Mockito.when(cmd.getDestinationHypervisorType()).thenReturn(hypervisorType);
         Mockito.when(cmd.getWait()).thenReturn(14400);
         Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(secondaryDataStore);
+        Mockito.when(cmd.getCheckConversionSupport()).thenReturn(checkConversionSupport);
+        Mockito.when(cmd.getOriginalVMName()).thenReturn(vmName);
         return cmd;
     }
 
     @Test
     public void testExecuteConvertUnsupportedOnTheHost() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
-            ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM);
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(1);
-            Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
-            Assert.assertFalse(answer.getResult());
-        }
+        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsInstanceConversion()).thenReturn(false);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
+        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+        Assert.assertFalse(answer.getResult());
     }
 
     @Test
     public void testExecuteConvertUnsupportedHypervisors() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.XenServer);
-            ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM);
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
-            Assert.assertFalse(answer.getResult());
-        }
+        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.XenServer);
+        Mockito.when(libvirtComputingResourceMock.hostSupportsInstanceConversion()).thenReturn(true);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
+        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+        Assert.assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testExecuteDirectRbdVddkFailsWhenHostLacksDirectRbdSupport() {
+        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, false);
+        Mockito.when(cmd.isUseVddk()).thenReturn(true);
+        Mockito.when(cmd.getVddkLibDir()).thenReturn("/opt/vddk");
+        Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(primaryDataStore);
+        Mockito.when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(primaryDataStore.getUuid()).thenReturn("rbd-pool-uuid");
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.RBD, "rbd-pool-uuid")).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getLocalPath()).thenReturn("/rbd");
+        Mockito.when(libvirtComputingResourceMock.getVddkLibDir()).thenReturn("/opt/vddk");
+        Mockito.when(libvirtComputingResourceMock.hostSupportsVddkRbdDirectImport("/opt/vddk")).thenReturn(false);
+
+        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Direct RBD VDDK import requires"));
     }
 
     @Test
     public void testExecuteConvertFailure() {
         RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
-        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
         String localMountPoint = "/mnt/xyz";
         Mockito.when(temporaryPool.getLocalPath()).thenReturn(localMountPoint);
 
@@ -296,15 +186,244 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                  Mockito.when(mock.getExitValue()).thenReturn(1);
              })
         ) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            Mockito.when(Script.runSimpleBashScriptForExitValueAvoidLogging(Mockito.anyString())).thenReturn(0);
-            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn("");
+            Mockito.when(libvirtComputingResourceMock.hostSupportsInstanceConversion()).thenReturn(true);
 
             Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
             Assert.assertFalse(answer.getResult());
-            Mockito.verify(convertInstanceCommandWrapper).performInstanceConversion(Mockito.anyString(),
-                    Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
+            Mockito.verify(convertInstanceCommandWrapper).performInstanceConversion(Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.nullable(String.class), Mockito.any(LibvirtComputingResource.class), Mockito.anyBoolean());
         }
     }
 
+    @Test
+    public void testAddExtraParamsToScriptSameKeysAndValues() {
+        Script script = Mockito.mock(Script.class);
+        String extraParams = "--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254";
+        convertInstanceCommandWrapper.addExtraParamsToScript(extraParams, script);
+        Mockito.verify(script).add("--mac", "00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254");
+    }
+
+    @Test
+    public void testAddExtraParamsToScriptDifferentArgs() {
+        Script script = Mockito.mock(Script.class);
+        String extraParams = "--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x -v";
+        convertInstanceCommandWrapper.addExtraParamsToScript(extraParams, script);
+        Mockito.verify(script).add("--mac", "00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254");
+        Mockito.verify(script).add("-x");
+        Mockito.verify(script).add("-v");
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkUsesConfiguredLibguestfsBackend() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn("28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81")
+                .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "libvirt", null, null, 1000L, false, null, "tmp-uuid", "-ip", false);
+
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            Mockito.verify(scriptMock).add("-c");
+            Mockito.verify(scriptMock).add(Mockito.contains("export LIBGUESTFS_BACKEND=libvirt &&"));
+            Mockito.verify(scriptMock).add(Mockito.contains("-ip /tmp/v2v.pass.cloud.vcenter.local."));
+            Mockito.verify(scriptMock).add(Mockito.contains(" -on tmp-uuid "));
+            Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-thumbprint=28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81 "));
+        }
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkUsesConfiguredTransportsOrder() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn("28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81")
+                .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", "nbd:nbdssl", null, 1000L, false, null, "tmp-uuid", "-ip", false);
+
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-transports=nbd:nbdssl "));
+        }
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkFailsWhenThumbprintUnavailable() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn(null)
+                .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null, null, 1000L, false, null, "tmp-uuid", "-ip", false);
+
+            Assert.assertFalse(result);
+        }
+    }
+
+    @Test
+    public void testPerformInstanceConversionUsingVddkUsesConfiguredThumbprintFromAgentProperty() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
+                    .thenReturn(true);
+
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null,
+                    "AA:BB:CC:DD:EE", 1000L, false, null, "tmp-uuid", "-ip", false);
+
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-thumbprint=AA:BB:CC:DD:EE "));
+            Mockito.verify(convertInstanceCommandWrapper, Mockito.never())
+                    .getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+        }
+    }
+
+    @Test
+    public void testBuildDirectRbdNbdLibvirtXmlUsesLocalhostNbdSourcesWithoutSecrets() {
+        // virt-v2v's "-i libvirtxml" input runs without a libvirt connection: a native
+        // rbd network disk with a <secret> auth reference attaches zero drives there,
+        // so the finalization XML must use localhost qemu-nbd bridge endpoints.
+        String xml = convertInstanceCommandWrapper.buildDirectRbdNbdLibvirtXml("tmp-uuid", List.of(10809, 10810));
+
+        Assert.assertTrue(xml, xml.contains("<source protocol='nbd'>"));
+        Assert.assertTrue(xml, xml.contains("<host name='localhost' port='10809'/>"));
+        Assert.assertTrue(xml, xml.contains("<host name='localhost' port='10810'/>"));
+        Assert.assertTrue(xml, xml.contains("<target dev='sda' bus='scsi'/>"));
+        Assert.assertTrue(xml, xml.contains("<target dev='sdb' bus='scsi'/>"));
+        Assert.assertFalse(xml, xml.contains("protocol='rbd'"));
+        Assert.assertFalse(xml, xml.contains("<secret"));
+        Assert.assertFalse(xml, xml.contains("<auth"));
+    }
+
+    @Test
+    public void testWindowsOnlineDisksFirstbootScriptContent() {
+        String script = LibvirtConvertInstanceCommandWrapper.WINDOWS_ONLINE_DISKS_FIRSTBOOT;
+        Assert.assertTrue("should set SAN policy OnlineAll", script.contains("OnlineAll"));
+        Assert.assertTrue("should clear the offline flag", script.contains("-IsOffline $false"));
+        Assert.assertTrue("should clear the read-only flag", script.contains("-IsReadOnly $false"));
+        Assert.assertTrue("should iterate the disks", script.contains("Get-Disk"));
+    }
+
+    @Test
+    public void testWriteWindowsOnlineDisksFirstbootScriptWritesFile() throws Exception {
+        Path firstboot = convertInstanceCommandWrapper.writeWindowsOnlineDisksFirstbootScript(vmName);
+        try {
+            Assert.assertNotNull(firstboot);
+            Assert.assertTrue(Files.exists(firstboot));
+            Assert.assertEquals(LibvirtConvertInstanceCommandWrapper.WINDOWS_ONLINE_DISKS_FIRSTBOOT, Files.readString(firstboot));
+        } finally {
+            if (firstboot != null) {
+                Files.deleteIfExists(firstboot);
+            }
+        }
+    }
+
+    @Test
+    public void testVddkConversionInjectsFirstbootForWindowsGuest() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn("AA:BB:CC").when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+        Mockito.doReturn(Path.of("/tmp/cs-fb.bat")).when(convertInstanceCommandWrapper).writeWindowsOnlineDisksFirstbootScript(Mockito.anyString());
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.any(), Mockito.eq("secret"))).thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.any())).thenReturn(true);
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null, null, 1000L, false, null, "tmp-uuid", "-ip", true);
+            Assert.assertTrue(result);
+            Script scriptMock = ignored.constructed().get(0);
+            // Path.toString() is platform-dependent on the test host; assert the flag is injected.
+            Mockito.verify(scriptMock).add(Mockito.contains("--firstboot "));
+        }
+    }
+
+    @Test
+    public void testVddkConversionSkipsFirstbootForNonWindowsGuest() {
+        RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn("vcenter.local");
+        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn("administrator@vsphere.local");
+        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn("secret");
+        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn("dc1");
+        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn("cluster1");
+        Mockito.when(remoteInstanceTO.getHostName()).thenReturn("host1");
+        Mockito.doReturn("AA:BB:CC").when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.when(mock.execute(Mockito.any())).thenReturn("");
+                 Mockito.when(mock.getExitValue()).thenReturn(0);
+             })) {
+            filesMock.when(() -> Files.writeString(Mockito.any(), Mockito.eq("secret"))).thenAnswer(invocation -> invocation.getArgument(0));
+            filesMock.when(() -> Files.deleteIfExists(Mockito.any())).thenReturn(true);
+            boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null, null, 1000L, false, null, "tmp-uuid", "-ip", false);
+            Assert.assertTrue(result);
+            Mockito.verify(convertInstanceCommandWrapper, Mockito.never()).writeWindowsOnlineDisksFirstbootScript(Mockito.anyString());
+        }
+    }
 }

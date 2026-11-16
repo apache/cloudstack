@@ -52,6 +52,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     boolean defaultNic;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
+    boolean enabled;
 
     Integer orderIndex;
 
@@ -62,6 +63,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     String iPv4Dns1;
     String iPv4Dns2;
     String requestedIPv4;
+    boolean ipv4AllocationRaceCheck;
 
     // IPv6
     String iPv6Address;
@@ -86,6 +88,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         broadcastType = network.getBroadcastDomainType();
         trafficType = network.getTrafficType();
         format = nic.getAddressFormat();
+        enabled = nic.isEnabled();
 
         iPv4Address = nic.getIPv4Address();
         iPv4Netmask = nic.getIPv4Netmask();
@@ -405,6 +408,21 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.mtu = mtu;
     }
 
+    public boolean getIpv4AllocationRaceCheck() {
+        return this.ipv4AllocationRaceCheck;
+    }
+
+    public void setIpv4AllocationRaceCheck(boolean ipv4AllocationRaceCheck) {
+        this.ipv4AllocationRaceCheck = ipv4AllocationRaceCheck;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
     //
     // OTHER METHODS
@@ -442,6 +460,9 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     @Override
     public String toString() {
-        return String.format("NicProfile %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "vmId", "reservationId", "iPv4Address", "broadcastUri"));
+        return String.format("NicProfile %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "vmId", "deviceId",
+                        "broadcastType", "broadcastUri", "reservationId", "iPv4Address"));
     }
 }

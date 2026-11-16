@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.Date;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class GenerateUsageRecordsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GenerateUsageRecordsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -49,13 +47,13 @@ public class GenerateUsageRecordsCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.END_DATE,
                type = CommandType.DATE,
-               required = true,
+               required = false,
                description = "End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date endDate;
 
     @Parameter(name = ApiConstants.START_DATE,
                type = CommandType.DATE,
-               required = true,
+               required = false,
                description = "Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
 

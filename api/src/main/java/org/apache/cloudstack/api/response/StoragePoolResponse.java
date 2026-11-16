@@ -30,99 +30,120 @@ import java.util.Map;
 @EntityReference(value = StoragePool.class)
 public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
-    @Param(description = "the ID of the storage pool")
+    @Param(description = "The ID of the storage pool")
     private String id;
 
     @SerializedName("zoneid")
-    @Param(description = "the Zone ID of the storage pool")
+    @Param(description = "The Zone ID of the storage pool")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the storage pool")
+    @Param(description = "The Zone name of the storage pool")
     private String zoneName;
 
     @SerializedName("podid")
-    @Param(description = "the Pod ID of the storage pool")
+    @Param(description = "The Pod ID of the storage pool")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name of the storage pool")
+    @Param(description = "The Pod name of the storage pool")
     private String podName;
 
     @SerializedName("name")
-    @Param(description = "the name of the storage pool")
+    @Param(description = "The name of the storage pool")
     private String name;
 
     @SerializedName("ipaddress")
-    @Param(description = "the IP address of the storage pool")
+    @Param(description = "The IP address of the storage pool")
     private String ipAddress;
 
     @SerializedName("path")
-    @Param(description = "the storage pool path")
+    @Param(description = "The storage pool path")
     private String path;
 
     @SerializedName("created")
-    @Param(description = "the date and time the storage pool was created")
+    @Param(description = "The date and time the storage pool was created")
     private Date created;
 
     @SerializedName("type")
-    @Param(description = "the storage pool type")
+    @Param(description = "The storage pool type")
     private String type;
 
     @SerializedName("clusterid")
-    @Param(description = "the ID of the cluster for the storage pool")
+    @Param(description = "The ID of the cluster for the storage pool")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the name of the cluster for the storage pool")
+    @Param(description = "The name of the cluster for the storage pool")
     private String clusterName;
 
+    @SerializedName(ApiConstants.CAPACITY_BYTES)
+    @Param(description = "bytes CloudStack can provision from this storage pool", since = "4.22.0")
+    private Long capacityBytes;
+
+    @Deprecated(since = "4.22.0")
     @SerializedName("disksizetotal")
-    @Param(description = "the total disk size of the storage pool")
+    @Param(description = "The total disk size of the storage pool")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeallocated")
-    @Param(description = "the host's currently allocated disk size")
+    @Param(description = "The pool's currently allocated disk size")
     private Long diskSizeAllocated;
 
     @SerializedName("disksizeused")
-    @Param(description = "the host's currently used disk size")
+    @Param(description = "The pool's currently used disk size")
     private Long diskSizeUsed;
 
-    @SerializedName("capacityiops")
+    @SerializedName(ApiConstants.CAPACITY_IOPS)
     @Param(description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
     @SerializedName("allocatediops")
-    @Param(description = "total min IOPS currently in use by volumes")
+    @Param(description = "Total min IOPS currently in use by volumes")
     private Long allocatedIops;
 
+    @SerializedName(ApiConstants.USED_IOPS)
+    @Param(description = "total IOPS currently in use", since = "4.20.1")
+    private Long usedIops;
+
+    @SerializedName(ApiConstants.STORAGE_CUSTOM_STATS)
+    @Param(description = "the storage pool custom stats", since = "4.18.1")
+    private Map<String, String> customStats;
+
     @SerializedName("tags")
-    @Param(description = "the tags for the storage pool")
+    @Param(description = "The tags for the storage pool")
     private String tags;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "the storage access groups for the storage pool", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.NFS_MOUNT_OPTIONS)
+    @Param(description = "the nfs mount options for the storage pool", since = "4.19.1")
+    private String nfsMountOpts;
 
     @SerializedName(ApiConstants.IS_TAG_A_RULE)
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the storage pool")
+    @Param(description = "The state of the storage pool")
     private StoragePoolStatus state;
 
     @SerializedName(ApiConstants.SCOPE)
-    @Param(description = "the scope of the storage pool")
+    @Param(description = "The scope of the storage pool")
     private String scope;
 
     @SerializedName("overprovisionfactor")
-    @Param(description = "the overprovisionfactor for the storage pool", since = "4.4")
+    @Param(description = "The overprovisionfactor for the storage pool", since = "4.4")
     private String overProvisionFactor;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor type of the storage pool")
+    @Param(description = "The hypervisor type of the storage pool")
     private String hypervisor;
 
     @SerializedName("suitableformigration")
-    @Param(description = "true if this pool is suitable to migrate a volume," + " false otherwise")
+    @Param(description = "True if this pool is suitable to migrate a volume," + " false otherwise")
     private Boolean suitableForMigration;
 
     @SerializedName("provider")
@@ -130,8 +151,16 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private String provider;
 
     @SerializedName(ApiConstants.STORAGE_CAPABILITIES)
-    @Param(description = "the storage pool capabilities")
+    @Param(description = "The storage pool capabilities")
     private Map<String, String> caps;
+
+    @SerializedName(ApiConstants.MANAGED)
+    @Param(description = "whether this pool is managed or not")
+    private Boolean managed;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "the storage pool details")
+    private Map<String, String> details;
 
     public Map<String, String> getCaps() {
         return caps;
@@ -264,6 +293,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
         this.clusterName = clusterName;
     }
 
+    public Long getCapacityBytes() {
+        return capacityBytes;
+    }
+
+    public void setCapacityBytes(Long capacityBytes) {
+        this.capacityBytes = capacityBytes;
+    }
+
     public Long getDiskSizeTotal() {
         return diskSizeTotal;
     }
@@ -300,12 +337,36 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
        this.allocatedIops = allocatedIops;
     }
 
+    public Long getUsedIops() {
+        return usedIops;
+    }
+
+    public void setUsedIops(Long usedIops) {
+        this.usedIops = usedIops;
+    }
+
+    public Map<String, String> getCustomStats() {
+        return customStats;
+    }
+
+    public void setCustomStats(Map<String, String> customStats) {
+        this.customStats = customStats;
+    }
+
     public String getTags() {
         return tags;
     }
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     public Boolean getIsTagARule() {
@@ -346,5 +407,41 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public String getNfsMountOpts() {
+        return nfsMountOpts;
+    }
+
+    public void setNfsMountOpts(String nfsMountOpts) {
+        this.nfsMountOpts = nfsMountOpts;
+    }
+
+    public Long getAllocatedIops() {
+        return allocatedIops;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
+
+    public Boolean getManaged() {
+        return managed;
+    }
+
+    public void setManaged(Boolean managed) {
+        this.managed = managed;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

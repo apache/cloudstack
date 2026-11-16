@@ -19,8 +19,9 @@ package com.cloud.user;
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface AccountDetailsDao extends GenericDao<AccountDetailVO, Long> {
+public interface AccountDetailsDao extends GenericDao<AccountDetailVO, Long>, ResourceDetailsDao<AccountDetailVO> {
     Map<String, String> findDetails(long accountId);
 
     void persist(long accountId, Map<String, String> details);

@@ -49,7 +49,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'InvitationTokenTemplate',
@@ -82,7 +82,7 @@ export default {
 
         this.loading = true
 
-        api('updateProjectInvitation', values).then(json => {
+        postAPI('updateProjectInvitation', values).then(json => {
           this.checkForAddAsyncJob(json, title, description)
           this.$emit('close-action')
         }).catch(error => {

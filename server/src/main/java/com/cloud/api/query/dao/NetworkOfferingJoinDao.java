@@ -18,6 +18,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 
@@ -52,4 +53,6 @@ public interface NetworkOfferingJoinDao extends GenericDao<NetworkOfferingJoinVO
     NetworkOfferingResponse newNetworkOfferingResponse(NetworkOffering nof);
 
     NetworkOfferingJoinVO newNetworkOfferingView(NetworkOffering nof);
+
+    Map<Long, List<String>> listDomainsOfNetworkOfferingsUsedByDomainPath(String domainPath);
 }

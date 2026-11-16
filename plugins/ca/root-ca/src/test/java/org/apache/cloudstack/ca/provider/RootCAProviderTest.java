@@ -26,24 +26,31 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import javax.net.ssl.SSLEngine;
 
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -69,7 +76,7 @@ public class RootCAProviderTest {
 
         addField(provider, "caKeyPair", caKeyPair);
         addField(provider, "caCertificate", caCertificate);
-        addField(provider, "caKeyPair", caKeyPair);
+        addField(provider, "caCertificates", Collections.singletonList(caCertificate));
     }
 
     @After
@@ -124,6 +131,46 @@ public class RootCAProviderTest {
     }
 
     @Test
+    public void testGetCaCertificateWithChain() throws Exception {
+        final KeyPair rootKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate rootCert = CertUtils.generateV3Certificate(null, rootKeyPair, rootKeyPair.getPublic(),
+                "CN=root", "SHA256withRSA", 365, null, null);
+        final KeyPair intermediateKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate intermediateCert = CertUtils.generateV3Certificate(rootCert, rootKeyPair,
+                intermediateKeyPair.getPublic(), "CN=intermediate", "SHA256withRSA", 365, null, null);
+
+        final List<X509Certificate> chain = Arrays.asList(intermediateCert, rootCert);
+        addField(provider, "caKeyPair", intermediateKeyPair);
+        addField(provider, "caCertificate", intermediateCert);
+        addField(provider, "caCertificates", chain);
+
+        Assert.assertEquals(2, provider.getCaCertificate().size());
+        Assert.assertEquals(intermediateCert, provider.getCaCertificate().get(0));
+        Assert.assertEquals(rootCert, provider.getCaCertificate().get(1));
+    }
+
+    @Test
+    public void testIssueCertificateWithoutCsrAndChain() throws Exception {
+        final KeyPair rootKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate rootCert = CertUtils.generateV3Certificate(null, rootKeyPair, rootKeyPair.getPublic(),
+                "CN=root", "SHA256withRSA", 365, null, null);
+        final KeyPair intermediateKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate intermediateCert = CertUtils.generateV3Certificate(rootCert, rootKeyPair,
+                intermediateKeyPair.getPublic(), "CN=intermediate", "SHA256withRSA", 365, null, null);
+
+        addField(provider, "caKeyPair", intermediateKeyPair);
+        addField(provider, "caCertificate", intermediateCert);
+        addField(provider, "caCertificates", Arrays.asList(intermediateCert, rootCert));
+
+        final Certificate certificate = provider.issueCertificate(Arrays.asList("domain1.com"), null, 1);
+        Assert.assertNotNull(certificate);
+        Assert.assertEquals(2, certificate.getCaCertificates().size());
+        Assert.assertEquals(intermediateCert, certificate.getCaCertificates().get(0));
+        Assert.assertEquals(rootCert, certificate.getCaCertificates().get(1));
+        certificate.getClientCertificate().verify(intermediateKeyPair.getPublic());
+    }
+
+    @Test
     public void testRevokeCertificate() throws Exception {
         Assert.assertTrue(provider.revokeCertificate(CertUtils.generateRandomBigInt(), "anyString"));
     }
@@ -150,4 +197,110 @@ public class RootCAProviderTest {
         Assert.assertEquals(provider.getProviderName(), "root");
     }
 
+    @Test
+    public void testIsManagementCertificateNotX509() {
+        try {
+            Assert.assertFalse(provider.isManagementCertificate(Mockito.mock(java.security.cert.Certificate.class)));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testIsManagementCertificateNoAltNames() {
+        try {
+            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(new ArrayList<>());
+            Assert.assertFalse(provider.isManagementCertificate(certificate));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testIsManagementCertificateNoMatch() throws Exception {
+        addField(provider, "managementCertificateCustomSAN", "cloudstack");
+        try {
+            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+            List<List<?>> altNames = new ArrayList<>();
+            altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+            altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+            Collection<List<?>> collection = new ArrayList<>(altNames);
+            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(collection);
+            Assert.assertFalse(provider.isManagementCertificate(certificate));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testIsManagementCertificateMatch() throws Exception {
+        String customSAN = "cloudstack";
+        addField(provider, "managementCertificateCustomSAN", customSAN);
+        try {
+            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+            List<List<?>> altNames = new ArrayList<>();
+            altNames.add(List.of(GeneralName.dNSName, customSAN));
+            altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+            Collection<List<?>> collection = new ArrayList<>(altNames);
+            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(collection);
+            Assert.assertTrue(provider.isManagementCertificate(certificate));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testLoadRootCACertificateWithMismatchedCert() throws Exception {
+        KeyPair otherKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate mismatchedCert = CertUtils.generateV3Certificate(null, otherKeyPair, otherKeyPair.getPublic(), "CN=other", "SHA256withRSA", 365, null, null);
+        String mismatchedPem = CertUtils.x509CertificateToPem(mismatchedCert);
+
+        ConfigKey<String> mockCertKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockCertKey.value()).thenReturn(mismatchedPem);
+        addField(provider, "rootCACertificate", mockCertKey);
+
+        addField(provider, "caCertificate", null);
+        addField(provider, "caCertificates", null);
+
+        Boolean result = provider.loadRootCACertificate();
+        Assert.assertFalse(result);
+        Assert.assertNull(provider.getCaCertificate());
+    }
+
+    @Test
+    public void testSaveNewRootCACertificateWithStaleCache() throws Exception {
+        ConfigurationDao configDao = Mockito.mock(ConfigurationDao.class);
+        addField(provider, "configDao", configDao);
+
+        ConfigKey<String> mockCertKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockCertKey.key()).thenReturn("ca.plugin.root.ca.certificate");
+        Mockito.when(mockCertKey.category()).thenReturn("Hidden");
+        addField(provider, "rootCACertificate", mockCertKey);
+
+        ConfigKey<String> mockIssuerKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockIssuerKey.value()).thenReturn("CN=ca.cloudstack.apache.org");
+        addField(provider, "rootCAIssuerDN", mockIssuerKey);
+
+        addField(provider, "caCertificate", null);
+        addField(provider, "caCertificates", null);
+
+        Mockito.when(configDao.update(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
+
+        Boolean result = provider.saveNewRootCACertificate();
+        Assert.assertTrue(result);
+        Assert.assertNotNull(provider.getCaCertificate());
+        Assert.assertEquals(1, provider.getCaCertificate().size());
+    }
+
+    @Test
+    public void testValidateCACertificatePem() throws Exception {
+        String truncatedPem = "-----BEGIN CERTIFICATE-----\nMIICxTCCAa0CAQAw\n";
+        try {
+            RootCAProvider.validateCACertificatePem(truncatedPem);
+            Assert.fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("is not a valid PEM certificate"));
+        }
+    }
 }

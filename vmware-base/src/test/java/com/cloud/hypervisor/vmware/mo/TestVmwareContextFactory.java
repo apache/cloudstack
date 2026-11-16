@@ -17,7 +17,8 @@
 
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -26,7 +27,7 @@ import com.cloud.utils.StringUtils;
 
 public class TestVmwareContextFactory {
 
-    private static final Logger s_logger = Logger.getLogger(TestVmwareContextFactory.class);
+    protected static Logger LOGGER = LogManager.getLogger(TestVmwareContextFactory.class);
 
     private static volatile int s_seq = 1;
     private static VmwareContextPool s_pool;
@@ -44,8 +45,8 @@ public class TestVmwareContextFactory {
 
         String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
 
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " +
+        if (LOGGER.isDebugEnabled())
+            LOGGER.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " +
                 StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
         VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);

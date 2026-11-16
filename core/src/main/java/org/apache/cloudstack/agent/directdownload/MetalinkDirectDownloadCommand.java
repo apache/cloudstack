@@ -24,8 +24,9 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 public class MetalinkDirectDownloadCommand extends DirectDownloadCommand {
 
-    public MetalinkDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> headers, int connectTimeout, int soTimeout) {
-        super(url, templateId, destPool, checksum, headers, connectTimeout, soTimeout, null);
+    public MetalinkDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum,
+                 Map<String, String> headers, int connectTimeout, int soTimeout, boolean followRedirects) {
+        super(url, templateId, destPool, checksum, headers, connectTimeout, soTimeout, null, followRedirects);
     }
 
 }

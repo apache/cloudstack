@@ -31,7 +31,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "usage_event")
 public class UsageEventVO implements UsageEvent {
     public enum DynamicParameters {
-        cpuSpeed, cpuNumber, memory, vmSnapshotId
+        cpuSpeed, cpuNumber, memory, vmSnapshotId, networkId
     };
 
     @Id
@@ -74,6 +74,9 @@ public class UsageEventVO implements UsageEvent {
 
     @Column(name = "virtual_size")
     private Long virtualSize;
+
+    @Column(name = "vm_id")
+    private Long vmId;
 
     public UsageEventVO() {
     }
@@ -141,6 +144,18 @@ public class UsageEventVO implements UsageEvent {
         this.zoneId = zoneId;
         this.resourceId = vmId;
         this.offeringId = securityGroupId;
+    }
+
+    public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, Long offeringId, Long templateId, Long size, Long vmId, String resourceName) {
+        this.type = usageType;
+        this.accountId = accountId;
+        this.zoneId = zoneId;
+        this.resourceId = resourceId;
+        this.offeringId = offeringId;
+        this.templateId = templateId;
+        this.size = size;
+        this.vmId = vmId;
+        this.resourceName = resourceName;
     }
 
     @Override
@@ -248,4 +263,11 @@ public class UsageEventVO implements UsageEvent {
         this.virtualSize = virtualSize;
     }
 
+    public Long getVmId() {
+        return vmId;
+    }
+
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
+    }
 }

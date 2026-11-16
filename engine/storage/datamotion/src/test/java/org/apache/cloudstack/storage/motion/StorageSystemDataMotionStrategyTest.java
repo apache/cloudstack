@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.HashMap;
@@ -47,8 +46,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.verification.VerificationMode;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.host.HostVO;
@@ -62,7 +60,6 @@ import com.cloud.storage.VolumeVO;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -373,71 +370,285 @@ public class StorageSystemDataMotionStrategyTest {
         assertFalse(strategy.isStoragePoolTypeInList(StoragePoolType.SharedMountPoint, listTypes));
     }
 
+    /**
+     * Test updateMigrateDiskInfoForBlockDevice with CLVM destination pool
+     * Should set driver type to RAW for CLVM
+     */
     @Test
-    public void validateAddSourcePoolToPoolsMapDestinationPoolIsManaged() {
-        Mockito.doReturn(true).when(destinationStoragePoolVoMock).isManaged();
-        strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+    public void testUpdateMigrateDiskInfoForBlockDevice_ClvmDestination() {
+        MigrateCommand.MigrateDiskInfo originalDiskInfo = new MigrateCommand.MigrateDiskInfo(
+                "serial123",
+                MigrateCommand.MigrateDiskInfo.DiskType.FILE,
+                MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
+                MigrateCommand.MigrateDiskInfo.Source.FILE,
+                "/source/path",
+                null
+        );
 
-        Mockito.verify(destinationStoragePoolVoMock).isManaged();
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+        StoragePoolVO destStoragePool = new StoragePoolVO();
+        destStoragePool.setPoolType(StoragePoolType.CLVM);
+
+        MigrateCommand.MigrateDiskInfo updatedDiskInfo = strategy.updateMigrateDiskInfoForBlockDevice(
+                originalDiskInfo, destStoragePool);
+
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, updatedDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, updatedDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, updatedDiskInfo.getSource());
+        Assert.assertEquals("serial123", updatedDiskInfo.getSerialNumber());
+        Assert.assertEquals("/source/path", updatedDiskInfo.getSourceText());
     }
 
+    /**
+     * Test updateMigrateDiskInfoForBlockDevice with CLVM_NG destination pool
+     * Should set driver type to QCOW2 for CLVM_NG
+     */
     @Test
-    public void validateAddSourcePoolToPoolsMapDestinationPoolIsNotNFS() {
-        List<StoragePoolType> storagePoolTypes = new LinkedList<>(Arrays.asList(StoragePoolType.values()));
-        storagePoolTypes.remove(StoragePoolType.NetworkFilesystem);
+    public void testUpdateMigrateDiskInfoForBlockDevice_ClvmNgDestination() {
+        MigrateCommand.MigrateDiskInfo originalDiskInfo = new MigrateCommand.MigrateDiskInfo(
+                "serial456",
+                MigrateCommand.MigrateDiskInfo.DiskType.FILE,
+                MigrateCommand.MigrateDiskInfo.DriverType.RAW,
+                MigrateCommand.MigrateDiskInfo.Source.FILE,
+                "/source/path",
+                "/backing/path"
+        );
 
-        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
-        storagePoolTypes.forEach(poolType -> {
-            Mockito.doReturn(poolType).when(destinationStoragePoolVoMock).getPoolType();
-            strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-        });
+        StoragePoolVO destStoragePool = new StoragePoolVO();
+        destStoragePool.setPoolType(StoragePoolType.CLVM_NG);
 
-        VerificationMode times = Mockito.times(storagePoolTypes.size());
-        Mockito.verify(destinationStoragePoolVoMock, times).isManaged();
-        Mockito.verify(destinationStoragePoolVoMock, times).getPoolType();
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+        MigrateCommand.MigrateDiskInfo updatedDiskInfo = strategy.updateMigrateDiskInfoForBlockDevice(
+                originalDiskInfo, destStoragePool);
+
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, updatedDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.QCOW2, updatedDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, updatedDiskInfo.getSource());
+        Assert.assertEquals("serial456", updatedDiskInfo.getSerialNumber());
+        Assert.assertEquals("/source/path", updatedDiskInfo.getSourceText());
+        Assert.assertEquals("/backing/path", updatedDiskInfo.getBackingStoreText());
     }
 
+    /**
+     * Test updateMigrateDiskInfoForBlockDevice with non-CLVM destination pool
+     * Should return original DiskInfo unchanged
+     */
     @Test
-    public void validateAddSourcePoolToPoolsMapMapContainsKey() {
-        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
-        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
-        Mockito.doReturn("").when(sourceStoragePoolVoMock).getUuid();
-        Mockito.doReturn(true).when(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
-        strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+    public void testUpdateMigrateDiskInfoForBlockDevice_NonClvmDestination() {
+        MigrateCommand.MigrateDiskInfo originalDiskInfo = new MigrateCommand.MigrateDiskInfo(
+                "serial789",
+                MigrateCommand.MigrateDiskInfo.DiskType.FILE,
+                MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
+                MigrateCommand.MigrateDiskInfo.Source.FILE,
+                "/source/path",
+                null
+        );
 
-        Mockito.verify(destinationStoragePoolVoMock, never()).getScope();
-        Mockito.verify(destinationStoragePoolVoMock).isManaged();
-        Mockito.verify(destinationStoragePoolVoMock).getPoolType();
-        Mockito.verify(sourceStoragePoolVoMock).getUuid();
-        Mockito.verify(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+        StoragePoolVO destStoragePool = new StoragePoolVO();
+        destStoragePool.setPoolType(StoragePoolType.NetworkFilesystem);
+
+        MigrateCommand.MigrateDiskInfo updatedDiskInfo = strategy.updateMigrateDiskInfoForBlockDevice(
+                originalDiskInfo, destStoragePool);
+
+        Assert.assertSame(originalDiskInfo, updatedDiskInfo);
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.FILE, updatedDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.QCOW2, updatedDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.FILE, updatedDiskInfo.getSource());
     }
 
+    /**
+     * Test supportStoragePoolType with CLVM and CLVM_NG types
+     */
     @Test
-    public void validateAddSourcePoolToPoolsMapMapDoesNotContainsKey() {
-        List<StoragePoolType> storagePoolTypes = new LinkedList<>(Arrays.asList(StoragePoolType.values()));
+    public void testSupportStoragePoolType_ClvmTypes() {
+        assertTrue(strategy.supportStoragePoolType(StoragePoolType.CLVM, StoragePoolType.CLVM, StoragePoolType.CLVM_NG));
+        assertTrue(strategy.supportStoragePoolType(StoragePoolType.CLVM_NG, StoragePoolType.CLVM, StoragePoolType.CLVM_NG));
 
-        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
-        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
-        Mockito.doReturn("").when(sourceStoragePoolVoMock).getUuid();
-        Mockito.doReturn(false).when(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
-        Mockito.doReturn(null).when(mapStringStoragePoolTypeMock).put(Mockito.anyString(), Mockito.any());
+        assertFalse(strategy.supportStoragePoolType(StoragePoolType.CLVM));
+        assertFalse(strategy.supportStoragePoolType(StoragePoolType.CLVM_NG));
+    }
 
-        storagePoolTypes.forEach(poolType -> {
-            Mockito.doReturn(poolType).when(sourceStoragePoolVoMock).getPoolType();
-            strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-        });
+    /**
+     * Test configureMigrateDiskInfo with CLVM destination
+     */
+    @Test
+    public void testConfigureMigrateDiskInfo_ForClvm() {
+        VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn("/dev/vg/volume-path").when(srcVolumeInfo).getPath();
 
-        VerificationMode times = Mockito.times(storagePoolTypes.size());
-        Mockito.verify(destinationStoragePoolVoMock, never()).getScope();
-        Mockito.verify(destinationStoragePoolVoMock, times).isManaged();
-        Mockito.verify(destinationStoragePoolVoMock, times).getPoolType();
-        Mockito.verify(sourceStoragePoolVoMock, times).getUuid();
-        Mockito.verify(mapStringStoragePoolTypeMock, times).containsKey(Mockito.anyString());
-        Mockito.verify(sourceStoragePoolVoMock, times).getPoolType();
-        Mockito.verify(mapStringStoragePoolTypeMock, times).put(Mockito.anyString(), Mockito.any());
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(
+                srcVolumeInfo, "/dev/vg/dest-path", null);
+
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, migrateDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, migrateDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, migrateDiskInfo.getSource());
+        Assert.assertEquals("/dev/vg/dest-path", migrateDiskInfo.getSourceText());
+        Assert.assertEquals("/dev/vg/volume-path", migrateDiskInfo.getSerialNumber());
+    }
+
+    /**
+     * Test configureMigrateDiskInfo with CLVM_NG destination and backing file
+     */
+    @Test
+    public void testConfigureMigrateDiskInfo_ForClvmNgWithBacking() {
+        VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn("/dev/vg/volume-path").when(srcVolumeInfo).getPath();
+
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(
+                srcVolumeInfo, "/dev/vg/dest-path", "/dev/vg/backing-template");
+
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, migrateDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, migrateDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, migrateDiskInfo.getSource());
+        Assert.assertEquals("/dev/vg/dest-path", migrateDiskInfo.getSourceText());
+        Assert.assertEquals("/dev/vg/backing-template", migrateDiskInfo.getBackingStoreText());
+        Assert.assertEquals("/dev/vg/volume-path", migrateDiskInfo.getSerialNumber());
+    }
+
+    /**
+     * Test isStoragePoolTypeInList with CLVM types
+     */
+    @Test
+    public void testIsStoragePoolTypeInList_WithClvmTypes() {
+        StoragePoolType[] clvmTypes = new StoragePoolType[] {
+            StoragePoolType.CLVM,
+            StoragePoolType.CLVM_NG,
+            StoragePoolType.Filesystem
+        };
+
+        assertTrue(strategy.isStoragePoolTypeInList(StoragePoolType.CLVM, clvmTypes));
+        assertTrue(strategy.isStoragePoolTypeInList(StoragePoolType.CLVM_NG, clvmTypes));
+        assertTrue(strategy.isStoragePoolTypeInList(StoragePoolType.Filesystem, clvmTypes));
+        assertFalse(strategy.isStoragePoolTypeInList(StoragePoolType.NetworkFilesystem, clvmTypes));
+    }
+
+    /**
+     * Test supportStoragePoolType with mixed CLVM and NFS types
+     */
+    @Test
+    public void testSupportStoragePoolType_MixedClvmAndNfs() {
+        assertTrue(strategy.supportStoragePoolType(
+                StoragePoolType.CLVM,
+                StoragePoolType.CLVM,
+                StoragePoolType.CLVM_NG,
+                StoragePoolType.NetworkFilesystem
+        ));
+
+        assertTrue(strategy.supportStoragePoolType(
+                StoragePoolType.CLVM_NG,
+                StoragePoolType.CLVM,
+                StoragePoolType.CLVM_NG,
+                StoragePoolType.NetworkFilesystem
+        ));
+
+        assertTrue(strategy.supportStoragePoolType(
+                StoragePoolType.NetworkFilesystem,
+                StoragePoolType.CLVM,
+                StoragePoolType.CLVM_NG
+        ));
+    }
+
+    /**
+     * Test internalCanHandle with CLVM source and managed destination
+     */
+    @Test
+    public void testInternalCanHandle_ClvmSourceManagedDestination() {
+        VolumeObject volumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(0L).when(volumeInfo).getPoolId();
+
+        DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+        volumeMap.put(volumeInfo, ds);
+
+        StoragePoolVO sourcePool = Mockito.spy(new StoragePoolVO());
+        Mockito.lenient().doReturn(StoragePoolType.CLVM).when(sourcePool).getPoolType();
+        Mockito.doReturn(true).when(sourcePool).isManaged();
+
+        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
+
+        StrategyPriority result = strategy.internalCanHandle(
+                volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+
+        Assert.assertEquals(StrategyPriority.HIGHEST, result);
+    }
+
+    /**
+     * Test internalCanHandle with CLVM_NG source and managed destination
+     */
+    @Test
+    public void testInternalCanHandle_ClvmNgSourceManagedDestination() {
+        VolumeObject volumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(0L).when(volumeInfo).getPoolId();
+
+        DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+        volumeMap.put(volumeInfo, ds);
+
+        StoragePoolVO sourcePool = Mockito.spy(new StoragePoolVO());
+        Mockito.lenient().doReturn(StoragePoolType.CLVM_NG).when(sourcePool).getPoolType();
+        Mockito.doReturn(true).when(sourcePool).isManaged();
+
+        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
+
+        StrategyPriority result = strategy.internalCanHandle(
+                volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+
+        Assert.assertEquals(StrategyPriority.HIGHEST, result);
+    }
+
+    /**
+     * Test internalCanHandle with both CLVM source and CLVM_NG destination
+     */
+    @Test
+    public void testInternalCanHandle_ClvmToClvmNg() {
+        VolumeObject volumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(0L).when(volumeInfo).getPoolId();
+
+        DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+        volumeMap.put(volumeInfo, ds);
+
+        StoragePoolVO sourcePool = Mockito.spy(new StoragePoolVO());
+        Mockito.lenient().doReturn(StoragePoolType.CLVM).when(sourcePool).getPoolType();
+        Mockito.doReturn(true).when(sourcePool).isManaged();
+
+        StoragePoolVO destPool = Mockito.spy(new StoragePoolVO());
+        Mockito.lenient().doReturn(StoragePoolType.CLVM_NG).when(destPool).getPoolType();
+
+        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
+
+        StrategyPriority result = strategy.internalCanHandle(
+                volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+
+        Assert.assertEquals(StrategyPriority.HIGHEST, result);
+    }
+
+    /**
+     * Test internalCanHandle with CLVM_NG to CLVM migration
+     */
+    @Test
+    public void testInternalCanHandle_ClvmNgToClvm() {
+        VolumeObject volumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(0L).when(volumeInfo).getPoolId();
+
+        DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+        volumeMap.put(volumeInfo, ds);
+
+        StoragePoolVO sourcePool = Mockito.spy(new StoragePoolVO());
+        Mockito.lenient().doReturn(StoragePoolType.CLVM_NG).when(sourcePool).getPoolType();
+        Mockito.doReturn(true).when(sourcePool).isManaged();
+
+        StoragePoolVO destPool = Mockito.spy(new StoragePoolVO());
+        Mockito.lenient().doReturn(StoragePoolType.CLVM).when(destPool).getPoolType();
+
+        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
+
+        StrategyPriority result = strategy.internalCanHandle(
+                volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+
+        Assert.assertEquals(StrategyPriority.HIGHEST, result);
     }
 }

@@ -1024,17 +1024,17 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 cls.services["disk_offering"]
             )
             cls._cleanup.append(cls.disk_offering)
-            template = get_template(
+            cls.template = get_template(
                 cls.apiclient,
                 cls.zone.id,
                 cls.services["ostype"]
             )
-            if template == FAILED:
+            if cls.template == FAILED:
                 assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
-            cls.services["template"]["ostypeid"] = template.ostypeid
-            cls.services["template_2"]["ostypeid"] = template.ostypeid
-            cls.services["ostypeid"] = template.ostypeid
+            cls.services["template"]["ostypeid"] = cls.template.ostypeid
+            cls.services["template_2"]["ostypeid"] = cls.template.ostypeid
+            cls.services["ostypeid"] = cls.template.ostypeid
 
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["volume"]["diskoffering"] = cls.disk_offering.id
@@ -1055,7 +1055,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
             cls.virtual_machine = VirtualMachine.create(
                 cls.apiclient,
                 cls.services["virtual_machine"],
-                templateid=template.id,
+                templateid=cls.template.id,
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 serviceofferingid=cls.service_offering.id,
@@ -1104,7 +1104,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_09_copy_delete_template(self):
         cmd = listZones.listZonesCmd()
         zones = self.apiclient.listZones(cmd)
@@ -1156,7 +1156,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
 
         list_template_response = Template.list(
             self.apiclient,
-            templatefilter=self.services["template"]["templatefilter"],
+            templatefilter=self.services["templatefilter"],
             id=self.template.id,
             zoneid=self.destZone.id
         )

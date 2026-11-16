@@ -31,24 +31,24 @@ import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import com.cloud.utils.Pair;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
+@APICommand(name = "listVMSnapshot", description = "List Instance Snapshot by conditions", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, description = "The ID of the VM snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, description = "The ID of the Instance Snapshot")
     private Long id;
 
-    @Parameter(name=ApiConstants.VM_SNAPSHOT_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMSnapshotResponse.class, description="the IDs of the vm snapshots, mutually exclusive with vmsnapshotid", since = "4.9")
+    @Parameter(name=ApiConstants.VM_SNAPSHOT_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMSnapshotResponse.class, description = "The IDs of the Instance Snapshots, mutually exclusive with vmsnapshotid", since = "4.9")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine snapshot")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the Instance Snapshot")
     private String state;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the vm")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists snapshot by snapshot name or display name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Lists Snapshot by Snapshot name or display name")
     private String vmSnapshotName;
 
     public String getState() {

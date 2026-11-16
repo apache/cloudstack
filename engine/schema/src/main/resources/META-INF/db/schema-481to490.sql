@@ -23,9 +23,9 @@ ALTER TABLE `event` ADD INDEX `archived` (`archived`);
 ALTER TABLE `event` ADD INDEX `state` (`state`);
 
 DROP VIEW IF EXISTS `cloud`.`template_view`;
-CREATE 
+CREATE
 VIEW `template_view` AS
-    SELECT 
+    SELECT
         `vm_template`.`id` AS `id`,
         `vm_template`.`uuid` AS `uuid`,
         `vm_template`.`unique_name` AS `unique_name`,
@@ -124,9 +124,9 @@ VIEW `template_view` AS
             OR (`resource_tags`.`resource_type` = 'ISO')))));
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
-CREATE 
+CREATE
 VIEW `volume_view` AS
-    SELECT 
+    SELECT
         `volumes`.`id` AS `id`,
         `volumes`.`uuid` AS `uuid`,
         `volumes`.`name` AS `name`,
@@ -234,9 +234,9 @@ VIEW `volume_view` AS
             AND (`async_job`.`job_status` = 0))));
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
-CREATE 
+CREATE
 VIEW `user_vm_view` AS
-    SELECT 
+    SELECT
         `vm_instance`.`id` AS `id`,
         `vm_instance`.`name` AS `name`,
         `user_vm`.`display_name` AS `display_name`,
@@ -423,10 +423,10 @@ ALTER TABLE `cloud`.`ssh_keypairs` ADD INDEX `i_public_key` (`public_key` (64) A
 ALTER TABLE `cloud`.`user_vm_details` ADD INDEX `i_name_vm_id` (`vm_id` ASC, `name` ASC);
 ALTER TABLE `cloud`.`instance_group` ADD INDEX `i_name` (`name` ASC);
 
------ 4) Some views query (Change view to improve account retrieval speed) 
+----- 4) Some views query (Change view to improve account retrieval speed)
 CREATE OR REPLACE
 VIEW `account_vmstats_view` AS
-    SELECT 
+    SELECT
         `vm_instance`.`account_id` AS `account_id`,
         `vm_instance`.`state` AS `state`,
         COUNT(0) AS `vmcount`

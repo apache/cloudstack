@@ -26,7 +26,7 @@
         <menu-unfold-outlined class="trigger" v-if="collapsed" @click="toggle" />
         <menu-fold-outlined class="trigger" v-else @click="toggle" />
       </template>
-      <project-menu v-if="device !== 'mobile'" />
+      <project-menu />
       <saml-domain-switcher style="margin-left: 20px" />
       <user-menu :device="device"></user-menu>
     </div>
@@ -45,7 +45,7 @@
             <menu-unfold-outlined class="trigger" v-else @click="toggle" />
           </div>
         </div>
-        <project-menu v-if="device !== 'mobile'" />
+        <project-menu />
         <saml-domain-switcher style="margin-left: 20px" />
         <user-menu></user-menu>
       </div>

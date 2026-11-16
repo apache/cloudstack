@@ -27,6 +27,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.utils.script.Script;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -70,7 +71,6 @@ public class KVMHostInfoTest {
             Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
             Mockito.when(conn.nodeInfo()).thenReturn(nodeInfo);
             Mockito.when(conn.getCapabilities()).thenReturn(capabilitiesXml);
-            Mockito.when(conn.close()).thenReturn(0);
             int manualSpeed = 500;
 
             KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, manualSpeed, 0);
@@ -92,8 +92,6 @@ public class KVMHostInfoTest {
             Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
             Mockito.when(conn.nodeInfo()).thenReturn(nodeInfo);
             Mockito.when(conn.getCapabilities()).thenReturn(capabilitiesXml);
-            Mockito.when(conn.close()).thenReturn(0);
-            int manualSpeed = 500;
 
             KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, 100, 2);
             Assert.assertEquals("reserve two CPU cores", 8, kvmHostInfo.getAllocatableCpus());
@@ -103,6 +101,51 @@ public class KVMHostInfoTest {
 
             kvmHostInfo = new KVMHostInfo(10, 10, 100, 12);
             Assert.assertEquals("Misconfigured/too large CPU reserve", 0, kvmHostInfo.getAllocatableCpus());
+        }
+    }
+
+    private void mockLscpuOutput(MockedStatic<Script> script, String modelNameGhz, String cpuMaxMhz) {
+        script.when(() -> Script.runSimpleBashScript(Mockito.contains("Model name"))).thenReturn(modelNameGhz);
+        script.when(() -> Script.runSimpleBashScript(Mockito.contains("CPU max MHz"))).thenReturn(cpuMaxMhz);
+    }
+
+    @Test
+    public void getCpuSpeedFromCommandLscpuTestPrefersModelNameFrequencyOverCpuMaxMhz() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            mockLscpuOutput(script, "2.40", "3400.0000");
+            Assert.assertEquals(2400L, KVMHostInfo.getCpuSpeedFromCommandLscpu());
+        }
+    }
+
+    @Test
+    public void getCpuSpeedFromCommandLscpuTestFallsBackToCpuMaxMhzWhenModelNameHasNoFrequency() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            mockLscpuOutput(script, null, "3400.0000");
+            Assert.assertEquals(3400L, KVMHostInfo.getCpuSpeedFromCommandLscpu());
+        }
+    }
+
+    @Test
+    public void getCpuSpeedFromCommandLscpuTestReturnsZeroWhenLscpuHasNoFrequency() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            mockLscpuOutput(script, null, null);
+            Assert.assertEquals(0L, KVMHostInfo.getCpuSpeedFromCommandLscpu());
+        }
+    }
+
+    @Test
+    public void getCpuMaxSpeedFromCommandLscpuTestReturnsCpuMaxMhz() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            mockLscpuOutput(script, "2.40", "3400.0000");
+            Assert.assertEquals(3400L, KVMHostInfo.getCpuMaxSpeedFromCommandLscpu());
+        }
+    }
+
+    @Test
+    public void getCpuMaxSpeedFromCommandLscpuTestReturnsZeroWhenLscpuHasNoCpuMaxMhz() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            mockLscpuOutput(script, "2.40", null);
+            Assert.assertEquals(0L, KVMHostInfo.getCpuMaxSpeedFromCommandLscpu());
         }
     }
 }

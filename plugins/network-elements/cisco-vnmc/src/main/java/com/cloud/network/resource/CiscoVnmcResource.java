@@ -23,7 +23,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -81,7 +82,7 @@ public class CiscoVnmcResource implements ServerResource {
         _connection = connection;
     }
 
-    private static final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public Answer executeRequest(Command cmd) {
@@ -244,7 +245,7 @@ public class CiscoVnmcResource implements ServerResource {
         try {
             ret = _connection.login();
         } catch (ExecutionException ex) {
-            s_logger.error("Login to Vnmc failed", ex);
+            logger.error("Login to Vnmc failed", ex);
         }
         return ret;
     }
@@ -312,7 +313,7 @@ public class CiscoVnmcResource implements ServerResource {
             }
         } catch (ExecutionException e) {
             String msg = "SetSourceNatCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -404,7 +405,7 @@ public class CiscoVnmcResource implements ServerResource {
             }
         } catch (ExecutionException e) {
             String msg = "SetFirewallRulesCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -489,7 +490,7 @@ public class CiscoVnmcResource implements ServerResource {
             }
         } catch (ExecutionException e) {
             String msg = "SetStaticNatRulesCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -579,7 +580,7 @@ public class CiscoVnmcResource implements ServerResource {
             }
         } catch (ExecutionException e) {
             String msg = "SetPortForwardingRulesCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -637,7 +638,7 @@ public class CiscoVnmcResource implements ServerResource {
                 throw new ExecutionException("Failed to create edge firewall in VNMC for guest network with vlan " + cmd.getVlanId());
         } catch (ExecutionException e) {
             String msg = "CreateLogicalEdgeFirewallCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -658,14 +659,14 @@ public class CiscoVnmcResource implements ServerResource {
         params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId));
         try {
             helper = new NetconfHelper(cmd.getVsmIp(), cmd.getVsmUsername(), cmd.getVsmPassword());
-            s_logger.debug("Connected to Cisco VSM " + cmd.getVsmIp());
+            logger.debug("Connected to Cisco VSM " + cmd.getVsmIp());
             helper.addVServiceNode(vlanId, cmd.getIpAddress());
-            s_logger.debug("Created vservice node for ASA appliance in Cisco VSM for vlan " + vlanId);
+            logger.debug("Created vservice node for ASA appliance in Cisco VSM for vlan " + vlanId);
             helper.updatePortProfile(cmd.getAsaInPortProfile(), SwitchPortMode.access, params);
-            s_logger.debug("Updated inside port profile for ASA appliance in Cisco VSM with new vlan " + vlanId);
+            logger.debug("Updated inside port profile for ASA appliance in Cisco VSM with new vlan " + vlanId);
         } catch (CloudRuntimeException e) {
             String msg = "ConfigureVSMForASACommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         } finally {
             if( helper != null) {
@@ -700,7 +701,7 @@ public class CiscoVnmcResource implements ServerResource {
             }
         } catch (ExecutionException e) {
             String msg = "AssociateAsaWithLogicalEdgeFirewallCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 
@@ -721,7 +722,7 @@ public class CiscoVnmcResource implements ServerResource {
             _connection.deleteTenant(tenant);
         } catch (ExecutionException e) {
             String msg = "CleanupLogicalEdgeFirewallCommand failed due to " + e.getMessage();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
 

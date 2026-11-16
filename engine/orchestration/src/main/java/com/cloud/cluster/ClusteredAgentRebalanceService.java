@@ -27,4 +27,5 @@ public interface ClusteredAgentRebalanceService {
 
     boolean executeRebalanceRequest(long agentId, long currentOwnerId, long futureOwnerId, Event event) throws AgentUnavailableException, OperationTimedoutException;
 
+    boolean executeRebalanceRequest(long agentId, long currentOwnerId, long futureOwnerId, Event event, boolean isConnectionTransfer) throws AgentUnavailableException, OperationTimedoutException;
 }

@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.command.admin.vm;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -24,7 +26,23 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "destroyVirtualMachine", description = "Destroys  an Instance. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
-public class DestroyVMCmdByAdmin extends DestroyVMCmd implements AdminCmd {}
+public class DestroyVMCmdByAdmin extends DestroyVMCmd implements AdminCmd {
+
+    @Parameter( name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            description = "Force destroy the Instance",
+            since = "4.23.0")
+    Boolean forced;
+
+    @Override
+    public boolean isForced() {
+        return Boolean.TRUE.equals(forced);
+    }
+
+    public void setForced(Boolean forced) {
+        this.forced = forced;
+    }
+}

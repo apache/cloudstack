@@ -92,7 +92,7 @@
 
 <script>
 import store from '@/store'
-import { api } from '@/api'
+import { callAPI } from '@/api'
 import DetailsTab from '@/components/view/DetailsTab'
 import ResourceView from '@/components/view/ResourceView'
 import ResourceLayout from '@/layouts/ResourceLayout'
@@ -204,9 +204,13 @@ export default {
           return
         }
 
-        if (Object.keys(this.resource).length > 0) {
+        const resourceKeys = Object.keys(this.resource)
+        if (resourceKeys.length > 0) {
           this.selectedTreeKey = this.resource.key
           this.$emit('change-resource', this.resource)
+          if (resourceKeys.filter(x => x.endsWith('limit')).length === 0) {
+            setTimeout(() => { this.getDetailResource(this.resource.id) })
+          }
 
           // set default expand
           if (this.defaultSelected.length > 1) {
@@ -264,7 +268,7 @@ export default {
       }
 
       return new Promise(resolve => {
-        api(this.apiChildren, params).then(json => {
+        callAPI(this.apiChildren, params).then(json => {
           const dataResponse = this.getResponseJsonData(json)
           const dataGenerate = this.generateTreeData(dataResponse)
           treeNode.dataRef.children = dataGenerate
@@ -386,7 +390,7 @@ export default {
       this.treeViewData = []
       this.loadingSearch = true
       this.$emit('change-tree-store', {})
-      api(this.apiList, params).then(json => {
+      callAPI(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)
         this.treeVerticalData = this.treeVerticalData.concat(listDomains)
 
@@ -450,7 +454,7 @@ export default {
         params.pageSize = 1
 
         this.detailLoading = true
-        api(apiName, params).then(json => {
+        callAPI(apiName, params).then(json => {
           const jsonResponse = this.getResponseJsonData(json)
           resolve(jsonResponse[0])
         }).catch(() => {

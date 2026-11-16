@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import com.amazonaws.util.StringInputStream;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -36,6 +37,8 @@ public class DigestHelperTest {
     private final static String INPUT_STRING_NO3 = "01234567890123456789012345678901234567890123456789012345678901234567890123456789h\n";
     private final static String SHA256_CHECKSUM = "{SHA-256}c6ab15af7842d23d3c06c138b53a7d09c5e351a79c4eb3c8ca8d65e5ce8900ab";
     private final static String SHA256_NO_PREFIX_CHECKSUM = "c6ab15af7842d23d3c06c138b53a7d09c5e351a79c4eb3c8ca8d65e5ce8900ab";
+    private final static String SHA512_CHECKSUM_NO_PREFIX = "e34efddea0cb6bfc960f902ffc16596aaaaff4b12999f720361a0b27e68932b5a73995ccffcf7418fabc4a684c4add13f8bb379f80cabf01220dd0a31cdc28eb";
+    private final static String SHA512_CHECKSUM = "{SHA-512}" + SHA512_CHECKSUM_NO_PREFIX;
     private final static String SHA1_CHECKSUM = "{SHA-1}49e4b2f4292b63e88597c127d11bc2cc0f2ca0ff";
     private final static String MD5_CHECKSUM = "{MD5}d141a8eeaf6bba779d1d1dc5102a81c5";
     private final static String MD5_NO_PREFIX_CHECKSUM = "d141a8eeaf6bba779d1d1dc5102a81c5";
@@ -43,6 +46,7 @@ public class DigestHelperTest {
     private final static String ZERO_PADDED_SHA256_CHECKSUM = "{SHA-256}08b5ae0c7d7d45d8ed406d7c3c7da695b81187903694314d97f8a37752a6b241";
     private static final String MD5 = "MD5";
     private static final String SHA_256 = "SHA-256";
+    private static final String SHA_512 = "SHA-512";
     private static InputStream inputStream;
     private InputStream inputStream2;
 
@@ -66,6 +70,13 @@ public class DigestHelperTest {
     public void testDigestSHA256() throws Exception {
         String result = DigestHelper.digest(SHA_256, inputStream).toString();
         Assert.assertEquals(SHA256_CHECKSUM, result);
+    }
+
+    @Test
+    public void testDigestSHA512() throws Exception {
+        String result = DigestHelper.digest(SHA_512, inputStream).toString();
+        Assert.assertEquals(SHA512_CHECKSUM, result);
+        Assert.assertEquals(SHA512_CHECKSUM_NO_PREFIX, DigestUtils.sha512Hex(INPUT_STRING));
     }
 
     @Test

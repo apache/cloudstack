@@ -49,6 +49,7 @@ SELECT
     `disk_offering`.`iops_write_rate_max` AS `iops_write_rate_max`,
     `disk_offering`.`iops_write_rate_max_length` AS `iops_write_rate_max_length`,
     `disk_offering`.`cache_mode` AS `cache_mode`,
+    `disk_offering`.`error_policy` AS `error_policy`,
     `disk_offering`.`sort_key` AS `sort_key`,
     `disk_offering`.`compute_only` AS `compute_only`,
     `disk_offering`.`display_offering` AS `display_offering`,
@@ -76,7 +77,5 @@ FROM
         LEFT JOIN
     `cloud`.`disk_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`offering_id` = `disk_offering`.`id`
         AND `vsphere_storage_policy`.`name` = 'storagepolicy'
-WHERE
-        `disk_offering`.`state`='Active'
 GROUP BY
     `disk_offering`.`id`;

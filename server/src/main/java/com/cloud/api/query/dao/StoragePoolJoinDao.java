@@ -18,20 +18,22 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> {
 
-    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host);
+    StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO pool);
+
+    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host, boolean customStats);
 
     StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO host);
 
@@ -43,8 +45,8 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
 
     List<StoragePoolJoinVO> searchByIds(Long... spIds);
 
-    Pair<List<StoragePoolJoinVO>, Integer> searchAndCount(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword, Filter searchFilter);
-
     List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags);
+
+    List<StoragePoolJoinVO> listAvailableByZoneHypervisorAndType(long zoneId, Hypervisor.HypervisorType hypervisorType, List<Storage.StoragePoolType> types, Filter filter);
 
 }

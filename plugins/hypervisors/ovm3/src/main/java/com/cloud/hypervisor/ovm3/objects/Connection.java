@@ -22,7 +22,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.TimingOutCallback;
 import org.apache.xmlrpc.client.XmlRpcClient;
@@ -30,7 +31,7 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.client.XmlRpcClientRequestImpl;
 
 public class Connection extends XmlRpcClient {
-    private static final Logger LOGGER = Logger.getLogger(Connection.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
     private XmlRpcClient xmlClient;
     private String hostUser = null;
@@ -83,7 +84,7 @@ public class Connection extends XmlRpcClient {
             /* reply time is 5 mins */
             xmlClientConfig.setReplyTimeout(60 * 15000);
             if (hostUser != null && hostPass != null) {
-                LOGGER.debug("Setting username " + hostUser);
+                logger.debug("Setting username " + hostUser);
                 xmlClientConfig.setBasicUserName(hostUser);
                 xmlClientConfig.setBasicPassword(hostPass);
             }
@@ -91,7 +92,7 @@ public class Connection extends XmlRpcClient {
             client.setConfig(xmlClientConfig);
             client.setTypeFactory(new RpcTypeFactory(client));
         } catch (MalformedURLException e) {
-            LOGGER.info("Incorrect URL: ", e);
+            logger.info("Incorrect URL: ", e);
         }
         return client;
     }
@@ -109,7 +110,7 @@ public class Connection extends XmlRpcClient {
             boolean debug) throws XmlRpcException {
         TimingOutCallback callback = new TimingOutCallback(timeout * 1000);
         if (debug) {
-            LOGGER.debug("Call Ovm3 agent " + hostName + "(" + hostIp +"): " + method
+            logger.debug("Call Ovm3 agent " + hostName + "(" + hostIp +"): " + method
                     + " with " + params);
         }
         long startTime = System.currentTimeMillis();
@@ -120,22 +121,22 @@ public class Connection extends XmlRpcClient {
             xmlClient.executeAsync(req, callback);
             return callback.waitForResponse();
         } catch (TimingOutCallback.TimeoutException e) {
-            LOGGER.info("Timeout: ", e);
+            logger.info("Timeout: ", e);
             throw new XmlRpcException(e.getMessage());
         } catch (XmlRpcException e) {
-            LOGGER.info("XML RPC Exception occurred: ", e);
+            logger.info("XML RPC Exception occurred: ", e);
             throw e;
         } catch (RuntimeException e) {
-            LOGGER.info("Runtime Exception: ", e);
+            logger.info("Runtime Exception: ", e);
             throw new XmlRpcException(e.getMessage());
         } catch (Throwable e) {
-            LOGGER.error("Holy crap batman!: ", e);
+            logger.error("Holy crap batman!: ", e);
             throw new XmlRpcException(e.getMessage(), e);
         } finally {
             long endTime = System.currentTimeMillis();
             /* in seconds */
             float during = (endTime - startTime) / (float) 1000;
-            LOGGER.debug("Ovm3 call " + method + " finished in " + during
+            logger.debug("Ovm3 call " + method + " finished in " + during
                     + " secs, on " + hostIp + ":" + hostPort);
         }
     }

@@ -19,6 +19,7 @@ package com.cloud.template;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -42,6 +43,7 @@ public interface TemplateAdapter extends Adapter {
 
         public static final TemplateAdapterType Hypervisor = new TemplateAdapterType("HypervisorAdapter");
         public static final TemplateAdapterType BareMetal = new TemplateAdapterType("BareMetalAdapter");
+        public static final TemplateAdapterType External = new TemplateAdapterType("ExternalAdapter");
 
         public TemplateAdapterType(String name) {
             _name = name;
@@ -72,12 +74,12 @@ public interface TemplateAdapter extends Adapter {
 
     boolean delete(TemplateProfile profile);
 
-    TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic,
+    TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic,
                             Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName, Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload,
-                            boolean deployAsIs) throws ResourceAllocationException;
+                            boolean deployAsIs, Long extensionId) throws ResourceAllocationException;
 
-    TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic,
+    TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic,
                             Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-                            TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException;
+                            TemplateType templateType, boolean directDownload, boolean deployAsIs, boolean forCks, Long extensionId) throws ResourceAllocationException;
 
 }

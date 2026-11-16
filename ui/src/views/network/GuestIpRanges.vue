@@ -36,14 +36,16 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="{ record }">
+        <template #bodyCell="{ column, record }">
           <tooltip-button
+            v-if="column.key === 'actions'"
             tooltipPlacement="bottom"
             :tooltip="$t('label.edit')"
             type="primary"
             @click="() => { handleUpdateIpRangeModal(record) }"
             icon="swap-outlined" />
           <a-popconfirm
+            v-if="column.key === 'actions'"
             :title="$t('message.confirm.remove.ip.range')"
             @confirm="removeIpRange(record.id)"
             :okText="$t('label.yes')"
@@ -131,7 +133,7 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import CreateVlanIpRange from '@/views/network/CreateVlanIpRange'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import { reactive, ref, toRaw } from 'vue'
@@ -217,7 +219,7 @@ export default {
         pagesize: this.pageSize
       }
       this.fetchLoading = true
-      api('listVlanIpRanges', params).then(json => {
+      getAPI('listVlanIpRanges', params).then(json => {
         this.total = json.listvlaniprangesresponse.count || 0
         this.ipranges = json.listvlaniprangesresponse.vlaniprange || []
       }).finally(() => {
@@ -225,7 +227,11 @@ export default {
       })
     },
     removeIpRange (id) {
-      api('deleteVlanIpRange', { id: id }).then(json => {
+      postAPI('deleteVlanIpRange', { id: id }).then(json => {
+        const message = `${this.$t('message.success.delete')} ${this.$t('label.ip.range')}`
+        this.$message.success(message)
+      }).catch((error) => {
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
       })
@@ -265,7 +271,7 @@ export default {
         for (const key of ipRangeKeys) {
           params[key] = values[key]
         }
-        api('updateVlanIpRange', params).then(() => {
+        postAPI('updateVlanIpRange', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.update.iprange')
           })

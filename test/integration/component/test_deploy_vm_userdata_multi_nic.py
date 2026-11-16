@@ -79,7 +79,7 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
         # Enable Network offering
         cls.network_offering_nouserdata.update(cls.api_client, state='Enabled')
 
-        # Create Network Offering with all the serices
+        # Create Network Offering with all the services
         cls.network_offering_all = NetworkOffering.create(
             cls.api_client,
             cls.test_data["isolated_network_offering"]

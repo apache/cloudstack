@@ -18,18 +18,18 @@
  */
 package com.cloud.agent.api.to;
 
+import java.io.Serializable;
+
 import com.cloud.agent.api.LogLevel;
 import com.cloud.hypervisor.Hypervisor;
-
-import java.io.Serializable;
 
 public class RemoteInstanceTO implements Serializable {
 
     private Hypervisor.HypervisorType hypervisorType;
-    private String hostName;
     private String instanceName;
+    private String instancePath;
 
-    // Vmware Remote Instances parameters
+    // VMware Remote Instances parameters (required for exporting OVA through ovftool)
     // TODO: cloud.agent.transport.Request#getCommands() cannot handle gsoc decode for polymorphic classes
     private String vcenterUsername;
     @LogLevel(LogLevel.Log4jLevel.Off)
@@ -37,21 +37,38 @@ public class RemoteInstanceTO implements Serializable {
     private String vcenterHost;
     private String datacenterName;
     private String clusterName;
+    private String hostName;
+    private String vmwareMoref;
 
     public RemoteInstanceTO() {
     }
 
-    public RemoteInstanceTO(String hostName, String instanceName, String vcenterHost,
-                            String datacenterName, String clusterName,
-                            String vcenterUsername, String vcenterPassword) {
+    public RemoteInstanceTO(String instanceName, String clusterName, String hostName) {
         this.hypervisorType = Hypervisor.HypervisorType.VMware;
-        this.hostName = hostName;
         this.instanceName = instanceName;
-        this.vcenterHost = vcenterHost;
-        this.datacenterName = datacenterName;
         this.clusterName = clusterName;
+        this.hostName = hostName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
+        this.hypervisorType = Hypervisor.HypervisorType.VMware;
+        this.instanceName = instanceName;
+        this.instancePath = instancePath;
+        this.vcenterHost = vcenterHost;
         this.vcenterUsername = vcenterUsername;
         this.vcenterPassword = vcenterPassword;
+        this.datacenterName = datacenterName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName, String clusterName, String hostName) {
+        this(instanceName, instancePath, vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
+        this.clusterName = clusterName;
+        this.hostName = hostName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName, String clusterName, String hostName, String vmwareMoref) {
+        this(instanceName, instancePath, vcenterHost, vcenterUsername, vcenterPassword, datacenterName, clusterName, hostName);
+        this.vmwareMoref = vmwareMoref;
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {
@@ -62,8 +79,8 @@ public class RemoteInstanceTO implements Serializable {
         return this.instanceName;
     }
 
-    public String getHostName() {
-        return this.hostName;
+    public String getInstancePath() {
+        return this.instancePath;
     }
 
     public String getVcenterUsername() {
@@ -84,5 +101,17 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getClusterName() {
         return clusterName;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public String getVmwareMoref() {
+        return vmwareMoref;
+    }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
     }
 }

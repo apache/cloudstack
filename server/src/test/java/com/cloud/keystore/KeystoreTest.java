@@ -20,12 +20,10 @@ import com.cloud.api.ApiSerializerHelper;
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.response.AlertResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
 public class KeystoreTest extends TestCase {
-    private final static Logger s_logger = Logger.getLogger(KeystoreTest.class);
 
     private final String keyContent = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n"
         + "hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n"
@@ -77,20 +75,20 @@ public class KeystoreTest extends TestCase {
             ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
             KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
-            ksDao.save("CPVMCertificate", "CPVMCertificate", "KeyForCertificate", "realhostip.com");
+            ksDao.save("CPVMCertificate", "CPVMCertificate", "KeyForCertificate", "example.com");
             ksVo = ksDao.findByName("CPVMCertificate");
             assertTrue(ksVo != null);
             assertTrue(ksVo.getCertificate().equals("CPVMCertificate"));
             assertTrue(ksVo.getKey().equals("KeyForCertificate"));
-            assertTrue(ksVo.getDomainSuffix().equals("realhostip.com"));
+            assertTrue(ksVo.getDomainSuffix().equals("example.com"));
 
-            ksDao.save("CPVMCertificate", "CPVMCertificate Again", "KeyForCertificate Again", "again.realhostip.com");
+            ksDao.save("CPVMCertificate", "CPVMCertificate Again", "KeyForCertificate Again", "again.example.com");
 
             ksVo = ksDao.findByName("CPVMCertificate");
             assertTrue(ksVo != null);
             assertTrue(ksVo.getCertificate().equals("CPVMCertificate Again"));
             assertTrue(ksVo.getKey().equals("KeyForCertificate Again"));
-            assertTrue(ksVo.getDomainSuffix().equals("again.realhostip.com"));
+            assertTrue(ksVo.getDomainSuffix().equals("again.example.com"));
 
             ksDao.expunge(ksVo.getId());
         }
@@ -114,9 +112,9 @@ public class KeystoreTest extends TestCase {
             assertTrue(ksMgr.configure("TaskManager", new HashMap<String, Object>()));
             assertTrue(ksMgr.start());
 
-            ksMgr.saveCertificate("CPVMCertificate", certContent, keyContent, "realhostip.com");
+            ksMgr.saveCertificate("CPVMCertificate", certContent, keyContent, "example.com");
 
-            byte[] ksBits = ksMgr.getKeystoreBits("CPVMCertificate", "realhostip", "vmops.com");
+            byte[] ksBits = ksMgr.getKeystoreBits("CPVMCertificate", "example", "vmops.com");
             assertTrue(ksBits != null);
 
             try {

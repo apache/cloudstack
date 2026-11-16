@@ -31,47 +31,59 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class StaticRouteResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of static route")
+    @Param(description = "The ID of static route")
     private String id;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the static route")
+    @Param(description = "The state of the static route")
     private String state;
 
     @SerializedName(ApiConstants.VPC_ID)
     @Param(description = "VPC the static route belongs to")
     private String vpcId;
 
-    @SerializedName(ApiConstants.GATEWAY_ID)
+    @SerializedName(ApiConstants.VPC_GATEWAY_ID)
     @Param(description = "VPC gateway the route is created for")
-    private String gatewayId;
+    private String vpcGatewayId;
+
+    @SerializedName(ApiConstants.VPC_GATEWAY_IP)
+    @Param(description = "IP of VPC gateway the route is created for", since = "4.21.0")
+    private String vpcGatewayIp;
+
+    @SerializedName(ApiConstants.NEXT_HOP)
+    @Param(description = "Next hop of the static route", since = "4.21.0")
+    private String nextHop;
 
     @SerializedName(ApiConstants.CIDR)
-    @Param(description = "static route CIDR")
+    @Param(description = "Static route CIDR")
     private String cidr;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the static route")
+    @Param(description = "The Account associated with the static route")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the static route")
+    @Param(description = "The project ID of the static route")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the static route")
+    @Param(description = "The project name of the static route")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the static route")
+    @Param(description = "The ID of the domain associated with the static route")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the static route")
+    @Param(description = "The domain associated with the static route")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "the domain path associated with the static route", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with static route", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with static route", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @Override
@@ -91,8 +103,16 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
         this.vpcId = vpcId;
     }
 
-    public void setGatewayId(String gatewayId) {
-        this.gatewayId = gatewayId;
+    public void setVpcGatewayId(String vpcGatewayId) {
+        this.vpcGatewayId = vpcGatewayId;
+    }
+
+    public void setVpcGatewayIp(String vpcGatewayIp) {
+        this.vpcGatewayIp = vpcGatewayIp;
+    }
+
+    public void setNextHop(String nextHop) {
+        this.nextHop = nextHop;
     }
 
     public void setCidr(String cidr) {
@@ -114,6 +134,10 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;

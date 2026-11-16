@@ -92,4 +92,6 @@ public interface TemplateDownloader extends Runnable {
     boolean isInited();
 
     long getMaxTemplateSizeInBytes();
+
+    void setFollowRedirects(boolean followRedirects);
 }

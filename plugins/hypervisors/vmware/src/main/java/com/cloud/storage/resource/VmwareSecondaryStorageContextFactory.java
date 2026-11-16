@@ -16,14 +16,15 @@
 // under the License.
 package com.cloud.storage.resource;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 
 public class VmwareSecondaryStorageContextFactory {
-    private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageContextFactory.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareSecondaryStorageContextFactory.class);
 
     private static volatile int s_seq = 1;
 
@@ -60,7 +61,7 @@ public class VmwareSecondaryStorageContextFactory {
         } else {
             // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
             if (!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vCenterSessionTimeout)) {
-                s_logger.info("Validation of the context faild. dispose and create a new one");
+                LOGGER.info("Validation of the context faild. dispose and create a new one");
                 context.close();
                 context = create(vCenterAddress, vCenterUserName, vCenterPassword);
             }

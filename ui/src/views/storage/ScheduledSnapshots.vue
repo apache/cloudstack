@@ -85,7 +85,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import { timeZoneName } from '@/utils/timezone'
 
@@ -178,7 +178,7 @@ export default {
       const params = {}
       params.id = record.id
       this.actionLoading = true
-      api('deleteSnapshotPolicies', params).then(json => {
+      postAPI('deleteSnapshotPolicies', params).then(json => {
         if (json.deletesnapshotpoliciesresponse.success) {
           this.$notification.success({
             message: this.$t('label.delete.snapshot.policy'),

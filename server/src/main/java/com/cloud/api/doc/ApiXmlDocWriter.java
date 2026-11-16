@@ -37,7 +37,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,7 +65,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ApiXmlDocWriter {
-    public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(ApiXmlDocWriter.class);
 
     private static String s_dirName = "";
     private static Map<String, Class<?>> s_apiNameCmdClassMap = new HashMap<String, Class<?>>();
@@ -76,13 +77,11 @@ public class ApiXmlDocWriter {
         List<String> asyncResponses = new ArrayList<String>();
         asyncResponses.add(TemplateResponse.class.getName());
         asyncResponses.add(VolumeResponse.class.getName());
-        //asyncResponses.add(LoadBalancerResponse.class.getName());
         asyncResponses.add(HostResponse.class.getName());
         asyncResponses.add(IPAddressResponse.class.getName());
         asyncResponses.add(StoragePoolResponse.class.getName());
         asyncResponses.add(UserVmResponse.class.getName());
         asyncResponses.add(SecurityGroupResponse.class.getName());
-        //asyncResponses.add(ExternalLoadBalancerResponse.class.getName());
         asyncResponses.add(SnapshotResponse.class.getName());
 
         return asyncResponses;
@@ -91,7 +90,10 @@ public class ApiXmlDocWriter {
     public static void main(String[] args) {
         Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[] {"org.apache.cloudstack.api", "com.cloud.api",
                 "com.cloud.api.commands", "com.globo.globodns.cloudstack.api", "org.apache.cloudstack.network.opendaylight.api",
-                "org.apache.cloudstack.api.command.admin.zone", "org.apache.cloudstack.network.contrail.api.command"});
+                "org.apache.cloudstack.api.command.admin.zone", "org.apache.cloudstack.network.contrail.api.command",
+                "org.apache.cloudstack.cloudian.api", "org.apache.cloudstack.framework.extensions.api",
+                "org.apache.cloudstack.mom.webhook.api.command.user", "org.apache.cloudstack.network.tungsten.api.command",
+                "org.apache.cloudstack.oauth2.api.command", "org.apache.cloudstack.storage.datastore.util"});
 
         for (Class<?> cmdClass : cmdClasses) {
             if(cmdClass.getAnnotation(APICommand.class)==null){
@@ -233,7 +235,7 @@ public class ApiXmlDocWriter {
 
             out.writeObject(apiCommand);
         } else {
-            s_logger.debug("Command " + command + " is not exposed in api doc");
+            LOGGER.debug("Command " + command + " is not exposed in api doc");
         }
     }
 
@@ -388,7 +390,7 @@ public class ApiXmlDocWriter {
                 out.closeEntry();
             }catch(IOException ex)
             {
-                s_logger.error("addDir:Exception:"+ ex.getMessage(),ex);
+                LOGGER.error("addDir:Exception:"+ ex.getMessage(),ex);
             }
         }
     }
@@ -410,16 +412,16 @@ public class ApiXmlDocWriter {
         xs.alias("alert", Alert.class);
         try(ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");) {
             for (Field f : AlertManager.class.getFields()) {
-                if (f.getClass().isAssignableFrom(Number.class)) {
+                if (Number.class.isAssignableFrom(f.getType())) {
                     String name = f.getName().substring(11);
                     Alert alert = new Alert(name, f.getInt(null));
                     out.writeObject(alert);
                 }
             }
         } catch (IOException e) {
-            s_logger.error("Failed to create output stream to write an alert types ", e);
+            LOGGER.error("Failed to create output stream to write an alert types ", e);
         } catch (IllegalAccessException e) {
-            s_logger.error("Failed to read alert fields ", e);
+            LOGGER.error("Failed to read alert fields ", e);
         }
     }
 

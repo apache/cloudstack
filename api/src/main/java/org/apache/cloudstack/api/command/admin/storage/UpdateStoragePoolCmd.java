@@ -17,49 +17,65 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.List;
-
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
+@SuppressWarnings("rawtypes")
 @APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "the Id of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "The Id of the storage pool")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "Change the name of the storage pool", since = "4.15")
     private String name;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "comma-separated list of tags for the storage pool")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Comma-separated list of tags for the storage pool")
     private List<String> tags;
 
-    @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool", validations={ApiArgValidator.PositiveNumber})
     private Long capacityIops;
 
-    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "bytes CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "Bytes CloudStack can provision from this storage pool",validations={ApiArgValidator.PositiveNumber})
     private Long capacityBytes;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "false to disable the pool for allocation of new volumes, true to" +
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "False to disable the pool for allocation of new volumes, true to" +
             " enable it back.")
     private Boolean enabled;
+
+    @Parameter(name = ApiConstants.DETAILS,
+                            type = CommandType.MAP,
+                            required = false,
+                            description = "the details for the storage pool",
+                            since = "4.19.0")
+    private Map details;
+
+    @Parameter(name = ApiConstants.URL,
+                            type = CommandType.STRING,
+                            required = false,
+                            description = "the URL of the storage pool",
+                            since = "4.19.0")
+    private String url;
 
     @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
@@ -115,9 +131,37 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return ApiCommandResourceType.StoragePool;
     }
 
+    public Map<String,String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String,String> details) {
+        this.details = details;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     @Override
     public void execute() {
-        StoragePool result = _storageService.updateStoragePool(this);
+        StoragePool result = null;
+        if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
+                MapUtils.isNotEmpty(details)) {
+            result = _storageService.updateStoragePool(this);
+        } else {
+            result = _storageService.getStoragePool(getId());
+        }
+
+        if (enabled != null) {
+            result = enabled ? _storageService.enablePrimaryStoragePool(id)
+                    : _storageService.disablePrimaryStoragePool(id);
+        }
+
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());

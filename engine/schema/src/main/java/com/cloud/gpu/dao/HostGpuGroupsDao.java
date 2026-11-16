@@ -19,6 +19,7 @@ package com.cloud.gpu.dao;
 import java.util.List;
 
 import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface HostGpuGroupsDao extends GenericDao<HostGpuGroupsVO, Long> {
@@ -57,4 +58,15 @@ public interface HostGpuGroupsDao extends GenericDao<HostGpuGroupsVO, Long> {
      */
     void persist(long hostId, List<String> gpuGroups);
 
+
+    /**
+     * Returns max and remaining GPU capacity
+     *
+     * @param dcId
+     * @param podId
+     * @param clusterId
+     * @param hostId
+     * @return Pair containing max GPU capacity and remaining GPU capacity
+     */
+    Pair<Long, Long> getGpuStats(Long dcId, Long podId, Long clusterId, Long hostId);
 }

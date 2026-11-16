@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "vlan")
@@ -192,24 +193,11 @@ public class VlanVO implements Vlan {
     @Override
     public String toString() {
         if (toString == null) {
-            toString =
-                    new StringBuilder("Vlan[").append(vlanTag)
-                    .append("|")
-                    .append(vlanGateway)
-                    .append("|")
-                    .append(vlanNetmask)
-                    .append("|")
-                    .append(ip6Gateway)
-                    .append("|")
-                    .append(ip6Cidr)
-                    .append("|")
-                    .append(ipRange)
-                    .append("|")
-                    .append(ip6Range)
-                    .append("|")
-                    .append(networkId)
-                    .append("]")
-                    .toString();
+            toString = String.format("Vlan %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid",
+                            "vlanTag", "vlanGateway", "vlanNetmask", "ip6Gateway", "ip6Cidr",
+                            "ipRange", "ip6Range", "networkId"));
+
         }
         return toString;
     }

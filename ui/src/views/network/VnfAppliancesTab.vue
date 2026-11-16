@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -120,7 +120,7 @@ export default {
   methods: {
     fetchData () {
       var params = {
-        details: 'servoff,tmpl,nics',
+        details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff,vnfnics',
         isVnf: true,
         listAll: true
       }
@@ -130,8 +130,8 @@ export default {
         params.networkid = this.resource.id
       }
       this.fetchLoading = true
-      api('listVirtualMachines', params).then(json => {
-        this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
+      getAPI('listVnfAppliances', params).then(json => {
+        this.virtualmachines = json.listvnfappliancesresponse.virtualmachine || []
         for (const vm of this.virtualmachines) {
           for (const vmnic of vm.nic) {
             if (vmnic.networkid === this.resource.id) {

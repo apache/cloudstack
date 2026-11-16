@@ -85,6 +85,33 @@
         </template>
         <a-switch v-model:checked="form.allowuserdrivenbackups"/>
       </a-form-item>
+      <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
+          <a-switch v-model:checked="form.ispublic" />
+        </a-form-item>
+        <a-form-item name="domainid" ref="domainid" v-if="!form.ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
+          <a-select
+            mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
+            v-model:value="form.domainid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domains.loading"
+            :placeholder="apiParams.domainid.description">
+            <a-select-option v-for="(opt, optIndex) in domains.opts" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
@@ -95,7 +122,8 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -108,6 +136,10 @@ export default {
   data () {
     return {
       loading: false,
+      domains: {
+        loading: false,
+        opts: []
+      },
       zones: {
         loading: false,
         opts: []
@@ -129,26 +161,45 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        allowuserdrivenbackups: true
+        allowuserdrivenbackups: true,
+        ispublic: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         description: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
-        externalid: [{ required: true, message: this.$t('message.error.select') }]
+        externalid: [{ required: true, message: this.$t('message.error.select') }],
+        domainid: [{ type: 'array', message: this.$t('message.error.select') }]
       })
+    },
+    isAdmin () {
+      return isAdmin()
     },
     fetchData () {
       this.fetchZone()
+      this.fetchDomainData()
     },
     fetchZone () {
       this.zones.loading = true
-      api('listZones', { available: true, showicon: true }).then(json => {
+      getAPI('listZones', { available: true, showicon: true }).then(json => {
         this.zones.opts = json.listzonesresponse.zone || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(f => {
         this.zones.loading = false
+      })
+    },
+    fetchDomainData () {
+      const params = {}
+      params.listAll = true
+      params.details = 'min'
+      this.domains.loading = true
+      getAPI('listDomains', params).then(json => {
+        this.domains.opts = json.listdomainsresponse.domain || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.domains.loading = false
       })
     },
     fetchExternal (zoneId) {
@@ -157,7 +208,7 @@ export default {
         return
       }
       this.externals.loading = true
-      api('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
+      getAPI('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
         this.externals.opts = json.listbackupproviderofferingsresponse.backupoffering || []
       }).catch(error => {
         this.$notifyError(error)
@@ -179,10 +230,24 @@ export default {
             params[key] = input
           }
         }
+        if (values.ispublic !== true) {
+          var domainIndexes = values.domainid
+          var domainId = null
+          if (domainIndexes && domainIndexes.length > 0) {
+            var domainIds = []
+            for (var i = 0; i < domainIndexes.length; i++) {
+              domainIds = domainIds.concat(this.domains.opts[domainIndexes[i]].id)
+            }
+            domainId = domainIds.join(',')
+          }
+          if (domainId) {
+            params.domainid = domainId
+          }
+        }
         params.allowuserdrivenbackups = values.allowuserdrivenbackups
         this.loading = true
         const title = this.$t('label.import.offering')
-        api('importBackupOffering', params).then(json => {
+        postAPI('importBackupOffering', params).then(json => {
           const jobId = json.importbackupofferingresponse.jobid
           if (jobId) {
             this.$pollJob({

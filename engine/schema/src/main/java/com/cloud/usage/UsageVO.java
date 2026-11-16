@@ -17,6 +17,7 @@
 package com.cloud.usage;
 
 import java.util.Date;
+import java.util.TimeZone;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,9 +28,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Entity
 @Table(name = "cloud_usage")
@@ -109,6 +112,9 @@ public class UsageVO implements Usage, InternalIdentity {
 
     @Column(name = "is_hidden")
     private boolean isHidden = false;
+
+    @Column(name = "state")
+    private String state;
 
     public Integer getQuotaCalculated() {
         return quotaCalculated;
@@ -398,8 +404,22 @@ public class UsageVO implements Usage, InternalIdentity {
         this.isHidden = hidden;
     }
 
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "usageId", "usageType", "startDate", "endDate");
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "usageId", "usageType");
+    }
+
+    public String toString(TimeZone timeZone) {
+        String startDateString = DateUtil.displayDateInTimezone(timeZone, getStartDate());
+        String endDateString = DateUtil.displayDateInTimezone(timeZone, getEndDate());
+        return String.format("%s,\"startDate\":\"%s\",\"endDate\":\"%s\"}", StringUtils.chop(this.toString()), startDateString, endDateString);
     }
 }

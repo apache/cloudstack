@@ -228,25 +228,45 @@ public class VnfTemplateManagerImplTest {
     @Test
     public void testValidateVnfApplianceNicsWithRequiredNics() {
         List<Long> networkIds = Arrays.asList(200L, 201L);
-        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds);
+        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds, null);
     }
 
     @Test
     public void testValidateVnfApplianceNicsWithAllNics() {
         List<Long> networkIds = Arrays.asList(200L, 201L, 202L);
-        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds);
+        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfApplianceNicsWithEmptyList() {
         List<Long> networkIds = new ArrayList<>();
-        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds);
+        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfApplianceNicsWithMissingNetworkId() {
         List<Long> networkIds = Arrays.asList(200L);
-        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds);
+        vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateVnfApplianceTrunkNicRejectsManagementDevice() {
+        when(template.getId()).thenReturn(templateId);
+        VnfTemplateNicVO vnfNic1 = new VnfTemplateNicVO(templateId, 0L, "eth0", true, true, "first");
+        VnfTemplateNicVO vnfNic2 = new VnfTemplateNicVO(templateId, 1L, "eth1", true, false, "second");
+        Mockito.doReturn(Arrays.asList(vnfNic1, vnfNic2)).when(vnfTemplateNicDao).listByTemplateId(templateId);
+
+        vnfTemplateManagerImpl.validateVnfApplianceTrunkNic(template, 0L);
+    }
+
+    @Test
+    public void testValidateVnfApplianceTrunkNicAllowsDataPlaneDevice() {
+        when(template.getId()).thenReturn(templateId);
+        VnfTemplateNicVO vnfNic1 = new VnfTemplateNicVO(templateId, 0L, "eth0", true, true, "first");
+        VnfTemplateNicVO vnfNic2 = new VnfTemplateNicVO(templateId, 1L, "eth1", true, false, "second");
+        Mockito.doReturn(Arrays.asList(vnfNic1, vnfNic2)).when(vnfTemplateNicDao).listByTemplateId(templateId);
+
+        vnfTemplateManagerImpl.validateVnfApplianceTrunkNic(template, 1L);
     }
 
     @Test

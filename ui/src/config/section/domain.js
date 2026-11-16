@@ -32,6 +32,27 @@ export default {
     name: 'account',
     title: 'label.accounts',
     param: 'domainid'
+  }, {
+    name: 'vm',
+    title: 'label.vms',
+    param: 'domainid'
+  }, {
+    name: 'volume',
+    title: 'label.volumes',
+    param: 'domainid'
+  }, {
+    name: 'guestnetwork',
+    title: 'label.networks',
+    param: 'domainid'
+  }, {
+    name: 'template',
+    title: 'label.templates',
+    param: 'domainid'
+  },
+  {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'domainid'
   }],
   tabs: [
     {
@@ -123,14 +144,31 @@ export default {
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       listView: true,
       dataView: true,
-      args: ['type', 'domainid', 'name', 'accounttype', 'admin'],
+      args: ['type', 'domainid', 'ldapdomain', 'accounttype', 'admin'],
       mapping: {
         type: {
           options: ['GROUP', 'OU']
         },
         accounttype: {
-          options: ['0', '2']
+          options: [
+            { id: '0', description: 'label.account.type.normal' },
+            { id: '2', description: 'label.account.type.domain.admin' }
+          ]
         },
+        domainid: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
+      api: 'unlinkDomainFromLdap',
+      icon: 'ArrowsAltOutlined',
+      label: 'label.unlink.domain.from.ldap',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+      listView: true,
+      dataView: true,
+      args: ['domainid'],
+      mapping: {
         domainid: {
           value: (record) => { return record.id }
         }

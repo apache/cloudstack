@@ -17,24 +17,20 @@
 package org.apache.cloudstack.metrics;
 
 import java.math.BigDecimal;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.dao.ResourceCountDao;
-import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.host.HostStats;
-import com.cloud.host.HostTagVO;
-import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -44,16 +40,21 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.CapacityState;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.configuration.Resource;
+import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -64,7 +65,8 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import org.apache.commons.lang3.StringUtils;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -73,7 +75,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class PrometheusExporterImpl extends ManagerBase implements PrometheusExporter, Manager {
-    private static final Logger LOG = Logger.getLogger(PrometheusExporterImpl.class);
 
     private static final String USED = "used";
     private static final String ALLOCATED = "allocated";
@@ -81,6 +82,24 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private static final String TOTAL = "total";
     private static final String ONLINE = "online";
     private static final String OFFLINE = "offline";
+
+    enum MissingInfoFilter {
+        Host_Stats("hostStats"),
+        CPU_CAPACITY("cpuCapacity"),
+        MEM_CAPACITY("memCapacity"),
+        CORE_CAPACITY("coreCapacity");
+
+        private final String name;
+
+        MissingInfoFilter(String name){
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
 
     private static List<Item> metricsItems = new ArrayList<>();
 
@@ -116,6 +135,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private ResourceCountDao _resourceCountDao;
     @Inject
     private HostTagsDao _hostTagsDao;
+    @Inject
+    private CAManager caManager;
 
     public PrometheusExporterImpl() {
         super();
@@ -128,8 +149,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         Map<String, Integer> totalHosts = new HashMap<>();
         Map<String, Integer> upHosts = new HashMap<>();
         Map<String, Integer> downHosts = new HashMap<>();
-
-        HostStats hostStats;
 
         for (final HostVO host : hostDao.listAll()) {
             if (host == null || host.getType() != Host.Type.Routing || host.getDataCenterId() != dcId) {
@@ -147,8 +166,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             int isDedicated = (dr != null) ? 1 : 0;
             metricsList.add(new ItemHostIsDedicated(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), isDedicated));
 
-            String hostTags = markTagMaps(host, totalHosts, upHosts,  downHosts);
-            hostStats = ApiDBUtils.getHostStatistics(host.getId());
 
             // Get account, domain details for dedicated hosts
             if (isDedicated == 1) {
@@ -160,16 +177,22 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 metricsList.add(new ItemHostDedicatedToAccount(zoneName, host.getName(), accountName, domain.getPath(), isDedicated));
             }
 
+            String hostTags = markTagMaps(host, totalHosts, upHosts,  downHosts);
+            HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
+
+            if (hostStats == null){
+                metricsList.add(new MissingHostInfo(zoneName, host.getName(), MissingInfoFilter.Host_Stats));
+            }
+
             final String cpuFactor = String.valueOf(CapacityManager.CpuOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO cpuCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
-            final double cpuUsedMhz = hostStats.getCpuUtilization() * host.getCpus() * host.getSpeed() / 100.0 ;
 
-            if (host.isInMaintenanceStates()) {
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, ALLOCATED, 0L, isDedicated, hostTags));
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, 0L, isDedicated, hostTags));
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, 0L, isDedicated, hostTags));
+            if (cpuCapacity == null && !host.isInMaintenanceStates()){
+                metricsList.add(new MissingHostInfo(zoneName, host.getName(), MissingInfoFilter.CPU_CAPACITY));
             }
-            else if (cpuCapacity != null && cpuCapacity.getCapacityState() == CapacityState.Enabled) {
+
+            if (hostStats != null && cpuCapacity != null && cpuCapacity.getCapacityState() == CapacityState.Enabled) {
+                final double cpuUsedMhz = hostStats.getCpuUtilization() * host.getCpus() * host.getSpeed() / 100.0 ;
                 metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, ALLOCATED, cpuCapacity.getUsedCapacity(), isDedicated, hostTags));
                 metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuUsedMhz, isDedicated, hostTags));
                 metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity(), isDedicated, hostTags));
@@ -181,12 +204,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
             final String memoryFactor = String.valueOf(CapacityManager.MemOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO memCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
-            if (host.isInMaintenanceStates()) {
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, ALLOCATED, 0L, isDedicated, hostTags));
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, 0, isDedicated, hostTags));
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, 0L, isDedicated, hostTags));
+
+            if (memCapacity == null && !host.isInMaintenanceStates()){
+                metricsList.add(new MissingHostInfo(zoneName, host.getName(), MissingInfoFilter.MEM_CAPACITY));
             }
-            else if (memCapacity != null && memCapacity.getCapacityState() == CapacityState.Enabled) {
+
+            if (hostStats != null && memCapacity != null && memCapacity.getCapacityState() == CapacityState.Enabled) {
                 metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, ALLOCATED, memCapacity.getUsedCapacity(), isDedicated, hostTags));
                 metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, hostStats.getUsedMemory(), isDedicated, hostTags));
                 metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, memCapacity.getTotalCapacity(), isDedicated, hostTags));
@@ -198,12 +221,15 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
             metricsList.add(new ItemHostVM(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), vmDao.listByHostId(host.getId()).size()));
 
+            addSSLCertificateExpirationMetrics(metricsList, zoneName, zoneUuid, host);
+
             final CapacityVO coreCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU_CORE);
-            if (host.isInMaintenanceStates()) {
-                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, 0L, isDedicated, hostTags));
-                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, 0L, isDedicated, hostTags));
+
+            if (coreCapacity == null && !host.isInMaintenanceStates()){
+                metricsList.add(new MissingHostInfo(zoneName, host.getName(), MissingInfoFilter.CORE_CAPACITY));
             }
-            else if (coreCapacity != null && coreCapacity.getCapacityState() == CapacityState.Enabled) {
+
+            if (hostStats != null && coreCapacity != null && coreCapacity.getCapacityState() == CapacityState.Enabled) {
                 metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, coreCapacity.getUsedCapacity(), isDedicated, hostTags));
                 metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, coreCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
@@ -213,17 +239,17 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         }
 
         final List<CapacityDaoImpl.SummedCapacity> cpuCapacity = capacityDao.findCapacityBy((int) Capacity.CAPACITY_TYPE_CPU, dcId, null, null);
-        if (cpuCapacity != null && cpuCapacity.size() > 0) {
+        if (cpuCapacity != null && !cpuCapacity.isEmpty()) {
             metricsList.add(new ItemHostCpu(zoneName, zoneUuid, null, null, null, null, ALLOCATED, cpuCapacity.get(0).getAllocatedCapacity() != null ? cpuCapacity.get(0).getAllocatedCapacity() : 0, 0, ""));
         }
 
         final List<CapacityDaoImpl.SummedCapacity> memCapacity = capacityDao.findCapacityBy((int) Capacity.CAPACITY_TYPE_MEMORY, dcId, null, null);
-        if (memCapacity != null && memCapacity.size() > 0) {
+        if (memCapacity != null && !memCapacity.isEmpty()) {
             metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, memCapacity.get(0).getAllocatedCapacity() != null ? memCapacity.get(0).getAllocatedCapacity() : 0, 0, ""));
         }
 
         final List<CapacityDaoImpl.SummedCapacity> coreCapacity = capacityDao.findCapacityBy((int) Capacity.CAPACITY_TYPE_CPU_CORE, dcId, null, null);
-        if (coreCapacity != null && coreCapacity.size() > 0) {
+        if (coreCapacity != null && !coreCapacity.isEmpty()) {
             metricsList.add(new ItemVMCore(zoneName, zoneUuid, null, null, null, ALLOCATED, coreCapacity.get(0).getAllocatedCapacity() != null ? coreCapacity.get(0).getAllocatedCapacity() : 0, 0, ""));
         }
 
@@ -232,6 +258,18 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total, null));
 
         addHostTagsMetrics(metricsList, dcId, zoneName, zoneUuid, totalHosts, upHosts, downHosts, total, up, down);
+    }
+
+    private void addSSLCertificateExpirationMetrics(List<Item> metricsList, String zoneName, String zoneUuid, HostVO host) {
+        if (caManager == null || caManager.getActiveCertificatesMap() == null) {
+            return;
+        }
+        X509Certificate cert = caManager.getActiveCertificatesMap().getOrDefault(host.getPrivateIpAddress(), null);
+        if (cert == null) {
+            return;
+        }
+        long certExpiryEpoch = cert.getNotAfter().getTime() / 1000; // Convert to epoch seconds
+        metricsList.add(new ItemHostCertExpiry(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), certExpiryEpoch));
     }
 
     private String markTagMaps(HostVO host, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts) {
@@ -280,11 +318,11 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
                 });
 
-        List<HostTagVO> allHostTagVOS = hostDao.listAll().stream()
-                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
+        List<HostTagVO> allHostTagVOS = hostDao.listAllIds().stream()
+                .flatMap( h -> _hostTagsDao.getHostTags(h).stream())
                 .distinct()
                 .collect(Collectors.toList());
-        List<String> allHostTags = new ArrayList<>();
+        HashSet<String> allHostTags = new HashSet<>();
         allHostTagVOS.forEach(hostTagVO -> allHostTags.add(hostTagVO.getTag()));
 
         for (final State state : State.values()) {
@@ -375,6 +413,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private void addDomainLimits(final List<Item> metricsList) {
         Long totalCpuLimit = 0L;
         Long totalMemoryLimit = 0L;
+        Long totalGpuLimit = 0L;
 
         for (final DomainJoinVO domain: domainDao.listAll()) {
             if (domain == null || domain.getLevel() != 1) {
@@ -392,6 +431,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 totalMemoryLimit += memoryLimit;
             }
 
+            long gpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getGpuLimit(), false,
+                    Resource.ResourceType.gpu, domain.getId());
+            if (gpuLimit > 0) {
+                totalGpuLimit += gpuLimit;
+            }
+
             long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), false,
                     Resource.ResourceType.primary_storage, domain.getId());
             long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSecondaryStorageLimit(), false,
@@ -400,6 +445,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             // Add per domain cpu, memory and storage count
             metricsList.add(new ItemPerDomainResourceLimit(cpuLimit, domain.getPath(), Resource.ResourceType.cpu.getName()));
             metricsList.add(new ItemPerDomainResourceLimit(memoryLimit, domain.getPath(), Resource.ResourceType.memory.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(gpuLimit, domain.getPath(), Resource.ResourceType.gpu.getName()));
             metricsList.add(new ItemPerDomainResourceLimit(primaryStorageLimit, domain.getPath(), Resource.ResourceType.primary_storage.getName()));
             metricsList.add(new ItemPerDomainResourceLimit(secondaryStorageLimit, domain.getPath(), Resource.ResourceType.secondary_storage.getName()));
         }
@@ -420,16 +466,19 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             }
 
             long memoryUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.memory);
+                    Resource.ResourceType.memory, null);
             long cpuUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.cpu);
+                    Resource.ResourceType.cpu, null);
+            long gpuUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
+                    Resource.ResourceType.gpu, null);
             long primaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.primary_storage);
+                    Resource.ResourceType.primary_storage, null);
             long secondaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.secondary_storage);
+                    Resource.ResourceType.secondary_storage, null);
 
             metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getPath(), Resource.ResourceType.memory.getName()));
             metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getPath(), Resource.ResourceType.cpu.getName()));
+            metricsList.add(new ItemPerDomainResourceCount(gpuUsed, domain.getPath(), Resource.ResourceType.gpu.getName()));
             metricsList.add(new ItemPerDomainResourceCount(primaryStorageUsed, domain.getPath(),
                     Resource.ResourceType.primary_storage.getName()));
             metricsList.add(new ItemPerDomainResourceCount(secondaryStorageUsed, domain.getPath(),
@@ -473,7 +522,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             addDomainLimits(latestMetricsItems);
             addDomainResourceCount(latestMetricsItems);
         } catch (Exception e) {
-            LOG.warn("Getting metrics failed ", e);
+            logger.warn("Getting metrics failed ", e);
         }
         metricsItems = latestMetricsItems;
     }
@@ -482,20 +531,48 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     public String getMetrics() {
         final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("# Cloudstack Prometheus Metrics\n");
-        for (final Item item : metricsItems) {
+
+        List<Item> sortedItems = metricsItems.stream()
+            .sorted((item1, item2) -> item1.name.compareTo(item2.name))
+            .collect(Collectors.toList());
+
+        String currentMetricName = null;
+
+        for (Item item : sortedItems) {
+            if (!item.name.equals(currentMetricName)) {
+                currentMetricName = item.name;
+                stringBuilder.append("# HELP ").append(currentMetricName).append(" ")
+                            .append(item.getHelp()).append("\n");
+                stringBuilder.append("# TYPE ").append(currentMetricName).append(" ")
+                            .append(item.getType()).append("\n");
+            }
+
             stringBuilder.append(item.toMetricsString()).append("\n");
         }
+
         return stringBuilder.toString();
     }
 
     private abstract class Item {
         String name;
+        String help;
+        String type;
 
-        public Item(final String nm) {
+        public Item(final String nm, final String hlp, final String tp) {
             name = nm;
+            help = hlp;
+            type = tp;
         }
 
         public abstract String toMetricsString();
+
+        public String getHelp() {
+            return help;
+        }
+
+        public String getType() {
+            return type;
+        }
     }
 
     class ItemVM extends Item {
@@ -505,7 +582,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         long total;
 
         public ItemVM(final String zn, final String zu, final String st, long cnt) {
-            super("cloudstack_vms_total");
+            super("cloudstack_vms_total",
+                  "Total number of virtual machines",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = st;
@@ -526,7 +605,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String hosttags;
 
         public ItemVMByTag(final String zn, final String zu, final String st, long cnt, final String tags) {
-            super("cloudstack_vms_total_by_tag");
+            super("cloudstack_vms_total_by_tag",
+                  "Total number of virtual machines grouped by host tags",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = st;
@@ -547,7 +628,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemVolume(final String zn, final String zu, final String st, int cnt) {
-            super("cloudstack_volumes_total");
+            super("cloudstack_volumes_total",
+                  "Total number of volumes",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = st;
@@ -568,7 +651,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String hosttags;
 
         public ItemHost(final String zn, final String zu, final String st, int cnt, final String tags) {
-            super("cloudstack_hosts_total");
+            super("cloudstack_hosts_total",
+                  "Total number of hosts",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             state = st;
@@ -580,6 +665,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         public String toMetricsString() {
             if (StringUtils.isNotEmpty(hosttags)) {
                 name = "cloudstack_hosts_total_by_tag";
+                help = "Total number of hosts grouped by tags";
                 return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, state, hosttags, total);
             }
             return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, state, total);
@@ -598,7 +684,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String hosttags;
 
         public ItemVMCore(final String zn, final String zu, final String hn, final String hu, final String hip, final String fl, final Long cr, final int dedicated, final String tags) {
-            super("cloudstack_host_vms_cores_total");
+            super("cloudstack_host_vms_cores_total",
+                  "Total number of VM cores on hosts",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             hostName = hn;
@@ -619,10 +707,31 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, filter, core);
                 } else {
                     name = "cloudstack_host_vms_cores_total_by_tag";
+                    help = "Total number of VM cores grouped by host tags";
                     return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, filter, hosttags, core);
                 }
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",filter=\"%s\",dedicated=\"%d\",tags=\"%s\"} %d", name, zoneName, hostName, ip, filter, isDedicated, hosttags, core);
+        }
+    }
+
+    class MissingHostInfo extends Item {
+        String zoneName;
+        String hostName;
+        MissingInfoFilter filter;
+
+        public MissingHostInfo(String zoneName, String hostname, MissingInfoFilter filter) {
+            super("cloudstack_host_missing_info",
+                  "Hosts with missing capacity or statistics information",
+                  "gauge");
+            this.zoneName = zoneName;
+            this.hostName = hostname;
+            this.filter = filter;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\",hostname=\"%s\",filter=\"%s\"} -1", name, zoneName, hostName, filter);
         }
     }
 
@@ -639,7 +748,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String hosttags;
 
         public ItemHostCpu(final String zn, final String zu, final String hn, final String hu, final String hip, final String of, final String fl, final double mh, final int dedicated, final String tags) {
-            super("cloudstack_host_cpu_usage_mhz_total");
+            super("cloudstack_host_cpu_usage_mhz_total",
+                  "Host CPU usage in MHz",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             hostName = hn;
@@ -659,6 +770,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, mhertz);
                 } else {
                     name = "cloudstack_host_cpu_usage_mhz_total_by_tag";
+                    help = "Host CPU usage in MHz grouped by host tags";
                     return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %.2f", name, zoneName, filter, hosttags, mhertz);
                 }
             }
@@ -679,7 +791,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String hosttags;
 
         public ItemHostMemory(final String zn, final String zu, final String hn, final String hu, final String hip, final String of, final String fl, final double membytes, final int dedicated, final String tags) {
-            super("cloudstack_host_memory_usage_mibs_total");
+            super("cloudstack_host_memory_usage_mibs_total",
+                  "Host memory usage in MiB",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             hostName = hn;
@@ -699,6 +813,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, miBytes);
                 } else {
                     name = "cloudstack_host_memory_usage_mibs_total_by_tag";
+                    help = "Host memory usage in MiB grouped by host tags";
                     return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %.2f", name, zoneName, filter, hosttags, miBytes);
                 }
             }
@@ -715,7 +830,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemHostVM(final String zoneName, final String zoneUuid, final String hostName, final String hostUuid, final String hostIp, final int total) {
-            super("cloudstack_host_vms_total");
+            super("cloudstack_host_vms_total",
+                  "Total number of VMs per host",
+                  "gauge");
             this.zoneName = zoneName;
             this.zoneUuid = zoneUuid;
             this.hostName = hostName;
@@ -741,7 +858,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         double total;
 
         public ItemPool(final String zn, final String zu, final String pn, final String pa, final String typ, final String of, final String fl, double cnt) {
-            super("cloudstack_storage_pool_gibs_total");
+            super("cloudstack_storage_pool_gibs_total",
+                  "Storage pool capacity in GiB",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             pname = pn;
@@ -768,7 +887,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemPrivateIp(final String zn, final String zu, final String fl, int cnt) {
-            super("cloudstack_private_ips_total");
+            super("cloudstack_private_ips_total",
+                  "Total number of private IP addresses",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = fl;
@@ -788,7 +909,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemPublicIp(final String zn, final String zu, final String fl, int cnt) {
-            super("cloudstack_public_ips_total");
+            super("cloudstack_public_ips_total",
+                  "Total number of public IP addresses",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = fl;
@@ -808,7 +931,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemSharedNetworkIp(final String zn, final String zu, final String fl, int cnt) {
-            super("cloudstack_shared_network_ips_total");
+            super("cloudstack_shared_network_ips_total",
+                  "Total number of shared network IP addresses",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = fl;
@@ -828,7 +953,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemVlan(final String zn, final String zu, final String fl, int cnt) {
-            super("cloudstack_vlans_total");
+            super("cloudstack_vlans_total",
+                  "Total number of VLANs",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             filter = fl;
@@ -845,7 +972,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         long cores;
 
         public ItemDomainLimitCpu(final long c) {
-            super("cloudstack_domain_limit_cpu_cores_total");
+            super("cloudstack_domain_limit_cpu_cores_total",
+                  "Total CPU core limit across all domains",
+                  "gauge");
             cores = c;
         }
 
@@ -859,7 +988,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         long miBytes;
 
         public ItemDomainLimitMemory(final long mb) {
-            super("cloudstack_domain_limit_memory_mibs_total");
+            super("cloudstack_domain_limit_memory_mibs_total",
+                  "Total memory limit in MiB across all domains",
+                  "gauge");
             miBytes = mb;
         }
 
@@ -878,7 +1009,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int isDedicated;
 
         public ItemHostIsDedicated(final String zoneName, final String zoneUuid, final String hostName, final String hostUuid, final String hostIp, final int isDedicated) {
-            super("cloudstack_host_is_dedicated");
+            super("cloudstack_host_is_dedicated",
+                  "Whether a host is dedicated (1) or not (0)",
+                  "gauge");
             this.zoneName = zoneName;
             this.zoneUuid = zoneUuid;
             this.hostName = hostName;
@@ -900,7 +1033,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemActiveDomains(final String zn, final String zu, final int cnt) {
-            super("cloudstack_active_domains_total");
+            super("cloudstack_active_domains_total",
+                  "Total number of active domains",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             total = cnt;
@@ -921,7 +1056,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         public ItemHostDedicatedToAccount(final String zoneName, final String hostName,
                                           final String accountName, final String domainName, int isDedicated) {
-            super("cloudstack_host_dedicated_to_account");
+            super("cloudstack_host_dedicated_to_account",
+                  "Host dedication to specific account",
+                  "gauge");
             this.zoneName = zoneName;
             this.hostName = hostName;
             this.accountName = accountName;
@@ -942,7 +1079,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String resourceType;
 
         public ItemPerDomainResourceLimit(final long c, final String domainName, final String resourceType) {
-            super("cloudstack_domain_resource_limit");
+            super("cloudstack_domain_resource_limit",
+                  "Resource limits per domain",
+                  "gauge");
             this.cores = c;
             this.domainName = domainName;
             this.resourceType = resourceType;
@@ -960,7 +1099,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         String resourceType;
 
         public ItemPerDomainResourceCount(final long mb, final String domainName, final String resourceType) {
-            super("cloudstack_domain_resource_count");
+            super("cloudstack_domain_resource_count",
+                  "Resource usage count per domain",
+                  "gauge");
             this.miBytes = mb;
             this.domainName = domainName;
             this.resourceType = resourceType;
@@ -978,7 +1119,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemActiveAccounts(final String zn, final String zu, final int cnt) {
-            super("cloudstack_active_accounts_total");
+            super("cloudstack_active_accounts_total",
+                  "Total number of active accounts",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             total = cnt;
@@ -998,7 +1141,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total;
 
         public ItemVMsBySize(final String zn, final String zu, final int c, final int m, int cnt) {
-            super("cloudstack_vms_total_by_size");
+            super("cloudstack_vms_total_by_size",
+                  "Total number of VMs grouped by CPU and memory size",
+                  "gauge");
             zoneName = zn;
             zoneUuid = zu;
             cpu = c;
@@ -1009,6 +1154,30 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             return String.format("%s{zone=\"%s\",cpu=\"%d\",memory=\"%d\"} %d", name, zoneName, cpu, memory, total);
+        }
+    }
+
+    class ItemHostCertExpiry extends Item {
+        String zoneName;
+        String zoneUuid;
+        String hostName;
+        String hostUuid;
+        String hostIp;
+        long expiryTimestamp;
+
+        public ItemHostCertExpiry(final String zoneName, final String zoneUuid, final String hostName, final String hostUuid, final String hostIp, final long expiry) {
+            super("cloudstack_host_cert_expiry_timestamp", "Host certificate expiry timestamp in seconds since epoch", "gauge");
+            this.zoneName = zoneName;
+            this.zoneUuid = zoneUuid;
+            this.hostName = hostName;
+            this.hostUuid = hostUuid;
+            this.hostIp = hostIp;
+            this.expiryTimestamp = expiry;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\"} %d", name, zoneName, hostName, hostIp, expiryTimestamp);
         }
     }
 }

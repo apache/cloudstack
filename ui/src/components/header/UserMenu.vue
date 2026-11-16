@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
@@ -80,6 +80,8 @@ import { mapActions, mapGetters } from 'vuex'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import eventBus from '@/config/eventBus'
 import { SERVER_MANAGER } from '@/store/mutation-types'
+import { sourceToken } from '@/utils/request'
+import { applyCustomGuiTheme } from '@/utils/guiTheme'
 
 export default {
   name: 'UserMenu',
@@ -139,13 +141,18 @@ export default {
     },
     fetchResourceIcon (id) {
       return new Promise((resolve, reject) => {
-        api('listUsers', {
+        if (this.$store.getters.avatar) {
+          this.image = this.$store.getters.avatar
+          resolve(this.image)
+        }
+        getAPI('listUsers', {
           id: id,
           showicon: true
         }).then(json => {
           const response = json.listusersresponse.user || []
           if (response?.[0]) {
             this.image = response[0]?.icon?.base64image || ''
+            this.$store.commit('SET_AVATAR', this.image)
             resolve(this.image)
           }
         }).catch(error => {
@@ -173,7 +180,9 @@ export default {
       }
     },
     handleLogout () {
-      return this.Logout({}).then(() => {
+      this.Logout({}).finally(async () => {
+        sourceToken.init()
+        await applyCustomGuiTheme(null, null)
         this.$router.push('/user/login')
       }).catch(err => {
         this.$message.error({

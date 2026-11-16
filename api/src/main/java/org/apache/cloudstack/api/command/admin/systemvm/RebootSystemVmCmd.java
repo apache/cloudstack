@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -37,7 +36,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "rebootSystemVm", description = "Reboots a system VM.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -48,10 +46,10 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
                required = true,
-               description = "The ID of the system virtual machine")
+               description = "The ID of the System VM")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force reboot the system VM (System VM is Stopped and then Started)", since = "4.16.0")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force reboot the System VM (System VM is Stopped and then Started)", since = "4.16.0")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -88,7 +86,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Rebooting System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -107,14 +105,14 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to reboot system vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reboot System Instance");
         }
     }
 }

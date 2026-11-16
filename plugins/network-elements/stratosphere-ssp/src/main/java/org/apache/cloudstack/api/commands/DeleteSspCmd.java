@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,11 +37,10 @@ import com.cloud.exception.ResourceUnavailableException;
 @APICommand(name = "deleteStratosphereSsp", responseObject = SuccessResponse.class, description = "Removes stratosphere ssp server",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSspCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(DeleteSspCmd.class.getName());
     @Inject
     SspService _service;
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID of ssp server")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID of ssp server")
     private Long hostId;
 
     @Override
@@ -58,7 +56,7 @@ public class DeleteSspCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException,
         NetworkRuleConflictException {
-        s_logger.trace("execute");
+        logger.trace("execute");
         SuccessResponse resp = new SuccessResponse();
         resp.setSuccess(_service.deleteSspHost(this));
         this.setResponseObject(resp);

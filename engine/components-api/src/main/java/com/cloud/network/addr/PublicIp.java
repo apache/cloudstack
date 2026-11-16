@@ -40,7 +40,11 @@ public class PublicIp implements PublicIpAddress {
     }
 
     public static PublicIp createFromAddrAndVlan(IPAddressVO addr, VlanVO vlan) {
-        return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress(), NetworkModel.MACIdentifier.value()));
+        long macIdentifier = NetworkModel.MACIdentifier.valueIn(addr.getDataCenterId());
+        if (macIdentifier == 0) {
+            macIdentifier = addr.getDataCenterId();
+        }
+        return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress(), macIdentifier));
     }
 
     @Override
@@ -268,5 +272,15 @@ public class PublicIp implements PublicIpAddress {
     @Override
     public void setRuleState(State ruleState) {
         _addr.setRuleState(ruleState);
+    }
+
+    @Override
+    public boolean isForSystemVms() {
+        return false;
+    }
+
+    @Override
+    public boolean isForRouter() {
+        return _addr.isForRouter();
     }
 }

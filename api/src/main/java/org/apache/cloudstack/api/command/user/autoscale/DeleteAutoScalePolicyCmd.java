@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteAutoScalePolicy", description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class, entityType = {AutoScalePolicy.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteAutoScalePolicyCmd.class.getName());
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
@@ -48,7 +46,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
                required = true,
-               description = "the ID of the autoscale policy")
+               description = "The ID of the autoscale policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -81,19 +79,19 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting AutoScale Policy: " + getId();
+        return "Deleting AutoScale Policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _autoScaleService.deleteAutoScalePolicy(id);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            s_logger.warn("Failed to delete autoscale policy " + getId());
+            logger.warn("Failed to delete autoscale policy {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete AutoScale Policy");
         }
     }

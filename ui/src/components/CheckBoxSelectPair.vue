@@ -21,8 +21,12 @@
       <a-col :md="24" :lg="layout === 'horizontal' ? 10 : 24">
         <a-checkbox
           :checked="checked"
+          :disabled="forExternalNetProvider"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
+          <a-tooltip v-if="checkBoxTooltip" :title="checkBoxTooltip">
+            <info-circle-outlined class="tooltip-icon" />
+          </a-tooltip>
         </a-checkbox>
       </a-col>
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
@@ -30,7 +34,8 @@
           v-if="reversed !== checked"
           :label="selectLabel">
           <a-select
-            v-model:value="selectedOption"
+            v-model:value="selected"
+            :disabled="forExternalNetProvider"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -68,9 +73,17 @@ export default {
       type: String,
       required: true
     },
+    checkBoxTooltip: {
+      type: String,
+      default: null
+    },
     defaultCheckBoxValue: {
       type: Boolean,
       default: false
+    },
+    defaultSelectValue: {
+      type: String,
+      default: null
     },
     selectOptions: {
       type: Array,
@@ -81,6 +94,10 @@ export default {
       default: ''
     },
     reversed: {
+      type: Boolean,
+      default: false
+    },
+    forExternalNetProvider: {
       type: Boolean,
       default: false
     }
@@ -94,6 +111,9 @@ export default {
   },
   created () {
     this.checked = this.defaultCheckBoxValue
+    if (this.defaultSelectValue) {
+      this.selectedOption = this.defaultSelectValue
+    }
   },
   watch: {
     selectOptions () {
@@ -112,6 +132,15 @@ export default {
         }
         return option
       })
+    },
+    selected () {
+      return this.option || this.selectedOption
+    },
+    option () {
+      if (this.forExternalNetProvider) {
+        return this.selectOptions[0]?.name || null
+      }
+      return null
     }
   },
   methods: {
@@ -143,5 +172,10 @@ export default {
 <style lang="less" scoped>
 .ant-list-split .ant-list-item div {
   width: 100%;
+}
+
+.tooltip-icon {
+  color: rgba(0,0,0,.45);
+  margin-left: 2px;
 }
 </style>

@@ -105,7 +105,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -207,7 +207,7 @@ export default {
     },
     importRole (params) {
       this.loading = true
-      api('importRole', {}, 'POST', params).then(json => {
+      postAPI('importRole', params).then(json => {
         const role = json.importroleresponse.role
         if (role) {
           this.$emit('refresh-data')

@@ -23,8 +23,8 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,20 +33,26 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.security.InvalidParameterException;
-
 public class DeleteVMScheduleCmdTest {
     @Mock
-    public VMScheduleManager vmScheduleManager;
+    public ResourceScheduleManager resourceScheduleManager;
+
     @Mock
     public EntityManager entityManager;
 
     @InjectMocks
     private DeleteVMScheduleCmd deleteVMScheduleCmd = new DeleteVMScheduleCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -58,9 +64,11 @@ public class DeleteVMScheduleCmdTest {
     public void testSuccessfulExecution() {
         final SuccessResponse response = new SuccessResponse();
         response.setResponseName(deleteVMScheduleCmd.getCommandName());
-        response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
+        response.setObjectName("vmschedule");
 
-        Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenReturn(1L);
+        Mockito.when(resourceScheduleManager.removeSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenReturn(1L);
         deleteVMScheduleCmd.execute();
         SuccessResponse actualResponse = (SuccessResponse) deleteVMScheduleCmd.getResponseObject();
         Assert.assertEquals(response.getResponseName(), actualResponse.getResponseName());
@@ -74,18 +82,22 @@ public class DeleteVMScheduleCmdTest {
      */
     @Test(expected = ServerApiException.class)
     public void testServerApiException() {
-        Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenReturn(0L);
+        Mockito.when(resourceScheduleManager.removeSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenReturn(0L);
         deleteVMScheduleCmd.execute();
     }
 
     /**
      * given: "We have a VMScheduleManager and DeleteVMScheduleCmd"
      * when: "DeleteVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(resourceScheduleManager.removeSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
+        )).thenThrow(new InvalidParameterValueException("Invalid schedule"));
         deleteVMScheduleCmd.execute();
     }
 
@@ -105,7 +117,7 @@ public class DeleteVMScheduleCmdTest {
     /**
      * given: "We have an EntityManager and DeleteVMScheduleCmd"
      * when: "DeleteVMScheduleCmd.getEntityOwnerId is executed for a VM which doesn't exist"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testFailureGetEntityOwnerId() {

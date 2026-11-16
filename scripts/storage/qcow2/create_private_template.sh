@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+
 
 # $Id: create_private_template.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/create_private_template.sh $
 # create_private_template.sh -- create a private template from a snapshot
@@ -31,7 +31,7 @@ create_template() {
   local fspath=$1
   local destpath=$2
 
-  # if backing image exists, we need to combine them, otherwise 
+  # if backing image exists, we need to combine them, otherwise
   # copy the image to preserve snapshots/compression
   if $qemu_img info "$tmpltimg" | grep -q backing; then
     qemu-img convert -O qcow2 /$fspath  $destpath

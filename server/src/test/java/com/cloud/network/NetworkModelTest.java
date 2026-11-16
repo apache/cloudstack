@@ -51,6 +51,7 @@ import com.cloud.utils.net.Ip;
 import junit.framework.Assert;
 import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -64,10 +65,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -125,10 +126,11 @@ public class NetworkModelTest {
     private static final String IPV6_GATEWAY = "fd59:16ba:559b:243d::1";
     private static final String START_IPV6 = "fd59:16ba:559b:243d:0:0:0:2";
     private static final String END_IPV6 = "fd59:16ba:559b:243d:ffff:ffff:ffff:ffff";
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         when(dataCenterDao.listEnabledZones()).thenReturn(Arrays.asList(zone1, zone2));
         when(physicalNetworkDao.listByZoneAndTrafficType(ZONE_1_ID, Networks.TrafficType.Guest)).
@@ -148,6 +150,11 @@ public class NetworkModelTest {
 
         when(physicalNetworkZone1.getId()).thenReturn(PHYSICAL_NETWORK_1_ID);
         when(physicalNetworkZone2.getId()).thenReturn(PHYSICAL_NETWORK_2_ID);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -238,29 +245,25 @@ public class NetworkModelTest {
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr32() {
         String ipv6cidr = "fd59:16ba:559b:243d::/32";
-        String endipv6 = "fd59:16ba:ffff:ffff:ffff:ffff:ffff:ffff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr63() {
         String ipv6cidr = "fd59:16ba:559b:243d::/63";
-        String endipv6 = "fd59:16ba:559b:243d:ffff:ffff:ffff:ffff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr65() {
         String ipv6cidr = "fd59:16ba:559b:243d::/65";
-        String endipv6 = "fd59:16ba:559b:243d:7fff:ffff:ffff:ffff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr120() {
         String ipv6cidr = "fd59:16ba:559b:243d::/120";
-        String endipv6 = "fd59:16ba:559b:243d:0:0:0:ff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)

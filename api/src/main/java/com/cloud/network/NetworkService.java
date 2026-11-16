@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -34,16 +35,22 @@ import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCm
 import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -55,6 +62,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
@@ -77,7 +85,7 @@ public interface NetworkService {
             true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Boolean> AllowUsersToSpecifyVRMtu = new ConfigKey<>("Advanced", Boolean.class,
-            "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
+            "allow.end.users.to.specify.vr.mtu", "false", "Allow end Users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
@@ -86,6 +94,8 @@ public interface NetworkService {
         ConcurrentOperationException;
 
     IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException;
+
+    IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException;
 
     boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
@@ -97,6 +107,14 @@ public interface NetworkService {
     boolean releasePortableIpAddress(long ipAddressId);
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+           PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+                               PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType, Pair<Integer, Integer> vrIfaceMTUs) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
@@ -218,7 +236,7 @@ public interface NetworkService {
     /**
      * Requests an IP address for the guest NIC
      */
-    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException;
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 
@@ -234,6 +252,32 @@ public interface NetworkService {
     boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled);
 
     List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd);
+
+    /**
+     * Associates one or more additional networks with an existing nic, delivering them as a multi-VLAN trunk
+     */
+    Nic associateNetworkToNic(AssociateNetworkToNicCmd cmd)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException;
+
+    /**
+     * Disassociates a network from an existing nic, shrinking its multi-VLAN trunk. The primary network cannot be disassociated.
+     */
+    Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) throws ResourceUnavailableException;
+
+    /**
+     * Changes a multi-VLAN trunk nic's primary network to one of its already-associated networks. Only allowed while
+     * the owning Instance is stopped, since the nic is rebuilt fresh on its next start.
+     */
+    Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd);
+
+    /**
+     * Associates additional networks with a nic that was just created (e.g. during VM deploy), before the owning
+     * Instance has ever started. No live agent update is issued - the nic's first plug already reads these
+     * associations fresh. requestedIps (nullable) optionally requests a specific ip4/ip6 address per associated
+     * network id - a network with no entry (or a null map) auto-allocates, same as today.
+     */
+    void associateNetworksToNic(Nic nic, List<Long> networkIds, Map<Long, IpAddresses> requestedIps)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException;
 
     AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException;
 
@@ -254,4 +298,23 @@ public interface NetworkService {
     PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd);
 
     void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd);
+
+    InternalLoadBalancerElementService getInternalLoadBalancerElementByType(VirtualRouterProvider.Type type);
+    InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId);
+    InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId);
+    List<InternalLoadBalancerElementService> getInternalLoadBalancerElements();
+
+    boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) throws ResourceUnavailableException;
+
+    IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
+
+    String getNicVlanValueForExternalVm(NicTO nic);
+
+    Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
+
+    // Re-applies each nic's VLAN membership on the host of a Running Instance, e.g. after a memory revert recreates its taps.
+    void reapplyLiveVlanMembership(VirtualMachine vm) throws ResourceUnavailableException;
+
+    // Pushes a migrated network's new VLAN and DHCP entries to the Running Instances that carry it as a trunk nic association.
+    void refreshTrunkNicsAssociatedToNetwork(Network network);
 }

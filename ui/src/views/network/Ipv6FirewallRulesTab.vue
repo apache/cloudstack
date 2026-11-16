@@ -167,7 +167,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -271,7 +271,7 @@ export default {
   methods: {
     fetchData () {
       this.loading = true
-      api('listIpv6FirewallRules', {
+      getAPI('listIpv6FirewallRules', {
         listAll: true,
         networkid: this.resource.id,
         page: this.page,
@@ -336,7 +336,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deleteIpv6FirewallRule', { id: rule.id }).then(response => {
+      postAPI('deleteIpv6FirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deleteipv6firewallruleresponse.jobid
         eventBus.emit('update-job-details', jobId, null)
         this.$pollJob({
@@ -372,7 +372,7 @@ export default {
     addRule () {
       if (this.loading) return
       this.loading = true
-      api('createIpv6FirewallRule', { ...this.newRule }).then(response => {
+      postAPI('createIpv6FirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createipv6firewallruleresponse.jobid,
           successMessage: this.$t('message.add.ip.v6.firewall.rule.success'),

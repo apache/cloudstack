@@ -33,7 +33,9 @@ def replaceVersion(fname, version):
     """replace VERSION in setup.py"""
     with open(fname, 'r') as f:
         content = f.read()
-    needle = '\nVERSION\s*=\s*[\'"][^\'"]*[\'"]'
+    needle = r'\nVERSION\s*=\s*[\'"][^\'"]*[\'"]'
+    # Ensure the version is PEP440 compliant
+    version = version.replace('-', '+', 1)
     replacement = '\nVERSION = "%s"' % version
     content = re.sub(needle, replacement, content, 1)
     with open(fname, 'w') as f:

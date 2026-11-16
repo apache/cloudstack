@@ -136,7 +136,11 @@ class TestSecStorageServices(cloudstackTestCase):
                         'Up',
                         "Check state of primary storage pools is Up or not"
                         )
-        for _ in range(2):
+        # Poll until all SSVMs are Running, or timeout after 3 minutes
+        timeout = 180
+        interval = 15
+        list_ssvm_response = []
+        while timeout > 0:
             list_ssvm_response = list_ssvms(
                                     self.apiclient,
                                     systemvmtype='secondarystoragevm',
@@ -154,10 +158,12 @@ class TestSecStorageServices(cloudstackTestCase):
                             "Check list System VMs response"
                         )
 
-            for ssvm in list_ssvm_response:
-                if ssvm.state != 'Running':
-                    time.sleep(30)
-                    continue
+            if all(ssvm.state == 'Running' for ssvm in list_ssvm_response):
+                break
+
+            time.sleep(interval)
+            timeout -= interval
+
         for ssvm in list_ssvm_response:
             self.assertEqual(
                             ssvm.state,
@@ -340,7 +346,7 @@ class TestSecStorageServices(cloudstackTestCase):
         # 1. Try complete migration from a storage with more (or equal) free space - migration should be refused
 
         storages = self.list_secondary_storages(self.apiclient)
-        if (len(storages)) < 2:
+        if (len(storages)) < 2 or (storages[0]['zoneid'] != storages[1]['zoneid']):
             self.skipTest(
                 "This test requires more than one secondary storage")
 

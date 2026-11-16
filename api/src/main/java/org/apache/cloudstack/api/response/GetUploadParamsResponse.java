@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 public class GetUploadParamsResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the template/volume ID")
+    @Param(description = "The Template/volume ID")
     private UUID id;
 
     @SerializedName(ApiConstants.POST_URL)
@@ -38,15 +38,15 @@ public class GetUploadParamsResponse extends BaseResponse {
     private URL postURL;
 
     @SerializedName(ApiConstants.METADATA)
-    @Param(description = "encrypted data to be sent in the POST request.")
+    @Param(description = "Encrypted data to be sent in the POST request.")
     private String metadata;
 
     @SerializedName(ApiConstants.EXPIRES)
-    @Param(description = "the timestamp after which the signature expires")
+    @Param(description = "The timestamp after which the signature expires")
     private String expires;
 
     @SerializedName(ApiConstants.SIGNATURE)
-    @Param(description = "signature to be sent in the POST request.")
+    @Param(description = "Signature to be sent in the POST request.")
     private String signature;
 
     public GetUploadParamsResponse(UUID id, URL postURL, String metadata, String expires, String signature) {
@@ -60,6 +60,10 @@ public class GetUploadParamsResponse extends BaseResponse {
 
     public GetUploadParamsResponse() {
         setObjectName("getuploadparams");
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public void setId(UUID id) {
