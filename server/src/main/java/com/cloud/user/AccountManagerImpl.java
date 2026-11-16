@@ -3184,7 +3184,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     private UserAccount getUserAccountForSSO(String username, Long domainId, Map<String, Object[]> requestParameters) {
-        String key = _configDao.getValue("security.singlesignon.key");
+        String key = SSOKey.value();
         if (key == null) {
             // the SSO key is gone, don't authenticate
             return null;
