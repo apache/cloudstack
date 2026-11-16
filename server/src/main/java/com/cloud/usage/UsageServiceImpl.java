@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
@@ -85,7 +87,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
+public class UsageServiceImpl extends ManagerBase implements UsageService, Manager, Configurable {
 
     //ToDo: Move implementation to ManagaerImpl
 
@@ -499,5 +501,16 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         logger.info("Removing cloud_usage records older than {} day(s).", interval);
         _usageDao.expungeAllOlderThan(interval, ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return UsageService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {UsageAggregationTimezone, UsageExecutionTimezone, UsageSanityCheckInterval,
+                UsageStatsJobAggregationRange, UsageStatsJobExecTime, EnableUsageServer};
     }
 }

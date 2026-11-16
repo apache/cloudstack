@@ -1551,7 +1551,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
-                                   SecondaryStorageVmUserData};
+                                   SecondaryStorageVmUserData, UseSecondaryStorageVm, MountParent, SystemVMAutoReserveCapacity,
+                                   SystemVMRandomPassword, MaxTemplateAndIsoSize, SecStorageAllowedInternalDownloadSites,
+                                   SecStorageEncryptCopy, SecStorageSecureCopyCert, ExtractURLCleanUpInterval, DisableExtraction,
+                                   ExtractURLExpirationInterval, SecondaryStorageServiceOffering};
     }
 
 }

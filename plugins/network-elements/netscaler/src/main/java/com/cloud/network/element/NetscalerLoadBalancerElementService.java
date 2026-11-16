@@ -19,6 +19,8 @@ package com.cloud.network.element;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
@@ -46,6 +48,12 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface NetscalerLoadBalancerElementService extends PluggableService {
+
+    ConfigKey<Boolean> EIPWithMultipleNetScalersEnabled = new ConfigKey<>("Advanced", Boolean.class, "eip.use.multiple.netscalers", "false",
+            "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone", true);
+
+    ConfigKey<Long> NCCCmdTimeOut = new ConfigKey<>("Advanced", Long.class, "ncc.command.timeout", "600000",
+            "Command Timeout Interval (in millisec)", true);
 
     /**
      * lists all Netscaler Control Center user Details

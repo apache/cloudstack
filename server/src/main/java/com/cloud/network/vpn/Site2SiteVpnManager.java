@@ -19,11 +19,22 @@ package com.cloud.network.vpn;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.vm.DomainRouterVO;
 
 public interface Site2SiteVpnManager extends Site2SiteVpnService {
+
+    ConfigKey<Integer> Site2SiteVpnConnectionPerVpnGatewayLimit = new ConfigKey<>("Network", Integer.class,
+            "site2site.vpn.vpngateway.connection.limit", "4",
+            "The maximum number of VPN connection per VPN gateway", true);
+
+    ConfigKey<Integer> Site2SiteVpnSubnetsPerCustomerGatewayLimit = new ConfigKey<>("Network", Integer.class,
+            "site2site.vpn.customergateway.subnets.limit", "10",
+            "The maximum number of subnets per customer gateway", true);
+
     Set<String> getExcludedVpnGatewayParameters(Site2SiteCustomerGateway customerGw);
 
     Set<String> getObsoleteVpnGatewayParameters(Site2SiteCustomerGateway customerGw);

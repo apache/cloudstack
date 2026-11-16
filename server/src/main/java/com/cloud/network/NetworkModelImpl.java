@@ -3039,7 +3039,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere};
+        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere, SecurityGroupDefaultAdding, CloudIdentifier,
+                SubDomainNetworkAccess, ExecuteInSequenceNetworkElementCommands, ExternalNetworkStatsInterval, NetworkIPv6SearchRetryMax};
     }
 
     @Override
