@@ -33,7 +33,7 @@ public class NicTO extends NetworkTO {
     boolean dpdkEnabled;
     Integer mtu;
     Long networkId;
-    boolean enabled;
+    boolean enabled = true;
 
     String networkSegmentName;
 
