@@ -252,6 +252,9 @@ export default {
       case 'imagestore':
         this.scopeKey = 'imagestoreuuid'
         break
+      case 'managementserver':
+        this.scopeKey = 'managementserverid'
+        break
       default:
         this.scopeKey = ''
     }
@@ -286,12 +289,18 @@ export default {
         newValue = newValue.join(' ')
       }
       const params = {
-        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
         value: newValue
       }
-      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
-        params[this.scopeKey] = this.resource?.id
+      if (this.scopeKey) {
+        const scopeId = this.resource?.id
+        if (!scopeId) {
+          this.editableValue = this.actualValue
+          this.valueLoading = false
+          this.$message.error(this.$t('message.error.save.setting'))
+          return
+        }
+        params[this.scopeKey] = scopeId
       }
       postAPI('updateConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
@@ -317,11 +326,16 @@ export default {
       this.valueLoading = true
       this.editableValueKey = null
       const params = {
-        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
       }
-      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
-        params[this.scopeKey] = this.resource?.id
+      if (this.scopeKey) {
+        const scopeId = this.resource?.id
+        if (!scopeId) {
+          this.valueLoading = false
+          this.$message.error(this.$t('message.error.reset.config'))
+          return
+        }
+        params[this.scopeKey] = scopeId
       }
       postAPI('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
