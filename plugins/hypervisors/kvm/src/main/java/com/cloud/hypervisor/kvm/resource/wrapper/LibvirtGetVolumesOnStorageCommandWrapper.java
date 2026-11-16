@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapper<GetVolumesOnStorageCommand, Answer, LibvirtComputingResource> {
 
     static final List<StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED_BY_QEMU_IMG = Arrays.asList(StoragePoolType.NetworkFilesystem,
-            StoragePoolType.Filesystem, StoragePoolType.RBD, StoragePoolType.SharedMountPoint);
+            StoragePoolType.Filesystem, StoragePoolType.RBD, StoragePoolType.SharedMountPoint, StoragePoolType.Linstor);
 
     @Override
     public Answer execute(final GetVolumesOnStorageCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -64,11 +64,22 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true, true);
 
+        if (StoragePoolType.Linstor.equals(pool.getType())) {
+            try {
+                List<VolumeOnStorageTO> volumes = storagePool.getVolumesForImport(
+                        StringUtils.isBlank(volumePath) ? null : volumePath);
+                if (StringUtils.isNotBlank(keyword)) {
+                    volumes = volumes.stream().filter(volume -> volume.getName().contains(keyword)).collect(Collectors.toList());
+                }
+                return new GetVolumesOnStorageAnswer(command, volumes);
+            } catch (RuntimeException e) {
+                return new GetVolumesOnStorageAnswer(command, false, e.getMessage());
+            }
+        }
         if (StringUtils.isNotBlank(volumePath)) {
             return addVolumeByVolumePath(command, storagePool, volumePath);
-        } else {
-            return addAllVolumes(command, storagePool, keyword);
         }
+        return addAllVolumes(command, storagePool, keyword);
     }
 
     private GetVolumesOnStorageAnswer addVolumeByVolumePath(final GetVolumesOnStorageCommand command, final KVMStoragePool storagePool, String volumePath) {
@@ -128,7 +139,20 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
             volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
         }
-        Boolean isLocked = isDiskFileLocked(storagePool, disk);
+        boolean isLocked = isDiskFileLocked(storagePool, disk);
+        if (!isLocked) {
+            // Clustered block storage (Linstor/DRBD): the host-local qemu-img lock cannot see a
+            // volume in use by a running VM on another node — consult the cluster-wide state.
+            String inUseNode = storagePool.getVolumeInUseNode(disk.getName());
+            if (KVMStoragePool.IN_USE_NODE_UNKNOWN.equals(inUseNode)) {
+                logger.warn("Could not determine cluster-wide in-use state of volume {}; marking as locked",
+                        disk.getName());
+                isLocked = true;
+            } else if (inUseNode != null) {
+                logger.info("Volume {} is in use on node {}; marking as locked", disk.getName(), inUseNode);
+                isLocked = true;
+            }
+        }
         volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
     }
 

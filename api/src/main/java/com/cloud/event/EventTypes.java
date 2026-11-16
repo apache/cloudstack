@@ -49,6 +49,8 @@ import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.schedule.ResourceSchedule;
+import org.apache.cloudstack.vm.bootgroup.InstanceBootGroup;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -127,6 +129,9 @@ public class EventTypes {
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
+    public static final String EVENT_VMWARE_CBT_MIGRATION_START = "VMWARE.CBT.MIGRATION.START";
+    public static final String EVENT_VMWARE_CBT_MIGRATION_SYNC = "VMWARE.CBT.MIGRATION.SYNC";
+    public static final String EVENT_VMWARE_CBT_MIGRATION_CUTOVER = "VMWARE.CBT.MIGRATION.CUTOVER";
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 
@@ -228,6 +233,11 @@ public class EventTypes {
     public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
     public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
     public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+    public static final String EVENT_NIC_NETWORK_ASSOCIATE = "NIC.NETWORK.ASSOCIATE";
+    public static final String EVENT_NIC_NETWORK_DISASSOCIATE = "NIC.NETWORK.DISASSOCIATE";
+    public static final String EVENT_NIC_PRIMARY_NETWORK_CHANGE = "NIC.PRIMARY.NETWORK.CHANGE";
+    // internal-only signal consumed by the usage job - never user-facing, not an audit event
+    public static final String EVENT_NIC_NETWORK_ID_BACKFILL = "NIC.NETWORK.ID.BACKFILL";
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -899,6 +909,21 @@ public class EventTypes {
     public static final String EVENT_DNS_RECORD_DELETE = "DNS.RECORD.DELETE";
     public static final String EVENT_DNS_NAME_COLLISION = "DNS.NAME.COLLISION";
 
+    // Instance Boot Group
+    public static final String EVENT_INSTANCE_BOOT_GROUP_CREATE = "INSTANCE.BOOT.GROUP.CREATE";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_DELETE = "INSTANCE.BOOT.GROUP.DELETE";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_UPDATE = "INSTANCE.BOOT.GROUP.UPDATE";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_START = "INSTANCE.BOOT.GROUP.START";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_STOP = "INSTANCE.BOOT.GROUP.STOP";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_REBOOT = "INSTANCE.BOOT.GROUP.REBOOT";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_MEMBER_ADD = "INSTANCE.BOOT.GROUP.MEMBER.ADD";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_MEMBER_REMOVE = "INSTANCE.BOOT.GROUP.MEMBER.REMOVE";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_MEMBER_REORDER = "INSTANCE.BOOT.GROUP.MEMBER.REORDER";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_CREATE = "INSTANCE.BOOT.GROUP.READINESS.RULE.CREATE";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_UPDATE = "INSTANCE.BOOT.GROUP.READINESS.RULE.UPDATE";
+    public static final String EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_DELETE = "INSTANCE.BOOT.GROUP.READINESS.RULE.DELETE";
+
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -980,6 +1005,9 @@ public class EventTypes {
 
         // Nic Events
         entityEventDetails.put(EVENT_NIC_CREATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_NETWORK_ASSOCIATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_NETWORK_DISASSOCIATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_PRIMARY_NETWORK_CHANGE, Nic.class);
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);
@@ -1468,6 +1496,19 @@ public class EventTypes {
         entityEventDetails.put(EVENT_DNS_RECORD_CREATE, DnsRecord.class);
         entityEventDetails.put(EVENT_DNS_RECORD_DELETE, DnsRecord.class);
 
+        // Instance Boot Group
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_CREATE, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_DELETE, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_UPDATE, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_START, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_STOP, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_REBOOT, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_MEMBER_ADD, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_MEMBER_REMOVE, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_MEMBER_REORDER, InstanceBootGroup.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_CREATE, InstanceBootGroupReadinessRule.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_UPDATE, InstanceBootGroupReadinessRule.class);
+        entityEventDetails.put(EVENT_INSTANCE_BOOT_GROUP_READINESS_RULE_DELETE, InstanceBootGroupReadinessRule.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

@@ -34,7 +34,6 @@ const err = (error) => {
   const response = error.response
   let countNotify = store.getters.countNotify
   if (response) {
-    console.log(response)
     if (response.status === 403) {
       const data = response.data
       countNotify++
@@ -51,7 +50,9 @@ const err = (error) => {
       })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
+      const requestCommand = (response.config && response.config.params && response.config.params.command) ||
+        (response.config && typeof response.config.data === 'string' && new URLSearchParams(response.config.data).get('command'))
+      if (['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(requestCommand)) {
         return
       }
       const originalPath = router.currentRoute.value.path
@@ -75,9 +76,9 @@ const err = (error) => {
           }
         }
       }
-      countNotify++
-      store.commit('SET_COUNT_NOTIFY', countNotify)
       if (originalPath === '/verify2FA' || originalPath === '/setup2FA') {
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
           top: '65px',
           message: i18n.global.t('label.2FA'),
@@ -90,13 +91,14 @@ const err = (error) => {
             store.commit('SET_COUNT_NOTIFY', countNotify)
           }
         })
-      } else {
-        notification.error({
+      } else if (originalPath !== '/user/login') {
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
+        notification.warning({
           top: '65px',
-          message: i18n.global.t('label.unauthorized'),
-          description: i18n.global.t('message.authorization.failed'),
+          message: i18n.global.t('label.session.expired'),
+          description: i18n.global.t('message.session.expired'),
           key: 'http-401',
-          duration: 0,
           onClose: () => {
             let countNotify = store.getters.countNotify
             countNotify > 0 ? countNotify-- : countNotify = 0

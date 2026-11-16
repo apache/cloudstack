@@ -18,9 +18,11 @@ package com.cloud.vm.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +46,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -106,6 +109,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
+    protected SearchBuilder<VMInstanceVO> IdsSearch;
     GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
     GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
     SearchBuilder<VMInstanceVO> DeleteProtectedVmSearchByAccount;
@@ -153,6 +157,21 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             + "WHERE vm_id IS NOT NULL AND host.data_center_id = ? ";
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
             "GROUP BY gpu_card.name, vgpu_profile.name";
+
+    // %s is the "changed state recently" test, or a constant 0 when no cut-off is given. It is not
+    // a bound parameter because there is no timestamp that reliably means "never" - update_time is
+    // a TIMESTAMP column, so anything past 2038 is out of range.
+    //
+    // The third count is VMs still in Starting. Unlike the recent-state-change count it does not
+    // expire on a clock: a VM that has been starting for ten minutes still counts, which is the
+    // case that matters, since a host that is struggling is exactly the one whose VMs take longest
+    // to leave Starting.
+    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id), SUM(IF(%s, 1, 0)), " +
+            "SUM(IF(vm.state = 'Starting', 1, 0)) " +
+            "FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm " +
+            "ON vm.host_id = host.id AND vm.state IN ('Running', 'Starting', 'Stopping', 'Migrating') " +
+            "AND vm.removed IS NULL WHERE host.type = 'Routing' AND host.removed IS NULL AND host.data_center_id = ? ";
+    private static final String COUNT_VMS_BY_HOST_PART2 = " GROUP BY host.id ";
 
     private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
 
@@ -386,6 +405,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         DeleteProtectedVmSearchByDomainIds.and(ApiConstants.DELETE_PROTECTION, DeleteProtectedVmSearchByDomainIds.entity().isDeleteProtection(), Op.EQ);
         DeleteProtectedVmSearchByDomainIds.and(ApiConstants.REMOVED, DeleteProtectedVmSearchByDomainIds.entity().getRemoved(), Op.NULL);
         DeleteProtectedVmSearchByDomainIds.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), Op.IN);
+        IdsSearch.done();
     }
 
     @Override
@@ -792,6 +815,45 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             throw new CloudRuntimeException("DB Exception on: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        }
+    }
+
+
+    @Override
+    public Map<Long, Ternary<Long, Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        Map<Long, Ternary<Long, Long, Long>> result = new HashMap<>();
+        String sql = String.format(COUNT_VMS_BY_HOST, changedStateAfter != null ? "vm.update_time > ?" : "0");
+        if (podId != null) {
+            sql = sql + " AND host.pod_id = ? ";
+        }
+        if (clusterId != null) {
+            sql = sql + " AND host.cluster_id = ? ";
+        }
+        sql = sql + COUNT_VMS_BY_HOST_PART2;
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+            int index = 1;
+            if (changedStateAfter != null) {
+                pstmt.setTimestamp(index++, new Timestamp(changedStateAfter.getTime()));
+            }
+            pstmt.setLong(index++, dcId);
+            if (podId != null) {
+                pstmt.setLong(index++, podId);
+            }
+            if (clusterId != null) {
+                pstmt.setLong(index++, clusterId);
+            }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                // SUM over no rows is NULL, which getLong reports as 0 - correct for an empty host
+                result.put(rs.getLong(1), new Ternary<>(rs.getLong(2), rs.getLong(3), rs.getLong(4)));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
         }
     }
 
@@ -1351,5 +1413,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("host", hostId);
         sc.setParameters("lastHost", hostId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMInstanceVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
     }
 }
