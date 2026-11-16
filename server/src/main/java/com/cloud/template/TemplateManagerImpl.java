@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -2445,13 +2446,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (MapUtils.isEmpty(details)) {
             return;
         }
+        if (template.isDeployAsIs()) {
+            Map<String, String> existing = template.getDetails() == null ? new HashMap<>() : template.getDetails();
+            for (Map.Entry<String, String> detail : details.entrySet()) {
+                if (!Objects.equals(existing.get(detail.getKey()), detail.getValue())) {
+                    String msg = String.format("Deploy-as-is Template %s can not have the %s setting. Settings are read directly from the Template", template, detail.getKey());
+                    throw new InvalidParameterValueException(msg);
+                }
+            }
+            return;
+        }
         String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
         if (bootMode == null) {
             return;
-        }
-        if (template.isDeployAsIs()) {
-            String msg = String.format("Deploy-as-is Template %s can not have the UEFI setting. Settings are read directly from the Template", template);
-            throw new InvalidParameterValueException(msg);
         }
         try {
             String mode = bootMode.trim().toUpperCase();

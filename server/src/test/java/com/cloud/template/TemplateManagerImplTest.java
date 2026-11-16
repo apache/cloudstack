@@ -100,7 +100,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -751,6 +753,37 @@ public class TemplateManagerImplTest extends TestCase {
         DeleteTemplateCmd cmd = new DeleteTemplateCmd();
         Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
         Assert.assertNull(type);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateDetailsTestDeployAsIsTemplateRejectsNewNonUefiSetting() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.isDeployAsIs()).thenReturn(true);
+        Map<String, String> details = new HashMap<>();
+        details.put("rootDiskController", "scsi");
+
+        templateManager.validateDetails(template, details);
+    }
+
+    @Test
+    public void validateDetailsTestDeployAsIsTemplateAcceptsUnchangedSetting() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.isDeployAsIs()).thenReturn(true);
+        Mockito.when(template.getDetails()).thenReturn(Map.of("rootDiskController", "scsi"));
+        Map<String, String> details = new HashMap<>();
+        details.put("rootDiskController", "scsi");
+
+        templateManager.validateDetails(template, details);
+    }
+
+    @Test
+    public void validateDetailsTestNonDeployAsIsTemplateAcceptsNonUefiSetting() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.isDeployAsIs()).thenReturn(false);
+        Map<String, String> details = new HashMap<>();
+        details.put("rootDiskController", "scsi");
+
+        templateManager.validateDetails(template, details);
     }
 
     @Test
