@@ -2645,14 +2645,24 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         setEndOfChainAndRemoveCurrentForBackup(backupVO);
     }
 
+    private int getBackupTimeout(long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            logger.trace("Unable to find host [{}] to resolve the zone-level [{}]; using the global value.", hostId, backupTimeout.key());
+            return backupTimeout.value();
+        }
+        return backupTimeout.valueIn(host.getDataCenterId());
+    }
+
     protected Answer sendBackupCommand(long hostId, Command cmd) {
-        cmd.setWait(backupTimeout.value());
+        cmd.setWait(getBackupTimeout(hostId));
         return agentManager.easySend(hostId, cmd);
     }
 
     protected Answer[] sendBackupCommands(Long hostId, Commands cmds) throws OperationTimedoutException, AgentUnavailableException {
+        int backupTimeoutValue = getBackupTimeout(hostId);
         for (Command cmd : cmds) {
-            cmd.setWait(backupTimeout.value());
+            cmd.setWait(backupTimeoutValue);
         }
         return agentManager.send(hostId, cmds);
     }
